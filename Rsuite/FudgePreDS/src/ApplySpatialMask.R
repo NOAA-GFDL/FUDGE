@@ -28,9 +28,9 @@ ApplySpatialMask<-function(data, masknc, maskname="spatial_mask", dataLon, dataL
   mask<-ncvar_get(masknc, maskname, 
                   start=c(startLon, startLat), count=c(lonLength, latLength), collapse_degen=FALSE)
   nc_close(masknc)
-  if(length(mask[1,])!=length(data[1,,])||length(mask[,1])!=length(data[,1,])){
-    stop(paste("Spatial mask dimension error: mask was of dimensions", dim(mask), 
-               "and was expected to be of dimensions", data_dim[1:2]))
+  if(length(mask[1,])!=length(data[1,,1]) | length(mask[,1])!=length(data[,1,1])){
+    stop(paste("Spatial mask dimension error: mask was of dimensions", dim(mask)[1], dim(mask)[2], 
+               "and was expected to be of dimensions", data_dim[1], data_dim[2]))
   }
   return(matrimult(data, mask))  
 }

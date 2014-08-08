@@ -20,6 +20,7 @@
 #' @references \url{link to the FUDGE API documentation}
 #'  
 ApplyTemporalMask<-function(data, masknc, timeData, maskname="none", type="train"){ # maskAll==TRUE
+  library(abind)
   start_time<-proc.time()
   data.length<-length(data)
   thisnc<-nc_open(masknc)
@@ -58,7 +59,7 @@ ApplyTemporalMask<-function(data, masknc, timeData, maskname="none", type="train
         stop(paste("Mask collision error: Masks within", masknc
                    ,",provided as ESD downscaling mask file, either overlap or do not wholly cover the timeseries."))
       }
-      tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=3)
+      tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=2) #along=3
       dim(tempvar)<-dim(data)
       mask.out[[name]]<-tempvar
     }
