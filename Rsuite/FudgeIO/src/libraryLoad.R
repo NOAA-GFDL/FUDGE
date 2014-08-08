@@ -1,4 +1,4 @@
 LoadLibs <- function() {
   #'Load dependancy libraries
-  library(ncdf)
+  library(ncdf4)
 }

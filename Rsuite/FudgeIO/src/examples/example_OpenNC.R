@@ -1,4 +1,4 @@
-library(ncdf)
+library(ncdf4)
 sapply(list.files(pattern="[.]R$", path="/home/a1r/gitlab/fudge2014/Rsuite/FudgeIO/src/", full.names=TRUE), source);
 
 #' Example 1

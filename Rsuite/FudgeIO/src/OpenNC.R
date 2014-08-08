@@ -3,7 +3,7 @@ OpenNC <- function(indir, in.filename, ilon=NA,jlat=NA) {
   #' Opens an existing file for reading (or writing)
   #' Ability to open minifiles
   #' Returns the netCDF file object (nc.object)
-  #' uses open.ncdf
+  #' uses nc_open from ncdf4
   #' ilon jlat are optional. If your file is a minifile with a "lon" index appended to the end, then #the function constructs the file name based on that and the "lat" range. Otherwise, filename is used as-is.
   if ((is.na(ilon)) & (is.na(jlat))) {
     print("..")
@@ -20,6 +20,6 @@ OpenNC <- function(indir, in.filename, ilon=NA,jlat=NA) {
     }
   filename <- paste(indir,in.filename,fileid,sep='')
   print(filename) 
-  nc.object = open.ncdf(filename) 
+  nc.object = nc_open(filename) 
   return(nc.object)
 }  
