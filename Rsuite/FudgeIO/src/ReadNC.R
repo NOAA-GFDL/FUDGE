@@ -13,7 +13,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   print(dcount)
   var.read <- ncvar_get(nc.object,var.name,dstart,dcount) 
   }
-  nc_close(nc.object) 
+#  nc_close(nc.object) #Creates an error when called again if left uncommented
   return(var.read)
 }
 
