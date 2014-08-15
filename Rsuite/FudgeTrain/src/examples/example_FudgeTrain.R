@@ -9,7 +9,7 @@ source("../MaskMerge.R")
 ###Inititalize data to be messed about with
 train_predictor <- seq(1:101)
 train_target <- train_predictor^1.4 + 12
-esd_gen <-seq(from=50, to=151, by=1)
+esd_gen <-seq(from=1, to=151, by=1)
 
 
 ####Run the cross-validation with the commented sample option

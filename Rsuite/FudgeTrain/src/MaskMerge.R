@@ -2,7 +2,8 @@
 
 #Merges two (or more) masked files of the same dimensions together into a single series.
 #Masked dataseries should be passed to the function as a list.
-MaskMerge <- function(args){
+#Optional argument flag "collide" checks for collisions if set to true.
+MaskMerge <- function(args, collide=FALSE){
   #Assume that all files have the same dimension, and store it for later.
   output.dim <- dim(args[[1]])
   if(is.null(output.dim)){
@@ -10,6 +11,10 @@ MaskMerge <- function(args){
   }else{
   merged.series <- rep(0, prod(output.dim))
   }
+  if(collide==TRUE){
+    checkvec<-rep(0, length(merged.series))
+  }
+  #Enter main masking loop
   for (i in 1:length(args)){
     print(paste("merging mask", i, "of", length(args)))
     dim(args[[i]]) <- c(length(args[[i]]))
@@ -18,15 +23,37 @@ MaskMerge <- function(args){
                  length(args[[i]]), "not expected length of", length(merged.series)))
     }
     merged.series <- merged.series + convert.NAs(args[[i]])
+    if(collide==TRUE){
+      checkvec <- checkvec + create.checkvector(args[[i]])
+    }
+  }
+  if(collide==TRUE && sum(checkvec)!=length(merged.series)){
+    if(sum(checkvec) > length(merged.series)){
+      stop(paste("Mask collision error: the vectors specified as args to MaskMerge collide in at least", 
+                 sum(checkvec)-length(merged.series),"places"))
+      ## Not checking for lack of coverage at this time - too many things can cause that
+      ## including the basic time windowing function working as it should.
+#     }else{
+#       stop(paste("Mask collision error: vectors specified as args to MaskMerge do not cover the whole series."))
+    }
   }
   return(merged.series)
 }
 
 
-#Converts NAs to 0, and all non-NA values to 1
+#Converts NAs to 0
 #and returns the result in a 1-D form
 convert.NAs<-function(dataset){
   dataset2<-dataset
   dataset2[is.na(dataset)]<-0
+  return(as.vector(dataset2))
+}
+
+#Converts NAs to 0, all non-NA values to 1
+#and returns the result in a 1-D form
+create.chceckvector<-function(dataset){
+  dataset2<-dataset
+  dataset2[is.na(dataset)]<-0
+  dataset2[!is.na(dataset)]<-1
   return(as.vector(dataset2))
 }

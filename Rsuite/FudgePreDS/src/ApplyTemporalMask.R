@@ -15,19 +15,24 @@
 #' cover the entire series or not. Defaults to TRUE (raises an error if not covering entire series).
 #' @return Either a 3-dimensional array of the same dimensions as the input data, with all time coordiantes where
 #' the mask contained a "NA" replaced with a "NA" (if maskname is supplied), or a list of 1-dimensional arrays of the
-#' sam length as data, with all other properties as described above (dimensions don't agree with lists in this case.)
+#' same length as data, with all other properties as described above (dimensions don't agree with lists in this case.)
 #' @example insert example here
 #' @references \url{link to the FUDGE API documentation}
+#' 
 #'  
-ApplyTemporalMask<-function(data, masknc, timeData, maskname="none", type="train"){ # maskAll==TRUE
+#' CEW 8-15-14 revision: 
+#' Given current state of DownscaleBySeason, revising to assume 1-D input data of length timeaxis.
+#' The check is being replaced with a check on the first date in the timeseries of the original file.
+#' Will probably revisit this later. This means removing timeData as well, BTW. 
+ApplyTemporalMask<-function(data, masknc, maskname="none", type="train"){ # maskAll==TRUE, #timeData
   library(abind)
   start_time<-proc.time()
   data.length<-length(data)
   thisnc<-nc_open(masknc)
   #Assume that calendar for all masks and data was checked earlier, with the CheckCalendar utility
-  if ( (thisnc$dim$time$vals[[1]]!=timeData[[1]]) | ( length(thisnc$dim$time$vals) != length(timeData) ) ){
-    stop(paste("Time dimension error: Data had ititial time value of", timeData[[1]], "and length of", length(timeData),
-               "while mask had initital time value of", thisnc$time$vals[[1]], "and length of", length(thisnc$dim$time$vals)))
+  if ( length(thisnc$dim$time$vals) != data.length ){
+    stop(paste("Time dimension error: Data had ititial time value of", timeData[[1]], "and length of", data.length,
+               "while mask had initital time value of", first.time.val, "and length of", length(thisnc$dim$time$vals)))
   }
   if (maskname!="none"){
     mask.data<-ncvar_get(thisnc, maskname) #Check for dimensional correspondence 
