@@ -1,0 +1,108 @@
+#CrossValidate.R
+#Carolyn Whitlock, August 2014
+
+#' CrossValidate
+#' Performs K-fold cross validation upon a predictor and target dataset.
+#' Will mask data according to the k-fold validation structure, and call
+#' a downscaling method.
+#' Predictor and target should be of the same size. Will this always be 
+#' the case? Ask Keith later.
+#' @param train.predict: a vector of predictor data
+#' @param train.target: a vector of the target data
+#' @param esd.gen: a vector of the data used to generate downscaled data. 
+#' Will be unused if k > 1
+#' @param k : the k-fold cross-validation steps to be used. 
+#' @param downscale.function: a string of the downscaling function to be used in the data. 
+#' Talk to Carlos about the possible inputs into this function.
+#' Code currently assumes that file containing downscaling function
+#' has already been sourced into the workspace by something else. Also talk to 
+#' Carlos about this.
+#' @param compare.function=NA :
+#' @param args = NULL: a list of arguments to be passed to the downscaling function.
+#' Defaults to NULL (no arguments)
+#' @example insert example here
+#' @references \url{link to the FUDGE API documentation}
+#' TODO: Will predictor and target always be of the same length?
+
+
+CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.function="ESD.Train.totally.fake", 
+                          compare.function=NA, args=NULL){ #downscale.function
+  #source('MaskMerge.R')
+  #First things first: determine if cross-validation needs to be performed at all.
+  if (k>1){
+    #Determine masks for k-fold cross-validation
+    #Note: if pressed for time/memory, can eliminate masks and call the index generation
+    #function directly. 
+    k.mask <- K.FoldMasker(length(train.predict), k)
+    #Call the downscaling function to obtain the initial predictions
+    #Note: at some point, this should include a flag
+    #to specify whether or not to save the downscaling equations
+    #for application to a later dataset
+    loop.list <- rep(list(), k)
+    for (loop in 1:k){
+      print(paste("entering k-fold validation loop", loop, "of", k))
+      loop.mask <- k.mask[[loop]]
+      loop.pred <- train.predict[loop.mask==TRUE]
+      loop.target <- train.target[loop.mask==TRUE]
+      #trained.function <- do.call(ESD.Train, loop.pred, loop.target)
+      trained.function <- do.call(downscale.function, list(loop.pred, loop.target))
+      #ESD.Train will incorporate checking and evaluating the function
+      loop.esd.gen <- train.predict[loop.mask==FALSE]
+      output <- do.call("trained.function", list(c(loop.esd.gen, args)))
+      temp<-rep(0, length(loop.mask))
+      ###Running into trouble on the mask reassignment - keeps putting in a vector
+      ##with no NAs for which all values are true. It messes up the merge function.
+      print(output)
+      temp[loop.mask==FALSE] <- output
+      print(temp)
+      temp[loop.mask==TRUE] <- NA
+      print(temp)
+      loop.list[[loop]] <- temp
+    }
+    #Once outside the loop, save the results of the calculation to a list to return
+    print("merging data into single series")
+    print(length(loop.list))
+    print(length(loop.list[[1]]))
+    return(MaskMerge(loop.list))
+  }else{
+    #If K is 1 or 0, run the downscaling equations on the esd.gen dataset instead.
+    #Training will take place over the entire dataset for both train.predict and
+    #train.target
+    trained.function <- ESD.Train.totally.fake(train.predict, train.target)
+    return(do.call("trained.function", list(c(esd.gen, args))))
+  }  
+}
+
+K.FoldMasker<-function(p.len, k){
+  # Returns k masks that partition predictor into a predictor set of
+  # length length(predictor)/(k-1), and a target set of length
+  # length(predictor)/k. In the event of a length(predictor)%%k!=0, 
+  # the remainder is passed to the first section for which the
+  # decimal round to 1.
+  # Yes, the partitioning is nonrandom. This way, it's reproducable.
+  p.index <- indices.calc(p.len,k)
+  temp <- rep(TRUE, p.len)   #Obtain k vectors of p.len
+  p.masks <- as.list(rep(list(temp), k))    #for which all values are true
+  for (i in 1:k){
+    print(i)
+    print((p.index[i])+1)
+    print(p.index[i+1])
+    p.masks[[i]][ (p.index[i]+1):p.index[i+1] ] <- FALSE #Set all values in the i-th partition
+    print(paste("the length of this mask is", length(p.masks[[i]])))
+  }                                                  #of the i-th mask to FALSE
+
+  
+  return(p.masks)
+}
+
+indices.calc <- function(val, k){
+  #Calculates indices of a vector
+  #for subsetting a vector of length val
+  #into k partitions of equal length
+  #or as close as integers allow.
+  ret<-rep(0,k)
+  for (i in 1:k){
+    ret[i+1] <- as.integer((val/k) * i)
+  }
+  return(ret)
+}
