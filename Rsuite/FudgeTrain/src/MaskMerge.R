@@ -5,12 +5,14 @@
 #Optional argument flag "collide" checks for collisions if set to true.
 MaskMerge <- function(args, collide=FALSE){
   #Assume that all files have the same dimension, and store it for later.
-  output.dim <- dim(args[[1]])
-  if(is.null(output.dim)){
-    merged.series <- rep(0, length(args[[1]]))
-  }else{
-  merged.series <- rep(0, prod(output.dim))
-  }
+  #Depracated in this version because nothing has had a dim so far, and nothing probably ever will.
+#   output.dim <- dim(args[[1]])
+#   if(is.null(output.dim)){
+#     merged.series <- rep(0, length(args[[1]]))
+#   }else{
+#   merged.series <- rep(0, prod(output.dim))
+#   }
+  merged.series <- rep(0, length(args[[1]]))
   if(collide==TRUE){
     checkvec<-rep(0, length(merged.series))
   }
@@ -31,10 +33,6 @@ MaskMerge <- function(args, collide=FALSE){
     if(sum(checkvec) > length(merged.series)){
       stop(paste("Mask collision error: the vectors specified as args to MaskMerge collide in at least", 
                  sum(checkvec)-length(merged.series),"places"))
-      ## Not checking for lack of coverage at this time - too many things can cause that
-      ## including the basic time windowing function working as it should.
-#     }else{
-#       stop(paste("Mask collision error: vectors specified as args to MaskMerge do not cover the whole series."))
     }
   }
   return(merged.series)
@@ -51,7 +49,7 @@ convert.NAs<-function(dataset){
 
 #Converts NAs to 0, all non-NA values to 1
 #and returns the result in a 1-D form
-create.chceckvector<-function(dataset){
+create.checkvector<-function(dataset){
   dataset2<-dataset
   dataset2[is.na(dataset)]<-0
   dataset2[!is.na(dataset)]<-1

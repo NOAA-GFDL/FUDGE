@@ -58,6 +58,6 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
                                       k = kfold, downscale.function = downscale.fxn, args = downscale.args)
   }
   print("Merging masks from all time series")
-  out.merge <- MaskMerge(output)
+  out.merge <- MaskMerge(output, collide=TRUE)
   return(out.merge)
 }

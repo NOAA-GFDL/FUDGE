@@ -73,7 +73,7 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
     }
     #Once outside the loop, save the results of the calculation to a list to return
     print("merging data into single series")
-    return(MaskMerge(loop.list))
+    return(MaskMerge(loop.list, collide=TRUE))
   }else{
     if(crossval==TRUE){  #If this works, I will be annoyed
       #If K is 1 or 0, and the method supports cross-validation, 
