@@ -37,22 +37,27 @@
 #' TODO: Figure out how the sourcing/wrappers are going to work, as well as the args input.
 #' TODO: Also, is this the place to start doing simple checks to avoid calling the fxn if all points
 #' are NA? Or do we do that twice: once for lat/lon, and then again for the time masking?
-DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen, kfold, masklist){
+DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen, 
+                                  downscale.fxn, downscale.args = NULL, kfold, masklist){
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
-  source("../../FudgePreDS/ApplyTemporalMask.R")
-  source("MaskMerge.R")
-  source("CrossValidate.R")
+  #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
+  #source("../../FudgePreDS/ApplyTemporalMask.R")
+  #source("MaskMerge.R")
+  #source("CrossValidate.R")
   t.predictor <- ApplyTemporalMask(train.predictor, masknc=masklist[[1]])
   t.target <-ApplyTemporalMask(train.target, masknc=masklist[[2]])
   new.predictor <- ApplyTemporalMask(esd.gen, masknc=masklist[[3]], type="run")
   num.masks <- length(t.predictor)
   #This is not how you pre-allocate a vector. Please work on it later.
-  output <-list(rep(list(rep(NA, length(esd.gen))), num.masks))      #Pre-allocate output vector for speed and meory efficency
-  for (season in 1:num.masks){
-    output[[season]] <- CrossValidate(train.predictor = t.predictor[[season]], train.target = t.target[[season]], 
-                                      esd.gen = new.predictor[[season]], 
+  out.chunk <- as.list(rep(NA, length(esd.gen)))
+  output <-list(rep(out.chunk, num.masks))      #Pre-allocate output vector for speed and meory efficency
+  for (window in 1:num.masks){
+    print(paste("starting on window", window, "of", num.masks))
+    output[[window]] <- CrossValidate(train.predict = t.predictor[[window]], train.target = t.target[[window]], 
+                                      esd.gen = new.predictor[[window]], 
                                       k = kfold, downscale.function = downscale.fxn, args = downscale.args)
   }
+  print("Merging masks from all time series")
   out.merge <- MaskMerge(output)
   return(out.merge)
 }

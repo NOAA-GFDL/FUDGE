@@ -33,22 +33,22 @@
 CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.function="ESD.Train.totally.fake", 
                           compare.function=NA, args=NULL){ #downscale.function
   #source('MaskMerge.R')
+  #Check the input for consistency
+  k0.methods <- c("CDFt")
+  crossval = TRUE
+  if(downscale.function%in%k0.methods){
+    if(k>1){
+      stop(paste("Method Selection Error: method", downscale.function, "does not support FUDGE cross-validation"))
+    }else{
+      crossval = FALSE
+    }
+  }
   #First things first: determine if cross-validation needs to be performed at all.
   if (k>1){
     #Determine masks for k-fold cross-validation
     #Note: if pressed for time/memory, can eliminate masks and call the index generation
     #function directly. 
     k.mask <- K.FoldMasker(length(train.predict), k)
-    #Check the input for consistency
-    k0.methods <- c("CDFt")
-    crossval = TRUE
-    if(downscale.function%in%k0.methods){
-      if(k>1){
-        stop(paste("Method Selection Error: method", downscale.function, "does not support FUDGE cross-validation"))
-      }else{
-        crossval = FALSE
-      }
-    }
     #Call the downscaling function to obtain the initial predictions
     #Note: at some point, this should include a flag
     #to specify whether or not to save the downscaling equations
@@ -75,15 +75,20 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
     print("merging data into single series")
     return(MaskMerge(loop.list))
   }else{
-    if(crossval){
+    if(crossval==TRUE){  #If this works, I will be annoyed
       #If K is 1 or 0, and the method supports cross-validation, 
       #run the downscaling equations on the esd.gen dataset instead.
       #Training will take place over the entire dataset for both train.predict and
       #train.target
       trained.function <- do.call(downscale.function, list(train.predict, train.target))
-      return(do.call("trained.function", list(c(esd.gen, args))))
+      print(trained.function)
+      output <- do.call("trained.function", list(c(esd.gen, args)))
+      print(summary(output))
+      return(output)
     }else{
-      return(do.call(trained.function, list(train.predict, train.target, esd.gen, args)))  #Currently, CDFt trips this check
+      #print(paste("non-missing vals:", sum(!is.na())))
+      return(CDFt(train.target, train.predict, esd.gen))
+      #return(do.call(downscale.function, list(train.predict, train.target, esd.gen, args)))  #Currently, CDFt trips this check
     }
   }
 }

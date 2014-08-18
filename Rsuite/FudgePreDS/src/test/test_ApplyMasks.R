@@ -15,8 +15,10 @@ test_ApplySpatialMask<-function(){
   masknc<-"dummy_spatial_mask.nc"
   print('testing simple mask function')
   checkEquals(ApplySpatialMask(dummy, masknc), dummy1)
-  print("Testing for supplying a mask name")
+  print("Testing for supplying a mask name: oddly_named_spatial_mask")
   masknc<-"dummy_oddly_named_spatial_mask.nc"
+#   dim(dummy) <- c(10, 10, )
+#   dim(dummy1) <- c(20, 10,10)
   checkEquals(ApplySpatialMask(dummy, masknc, maskname = "oddly_named_spatial_mask"), dummy1)
   print("Testing for subsetting of a larger mask")
   masknc<-"dummy_large_spatial_mask.nc"
@@ -50,7 +52,7 @@ provided as ESD downscaling mask file, either overlap or do not wholly cover the
 create_things<-function(){
   spatial_mask  <-  rep(1, 100)
   dim(spatial_mask) <- c(10,10)
-  spatial_mask[5,5] <- 99
+  spatial_mask[5,5] <- NA
   #Create normal ncdf file
   x_dim<-ncdim_def("lon", units = "degrees_east", seq(from=1, to=10, by=1), create_dimvar=TRUE)
   y_dim<-ncdim_def("lat", units = "degrees_north", seq(from=1, to=10, by=1), create_dimvar=TRUE)
