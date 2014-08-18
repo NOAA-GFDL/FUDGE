@@ -1,3 +1,4 @@
+#Aparna Radhakrishnan, 08/06/2014
 WriteGlobals <- function(filename,count.dep.samples,count.indep.samples,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined"){

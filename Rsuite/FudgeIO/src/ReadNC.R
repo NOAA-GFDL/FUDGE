@@ -1,3 +1,4 @@
+# Aparna Radhakrishnan 08/04/2014
 ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   #'Reads data from netCDF file object
   #'Returns netCDF variable data
@@ -12,12 +13,11 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   #'The length of this vector must equal the number of dimensions the variable has. Order is X-Y-Z-T (i.e., the time dimension is last).
   #'If not specified, reading starts at the beginning of the file (1,1,1,...). 
   if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
-  print("check 1")
   read.nc <- ncvar_get(nc.object)            
   }else {
   print("check 2")
   print(dcount)
-  var.read <- ncvar_get(nc.object,var.name,dstart,dcount, collapse_degen=FALSE) #collapse_degen ensures that all datasets are 3-D
+  var.read <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE)
   }
 #  nc_close(nc.object) #Creates an error when called again if left uncommented
   return(var.read)
