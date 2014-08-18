@@ -15,26 +15,34 @@
 #' cover the entire series or not. Defaults to TRUE (raises an error if not covering entire series).
 #' @return Either a 3-dimensional array of the same dimensions as the input data, with all time coordiantes where
 #' the mask contained a "NA" replaced with a "NA" (if maskname is supplied), or a list of 1-dimensional arrays of the
-#' sam length as data, with all other properties as described above (dimensions don't agree with lists in this case.)
+#' same length as data, with all other properties as described above (dimensions don't agree with lists in this case.)
 #' @example insert example here
 #' @references \url{link to the FUDGE API documentation}
+#' 
 #'  
-ApplyTemporalMask<-function(data, masknc, timeData, maskname="none", type="train"){ # maskAll==TRUE
+#' CEW 8-15-14 revision: 
+#' Given current state of DownscaleBySeason, revising to assume 1-D input data of length timeaxis.
+#' The check is being replaced with a check on the first date in the timeseries of the original file.
+#' Will probably revisit this later. This means removing timeData as well, BTW. 
+ApplyTemporalMask<-function(data, masknc, maskname="none", type="train"){ # maskAll==TRUE, #timeData
+  #library(abind)
   start_time<-proc.time()
   data.length<-length(data)
+  print(dim(data))
   thisnc<-nc_open(masknc)
   #Assume that calendar for all masks and data was checked earlier, with the CheckCalendar utility
-  if ( (thisnc$dim$time$vals[[1]]!=timeData[[1]]) | ( length(thisnc$dim$time$vals) != length(timeData) ) ){
-    stop(paste("Time dimension error: Data had ititial time value of", timeData[[1]], "and length of", length(timeData),
-               "while mask had initital time value of", thisnc$time$vals[[1]], "and length of", length(thisnc$dim$time$vals)))
+  if ( length(thisnc$dim$time$vals) != data.length ){
+    stop(paste("Time dimension error: Data had length of", data.length,
+               "while mask had length of", length(thisnc$dim$time$vals)))
   }
   if (maskname!="none"){
     mask.data<-ncvar_get(thisnc, maskname) #Check for dimensional correspondence 
-    if (!( length(mask.data)==length(data[1,1,]) ) ){
+    if (!( length(mask.data)==length(data) ) ){ #length(data[1,1,])
       stop(paste("Temporal mask dimension error: mask was of length", length(mask.data), 
-                 "and was expected to be of length", length(data[1,1,])))
+                 "and was expected to be of length", length(data))) #length(data[1,1,])
     }else{
-      tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=3) #Lapply or sapply? Does it make a diff?
+      #tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=3) #Lapply or sapply? Does it make a diff?
+      tempvar <- data * mask.data
       dim(tempvar)<-dim(data)
       mask.out<-list(tempvar)
       names(mask.out)<-maskname
@@ -48,17 +56,18 @@ ApplyTemporalMask<-function(data, masknc, timeData, maskname="none", type="train
     NA.storage.vector<-rep(0,data.length)
     for (name in 1:length(mask.names)){
       mask.data<-ncvar_get(thisnc, mask.names[name])#obtain masked data
-      print(paste("Starting on loop", name, "of", length(mask.names)))
+      print(paste("Starting on mask", name, "of", length(mask.names)))
       NA.storage.vector<-NA.storage.vector+convert.NAs(mask.data)  #store location of NAs for error checking
-      if (!length(mask.data)==length(data[1,1,])){
+      if (!length(mask.data)==length(data)){ #length(data[1,1,])
         stop(paste("Temporal mask dimension error: mask", masknc, mask.names[name], "was of length", length(mask.data), 
-                   "and was expected to be of length", length(data[1,1,])))
+                   "and was expected to be of length", length(data))) #length(data[1,1,])
       }
       if (type=="run" && ( max(NA.storage.vector) > 1) ){  #tot.not.NAs >= data.length ||
         stop(paste("Mask collision error: Masks within", masknc
                    ,",provided as ESD downscaling mask file, either overlap or do not wholly cover the timeseries."))
       }
-      tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=3)
+      #tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=2) #along=3
+      tempvar <- data * mask.data
       dim(tempvar)<-dim(data)
       mask.out[[name]]<-tempvar
     }
