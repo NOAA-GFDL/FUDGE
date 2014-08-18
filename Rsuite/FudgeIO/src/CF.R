@@ -1,3 +1,4 @@
+# Aparna Radhakrishnan, 08/08/2014
 GetCFName <- function(var.name){
   #'Function to retrieve standard_name,long_name and units for a given variable, if available
   #' TODO : Interface with udunits2 and [cf-units]

@@ -13,7 +13,8 @@ rm(list=ls())
 	hist.model_1 <- 'MPI-ESM-LR' 
 	hist.freq_1 <- 'day'
 	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
-	hist.spatial.mask_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1_masks.nc'
+	spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/OneD/'
+	spat.mask.var <- 'red_river_0p1_masks'
 #------------ future predictor(s) -------------# 
 	fut.start.year_1 <- 2006
 	fut.end.year_1 <- 2100
@@ -23,6 +24,7 @@ rm(list=ls())
 	fut.freq_1 <- 'day'
 	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/rcp85/atmos/day/r1i1p1/v20111014/tasmax/SCCSC0p1/OneD/'
 	fut.spatial.mask_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1_masks.nc'
+
 #------------- target -------------------------# 
 	target.start.year_1 <- 1961
 	target.end.year_1 <- 2011
@@ -32,6 +34,7 @@ rm(list=ls())
 	target.freq_1 <- 'day'
         target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/'
 	target.spatial.mask_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1_masks.nc'
+
 ############### Section 2 #######################
 #------------- method name k-fold specs-----------------------#
 	ds.method <- 'CDFtv1'
@@ -45,8 +48,8 @@ rm(list=ls())
 	file.j.range <- 'J31-170' 
 	i.start <- 300 
 	i.end <- 300 
-	j.start <- 31
-	j.end <- 170 
+	j.start <- 32 - 31
+	j.end <-  170 - 30 
 ################## Section 3 #######################
 #TO DO Custom Method Specific Params
 	lopt.wetday <- FALSE

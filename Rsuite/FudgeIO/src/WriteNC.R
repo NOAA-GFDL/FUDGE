@@ -1,10 +1,16 @@
+# Aparna Radhakrishnan 08/04/2014
 WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, time.index.end, 
                      start.year="undefined",units ,calendar,lname=var.name,cfname=var.name) {
   #'Creates file filename (netCDF type) with the variable  var.name along with the 
   #'coordinate variables in the netCDF file, CF standard name, long names.
   #' Data to populate the file is read from data.array.
-  time1 <- 1:((time.index.end - time.index.start)+1)
+  #print(data.array)
+  FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
+
+  #time1 <- 1:((time.index.end - time.index.start)+1)
+ time1 <- 1:((time.index.end - time.index.start))
   y <- ncdim_def("lat","degrees_north",ylat)
+  #print(ylat)
   if(exists("xlon") & (xlon != '')){
     x <- ncdim_def("lon","degrees_east",xlon)
   }
@@ -14,9 +20,9 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
   #' If CFNAME undefined in the call, pull information from CF.R. Use default otherwise. 
   print(cfname)
   if(cfname == var.name){
-    source("CF.R")
+    source(paste(FUDGEROOT,"Rsuite/FudgeIO/src/","CF.R",sep=""))
     cflist <- GetCFName(var.name)
-    if(mode(cflist) == "list"){
+    if(cflist != "none"){
       cfname <- cflist$cfname
       cflongname <- cflist$cflongname
       print(paste("cfname:",cfname,sep=''))
