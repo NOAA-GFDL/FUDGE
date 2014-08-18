@@ -1,3 +1,4 @@
+# Aparna Radhakrishnan,08/08/2014 
 WriteDSTimeSeries <- function(data.mon, out.calendar,predictor.startyr,predictor.endyr) {
   #' @param data.mon: Data for every month that is to be written to form one continuous series 
   #' @param out.calendar: calendar type ,Handles julian and noleap  
