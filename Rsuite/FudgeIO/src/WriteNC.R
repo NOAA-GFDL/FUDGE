@@ -7,8 +7,8 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
   #print(data.array)
   FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
 
-  #time1 <- 1:((time.index.end - time.index.start)+1)
- time1 <- 1:((time.index.end - time.index.start))
+ #time1 <- 1:((time.index.end - time.index.start))
+  time1 <- time.index.start:time.index.end 
   y <- ncdim_def("lat","degrees_north",ylat)
   #print(ylat)
   if(exists("xlon") & (xlon != '')){
@@ -31,9 +31,9 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
     }
   }
   if(exists("xlon") & (xlon != '')){
-    var.dat <- ncvar_def(var.name,units,list(x,y,t1),1.e30,longname=cflongname,prec="double")
+    var.dat <- ncvar_def(var.name,units,list(x,y,t1),1.e20,longname=cflongname,prec="double")
   }else{
-    var.dat <- ncvar_def(var.name,units,list(y,t1),1.e30,longname=cflongname,prec="double")
+    var.dat <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=cflongname,prec="double")
   }
 
   nc.obj <- nc_create(filename,var.dat)
