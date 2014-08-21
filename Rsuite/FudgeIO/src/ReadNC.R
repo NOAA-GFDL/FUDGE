@@ -7,11 +7,22 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   #'[count]: A vector of integers indicating the count of values to read along each dimen- sion (order is X-Y-Z-T). 
   #'[start]: A vector of indices indicating where to start reading the passed values (begin- ning at 1). The length of this vector must equal the number of dimensions the variable has. Order is X-Y-Z-T (i.e., the time dimension is last). If not specified, reading starts at the beginning of the file (1,1,1,...). 
   if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
-  read.nc <- ncvar_get(nc.object)            
+  clim.in <- ncvar_get(nc.object)            
   }else {
-  var.read <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
+  clim.in <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
   }
-  nc_close(nc.object) 
-  return(var.read)
+  #### get standard name,long name, units if present ####
+  attname = 'standard_name'
+  cfname <- ncatt_get(nc.object, var.name, attname) 
+  attname = 'long_name'
+  long_name <- ncatt_get(nc.object, var.name, attname)
+  attname <- 'units' 
+  units <- ncatt_get(nc.object, var.name, attname)
+  #######################################################
+  listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units)
+  #print("debug .......")
+  #print(clim.in)
+  nc_close(nc.object)
+  return(listout)
 }
 

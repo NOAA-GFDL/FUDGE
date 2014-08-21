@@ -1,0 +1,7 @@
+Setup environment: 
+/home/Aparna.Radhakrishnan/gitlab/fudge2014/Rsuite/settings
+
+Run starter R code:
+a1r's starter R code: /home/Aparna.Radhakrishnan/gitlab/fudge2014/Rsuite/drivers/CDFt/
+
+R --vanilla < runcode_sample.R > /nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/log.1

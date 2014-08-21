@@ -7,10 +7,8 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
   #print(data.array)
   FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
 
- #time1 <- 1:((time.index.end - time.index.start))
   time1 <- time.index.start:time.index.end 
   y <- ncdim_def("lat","degrees_north",ylat)
-  #print(ylat)
   if(exists("xlon") & (xlon != '')){
     x <- ncdim_def("lon","degrees_east",xlon)
   }
@@ -24,25 +22,38 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
     cflist <- GetCFName(var.name)
     if(cflist != "none"){
       cfname <- cflist$cfname
-      cflongname <- cflist$cflongname
+      lname <- cflist$cflongname
       print(paste("cfname:",cfname,sep=''))
     }else{
       print("CF.R does not contain this variable. Using default values")
     }
   }
   if(exists("xlon") & (xlon != '')){
-    var.dat <- ncvar_def(var.name,units,list(x,y,t1),1.e20,longname=cflongname,prec="double")
+    var.dat <- ncvar_def(var.name,units,list(x,y,t1),1.e20,longname=lname,prec="double")
   }else{
-    var.dat <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=cflongname,prec="double")
+    var.dat <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=lname,prec="double")
   }
 
   nc.obj <- nc_create(filename,var.dat)
   ncvar_put(nc.obj, var.dat, data.array)
-  #' gets CF mappings from CF.R if user does not pass these 
-
+  # gets CF mappings from CF.R if user does not pass these 
+  #TODO create grid coordinate bounds variables  
+ 
+  # lets make it close to CF compliancy,shall we
   ncatt_put(nc.obj,"time","calendar",calendar)
+  ncatt_put(nc.obj,"time","standard_name","time")
+  ncatt_put(nc.obj,"time","axis",'T')
+  ncatt_put(nc.obj,"lat","axis",'Y')
+  ncatt_put(nc.obj,"lon","axis",'X')
+  ncatt_put(nc.obj,"lat","standard_name","latitude")
+  ncatt_put(nc.obj,"lat","long_name","latitude")
+  ncatt_put(nc.obj,"lon","standard_name","longitude")
+  ncatt_put(nc.obj,"lon","long_name","longitude")
   ncatt_put(nc.obj,var.dat,"units",units)
   ncatt_put(nc.obj,var.dat,"standard_name",cfname)
+ ########### write grid coordinate bounds ####################
+
+ #############################################################  
   nc_close(nc.obj)
   return(filename)
 }
