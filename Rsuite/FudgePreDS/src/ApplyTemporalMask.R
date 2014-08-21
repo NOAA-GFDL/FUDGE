@@ -24,7 +24,7 @@
 #' Given current state of DownscaleBySeason, revising to assume 1-D input data of length timeaxis.
 #' The check is being replaced with a check on the first date in the timeseries of the original file.
 #' Will probably revisit this later. This means removing timeData as well, BTW. 
-ApplyTemporalMask<-function(data, masknc, maskname="none", type="train"){ # maskAll==TRUE, #timeData
+ApplyTemporalMask<-function(data, masknc, maskname="none", run=FALSE){ # maskAll==TRUE, #timeData
   #library(abind)
   start_time<-proc.time()
   data.length<-length(data)
@@ -32,8 +32,8 @@ ApplyTemporalMask<-function(data, masknc, maskname="none", type="train"){ # mask
   thisnc<-nc_open(masknc)
   #Assume that calendar for all masks and data was checked earlier, with the CheckCalendar utility
   if ( length(thisnc$dim$time$vals) != data.length ){
-    stop(paste("Time dimension error: Data had length of", data.length,
-               "while mask had length of", length(thisnc$dim$time$vals)))
+    warning(paste("Time dimension warning: Data had length of", data.length,
+               "while time dimensions of mask had length of", length(thisnc$dim$time$vals)))
   }
   if (maskname!="none"){
     mask.data<-ncvar_get(thisnc, maskname) #Check for dimensional correspondence 
@@ -55,16 +55,18 @@ ApplyTemporalMask<-function(data, masknc, maskname="none", type="train"){ # mask
     tempvar<-vector(mode="list", length=data.length)
     NA.storage.vector<-rep(0,data.length)
     for (name in 1:length(mask.names)){
-      mask.data<-ncvar_get(thisnc, mask.names[name])#obtain masked data
-      print(paste("Starting on mask", name, "of", length(mask.names)))
+      mask.data<-ncvar_get(thisnc, mask.names[[name]])#obtain masked data
+      print(paste("Starting on mask", mask.names[[name]], ", mask number",
+                  name, "of", length(mask.names)))
       NA.storage.vector<-NA.storage.vector+convert.NAs(mask.data)  #store location of NAs for error checking
       if (!length(mask.data)==length(data)){ #length(data[1,1,])
         stop(paste("Temporal mask dimension error: mask", masknc, mask.names[name], "was of length", length(mask.data), 
                    "and was expected to be of length", length(data))) #length(data[1,1,])
       }
-      if (type=="run" && ( max(NA.storage.vector) > 1) ){  #tot.not.NAs >= data.length ||
-        stop(paste("Mask collision error: Masks within", masknc
-                   ,",provided as ESD downscaling mask file, either overlap or do not wholly cover the timeseries."))
+      if (run==TRUE && ( max(NA.storage.vector) > 1) ){
+        stop(paste("Mask collision error: Masks within", masknc,
+                   ",provided either as an ESD generation mask file or as a predictor mask file with k > 1,", 
+                   "either overlap or do not wholly cover the timeseries."))
       }
       #tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=2) #along=3
       tempvar <- data * mask.data
@@ -82,7 +84,7 @@ ApplyTemporalMask<-function(data, masknc, maskname="none", type="train"){ # mask
 #to chain on more conditionals as things progress. And it gets used
 #twice.
 RemoveBounds<-function(names){
-  return(names[names!="lon_bnds"&names!="lat_bnds"&names!="time_bnds"&names!="i_offset"&names!="j_offset"])
+  return(names[names!="lon_bnds"&names!="lat_bnds"&names!="time_bnds"&names!="i_offset"&names!="j_offset"&names!="height"])
 }
 
 #Converts NAs to 0, and all non-NA values to 1

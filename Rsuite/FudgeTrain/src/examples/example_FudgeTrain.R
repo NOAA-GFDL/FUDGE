@@ -1,6 +1,13 @@
 #example_FudgeTrain.R
 #Tests several of the scripts in FudgeTrain and provides examples of their use
 #Written by Carolyn Whitlock, August 2014
+#
+#
+#
+setwd("~/Code/fudge2014/Rsuite/FudgeTrain/src/examples/")
+
+######
+###Example code for calling and testing the cross-validation functions
 
 #Source the relevant files in the directory
 source("../CrossValidate.R")
@@ -10,7 +17,6 @@ source("../MaskMerge.R")
 train_predictor <- seq(1:101)
 train_target <- train_predictor^1.4 + 12
 esd_gen <-seq(from=1, to=151, by=1)
-
 
 ####Run the cross-validation with the commented sample option
 source("ESD.train.totally.fake.R")
@@ -30,144 +36,130 @@ lines(train_predictor, k4, col="orange")
 legend("bottomright", legend=c("target", "k=0", "k=4"), col=c("blue", "red", "orange"), 
        lty=c(1,1,1), title="Data source")
 
-#########Now, run the data on a timeseries with downscaled data
+#######
+##Example code for calling and testing the cross-validation and time-windowing functions
+
+#Source relevant files in the code or directory
 source("../DownscaleByTimeWindow.R")
 source("../../../FudgePreDS/src/ApplyTemporalMask.R")
-sample_t_predict <- seq(1:50769)
-sample_t_target <- sin(sample_t_predict*0.0003)
-sample_esd_gen <- seq(1:50769)
 
-##Special arguments
-mask_list <- list("/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc")
-plot(seq(1:50769), sin(seq(1:50769)*0.0003), type="l", main="Test time window calls")
+sample_t_predict <- seq(1:365)
+sample_t_target <- sin(sample_t_predict*0.05)
+sample_esd_gen <- seq(1:365)
+mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
+
+#Alt_mask_list is used for k-fold validation of k > 1, 
+#since predictor and esdged datasets are the same dataset
+alt_mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
+                  "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
+                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
+ 
+sample_t_predict <- seq(1:365)
+sample_t_target <- sin(sample_t_predict*0.05)
+sample_esd_gen <- seq(1:365)
+plot(sample_t_predict, sample_t_target, type="n", main="Test time window calls with alt_mask on k > 0", 
+     ylim = c(-1.5, 1.5), xlim = c(1, 370))
+lines(sample_t_predict, sample_t_target)
+crossval_data <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 0, "ESD.Train.totally.fake")
+lines(seq(1:365), crossval_data, col="blue")
+crossval_data2 <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 2, "ESD.Train.totally.fake")
+lines(seq(1:365), crossval_data2, col="red")
+crossval_data4 <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 4, "ESD.Train.totally.fake")
+lines(seq(1:365), crossval_data4, col="green")
 d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
                                 esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
                                 downscale.args=NULL,
                                 masklist = mask_list)
-lines(seq(1:50769), d_data, col="cyan")
+lines(seq(1:365), d_data, col="cyan")
 d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-                                esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
-                                downscale.args=NULL,
-                                masklist = mask_list)
-lines(seq(1:50769), d2_data, col="violet")
-###Not doing what it should. Try again.
-sample_t_predict <- seq(1:50769)
-sample_t_target <- sin(sample_t_predict*0.0003)+1
-sample_esd_gen <- seq(1:50769)
+                                 esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake", 
+                                 downscale.args=NULL,
+                                 masklist = alt_mask_list)
+lines(seq(1:365), d2_data, col="magenta")
+d4_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                 esd.gen = sample_esd_gen, kfold = 4, downscale.fxn = "ESD.Train.totally.fake", 
+                                 downscale.args=NULL,
+                                 masklist = alt_mask_list)
+lines(seq(1:365), d4_data, col="yellow")
+legend(legend = c("k0", "k2", "k4", "win12k0", "win12k2", "win12k4"), 
+       col = c("blue", "red", "green", "cyan", "magenta", "yellow"), 
+       pch = rep("_", 6), "topright")
 
-##Special arguments
-mask_list <- list("/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc")
-plot(seq(1:50769), sample_t_target, type="l", main="Test time window calls")
+######Testing the same commands on non-sine data
+sample_t_predict <- seq(1:365)
+sample_t_target <- rnorm(1:365, mean=20, sd=20)+seq(1:365)*0.5
+sample_esd_gen <- seq(1:365)
+
+
+plot(sample_t_predict, sample_t_target, type="n", main="Test time window calls with alt_mask on k > 0", 
+     ylim = c(0, 200), xlim = c(1, 370))
+lines(sample_t_predict, sample_t_target)
+crossval_data <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 0, "ESD.Train.totally.fake")
+lines(seq(1:365), crossval_data, col="blue")
+crossval_data2 <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 2, "ESD.Train.totally.fake")
+lines(seq(1:365), crossval_data2, col="red")
+crossval_data4 <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 4, "ESD.Train.totally.fake")
+lines(seq(1:365), crossval_data4, col="green")
 d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
                                 esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
                                 downscale.args=NULL,
                                 masklist = mask_list)
-lines(seq(1:50769), d_data, col="cyan")
+lines(seq(1:365), d_data, col="cyan")
+d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                 esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake", 
+                                 downscale.args=NULL,
+                                 masklist = alt_mask_list)
+lines(seq(1:365), d2_data, col="magenta")
+d4_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                 esd.gen = sample_esd_gen, kfold = 4, downscale.fxn = "ESD.Train.totally.fake", 
+                                 downscale.args=NULL,
+                                 masklist = alt_mask_list)
+lines(seq(1:365), d4_data, col="yellow")
+legend(legend = c("k0", "k2", "k4", "win12k0", "win12k2", "win12k4"), 
+       col = c("blue", "red", "green", "cyan", "magenta", "yellow"), 
+       pch = rep("_", 6), "topleft")
 
-t.predictor <- ApplyTemporalMask(sample_t_predict, masknc=masklist[[1]])
-t.target <-ApplyTemporalMask(sample_t_target, masknc=masklist[[2]])
-plot.colors <- rainbow(12)
-for (i in 1:12){
-  lines(x=seq(1:50769), y=t.target[[i]], col=plot.colors[i])
-}
-new.predictor <- ApplyTemporalMask(sample_esd_gen, masknc=masklist[[3]], type="run")
-
-downscale.colors <- cm.colors(12)
-out.chunk <- as.list(rep(NA, length(sample_esd_gen)))
-output <-list(rep(out.chunk, 12))      #Pre-allocate output vector for speed and meory efficency
-for (window in 1:12){
-  print(paste("starting on window", window, "of 12"))
-  output[[window]] <- CrossValidate(train.predict = t.predictor[[window]], train.target = t.target[[window]], 
-                                    esd.gen = new.predictor[[window]], 
-                                    k = 0, downscale.function = downscale.fxn, args = downscale.args)
-  lines(x=seq(1:50769), y=output[[window]], col=downscale.colors[[window]])
-}
-
-####Plot the distribution of the first mask
-first.mask <- output[[1]]
-hist(first.mask[!is.na(first.mask)])
-
-hist(unlist(output))
-
-####Hmmm...okay: try this again with the sinusoidal model instead.
-sample_t_predict <- seq(1:50769)
-sample_t_target <- sin(sample_t_predict*0.0003)+1
-sample_esd_gen <- seq(1:50769)
-
-##Special arguments
-mask_list <- list("/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc")
-plot(seq(1:50769), sample_t_target, type="l", main="Test time window calls")
-d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-                                esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
-                                downscale.args=NULL,
-                                masklist = mask_list)
-lines(seq(1:50769), d_data, col="cyan")
-
-t.predictor <- ApplyTemporalMask(sample_t_predict, masknc=masklist[[1]])
-t.target <-ApplyTemporalMask(sample_t_target, masknc=masklist[[2]])
-plot.colors <- rainbow(12)
-for (i in 1:12){
-  lines(x=seq(1:50769), y=t.target[[i]], col=plot.colors[i])
-}
-new.predictor <- ApplyTemporalMask(sample_esd_gen, masknc=masklist[[3]], type="run")
-
-downscale.colors <- cm.colors(12)
-out.chunk <- as.list(rep(NA, length(sample_esd_gen)))
-output <-list(rep(out.chunk, 12))      #Pre-allocate output vector for speed and meory efficency
-for (window in 1:12){
-  print(paste("starting on window", window, "of 12"))
-  output[[window]] <- CrossValidate(train.predict = t.predictor[[window]], train.target = t.target[[window]], 
-                                    esd.gen = new.predictor[[window]], 
-                                    k = 4, downscale.function = "ESD.Train.totally.fake", args = downscale.args)
-  lines(x=seq(1:50769), y=output[[window]], col=downscale.colors[[window]])
-}
-
-####Okay, maybe it's jsut a problem wiht the methods. Maybe they are all flawed.
-
-sample_t_predict <- seq(1:50769)
-sample_t_target <- rnorm(50769, mean=100, sd=1000)+seq(1:50769)
-sample_esd_gen <- seq(1:50769)
-mask_list <- list("/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc", 
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc",
-                  "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20991231.nc")
-                  #"/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc")
-plot(seq(1:50769), sample_t_target, type="l", main="Test time window calls")
-d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-                                esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
-                                downscale.args=NULL,
-                                masklist = mask_list)
-lines(seq(1:50769), d_data, col="cyan")
-d3_data <- CrossValidate(train.predict = sample_t_predict, train.target = sample_t_target, 
-                         esd.gen = sample_esd_gen, k=0, downscale.function="ESD.Train.totally.fake", 
-                         compare.function=NA, args=NULL)
-lines(seq(1:50769), d_data, col="yellow")
-d4_trained.function <- do.call(downscale.fxn, list(sample_t_predict, sample_t_target))
-print(d4_trained_function)
-d4_data <- do.call(d4_trained.function, list(sample_esd_gen))
-
-
-t.predictor <- ApplyTemporalMask(sample_t_predict, masknc=masklist[[1]])
-t.target <-ApplyTemporalMask(sample_t_target, masknc=masklist[[2]])
-plot.colors <- rainbow(12)
-for (i in 1:12){
-  lines(x=seq(1:50769), y=t.target[[i]], col=plot.colors[i])
-}
-new.predictor <- ApplyTemporalMask(sample_esd_gen, masknc=masklist[[3]], type="run")
-
-downscale.colors <- cm.colors(12)
-out.chunk <- as.list(rep(NA, length(sample_esd_gen)))
-output <-list(rep(out.chunk, 12))      #Pre-allocate output vector for speed and meory efficency
-for (window in 1:12){
-  print(paste("starting on window", window, "of 12"))
-  output[[window]] <- CrossValidate(train.predict = t.predictor[[window]], train.target = t.target[[window]], 
-                                    esd.gen = new.predictor[[window]], 
-                                    k = 4, downscale.function = "ESD.Train.totally.fake", args = downscale.args)
-  lines(x=seq(1:50769), y=output[[window]], col=downscale.colors[[window]])
-}
-
+###THIS SECTION IS PRELIMINARY: 
+###Seeing if the CDFt code can work from the crossval fxn w/wo time windowing when k = 0
+sample_t_predict <- seq(1:365)
+sample_t_target <- sin(sample_t_predict*0.05)+10
+sample_esd_gen <- seq(1:365)
+plot(sample_t_predict, sample_t_target, type="n", main="Test time window calls with CDFt", 
+     ylim=c(0,20), xlim=c(1,365))
+lines(sample_t_predict, sample_t_target)
+crossval_new_data <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 0, "CDFt")
+lines(sample_t_predict, crossval_new_data, col="orange")
+d0_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                 esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "CDFt", 
+                                 downscale.args=NULL,
+                                 masklist = mask_list)
+lines(sample_t_predict, d0_data, col="violet")
+d0_alt_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                 esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "CDFt", 
+                                 downscale.args=NULL,
+                                 masklist = alt_mask_list)
+lines(sample_t_predict, d0_alt_data, col="blue")
+legend(legend=c("win0k0", "win12k0", "win12k0 alt mask"), 
+       col=c("orange", "violet", "blue"), pch = c("-", "-", "-"), "bottomright")
+####Trying as part of a non-sine test:
+sample_t_predict <- seq(1:365)
+sample_t_target <- rnorm(1:365, mean=20, sd=20)+seq(1:365)
+sample_esd_gen <- seq(1:365)
+plot(sample_t_predict, sample_t_target, type="n", main="Test time window calls with CDFt")
+lines(sample_t_predict, sample_t_target)
+crossval_new_data <- CrossValidate(sample_t_predict, sample_t_target, sample_esd_gen, 0, "CDFt")
+lines(sample_t_predict, crossval_new_data, col="orange")
+d0_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                 esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "CDFt", 
+                                 downscale.args=NULL,
+                                 masklist = mask_list)
+lines(sample_t_predict, d0_data, col="violet")
+d0_alt_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+                                     esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "CDFt", 
+                                     downscale.args=NULL,
+                                     masklist = alt_mask_list)
+lines(sample_t_predict, d0_alt_data, col="blue")
+legend(legend=c("win0k0", "win12k0", "win12k0 alt mask"), 
+col=c("orange", "violet", "blue"), pch = c("-", "-", "-"), "bottomright")

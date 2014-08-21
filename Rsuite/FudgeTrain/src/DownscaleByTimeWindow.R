@@ -44,18 +44,43 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
   #source("../../FudgePreDS/ApplyTemporalMask.R")
   #source("MaskMerge.R")
   #source("CrossValidate.R")
-  t.predictor <- ApplyTemporalMask(train.predictor, masknc=masklist[[1]])
-  t.target <-ApplyTemporalMask(train.target, masknc=masklist[[2]])
-  new.predictor <- ApplyTemporalMask(esd.gen, masknc=masklist[[3]], type="run")
+  print(paste("kfold greater than 2:", (kfold > 2)))
+  t.predictor <- ApplyTemporalMask(train.predictor, masknc=masklist[[1]], run=(kfold > 2)) #This option means that
+  t.target <-ApplyTemporalMask(train.target, masknc=masklist[[2]])                         #pred.masks cannot collide
+  new.predictor <- ApplyTemporalMask(esd.gen, masknc=masklist[[3]], run=TRUE)              #for k > 1
   num.masks <- length(t.predictor)
-  #This is not how you pre-allocate a vector. Please work on it later.
   out.chunk <- as.list(rep(NA, length(esd.gen)))
   output <-list(rep(out.chunk, num.masks))      #Pre-allocate output vector for speed and meory efficency
+  
+#  plot(train.predictor, train.target*15, type="n", main=paste("Mask and lines of best fit for k=", kfold, sep=""))
+#  lines(train.predictor, train.target)
+#  plot(train.predictor, train.target*2, type="n", main=paste("Mask and lines of best fit for kfold crossval"))
+#  lines(train.predictor, train.target)
+  mask.cols = rainbow(num.masks)
+  fit.cols = rainbow(num.masks*kfold)
   for (window in 1:num.masks){
     print(paste("starting on window", window, "of", num.masks))
-    output[[window]] <- CrossValidate(train.predict = t.predictor[[window]], train.target = t.target[[window]], 
-                                      esd.gen = new.predictor[[window]], 
-                                      k = kfold, downscale.function = downscale.fxn, args = downscale.args)
+    print("********")
+    print(paste("Expected number NAs:", sum(is.na(t.target[[window]]))))
+#     print((kfold)*(window-1)+1)
+#     print((kfold*window))
+    window.predict <- t.predictor[[window]]
+    window.target <- t.target[[window]]
+    window.gen <- new.predictor[[window]]
+    output[[window]] <- window.gen
+    output[[window]][!is.na(window.gen)] <- CrossValidate(train.predict = window.predict[!is.na(window.predict)], 
+                                                          train.target = window.target[!is.na(window.target)] , 
+                                                          esd.gen = window.gen[!is.na(window.gen)], 
+                                                          k = kfold, downscale.function = downscale.fxn, 
+                                                          args = downscale.args, 
+                                                          cols=fit.cols[(kfold*(window+1)-1):(kfold*window)])
+    print("********")
+    print(paste("Numer NAs present in ouput:", sum(is.na(output[[window]])), "out of", length(output[[window]])))
+#    lines(train.predictor, t.target[[window]], col=plot.colors[window])
+#    lines(train.predictor, output[[window]], col=plot.colors[window])
+    
+#    abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as bars on graph
+    #lines(train.predictor, t.target[[window]], col=mask.cols[[window]])     #option for color-coding masks
   }
   print("Merging masks from all time series")
   out.merge <- MaskMerge(output, collide=TRUE)

@@ -27,11 +27,11 @@
 #' TODO: Will predictor and target always be of the same length?
 #' TODO: Does MaskMerge need to be sourced in this location?
 #' TODO: Modify script to accept a list of esd.gen vectors, call MaskMerge multiple times, 
-#' and perform simple error checking to see if there's a conflict wiht kfold.
+#' and perform simple error checking to see if there's a conflict with kfold.
 
 
 CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.function="ESD.Train.totally.fake", 
-                          compare.function=NA, args=NULL){ #downscale.function
+                          compare.function=NA, args=NULL, cols=FALSE){ #downscale.function
   #source('MaskMerge.R')
   #Check the input for consistency
   k0.methods <- c("CDFt")
@@ -48,7 +48,11 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
     #Determine masks for k-fold cross-validation
     #Note: if pressed for time/memory, can eliminate masks and call the index generation
     #function directly. 
+    ###I realize that it's going to take code restructuring, but you need to make sure, at some point, 
+    ##that the masks which are being used in the cross-validation case actually don't collide.
+    ##Colliding masks is making it look like I have data when, in fact, I do not.
     k.mask <- K.FoldMasker(length(train.predict), k)
+    #esd.mask <- K.Fold.Masker(length(esd.gen), k)                   #You may need to take these masks into account, too
     #Call the downscaling function to obtain the initial predictions
     #Note: at some point, this should include a flag
     #to specify whether or not to save the downscaling equations
@@ -58,21 +62,41 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
       print(paste("entering k-fold validation loop", loop, "of", k))
       loop.mask <- k.mask[[loop]]
       loop.pred <- train.predict[loop.mask==TRUE]
-      loop.target <- train.target[loop.mask==TRUE]
+      loop.target <- train.target[loop.mask==TRUE]  #Changed from TRUE
       #trained.function <- do.call(ESD.Train, loop.pred, loop.target)
-      trained.function <- do.call(downscale.function, list(loop.pred, loop.target))
-      #ESD.Train will incorporate checking and evaluating the function
-      loop.esd.gen <- train.predict[loop.mask==FALSE]
-      output <- do.call("trained.function", list(c(loop.esd.gen, args)))
-      temp<-rep(0, length(loop.mask))
-      temp[loop.mask==FALSE] <- output
-      temp[loop.mask==TRUE] <- NA
-      loop.list[[loop]] <- temp
+####Check commented out until we can figure out why it's going wrong      
+      ####Institue simple check for all missing values:
+      print(paste("num non-NAs in predictor", sum(!is.na(loop.pred))))
+      print(paste("num non-NAs in target", sum(!is.na(loop.target))))
+       if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
+        trained.function <- do.call(downscale.function, list(loop.pred, loop.target))
+        #ESD.Train will incorporate checking and evaluating the function
+        loop.esd.gen <- train.predict[loop.mask==FALSE]   #Changed from FALSE
+        #print("loop.esd.gen:")
+        #print(loop.esd.gen)
+        output <- do.call("trained.function", list(c(loop.esd.gen, args)))
+        #print("output:")
+        #print(output)
+        print(paste("the length of the output vector is", length(output)))
+        temp<-rep(0, length(loop.mask))
+        temp[loop.mask==FALSE] <- output #Changed from true to false.
+        temp[loop.mask==TRUE] <- NA
+        #print("temp:")
+        #print(temp)
+        loop.list[[loop]] <- temp
+#       lines(1:365, loop.list[[loop]], col=cols[k])                          #Option for plotting line segments
+        #lines(1:365, do.call("trained.function", list(1:365)), col=cols[k])   #Option for plotting full lines
+      }else{
+        print("activating all NA training contingency")
+        loop.list[[loop]] <- rep(NA, length(k.mask[[k]])) #This might be too clever
+     }
       #...There are redundant assignment steps in here, but at the moment it's clear to read.
-      #Save that for testing.
+      #Save that for cleanup.
     }
     #Once outside the loop, save the results of the calculation to a list to return
-    print("merging data into single series")
+    print("merging data from cross-validation into single series")
+    #print(loop.list)
+    #save("loop.list", file="saved_loop.list")
     return(MaskMerge(loop.list, collide=TRUE))
   }else{
     if(crossval==TRUE){  #If this works, I will be annoyed
@@ -80,15 +104,24 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
       #run the downscaling equations on the esd.gen dataset instead.
       #Training will take place over the entire dataset for both train.predict and
       #train.target
-      trained.function <- do.call(downscale.function, list(train.predict, train.target))
-      print(trained.function)
-      output <- do.call("trained.function", list(c(esd.gen, args)))
-      print(summary(output))
-      return(output)
+      if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
+        trained.function <- do.call(downscale.function, list(train.predict, train.target))
+        print(trained.function)
+        output <- do.call("trained.function", list(c(esd.gen, args)))
+        #print(summary(output))
+        return(output)
+      }else{
+        return(rep(NA, length(esd.gen)))
+      }
     }else{
-      #print(paste("non-missing vals:", sum(!is.na())))
-      return(CDFt(train.target, train.predict, esd.gen))
-      #return(do.call(downscale.function, list(train.predict, train.target, esd.gen, args)))  #Currently, CDFt trips this check
+      if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
+        #print(paste("non-missing vals:", sum(!is.na())))
+        return(CDFt(train.target, train.predict, esd.gen)$DS)
+        #return(do.call(downscale.function, list(train.predict, train.target, esd.gen, args)))  #Currently, CDFt trips this check
+      }else{
+        print('tripping NA contingency')
+        return(rep(NA, length(esd.gen)))
+      }
     }
   }
 }
@@ -105,7 +138,6 @@ K.FoldMasker<-function(p.len, k){
   p.masks <- as.list(rep(list(temp), k))    #for which all values are true
   for (i in 1:k){
     p.masks[[i]][ (p.index[i]+1):p.index[i+1] ] <- FALSE #Set all values in the i-th partition
-    print(paste("the length of this mask is", length(p.masks[[i]])))
   }                                                  #of the i-th mask to FALSE
   return(p.masks)
 }
@@ -119,5 +151,7 @@ indices.calc <- function(val, k){
   for (i in 1:k){
     ret[i+1] <- as.integer((val/k) * i)
   }
+  print(paste("indices over which to subset within the data:
+              "))
   return(ret)
 }
