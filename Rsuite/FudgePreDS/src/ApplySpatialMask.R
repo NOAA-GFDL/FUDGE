@@ -41,12 +41,10 @@ ApplySpatialMask<-function(data, masknc, maskname="spatial_mask", dataLon, dataL
 #This is a strictly internal method, so it shouldn't need the lovely
 #roxygen documentation
 matrimult<-function(mat,n){
-  message("matrimult starts")
   ret<-mat
   timedim<-dim(mat)[3]
   for (i in 1:timedim){
     ret[,,i]<-mat[,,i]*n
   }
-  message("matrimult ends")
   return(ret)
 }
