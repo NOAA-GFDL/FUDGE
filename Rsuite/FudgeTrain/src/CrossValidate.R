@@ -17,21 +17,25 @@
 #' @param downscale.function: a string of the downscaling function to be used in the data. 
 #' Talk to Carlos about the possible inputs into this function.
 #' Code currently assumes that file containing downscaling function
-#' has already been sourced into the workspace by something else. Also talk to 
-#' Carlos about this.
-#' @param compare.function=NA :
+#' has already been sourced into the workspace by something else.
 #' @param args = NULL: a list of arguments to be passed to the downscaling function.
 #' Defaults to NULL (no arguments)
-#' @example insert example here
+#' @param cols=FALSE: vector of color data to be used for debugging. 
+#' @examples 
+#' train_predictor <- seq(1:101)
+#' train_target <- train_predictor^1.4 + 12
+#' esd_gen <-seq(from=1, to=151, by=1)
+#' #### Running the cross-validation function
+#' k0 <- CrossValidate(train_predictor, train_target, esd_gen, 0, "ESD.Train.totally.fake")
+#' k4 <- CrossValidate(train_predictor, train_target, esd_gen, 4, "ESD.Train.totally.fake")
 #' @references \url{link to the FUDGE API documentation}
 #' TODO: Will predictor and target always be of the same length?
 #' TODO: Does MaskMerge need to be sourced in this location?
 #' TODO: Modify script to accept a list of esd.gen vectors, call MaskMerge multiple times, 
 #' and perform simple error checking to see if there's a conflict with kfold.
 
-
 CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.function="ESD.Train.totally.fake", 
-                          compare.function=NA, args=NULL, cols=FALSE){ #downscale.function
+                          args=NULL, cols=FALSE){ #downscale.function
   #source('MaskMerge.R')
   #Check the input for consistency
   k0.methods <- c("CDFt")
@@ -62,12 +66,8 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
       print(paste("entering k-fold validation loop", loop, "of", k))
       loop.mask <- k.mask[[loop]]
       loop.pred <- train.predict[loop.mask==TRUE]
-      loop.target <- train.target[loop.mask==TRUE]  #Changed from TRUE
-      #trained.function <- do.call(ESD.Train, loop.pred, loop.target)
-####Check commented out until we can figure out why it's going wrong      
+      loop.target <- train.target[loop.mask==TRUE] 
       ####Institue simple check for all missing values:
-      print(paste("num non-NAs in predictor", sum(!is.na(loop.pred))))
-      print(paste("num non-NAs in target", sum(!is.na(loop.target))))
        if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
         trained.function <- do.call(downscale.function, list(loop.pred, loop.target))
         #ESD.Train will incorporate checking and evaluating the function
@@ -116,7 +116,7 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
     }else{
       if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
         #print(paste("non-missing vals:", sum(!is.na())))
-        return(CDFt(train.target, train.predict, esd.gen)$DS)
+        return(CDFt(train.target, train.predict, esd.gen, npas=length(esd.gen))$DS)
         #return(do.call(downscale.function, list(train.predict, train.target, esd.gen, args)))  #Currently, CDFt trips this check
       }else{
         print('tripping NA contingency')

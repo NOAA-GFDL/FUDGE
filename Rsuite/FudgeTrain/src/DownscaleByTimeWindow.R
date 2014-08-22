@@ -26,7 +26,23 @@
 #'
 #'@return A single timeseries containing all downscaled data.
 #'####
-#' @example insert example here
+#' @examples
+#' sample_t_predict <- seq(1:365)
+#' sample_t_target <- sin(sample_t_predict*0.05)
+#' sample_esd_gen <- seq(1:365)
+#' mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
+#'                   d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+#' esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
+#' downscale.args=NULL,
+#' masklist = mask_list)
+#' lines(seq(1:365), d_data, col="cyan")
+#' d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+#'                                  esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake", 
+#'                                  downscale.args=NULL,
+#'                                  masklist = alt_mask_list)
+#' lines(seq(1:365), d2_data, col="magenta")
 #' @references \url{link to the FUDGE API documentation}
 #' TODO: Check on assumption that all maskfiles will have the same number of masks
 #' RESOLVED: They may not in later versions, but it's a valid 1^5 assumption.
@@ -37,6 +53,8 @@
 #' TODO: Figure out how the sourcing/wrappers are going to work, as well as the args input.
 #' TODO: Also, is this the place to start doing simple checks to avoid calling the fxn if all points
 #' are NA? Or do we do that twice: once for lat/lon, and then again for the time masking?
+#' MORE INFO NEEDED: At the moment, the checks take place in the CrossValidate function. Calls elsewhere
+#' migth make sense; it's something to discuss once the driver script is working.
 DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen, 
                                   downscale.fxn, downscale.args = NULL, kfold, masklist){
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
@@ -61,9 +79,6 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
   for (window in 1:num.masks){
     print(paste("starting on window", window, "of", num.masks))
     print("********")
-    print(paste("Expected number NAs:", sum(is.na(t.target[[window]]))))
-#     print((kfold)*(window-1)+1)
-#     print((kfold*window))
     window.predict <- t.predictor[[window]]
     window.target <- t.target[[window]]
     window.gen <- new.predictor[[window]]
