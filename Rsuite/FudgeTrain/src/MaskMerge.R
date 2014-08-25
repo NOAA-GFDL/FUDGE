@@ -21,10 +21,12 @@ MaskMerge <- function(args, collide=FALSE){
   }
   #Enter main masking loop
   for (i in 1:length(args)){
-    print(paste("merging mask", i, "of", length(args)))
+    if (i%%10==0 || i==1){
+      print(paste("merging mask", i, "of", length(args)))
+    }
     dim(args[[i]]) <- c(length(args[[i]]))
     if(length(args[[i]])!=length(merged.series)){
-      stop(paste("Masked dataset merging error: masked dataset", names(args[i]), "was of length",
+      stop(paste("Masked dataset merging error: masked dataset", i, "named", names(args[i]), "was of length",
                  length(args[[i]]), "not expected length of", length(merged.series)))
     }
     merged.series <- MergeSeries(args[[i]],merged.series)
@@ -33,7 +35,7 @@ MaskMerge <- function(args, collide=FALSE){
 #     print(summary(args[[i]]))
 #     print(paste("the length of the merged series is", length(merged.series)))
     if(collide==TRUE){
-      print("Creating check vector")
+#      print("Creating check vector")
       checkvec <- checkvec + create.checkvector(args[[i]])
     }
   }

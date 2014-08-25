@@ -167,11 +167,17 @@ MyStats(esd.input)
 # + + + begin defining function BlackBox + + +
 #
 ####Start by invoking the time windowing function
-esd.output <- FudgeTrainDriver()
+mask.list <- list(train.mask, train.mask, gen.mask)
 message("CDFt training begins..")
-list.CDFt.result <- CDFt(target.clim.in,hist.clim.in,fut.clim.in,npas = 34333) #34333 16436 
+esd.output <- TrainDriver(target.masked.in = target.clim.in, 
+                          hist.masked.in = hist.clim.in, 
+                          fut.masked.in = fut.clim.in, 
+                          mask.list = mask.list, ds.method = 'CDFt', k=0, 
+                          time.steps=NA, istart = NA,loop.start = NA,loop.end = NA)
+##Commented out CEW
+#list.CDFt.result <- CDFt(target.clim.in,hist.clim.in,fut.clim.in,npas = 34333) #34333 16436 
 message("CDFt training ends")
-esd.output <- list.CDFt.result$DS
+#esd.output <- list.CDFt.result$DS
 plot(fut.clim.in,esd.output,xlab="fut.esdGen.predictor -- Large-scale data", ylab="ds -- Downscaled data")
 
 # + + + end Training + + +

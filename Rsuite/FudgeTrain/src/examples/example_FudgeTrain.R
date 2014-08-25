@@ -5,6 +5,8 @@
 #
 #
 setwd("~/Code/fudge2014/Rsuite/FudgeTrain/src/examples/")
+library(ncdf4)
+
 
 ######
 ###Example code for calling and testing the cross-validation functions
@@ -37,11 +39,13 @@ legend("bottomright", legend=c("target", "k=0", "k=4"), col=c("blue", "red", "or
        lty=c(1,1,1), title="Data source")
 
 #######
-##Example code for calling and testing the cross-validation and time-windowing functions
+##Example code for calling and testing the Fudge driver script and the time-windowing functions
 
 #Source relevant files in the code or directory
 source("../DownscaleByTimeWindow.R")
 source("../../../FudgePreDS/src/ApplyTemporalMask.R")
+source("../DownscaleWithAllArgs.R")
+source("../TrainDriver.R")
 
 sample.t.predict <- seq(1:365)
 sample.t.target <- sin(sample.t.predict*0.05)
@@ -56,6 +60,49 @@ alt.mask.list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-
                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
                    "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
 
+
+d.data <- DownscaleByTimeWindow(train.predictor = sample.t.predict, train.target = sample.t.target, 
+                                esd.gen = sample.esd.gen, kfold = 0, downscale.fxn = "simple.lm", 
+                                downscale.args=NULL,
+                                masklist = mask.list, debug=TRUE)
+cdft.data <- DownscaleByTimeWindow(train.predictor = sample.t.predict, train.target = sample.t.target, 
+                                esd.gen = sample.esd.gen, kfold = 0, downscale.fxn = "CDFt", 
+                                downscale.args=NULL,
+                                masklist = mask.list, debug=TRUE)
+#####Testing on real data
+train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231.nc"
+esdgen_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc"
+historical_target = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1.2/tasmax/SCCSC0p1/OneD/tasmax_day_livneh_historical_r0i0p0_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
+new.nc <- nc_open(historical_target)
+hist.targ <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+historical_predictor = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_historical_r1i1p1_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
+new.nc <- nc_open(historical_predictor)
+hist.pred <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+
+#hmm...error message that gives a better description of the data throwing the error?
+
+real.mask.list <- list(train_time_window, train_time_window, esdgen_time_window)
+
+real.data <- DownscaleByTimeWindow(train.predictor = hist.pred[100,], train.target = hist.targ[100,], 
+                                esd.gen = hist.pred[100,], kfold = 0, downscale.fxn = "simple.lm", 
+                                downscale.args=NULL,
+                                masklist = real.mask.list, debug=TRUE)
+
+real.cdft.data <- DownscaleByTimeWindow(train.predictor = hist.pred[100,], train.target = hist.targ[100,], 
+                                   esd.gen = hist.pred[100,], kfold = 0, downscale.fxn = "CDFt", 
+                                   downscale.args=NULL,
+                                   masklist = real.mask.list, debug=TRUE)
+
+#############################
+#Now, attempt inclusion of the driver script
+
+start.time <- proc.time()
+all.real.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = hist.pred, 
+                             mask.list = real.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
+                             istart = NA,loop.start = NA,loop.end = NA)
+print(paste("Entire run took", proc.time()-start.time, "to complete."))
+
+#############################
 plot(sample.t.predict, sample.t.target, type="n", main="Test time window calls with alt.mask on k > 0", 
      ylim = c(-1.5, 1.5), xlim = c(1, 370))
 lines(sample.t.predict, sample.t.target)
@@ -124,7 +171,7 @@ sample.t.predict <- seq(1:365)
 sample.t.target <- sin(sample.t.predict*0.05)+10
 sample.esd.gen <- seq(1:365)
 plot(sample.t.predict, sample.t.target, type="n", main="Test time window calls with CDFt", 
-     ylim=c(0,20), xlim=c(1,365))
+     ylim=c(0,100), xlim=c(1,365))
 lines(sample.t.predict, sample.t.target)
 #Plotting as a simple call to CDFt
 no.sep <- CDFt(sample.t.predict, sample.t.target, sample.esd.gen, npas=length(sample.esd.gen))$DS
@@ -154,8 +201,10 @@ sample.esd.gen <- seq(1:365)
 plot(sample.t.predict, sample.t.target, type="n", main="Test time window calls with CDFt")
 lines(sample.t.predict, sample.t.target)
 #Plotting as a simple call to CDFt
+
 no.sep <- CDFt(sample.t.predict, sample.t.target, sample.esd.gen, npas=length(sample.esd.gen))$DS
 lines(sample.t.predict, no.sep, col="lightsteelblue")
+
 #Plotting as a call to CrossValidate
 crossval.new.data <- CrossValidate(sample.t.predict, sample.t.target, sample.esd.gen, 0, "CDFt")
 lines(sample.t.predict, crossval.new.data, col="orange")

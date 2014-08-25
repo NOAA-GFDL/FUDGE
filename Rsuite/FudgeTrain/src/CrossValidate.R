@@ -44,7 +44,7 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
     if(k>1){
       stop(paste("Method Selection Error: method", downscale.function, "does not support FUDGE cross-validation"))
     }else{
-      crossval = FALSE
+      can.crossval = FALSE
     }
   }
   #First things first: determine if cross-validation needs to be performed at all.
@@ -99,12 +99,12 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
     #save("loop.list", file="saved_loop.list")
     return(MaskMerge(loop.list, collide=TRUE))
   }else{
-    if(crossval==TRUE){  #If this works, I will be annoyed
+    if(can.crossval==TRUE){  #If this works, I will be annoyed
       #If K is 1 or 0, and the method supports cross-validation, 
       #run the downscaling equations on the esd.gen dataset instead.
       #Training will take place over the entire dataset for both train.predict and
       #train.target
-      if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
+      if (sum(!is.na(train.predict))!=0 && sum(!is.na(train.target))!=0){
         trained.function <- do.call(downscale.function, list(train.predict, train.target))
         print(trained.function)
         output <- do.call("trained.function", list(c(esd.gen, args)))
@@ -114,7 +114,7 @@ CrossValidate <- function(train.predict, train.target, esd.gen, k, downscale.fun
         return(rep(NA, length(esd.gen)))
       }
     }else{
-      if (sum(!is.na(loop.pred))!=0 && sum(!is.na(loop.target))!=0){
+      if (sum(!is.na(train.predict))!=0 && sum(!is.na(train.target))!=0){
         #print(paste("non-missing vals:", sum(!is.na())))
         return(CDFt(train.target, train.predict, esd.gen, npas=length(esd.gen))$DS)
         #return(do.call(downscale.function, list(train.predict, train.target, esd.gen, args)))  #Currently, CDFt trips this check
