@@ -1,13 +1,14 @@
 TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.list, ds.method, k=0, time.steps=NA, 
                         istart = NA,loop.start = NA,loop.end = NA){
-  #' Function to loop through spatially,temporally and call the Training guts.
-  #' @param target.masked.in, hist.masked.in, fut.masked.in: The target, historic and 
-  #' future datasets to which spatial masks have been applied
-  #' @param datasets: input datasets with spatial masks applied
-  #' @param ds.method: name of the downscaling method to be applied to the data.
-  #' @param mask.list: the list of temporal masks to be applied to the 
-  #' @param  loop.start: J loop start index
-  #' @param loop.end: J loop end index
+#' Function to loop through spatially,temporally and call the Training guts.
+#' @param target.masked.in, hist.masked.in, fut.masked.in: The target, historic and 
+#' future datasets to which spatial masks have been applied
+#' @param mask.list: The list of time windowing masks to be applied to the 
+#' @param ds.method: name of the downscaling method to be applied to the data.
+#' @param k: The number of k-fold cross-validation steps to be performed. 
+#' ---Optional arguments for use in debugging---
+#' @param  loop.start: J loop start index
+#' @param loop.end: J loop end index
 
      
      # Initialize ds.vector 

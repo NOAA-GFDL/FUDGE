@@ -1,6 +1,7 @@
 #' task_driver_a1rv1.r
 #' phase 1 of driver script implementation for FUDGE: CDFt train driver 
 #' originally created:8/09/2014
+#' Modified by CEW: 8/25/2014, adding FudgeTrainDriver, time windowing functions
 
 # ------ Set FUDGE environment ---------------
 FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
@@ -35,6 +36,7 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',se
 #' hist.freq_1: Time Frequency 
 #' hist.indir_1: Input directory 
 #' hist.spatial.mask_1: Spatial mask file path 
+#' hist.time.window: Training time window, to be used on the training data
 #' -----Information on Future ESDGEN Predictor dataset---------
 #' fut.start.year_1: start year
 #' fut.end.year_1: end year
@@ -44,6 +46,7 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',se
 #' fut.freq_1: Time frequency 
 #' fut.indir_1: Input directory
 #' fut.spatial.mask: Spatial mask 
+#' fut.time.window: Path to esdgen time window masks, to be used on the esdgen data
 #' -----Information on Target Dataset used in training------
 #' target.start.year_1: start year
 #' target.end.year_1: end year
@@ -167,12 +170,16 @@ MyStats(esd.input)
 # + + + begin defining function BlackBox + + +
 #
 ####Start by invoking the time windowing function
-mask.list <- list(train.mask, train.mask, gen.mask)
+if(exists("fut.time.window")){
+ mask.list <- list(hist.time.window, hist.time.window, hist.time.window)
+}else{
+  mask.list <- list(hist.time.window, hist.time.window, hist.time.window)
+}
 message("CDFt training begins..")
 esd.output <- TrainDriver(target.masked.in = target.clim.in, 
                           hist.masked.in = hist.clim.in, 
                           fut.masked.in = fut.clim.in, 
-                          mask.list = mask.list, ds.method = 'CDFt', k=0, 
+                          mask.list = mask.list, ds.method = ds.method, k=0, 
                           time.steps=NA, istart = NA,loop.start = NA,loop.end = NA)
 ##Commented out CEW
 #list.CDFt.result <- CDFt(target.clim.in,hist.clim.in,fut.clim.in,npas = 34333) #34333 16436 

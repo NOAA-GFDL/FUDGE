@@ -56,7 +56,7 @@
 #' MORE INFO NEEDED: At the moment, the checks take place in the CrossValidate function. Calls elsewhere
 #' migth make sense; it's something to discuss once the driver script is working.
 DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen, 
-                                  downscale.fxn, downscale.args = NULL, kfold, masklist, debug=FALSE){
+                                  downscale.fxn, downscale.args = NULL, kfold, masklist, debug=FALSE, masklines=FALSE){
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
   #source("../../FudgePreDS/ApplyTemporalMask.R")
@@ -75,13 +75,12 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
 #  plot(train.predictor, train.target*2, type="n", main=paste("Mask and lines of best fit for kfold crossval"))
 #  lines(train.predictor, train.target)
   if(debug){
-    mask.cols = rainbow(num.masks)
-    fit.cols = rainbow(num.masks*kfold)
+    mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks)
+    fit.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks*kfold)
     plot(seq(1:length(train.target)), train.target, type = "l", lwd = 3, main=paste("Mask and lines of best fit for time windowing"))
   }
   for (window in 1:num.masks){
     print(paste("starting on window", window, "of", num.masks))
-    print("********")
     window.predict <- t.predictor[[window]]
     window.target <- t.target[[window]]
     window.gen <- new.predictor[[window]]
@@ -95,7 +94,9 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
                                                                    esd.gen = window.gen[!is.na(window.gen)], 
                                                                    args=NULL)
       if(debug){
-        #       abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as lines on graph
+        if(masklines){
+               abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as lines on graph
+        }
         lines(seq(1:length(window.gen)), output[[window]], lty = window, lwd = 4, col=mask.cols[window])
       }
       
@@ -103,7 +104,6 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
       #Otherwise, you don't need to do anything because that loop should be full of NAs
       print(paste("Too many NAs in loop", window, "of", num.masks, "; passing loop without downscaling"))
     }
-    #output[[window]] <- tempout
     print("********")
   }
   

@@ -20,7 +20,8 @@ DownscaleWithAllArgs <- function(ds.method, train.predict, train.target, esd.gen
   library(CDFt)
   return(switch(ds.method, 
                 "simple.lm" = simple.nocross.lm(train.predict, train.target, esd.gen),
-                'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(esd.gen))$DS, 
+                'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(esd.gen))$DS,
+                'CDFtv1' = CDFt(train.target, train.predict, esd.gen, npas=34333)$DS,
                 ReturnDownscaleError(ds.method)))
 }
 
