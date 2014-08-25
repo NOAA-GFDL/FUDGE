@@ -26,7 +26,23 @@
 #'
 #'@return A single timeseries containing all downscaled data.
 #'####
-#' @example insert example here
+#' @examples
+#' sample_t_predict <- seq(1:365)
+#' sample_t_target <- sin(sample_t_predict*0.05)
+#' sample_esd_gen <- seq(1:365)
+#' mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
+#'                   d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+#' esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
+#' downscale.args=NULL,
+#' masklist = mask_list)
+#' lines(seq(1:365), d_data, col="cyan")
+#' d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
+#'                                  esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake", 
+#'                                  downscale.args=NULL,
+#'                                  masklist = alt_mask_list)
+#' lines(seq(1:365), d2_data, col="magenta")
 #' @references \url{link to the FUDGE API documentation}
 #' TODO: Check on assumption that all maskfiles will have the same number of masks
 #' RESOLVED: They may not in later versions, but it's a valid 1^5 assumption.
@@ -37,14 +53,16 @@
 #' TODO: Figure out how the sourcing/wrappers are going to work, as well as the args input.
 #' TODO: Also, is this the place to start doing simple checks to avoid calling the fxn if all points
 #' are NA? Or do we do that twice: once for lat/lon, and then again for the time masking?
+#' MORE INFO NEEDED: At the moment, the checks take place in the CrossValidate function. Calls elsewhere
+#' migth make sense; it's something to discuss once the driver script is working.
 DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen, 
-                                  downscale.fxn, downscale.args = NULL, kfold, masklist){
+                                  downscale.fxn, downscale.args = NULL, kfold, masklist, debug=FALSE, masklines=FALSE){
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
   #source("../../FudgePreDS/ApplyTemporalMask.R")
   #source("MaskMerge.R")
   #source("CrossValidate.R")
-  print(paste("kfold greater than 2:", (kfold > 2)))
+
   t.predictor <- ApplyTemporalMask(train.predictor, masknc=masklist[[1]], run=(kfold > 2)) #This option means that
   t.target <-ApplyTemporalMask(train.target, masknc=masklist[[2]])                         #pred.masks cannot collide
   new.predictor <- ApplyTemporalMask(esd.gen, masknc=masklist[[3]], run=TRUE)              #for k > 1
@@ -56,33 +74,45 @@ DownscaleByTimeWindow <- function(train.predictor, train.target, esd.gen,
 #  lines(train.predictor, train.target)
 #  plot(train.predictor, train.target*2, type="n", main=paste("Mask and lines of best fit for kfold crossval"))
 #  lines(train.predictor, train.target)
-  mask.cols = rainbow(num.masks)
-  fit.cols = rainbow(num.masks*kfold)
+  if(debug){
+    mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks)
+    fit.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks*kfold)
+    plot(seq(1:length(train.target)), train.target, type = "l", lwd = 3, main=paste("Mask and lines of best fit for time windowing"))
+  }
   for (window in 1:num.masks){
     print(paste("starting on window", window, "of", num.masks))
-    print("********")
-    print(paste("Expected number NAs:", sum(is.na(t.target[[window]]))))
-#     print((kfold)*(window-1)+1)
-#     print((kfold*window))
     window.predict <- t.predictor[[window]]
     window.target <- t.target[[window]]
     window.gen <- new.predictor[[window]]
     output[[window]] <- window.gen
-    output[[window]][!is.na(window.gen)] <- CrossValidate(train.predict = window.predict[!is.na(window.predict)], 
-                                                          train.target = window.target[!is.na(window.target)] , 
-                                                          esd.gen = window.gen[!is.na(window.gen)], 
-                                                          k = kfold, downscale.function = downscale.fxn, 
-                                                          args = downscale.args, 
-                                                          cols=fit.cols[(kfold*(window+1)-1):(kfold*window)])
+
+    if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
+      #If there aren't any entire series of missing data, perform downscaling on the series
+      output[[window]][!is.na(window.gen)] <- DownscaleWithAllArgs(ds.method = downscale.fxn,
+                                                                   train.predict = window.predict[!is.na(window.predict)], 
+                                                                   train.target = window.target[!is.na(window.target)], 
+                                                                   esd.gen = window.gen[!is.na(window.gen)], 
+                                                                   args=NULL)
+      if(debug){
+        if(masklines){
+               abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as lines on graph
+        }
+        lines(seq(1:length(window.gen)), output[[window]], lty = window, lwd = 4, col=mask.cols[window])
+      }
+      
+    }else{
+      #Otherwise, you don't need to do anything because that loop should be full of NAs
+      print(paste("Too many NAs in loop", window, "of", num.masks, "; passing loop without downscaling"))
+    }
     print("********")
-    print(paste("Numer NAs present in ouput:", sum(is.na(output[[window]])), "out of", length(output[[window]])))
-#    lines(train.predictor, t.target[[window]], col=plot.colors[window])
-#    lines(train.predictor, output[[window]], col=plot.colors[window])
-    
+  }
+  
 #    abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as bars on graph
     #lines(train.predictor, t.target[[window]], col=mask.cols[[window]])     #option for color-coding masks
-  }
   print("Merging masks from all time series")
   out.merge <- MaskMerge(output, collide=TRUE)
+#   if(debug){
+#     legend(legend = c(as.character(seq(1:num.masks))), pch = c(1:num.masks), col = mask.cols, "bottomright")
+#   }
   return(out.merge)
 }

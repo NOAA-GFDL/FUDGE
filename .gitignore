@@ -1,2 +1,10 @@
 [.nfs*]
 [*.*~]
+[.Rdata]
+[.Rhistory]
+.gitignore~
+Rsuite/FudgeTrain/src/examples/.RData
+Rsuite/FudgeTrain/src/examples/.Rhistory
+Rsuite/FudgeTrain/src/examples/Rplot.png
+Rsuite/FudgeTrain/src/examples/plotting CDFt method with real data.png
+

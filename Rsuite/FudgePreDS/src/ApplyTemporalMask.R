@@ -28,7 +28,7 @@ ApplyTemporalMask<-function(data, masknc, maskname="none", run=FALSE){ # maskAll
   #library(abind)
   start_time<-proc.time()
   data.length<-length(data)
-  print(dim(data))
+#  print(dim(data))  #Never gave anything but null anyway
   thisnc<-nc_open(masknc)
   #Assume that calendar for all masks and data was checked earlier, with the CheckCalendar utility
   if ( length(thisnc$dim$time$vals) != data.length ){
@@ -56,8 +56,10 @@ ApplyTemporalMask<-function(data, masknc, maskname="none", run=FALSE){ # maskAll
     NA.storage.vector<-rep(0,data.length)
     for (name in 1:length(mask.names)){
       mask.data<-ncvar_get(thisnc, mask.names[[name]])#obtain masked data
-      print(paste("Starting on mask", mask.names[[name]], ", mask number",
-                  name, "of", length(mask.names)))
+      if(name%%10==0 || name == 1){
+        print(paste("Starting on mask", mask.names[[name]], ", mask number",
+                    name, "of", length(mask.names)))
+      }
       NA.storage.vector<-NA.storage.vector+convert.NAs(mask.data)  #store location of NAs for error checking
       if (!length(mask.data)==length(data)){ #length(data[1,1,])
         stop(paste("Temporal mask dimension error: mask", masknc, mask.names[name], "was of length", length(mask.data), 
