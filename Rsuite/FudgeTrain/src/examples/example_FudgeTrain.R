@@ -32,7 +32,7 @@ xrange=c(0,151)
 yrange=c(0,800)
 plot(xrange, yrange, type="n", main="Comparison of cross-validation methods", 
      xlab="independent", ylab="dependent")
-lines(train.predictor, train.target, col="blue" lwd=3, lty = 1)
+lines(train.predictor, train.target, col="blue", lwd=3, lty = 1)
 lines(esd.gen, k0, col="red", lwd=4, lty = 2)
 lines(train.predictor, k4, col="magenta", lwd=4, lty = 3)
 legend("bottomright", legend=c("target", "k=0", "k=4"), col=c("blue", "red", "magenta"), 
@@ -121,7 +121,7 @@ start.time <- proc.time()
 all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
                              mask.list = real.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
                              istart = NA,loop.start = NA,loop.end = NA)
-print(paste("Entire run with simple.lm took", proc.time()-start.time, "to complete."))
+print(paste("Entire run with CDFt took", proc.time()-start.time, "to complete."))
 
 # #############################
 # plot(sample.t.predict, sample.t.target, type="n", main="Test time window calls with alt.mask on k > 0", 

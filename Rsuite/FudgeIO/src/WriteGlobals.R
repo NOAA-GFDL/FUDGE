@@ -1,7 +1,8 @@
 #Aparna Radhakrishnan, 08/06/2014
-WriteGlobals <- function(filename,count.dep.samples,count.indep.samples,kfold,predictand=NA,predictor=NA,
+WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined"){
+#a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   info <- ""
   if(!is.na(downscaling.method)){ 
@@ -20,9 +21,9 @@ WriteGlobals <- function(filename,count.dep.samples,count.indep.samples,kfold,pr
   info <- paste(info,' having done training using the ',label.training, ' time series',sep='')
   }
   if(!is.na(predictor)){
-  info <- paste(info, 'and predictor(s) ',predictor,sep='')
+  info <- paste(info, ', predictor(s) used: ',predictor,sep='')
   }
-  history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version:  ', version ,' on ', date(), sep='')
+  history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
   if(file.exists(filename)){ 
     print("File already exists. Open in WRITE MODE")
     nc.object = nc_open(filename,write=TRUE)
@@ -40,7 +41,7 @@ WriteGlobals <- function(filename,count.dep.samples,count.indep.samples,kfold,pr
   }
   #' TODO info versus comment global attribute
   if(!is.na(reference)){
-  ncatt_put(nc.object, 0 , "references", references )
+  ncatt_put(nc.object, 0 , "references", reference )
   }
   nc_close(nc.object) 
   return(filename)
