@@ -14,8 +14,10 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
      # Initialize ds.vector 
      ds.vector =  array(NA,dim=c(dim(fut.masked.in))) #c(istart,loop.end,time.steps)
      
-     #TODO cew: Work on adding the time windowing and a simple wrapper
-     #for more than one set of downscaling code
+     #TODO CEW: Add the cross-validation mask creation before looping over the timeseries
+   #(assumes that all time series will be of same length)
+   #Also keep in mind: both the time windows and the kfold masks are, technically, 
+   #time masks. You're just doing a compression step after one but not the other.
      
      #### Loop(1) through J subset ######################### 
      #TODO loop.start,loop.end could be derived from mask lat dimension
