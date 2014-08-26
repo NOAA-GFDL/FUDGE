@@ -16,7 +16,7 @@
 #' TODO: Integrate properly with the 
 #' 
 
-DownscaleWithAllArgs <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
+CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
   library(CDFt)
   return(switch(ds.method, 
                 "simple.lm" = simple.nocross.lm(train.predict, train.target, esd.gen),

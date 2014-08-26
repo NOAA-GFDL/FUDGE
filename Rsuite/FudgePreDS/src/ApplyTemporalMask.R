@@ -23,9 +23,9 @@ ApplyTemporalMask<-function(data, mask){
   #Assume that calendar for all masks and data was checked earlier, with the MaskQC utility
   if ( data.length != mask.length ){
     stop(paste("Mask dimension error: Data had length of", data.length,
-               "while time mask had length of", mask.length))
+               "while time mask had length of", mask.length), .call=TRUE)
   }
-      tempvar <- data * mask.data
+      tempvar <- data * mask
 #       dim(tempvar)<-dim(data)
 #       mask.out<-list(tempvar)
 #       names(mask.out)<-maskname

@@ -17,7 +17,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
      #TODO CEW: Add the cross-validation mask creation before looping over the timeseries
    #(assumes that all time series will be of same length)
    #Also keep in mind: both the time windows and the kfold masks are, technically, 
-   #time masks. You're just doing a compression step after one but not the other.
+   #time masks. You're just doing a compression step immediately after one but not the other.
      
      #### Loop(1) through J subset ######################### 
      #TODO loop.start,loop.end could be derived from mask lat dimension

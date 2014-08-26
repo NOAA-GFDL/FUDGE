@@ -12,6 +12,11 @@
 #' @param vector.length: 
 #' @param k: 
 #' @param byyear: defaults to TRUE, which requires the timeseries.
+#' 
+#' 
+#' Note: was in the process of moditying to do teh crossvalidation by year
+#' properly. Got distracted and told that this might not be all that important.
+#' Left it to work on later.
 
 
 K.FoldMasker<-function(timeseries, vector.length, k, byyear = TRUE){
