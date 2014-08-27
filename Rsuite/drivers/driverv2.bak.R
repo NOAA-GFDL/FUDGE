@@ -6,11 +6,16 @@
 # ------ Set FUDGE environment ---------------
 FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
 print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
+##How do you get and set 
 
 #------- Add libraries -------------
 library(ncdf4)
 library(CDFt)
 #TODO the following sapplys and sourcing should be a library call
+###CEW: This is not working today (8-25), but it was yesterday
+###Fixed; FUDGEROOT isn't being set as my current working directory.
+###Need as setwd()
+setwd("~/Code/fudge2014/")
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',sep=''), full.names=TRUE), source);
 
 #' key data objects -----
@@ -109,11 +114,11 @@ message("xlon: received")
 ylat <- sort(ncvar_get(fut.ncobj,'lat'))
 message("ylat: received")
 
-hist.clim.in <- ReadNC(hist.ncobj,predictor.var,dstart=c(1,22,1),dcount=c(1,2,1))
+hist.clim.in <- ReadNC(hist.ncobj,predictor.var)#dstart=c(1,22,1),dcount=c(1,2,1)  ##, dstart = c(1,100,1), dcount=c(1,1,16436)
 message("ReadNC: success..1")
-fut.clim.in  <- ReadNC(fut.ncobj,predictor.var,dstart=c(1,22,1),dcount=c(1,2,1)) 
+fut.clim.in  <- ReadNC(fut.ncobj,predictor.var) #dstart=c(1,22,1),dcount=c(1,2,1)  ##, dstart = c(1,100,1), dcount=c(1,1,34333)
 message("ReadNC: success..2")
-target.clim.in <- ReadNC(target.ncobj,predictor.var,dstart=c(1,22,1),dcount=c(1,2,1))
+target.clim.in <- ReadNC(target.ncobj,predictor.var) #dstart=c(1,22,1),dcount=c(1,2,1) ##, dstart = c(1,100,1), dcount=c(1,1,16436)
 message("ReadNC: success..3")
 
 # simulate the user-specified choice of climate variable name to be processed
@@ -122,9 +127,33 @@ clim.var.in <- hist.clim.in
 # ----- Begin segment like FUDGE Schematic Section 3: Pre-processing of Input Data -----
 
 # + + + function MyStats + + + moved to MyStats.R
-source(paste(FUDGEROOT,'/Rsuite/aux/','MyStats.R',sep=''))
+source(paste(FUDGEROOT,'Rsuite/aux/','MyStats.R',sep=''))
 # use the my_stats function to compute the statistics of the user-specified variable
-MyStats(clim.var.in)
+MyStats(clim.var.in$clim.in)
+
+##CEW edit: Added TimeMaskQC to FudgePP
+##Performs QC of mask data and returns a list of all masks used for applying time windows
+##Implements checks based on method and kfold crossval
+source('Rsuite/FudgePreDS/src/TimeMaskQC.R')
+message("Performing QC on time mask data")
+if (ds.method=='CDFt' || ds.method=='CDFtv1'){
+  #Future data used in downscaling will be underneath the fut.time tag
+  tmask.list <-TimeMaskQC(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                          esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
+}else{
+  #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+  tmask.list <- TimeMaskQC(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                           esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
+}
+# ##CEW edit: added spatial masking function calls
+# source('Rsuite/FudgePreDS/src/ApplySpatialMask.R')
+# message("Applying spatial masks")
+# target.clim.in$clim.in <- ApplySpatialMask(target.clim.in$clim.in, )
+# if (ds.method=='CDFt' || ds.method=='CDFtv1'){
+#   #Future data used in downscaling will be underneath the fut.time tag
+# }else{
+#   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+# }
 
 # ----- Begin segment like FUDGE Schematic Section 3: Apply Distribution Transform -----
 
@@ -132,28 +161,39 @@ MyStats(clim.var.in)
 # classify each day as being a wetday or not, according to the method
 # indicated by the user-specified numerical variable opt.wetday
 # Note: function WetDayID is in file task1_WetDayID.R
+message("Entering FUDGE-like section 3: Apply Distribution Transform")
 
 source(paste(FUDGEROOT,'Rsuite/aux/','task1_wetdayid.R',sep=''))
 
-  if (lopt.wetday == TRUE) {   
-   wetday.output <- WetDayID(clim.var.in, opt.wetday)
+
+  if (lopt.wetday == TRUE) { 
+   message("Calling WetDayID")
+   wetday.output <- WetDayID(clim.var.in$clim.in, opt.wetday)
    wetday.masks <- wetday.output$is.wetday
    wetday.threshold <- wetday.output$threshold.wetday
   } else {
-   wetday.masks <- clim.var.in != NA
+    message("Not calling WetDayID")
+    ##CEW change 
+#   wetday.masks <- clim.var.in != NA
+    wetday.masks <- !is.na(clim.var.in$clim.in)
+    #end of CEW change
    wetday.threshold <- NA
   }
 
   print(wetday.masks[1:15])
   print(wetday.threshold)
 
-MyStats(wetday.masks)
+message("Calculating MyStats")
+##CEW change
+#MyStats(wetday.masks)
+#MyStats(clim.var.in$clim.in[wetday.masks==TRUE])
+##End CEW change
 
 # If the user-specified numerical variable opt.transform > 1, then initiate a 
 # data transformation processed using the method indicated by the user-specified
 # numerical variable opt.transform
 # Note: function TransformData is in file task1_transform.R
-
+message("Transforming data")
 source(paste(FUDGEROOT,'Rsuite/aux/','task1_transform.R',sep=''))
 
   if (opt.transform == 0) {   
@@ -164,28 +204,35 @@ source(paste(FUDGEROOT,'Rsuite/aux/','task1_transform.R',sep=''))
 
 # ----- Begin segment like FUDGE Schematic Section 3: QC of Data After Pre-Processing -----
 # compute the statistics of the vector to be passed into the downscaling training,
-MyStats(esd.input)
+message("Begin segment similar to FUDGE Schematic Section 3")
+MyStats(esd.input$clim.in)
 
 # ----- Begin segment FUDGE Schematic Section 4: ESD Method Training and Generation -----
 # + + + begin defining function BlackBox + + +
 #
 ####Start by invoking the time windowing function
-if(exists("fut.time.window")){
- mask.list <- list(hist.time.window, hist.time.window, hist.time.window)
-}else{
-  mask.list <- list(hist.time.window, hist.time.window, hist.time.window)
-}
-message("CDFt training begins..")
-esd.output <- TrainDriver(target.masked.in = target.clim.in, 
-                          hist.masked.in = hist.clim.in, 
-                          fut.masked.in = fut.clim.in, 
-                          mask.list = mask.list, ds.method = ds.method, k=0, 
-                          time.steps=NA, istart = NA,loop.start = NA,loop.end = NA)
+# if(exists("fut.time.window")){
+#  mask.list <- list(hist.time.window, hist.time.window, hist.time.window)
+# }else{
+#   mask.list <- list(hist.time.window, hist.time.window, hist.time.window)
+# }
+message("FUDGE training begins..")
+start.time <- proc.time()
+source("Rsuite/FudgeTrain/src/TrainDriver.R")
+source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
+source("Rsuite/FudgeTrain/src/CallDSMethod.R")
+source("Rsuite/FudgePreDS/src/ApplyTemporalMask.R")
+esd.output <- TrainDriver(target.masked.in = target.clim.in$clim.in, 
+                          hist.masked.in = hist.clim.in$clim.in, 
+                          fut.masked.in = fut.clim.in$clim.in, 
+                          mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
+                          istart = NA,loop.start = NA,loop.end = NA)
 ##Commented out CEW
 #list.CDFt.result <- CDFt(target.clim.in,hist.clim.in,fut.clim.in,npas = 34333) #34333 16436 
-message("CDFt training ends")
+message("FUDGE training ends")
+message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 #esd.output <- list.CDFt.result$DS
-plot(fut.clim.in,esd.output,xlab="fut.esdGen.predictor -- Large-scale data", ylab="ds -- Downscaled data")
+#plot(fut.clim.in,esd.output,xlab="fut.esdGen.predictor -- Large-scale data", ylab="ds -- Downscaled data")
 
 # + + + end Training + + +
 
@@ -203,10 +250,11 @@ plot(fut.clim.in,esd.output,xlab="fut.esdGen.predictor -- Large-scale data", yla
 
 # compute the statistics of the variable after back transform
 # using the previously define MyStats function
-MyStats(esd.final)
+#MyStats(esd.final)
 
 # compute the statistics of the back transformed results vs. the original data read in
-inout.diff = esd.final - clim.var.in
+###CEW change: fut.clim.in is closer to what you want than clim.var.in
+inout.diff = esd.final - fut.clim.in$clim.in
 MyStats(inout.diff)
 
 # Check to see is difference exceed machine precision by more than 10 percent
@@ -219,11 +267,16 @@ if (count.bigdiffs == 0) {
   print("Good news. All backtransformed values are within machine precision of the original input") 
 } else {
   print(paste("Hmmm. There were ", count.bigdiffs, " occurences of the 
-  back-transformed values differing from the original input by more than machine precision ")) 
+  back-transformed values differing from the original input by more than machine precision. But that's sort of the point.")) 
 }
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
-out.file <- paste(output.dir,"/","ds.",fut.filename,sep='')
-ds.out.filename = WriteNC(out.file,esd.final,predictand.var,xlon[1],ylat[1],0,34333,start.year="undefined","K","julian")
+#out.file <- paste(output.dir,"/","ds.",fut.filename,sep='')
+#CEW change, bceause no write permissions
+out.file <- "~/sample_full_ds_output.nc"
+print(out.file)
+ds.out.filename = WriteNC(out.file,esd.final,predictand.var,xlon[1],ylat,0,34332,start.year="undefined","K","julian") #34332 ylat[1]
+###There are options in ds.out that could be obtained by looking at dims of input data
+###Units of input data and calendar objects (train.fut, for example)
 
 ## End Of Program
 

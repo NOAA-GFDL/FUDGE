@@ -85,7 +85,9 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
   }
   
   for (window in 1:num.masks){
-    print(paste("starting on window", window, "of", num.masks))
+    if (window%%10==0 || window==1){
+    message(paste("starting on window", window, "of", num.masks))
+    }
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct$train.pred$masks[[window]])
     window.target <- ApplyTemporalMask(train.target, mask.struct$train.targ$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct$esd.gen$masks[[window]])
@@ -94,12 +96,13 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
     if (kfold <= 1){
       ######Investigate why I'm getting errors from checkvec
       ######No matter what I do to it.
-#       newcheck <- checkvector
-#       newcheck[!is.na(window.gen)] <- 1  #Set all non-NA values of this row to 1
-#       checkvector <- newcheck + checkvector
-#       if (max(checkvector > 1)){
-#         stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
-#       }
+      newcheck <- convert.NAs(window.gen)
+      checkvector <- newcheck + checkvector
+      if (max(checkvector > 1)){
+        print(summary(checkvector))
+        print(which(checkvector > 1))
+        stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
+      }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
         #perform downscaling on the series and merge into new vector
@@ -127,6 +130,15 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
   }
   #Exit loop
   return(downscale.vec)
+}
+
+#Converts NAs to 0, and all non-NA values to 1
+#and returns the result in a 1-D form
+convert.NAs<-function(dataset){
+  dataset2<-dataset
+  dataset2[is.na(dataset)]<-0
+  dataset2[!is.na(dataset)]<-1
+  return(as.vector(dataset2))
 }
   
 #   

@@ -1,5 +1,5 @@
-#DownscaleWithAllArgs
-#' DownscaleWithAllArgs
+#CallDSMethod.R
+#' CallDSMethod
 #' Calls a downscaling method specified as ds.method and returns the result of training it 
 #' upon train.predict and train.target, and then running the relvant equation upon
 #' esd.gen. No cross-validation is used for these methods. 
@@ -10,7 +10,7 @@
 #' @param esd.gen: a vector of the data used to generate downscaled data 
 #' @param args = NULL: a list of arguments to be passed to the downscaling function.
 #' Defaults to NULL (no arguments)
-#' @examples (insert examples here)
+#' @examples 
 #' @references \url{link to the FUDGE API documentation}
 #' TODO: Find a better name for this function
 #' TODO: Integrate properly with the 
@@ -21,7 +21,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   return(switch(ds.method, 
                 "simple.lm" = simple.nocross.lm(train.predict, train.target, esd.gen),
                 'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(esd.gen))$DS,
-                'CDFtv1' = CDFt(train.target, train.predict, esd.gen, npas=34333)$DS,
+                'CDFtv1' = CDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
                 ReturnDownscaleError(ds.method)))
 }
 

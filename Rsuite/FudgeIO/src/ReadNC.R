@@ -9,7 +9,9 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
   clim.in <- ncvar_get(nc.object)            
   }else {
+    message('obtaining vars')
   clim.in <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
+    message('vars obtained')
   }
   #### get standard name,long name, units if present ####
   attname = 'standard_name'

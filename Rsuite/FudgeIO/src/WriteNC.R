@@ -20,7 +20,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
   if(cfname == var.name){
     source(paste(FUDGEROOT,"Rsuite/FudgeIO/src/","CF.R",sep=""))
     cflist <- GetCFName(var.name)
-    if(cflist != "none"){
+    if(is.list(cflist)){     ###CEW: Changed because was throwing a warning when cflist != "none"
       cfname <- cflist$cfname
       lname <- cflist$cflongname
       print(paste("cfname:",cfname,sep=''))
@@ -34,8 +34,11 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
     var.dat <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=lname,prec="double")
   }
 
+  print("creating nc objects")
   nc.obj <- nc_create(filename,var.dat)
+  print("placing nc vars")
   ncvar_put(nc.obj, var.dat, data.array)
+  print("placing nc variables")
   # gets CF mappings from CF.R if user does not pass these 
   #TODO create grid coordinate bounds variables  
  

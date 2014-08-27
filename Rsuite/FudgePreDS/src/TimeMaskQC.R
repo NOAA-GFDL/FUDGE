@@ -1,38 +1,42 @@
 #'Reads in time masks and performs basic QC, including checks between the masks
 #'to make sure there are the same number of masks per file.
-#' @param hist.train.mask
-#' @param hist.targ.mask
+#' @param hist.train.mask: path to file with the masks for historical predictors
+#' @param hist.targ.mask: path to file with the masks for target data 
 #' @param esd.gen.mask: Mask to apply to the esdgen datasets. Needs to be checked
 #' for overlapping masks as well. 
 #' @param method=NULL: The method included, if it will change the checks that need to
 #' be performed on the intial data. CDFt, for example, currently has a check for 
 #' overlapping masks on all predictors
 #' @return A list containing (in this version) three elements (one for the hist.train,
-#' hist.targ and fut.train), each containing the masks of the file, the names of the
-#' masks, and the timeseries associated with each mask (used in cross-validation)
+#' hist.targ and fut.train), each containing the timeseries associated with each mask 
+#' (used in cross-validation) and the named masks contained within the file. 
 #' @example insert example here
 #' @references \url{link to the FUDGE API documentation}
 #' TODO: set function to perform checks for more than one esdgen dataset
 #' TODO: Is there a good way to preallocate lists for speeed in this place?
 #' TODO: Develop better mask comparison when more than one mask is present
-#' TODO: Do a check for Julian calendars over the relevant time windows
+
 
 TimeMaskQC <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, method=NULL){
   #This is the list of methods that use all arguments in order to generate the esd
   #equations, and therefore should probably be run without
   #overlapping time windows
-  use.all.list <- c("CDFt")
+  message("now in TimeMaskQC")
+  use.all.list <- c("CDFt", "CDFtv1")
   if (!method%in%use.all.list){   #If method uses only historical data to generate eq's
+    message("Obtaining all masks of the historical predictor mask")
     t.pred.masks <- ObtainAllMasks(hist.train.mask)
     t.targ.masks <- ObtainAllMasks(hist.targ.mask)
     esd.gen.masks <- ObtainAllMasks(esd.gen.mask, run=TRUE)
   }else{                          #If method uses historic and future data to generate eq's
+    message("Obtaining all masks of the historical predictor mask; in else branch")
     t.pred.masks <- ObtainAllMasks(hist.train.mask, run=TRUE)
     t.targ.masks <- ObtainAllMasks(hist.targ.mask, run=TRUE)
     esd.gen.masks <- ObtainAllMasks(esd.gen.mask, run=TRUE)
   }
   #All members of training (train predictor and train target)
   #should have same length and same start/end date
+  message("Attempting time comparison")
   if ( (t.pred.masks$time[1] != t.targ.masks$time[1]) ||
       (t.pred.masks$time[length(t.pred.masks$time)] != t.targ.masks$time[length(t.targ.masks$time)]) ){
     stop(paste("Training period time error: The start and end dates of the training target", 
@@ -42,6 +46,7 @@ TimeMaskQC <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, metho
   }
   #When k > 1, both training and esdgen will have the same length
   #and start/end date
+  message("Passing k > 1 time comparison")
   if (k > 1){
     if ( (t.pred.masks$time[1] != esd.gen.masks$time[1]) ||
            (t.pred.masks$time[length(t.pred.masks$time)] != esd.gen.masks$time[length(esd.gen.masks$time)]) ){
@@ -53,6 +58,7 @@ TimeMaskQC <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, metho
   }
   #At present, all mask files need to have the same number of masks present 
   #within the file
+  message("Checking for same numbers of masks within files")
   if (length(t.pred.masks)!= length(t.targ.masks) || 
         length(t.targ.masks)!= length(esd.gen.masks)){
     stop(paste("Time mask dimension error: time mask files are expected to have the", 
@@ -61,6 +67,7 @@ TimeMaskQC <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, metho
                length(t.targ.masks)-1, ",", "and", esd.gen.mask, "had", 
                length(esd.gen.masks)-1))
   }
+  message("Creating final list")
   tmask.list <- list("train.pred" = t.pred.masks, "train.targ" = t.targ.masks, "esd.gen" = esd.gen.masks)
   return(tmask.list)
 }
@@ -73,14 +80,12 @@ ObtainAllMasks<-function(mask.nc, run=FALSE){
   #The data has a calendar attribute, which is one of '365', 'noleap', '360' or 'gregorian'
   #The data is in 'days since' form
   #The data has a dimension actually named 'time'
-  ####TODO: Actually calculate the timeseries in this step. It can be used later, 
-  ####But it's nto computationally intense and it's arguably more compact
-  ####than carrying around the origin and the calendar.
   ####TODO: Can the kfold masking step be made a separate function to be called once?
   ####It really will be pretty much the same for all timeseries.
   #Should probably be initialized before the first loop, and then passed to the time masking function...
   library(ncdf4)
   library(PCICt)
+  message("Activiating ObtainAllMasks")
   thisnc <- nc_open(mask.nc)
   mask.names <- RemoveBounds(names(thisnc$var))
   ##Create a timeseries (used for subsetting in kfold cross-validation)
@@ -109,7 +114,7 @@ ObtainAllMasks<-function(mask.nc, run=FALSE){
   ###Pre-allocaate vector and loop over the available masks
   out.list <- list('time' = all.time)
   mask.list <- list()
-  checkvector <- rep(0, length(mask.list$time))
+  checkvector <- rep(0, time.length)
   #Loop over the names of each mask in the file
   for (name in 1:length(mask.names)){
     mask.data <- ncvar_get(thisnc, mask.names[name])
