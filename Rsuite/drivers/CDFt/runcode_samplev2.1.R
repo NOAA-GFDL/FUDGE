@@ -27,6 +27,8 @@ rm(list=ls())
 	hist.model_1 <- 'MPI-ESM-LR' 
 	hist.freq_1 <- 'day'
 	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
+##CEW edit: need time window specifications
+hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- 2006
 	fut.file.end.year_1 <- 2100
@@ -37,6 +39,8 @@ rm(list=ls())
 	fut.model_1 <- 'MPI-ESM-LR'
 	fut.freq_1 <- 'day'
 	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/rcp85/atmos/day/r1i1p1/v20111014/tasmax/SCCSC0p1/OneD/'
+##CEW edit: 
+fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 #------------- target -------------------------# 
 	target.file.start.year_1 <- 1961
 	target.file.end.year_1 <- 2011
@@ -47,12 +51,18 @@ rm(list=ls())
 	target.model_1 <-'livneh'
 	target.freq_1 <- 'day'
         target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/'
+##CEW edit: 
+target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
-	ds.method <- 'CDFtv1'
+###CEW edit:
+#	ds.method <- 'CDFtv1'
+  ds.method <- "CDFt"
 	ds.experiment <- 'vanilla-GFDL-CDFtv1-A00B00X00' #TODO Construct this outside of R
 	k.fold <- 0
 #-------------- output -----------------------#
-	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
+###CEW edit:
+#	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
+  output.dir <- "/home/cew/Code/"
 #TODO include standardize output dir for experiment A - in experGen 
 #TO DO Custom Method Specific Params
 #Sample only 
@@ -69,4 +79,5 @@ rm(list=ls())
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 ################ call main driver ###################################
 print(paste("START TIME:",Sys.time(),sep=''))
-source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.R',sep=''))
+#source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.R',sep=''))
+source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.1.R',sep=''))
