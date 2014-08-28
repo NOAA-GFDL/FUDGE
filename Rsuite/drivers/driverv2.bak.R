@@ -146,14 +146,18 @@ if (ds.method=='CDFt' || ds.method=='CDFtv1'){
                            esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
 }
 # ##CEW edit: added spatial masking function calls
-# source('Rsuite/FudgePreDS/src/ApplySpatialMask.R')
-# message("Applying spatial masks")
-# target.clim.in$clim.in <- ApplySpatialMask(target.clim.in$clim.in, )
-# if (ds.method=='CDFt' || ds.method=='CDFtv1'){
-#   #Future data used in downscaling will be underneath the fut.time tag
-# }else{
-#   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-# }
+source('Rsuite/FudgePreDS/src/ApplySpatialMask.R')
+message("Applying spatial masks")
+spat.mask.path <- list.files(path=paste(spat.mask.dir_1,spat.mask.var,"/OneD/", sep=""),
+                             pattern=paste("[.]","I",i.start,"_",file.j.range, sep=""), full.names=TRUE)
+target.clim.in$clim.in <- ApplySpatialMask(target.clim.in$clim.in, spat.mask.path)
+hist.clim.in$clim.in <- ApplySpatialMask(hist.clim.in$clim.in, spat.mask.path)
+fut.clim.in$clim.in <- ApplySpatialMask(fut.clim.in$clim.in, spat.mask.path)
+if (ds.method=='CDFt' || ds.method=='CDFtv1'){
+  #Future data used in downscaling will be underneath the fut.time tag
+}else{
+  #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+}
 
 # ----- Begin segment like FUDGE Schematic Section 3: Apply Distribution Transform -----
 
@@ -270,10 +274,10 @@ if (count.bigdiffs == 0) {
   back-transformed values differing from the original input by more than machine precision. But that's sort of the point.")) 
 }
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
-#out.file <- paste(output.dir,"/","ds.",fut.filename,sep='')
+out.file <- paste(output.dir,"/","ds.",fut.filename,sep='')
 #CEW change, bceause no write permissions
-out.file <- "~/sample_full_ds_output.nc"
-print(out.file)
+#out.file <- "~/sample_full_ds_output.nc"
+print(paste("Preparing to write downscaled data to", out.file))
 ds.out.filename = WriteNC(out.file,esd.final,predictand.var,xlon[1],ylat,0,34332,start.year="undefined","K","julian") #34332 ylat[1]
 ###There are options in ds.out that could be obtained by looking at dims of input data
 ###Units of input data and calendar objects (train.fut, for example)

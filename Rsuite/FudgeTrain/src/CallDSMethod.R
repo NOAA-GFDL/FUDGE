@@ -20,7 +20,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   library(CDFt)
   return(switch(ds.method, 
                 "simple.lm" = simple.nocross.lm(train.predict, train.target, esd.gen),
-                'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(esd.gen))$DS,
+                'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(train.target))$DS,
                 'CDFtv1' = CDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
                 ReturnDownscaleError(ds.method)))
 }

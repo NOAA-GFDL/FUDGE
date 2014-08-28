@@ -5,7 +5,7 @@
 #
 #
 #
-setwd("~/Code/fudge2014/Rsuite/FudgeTrain/src/examples/")
+
 library(ncdf4)
 source("../../src/TrainDriver.R")
 source("../../src/LoopByTimeWindow.R")
@@ -52,7 +52,7 @@ real.CDFtv1 <- LoopByTimeWindow(train.predictor = hist.pred[1,100,], train.targe
                               esd.gen = fut.pred[1,100,], 
                               mask.struct = check.mask.list, downscale.fxn = "CDFtv1", 
                               downscale.args = NULL, kfold=0, kfold.mask=NULL, graph=TRUE, masklines=FALSE)
-print(paste("Entire run with CDFtv1 took", proc.time()[1]-start.time[1], "to complete."))
+print(paste("Entire run with CDFtv1 (npas=34333), took", proc.time()[1]-start.time[1], "to complete."))
 
 #Plot results to compare over a five-year period
 timevector <- new.nc$dim$time$vals[1:(365*5)]
@@ -82,3 +82,9 @@ all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in =
                                   istart = NA,loop.start = NA,loop.end = NA)
 print(paste("Entire run with CDFt took", proc.time()[1]-start.time[1], "to complete."))
 #CDFt took **6 MINUTES** to run over the entire dataset. I think that this might be doing okay.
+
+#####And finally, source and run the sample driver scripts: 
+source("../../../drivers/runcode_samplev2.R")
+##Note that there are a couple hard-coded args (output directory, setting current working directory)
+##that you might need to change to get the core driver to run.
+source("../../../drivers/driverv2.bak.R")

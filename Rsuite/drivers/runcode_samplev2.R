@@ -17,9 +17,14 @@ rm(list=ls())
 	hist.model_1 <- 'MPI-ESM-LR' 
 	hist.freq_1 <- 'day'
 	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
-	spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/OneD/'
-	spat.mask.var <- 'red_river_0p1_masks'
-##CEW edit: 
+###CEW edit: this points to a non-existent directory
+#	spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/OneD/'
+  spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/'
+###And this points to a NetCDF file, not the directory
+#	spat.mask.var <- 'red_river_0p1_masks'
+  spat.mask.var <- 'red_river_0p1'
+###End CEW edit
+##CEW edit: need time window specifications
   hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------ future predictor(s) -------------# 
 	fut.start.year_1 <- 2006
@@ -47,12 +52,15 @@ rm(list=ls())
 
 ############### Section 2 #######################
 #------------- method name k-fold specs-----------------------#
+  ##CEW edit: replaced because presets in CDFtv1 take too long to run
 	#ds.method <- 'CDFtv1'
 ds.method <- 'CDFt'
 	ds.experiment <- 'vanilla-GFDL-CDFtv1-A00B00X00'
 	k.fold <- 0
 #-------------- output -----------------------#
-	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
+#	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
+  output.dir <- "/home/cew/Code/"
+
 #--------------grid region settings----------#
 	region <- 'sccsc0p1'
 #--------------- I,J settings ----------------#
@@ -74,4 +82,5 @@ ds.method <- 'CDFt'
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 ################ call main driver ###################################
 
-source(paste(FUDGEROOT,'Rsuite/drivers/','driverv2.R',sep=''))
+setwd("~/Code/fudge2014/")
+source(paste(FUDGEROOT,'Rsuite/drivers/','driverv2.bak.R',sep=''))
