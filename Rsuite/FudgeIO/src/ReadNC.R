@@ -10,7 +10,8 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   #'[start]: A vector of indices indicating where to start reading the passed values (begin- ning at 1). 
   #'The length of this vector must equal the number of dimensions the variable has. Order is X-Y-Z-T 
   #'(i.e., the time dimension is last). If not specified, reading starts at the beginning of the file (1,1,1,...). 
-#  var.name <- "tasmax"
+
+  
   if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
   clim.in <- ncvar_get(nc.object)            
   }else {

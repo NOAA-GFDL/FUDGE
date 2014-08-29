@@ -94,10 +94,9 @@ print(paste("predictor:",predictor.var,sep=''))
 #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
 } 
 ######################## input minifiles ####################
-###CEW edit: 
-###Should these be predictor.vars? There's an error somwhere
 
-predictor.var <- "tasmax"
+###CEW edit 8-28: Will not run without initializing predictor.var
+predictor.var <- predictor.vars
 
 hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
 print(hist.filename)
@@ -114,8 +113,8 @@ print("OpenNC: success..1")
 target.ncobj <- OpenNC(target.indir_1,target.filename)
 print("OpenNC: success..2")
 fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
-
 print("OpenNC: success..3")
+
 print("get xlon,ylat")
 xlon <- sort(ncvar_get(fut.ncobj,"lon"))
 print("xlon: received")
@@ -123,43 +122,13 @@ ylat <- sort(ncvar_get(fut.ncobj,'lat'))
 print("ylat: received")
 
 
-###CEW edit 8-28: Will not run without changing name to 'predictor.vars'
-###It won't run if I source it on my machine in either case, but it will run
-###if I copy-paste it into the terminal directly; this makes no sense.
-# OpenNC: success..3
-# get xlon,ylat
-# xlon: received
-# ylat: received
-# obtaining vars
-# Error in mode(varid) : object 'predictor.var' not found
-# The code is clearly entering the ReadNC and having an error there.
-#This error repeats when (after workspace cleared):
-#predictor.var <- "tasmax"
-#predictor.var <- predictor.vars
-#predictor.var <- NA
-# list.hist <- ReadNC(nc.object = hist.ncobj,
-#                     var.name="tasmax",
-#                     dstart=c(1,1,1),dcount=c(1,140,16436))
-# list.hist <- ReadNC(nc.object = hist.ncobj,
-#                     var.name=NA,
-#                     dstart=c(1,1,1),dcount=c(1,140,16436))
-#Replacing all instances of 'predictor.var' with 'frederick'
-#Note that in this case, the error still read that 
-#'predictor.var' was missing
-#'
-#'Problem finally worked around by setting var.name in ReadNC to "tasmax".
-#'But that is a truly eregious hack.
-###
-
-predictor.var <- "tasmax"
-
 list.hist <- ReadNC(nc.object = hist.ncobj,
-                    var.name=predictor.vars,
+                    var.name=predictor.var,
                     dstart=c(1,1,1),dcount=c(1,140,16436))
 print("ReadNC: success..1")
-list.fut  <- ReadNC(fut.ncobj,var.name=predictor.vars,dstart=c(1,1,1),dcount=c(1,140,34333)) 
+list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,34333)) 
 print("ReadNC: success..2")
-list.target <- ReadNC(target.ncobj,var.name=predictor.vars,dstart=c(1,1,1),dcount=c(1,140,16436))
+list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,16436))
 print("ReadNC: success..3")
 
 # spatial mask read check
@@ -179,25 +148,36 @@ clim.var.in <- list.fut$clim.in
 #making checks currently done internal to the function that relies on the path to outside. 
 #This way, we open the file just once. spat.mask.ncobj potentially to be used in final sections
 
-# target.masked.in <- ApplySpatialMask(list.target$clim.in,paste(spat.mask.dir_1,spat.mask.filename,sep=''),spat.mask.var,xlon,ylat)
-# print("ApplySpatialMask target: success..1")
-# hist.masked.in <- ApplySpatialMask(list.hist$clim.in,paste(spat.mask.dir_1,spat.mask.filename,sep=''),spat.mask.var,xlon,ylat)
-# print("ApplySpatialMask hist.predictor: success..2")
-# fut.masked.in <- ApplySpatialMask(list.fut$clim.in,paste(spat.mask.dir_1,spat.mask.filename,sep=''),spat.mask.var,xlon,ylat)
-# print("ApplySpatialMask esgden.fut.predictor: success..3")
 message("Applying spatial masks")
-spat.mask.path <- list.files(path=paste(spat.mask.dir_1),
-                             pattern=paste("[.]","I",i.file,"_",file.j.range, sep=""), full.names=TRUE)
-list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask.path)
+#spat.mask.path <- list.files(path=paste(spat.mask.dir_1),
+#                             pattern=paste("[.]","I",i.file,"_",file.j.range, sep=""), full.names=TRUE)
+spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
+print(paste("Spatial mask to be applied:", spat.mask.filename))
+spat.mask.nc <- OpenNC(spat.mask.dir_1,spat.mask.filename)
+spat.mask <- ReadMaskNC(spat.mask.nc)
+list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
 print("ApplySpatialMask target: success..1")
-list.hist$clim.in <- ApplySpatialMask(list.hist$clim.in, spat.mask.path)
+list.hist$clim.in <- ApplySpatialMask(list.hist$clim.in, spat.mask$masks[[1]])
 print("ApplySpatialMask target: success..2")
-list.fut$clim.in <- ApplySpatialMask(list.fut$clim.in, spat.mask.path)
+list.fut$clim.in <- ApplySpatialMask(list.fut$clim.in, spat.mask$masks[[1]])
 print("ApplySpatialMask target: success..3")
 #- - - - - Loop through masked.data to downscale points ------------- #
 
-# ----- Begin segment like FUDGE Schematic Section 3: QC of Data After Pre-Processing -----
-# compute the statistics of the vector to be passed into the downscaling training,
+# ----- Begin segment like FUDGE Schematic Section 3: QC of Data After Pre-Processing -----#
+
+#Perform a check upon the time series, dimensions and method of the downscaling 
+#input and output to assure compliance
+message("Checking input data")
+#QCInputData(list.hist, list.fut, list.target)
+QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = list.fut, 
+            k = k.fold, ds.method=ds.method)
+
+#Perform a check upon the downscaling method and core arguments to make sure
+#that parameters are in agreement
+message("Checking input arguments")
+QCDSArguments(k=k.fold, ds.method = ds.method)
+
+# compute the statistics of the vector to be passed into the downscaling training
 
 # + + + function MyStats + + + moved to MyStats.R
 ##  CEW edit
@@ -213,13 +193,14 @@ print("STATS: Future predictors")
 liststats <- MyStats(list.fut$clim.in,verbose="yes")
 
 ####Read in time masks and perform QC operations
-source('Rsuite/FudgePreDS/src/TimeMaskQC.R')
-message("Performing QC on time mask data")
+source('Rsuite/FudgePreDS/src/QCTimeMask.R')
+message("Reading in and checking time windowing masks")
 if (ds.method=='CDFt' || ds.method=='CDFtv1' || ds.method == "simple.lm"){
   #Future data used in downscaling will be underneath the fut.time tag
-  tmask.list <-TimeMaskQC(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+  tmask.list <-QCTimeMask(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                           esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
 }
+##Can replace with %in% train.and.use.same
 ####CEW edit: Second branch of code currently commented out for testing purposes
 ####And simple.lm included as an example of using future data for downscaling
 # }else{

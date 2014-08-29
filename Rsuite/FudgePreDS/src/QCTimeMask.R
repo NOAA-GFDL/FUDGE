@@ -18,13 +18,11 @@
 
 
 QCTimeMask <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, method="generic"){
-  message("now in QCTimeMask")
-  
+
   #This is the list of methods that use all arguments in order to generate the esd
   #equations, and therefore should probably be run without
   #overlapping time windows
-  use.all.list <- c("CDFt", "CDFtv1")
-  if (!method%in%use.all.list){   #If method uses only historical data to generate eq's
+  if (!method%in%train.and.use.same){   #If method uses only historical data to generate eq's
     message("Obtaining all masks of the historical predictor mask")
     t.pred.masks <- ObtainAllMasks(hist.train.mask)
     t.targ.masks <- ObtainAllMasks(hist.targ.mask)
