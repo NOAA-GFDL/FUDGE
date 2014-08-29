@@ -16,7 +16,9 @@ rm(list=ls())
         j.start <- 31
         j.end <-  170
         loop.start <-  1 #j.start - (j.start-1)
-        loop.end <-72 #  j.end - (j.start-1)
+###CEW edit:
+#        loop.end <-72 #  j.end - (j.start-1)
+loop.end <- 140
 #------------ historical predictor(s)----------# 
 	hist.file.start.year_1 <- 1961
 	hist.file.end.year_1 <- 2005
@@ -80,4 +82,5 @@ target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemas
 ################ call main driver ###################################
 print(paste("START TIME:",Sys.time(),sep=''))
 #source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.R',sep=''))
+FUDGEROOT = ""
 source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.1.R',sep=''))

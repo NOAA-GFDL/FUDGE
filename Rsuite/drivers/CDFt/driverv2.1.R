@@ -9,6 +9,12 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/src/'
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
+#-------Add traceback call for error handling -------
+options(error=traceback)
+###See if there's a good way to return back to the original settings
+###after this point. Probably not a component of a --vanilla run. 
+###But it unquestionably simplifies debugging.
+
 #------- Add libraries -------------
 LoadLib(ds.method)
 #-------End Add libraries ---------
@@ -132,11 +138,13 @@ list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount
 print("ReadNC: success..3")
 
 # spatial mask read check
+spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
 spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
 print('OpenNC spatial mask: success..4') 
 
-ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-print('ReadNC spatial mask: success..4')
+#ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
+spat.mask <- ReadMaskNC(spat.mask.nc)
+print('ReadMaskNC spatial mask: success..4')
 
 
 # simulate the user-specified choice of climate variable name to be processed
@@ -149,12 +157,13 @@ clim.var.in <- list.fut$clim.in
 #This way, we open the file just once. spat.mask.ncobj potentially to be used in final sections
 
 message("Applying spatial masks")
-#spat.mask.path <- list.files(path=paste(spat.mask.dir_1),
-#                             pattern=paste("[.]","I",i.file,"_",file.j.range, sep=""), full.names=TRUE)
-spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-print(paste("Spatial mask to be applied:", spat.mask.filename))
-spat.mask.nc <- OpenNC(spat.mask.dir_1,spat.mask.filename)
-spat.mask <- ReadMaskNC(spat.mask.nc)
+# #spat.mask.path <- list.files(path=paste(spat.mask.dir_1),
+# #                             pattern=paste("[.]","I",i.file,"_",file.j.range, sep=""), full.names=TRUE)
+# spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
+# print(paste("Spatial mask to be applied:", spat.mask.filename))
+# spat.mask.nc <- OpenNC(spat.mask.dir_1,spat.mask.filename)
+# spat.mask <- ReadMaskNC(spat.mask.nc)
+
 list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
 print("ApplySpatialMask target: success..1")
 list.hist$clim.in <- ApplySpatialMask(list.hist$clim.in, spat.mask$masks[[1]])
@@ -266,9 +275,9 @@ esd.final[is.na(esd.final)] <- 1.0e+20
 out.file <- paste(output.dir,"/","dstest2.",fut.filename,sep='')
 #Write to netCDF
 ds.out.filename = WriteNC(out.file,esd.final,target.var,
-                          xlon,ylat[loop.start:loop.end],0,
-                          (time.steps-1),start.year=fut.train.start.year_1,
-                          list.fut$units$value,"julian",
+                          xlon,ylat[loop.start:loop.end],time.index.start=0,
+                          time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
+                          units=list.fut$units$value,calendar="julian",
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
                           cfname=list.fut$cfname$value)
 #Write Global attributes to downscaled netcdf

@@ -104,9 +104,10 @@ ObtainAllMasks<-function(mask.nc, run=FALSE){
       checkvector <- checkvector + convert.NAs(mask.data)
       #Something is triggering this with all NA arguments 36 times during the run
       if(max(checkvector) > 1){
-        stop(paste("Mask collision error: Masks within the first", name, "masks of", mask.nc,
+        stop(paste("Mask collision error: Masks within the first", mask, "masks of", mask.nc,
                    ", provided as an ESD generation mask file", 
-                   "overlap along the time series."), .call=TRUE)
+                   "overlap along the time series."))
+        
       }
     }
   } ##Is it neccesary to do the second check? Ask Keith.

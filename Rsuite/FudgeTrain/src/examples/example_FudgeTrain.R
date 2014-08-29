@@ -6,7 +6,8 @@
 #
 setwd("~/Code/fudge2014/Rsuite/FudgeTrain/src/examples/")
 library(ncdf4)
-
+# source("../CrossValidate.R")
+# source("../MaskMerge.R")
 
 ######
 ###Example code for calling and testing the cross-validation functions
