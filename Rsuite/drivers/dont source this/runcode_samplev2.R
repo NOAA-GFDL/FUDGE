@@ -17,37 +17,50 @@ rm(list=ls())
 	hist.model_1 <- 'MPI-ESM-LR' 
 	hist.freq_1 <- 'day'
 	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
-	spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/OneD/'
-	spat.mask.var <- 'red_river_0p1_masks'
-  ##CEW edit: 
+###CEW edit: this points to a non-existent directory
+#	spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/OneD/'
+  spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/'
+###And this points to a NetCDF file, not the directory
+#	spat.mask.var <- 'red_river_0p1_masks'
+  spat.mask.var <- 'red_river_0p1'
+###End CEW edit
+##CEW edit: need time window specifications
   hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------ future predictor(s) -------------# 
 	fut.start.year_1 <- 2006
-	fut.end.year_1 <- 2100
+	fut.end.year_1 <- 2099
 	fut.scenario_1 <-'rcp85.r1i1p1'
 	fut.nyrtot_1 <- (fut.end.year_1 - fut.start.year_1) + 1
 	fut.model_1 <- 'MPI-ESM-LR'
 	fut.freq_1 <- 'day'
 	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/rcp85/atmos/day/r1i1p1/v20111014/tasmax/SCCSC0p1/OneD/'
 	fut.spatial.mask_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1_masks.nc'
+##CEW edit: 
+  fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 
 #------------- target -------------------------# 
 	target.start.year_1 <- 1961
-	target.end.year_1 <- 2011
+	target.end.year_1 <- 2005
 	target.scenario_1 <- 'historical'
 	target.nyrtot_1 <- (target.end.year_1 - target.start.year_1) + 1 
 	target.model_1 <-'livneh'
 	target.freq_1 <- 'day'
         target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/'
 	target.spatial.mask_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1_masks.nc'
+##CEW edit: 
+  target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 
 ############### Section 2 #######################
 #------------- method name k-fold specs-----------------------#
-	ds.method <- 'CDFtv1'
+  ##CEW edit: replaced because presets in CDFtv1 take too long to run
+	#ds.method <- 'CDFtv1'
+ds.method <- 'CDFt'
 	ds.experiment <- 'vanilla-GFDL-CDFtv1-A00B00X00'
 	k.fold <- 0
 #-------------- output -----------------------#
-	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
+#	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
+  output.dir <- "/home/cew/Code/"
+
 #--------------grid region settings----------#
 	region <- 'sccsc0p1'
 #--------------- I,J settings ----------------#
@@ -69,4 +82,5 @@ rm(list=ls())
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 ################ call main driver ###################################
 
-source(paste(FUDGEROOT,'Rsuite/drivers/','driverv1.R',sep=''))
+setwd("~/Code/fudge2014/")
+source(paste(FUDGEROOT,'Rsuite/drivers/','driverv2.bak.R',sep=''))

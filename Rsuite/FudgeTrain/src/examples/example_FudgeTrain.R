@@ -6,7 +6,8 @@
 #
 setwd("~/Code/fudge2014/Rsuite/FudgeTrain/src/examples/")
 library(ncdf4)
-
+# source("../CrossValidate.R")
+# source("../MaskMerge.R")
 
 ######
 ###Example code for calling and testing the cross-validation functions
@@ -41,39 +42,14 @@ legend("bottomright", legend=c("target", "k=0", "k=4"), col=c("blue", "red", "ma
 #######
 ##Example code for calling and testing the Fudge driver script and the time-windowing functions
 
-#Source relevant files in the code or directory
-source("../DownscaleByTimeWindow.R")
-source("../../../FudgePreDS/src/ApplyTemporalMask.R")
-source("../DownscaleWithAllArgs.R")
-source("../TrainDriver.R")
-
-sample.t.predict <- seq(1:365)
-sample.t.target <- sin(sample.t.predict*0.05)
-sample.esd.gen <- seq(1:365)
-mask.list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
-                  "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
-                  "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
-
-#Alt.mask.list is used for k-fold validation of k > 1, 
-#since predictor and esdged datasets are the same dataset
-alt.mask.list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
-                  "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
-                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
-
-
-d.data <- DownscaleByTimeWindow(train.predictor = sample.t.predict, train.target = sample.t.target, 
-                                esd.gen = sample.esd.gen, kfold = 0, downscale.fxn = "simple.lm", 
-                                downscale.args=NULL,
-                                masklist = mask.list, debug=TRUE, masklines=TRUE)
-cdft.data <- DownscaleByTimeWindow(train.predictor = sample.t.predict, train.target = sample.t.target, 
-                                esd.gen = sample.esd.gen, kfold = 0, downscale.fxn = "CDFt", 
-                                downscale.args=NULL,
-                                masklist = mask.list, debug=TRUE, masklines=TRUE)
-
-#####Testing on real data
-train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231.nc"
+#train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231.nc"
+train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc"
 #esdgen_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc"
 esdgen_time_window <- "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc"
+
+check.mask.list <- TimeMaskQC(hist.train.mask = train_time_window, hist.targ.mask = train_time_window, 
+                       esd.gen.mask = esdgen_time_window, k=0, method='CDFt')
+#Then, read in data 
 historical_target = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1.2/tasmax/SCCSC0p1/OneD/tasmax_day_livneh_historical_r0i0p0_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
 new.nc <- nc_open(historical_target)
 hist.targ <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
@@ -84,17 +60,15 @@ future_predictor <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR
 new.nc <- nc_open(future_predictor)
 fut.pred <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
 
-real.mask.list <- list(train_time_window, train_time_window, esdgen_time_window)
-
-real.data <- DownscaleByTimeWindow(train.predictor = hist.pred[1,100,], train.target = hist.targ[1,100,], 
-                                esd.gen = fut.pred[1,100,], kfold = 0, downscale.fxn = "simple.lm", 
-                                downscale.args=NULL,
-                                masklist = real.mask.list, debug=TRUE)
-
-real.cdft.data <- DownscaleByTimeWindow(train.predictor = hist.pred[1,100,], train.target = hist.targ[1,100,], 
-                                   esd.gen = fut.pred[1,100,], kfold = 0, downscale.fxn = "CDFt", 
-                                   downscale.args=NULL,
-                                   masklist = real.mask.list, debug=TRUE)
+#And run your DS method of choice
+real.lm <- LoopByTimeWindow(train.predictor = hist.pred[1,100,], train.target = hist.targ[1,100,], 
+                            esd.gen = fut.pred[1,100,], 
+                            mask.struct = check.mask.list, downscale.fxn = "simple.lm", 
+                            downscale.args = NULL, kfold=0, kfold.mask=NULL, graph=TRUE, masklines=FALSE)
+real.CDFt <- LoopByTimeWindow(train.predictor = hist.pred[1,100,], train.target = hist.targ[1,100,], 
+                              esd.gen = fut.pred[1,100,], 
+                              mask.struct = check.mask.list, downscale.fxn = "CDFt", 
+                              downscale.args = NULL, kfold=0, kfold.mask=NULL, graph=TRUE, masklines=FALSE)
 
 #Plot results to compare over a five-year period
 timevector <- new.nc$dim$time$vals[1:(365*5)]
@@ -105,23 +79,109 @@ timeseries <- origin + timevector * 86400
 plot(timeseries, fut.pred[1,100,1:(365*5)], type="l", main="Test time window calls with real data on k=0", lwd=2)
 lines(timeseries, real.cdft.data[1:(365*5)], lwd=3, lty = 3, col='red')
 lines(timeseries, real.data[1:(365*5)], lwd=3, lty = 1, col='blue')
-legend(legend = c("target", "simple.lm", "CDFt"), col=c("black", "red", "blue"), lty = c(1,3,1),
-"bottomright")
+legend(legend = c("target", "CDFt", "simple.lm"), col=c("black", "red", "blue"), lty = c(1,3,1),
+       "bottomright")
 
-#############################
 #Now, attempt inclusion of the TrainDriver script on the same target datasets as before
 
 start.time <- proc.time()
-all.real.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
-                             mask.list = real.mask.list, ds.method = 'simple.lm', k=0, time.steps=NA, 
-                             istart = NA,loop.start = NA,loop.end = NA)
-print(paste("Entire run with simple.lm took", proc.time()-start.time, "to complete."))
+all.real.lm.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, 
+                                fut.masked.in = fut.pred, mask.list = check.mask.list, 
+                                ds.method = 'simple.lm', k=0, time.steps=NA, 
+                                istart = NA,loop.start = NA,loop.end = NA)
+print(paste("Entire run with simple.lm took", proc.time()[1]-start.time[1], "to complete."))
 
 start.time <- proc.time()
 all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
-                             mask.list = real.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
-                             istart = NA,loop.start = NA,loop.end = NA)
-print(paste("Entire run with CDFt took", proc.time()-start.time, "to complete."))
+                                  mask.list = check.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
+                                  istart = NA,loop.start = NA,loop.end = NA)
+print(paste("Entire run with CDFt took", proc.time()[1]-start.time[1], "to complete."))
+#CDFt took **6 MINUTES** to run over the entire dataset. I think that this might be doing okay.
+
+##########
+#####----Old code for calling and plotting time windowing / downscaling funcitons
+#####Probably still has a few useful calls in it
+#Source relevant files in the code or directory
+# source("../DownscaleByTimeWindow.R")
+# source("../../../FudgePreDS/src/ApplyTemporalMask.R")
+# source("../DownscaleWithAllArgs.R")
+# source("../TrainDriver.R")
+# 
+# sample.t.predict <- seq(1:365)
+# sample.t.target <- sin(sample.t.predict*0.05)
+# sample.esd.gen <- seq(1:365)
+# mask.list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
+# 
+# #Alt.mask.list is used for k-fold validation of k > 1, 
+# #since predictor and esdged datasets are the same dataset
+# alt.mask.list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
+#                       "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc", 
+#                       "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
+# 
+# 
+# d.data <- DownscaleByTimeWindow(train.predictor = sample.t.predict, train.target = sample.t.target, 
+#                                 esd.gen = sample.esd.gen, kfold = 0, downscale.fxn = "simple.lm", 
+#                                 downscale.args=NULL,
+#                                 masklist = mask.list, debug=TRUE, masklines=TRUE)
+# cdft.data <- DownscaleByTimeWindow(train.predictor = sample.t.predict, train.target = sample.t.target, 
+#                                    esd.gen = sample.esd.gen, kfold = 0, downscale.fxn = "CDFt", 
+#                                    downscale.args=NULL,
+#                                    masklist = mask.list, debug=TRUE, masklines=TRUE)
+# 
+# #####Testing on real data
+# train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231.nc"
+# #esdgen_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc"
+# esdgen_time_window <- "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc"
+# historical_target = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1.2/tasmax/SCCSC0p1/OneD/tasmax_day_livneh_historical_r0i0p0_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
+# new.nc <- nc_open(historical_target)
+# hist.targ <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+# historical_predictor = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_historical_r1i1p1_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
+# new.nc <- nc_open(historical_predictor)
+# hist.pred <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+# future_predictor <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/rcp85/atmos/day/r1i1p1/v20111014/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_rcp85_r1i1p1_SCCSC0p1_20060101-20991231.I250_J31-170.nc"
+# new.nc <- nc_open(future_predictor)
+# fut.pred <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+# 
+# real.mask.list <- list(train_time_window, train_time_window, esdgen_time_window)
+# 
+# real.data <- DownscaleByTimeWindow(train.predictor = hist.pred[1,100,], train.target = hist.targ[1,100,], 
+#                                    esd.gen = fut.pred[1,100,], kfold = 0, downscale.fxn = "simple.lm", 
+#                                    downscale.args=NULL,
+#                                    masklist = real.mask.list, debug=TRUE)
+# 
+# real.cdft.data <- DownscaleByTimeWindow(train.predictor = hist.pred[1,100,], train.target = hist.targ[1,100,], 
+#                                         esd.gen = fut.pred[1,100,], kfold = 0, downscale.fxn = "CDFt", 
+#                                         downscale.args=NULL,
+#                                         masklist = real.mask.list, debug=TRUE)
+# 
+# #Plot results to compare over a five-year period
+# timevector <- new.nc$dim$time$vals[1:(365*5)]
+# library(PCICt)
+# origin <- as.PCICt("1961-01-01", "gregorian")
+# timeseries <- origin + timevector * 86400
+# 
+# plot(timeseries, fut.pred[1,100,1:(365*5)], type="l", main="Test time window calls with real data on k=0", lwd=2)
+# lines(timeseries, real.cdft.data[1:(365*5)], lwd=3, lty = 3, col='red')
+# lines(timeseries, real.data[1:(365*5)], lwd=3, lty = 1, col='blue')
+# legend(legend = c("target", "CDFt", "simple.lm"), col=c("black", "red", "blue"), lty = c(1,3,1),
+#        "bottomright")
+# 
+# #############################
+# #Now, attempt inclusion of the TrainDriver script on the same target datasets as before
+# 
+# start.time <- proc.time()
+# all.real.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
+#                              mask.list = real.mask.list, ds.method = 'simple.lm', k=0, time.steps=NA, 
+#                              istart = NA,loop.start = NA,loop.end = NA)
+# print(paste("Entire run with simple.lm took", proc.time()-start.time, "to complete."))
+# 
+# start.time <- proc.time()
+# all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
+#                                   mask.list = real.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
+#                                   istart = NA,loop.start = NA,loop.end = NA)
+# print(paste("Entire run with CDFt took", proc.time()-start.time, "to complete."))
 
 # #############################
 # plot(sample.t.predict, sample.t.target, type="n", main="Test time window calls with alt.mask on k > 0", 
