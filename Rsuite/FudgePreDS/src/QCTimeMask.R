@@ -22,7 +22,7 @@ QCTimeMask <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, metho
   #This is the list of methods that use all arguments in order to generate the esd
   #equations, and therefore should probably be run without
   #overlapping time windows
-  if (!method%in%train.and.use.same){   #If method uses only historical data to generate eq's
+  if (!train.and.use.same){   #If method uses only historical data to generate eq's
     message("Obtaining all masks of the historical predictor mask")
     t.pred.masks <- ObtainAllMasks(hist.train.mask)
     t.targ.masks <- ObtainAllMasks(hist.targ.mask)
@@ -102,7 +102,6 @@ ObtainAllMasks<-function(mask.nc, run=FALSE){
     #Implement overlap checks if run==TRUE
     if(run){                          
       checkvector <- checkvector + convert.NAs(mask.data)
-      #Something is triggering this with all NA arguments 36 times during the run
       if(max(checkvector) > 1){
         stop(paste("Mask collision error: Masks within the first", mask, "masks of", mask.nc,
                    ", provided as an ESD generation mask file", 
@@ -110,12 +109,7 @@ ObtainAllMasks<-function(mask.nc, run=FALSE){
         
       }
     }
-  } ##Is it neccesary to do the second check? Ask Keith.
-  ##Important to note that the current round of checks happens to trip this one on hist.train.mask
-#   if (run && sum(checkvector != time.length)){
-#     stop(paste("Mask Gap Error: Masks within the file", mask.nc, 
-#                ",provides as an ESD generation mask file, do not wholly cover the time series."))
-#   }
+  }
   return(all.masks)
 }
 

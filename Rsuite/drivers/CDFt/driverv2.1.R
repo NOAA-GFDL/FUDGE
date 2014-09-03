@@ -10,7 +10,8 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
 #-------Add traceback call for error handling -------
-options(error=traceback)
+#options(error=traceback)
+#options(showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
 ###after this point. Probably not a component of a --vanilla run. 
 ###But it unquestionably simplifies debugging.
@@ -184,6 +185,7 @@ QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = l
 #Perform a check upon the downscaling method and core arguments to make sure
 #that parameters are in agreement
 message("Checking input arguments")
+SetDSMethodInfo(ds.method)
 QCDSArguments(k=k.fold, ds.method = ds.method)
 
 # compute the statistics of the vector to be passed into the downscaling training
@@ -204,7 +206,7 @@ liststats <- MyStats(list.fut$clim.in,verbose="yes")
 ####Read in time masks and perform QC operations
 source('Rsuite/FudgePreDS/src/QCTimeMask.R')
 message("Reading in and checking time windowing masks")
-if (ds.method=='CDFt' || ds.method=='CDFtv1' || ds.method == "simple.lm"){
+if (train.and.use.same){ #set by SetDSMethodInfo()
   #Future data used in downscaling will be underneath the fut.time tag
   tmask.list <-QCTimeMask(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                           esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)

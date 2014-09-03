@@ -19,7 +19,7 @@
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
   library(CDFt)
   return(switch(ds.method, 
-                "simple.lm" = simple.nocross.lm(train.predict, train.target, esd.gen),
+                "simple.lm" = simple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(train.target))$DS,
                 'CDFtv1' = CDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
                 ReturnDownscaleError(ds.method)))
@@ -30,7 +30,7 @@ ReturnDownscaleError <- function(ds.method){
   stop(paste("Downscale Method Error: the method", ds.method, "is not supported for FUDGE at this time."))
 }
 
-simple.nocross.lm <- function(pred, targ, new){
+simple.lm <- function(pred, targ, new){
   #Creates a simple linear model without a cross-validation step. 
   #Mostly used to check that the procedure is working
   lm.results <- lm(targ ~ pred)
