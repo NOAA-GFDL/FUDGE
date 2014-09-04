@@ -12,7 +12,8 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start, t
   if(exists("xlon") & (xlon != '')){
     x <- ncdim_def("lon","degrees_east",xlon)
   }
-  tunit <- paste('days since ',start.year,'-01-01 12:00:00',sep='')
+  #tunit <- paste('days since ',start.year,'-01-01 12:00:00',sep='')
+  tunit <- origin
   print(tunit) 
   t1 <- ncdim_def("time",tunit,time1,unlim=TRUE)
   #' If CFNAME undefined in the call, pull information from CF.R. Use default otherwise. 

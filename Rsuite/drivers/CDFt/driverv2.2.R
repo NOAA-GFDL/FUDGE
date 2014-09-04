@@ -98,60 +98,98 @@ LoadLib(ds.method)
 
 # construct file-names
 
-for (predictor.var in predictor.vars){
-print(paste("predictor:",predictor.var,sep='')) 
-#TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
-} 
-######################## input minifiles ####################
+###First, do simple QC checks, and set variables to be used later.
 
-###CEW edit 8-28: Will not run without initializing predictor.var
-predictor.var <- predictor.vars
+message("Setting downscaling method information")
+SetDSMethodInfo(ds.method)
+message("Checking downscaling arguments")
+QCDSArguments(k=k.fold, ds.method = ds.method)
+#Check for writable output directory
+message("Checking output directory")
+QCIO(output.dir)
 
-hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
-print(hist.filename)
-fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-print(fut.filename)
-target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
-print(target.filename)
-spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-print(spat.mask.filename)
-
-# load the sample input datasets to numeric vectors
-hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
-print("OpenNC: success..1")
-target.ncobj <- OpenNC(target.indir_1,target.filename)
-print("OpenNC: success..2")
-fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
-print("OpenNC: success..3")
-
-print("get xlon,ylat")
-xlon <- sort(ncvar_get(fut.ncobj,"lon"))
-print("xlon: received")
-ylat <- sort(ncvar_get(fut.ncobj,'lat'))
-print("ylat: received")
-
-
-list.hist <- ReadNC(nc.object = hist.ncobj,
-                    var.name=predictor.var)#dstart=c(1,1,1),dcount=c(1,140,16436)
-print("ReadNC: success..1")
-list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,34333)) #,dstart=c(1,1,1),dcount=c(1,140,34333)
-#Also temporarily hard-coded due to longer timeseries and length of mask files
-print("ReadNC: success..2")
-list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,16436)) #,dstart=c(1,1,1),dcount=c(1,140,16436)
-#Temporarily hard-coded due to longer time series on train.target
-print("ReadNC: success..3")
+#### Then, read in spatial and temporal masks. Those will be used
+#### not only as a source of dimensions for writing the downscaled
+#### output to file, but as an immediate check upon the dimensions
+#### of the files being read in.
 
 # spatial mask read check
 spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
 spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
-print('OpenNC spatial mask: success..4') 
+print('OpenNC spatial mask: success..1') 
 
 #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
 spat.mask <- ReadMaskNC(spat.mask.ncobj)
-print('ReadMaskNC spatial mask: success..4')
+print('ReadMaskNC spatial mask: success..1')
 
+print("get xlon,ylat")
+xlon <- sort(spat.mask$dim$lon)
+print("xlon: received")
+ylat <- sort(spat.mask$dim$lat)
+print("ylat: received")
+
+message("Reading in and checking time windowing masks")
+if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
+  #Future data used in downscaling will be underneath the fut.time tag
+  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                     esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
+}else{
+  #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                     esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
+}
+
+#Check time masks for consistency against each other
+QCTimeWindowList(tmask.list, k=k.fold)
+#Obtain time series and other information for later checks
+downscale.tseries <- tmask.list[[3]]$dim$time$
+downscale.origin <- 
+downscale.calendar <- attr(tmask.list$dim$time, "calendar")
+
+### Now, access input data sets
+### For the variables specified in predictor.vars
+for (predictor.var in predictor.vars){
+  print(paste("predictor:",predictor.var,sep='')) 
+  #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
+  #There is also probably an elegant way to generalize this for an unknown number of input files, but that 
+  #should wait for later. 
+  
+  ######################## input minifiles ####################
+  
+  ###CEW edit 8-28: Will not run without initializing predictor.var
+  #predictor.var <- predictor.vars
+  
+  hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
+  print(hist.filename)
+  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+  print(fut.filename)
+  target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
+  print(target.filename)
+  spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
+  print(spat.mask.filename)
+  
+  # load the sample input datasets to numeric vectors
+  hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
+  print("OpenNC: success..1")
+  target.ncobj <- OpenNC(target.indir_1,target.filename)
+  print("OpenNC: success..2")
+  fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
+  print("OpenNC: success..3")
+  
+  #Read in sample data
+  list.hist <- ReadNC(nc.object = hist.ncobj,
+                      var.name=predictor.var)#dstart=c(1,1,1),dcount=c(1,140,16436)
+  print("ReadNC: success..1")
+  list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(length(xlon),length(ylat),34333)) #,dstart=c(1,1,1),dcount=c(1,140,34333)
+  #Also temporarily hard-coded due to longer timeseries and length of mask files
+  print("ReadNC: success..2")
+  list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(length(xlon),length(ylat),16436)) #,dstart=c(1,1,1),dcount=c(1,140,16436)
+  #Temporarily hard-coded due to longer time series on train.target
+  print("ReadNC: success..3")
+}
 
 # simulate the user-specified choice of climate variable name to be processed
+# TODO: Talk to Aparna about this, because it still needs work.
 clim.var.in <- list.fut$clim.in
 # ----- Begin segment like FUDGE Schematic Section 3: Pre-processing of Input Data -----
 
@@ -181,17 +219,9 @@ print("ApplySpatialMask target: success..3")
 #Perform a check upon the time series, dimensions and method of the downscaling 
 #input and output to assure compliance
 message("Checking input data")
-#QCInputData(list.hist, list.fut, list.target)
+
 QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = list.fut, 
             k = k.fold, ds.method=ds.method)
-message("Checking output directory")
-QCIO(output.dir)
-#Perform a check upon the downscaling method and core arguments to make sure
-#that parameters are in agreement
-message("Checking input arguments")
-SetDSMethodInfo(ds.method)
-message("Checking downscaling arguments")
-QCDSArguments(k=k.fold, ds.method = ds.method)
 
 # compute the statistics of the vector to be passed into the downscaling training
 
@@ -210,20 +240,7 @@ liststats <- MyStats(list.fut$clim.in,verbose="yes")
 
 ####Read in time masks and perform QC operations
 #source('Rsuite/FudgePreDS/src/QCTimeMask.R')
-message("Reading in and checking time windowing masks")
 
-if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
-  #Future data used in downscaling will be underneath the fut.time tag
-  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                          esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
-}else{
-  #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                           esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
-}
-
-#Check time masks for consistency against each other
-QCTimeWindowList(tmask.list, k=k.fold)
 
 
 # -- QC of input data ends --#
@@ -283,10 +300,17 @@ esd.final[is.na(esd.final)] <- 1.0e+20
 
 out.file <- paste(output.dir,"/","dstest2.",fut.filename,sep='')
 #Write to netCDF
+# ds.out.filename = WriteNC(out.file,esd.final,target.var,
+#                           xlon,ylat[loop.start:loop.end],time.index.start=0,
+#                           time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
+#                           units=list.fut$units$value,calendar="julian",
+#                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
+#                           cfname=list.fut$cfname$value)
 ds.out.filename = WriteNC(out.file,esd.final,target.var,
-                          xlon,ylat[loop.start:loop.end],time.index.start=0,
-                          time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
-                          units=list.fut$units$value,calendar="julian",
+                          xlon,ylat,
+                          downscale.tseries, downscale.origin, calendar = downscale.calendar,
+                          #start.year=fut.train.start.year_1,
+                          units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
                           cfname=list.fut$cfname$value)
 #Write Global attributes to downscaled netcdf
@@ -294,7 +318,7 @@ label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.ye
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',version='testing',title="CDFt tests in 1^5")
-print(paste('Downscaled output file:',ds.out.filename,sep=''))
+#print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
 print(paste("END TIME:",Sys.time(),sep=''))
