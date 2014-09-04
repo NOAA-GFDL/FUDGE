@@ -1,7 +1,7 @@
 #'CreateTimeseries.R
 #'@include PCICt
 #'Given a series of numbers representing dates since a date, 
-#'an origing that contains the date and a calendar, returns
+#'an origin that contains the date and a calendar, returns
 #'a PCICt formatted time series
 #'@param timeseries: A vector representing a series of days since
 #'a date
@@ -17,6 +17,7 @@
 CreateTimeseries <- function(timeseries, origin, calendar, sourcefile="some file"){
   #Figure out how to include the source file in the function call
   #Check origin
+  library(PCICt)
   message("Creating date series")
   seconds.per.day <- 86400
   if (is.null(origin)){

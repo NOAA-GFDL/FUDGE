@@ -12,7 +12,7 @@ SetDSMethodInfo <- function(ds.method){
   switch(ds.method, 
                 "simple.lm" = setSimpleLM(),
                 'CDFt' = setCDFt(),
-                'CDFtv1' = setCDFt()
+                'CDFtv1' = setCDFt(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
 }

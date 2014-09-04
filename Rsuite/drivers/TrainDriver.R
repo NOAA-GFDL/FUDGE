@@ -1,8 +1,8 @@
 TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.list, ds.method, k=0, time.steps=NA, 
                         istart = NA,loop.start = NA,loop.end = NA){
 #' Function to loop through spatially,temporally and call the Training guts.
-#' @param target.masked.in, hist.masked.in, fut.masked.in: The target, historic and 
-#' future datasets to which spatial masks have been applied earlier
+#' @param target.masked.in, hist.masked.in, fut.masked.in: The historic target/predictor and 
+#' future predictor datasets to which spatial masks have been applied earlier
 #' in the main driver function
 #' @param mask.list: The list of time windowing masks and their corresponding
 #' time series to be applied to the time windows; returned from (insert link)

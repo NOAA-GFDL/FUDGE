@@ -6,6 +6,8 @@
 #TODO the following sapplys and sourcing should be a library call
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/src/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/src/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
@@ -130,12 +132,13 @@ print("ylat: received")
 
 
 list.hist <- ReadNC(nc.object = hist.ncobj,
-                    var.name=predictor.var,
-                    dstart=c(1,1,1),dcount=c(1,140,16436))
+                    var.name=predictor.var)#dstart=c(1,1,1),dcount=c(1,140,16436)
 print("ReadNC: success..1")
-list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,34333)) 
+list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,34333)) #,dstart=c(1,1,1),dcount=c(1,140,34333)
+#Also temporarily hard-coded due to longer timeseries and length of mask files
 print("ReadNC: success..2")
-list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,16436))
+list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(1,140,16436)) #,dstart=c(1,1,1),dcount=c(1,140,16436)
+#Temporarily hard-coded due to longer time series on train.target
 print("ReadNC: success..3")
 
 # spatial mask read check
@@ -144,7 +147,7 @@ spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
 print('OpenNC spatial mask: success..4') 
 
 #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-spat.mask <- ReadMaskNC(spat.mask.nc)
+spat.mask <- ReadMaskNC(spat.mask.ncobj)
 print('ReadMaskNC spatial mask: success..4')
 
 
@@ -186,6 +189,7 @@ QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = l
 #that parameters are in agreement
 message("Checking input arguments")
 SetDSMethodInfo(ds.method)
+message("Checking downscaling arguments")
 QCDSArguments(k=k.fold, ds.method = ds.method)
 
 # compute the statistics of the vector to be passed into the downscaling training
@@ -204,21 +208,22 @@ print("STATS: Future predictors")
 liststats <- MyStats(list.fut$clim.in,verbose="yes")
 
 ####Read in time masks and perform QC operations
-source('Rsuite/FudgePreDS/src/QCTimeMask.R')
+#source('Rsuite/FudgePreDS/src/QCTimeMask.R')
 message("Reading in and checking time windowing masks")
-if (train.and.use.same){ #set by SetDSMethodInfo()
+
+if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
   #Future data used in downscaling will be underneath the fut.time tag
-  tmask.list <-QCTimeMask(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                           esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
+}else{
+  #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                           esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
 }
-##Can replace with %in% train.and.use.same
-####CEW edit: Second branch of code currently commented out for testing purposes
-####And simple.lm included as an example of using future data for downscaling
-# }else{
-#   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-#   tmask.list <- TimeMaskQC(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-#                            esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
-# }
+
+#Check time masks for consistency against each other
+QCTimeWindowList(tmask.list, k=k.fold)
+
 
 # -- QC of input data ends --#
 
@@ -241,9 +246,9 @@ if (train.and.use.same){ #set by SetDSMethodInfo()
 ################ call train driver ######################################
 print("FUDGE training begins...")
 start.time <- proc.time()
-source("Rsuite/drivers/TrainDriver.R")
-source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
-source("Rsuite/FudgeTrain/src/CallDSMethod.R")
+#source("Rsuite/drivers/TrainDriver.R")
+#source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
+#source("Rsuite/FudgeTrain/src/CallDSMethod.R")
 esd.final <- TrainDriver(target.masked.in = list.target$clim.in, 
                           hist.masked.in = list.hist$clim.in, 
                           fut.masked.in = list.fut$clim.in, 
@@ -252,7 +257,8 @@ esd.final <- TrainDriver(target.masked.in = list.target$clim.in,
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 ##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
-time.steps <- 34333 # No.of time steps in the downscaled output.
+#time.steps <- 34333 # No.of time steps in the downscaled output.
+time.steps <- dim(esd.final)[3]
 ##
 ############## end call TrainDriver ######################################
 

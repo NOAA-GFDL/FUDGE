@@ -19,9 +19,9 @@
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
   library(CDFt)
   return(switch(ds.method, 
-                "simple.lm" = simple.lm(train.predict, train.target, esd.gen),
-                'CDFt' = CDFt(train.target, train.predict, esd.gen, npas=length(train.target))$DS,
-                'CDFtv1' = CDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
+                "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
+                'CDFt' = callCDFt(train.predict, train.target, esd.gen),
+               # 'CDFtv1' = callCDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
                 ReturnDownscaleError(ds.method)))
 }
 
@@ -30,14 +30,14 @@ ReturnDownscaleError <- function(ds.method){
   stop(paste("Downscale Method Error: the method", ds.method, "is not supported for FUDGE at this time."))
 }
 
-simple.lm <- function(pred, targ, new){
+callSimple.lm <- function(pred, targ, new){
   #Creates a simple linear model without a cross-validation step. 
   #Mostly used to check that the procedure is working
   lm.results <- lm(targ ~ pred)
   lm.intercept <- lm.results$coefficients[1]
   lm.slope <- lm.results$coefficients[2]
   if(is.na(lm.intercept) || is.na(lm.slope) ){
-    warning(paste("simple.nocross.lm warning: intercept was", lm.intercept, 
+    warning(paste("simple.lm warning: intercept was", lm.intercept, 
                   "and intercept was", lm.slope, ": therefore no ESD values will be generated."))
   }
   trained.function<-function(x){
@@ -45,5 +45,10 @@ simple.lm <- function(pred, targ, new){
     print(lm.slope)
     return( lm.intercept + unlist(x)*lm.slope)
   }
+  #insert save command for saving 
   return(trained.function(new))
+}
+
+callCDFt <- function (pred, targ, new){
+  return(CDFt(targ, pred, new, npas=length(targ))$DS)
 }

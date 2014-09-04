@@ -28,19 +28,14 @@
 
 QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="none", missval.threshold = NA){
   #Inititalize list of data to be checked
-  #arg.list <- c(train.predictor, train.target, esd.gen)
   arg.names <- c("train.predictor", "train.target", "esd.gen")
-  #Check for cntaining nothing but missing values
+  #Check for containing nothing but missing values
   for (arg in 1:length(arg.names)){
     arg.data <- eval(parse(text=paste(arg.names[arg],"$clim.in", sep="")))
     if( sum(!is.na(arg.data))==0){
       stop(paste("Missing value error:", arg.names[arg], "contained all NA values."))
     }
   }
-#   if(sum(!is.na(train.predictor$clim.in)==0 || sum(!is.na(train.predictor$clim.in))==0 || 
-#                                                      sum(!is.na(train.predictor$clim.in))==0)){
-#     stop(paste("Missing value error: one or more of", "contained all NA values."))
-#   }
   message("Passed all missing value check")
   #Check for more missing values than the threshold. Currently a percentage, 
   #but that can change. 
