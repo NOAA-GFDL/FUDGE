@@ -30,12 +30,24 @@ test_QCDSArguments <- function(){
 test_QCInputData <- function(){
   ###Initialize common variables
   train.target.filename <- "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/tasmax_day_livneh_historical_r0i0p0_SCCSC0p1_19610101-20051231.I300_J31-170.nc"
-  train.predict.filename <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_historical_r1i1p1_SCCSC0p1_19610101-20051231.I300_J31-170.nc "
-  esd.gen.filename <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/rcp85/atmos/day/r1i1p1/v20111014/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_rcp85_r1i1p1_SCCSC0p1_20060101-20991231.I300_J31-170.nc"
+  train.predict.filename <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_historical_r1i1p1_SCCSC0p1_19610101-20051231.I300_J31-170.nc"
+  esd.gen.filename <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_historical_r1i1p1_SCCSC0p1_19610101-20051231.I300_J31-170.nc"
+  
   print("Testing for all missing values in input data error")
-  all.missvals <- ""
-  print("Testing for missing value threshold error")
-  too.many.missvals <- ""
+  good.data.filename <- "Rsuite/sampleNC/tasmax_day_GFDL-HIRAM-C360-COARSENED_amip_r1i1p1_19790101-20081231.I748_J454-567.nc"
+  all.missvals <- "/home/cew/Code/fudge2014/Rsuite/sampleNC/all_na_values.nc"
+  good <- ReadNC(nc_open(good.data.filename), "tasmax")
+  bad <- ReadNC(nc_open(all.missvals), "tasmax")
+  checkException(QCInputData(good, bad, good, k=0, calendar="julian"), 
+                 "Missing value error: train.target contained all NA values.")
+ 
+  ###Missing valyes currently throw a warning rather than an error, but the principle is the same.
+#   print("Testing for missing value threshold error")
+#   too.many.missvals <- "Rsuite/sampleNC/half_na_values.nc"
+#   bad <- ReadNC(nc_open(too.many.missvals), "tasmax")
+#   checkException(QCInputData(good, bad, good, k=0, calendar="julian", missval.threshold=40), 
+#                  "Missing value warning: argument train.target had 50 percent missing values, more than the missing value threshold of 40")
+#   
   print("Testing for calendar mismatch error")
   train.predictor <- ReadNC(nc_open(train.predict.filename), "tasmax")
   train.target <- ReadNC(nc_open(train.target.filename), "tasmax")
@@ -106,5 +118,26 @@ test_QCTimeWindowList <- function(){
 
 Create.nc.objects <- function(){
   #Create objects to be used for testing purposes
+  thisnc <- nc_open("Rsuite/sampleNC/tasmax_day_GFDL-HIRAM-C360-COARSENED_amip_r1i1p1_19790101-20081231.I748_J454-567.nc")
+  tasmax <- ncvar_get(thisnc, "tasmax") #No need for collapse_degen
+  newvar <- rep(NA, 114*10958)
+  dim(newvar)<- c(114, 10958)
+  filename <- "~/Code/fudge2014/Rsuite/sampleNC/all_na_values.nc"
+  WriteNC(filename = filename, data.array = newvar, var.name = "tasmax", 
+          xlon = thisnc$dim$lon$vals, ylat = thisnc$dim$lat$vals, 
+          downscale.tseries = thisnc$dim$time$vals, downscale.origin =thisnc$dim$time$units,
+          start.year="undefined", units= "K", calendar = "julian",
+          lname="All NA Tasmax output",cfname=var.name)
+  thisnc <- nc_open("Rsuite/sampleNC/tasmax_day_GFDL-HIRAM-C360-COARSENED_amip_r1i1p1_19790101-20081231.I748_J454-567.nc")
+  tasmax <- ncvar_get(thisnc, "tasmax") #No need for collapse_degen
+  newvar <- seq(1:(114*10958))
+  newvar[newvar > 624606] <- NA
+  dim(newvar)<- c(114, 10958)
+  filename <- "~/Code/fudge2014/Rsuite/sampleNC/half_na_values.nc"
+  WriteNC(filename = filename, data.array = newvar, var.name = "tasmax", 
+          xlon = thisnc$dim$lon$vals, ylat = thisnc$dim$lat$vals, 
+          downscale.tseries = thisnc$dim$time$vals, downscale.origin =thisnc$dim$time$units,
+          start.year="undefined", units= "K", calendar = "julian",
+          lname="Half NA Tasmax output",cfname=var.name)
   
 }
