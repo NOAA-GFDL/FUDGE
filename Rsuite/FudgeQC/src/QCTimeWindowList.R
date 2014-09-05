@@ -27,9 +27,9 @@ QCTimeWindowList <- function(tmask.list, k=0){
   if (length(tmask.list$train.pred$masks)!= length(tmask.list$train.targ$masks) || 
         length(tmask.list$train.targ$masks)!= length(tmask.list$esd.gen$masks)){
     stop(paste("Time mask dimension error: time mask files are expected to have the", 
-               "same number of masks per file, but", hist.train.mask, "had", 
-               length(tmask.list$train.pred$masks), ",", hist.targ.mask, "had",
-               length(tmask.list$train.targ$masks), ",", "and", esd.gen.mask, "had", 
+               "same number of masks per file, but", attr(tmask.list$train.pred, "filename"), "had", 
+               length(tmask.list$train.pred$masks), ",", attr(tmask.list$train.targ, "filename"), "had",
+               length(tmask.list$train.targ$masks), ",", "and", attr(tmask.list$esd.gen, "filename"), "had", 
                length(tmask.list$esd.gen$masks)))
   }
 }

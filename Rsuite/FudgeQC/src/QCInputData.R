@@ -17,6 +17,8 @@
 #' @param ds.method: The downscaling method used by the downscaling function
 #' @param missval.threshold: The maximum percentage of missing values allowed 
 #' in the data. Defaults to NA, which performs no checks. 
+#' @param calendar: The calendar of the time masks. Should match the calendars
+#' of the input data
 #' 
 #' At present, nothing is returned
 #' 
@@ -26,30 +28,38 @@
 #' TODO: Are there other checks that should be run? 
 #' 
 
-QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="none", missval.threshold = NA){
+QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="none", missval.threshold = NA, calendar="julian"){
   #Inititalize list of data to be checked
   arg.names <- c("train.predictor", "train.target", "esd.gen")
-  #Check for containing nothing but missing values
+  #Do the checks for consistency within a dataset
   for (arg in 1:length(arg.names)){
-    arg.data <- eval(parse(text=paste(arg.names[arg],"$clim.in", sep="")))
+    loop.arg <- eval(parse(text=arg.names[arg]))
+    #arg.data <- eval(parse(text=paste(arg.names[arg],"$clim.in", sep="")))
+    arg.data <- loop.arg$clim.in
+    ## Were all values missing? 
     if( sum(!is.na(arg.data))==0){
       stop(paste("Missing value error:", arg.names[arg], "contained all NA values."))
     }
-  }
-  message("Passed all missing value check")
-  #Check for more missing values than the threshold. Currently a percentage, 
-  #but that can change. 
-  if (!is.na(missval.threshold)){
-    for (arg in 1:length(arg.names)){
-      arg.data <- eval(parse(text=paste(arg.names[arg],"$clim.in", sep="")))
-      missing.percentage <- sum(is.na(arg.data)) / length(arg.data)
-      if (missing.percentage > (missval.threshold/100)){
-        warning(paste("Missing value warning: argument", arg.names[arg], "had", missing.percentage*100,
-                      "percent missing values, more than the missing value threshold of", missval.threshold))
+    ## Were there more missing values than the missing value threshold? 
+    if (!is.na(missval.threshold)){
+        missing.percentage <- sum(is.na(arg.data)) / length(arg.data)
+        if (missing.percentage > (missval.threshold/100)){
+          warning(paste("Missing value warning: argument", arg.names[arg], "had", missing.percentage*100,
+                        "percent missing values, more than the missing value threshold of", missval.threshold))
+        }
       }
+    #arg.cal <- eval(parse(text=paste("attr(", arg.names[arg], ", 'calendar')", sep="")))
+    arg.cal <- attr(loop.arg, "calendar")
+    ## Did the calendar match the calendar of the common data? 
+    if ( arg.cal != calendar){
+      stop(paste("Calendar mismatch error:", arg.names[arg], "read in from", attr(loop.arg, "filename"), 
+                 "had a calendar attribute of", attr(loop.arg, "calendar"), 
+                 "and an expected calendar attribute of", calendar))
     }
-    message("Passed mising value threshold check")
   }
+  message("Datasets passed internal consistency checks")
+  
+  message("Checking for consistency between input datasets") 
   #Check for spatial dimension agreement
   if(dim(train.predictor$clim.in)[1:2]!=dim(train.target$clim.in)[1:2] || dim(train.predictor$clim.in)[1:2]!=dim(esd.gen$clim.in)[1:2]){
     stop(paste("Spatial dimension error: train.target had spatial dimensions of", dim(train.target)[1], dim(train.target)[2], 

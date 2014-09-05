@@ -142,9 +142,9 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
 #Check time masks for consistency against each other
 QCTimeWindowList(tmask.list, k=k.fold)
 #Obtain time series and other information for later checks
-downscale.tseries <- tmask.list[[3]]$dim$time$
-downscale.origin <- 
-downscale.calendar <- attr(tmask.list$dim$time, "calendar")
+downscale.tseries <- tmask.list[[3]]$dim$tseries
+downscale.origin <- attr(tmask.list[[3]]$dim$tseries, "origin")
+downscale.calendar <- attr(tmask.list[[3]]$dim$time, "calendar")
 
 ### Now, access input data sets
 ### For the variables specified in predictor.vars
@@ -152,12 +152,11 @@ for (predictor.var in predictor.vars){
   print(paste("predictor:",predictor.var,sep='')) 
   #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
   #There is also probably an elegant way to generalize this for an unknown number of input files, but that 
-  #should wait for later. 
+  #should wait for later. See QCINput for more information on what that might look like.
   
   ######################## input minifiles ####################
   
   ###CEW edit 8-28: Will not run without initializing predictor.var
-  #predictor.var <- predictor.vars
   
   hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
   print(hist.filename)
@@ -180,10 +179,10 @@ for (predictor.var in predictor.vars){
   list.hist <- ReadNC(nc.object = hist.ncobj,
                       var.name=predictor.var)#dstart=c(1,1,1),dcount=c(1,140,16436)
   print("ReadNC: success..1")
-  list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(length(xlon),length(ylat),34333)) #,dstart=c(1,1,1),dcount=c(1,140,34333)
+  list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var) #,dstart=c(1,1,1),dcount=c(1,140,34333) aka length(xlon), lenght(ylat)
   #Also temporarily hard-coded due to longer timeseries and length of mask files
   print("ReadNC: success..2")
-  list.target <- ReadNC(target.ncobj,var.name=predictor.var,dstart=c(1,1,1),dcount=c(length(xlon),length(ylat),16436)) #,dstart=c(1,1,1),dcount=c(1,140,16436)
+  list.target <- ReadNC(target.ncobj,var.name=predictor.var) #,dstart=c(1,1,1),dcount=c(1,140,16436)
   #Temporarily hard-coded due to longer time series on train.target
   print("ReadNC: success..3")
 }

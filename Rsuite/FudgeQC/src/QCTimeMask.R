@@ -1,4 +1,4 @@
-QCTimeMask<-function(all.masks, run=FALSE){
+QCTimeMask<-function(time.mask.obj, run=FALSE){
   #Given a path to a filename, returns all masks
   #within that file, along with the timeseries and the information needed to 
   #generate it at a later date.
@@ -13,31 +13,31 @@ QCTimeMask<-function(all.masks, run=FALSE){
 #   library(PCICt)
   message("Checking time windowing mask")
   #   thisnc <- nc_open(mask.nc)
-  #   all.masks <- ReadMaskNC(thisnc)
-  time.length <- length(all.masks$dim$time)
+  #   time.mask.obj <- ReadMaskNC(thisnc)
+  time.length <- length(time.mask.obj$dim$time)
   ###Pre-allocaate vector and loop over the available masks
   checkvector <- rep(0, time.length)
   #Loop over the names of each mask in the file
-  mask.names <- names(all.masks$masks)
-  for (mask in 1:length(all.masks$masks)){
-    mask.data <- all.masks$masks[[mask]]
+  mask.names <- names(time.mask.obj$masks)
+  for (mask in 1:length(time.mask.obj$masks)){
+    mask.data <- time.mask.obj$masks[[mask]]
     if(length(mask.data) != time.length){
       warning(paste("Mask Time Dimension Warning: mask", mask.names[mask], 
-                    "within", "this nc file", "had length of", length(mask.data),
+                    "within", attr(time.mask.obj, 'filename'), "had length of", length(mask.data),
                     "while time dimension had length of", time.length))
     }
     #Implement overlap checks if run==TRUE
     if(run){                          
       checkvector <- checkvector + convert.NAs(mask.data)
       if(max(checkvector) > 1){
-        stop(paste("Mask collision error: Masks within the first", mask, "masks of", "this nc file", #Add file name attribute for error messages
+        stop(paste("Mask collision error: Masks within the first", mask, "masks of", attr(time.mask.obj, 'filename'), 
                    ", provided as an ESD generation mask file", 
                    "overlap along the time series."))
         
       }
     }
   }
-  return(all.masks)
+  return(time.mask.obj)
 }
 
 #Converts NAs to 0, and all non-NA values to 1

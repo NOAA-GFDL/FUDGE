@@ -45,9 +45,9 @@ hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks
 fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 #------------- target -------------------------# 
 	target.file.start.year_1 <- 1961
-	target.file.end.year_1 <- 2011
+	target.file.end.year_1 <- 2005
         target.train.start.year_1 <- 1961
-        target.train.end.year_1 <- 2011
+        target.train.end.year_1 <- 2005
 	target.scenario_1 <- 'historical_r0i0p0'
 	target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 	target.model_1 <-'livneh'
@@ -64,7 +64,7 @@ target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemas
 #-------------- output -----------------------#
 ###CEW edit:
 #	output.dir <- '/nbhome/a1r/PROJECTS/DOWNSCALING/3ToTheFifth/'
-  output.dir <- "/home/cew/Code/"
+  output.dir <- "/home/cew/"
 #TODO include standardize output dir for experiment A - in experGen 
 #TO DO Custom Method Specific Params
 #Sample only 
@@ -83,4 +83,4 @@ target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemas
 print(paste("START TIME:",Sys.time(),sep=''))
 #source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.R',sep=''))
 FUDGEROOT = ""
-source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.1.R',sep=''))
+source(paste(FUDGEROOT,'Rsuite/drivers/','CDFt','/driverv2.2.R',sep=''))
