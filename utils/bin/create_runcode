@@ -1,0 +1,135 @@
+#!/bin/tcsh
+###User input interactive
+if ($#argv < 11) then
+ echo "Usage: make.code.tmax.sh number_of_years_to_leave_out lon_start lon_end lat_start lat_end basedir outdir [start_year] [end_year] [varname_to_downscale] [futurelist]"
+ exit
+endif
+echo "Making R code starters for lon slices " $argv[7] #"to " $argv[44]
+#####################################################
+set TEMPLATE_LIST = ()
+set PREDICTOR = $argv[1]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PREDICTOR":"'"${PREDICTOR}"'" ) 
+set TARGET = $argv[2]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "TARGET":"'"${TARGET}"'" )
+set op_grid = $argv[3]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "OP.GRID":"'"${op_grid}"'" )
+set spat_mask_dir = $argv[4]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "SPAT.MASK.DIR":"'"${spat_mask_dir}"'" )
+set spat_mask_var = $argv[5]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "SPAT.MASK.VAR":"'"${spat_mask_var}"'" )
+set jrange = $argv[6]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "JRANGE":"'"${jrange}"'" )
+set istart = $argv[7]
+set jstart = $argv[8]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "JSTART":${jstart} )
+set jend = $argv[9]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "JEND":${jend} )
+set hist_file_start_year = $argv[10]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FILE.START.YEAR":${hist_file_start_year} )
+set hist_file_end_year = $argv[11]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FILE.END.YEAR":${hist_file_end_year} )
+set hist_train_start_year = $argv[12]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.START.YEAR":${hist_train_start_year} )
+set hist_train_end_year = $argv[13]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.END.YEAR":${hist_train_end_year} )
+set hist_scenario = $argv[14]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.SCENARIO":"'"${hist_scenario}"'" )
+set hist_model = $argv[15]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.MODEL":"'"${hist_model}"'" )
+set hist_freq = $argv[16]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FREQ":"'"${hist_freq}"'" )
+set hist_indir = $argv[17]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.INDIR":"'"${hist_indir}"'" )
+set hist_time_window = $argv[18] 
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TIME.WINDOW":"'"${hist_time_window}"'" )
+set fut_file_start_year = $argv[19]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FILE.START.YEAR":${fut_file_start_year})
+set fut_file_end_year = $argv[20]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FILE.END.YEAR":${fut_file_end_year} )
+set fut_train_start_year = $argv[21]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.START.YEAR":${fut_train_start_year} )
+set fut_train_end_year = $argv[22]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.END.YEAR":${fut_train_end_year} )
+set fut_scenario = $argv[23]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.SCENARIO":"'"${fut_scenario}"'" )
+set fut_model = $argv[24]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.MODEL":"'"${fut_model}"'" )
+set fut_freq = $argv[25]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FREQ":"'"${fut_freq}"'" )
+set fut_indir = $argv[26]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.INDIR":"'"${fut_indir}"'")
+set fut_time_window = $argv[27]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TIME.WINDOW":"'"${fut_time_window}"'")
+set target_file_start_year = $argv[28]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FILE.START.YEAR":${target_file_start_year} )
+set target_file_end_year = $argv[29]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FILE.END.YEAR":${target_file_end_year} )
+set target_train_start_year = $argv[30]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.START.YEAR":${target_train_start_year} )
+set target_train_end_year = $argv[31]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.END.YEAR":${target_train_end_year} )
+set target_scenario = $argv[32]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SCENARIO":"'"${target_scenario}"'")
+set target_model = $argv[33]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.MODEL":"'"${target_model}"'")
+set target_freq = $argv[34]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FREQ":"'"${target_freq}"'")
+set target_indir = $argv[35]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.INDIR":"'"${target_indir}"'")
+set target_time_window = $argv[36] 
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TIME.WINDOW":"'"${target_time_window}"'")
+set method = $argv[37]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "METHOD":"'"${method}"'")
+set dexper = $argv[38]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "DEXPER":"'"${dexper}"'")
+set kfold = $argv[39]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "KFOLD":${kfold} )
+set outdir = $argv[40]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "OUTPUT.DIR":"'"${outdir}"'")
+set tstamp = $argv[41]
+set esdgen = $argv[42]
+set basedir = $argv[43]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUDGEROOT":"'"${basedir}"'")
+set iend = $argv[44]
+set params = $argv[45]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list("${params}")" )
+foreach var ($PREDICTOR)
+ if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
+  echo "WARNING This variable $var is not supported variable at this time. Please check back later. Thank you"
+  exit
+ endif
+end
+
+set lon_end = $iend
+set lon_start = $istart
+if ( $lon_end < $lon_start ) then
+ echo "Please check second argument: lon_end  should be greater than or equal to lon_start"
+ exit
+endif
+
+set codeprefix=$basedir/scripts/${TARGET}/${dexper}/runcode/
+mkdir -p $codeprefix
+set cnter = 1
+
+#new
+#TODO we could store templates in a method sub-dir and switch it based on the templates
+set template = $basedir/utils/templates/runcode/template_runcode.R 
+foreach i (`seq $lon_start 1 $lon_end`)
+  #set TEMPLATE_LIST = ( $TEMPLATE_LIST "ISUFFIX":${i} )
+  set codepath=$codeprefix/code.$TARGET.$dexper.I$i"_"$jrange"."$tstamp
+  cp $template $codepath
+  sed -i 's%<'ISUFFIX'>%'$i% $codepath
+  foreach TEMPLATE ($TEMPLATE_LIST)
+   set find =  `echo "$TEMPLATE" | cut -d':' -f1` 
+   set replace = `echo "$TEMPLATE" | cut -d':' -f2` 
+#   echo $find $replace
+   if($find == 'PARAMS') then
+	   sed -i 's%<'$find'>%'$replace% $codepath
+   else	
+    sed -i 's%<'$find'>%'$replace% $codepath
+
+   endif
+ end
+  echo "R starter Code location: $codepath"
+# @ i = $i + 1
+end

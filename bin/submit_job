@@ -1,0 +1,50 @@
+#!/bin/csh
+set counter=1
+if ($#argv == 0) then
+ echo "Please provide 4 arguments: master_script_dir lon_start lon_end timeSuffix. Eg: submit_job /home/a1r/gitlab/fudge//main/scripts/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/master/60L0/ 748 941 2014-05-01.10:43:23.858305 "
+ exit
+endif
+echo "Submitting jobs for downscaling lon slice " $argv[2] "to " $argv[3]" , with suffix "$argv[4]
+set basedir=$argv[1]
+set lon_start=$argv[2]
+set lon_end=$argv[3]
+set tstamp=$argv[4]
+set i=1
+set cnt16=1
+
+if ( $lon_end < $lon_start ) then
+ echo "Please check second argument: lon_end  should be greater than or equal to lon_start"
+ exit
+endif
+while ( $lon_start <= $lon_end )
+ set inc=1
+ set sub_lon_end=`expr $lon_start`
+ set sub_lon_start=`expr $lon_start`
+ while ( ( $sub_lon_end <= $lon_end ) && ( $inc < 9 ) )
+         set sub_lon_end=`expr $lon_start + $inc`
+         set inc=`expr $inc + 1`
+ end
+ set sub_lon_end=`expr $sub_lon_end - 1`
+ set masterloc=$basedir/master_script_${sub_lon_start}_${sub_lon_end}.${tstamp}
+ echo $masterloc
+ #msub_string from MJN's 
+ if ($?NEMSemail)  then
+   set msub_string = "-m ae -M $NEMSemail"
+ else
+   set msub_string = ""
+ endif
+ msub $msub_string $masterloc
+
+ foreach i (`seq $sub_lon_start 1 $sub_lon_end`)
+  set counter=$i
+ if ( $i != $sub_lon_end ) then
+	set val=`expr $sub_lon_start + 1 \* $cnt16 \+ $cnt16 \- 1`##
+        if($i == $val) then
+       		set cnt16=`expr $cnt16 + 1`
+        endif
+ endif
+  if ( $i != $sub_lon_end ) then
+  endif
+end
+set lon_start=`expr $sub_lon_end + 1`
+end 

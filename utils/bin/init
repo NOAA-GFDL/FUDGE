@@ -1,0 +1,4 @@
+module load netcdf/4.2
+module load R/2.15.2
+module load gcp 
+module list 
