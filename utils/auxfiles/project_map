@@ -1,0 +1,8 @@
+######project mapping to construct experiment config names in fudge
+longname:3ToThe5th,shortname:35
+longname:Perfect Model,shortname:PM
+longname:Red River,shortname:RR
+longname:sythetic1,shortname:S1
+longname:Regression Test Suite:RT
+longname:code development:CD
+

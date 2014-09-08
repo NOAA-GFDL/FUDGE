@@ -1,0 +1,95 @@
+#!/bin/tcsh -f 
+## user input
+if ($#argv < 11) then
+ echo " Please provide 10 arguments: lon_start lon_end xvaltype basedir input_dir_exp1_hires input_dir_exp1_lores input_dir_exp2_hires input_dir_exp2_lores outdir tasmax \n Eg: create_runscript 1 8 30L30 $TMPDIR/ /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H2/amip/mini_files  /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H2/N360_to_M45/mini_files  /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H3/amip/mini_files  /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H3/N360_to_M45/mini_files  $TMPDIR/outdir/ tasmax "
+ exit
+endif
+echo "Creating run scripts for downscaling lon slice  $argv[1] to  $argv[2]"
+set lon_start=$argv[1]
+set lon_end=$argv[2]
+set dexper=$argv[3]
+set basedir=$argv[4]
+set varname=$argv[5]
+set cmipvar = $varname
+set method = $argv[6]
+set rundir=$basedir/scripts/$varname/$dexper/runscript 
+mkdir -p $rundir
+#### include varname in input dir path
+## end of user input
+set counter=1
+set TARGET_DIR=$argv[7]/
+set HIST_PRED_DIR=$argv[8]/
+set FUT_PRED_DIR=$argv[9]/ 
+########## parse OUTDIR ############
+set OUTDIR=$argv[10]
+echo "..."$OUTDIR
+####################################
+set dsuffix = $argv[11]
+set tstamp = $argv[12]
+set T_FILE_START_YEAR = $argv[13]
+set T_FILE_END_YEAR = $argv[14]
+set H_FILE_START_YEAR=$argv[15]
+set H_FILE_END_YEAR=$argv[16]
+set F_FILE_START_YEAR=$argv[17]
+set F_FILE_END_YEAR=$argv[18]
+set SPAT_MASK_DIR=$argv[19]
+set SPAT_REGION=$argv[20]
+######################################
+set ctr=1
+##########
+set logdir=$basedir/scripts/${varname}/${dexper}/log/
+mkdir -p $logdir 
+set joblog=/work/$USER/fudge/stdout/
+mkdir -p $joblog
+
+foreach i (`seq $lon_start 1 $lon_end`)
+ set counter=$i
+ set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix"."$tstamp 
+ echo "#\!/bin/tcsh " > $runpath
+ echo "#PBS -S /bin/csh " >> $runpath 
+ echo "#PBS -l nodes=1:ppn=1,walltime=6:00:00 "  >> $runpath 
+ echo "#PBS -j oe "  >> $runpath 
+ echo "#PBS -r y " >> $runpath 
+ echo "#PBS -o ${joblog}/ind."'${MOAB_JOBNAME}.${MOAB_JOBID} ' >> $runpath 
+ echo "#PBS -N fudge_run "  >> $runpath  
+ echo "#PBS -E "  >> $runpath
+ echo "#PBS -q batch "  >> $runpath 
+ echo "source $basedir/utils/bin/init " >> $runpath 
+ echo "mkdir -p "$logdir  >> $runpath
+
+## Add lines to gcp input from /arch to VFTMP for processing
+ if ($SPAT_MASK_DIR != 'NA/') then
+         echo 'mkdir -p $TMPDIR'$SPAT_MASK_DIR  >> $runpath
+ endif
+ if ($TARGET_DIR != 'NA/') then
+	 echo 'mkdir -p $TMPDIR'$TARGET_DIR  >> $runpath 
+ endif
+ if ($HIST_PRED_DIR != 'NA/') then 
+ echo 'mkdir -p $TMPDIR'$HIST_PRED_DIR  >> $runpath 
+ endif
+ if ($FUT_PRED_DIR != 'NA/') then
+ echo 'mkdir -p $TMPDIR'$FUT_PRED_DIR  >> $runpath 
+ endif
+ if ($SPAT_MASK_DIR != 'NA/') then
+        echo "gcp -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+ endif
+ if ($TARGET_DIR != 'NA/') then
+ 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}0101-${T_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
+ endif
+ if ($HIST_PRED_DIR != 'NA/') then
+ 	echo "gcp -cd $HIST_PRED_DIR/*${H_FILE_START_YEAR}0101-${H_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR/  >> $runpath 
+ endif
+ if ($FUT_PRED_DIR != 'NA/') then
+ 	echo "gcp -cd $FUT_PRED_DIR/*${F_FILE_START_YEAR}0101-${F_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR/  >> $runpath 
+ endif
+        echo "mkdir -p $OUTDIR" >> $runpath
+        echo "mkdir -p "'$TMPDIR'"$OUTDIR/  ">> $runpath
+echo "R --vanilla < $basedir/scripts/${cmipvar}/${dexper}/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix"."${tstamp} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix"."${tstamp} &"  >> $runpath
+ echo "wait " >> $runpath 
+# Add lines to gcp output from VFTMP to /arch 
+
+ echo "gcp -cd "'$TMPDIR'"$OUTDIR/*.I$counter"_"$dsuffix.nc $OUTDIR/ " >> $runpath 
+ echo $runpath
+ chmod u+x  $runpath
+end
+echo "Done."
