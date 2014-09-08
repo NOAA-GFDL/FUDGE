@@ -38,7 +38,8 @@ QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="
     arg.data <- loop.arg$clim.in
     ## Were all values missing? 
     if( sum(!is.na(arg.data))==0){
-      warning(paste("Missing value error:", arg.names[arg], "contained all NA values."))
+      warning(paste("Missing value warning:", arg.names[arg], 
+                    "contained all NA values. No non-NA values will be produced from this run."))
     }
     ## Were there more missing values than the missing value threshold? 
     if (!is.na(missval.threshold)){
