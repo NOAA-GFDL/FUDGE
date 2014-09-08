@@ -4,7 +4,11 @@
 #' reading, writing and organization funcitons
 #' that create the data structures that FudgeQC
 #' will check for inclusion in 
-#' 
+
+#'TODO: Finish QC test cases for: 
+#'test_QCInputData
+#'test_QCTimeMask
+#'test_QCTimeWindowList
 
 library(RUnit)
 
