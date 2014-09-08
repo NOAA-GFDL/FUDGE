@@ -1,5 +1,5 @@
 TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.list, ds.method, k=0, time.steps=NA, 
-                        istart = NA,loop.start = NA,loop.end = NA){
+                        istart = NA,loop.start = NA,loop.end = NA, downscale.args=NA){
 #' Function to loop through spatially,temporally and call the Training guts.
 #' @param target.masked.in, hist.masked.in, fut.masked.in: The historic target/predictor and 
 #' future predictor datasets to which spatial masks have been applied earlier
@@ -45,7 +45,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
                                                                  train.target = target.masked.in[i.index, j.index,], 
                                                                  esd.gen = fut.masked.in[i.index, j.index,], 
                                                                  mask.struct = mask.list, 
-                                                                 downscale.fxn = ds.method, downscale.args = NULL, 
+                                                                 downscale.fxn = ds.method, downscale.args = downscale.args, 
                                                                  kfold=k, kfold.mask=NULL, graph=FALSE, masklines=FALSE)    
          }else{
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.

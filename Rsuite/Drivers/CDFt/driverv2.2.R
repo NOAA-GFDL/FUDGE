@@ -8,8 +8,8 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',se
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/src/',sep=''), full.names=TRUE), source);
-#source("~/Code/fudge2014/Rsuite/drivers/LoadLib.R")
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''), full.names=TRUE), source);
+source("~/Code/fudge2014/Rsuite/drivers/LoadLib.R")
+#sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
 #-------Add traceback call for error handling -------
@@ -267,19 +267,11 @@ start.time <- proc.time()
 #source("Rsuite/drivers/TrainDriver.R")
 #source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
 #source("Rsuite/FudgeTrain/src/CallDSMethod.R")
-if (exists("args")){
 esd.final <- TrainDriver(target.masked.in = list.target$clim.in, 
                           hist.masked.in = list.hist$clim.in, 
                           fut.masked.in = list.fut$clim.in, 
                           mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                          istart = NA,loop.start = NA,loop.end = NA, downscale.args=args)
-}else{
-  esd.final <- TrainDriver(target.masked.in = list.target$clim.in, 
-                           hist.masked.in = list.hist$clim.in, 
-                           fut.masked.in = list.fut$clim.in, 
-                           mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                           istart = NA,loop.start = NA,loop.end = NA)
-}
+                          istart = NA,loop.start = NA,loop.end = NA)
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 ##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
