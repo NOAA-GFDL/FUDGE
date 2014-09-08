@@ -29,6 +29,8 @@ setSimpleLM <- function(){
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
   train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c("")
 }
 
 setCDFt<- function(){
@@ -38,4 +40,6 @@ setCDFt<- function(){
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
   train.and.use.same <<- TRUE
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c("npas", "dev")
 }

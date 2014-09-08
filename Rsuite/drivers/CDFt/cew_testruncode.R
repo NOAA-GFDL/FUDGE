@@ -10,7 +10,8 @@ rm(list=ls())
         spat.mask.var <- 'red_river_0p1_masks' 
 #--------------- I,J settings ----------------#
         file.j.range <- 'J31-170' 
-        i.file <- 200   
+###CEW edit
+        i.file <- 300   
         j.start <- 31 
         j.end <- 170 
         loop.start <-  j.start - (j.start-1)
@@ -59,6 +60,7 @@ output.dir <- '/home/cew/Code'
 #-------------  custom -----------------------#
 ###CEW EDIT:
 #        npas=300
+#args = list(npas=300, fakething="none")
 args = list(npas=300)
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 
@@ -102,6 +104,6 @@ output.dir <- paste(TMPDIR,output.dir,sep='')
 #source(paste(FUDGEROOT,'Rsuite/Drivers/',ds.method,'/Driver_',ds.method,'.R',sep=''))
 #source(paste(FUDGEROOT,'Rsuite/drivers/',ds.method,'/driverv2.2','.R',sep=''))
 #driver <- paste(FUDGEROOT, 'Rsuite/drivers/CDFt/driverv2.2.R', sep="")
-driver <- "~/Code/fudge2014/Rsuite/Drivers/CDFt/driverv2.2.R"
+driver <- "~/Code/fudge2014/Rsuite/Drivers/CDFt/Driver_CDFt.R"
 print(driver)
 source(driver)
