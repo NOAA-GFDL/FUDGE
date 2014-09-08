@@ -9,15 +9,27 @@
 #' TODO: Type up specifications for input files, because there are 
 #' some assumptions being made about what is and is not a mask
 ApplySpatialMask<-function(data, mask){   #, maskname="spatial_mask", dataLon, dataLat
-# #  data_dim<-dim(data)
-#   mask.nc<-nc_open(mask.nc.path) #Assume that mask is a valid path to a formatted mask
-#   #And grab the first variable with a name that contains the word "mask"
-#   mask.var <- names(mask.nc$var)[which(regexpr(pattern="mask", names(mask.nc$var)) != -1)]
-#   if(is.null(mask.var)){
-#     stop(paste("Mask name error: no variable within the file", mask.nc.path, 
-#                "has a name that matches the pattern 'mask'. "))
-#   }
-#   
+  #Assume a 2-D mask and 3-D data
+  if(length(mask[1,])!=length(data[1,,1])||length(mask[,1])!=length(data[,1,1])){
+    stop(paste("Spatial mask dimension error: mask was of dimensions", dim(mask)[1], dim(mask)[2], 
+               "and was expected to be of dimensions", data_dim[1], data_dim[2]))
+  }
+  return(matrimult(data, mask))  
+}
+
+#Multiplies the lat./lon. mask by the spatial data at each timestep
+#Assumes a 3-D matrix of original data.
+#This is a strictly internal method, so it shouldn't need the lovely
+#roxygen documentation
+matrimult<-function(mat,n){
+  ret<-mat
+  timedim<-dim(mat)[3]
+  for (i in 1:timedim){
+    ret[,,i]<-mat[,,i]*n
+  }
+  return(ret)
+}
+ 
 #   #Furthermore, assument that this logic is unnessecary - there should be an
 #   #appropriately-formatted mask file present with only the lon/lat coords needed there
 #   
@@ -38,23 +50,3 @@ ApplySpatialMask<-function(data, mask){   #, maskname="spatial_mask", dataLon, d
 # #   nc_close(masknc)
 #   mask <- ncvar_get(mask.nc, mask.var, collapse_degen=FALSE)
 #   nc_close(mask.nc)
-  #Assume a 2-D mask and 3-=D data
-  if(length(mask[1,])!=length(data[1,,1])||length(mask[,1])!=length(data[,1,1])){
-    stop(paste("Spatial mask dimension error: mask was of dimensions", dim(mask)[1], dim(mask)[2], 
-               "and was expected to be of dimensions", data_dim[1], data_dim[2]))
-  }
-  return(matrimult(data, mask))  
-}
-
-#Multiplies the lat./lon. mask by the spatial data at each timestep
-#Assumes a 3-D matrix of original data.
-#This is a strictly internal method, so it shouldn't need the lovely
-#roxygen documentation
-matrimult<-function(mat,n){
-  ret<-mat
-  timedim<-dim(mat)[3]
-  for (i in 1:timedim){
-    ret[,,i]<-mat[,,i]*n
-  }
-  return(ret)
-}

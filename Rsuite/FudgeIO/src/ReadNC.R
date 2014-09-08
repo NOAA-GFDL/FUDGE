@@ -30,6 +30,10 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,verbose=FALSE) {
   listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units)
   #print("debug .......")
   #print(clim.in)
+  
+  ###Add attributes for later QC checking against each other
+  attr(listout, "calendar") <- nc.object$dim$time$calendar
+  attr(listout, "filename") <- nc.object$filename
   nc_close(nc.object)
   return(listout)
 }

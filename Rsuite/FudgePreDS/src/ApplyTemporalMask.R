@@ -20,50 +20,12 @@ ApplyTemporalMask<-function(data, mask){
   
   data.length<-length(data)
   mask.length <- length(mask)
-  #Assume that calendar for all masks and data was checked earlier, with the MaskQC utility
   if ( data.length != mask.length ){
     print(summary(data))
     stop(paste("Mask dimension error: Data had length of", data.length,
                "while time mask had length of", mask.length))
   }
       tempvar <- data * mask
-#       dim(tempvar)<-dim(data)
-#       mask.out<-list(tempvar)
-#       names(mask.out)<-maskname
       return(tempvar)
 }
-#tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=3) #Lapply or sapply? Does it make a diff?
-#   }else{
-#     #grab all vars from the file and apply them
-#     mask.names <- RemoveBounds(names(thisnc$var)) #Remove anything that's not a mask
-#     mask.out<-vector(mode="list",length=length(mask.names))
-#     tempvar<-vector(mode="list", length=data.length)
-#     NA.storage.vector<-rep(0,data.length)
-#     for (name in 1:length(mask.names)){
-#       mask.data<-ncvar_get(thisnc, mask.names[[name]])#obtain masked data
-#       if(name%%10==0 || name == 1){
-#         print(paste("Starting on mask", mask.names[[name]], ", mask number",
-#                     name, "of", length(mask.names)))
-#       }
-#       NA.storage.vector<-NA.storage.vector+convert.NAs(mask.data)  #store location of NAs for error checking
-#       if (!length(mask.data)==length(data)){ #length(data[1,1,])
-#         stop(paste("Temporal mask dimension error: mask", masknc, mask.names[name], "was of length", length(mask.data), 
-#                    "and was expected to be of length", length(data))) #length(data[1,1,])
-#       }
-#       if (run==TRUE && ( max(NA.storage.vector) > 1) ){
-#         stop(paste("Mask collision error: Masks within", masknc,
-#                    ",provided either as an ESD generation mask file or as a predictor mask file with k > 1,", 
-#                    "either overlap or do not wholly cover the timeseries."))
-#       }
 #       #tempvar <- abind(lapply(1:dim(data)[3], function(i) data[,,i] * mask.data[[i]]),along=2) #along=3
-#       tempvar <- data * mask.data
-#       dim(tempvar)<-dim(data)
-#       mask.out[[name]]<-tempvar
-#     }
-#     names(mask.out)<-mask.names
-#   }
-#   return(mask.out)
-# }
-# 
-# 
-# }

@@ -33,9 +33,9 @@ loop.end <- 140
 hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- 2006
-	fut.file.end.year_1 <- 2100
+	fut.file.end.year_1 <- 2099
         fut.train.start.year_1 <- 2006
-        fut.train.end.year_1 <- 2100
+        fut.train.end.year_1 <- 2099
 	fut.scenario_1 <-'rcp85_r1i1p1'
 	fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 	fut.model_1 <- 'MPI-ESM-LR'

@@ -1,7 +1,7 @@
 #'CreateTimeseries.R
 #'@include PCICt
 #'Given a series of numbers representing dates since a date, 
-#'an origing that contains the date and a calendar, returns
+#'an origin that contains the date and a calendar, returns
 #'a PCICt formatted time series
 #'@param timeseries: A vector representing a series of days since
 #'a date
@@ -17,6 +17,7 @@
 CreateTimeseries <- function(timeseries, origin, calendar, sourcefile="some file"){
   #Figure out how to include the source file in the function call
   #Check origin
+  library(PCICt)
   message("Creating date series")
   seconds.per.day <- 86400
   if (is.null(origin)){
@@ -32,12 +33,14 @@ CreateTimeseries <- function(timeseries, origin, calendar, sourcefile="some file
   }
   if (calendar %in% c('Julian', 'julian', "JULIAN")){
     all.time <- CheckJulian(calendar, timeseries, origin)
+    attr(all.time, "calendar") <- "julian"
   } else if (!calendar%in%c('gregorian', 'proleptic_gregorian', '365-day', 'noleap', '360', '360-day')){
     warning(paste("NetCDF formatting warning: file", sourcefile, "used as a source of masks,",
                   'contained calendar', calendar,',not recognized by PCICt'))
   }else{
     origin.time <- as.PCICt(origin, calendar)
     all.time <- origin.time + timeseries * seconds.per.day  #Converts to a timeseries
+    attr(all.time, "calendar") <- calendar
   }
   return(all.time)
 }

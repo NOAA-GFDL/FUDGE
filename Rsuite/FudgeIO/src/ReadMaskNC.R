@@ -9,14 +9,16 @@
 #'@param verbose: Whether or not to print debugging information. Defaults
 #'to FALSE.
 #'@return A list containing the data from the file under data, and the
-#'timeseries and lat/lon coordinates of the file underneath something else. 
+#'timeseries and lat/lon coordinates of the file underneath dim. Also
+#'contains a 'filename' attribute associated with the list, and a
+#''calendar' attribute associated with the timeseries origin. 
 #'@examples
-ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, original.file = "some file") {
-  ###Seriosly, figure out how to return original file name in an error call
+#'
+ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE) {
     message('Obtaining mask vars')
     mask.var <- names(mask.nc$var)[which(regexpr(pattern="mask", names(mask.nc$var)) != -1)]
     if(is.null(mask.var)){
-      stop(paste("Mask name error: no variable within the file", some.file, 
+      stop(paste("Mask name error: no variable within the file", mask.nc$filename, 
                  "has a name that matches the pattern 'mask'. "))
     }
     mask.list <- list()
@@ -41,7 +43,10 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, original.file = "some 
           calendar <- mask.nc$dim$time$calendar
           #grab origin for later use
           origin <- mask.nc$dim$time$units
-          dim.list$time <- CreateTimeseries(dimvar, origin, calendar)
+          dim.list$time <- CreateTimeseries(dimvar, origin, calendar, sourcefile = mask.nc$filename)
+          dim.list$tseries <- dimvar
+          attr(dim.list$tseries, "origin") <- origin
+#          print(paste("origin: ", attr(dim.list$tseries, "origin")))
           if(verbose)
             message(paste("Adding time dimension"))
         }else{
@@ -51,6 +56,7 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, original.file = "some 
     }
   #######################################################
   listout <- list('masks' = mask.list, 'dim' = dim.list)
+    attr(listout, "filename") <- mask.nc$filename
   nc_close(mask.nc)
   return(listout)
 }

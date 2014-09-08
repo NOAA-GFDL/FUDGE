@@ -19,7 +19,8 @@ summary(as.vector(sample.data))
 
 ###Mask data spatial
 spat.mask <- "/net3/kd/PROJECTS/DOWNSCALING/DATA/3ToThe5th/masks/geomasks/OneD/red_river_0p1_masks.I181_J31-170.nc"
-masked.data <- ApplySpatialMask(sample.spat.data, spat.mask, maskname="red_river_0p1_masks")
+spat.mask.nc <- nc_open(spat.mask)
+masked.data <- ApplySpatialMask(sample.spat.data, spat.mask.nc)
 
 ###Initalize temporal mask functions
 source("../ApplyTemporalMask.R")
