@@ -60,7 +60,7 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, get.bounds.vars=FALSE)
             var.list[[bounds.var]]$vals <- ncvar_get(mask.nc, bounds.var)
             #Create a string of the form "c(bnds, varname.of.bnds)"
             #dim.string <- paste("c(bnds,", dimvec.writestring[dim], ")", sep="")
-            dim.string <- dimvec.writestring
+            dim.string <- dimvec.writestring[dim]
             var.list[[bounds.var]]$info <- create.ncvar.list(mask.nc, bounds.var, dim.string)
           }else{
             message('No var time_bnds found within file despite bnds dim; proceeding without it')
@@ -81,7 +81,7 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, get.bounds.vars=FALSE)
             #dim.list[[dimname]]$vars$vals[[bounds.var]] <- ncvar_get(mask.nc, bounds.var)
             #Create a string of the form "c(bnds, varname.of.bnds)"
             #dim.string <- paste("c(bnds,", dimvec.writestring[dim], ")", sep="")
-            dim.string <- dimvec.writestring
+            dim.string <- dimvec.writestring[dim]
             var.list[[bounds.var]]$info <- create.ncvar.list(mask.nc, bounds.var, dim.string)
           }else{
             message(paste('No var ', dimname, "_bnds found within file despite bnds dim; proceeding without it", sep=""))
@@ -90,7 +90,7 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, get.bounds.vars=FALSE)
         #Determine if there is an i or j offset that could be used
         if (offsets[dim] %in% names(mask.nc$var)){
           var.list[[offsets[dim]]]$vals <- ncvar_get(mask.nc, offsets[dim])
-          dim.string <- ""
+          dim.string <- "NULL"
           var.list[[offsets[dim]]]$info <- create.ncvar.list(mask.nc, offsets[dim], dim.string)
         }
         #Assign the var list back into the dimension structure
@@ -111,5 +111,13 @@ create.ncvar.list <- function(mask.nc, varname, dim.string){
               'units' = mask.nc$var[[varname]]$units, 
               'dim' = dim.string,
               'longname' = mask.nc$var[[varname]]$longname,
-              'prec' = mask.nc$var[[varname]]$prec))
+              'prec' = correct.int(mask.nc$var[[varname]]$prec) ))
+}
+
+correct.int <- function(string){
+  if(string=="int"){
+    return("integer")
+  }else{
+    return(string)
+  }
 }

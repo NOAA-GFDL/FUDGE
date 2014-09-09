@@ -96,14 +96,27 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA
       #presumably gotten from combining the bnds from the first with the bnds from the latter
       bnds.names <- names(bnds.list)
       for (i in 1:length(bnds.names)){
-        varname <- bnds.names[i]
-        print(parse( text=bnds.list[[varname]]$info$dim ))
-        var.dat[[varname]] <- ncvar_def(var.name, 
-                                        units=bnds.list[[varname]]$info$units, 
-                                        dim= c(bnds, eval(parse( text=bnds.list[[varname]]$info$dim )) ), 
-                                        missval = 1.e20, 
-                                        longname = bnds.list[[varname]]$info$longname, 
-                                        prec = bnds.list[[varname]]$info$prec)
+        bnds.var <- bnds.names[i]
+        print(bnds.var)
+        #print(eval(parse( text=bnds.list[[bnds.var]]$info$dim )))
+        carried.dim <- eval(parse( text=bnds.list[[bnds.var]]$info$dim))
+        if(!is.null(carried.dim)){
+          var.dimlist <- list(bnds, carried.dim)
+        }else{
+          var.dimlist=NULL
+        }
+        #correct missing value
+        if (bnds.list[[bnds.var]]$info$prec=="integer"){
+          missval=NULL
+        }else{
+          var.missval=1.e20
+        }
+        var.dat[[bnds.var]] <- ncvar_def(bnds.var, 
+                                        units=bnds.list[[bnds.var]]$info$units, 
+                                        dim= var.dimlist, 
+                                        #missval = var.missval, 
+                                        longname = bnds.list[[bnds.var]]$info$longname, 
+                                        prec = bnds.list[[bnds.var]]$info$prec)
       }
     }
     
@@ -116,7 +129,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA
       bnds.names <- names(bnds.list)
       for (i in 1:length(bnds.names)){
         bnds.var <- bnds.names[i]
-        ncvar_put(ncobj, var.dat[[bnds.var]], bnds.list[[bnds.var]]$vals)
+        ncvar_put(nc.obj, var.dat[[bnds.var]], bnds.list[[bnds.var]]$vals)
       }
     }
     print("placing nc variables")
@@ -129,6 +142,11 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA
     ncatt_put(nc.obj,"time","axis",'T')
     ncatt_put(nc.obj,"lat","axis",'Y')
     ncatt_put(nc.obj,"lon","axis",'X')
+    if(bounds){
+      ncatt_put(nc.obj, "lat", 'bounds', 'lat_bnds')
+      ncatt_put(nc.obj, "lon", 'bounds', 'lon_bnds')
+      ncatt_put(nc.obj, "time", 'bounds', 'time_bnds')
+    }
     ncatt_put(nc.obj,"lat","standard_name","latitude")
     ncatt_put(nc.obj,"lat","long_name","latitude")
     ncatt_put(nc.obj,"lon","standard_name","longitude")
