@@ -11,7 +11,7 @@ rm(list=ls())
 #--------------- I,J settings ----------------#
         file.j.range <- 'J31-170' 
 ###CEW edit
-        i.file <- 200   
+        i.file <- 300   
         j.start <- 31 
         j.end <- 170 
         loop.start <-  j.start - (j.start-1)

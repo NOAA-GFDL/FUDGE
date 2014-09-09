@@ -165,7 +165,8 @@ for (predictor.var in predictor.vars){
   hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
   print(hist.filename)
   fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-  print(fut.filename)
+#  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+#  print(fut.filename)
   target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
   print(target.filename)
   spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
@@ -224,7 +225,7 @@ print("ApplySpatialMask target: success..3")
 message("Checking input data")
 
 QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = list.fut, 
-            k = k.fold, ds.method=ds.method)
+            k = k.fold, ds.method=ds.method, calendar=downscale.calendar)
 
 # compute the statistics of the vector to be passed into the downscaling training
 
