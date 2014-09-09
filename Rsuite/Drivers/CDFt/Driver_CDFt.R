@@ -309,7 +309,8 @@ MyStats(esd.final,verbose="yes")
 ###CEW edit: replaced ds.vector with esd.final
 esd.final[is.na(esd.final)] <- 1.0e+20
 
-out.file <- paste(output.dir,"/","outtest", fut.filename,sep='')
+#out.file <- paste(output.dir,"/","outtest", fut.filename,sep='')
+out.file <- paste(output.dir,"/", fut.filename,sep='')
 
 #Create structure containing bounds and other vars
 bounds.list.combined <- c(spat.mask$vars, tmask.list[[3]]$vars)
