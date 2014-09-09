@@ -123,7 +123,7 @@ spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
 print('OpenNC spatial mask: success..1') 
 
 #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-spat.mask <- ReadMaskNC(spat.mask.ncobj)
+spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
 print('ReadMaskNC spatial mask: success..1')
 
 print("get xlon,ylat")
@@ -309,21 +309,26 @@ MyStats(esd.final,verbose="yes")
 ###CEW edit: replaced ds.vector with esd.final
 esd.final[is.na(esd.final)] <- 1.0e+20
 
-#out.file <- paste(output.dir,"/","dstest2.",fut.filename,sep='')
+out.file <- paste(output.dir,"/","outtest", fut.filename,sep='')
+
+#Create structure containing bounds and other vars
+bounds.list.combined <- c(spat.mask$vars, tmask.list[[3]]$vars)
+isBounds <- length(bounds.list.combined) > 1
 #Write to netCDF
-ds.out.filename = WriteNC(out.file,esd.final,target.var,
-                          xlon,ylat[loop.start:loop.end],time.index.start=0,
-                          time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
-                          units=list.fut$units$value,calendar= downscale.calendar,
-                          lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value)
 # ds.out.filename = WriteNC(out.file,esd.final,target.var,
-#                           xlon,ylat,
-#                           downscale.tseries, downscale.origin, calendar = downscale.calendar,
-#                           #start.year=fut.train.start.year_1,
-#                           units=list.fut$units$value,
+#                           xlon,ylat[loop.start:loop.end],time.index.start=0,
+#                           time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
+#                           units=list.fut$units$value,calendar= downscale.calendar,
 #                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
 #                           cfname=list.fut$cfname$value)
+ds.out.filename = WriteNC(out.file,esd.final,target.var,
+                          xlon,ylat,
+                          downscale.tseries=downscale.tseries, 
+                          downscale.origin=downscale.origin, calendar = downscale.calendar,
+                          #start.year=fut.train.start.year_1,
+                          units=list.fut$units$value,
+                          lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
+                          cfname=list.fut$cfname$value) #bounds=isBounds, bnds.list = bounds.list.combined)
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
@@ -334,7 +339,7 @@ message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
 print(paste("END TIME:",Sys.time(),sep=''))
 
-options()[c('warn', 'error', 'showErrorCalls')]<-stored.opts
+#options()[c('warn', 'error', 'showErrorCalls')]<-stored.opts
 
 ## End Of Program
 

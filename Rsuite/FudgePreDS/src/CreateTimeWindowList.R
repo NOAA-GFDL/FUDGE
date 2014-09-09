@@ -27,12 +27,12 @@ CreateTimeWindowList <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, 
     message("Obtaining all time masks")
     t.pred.masks <- QCTimeMask(ReadMaskNC(nc_open(hist.train.mask)))
     t.targ.masks <- QCTimeMask(ReadMaskNC(nc_open(hist.targ.mask)))
-    esd.gen.masks <- QCTimeMask(ReadMaskNC(nc_open(esd.gen.mask)), run=TRUE)
+    esd.gen.masks <- QCTimeMask(ReadMaskNC(nc_open(esd.gen.mask), get.bounds.vars=TRUE), run=TRUE)
   }else{                          #If method uses historic and future data to generate eq's
     message("Obtaining all time masks")
     t.pred.masks <- QCTimeMask(ReadMaskNC(nc_open(hist.train.mask)), run=TRUE)
     t.targ.masks <- QCTimeMask(ReadMaskNC(nc_open(hist.targ.mask)), run=TRUE)
-    esd.gen.masks <- QCTimeMask(ReadMaskNC(nc_open(esd.gen.mask)), run=TRUE)
+    esd.gen.masks <- QCTimeMask(ReadMaskNC(nc_open(esd.gen.mask), get.bounds.vars=TRUE), run=TRUE)
   }
   message("Creating final list")
   tmask.list <- list("train.pred" = t.pred.masks, "train.targ" = t.targ.masks, "esd.gen" = esd.gen.masks)

@@ -1,7 +1,7 @@
 # Aparna Radhakrishnan 08/04/2014
-WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=0, time.index.end=1, downscale.tseries=NA, downscale.origin=NA,
+WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA, time.index.end=NA, downscale.tseries=NA, downscale.origin=NA,
                      start.year="undefined",units ,calendar,lname=var.name,cfname=var.name, 
-                     bnds=FALSE, bnds.list=NA) {
+                     bounds=FALSE, bnds.list=NA) {
   #'Creates file filename (netCDF type) with the variable  var.name along with the 
   #'coordinate variables in the netCDF file, CF standard name, long names.
   #'
@@ -39,7 +39,10 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=0,
     FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
     
     #Define the time dimension
+    print(is.na(downscale.origin))
+    print(downscale.origin)
     if (!is.na(downscale.origin)){
+      print("Creating cloned timeseries")
       time1 <- downscale.tseries
       tunit <- downscale.origin
       print(tunit) 
@@ -50,6 +53,8 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=0,
       print(tunit) 
       t1 <- ncdim_def("time",tunit,time1,unlim=TRUE)
     }
+    print(time.index.start)
+    print(time.index.end)
     
     #Define Y
     y <- ncdim_def("lat","degrees_north",ylat)
@@ -77,24 +82,43 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=0,
     var.dat <- list()
     
     if(exists("xlon") & (xlon != '')){
-      var.dat[var.name] <- ncvar_def(var.name,units,list(x,y,t1),1.e20,longname=lname,prec="double")
+      print(class(x))
+      print(class(y))
+      print(class(t1))
+      var.dat[[var.name]] <- ncvar_def(var.name,units,list(x,y,t1),1.e20,longname=lname,prec="double")
     }else{
-      var.dat[var.name] <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=lname,prec="double")
+      var.dat[[var.name]] <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=lname,prec="double")
     }
     #If bounds are present, define bounds and populate bounds variables
-    if(bnds){
-      bounds <- ncdim_def("bnds", "", c(1,2))
+    if(bounds){
+      bnds <- ncdim_def("bnds", "", c(1,2))
       #If bnds is true, the bounds strucutre will presumably be full of all bnds
+      #presumably gotten from combining the bnds from the first with the bnds from the latter
       bnds.names <- names(bnds.list)
-      for (bnd in 1:length(bnds.names)){
-        varname <- bnds.names[bnd]
+      for (i in 1:length(bnds.names)){
+        varname <- bnds.names[i]
+        print(parse( text=bnds.list[[varname]]$info$dim ))
+        var.dat[[varname]] <- ncvar_def(var.name, 
+                                        units=bnds.list[[varname]]$info$units, 
+                                        dim= c(bnds, eval(parse( text=bnds.list[[varname]]$info$dim )) ), 
+                                        missval = 1.e20, 
+                                        longname = bnds.list[[varname]]$info$longname, 
+                                        prec = bnds.list[[varname]]$info$prec)
       }
     }
     
     print("creating nc objects")
     nc.obj <- nc_create(filename,var.dat)
     print("placing nc vars")
-    ncvar_put(nc.obj, var.dat, data.array)
+    ncvar_put(nc.obj, var.dat[[var.name]], data.array)
+    if(bounds){
+      message("Adding variables associated with bounds")
+      bnds.names <- names(bnds.list)
+      for (i in 1:length(bnds.names)){
+        bnds.var <- bnds.names[i]
+        ncvar_put(ncobj, var.dat[[bnds.var]], bnds.list[[bnds.var]]$vals)
+      }
+    }
     print("placing nc variables")
     # gets CF mappings from CF.R if user does not pass these 
     #TODO create grid coordinate bounds variables  
@@ -109,8 +133,8 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=0,
     ncatt_put(nc.obj,"lat","long_name","latitude")
     ncatt_put(nc.obj,"lon","standard_name","longitude")
     ncatt_put(nc.obj,"lon","long_name","longitude")
-    ncatt_put(nc.obj,var.dat,"units",units)
-    ncatt_put(nc.obj,var.dat,"standard_name",cfname)
+    ncatt_put(nc.obj,var.dat[[var.name]],"units",units)
+    ncatt_put(nc.obj,var.dat[[var.name]],"standard_name",cfname)
     ########### write grid coordinate bounds ####################
     
     #############################################################  

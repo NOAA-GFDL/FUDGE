@@ -14,55 +14,92 @@
 #''calendar' attribute associated with the timeseries origin. 
 #'@examples
 #'
-ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE) {
-    message('Obtaining mask vars')
-    mask.var <- names(mask.nc$var)[which(regexpr(pattern="mask", names(mask.nc$var)) != -1)]
-    if(is.null(mask.var)){
-      stop(paste("Mask name error: no variable within the file", mask.nc$filename, 
-                 "has a name that matches the pattern 'mask'. "))
+ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, get.bounds.vars=FALSE) {
+  message('Obtaining mask vars')
+  mask.var <- names(mask.nc$var)[which(regexpr(pattern="mask", names(mask.nc$var)) != -1)]
+  if(is.null(mask.var)){
+    stop(paste("Mask name error: no variable within the file", mask.nc$filename, 
+               "has a name that matches the pattern 'mask'. "))
+  }
+  mask.list <- list()
+  for (name in 1:length(mask.var)){
+    mask.name <- mask.var[name]
+    if(verbose){
+      message(paste("Obtaining", mask.name, ":mask", name, "of", length(mask.var)))
     }
-    mask.list <- list()
-    for (name in 1:length(mask.var)){
-      mask.name <- mask.var[name]
-      if(verbose){
-        message(paste("Obtaining", mask.name, ":mask", name, "of", length(mask.var)))
-      }
-      mask <- ncvar_get(mask.nc,mask.name, collapse_degen=FALSE) #verbose adds too much info
-      mask.list[[mask.name]] <- mask
-    }    
-    message('All mask vars obtained; starting dimension vars')
-    dimvec <- c("lat", "lon", "time", "bnds", "bounds")
-    dimvec.writestring <- c('y', 'x', 't1', 'bnds')
-    dim.list <- list()
-    for (dim in 1:length(dimvec)){
-#      dimvar <- ncvar_get(mask.nc, dimvec[dim], collapse_degen=FALSE, verbose=verbose)
-      dimname <- dimvec[dim]
-      dimvar <- mask.nc$dim[[dimname]]$vals
-      if (!is.null(dimvar))
-        if (dimname=='time'){
-          #grab calendar
-          calendar <- mask.nc$dim$time$calendar
-          #grab origin for later use
-          origin <- mask.nc$dim$time$units
-          dim.list$time <- CreateTimeseries(dimvar, origin, calendar, sourcefile = mask.nc$filename)
-          dim.list$tseries <- dimvar
-          attr(dim.list$tseries, "origin") <- origin
-          message(paste("Adding time dimension"))
-#          print(paste("origin: ", attr(dim.list$tseries, "origin")))
-        }else if (dimname=='bnds' || dimname=='bounds'){
-          dim.index <- length(dimvec)-2
-          for (i in 1:dim.index){
-            bnds.var <- paste(dimvec[i], "_", dimname, sep="")
-            
+    mask <- ncvar_get(mask.nc,mask.name, collapse_degen=FALSE) #verbose adds too much info
+    mask.list[[mask.name]] <- mask
+  }    
+  message('All mask vars obtained; starting dimension vars')
+  dimvec <- c("lat", "lon", "time")
+  dimvec.writestring <- c('y', 'x', 't1')
+  offsets <- c("j_offset", "i_offset")
+  dim.list <- list()
+  var.list <- list()
+  for (dim in 1:length(dimvec)){
+    #      dimvar <- ncvar_get(mask.nc, dimvec[dim], collapse_degen=FALSE, verbose=verbose)
+    dimname <- dimvec[dim]
+    dimvar <- mask.nc$dim[[dimname]]$vals
+    dim.var.list <- list()
+    if (!is.null(dimvar))
+      if (dimname=='time'){
+        #grab calendar
+        calendar <- mask.nc$dim$time$calendar
+        #grab origin for later use
+        origin <- mask.nc$dim$time$units
+        dim.list$time <- CreateTimeseries(dimvar, origin, calendar, sourcefile = mask.nc$filename)
+        dim.list$tseries <- dimvar
+        attr(dim.list$tseries, "origin") <- origin
+        message(paste("Adding time dimension"))
+        #          print(paste("origin: ", attr(dim.list$tseries, "origin")))
+        #If selected, look for metadata variables
+        if ("bnds" %in% names(mask.nc$dim) && get.bounds.vars==TRUE){             # || "bounds" %in% names(mask.nc$dim)
+          message("Searching for time bounds")
+          bounds.var <- paste(dimname, "_", "bnds", sep="")
+          if (bounds.var %in% names(mask.nc$var) && get.bounds.vars==TRUE){
+            var.list[[bounds.var]]$vals <- ncvar_get(mask.nc, bounds.var)
+            #Create a string of the form "c(bnds, varname.of.bnds)"
+            #dim.string <- paste("c(bnds,", dimvec.writestring[dim], ")", sep="")
+            dim.string <- dimvec.writestring
+            var.list[[bounds.var]]$info <- create.ncvar.list(mask.nc, bounds.var, dim.string)
+          }else{
+            message('No var time_bnds found within file despite bnds dim; proceeding without it')
           }
-        }else{
-          dim.list[[dimname]] <- dimvar
-          message(paste("Adding", dimname, 'dimension'))
         }
-    }
+        #Assign the var list back into the dimension structure
+        #dim.list[[dimname]]$vars <- dim.var.list
+      }else{
+        dim.list[[dimname]] <- dimvar
+        message(paste("Adding", dimname, 'dimension'))
+        ##If selected, look for metadata variables (i.e. lat_bnds, j_offset)
+        if ("bnds" %in% names(mask.nc$dim) && get.bounds.vars==TRUE){             # || "bounds" %in% names(mask.nc$dim)
+          bounds.var <- paste(dimname, "_", "bnds", sep="")
+          print(bounds.var)
+          print((bounds.var %in% names(mask.nc$var)))
+          if (bounds.var %in% names(mask.nc$var)){
+            var.list[[bounds.var]]$vals <- ncvar_get(mask.nc, bounds.var)
+            #dim.list[[dimname]]$vars$vals[[bounds.var]] <- ncvar_get(mask.nc, bounds.var)
+            #Create a string of the form "c(bnds, varname.of.bnds)"
+            #dim.string <- paste("c(bnds,", dimvec.writestring[dim], ")", sep="")
+            dim.string <- dimvec.writestring
+            var.list[[bounds.var]]$info <- create.ncvar.list(mask.nc, bounds.var, dim.string)
+          }else{
+            message(paste('No var ', dimname, "_bnds found within file despite bnds dim; proceeding without it", sep=""))
+          }
+        }
+        #Determine if there is an i or j offset that could be used
+        if (offsets[dim] %in% names(mask.nc$var)){
+          var.list[[offsets[dim]]]$vals <- ncvar_get(mask.nc, offsets[dim])
+          dim.string <- ""
+          var.list[[offsets[dim]]]$info <- create.ncvar.list(mask.nc, offsets[dim], dim.string)
+        }
+        #Assign the var list back into the dimension structure
+        #dim.list$vars <- dim.var.list
+      }
+  }
   #######################################################
-  listout <- list('masks' = mask.list, 'dim' = dim.list)
-    attr(listout, "filename") <- mask.nc$filename
+  listout <- list('masks' = mask.list, 'dim' = dim.list, 'vars'=var.list)
+  attr(listout, "filename") <- mask.nc$filename
   nc_close(mask.nc)
   return(listout)
 }
@@ -71,8 +108,8 @@ create.ncvar.list <- function(mask.nc, varname, dim.string){
   #'Creates a list with elements named in a manner appropriate
   #'for a NetCDF variable. 
   return(list('name' = varname, 
-              'units' = mask.nc$var[varname]$units, 
-              'dim' = dim.list,
-              'longname' = mask.nc$var[varname]$longname,
-              'prec' = mask.nc$var[varname]$prec))
+              'units' = mask.nc$var[[varname]]$units, 
+              'dim' = dim.string,
+              'longname' = mask.nc$var[[varname]]$longname,
+              'prec' = mask.nc$var[[varname]]$prec))
 }
