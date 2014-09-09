@@ -11,7 +11,7 @@ rm(list=ls())
 #--------------- I,J settings ----------------#
         file.j.range <- 'J31-170' 
 ###CEW edit
-        i.file <- 300   
+        i.file <- 200   
         j.start <- 31 
         j.end <- 170 
         loop.start <-  j.start - (j.start-1)
@@ -60,8 +60,8 @@ output.dir <- '/home/cew/Code'
 #-------------  custom -----------------------#
 ###CEW EDIT:
 #        npas=300
-#args = list(npas=300, fakething="none")
-args = list(npas=300)
+args = list(npas=300, fakething="none")
+#args = list(npas=300)
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 
 ################### others ###################################

@@ -46,12 +46,19 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE) {
           dim.list$time <- CreateTimeseries(dimvar, origin, calendar, sourcefile = mask.nc$filename)
           dim.list$tseries <- dimvar
           attr(dim.list$tseries, "origin") <- origin
+          message(paste("Adding time dimension"))
 #          print(paste("origin: ", attr(dim.list$tseries, "origin")))
-          if(verbose)
-            message(paste("Adding time dimension"))
+          if("bnds" %in% names(mask.nc$dim)){
+            dim.list$time_bnds <- ncvar_get(mask.nc, "time_bnds")
+            message(paste("Adding time_bnds"))
+          }
         }else{
           dim.list[[dimname]] <- dimvar
           message(paste("Adding", dimname, 'dimension'))
+          if("bnds" %in% names(mask.nc$dim)){
+            bnds.name <- paste(dimname, "_bnds", sep="")
+            dim.list[bnds.name] <- ncvar_get(mask.nc, bnds.name)
+          }
         }
     }
   #######################################################

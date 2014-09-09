@@ -5,18 +5,17 @@
 #'Does not return anything at present.
 
 QCDSArguments <- function(k, ds.method, args=NA, ...){
-  if(k > 1 && ds.method%in%no.crossval.possible){
+  #message("Entering QCDSArguments")
+  if(k > 1 && !(crossval.possible) ){
     stop(paste("Cross-Validation Conflict Error: Method", ds.method, 
                "does not support cross-validaiton. Check documentation for more details."))
   }
-  ##Check for compatibility between names of args and 
-  for(name in length(names(args))){
+  ##Check for compatibility between names of args and the downscaling function
+  for(name in 1:length(names(args)) ){
     argname <- names(args)[name]
-    print(argname)
     if(!(argname %in% names.of.args)){ #Set by SetDSMethodInfo()
-      print("Activatings DS warning")
       warning(paste("Downscaling Argument Warning: arg", argname, "is not used by method", ds.method, 
-                    "; this could create an error or nonstandard output, depenidng upon the method."))
+                    "; this could create an error or nonstandard output, depending upon the method."))
     }
   }
 }
