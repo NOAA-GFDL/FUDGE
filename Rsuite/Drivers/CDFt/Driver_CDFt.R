@@ -9,7 +9,7 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/src/'
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/src/',sep=''), full.names=TRUE), source);
 #source("~/Code/fudge2014/Rsuite/drivers/LoadLib.R")
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/Drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
 #-------Add traceback call for error handling -------
@@ -309,7 +309,7 @@ MyStats(esd.final,verbose="yes")
 ###CEW edit: replaced ds.vector with esd.final
 esd.final[is.na(esd.final)] <- 1.0e+20
 
-out.file <- paste(output.dir,"/","dstest2.",fut.filename,sep='')
+#out.file <- paste(output.dir,"/","dstest2.",fut.filename,sep='')
 #Write to netCDF
 ds.out.filename = WriteNC(out.file,esd.final,target.var,
                           xlon,ylat[loop.start:loop.end],time.index.start=0,
