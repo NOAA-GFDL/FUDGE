@@ -13,6 +13,8 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/drivers/',sep=''
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
 #-------Add traceback call for error handling -------
+stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
+options(error=traceback, warn = 1, showErrorCalls=TRUE)
 #options(error=traceback)
 #options(showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
@@ -331,6 +333,8 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
 print(paste("END TIME:",Sys.time(),sep=''))
+
+options()[c('warn', 'error', 'showErrorCalls')]<-stored.opts
 
 ## End Of Program
 

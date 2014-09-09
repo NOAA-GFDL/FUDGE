@@ -31,7 +31,8 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE) {
       mask.list[[mask.name]] <- mask
     }    
     message('All mask vars obtained; starting dimension vars')
-    dimvec <- c("lat", "lon", "time")
+    dimvec <- c("lat", "lon", "time", "bnds", "bounds")
+    dimvec.writestring <- c('y', 'x', 't1', 'bnds')
     dim.list <- list()
     for (dim in 1:length(dimvec)){
 #      dimvar <- ncvar_get(mask.nc, dimvec[dim], collapse_degen=FALSE, verbose=verbose)
@@ -48,17 +49,15 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE) {
           attr(dim.list$tseries, "origin") <- origin
           message(paste("Adding time dimension"))
 #          print(paste("origin: ", attr(dim.list$tseries, "origin")))
-          if("bnds" %in% names(mask.nc$dim)){
-            dim.list$time_bnds <- ncvar_get(mask.nc, "time_bnds")
-            message(paste("Adding time_bnds"))
+        }else if (dimname=='bnds' || dimname=='bounds'){
+          dim.index <- length(dimvec)-2
+          for (i in 1:dim.index){
+            bnds.var <- paste(dimvec[i], "_", dimname, sep="")
+            
           }
         }else{
           dim.list[[dimname]] <- dimvar
           message(paste("Adding", dimname, 'dimension'))
-          if("bnds" %in% names(mask.nc$dim)){
-            bnds.name <- paste(dimname, "_bnds", sep="")
-            dim.list[bnds.name] <- ncvar_get(mask.nc, bnds.name)
-          }
         }
     }
   #######################################################
@@ -66,4 +65,14 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE) {
     attr(listout, "filename") <- mask.nc$filename
   nc_close(mask.nc)
   return(listout)
+}
+
+create.ncvar.list <- function(mask.nc, varname, dim.string){
+  #'Creates a list with elements named in a manner appropriate
+  #'for a NetCDF variable. 
+  return(list('name' = varname, 
+              'units' = mask.nc$var[varname]$units, 
+              'dim' = dim.list,
+              'longname' = mask.nc$var[varname]$longname,
+              'prec' = mask.nc$var[varname]$prec))
 }
