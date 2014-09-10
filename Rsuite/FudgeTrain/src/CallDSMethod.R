@@ -53,7 +53,12 @@ callCDFt <- function (pred, targ, new, args){
   if(is.null(args)){
     return(CDFt(targ, pred, new, npas=length(targ))$DS)
   }else{
-    args.list <- c(args, ObsRp=targ, DataGP=pred, DataGF=new)
-    return(do.call("CDFt", args.list))
+#     bse.list <- list()
+#     base.list
+    #args.list <- c(list('ObsRp'=targ, 'DataGP'=pred, 'DataGF'=new), args)
+    args.list <- c(list(targ, pred, new), args)
+    print("calling CDFt with args:")
+    print(args)
+    return(do.call("CDFt", args.list)$DS)
   }
 }

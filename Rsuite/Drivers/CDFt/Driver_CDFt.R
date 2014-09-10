@@ -271,7 +271,7 @@ start.time <- proc.time()
 #source("Rsuite/drivers/TrainDriver.R")
 #source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
 #source("Rsuite/FudgeTrain/src/CallDSMethod.R")
-if (exists("args")){
+if (args!='na'){
 esd.final <- TrainDriver(target.masked.in = list.target$clim.in, 
                           hist.masked.in = list.hist$clim.in, 
                           fut.masked.in = list.fut$clim.in, 

@@ -110,7 +110,7 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
                                                                            train.predict = window.predict[!is.na(window.predict)], 
                                                                            train.target = window.target[!is.na(window.target)], 
                                                                            esd.gen = window.gen[!is.na(window.gen)], 
-                                                                           args=NULL)
+                                                                           args=downscale.args)
         if(graph){
           if(masklines){
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
