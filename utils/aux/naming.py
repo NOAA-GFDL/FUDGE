@@ -7,7 +7,7 @@ import re, sys, subprocess
 
 
 #{p=GFDL-PPnodes, z=Zeus, g=gaea, s=Sooner, k=kd workstation, etc.}.
-def constructExpname(lname_project,lname_target,series,method,basedir):
+def constructExpname(lname_project,lname_target,series,method,kfold,basedir):
 	expconfig = ""
 	mapdir = basedir+"/utils/auxfiles/"
 	proj_mappings = mapdir+"project_map"
@@ -40,17 +40,22 @@ def constructExpname(lname_project,lname_target,series,method,basedir):
 	## get platform code
 	system,node,release,version,machine = os.uname()
 	if(node.startswith('pp')):
-		print "Running on PP node", node
-		plat = "p" 
+		print "Running on PP(PAN) node", node
+		plat = "p1" 
 	if(node.startswith('an')):
-                print "Running on AN node", node
-		plat = "a"
+                print "Running on AN(PAN) node", node
+		plat = "p1"
 	else:
                 print "Running on a workstation", node
 	        plat = node 
 	plat.strip()
-        expconfig = sname_project+sname_target+plat+"-"+method+"-"+series  #eg kd_PMtxp2-GFDL-ARRMv3-B00X01K02
+        if(int(kfold) < 10):
+	        #print "kfold < 10 ......................." 
+       	 	k = "K0"+kfold
+   	else:
+		k = "K"+kfold
+        expconfig = sname_project+sname_target+plat+"-"+method+"-"+series+k  #eg kd_PMtxp2-GFDL-ARRMv3-B00X01K02
 	#print expconfig
-	return expconfig
+	return expconfig,sname_project
   
  

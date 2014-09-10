@@ -93,6 +93,10 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUDGEROOT":"'"${basedir}"'")
 set iend = $argv[44]
 set params = $argv[45]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list("${params}")" )
+echo "debug"
+set ds_region = $argv[46]
+echo "debug 2"
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "DS.REGION":"'"${ds_region}"'")
 foreach var ($PREDICTOR)
  if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
   echo "WARNING This variable $var is not supported variable at this time. Please check back later. Thank you"

@@ -17,6 +17,7 @@ list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
 rootdir = "/archive/esd/PROJECTS/DOWNSCALING/"  #default
+projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
 project = "35" #default TODO get from XML
 ppn = 2 #TODO get from XML custom?
 
@@ -29,7 +30,7 @@ def checkTags(dictParams,key):
 				key='output_grid'
 				val = checkTags(dictParams.key)
 			elif(key == 'oroot'):
-				projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th/"
+				#projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/RedRiver/"
 				print "use output root default value", projectRoot
 				val = projectRoot
 			elif(key == 'outdir'):
@@ -157,7 +158,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 	if(experiment == 'na'): #if not present in XML
 	        proj = checkTags(dictParams,'project')
                 series = checkTags(dictParams,'series') #experiment series
- 		experiment = naming.constructExpname(proj,target,series,method,basedir)
+ 		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
         projectRoot = checkTags(dictParams,'oroot')
@@ -185,7 +186,8 @@ def listVars(uinput,basedir=None,force=False,pp=False):
         else:
 	   if(file_j_range != ''):
 	   	dsuffix=file_j_range
-		dim = output_grid+"/"+dim
+		dim1 = dim
+		dim = output_grid+"/"+dim1
 	   else:
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
         ############ target get dir info ########################
@@ -221,7 +223,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 	    ens = dict_fut['rip']
             predictand = target
             #dversion from command line args. default value is v20120422
-            outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,dim,dversion)
+            outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,dversion)
             #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
 #new
@@ -246,7 +248,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
             fut_freq = dict_fut['mip']
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
 
-	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp
+	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region
 ############end of listVars###################### 
 def main():
     #################### args parsing ############
@@ -295,7 +297,7 @@ def main():
                     			forOpt = False
                 		force = vals 
         #########  call listVars() #############################################################
-	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp= listVars(uinput,basedir,force)
+	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region= listVars(uinput,basedir,force)
         ######### call script creators..  #######################################################
         ############################### 1 ###############################################################
         #  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -313,47 +315,48 @@ def main():
 	make_code_cmd = make_code_cmd+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(hist_train_start_time)+" "+str(hist_train_end_time)+" "+str(hist_scenario)+" "+str(hist_model)+" "+hist_freq+" "+str(hist_pred_dir)+" "+str(hist_time_window)
         make_code_cmd = make_code_cmd+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(fut_train_start_time)+" "+str(fut_train_end_time)+" "+str(fut_scenario)+" "+str(fut_model)+" "+fut_freq+" "+str(fut_pred_dir)+" "+str(fut_time_window)
         make_code_cmd = make_code_cmd+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(target_train_start_time)+" "+str(target_train_end_time)+" "+str(target_scenario)+" "+str(target_model)+" "+target_freq+" "+str(target_dir)+" "+str(target_time_window)
-        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" "+str(outdir)+" "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone) 
+        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" "+str(outdir)+" "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
 
         print "Step 1: R code starters generation ..in progress"
         #p = subprocess.Popen('tcsh -c "'+make_code_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         
         params_new =  '"'+str(params)+'\"'
-        print make_code_cmd +" "+params_new
-        p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        
+        make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
+	#cprint make_code_cmd
+        #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
         if(p.returncode != 0):
          print "Step1:!!!! FAILED !!!!, please contact developer."
          print output, errors
          sys.exit(0)
         #cprint output, errors
-	print "----Log-----"
-        print output,errors
+	#cprint "----Log-----"
+        #cprint output,errors
         ###############################################################################################
         print "1- completed\n"
         ############################### 2 ################################################################
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
         create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" "+outdir+" "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)
-        print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
+        #print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
         p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         print "Step 2: Individual runscript  creation.. in progress"
         output1, errors1 = p1.communicate()
-	print output1,errors1
+	#cprint output1,errors1
         print "2- completed\n"
         if(p1.returncode != 0):
          print "Step2:!!!! FAILED !!!!, please contact developer."
          print output1, errors1
          sys.exit(0)
         #print output1, errors1
-         print errors1
+        #c print errors1
         
         ###################################### 3 ################################################################
         script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
         create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(predictor)+" "+method+" "+basedir+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)
         print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
         p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        print create_master_cmd
+        #cprint create_master_cmd
         #print "Create master script .. in progress"
         output2, errors2 = p2.communicate()
         #######
@@ -372,14 +375,18 @@ def main():
 	  print "Unable to create dir. Dir may exist already", cdir 
 	shutil.copy2(uinput, cdir)
         print "Config XML saved in ",cdir 
-def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,dim,dversion):
+	print "----See readMe in fudge2014 directory for the next steps----"
+def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc
      
     print "No outdir specified. Let's deduce the standardized output directory here.."        
     if(projectRoot == 'na'):
         print "Output root directory not specified. Default project root will be used. (Default project root is /archive/esd/)"
-    stdoutdir = projectRoot+"/"+category+"/"+instit+"/"+predModel+"/"+dexper+"/"+freq+"/"+realm+"/"+mip+"/"+ens+"/"+pversion+"/"+dmodel+"/"+predictand+"/"+dim+"/"+dversion+"/"  
+    dexperonly = dexper.split("_")[0]	
+    if(freq == ""):
+	freq = mip
+    stdoutdir = projectRoot+"/"+category+"/"+instit+"/"+predModel+"/"+dexperonly+"/"+freq+"/"+realm+"/"+mip+"/"+ens+"/"+pversion+"/"+dmodel+"/"+predictand+"/"+ds_region+"/"+dim+"/"+dversion+"/"  
     return stdoutdir  
 
 def checkExisting(dire,lon,Jsuffix,variable,freq,method,scenario,ens,start_year_s1,end_year_s1,fileid):
