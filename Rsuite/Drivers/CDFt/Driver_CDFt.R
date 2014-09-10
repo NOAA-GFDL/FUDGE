@@ -169,6 +169,9 @@ for (predictor.var in predictor.vars){
 #  print(fut.filename)
   target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
   print(target.filename)
+  out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+  print(out.filename)
+  
   spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
   print(spat.mask.filename)
   
@@ -311,7 +314,8 @@ MyStats(esd.final,verbose="yes")
 esd.final[is.na(esd.final)] <- 1.0e+20
 
 #out.file <- paste(output.dir,"/","outtest", fut.filename,sep='')
-out.file <- paste(output.dir,"/", fut.filename,sep='')
+#out.file <- paste(output.dir,"/", fut.filename,sep='')
+out.file <- paste(output.dir,"/", out.filename,sep='')
 
 #Create structure containing bounds and other vars
 bounds.list.combined <- c(spat.mask$vars, tmask.list[[3]]$vars)
