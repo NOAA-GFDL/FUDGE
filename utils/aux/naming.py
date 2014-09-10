@@ -37,6 +37,7 @@ def constructExpname(lname_project,lname_target,series,method,kfold,basedir):
                 sname_target = lname_target
                 print "Using ",lname_target," as default for sname_target(short name)"
         print sname_target
+	f.close()
 	## get platform code
 	system,node,release,version,machine = os.uname()
 	if(node.startswith('pp')):
