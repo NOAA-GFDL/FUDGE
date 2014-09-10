@@ -1,5 +1,5 @@
 module load python/2.7.3
-setenv BASEDIR "/home/a1r/gitlab/cew/fudge2014/" 
+setenv BASEDIR "/home/a1r/gitlab/vanilla/fudge2014/" 
 setenv PYTHONPATH ${BASEDIR}/utils/aux/
 
 setenv NEMSemail $USER@noaa.gov

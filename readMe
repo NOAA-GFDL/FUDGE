@@ -1,20 +1,28 @@
-1. Set BASEDIR in setenv_fudge 
+The below workflow is tested on PAN only at this time.
+ 
+1. Set BASEDIR in setenv_fudge and source setenv_fudge
 (setenv_fudge is found within the fudge2014 directory/git repo)
+
+###################
+source setenv_fudge
+###################
+
 2. Prepare experiment XML. There is a sample XML in the following location:
-/home/a1r/gitlab/cew/fudge2014/utils/xml/sample.xml 
+/home/a1r/gitlab/vanilla/fudge2014/utils/xml/vanilla.xml 
 3. Run expergen to produce runscripts:
 expergen is now found within fudge2014/bin/
 
 Usage:
 
-expergen -i ../utils/xml/sample.xml  
+expergen -i ../utils/xml/vanilla.xml  
 
+Running the above will out a list of master scripts that can be submitted as a MOAB job. Next steps found below- 
 4. Script to Submit MOAB Jobs
 The submit_job script is found in fudge2014/bin/
 Usage:
 Please provide 4 arguments: master_script_dir lon_start lon_end timeSuffix. Eg: submit_job /home/a1r/gitlab/fudge//main/scripts/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/master/60L0/ 748 941 2014-05-01.10:43:23.858305 
 
-eg. /submit_job /home/a1r/gitlab/cew/fudge2014//scripts/tasmax/1pow5-txp1-GFDL-CDFtv1-A00X01K00/master 299 300 2014-09-06.17:24:52.009175 
+eg. /submit_job /home/a1r/gitlab/vanilla/fudge2014//scripts/tasmax/1pow5-txp1-GFDL-CDFtv1-A00X01K00/master 299 300 2014-09-06.17:24:52.009175 
 
 5. Monitor Job
 showq | grep USERNAME

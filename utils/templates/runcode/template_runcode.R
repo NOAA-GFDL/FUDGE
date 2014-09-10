@@ -8,6 +8,7 @@ rm(list=ls())
         grid <- <OP.GRID> 
         spat.mask.dir_1 <- <SPAT.MASK.DIR> 
         spat.mask.var <- <SPAT.MASK.VAR> 
+	ds.region <- <DS.REGION>
 #--------------- I,J settings ----------------#
         file.j.range <- <JRANGE> 
         i.file <- <ISUFFIX>   
