@@ -162,12 +162,13 @@ for (predictor.var in predictor.vars){
   
   ###CEW edit 8-28: Will not run without initializing predictor.var
   
-  hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
+  #replaced all grid with ds.region
+  hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,ds.region,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
   print(hist.filename)
-  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 #  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 #  print(fut.filename)
-  target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
+  target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,ds.region,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
   print(target.filename)
   out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
   print(out.filename)
@@ -190,6 +191,32 @@ for (predictor.var in predictor.vars){
   list.target <- ReadNC(target.ncobj,var.name=predictor.var) #,dstart=c(1,1,1),dcount=c(1,140,16436)
   #Temporarily hard-coded due to longer time series on train.target
   print("ReadNC: success..3")
+
+#   ####Precipitation changes go here
+#   if(predictor.var=='pr'){
+#     pr.mask.opt <- 'global_trace'
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.hist$clim.in)))
+#     print("Number of zeroes in var:")
+#     print(sum(list.hist$clim.in==0))
+#     list.hist$clim.in <- MaskPRSeries(list.hist$clim.in, pr.mask.opt)
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.hist$clim.in)))
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.target$clim.in)))
+#     print("Number of zeroes in var:")
+#     print(sum(list.target$clim.in==0))
+#     list.target$clim.in <- MaskPRSeries(list.target$clim.in, pr.mask.opt)
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.target$clim.in)))
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.fut$clim.in)))
+#     print("Number of zeroes in var:")
+#     print(sum(list.fut$clim.in==0))
+#     list.fut$clim.in <- MaskPRSeries(list.fut$clim.in, pr.mask.opt)
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.fut$clim.in)))
+#   }
 }
 
 # simulate the user-specified choice of climate variable name to be processed

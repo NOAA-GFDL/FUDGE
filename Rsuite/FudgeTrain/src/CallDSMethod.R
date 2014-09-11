@@ -55,7 +55,7 @@ callCDFt <- function (pred, targ, new, args){
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
-    ## explanation as to why,
+    ## explanation as to why. This way works.
     args.list <- c(list(targ, pred, new), args)
 #     print("calling CDFt with args:")
 #     print(args)
