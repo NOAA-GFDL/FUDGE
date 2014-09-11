@@ -172,9 +172,6 @@ for (predictor.var in predictor.vars){
   out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
   print(out.filename)
   
-  spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-  print(spat.mask.filename)
-  
   # load the sample input datasets to numeric vectors
   hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
   print("OpenNC: success..1")
