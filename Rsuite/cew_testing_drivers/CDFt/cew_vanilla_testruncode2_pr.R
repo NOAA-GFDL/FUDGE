@@ -2,8 +2,8 @@
 rm(list=ls())
 
 #--------------predictor and target variable names--------#
-	predictor.vars <- 'tasmin' 
-	target.var <- 'tasmin'
+	predictor.vars <- 'pr' 
+	target.var <- 'pr'
 #--------------grid region, mask settings----------#
         #grid <- 'SCCSC0p1' 
         ds.region <- 'SCCSC0p1'
@@ -26,7 +26,7 @@ rm(list=ls())
 	hist.model_1 <- 'MPI-ESM-LR' 
 	hist.freq_1 <- 'day' 
 #	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
-hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/tasmin/SCCSC0p1/OneD/'
+hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/pr/SCCSC0p1/OneD/'
 	hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc' 
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- 2006 
@@ -37,7 +37,7 @@ hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/
 	fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 	fut.model_1 <- 'MPI-ESM-LR' 
 	fut.freq_1 <- 'day' 
-	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp85//atmos/day/r1i1p1/v20111014/tasmin/SCCSC0p1/OneD/'
+	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp85//atmos/day/r1i1p1/v20111014/pr/SCCSC0p1/OneD/'
 	fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 #------------- target -------------------------# 
 	target.file.start.year_1 <- 1961 
@@ -48,12 +48,14 @@ hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/
 	target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 	target.model_1 <- 'livneh'
 	target.freq_1 <- 'day' 
-        target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/tasmin/SCCSC0p1/OneD/'
+        target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/pr/SCCSC0p1/OneD/'
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'CDFt' 
-	ds.experiment <- 'testing-with_pr_masks-globaltrace-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
+	ds.experiment <- 'testing-with-wettday-convert-globaltrace-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
+####CEW EDIT: 
+pr.mask.opt <- 'global_trace'
 #-------------- output -----------------------#
 	#output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/1pow5-txp1-GFDL-CDFtv1-A00X01K00/tasmax/SCCSC0p1/OneD/v20140108/'
 output.dir <- '/home/cew/Code/testing/'
