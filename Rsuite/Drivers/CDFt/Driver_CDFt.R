@@ -339,9 +339,7 @@ ds.out.filename = WriteNC(out.file,esd.final,target.var,
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
-             configURL,label.validation,institution='NOAA/GFDL',
-             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
-             title="CDFt tests in 1^5", ds.experiment=ds.experiment)
+             configURL,label.validation,institution='NOAA/GFDL',version='testing',title="CDFt tests in 1^5")
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
