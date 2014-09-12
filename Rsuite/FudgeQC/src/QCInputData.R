@@ -28,7 +28,8 @@
 #' TODO: Are there other checks that should be run? 
 #' 
 
-QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="none", missval.threshold = NA, calendar="julian"){
+QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="none", missval.threshold = NA, calendar="julian", 
+                        allow.timeseries.nas=FALSE){
   #Inititalize list of data to be checked
   arg.names <- c("train.predictor", "train.target", "esd.gen")
   #Do the checks for consistency within a dataset
@@ -57,6 +58,27 @@ QCInputData <- function(train.predictor, train.target, esd.gen, k=0, ds.method="
                  "had a calendar attribute of", attr(loop.arg, "calendar"), 
                  "and an expected calendar attribute of", calendar))
     }
+    #Were there discontinuous timeseries within the dataset?
+#     if(!allow.timeseries.nas){
+#       out <- rle(is.na(as.vector(arg.data)))
+#       print(paste("allow.timeseries.check on", arg.names[arg], ":", TRUE%in%out$values))
+# #       print(out$values)
+# #       print(out$lengths)
+#       if(TRUE%in%out$values){
+#         #If there are missing values:
+#         out2<-rle(out$lengths[out$values==TRUE])
+#         #a continuous time series, if it has spatial discontinuities, will have length(timeseries)
+#         #entries in out, all with the same length
+#         print(length(out$lengths))
+#         print(out2$values)
+#         if(length(out$lengths)%%dim(arg.data)[3]!=0){
+#           #If there are missing values present and those missing values do 
+#           #not occupy an entire time series
+#           stop(paste("Discontinuous Time Series Error:", arg.names[arg], "read in from", attr(loop.arg, "filename"), 
+#                      "had a discontinuous time series. Please check missing values."))
+#         }
+#       }
+#     }
   }
   message("Datasets passed internal consistency checks")
   

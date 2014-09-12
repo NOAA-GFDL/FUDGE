@@ -4,6 +4,8 @@ LoadLib <- function(ds.method){
 # ncdf4 is common to all methods as datasets used in FUDGE are netCDF only at this time.
   library(ncdf4)
   library(PCICt)
+  library(udunits2)
+  #library(abind)
   if(grepl('CDFt', ds.method)){
         print("Importing CDFt library")       
 	library(CDFt)

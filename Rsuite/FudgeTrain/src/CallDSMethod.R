@@ -53,9 +53,9 @@ callCDFt <- function (pred, targ, new, args){
   if(is.null(args)){
     return(CDFt(targ, pred, new, npas=length(targ))$DS)
   }else{
-#     bse.list <- list()
-#     base.list
-    #args.list <- c(list('ObsRp'=targ, 'DataGP'=pred, 'DataGF'=new), args)
+    ##Note: if any of the input data parameters are named, CDFt will 
+    ## fail to run with an 'unused arguments' error, without any decent
+    ## explanation as to why. This way works.
     args.list <- c(list(targ, pred, new), args)
     print("calling CDFt with args:")
     print(args)
