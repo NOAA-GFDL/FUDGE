@@ -162,13 +162,13 @@ for (predictor.var in predictor.vars){
   
   ###CEW edit 8-28: Will not run without initializing predictor.var
   
-  #replaced all grid with ds.region
-  hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,ds.region,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
+
+  hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
   print(hist.filename)
-  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 #  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 #  print(fut.filename)
-  target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,ds.region,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
+  target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
   print(target.filename)
   out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
   print(out.filename)
@@ -371,7 +371,9 @@ ds.out.filename = WriteNC(out.file,esd.final,target.var,
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
-             configURL,label.validation,institution='NOAA/GFDL',version='testing',title="CDFt tests in 1^5")
+             configURL,label.validation,institution='NOAA/GFDL',
+version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5",ds.experiment=ds.experiment)
+
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 

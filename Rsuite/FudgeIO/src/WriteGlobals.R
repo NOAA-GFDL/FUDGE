@@ -1,7 +1,7 @@
 #Aparna Radhakrishnan, 08/06/2014
 WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
-                         institution='NOAA/GFDL',version='undefined',title="undefined"){
+                         institution='NOAA/GFDL',version='undefined',title="undefined", ds.experiment='unknown-experiment'){
 #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   info <- ""
@@ -10,6 +10,9 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(!is.na(kfold)){
   info <- paste(info, '(based on ',kfold,'-fold',' cross-validation).',sep='') 
+  }
+  if(!is.na(ds.experiment)){
+    info <- paste(info, 'with experiment configuration', ds.experiment, ").")
   }
   if(!is.na(predictand)){
   info <- paste(info, 'This is a downscaled estimate of ',predictand,sep='')
