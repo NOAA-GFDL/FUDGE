@@ -92,7 +92,11 @@ set basedir = $argv[43]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUDGEROOT":"'"${basedir}"'")
 set iend = $argv[44]
 set params = $argv[45]
-set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list("${params}")" )
+if($params == 'na') then 
+ set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list('"${params}"')" )
+else
+ set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list("${params}")" )
+endif
 echo "debug"
 set ds_region = $argv[46]
 echo "debug 2"
