@@ -371,9 +371,17 @@ ds.out.filename = WriteNC(out.file,esd.final,target.var,
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
+commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
+time.mask.names <- ""
+for (i in 1:length(names(tmask.list))){
+  var <- names(tmask.list[i])
+  time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ";", sep=""), collapse="")
+  print(time.mask.names)
+}
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
-version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5")
+             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+             ds.arguments=args, time.masks=time.mask.names)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
