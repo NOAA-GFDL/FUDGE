@@ -2,7 +2,7 @@
 WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
-                         ds.arguments='na', time.masks=NA){
+                         ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment'){
 #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   comment.info <- ""

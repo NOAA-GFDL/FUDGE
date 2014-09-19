@@ -216,6 +216,9 @@ for (predictor.var in predictor.vars){
       list.fut$pr_mask <-temp.out$future$pr_mask
       #remove from workspace to keep memory overhead low
       remove(temp.out)
+      print(paste("number in future < 0:", sum(list.fut$clim.in[!is.na(list.fut$clim.in)] < 0)))
+      print(paste("number in predictor < 0:", sum(list.hist$clim.in[!is.na(list.hist$clim.in)] < 0)))
+      print(paste("number in target < 0:", sum(list.target$clim.in[!is.na(list.target$clim.in)] < 0)))
     }else{
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
@@ -384,7 +387,7 @@ for (i in 1:length(names(tmask.list))){
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
-             ds.arguments=args, time.masks=time.mask.names)
+             ds.arguments=args, time.masks=time.mask.names, ds.experiment=ds.experiment)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
