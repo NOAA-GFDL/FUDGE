@@ -52,7 +52,7 @@ hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'CDFt' 
-	ds.experiment <- 'tracking-neg-precip-source-all-opts-converted-units3-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
+	ds.experiment <- 'tracking-neg-precip-source-remove-0-pr-postprocess2-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
 ####CEW EDIT: 
 #-------------- output -----------------------#

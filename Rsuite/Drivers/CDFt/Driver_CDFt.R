@@ -216,9 +216,6 @@ for (predictor.var in predictor.vars){
       list.fut$pr_mask <-temp.out$future$pr_mask
       #remove from workspace to keep memory overhead low
       remove(temp.out)
-      print(paste("number in future < 0:", sum(list.fut$clim.in[!is.na(list.fut$clim.in)] < 0)))
-      print(paste("number in predictor < 0:", sum(list.hist$clim.in[!is.na(list.hist$clim.in)] < 0)))
-      print(paste("number in target < 0:", sum(list.target$clim.in[!is.na(list.target$clim.in)] < 0)))
     }else{
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
@@ -347,6 +344,20 @@ time.steps <- dim(esd.final)[3]
 #--QC Downscaled Values
 print("STATS: Downscaled output")
 MyStats(esd.final,verbose="yes")
+
+numzeroes <- sum(esd.final[!is.na(esd.final)] < 0)
+print(paste("Number of values in output < 0:", numzeroes))
+if(numzeroes > 0){
+  esd.final[esd.final < 0] <- 0
+  print(paste("Number of values in output < 0 after correction:", sum(esd.final[!is.na(esd.final)] < 0)))
+}
+pr.post.process <- TRUE
+
+if('pr'%in%target.var && pr.post.process){ #TODO: Change to predictand.vars at some point
+  print(paste("Adjusting pr values to pr threshold"))
+  esd.final <- as.numeric(esd.final) * MaskPRSeries(esd.final, units=list.fut$units$value , index = pr.mask.opt)
+}
+
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 #Replace NAs by missing 
 ###CEW edit: replaced ds.vector with esd.final
