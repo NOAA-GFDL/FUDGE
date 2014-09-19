@@ -317,8 +317,9 @@ esd.final <- TrainDriver(target.masked.in = list.target$clim.in,
                            hist.masked.in = list.hist$clim.in, 
                            fut.masked.in = list.fut$clim.in, 
                            mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                           istart = NA,loop.start = NA,loop.end = NA)
+                           istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL)
 }
+print(summary(esd.final))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 ##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
@@ -370,9 +371,17 @@ ds.out.filename = WriteNC(out.file,esd.final,target.var,
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
+commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
+time.mask.names <- ""
+for (i in 1:length(names(tmask.list))){
+  var <- names(tmask.list[i])
+  time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ";", sep=""), collapse="")
+  print(time.mask.names)
+}
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
-version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5",ds.experiment=ds.experiment)
+             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+             ds.arguments=args, time.masks=time.mask.names)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))

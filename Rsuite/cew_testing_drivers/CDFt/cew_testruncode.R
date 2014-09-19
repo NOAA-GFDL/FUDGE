@@ -5,13 +5,14 @@ rm(list=ls())
 	predictor.vars <- 'tasmax' 
 	target.var <- 'tasmax'
 #--------------grid region, mask settings----------#
-        grid <- 'SCCSC0p1' 
+        grid <- 'SCCSC0p1'
+        ds.region <- grid
         spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/' 
         spat.mask.var <- 'red_river_0p1_masks' 
 #--------------- I,J settings ----------------#
         file.j.range <- 'J31-170' 
 ###CEW edit
-        i.file <- 300   
+        i.file <- 250   
         j.start <- 31 
         j.end <- 170 
         loop.start <-  j.start - (j.start-1)
@@ -51,17 +52,17 @@ rm(list=ls())
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'CDFt' 
-	ds.experiment <- '1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
+	ds.experiment <- 'TRAINTEST-1pow5-txp1-GFDL-CDFtv1-A00-X01K00' 
 	k.fold <- 0 
 #-------------- output -----------------------#
 ###CEW EDIT:
 #	output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/CDFt/tasmax/SCCSC0p1/OneD/v20140108/'
-output.dir <- '/home/cew/Code'
+output.dir <- '/home/cew/Code/'
 #-------------  custom -----------------------#
 ###CEW EDIT:
 #        npas=300
-args = list(npas=300, fakething="none")
-#args = list(npas=300)
+#args = list(npas=300, fakething="none")
+args = list('na')
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 
 ################### others ###################################

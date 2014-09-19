@@ -58,7 +58,7 @@ callCDFt <- function (pred, targ, new, args){
     ## explanation as to why. This way works.
     args.list <- c(list(targ, pred, new), args)
     print("calling CDFt with args:")
-    print(args)
+#    print(args)
     return(do.call("CDFt", args.list)$DS)
   }
 }
