@@ -2,7 +2,8 @@
 WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
-                         ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment'){
+                         ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
+                         post.process=""){
 #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   comment.info <- ""
@@ -36,6 +37,9 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     argnames <- ls.str(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function:", argstring, "\n", sep=" ")
+  }
+  if(post.process!=""){
+    info <- paste(info, "Processing options: ", post.process, "\n", sep="")
   }
   history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
   if(file.exists(filename)){ 

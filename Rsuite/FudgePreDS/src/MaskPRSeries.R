@@ -16,7 +16,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
                           adjust.future=NA, adjust.future.units='kg m-2 s-1'){
   ref.wetdays <- MaskPRSeries(ref.data, ref.units, opt.wetday)
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
-  print(length(adjust.future))
+  #print(length(adjust.future))
   if(length(adjust.future) > 1 ){ #|| !is.na(adjust.future)){
     print("activiating future quantile option")
     future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
@@ -35,7 +35,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
       loop.adj <- adjust.data[i,j,][!is.na(adjust.data[i,j,])]
       loop.adj.wetdays <- adjust.wetdays[i,j,][!is.na(adjust.wetdays[i,j,])]
       if(length(adjust.future) > 1) {#||!is.na(adjust.future)){
-        print(length(adjust.future))
+        #print(length(adjust.future))
         loop.fut <- adjust.future[i,j,][!is.na(adjust.future[i,j,])]
         loop.fut.wetdays <- future.wetdays[i,j,][!is.na(future.wetdays[i,j,])]
       }
