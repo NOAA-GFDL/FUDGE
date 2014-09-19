@@ -13,7 +13,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
                           adjust.data, adjust.units='kg m-2 s-1', 
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
                           lopt.graphics=FALSE, verbose=TRUE,
-                          adjust.future=NA, adjust.future.units=NA){
+                          adjust.future=NA, adjust.future.units='kg m-2 s-1'){
   ref.wetdays <- MaskPRSeries(ref.data, ref.units, opt.wetday)
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
   print(length(adjust.future))
@@ -21,10 +21,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
     print("activiating future quantile option")
     future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
   }
-  #fraction.wet.ref <- num.wet.ref / (num.wet.ref + num.notwet.ref)
-  ########
   ##Loop over all lat/lon points available in the input datasets
-  ###
   ref.data.new <- ref.data
   adjust.data.new <- adjust.data
   if(length(adjust.future) > 1 ){ #|| !is.na(adjust.future)){
@@ -32,34 +29,35 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   }
   print(dim(ref.data))
   for (i in 1:dim(ref.data)[1]){
-    for (j in 1:dim(ref.data)[2]){
-      loop.ref <- ref.data[i,j,]
-      loop.ref.wetdays <- ref.wetdays[i,j,]
-      loop.adj <- adjust.data[i,j,]
-      loop.adj.wetdays <- adjust.wetdays[i,j,]
+    for (j in 1:dim(ref.data)[2]){ 
+      loop.ref <- ref.data[i,j,][!is.na(ref.data[i,j,])]
+      loop.ref.wetdays <- ref.wetdays[i,j,][!is.na(ref.wetdays[i,j,])]
+      loop.adj <- adjust.data[i,j,][!is.na(adjust.data[i,j,])]
+      loop.adj.wetdays <- adjust.wetdays[i,j,][!is.na(adjust.wetdays[i,j,])]
       if(length(adjust.future) > 1) {#||!is.na(adjust.future)){
-        loop.fut <-adjust.future[i,j,]
-        loop.fut.wetdays <- future.wetdays[i,j,]
+        print(length(adjust.future))
+        loop.fut <- adjust.future[i,j,][!is.na(adjust.future[i,j,])]
+        loop.fut.wetdays <- future.wetdays[i,j,][!is.na(future.wetdays[i,j,])]
       }
-      if (lopt.drizzle == TRUE && sum(!is.na(loop.ref))!=0) { #Avoid running if all NA values present
-        fraction.wet.ref <- sum(loop.ref.wetdays[!is.na(loop.ref.wetdays)]) / sum(!is.na(loop.ref.wetdays))
+      if (lopt.drizzle == TRUE && length(loop.ref)!=0) { #Avoid running if all NA values present
+        fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
         #         print(fraction.wet.ref)
-        fraction.wet.adj <- sum(loop.adj.wetdays[!is.na(loop.adj.wetdays)]) / sum(!is.na(loop.adj.wetdays))
+        fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
         #         print(fraction.wet.adj)
         # Perform the following calculations and adjustments to the GCM time series
         # only if the user has asked for the drizzle adjusment to be applied 
-        if(j%%10==0){
+        if(j%%10==0 || j==1){
           print(" Consider applying drizzle adjustment")
         }
       #  print(fraction.wet.adj)
       #  print(fraction.wet.ref)
         if (fraction.wet.adj > fraction.wet.ref) {
-          if(j%%10==0){
+          if(j%%10==0 || j==1){
             print(" Need to do drizzle adjustment")
           }
           #      print(c(fraction.wet.adj," > ",fraction.wet.ref), sep =" ")
           first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)  
-          small.fraction <- 1.0/length(!is.na(loop.ref))
+          small.fraction <- 1.0/length(loop.ref)
           last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
           #       if (under.development == TRUE) {
           #         print(c(" last, first", last.below.threshold, first.above.threshold))
@@ -70,83 +68,69 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
                                            probs=(num.zero.in.adjusted/length(loop.adj)), 
                                            na.rm=TRUE)
           #           print(threshold.wetday.adj)
-          #           print(paste("threshold:", threshold.wetday.adj))
-          #adjust.wetdays <- MaskPRSeries(adjust.data[i,j,], adjust.units, threshold.wetday.adj)
+                    print(paste("threshold:", threshold.wetday.adj))
           loop.adj.wetdays <- loop.adj > threshold.wetday.adj
           #           print(paste("length of adj.wetdays:", length(adj.wetdays)))
           if(length(adjust.future) > 1 ){ #|| !is.na(adjust.future)){
-            #             print('calculating future parameters')
-            #future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, threshold.wetday.adj)
             loop.fut.wetdays <- loop.fut > threshold.wetday.adj
           }
         } else {
-          if(j%%10==0){
+          if(j%%10==0 || j==1){
             print(" No need to do drizzle adjustment")
           }
         }
       } else {
-        if(j%%10==0){
+        if(j%%10==0 || j==1){
           print(" Not considering drizzle adjustment ")
         }
       }
       ###Now consider the conserve option
       if(lopt.conserve==TRUE){
-        if(j%%10==0){
+        if(j%%10==0 || j==1){
           print("entering conserve option")
         }
-        total.trace.pr <- sum(loop.ref[!is.na(loop.ref) && loop.ref.wetdays==FALSE])
+        total.trace.pr <- sum(loop.ref[loop.ref.wetdays==FALSE])
         ####REALLY think about how to do this compare
         pr.adjust <- total.trace.pr/sum(loop.ref.wetdays[!is.na(loop.ref.wetdays)])
-        #         print(total.trace.pr)
-        #         print(pr.adjust)
-        #         print(sum(loop.ref.wetdays[!is.na(loop.ref.wetdays)]))
-        #         print(dim(loop.ref.wetdays))
-        #         print(dim(loop.ref))
-        loop.ref[!is.na(loop.ref) && loop.ref.wetdays==TRUE] <- (loop.ref + pr.adjust)
+        loop.ref[loop.ref.wetdays==TRUE] <- (loop.ref[loop.ref.wetdays==TRUE] + pr.adjust)
         
         ###And do the same thing for the adjusted data
-        if(j%%10==0){
+        if(j%%10==0 || j==1){
           print("starting adjust section")
         }
-        total.trace.pr <- sum(loop.adj[!is.na(loop.adj) && loop.adj.wetdays==FALSE])
+        total.trace.pr <- sum(loop.adj[loop.adj.wetdays==FALSE])
         pr.adjust <- total.trace.pr/sum(loop.adj.wetdays)
         #         print(sum(loop.adj.wetdays))
         #         print(pr.adjust)
-        loop.adj[!is.na(loop.adj) && loop.adj.wetdays==TRUE] <- loop.adj + pr.adjust
+#         print(paste("pr adjust:", pr.adjust))
+#         if(pr.adjust >0){
+#        print(paste("pr adjust", pr.adjust))
+#         }
+#         print(paste("loop adjust:", sum(loop.adj)))
+        loop.adj[loop.adj.wetdays==TRUE] <- (loop.adj[loop.adj.wetdays==TRUE]  + pr.adjust)
+#         loop.new <- (loop.adj + rep(pr.adjust, length(loop.adj)))
+#         print(paste("loop adjust:", sum(loop.new)))
+#         print(sum(loop.new-loop.adj))
+#         loop.adj[loop.adj.wetdays==TRUE] <- loop.new[loop.adj.wetdays==TRUE]
         ###and the future, if that applies
         if(length(adjust.future) > 1){ #|| !is.na(adjust.future)){
-          total.trace.pr <- sum(loop.fut[!is.na(loop.fut) && loop.fut.wetdays==FALSE])
+          # print("line 118")
+          total.trace.pr <- sum(loop.fut[loop.fut.wetdays==FALSE])
           pr.adjust <- total.trace.pr/sum(loop.fut.wetdays)
-          #           print(sum(loop.fut.wetdays))
-          #           print(pr.adjust)
-          loop.fut[!is.na(loop.adj) && loop.fut.wetdays==TRUE] <- loop.fut + pr.adjust
+          loop.fut[loop.fut.wetdays==TRUE] <- (loop.fut[loop.fut.wetdays==TRUE] + pr.adjust)
         }
+      } 
+      ref.data[i,j,][!is.na(ref.data[i,j,])] <- loop.ref
+      ref.wetdays[i,j,][!is.na(ref.wetdays[i,j,])] <- loop.ref.wetdays
+      adjust.data[i,j,][!is.na(adjust.data[i,j,])] <- loop.adj 
+      adjust.wetdays[i,j,][!is.na(adjust.wetdays[i,j,])] <- loop.adj.wetdays 
+      #Future 'if' scenario
+      if(length(adjust.future) > 1 ){   #||!is.na(adjust.future))
+        adjust.future[i,j,][!is.na(adjust.future[i,j,])] <- loop.fut
+        future.wetdays[i,j,][!is.na(future.wetdays[i,j,])] <- loop.fut.wetdays
       }
-      ref.data[i,j,] <- loop.ref
-      ref.wetdays[i,j,] <- loop.ref.wetdays 
-      adjust.data[i,j,] <- loop.adj
-      adjust.wetdays[i,j,] <- loop.adj.wetdays 
-      if(length(adjust.future > 1) )#||!is.na(adjust.future)){
-        adjust.future[i,j,] <- loop.fut
-      future.wetdays[i,j,] <-  loop.fut.wetdays
     }
   }
-  #   out.list <- list()
-  #   print("doing final mask apply")
-  #   print(length(adjust.data))
-  #   print(length(ref.data))
-  #   print(length(adjust.wetdays))
-  #   print(length(ref.wetdays))
-  #   reference.out <- as.numeric(ref.wetdays)*ref.data
-  #   after.adjustment <- as.numeric(adjust.wetdays)*adjust.data
-  print("input data:")
-  print(summary(ref.data.new))
-  print(summary(as.numeric(ref.wetdays)*ref.data))
-  print(summary(ref.data.new-(as.numeric(ref.wetdays)*ref.data)))
-  print("adjusted data:")
-  print(summary(adjust.data.new))
-  print(summary(as.numeric(adjust.wetdays)*adjust.data))
-  print(summary(adjust.data.new-(as.numeric(adjust.wetdays)*adjust.data)))
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays))
   if(length(adjust.future) > 1) {#||!is.na(adjust.future)){
@@ -172,7 +156,9 @@ MaskPRSeries <- function(data, units, index){
   us.trace.thold = ud.convert(0.01, "inches/day", units)
   global.trace.thold = ud.convert(0.1, "mm/day", units)
   switch(index, 
-         #'zero' = return(replace.vals(data, data==zero.thold)), 
+         #'zero' = return(replace.vals(data, data==zero.thold)),
+         #'zero' = return(apply(apply(data, c(1,2,3), all.equal, zero.thold), c(1,2,3), isTRUE))
+         #Ignore the above. Machine precision or no, it's hideous. 
          'zero' = return(data==zero.thold),
          'us_trace' = return(data > us.trace.thold), 
          'global_trace' = return(data > global.trace.thold), 

@@ -193,38 +193,41 @@ for (predictor.var in predictor.vars){
   print("ReadNC: success..3")
 
   ####Precipitation changes go here
-#   if(predictor.var=='pr'){
-#     
-#     print("Number of NAs in var:")
-#     print(sum(is.na(list.hist$clim.in)))
-#     print("Number of zeroes in var:")
-#     print(sum(list.hist$clim.in==0))
-#     if(train.and.use.same==TRUE){
-#       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
-#                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
-#                                 opt.wetday=pr.mask.opt, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
-#                                 lopt.graphics=FALSE, verbose=TRUE,
-#                                 adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
-#       list.target$clim.in <- temp.out$ref$data
-#       list.target$pr_mask <-temp.out$ref$pr_mask
-#       list.hist$clim.in <- temp.out$adjust$data
-#       list.hist$pr_mask <-temp.out$adjust$pr_mask
-#       list.fut$clim.in <- temp.out$future$data
-#       list.fut$pr_mask <-temp.out$future$pr_mask
-#       #remove from workspace to keep memory overhead low
-#       remove(temp.out)
-#     }else{
-#       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
-#                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
-#                                 opt.wetday=opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
-#                                 lopt.graphics=FALSE, verbose=TRUE,
-#                                 adjust.future=NA, adjust.future.units=NA)
-#       list.target$clim.in <- temp.out$ref$data
-#       list.target$pr_mask <-temp.out$ref$pr_mask
-#       list.hist$clim.in <- temp.out$adjust$data
-#       list.hist$pr_mask <-temp.out$adjust$pr_mask
-#     }
-#   }
+  if(predictor.var=='pr'){
+    #Options currently hard-coded
+    pr.mask.opt = 'us_trace'
+    lopt.drizzle = TRUE
+    lopt.conserve= TRUE
+    print("Number of NAs in var:")
+    print(sum(is.na(list.hist$clim.in)))
+    print("Number of zeroes in var:")
+    print(sum(list.hist$clim.in==0))
+    if(train.and.use.same==TRUE){
+      temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
+                                adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
+                                opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
+                                lopt.graphics=FALSE, verbose=TRUE,
+                                adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
+      list.target$clim.in <- temp.out$ref$data
+      list.target$pr_mask <-temp.out$ref$pr_mask
+      list.hist$clim.in <- temp.out$adjust$data
+      list.hist$pr_mask <-temp.out$adjust$pr_mask
+      list.fut$clim.in <- temp.out$future$data
+      list.fut$pr_mask <-temp.out$future$pr_mask
+      #remove from workspace to keep memory overhead low
+      remove(temp.out)
+    }else{
+      temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
+                                adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
+                                opt.wetday=opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
+                                lopt.graphics=FALSE, verbose=TRUE,
+                                adjust.future=NA, adjust.future.units=NA)
+      list.target$clim.in <- temp.out$ref$data
+      list.target$pr_mask <-temp.out$ref$pr_mask
+      list.hist$clim.in <- temp.out$adjust$data
+      list.hist$pr_mask <-temp.out$adjust$pr_mask
+    }
+  }
 }
 
 # simulate the user-specified choice of climate variable name to be processed

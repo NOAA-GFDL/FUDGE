@@ -50,14 +50,20 @@ callSimple.lm <- function(pred, targ, new, args){
 }
 
 callCDFt <- function (pred, targ, new, args){
+  #Calls the CDFt function
+  #If no argument is provided for npas, defaults to 
+  #npas=length(targ)
   if(is.null(args)){
     return(CDFt(targ, pred, new, npas=length(targ))$DS)
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
     ## explanation as to why. This way works.
+    if(!'npas'%in%names(args)){
+      args <- c(npas=length(targ), args)
+    }
     args.list <- c(list(targ, pred, new), args)
-    print("calling CDFt with args:")
+#    print("calling CDFt with args:")
 #    print(args)
     return(do.call("CDFt", args.list)$DS)
   }

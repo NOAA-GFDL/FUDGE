@@ -7,11 +7,14 @@
 #
 
 library(ncdf4)
-source("../../../../Rsuite/drivers/TrainDriver.R")
+source("../../src/TrainDriver.R")
 source("../../src/LoopByTimeWindow.R")
 source("../../src/CallDSMethod.R")
-source("../../../FudgePreDS/src/QCTimeMask.R")
+source("../../../FudgePreDS/src/CreateTimeWindowList.R")
+source("../../../FudgeQC/src/QCTimeMask.R")
 source("../../../FudgePreDS/src/ApplyTemporalMask.R")
+source("../../../FudgeIO/src/CreateTimeseries.R")
+source("../../../FudgeIO/src/ReadMaskNC.R")
 #######
 ##Example code for calling and testing the Fudge driver script and the time-windowing functions
 ##with real data.
@@ -21,7 +24,7 @@ train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks
 #esdgen_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc"
 esdgen_time_window <- "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc"
 
-check.mask.list <- QCTimeMask(hist.train.mask = train_time_window, hist.targ.mask = train_time_window, 
+check.mask.list <- CreateTimeWindowList(hist.train.mask = train_time_window, hist.targ.mask = train_time_window, 
                               esd.gen.mask = esdgen_time_window, k=0, method='CDFt')
 #Then, read in data 
 historical_target = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1.2/tasmax/SCCSC0p1/OneD/tasmax_day_livneh_historical_r0i0p0_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
@@ -72,14 +75,14 @@ start.time <- proc.time()
 all.real.lm.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, 
                                 fut.masked.in = fut.pred, mask.list = check.mask.list, 
                                 ds.method = 'simple.lm', k=0, time.steps=NA, 
-                                istart = NA,loop.start = NA,loop.end = NA)
+                                istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL)
 print(paste("Entire run with simple.lm took", proc.time()[1]-start.time[1], "to complete."))
 #Takes roughly 18 seconds to run if workspace is cleared first
 
 start.time <- proc.time()
 all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
                                   mask.list = check.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
-                                  istart = NA,loop.start = NA,loop.end = NA)
+                                  istart = NA,loop.start = NA,loop.end=NA, downscale.args=NULL)
 print(paste("Entire run with CDFt took", proc.time()[1]-start.time[1], "to complete."))
 #CDFt took **6 MINUTES** to run over the entire dataset. I think that this might be doing okay.
 

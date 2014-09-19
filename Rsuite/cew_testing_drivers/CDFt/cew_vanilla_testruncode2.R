@@ -5,7 +5,7 @@ rm(list=ls())
 	predictor.vars <- 'tasmin' 
 	target.var <- 'tasmin'
 #--------------grid region, mask settings----------#
-        #grid <- 'SCCSC0p1' 
+        grid <- 'SCCSC0p1' 
         ds.region <- 'SCCSC0p1'
         spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/' 
         spat.mask.var <- 'red_river_0p1_masks' 
@@ -58,7 +58,8 @@ hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/
 	#output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/1pow5-txp1-GFDL-CDFtv1-A00X01K00/tasmax/SCCSC0p1/OneD/v20140108/'
 output.dir <- '/home/cew/Code/testing/'
 #-------------  custom -----------------------#
-        args=list(npas=300) 
+ #       args=list(npas=300) 
+args=list('na')
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 
 ################### others ###################################
