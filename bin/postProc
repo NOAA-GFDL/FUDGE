@@ -45,7 +45,7 @@ def postProc():
      if(basedir is None):
            print "ERROR: BASEDIR environment variable not set"
 	   sys.exit(1)
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region = expergen.listVars(uinput,basedir=basedir,pp=True) 
+     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver = expergen.listVars(uinput,basedir=basedir,pp=True) 
      basedire = basedir	
      esdMethod = method
      varname = target 
@@ -66,14 +66,15 @@ def postProc():
      ver = dversion
      predModel = fut_model 	
      indir = outdir #Our mini op from dscaling is the input to PP  
-     print "test//"	 
+     obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
+     #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
      if (cond == 1):
            			if (os.path.exists(indir)):
                                         exists = checkExists(varname,indir,region,ver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
              				if (exists == False):
 
            					print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,varname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time))
+						cnt = call_ppFudge(basedire,indir,esdMethod,varname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid)
 					else:
 						sys.exit("ERROR")
            			else:
@@ -98,7 +99,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 					print filename
 				        return exists		
 
-def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end):
+def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid):
         script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
 	print script1Loc 
 #check if output already exists
@@ -106,7 +107,7 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 #TODO rem redundant region to cattool
 
         fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"0101"+"-"+end+"1231" 
-	cmd =  script1Loc+" "+basedire+" "+indir+" "+method+" "+var+" "+dexper+" "+exper_rip+" "+region+" "+ver+" "+str(lons)+" "+str(lone)+" "+str(lats)+" "+str(late)+" "+str(grid)+" "+fileprefix
+	cmd =  script1Loc+" "+basedire+" "+indir+" "+method+" "+var+" "+dexper+" "+exper_rip+" "+region+" "+ver+" "+str(lons)+" "+str(lone)+" "+str(lats)+" "+str(late)+" "+str(grid)+" "+fileprefix+" "+obsid
         print "PP ..in progress", cmd 
        	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 

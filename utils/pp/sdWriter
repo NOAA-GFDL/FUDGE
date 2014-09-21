@@ -15,7 +15,9 @@ set METHOD = $4
 set auxfiledir = $5 #new
 set dversion = $6 #new
 set drs = $7
-set obs = "OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)" # use as arg TODO
+set obs = $8 #being passed 
+#set drs = $8
+#set obs = "OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)" # use as arg TODO
 set simple = 0
 #set exp_config_url = "http://gfdl.noaa.gov/esd_experiment_configs"
 if (($AARMVAR == "tasmax") || ($AARMVAR == "tasmin")) then
@@ -62,6 +64,7 @@ while ( $inc > 0 )
 #   set i_offset = 1 
 #   set j_offset  = 1 
    set maskswitch = 'off'	
+   #bndsfile notused 
    set bndsfile = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/red_river_0p1_masks.nc' #TODO ARG
  endif
   @ inc = $inc - 1
@@ -425,7 +428,7 @@ ncatted -O -h -a region_id,global,a,c,"${region}" $OFILE
 ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE 
 ncatted -O -h -a comment,global,a,c,".OBS used: ${obs}" $OFILE
 ncatted -O -h -a resolution,global,a,c,"0.1x0.1degree" $OFILE
-ncatted -O -h -a info,global,o,c,"time_mask: seasonal" $OFILE
+#ncatted -O -h -a info,global,o,c,"time_mask: seasonal" $OFILE
 
 endif
 if($simple == 0) then
