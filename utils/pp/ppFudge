@@ -1,0 +1,176 @@
+#!/bin/tcsh 
+#PBS -S /bin/tcsh
+#PBS -l nodes=1:ppn=2,walltime=12:00:00
+#PBS -r y
+#PBS -j oe
+#PBS -N cmor
+#PBS -E
+#PBS -o /home/a1r/gitlab/fudge//main/stdout/ppFudge.${MOAB_JOBNAME}.${MOAB_JOBID}
+#PBS -q batch
+#
+#unset echo
+if ($#argv < 9) then
+ set usage=" (run on PAN) Please provide 8 command line arguments- basedir indir method var epoch rip region ver \n"
+ set usage="$usage Eg. ppFudge /home/a1r/gitlab/ /work/a1r/NCPP2013/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/OneD/v20120422/ GFDL-ARRMv1-FutUS48-xval-60lo0 tasmax sst2090 r1i1p1 US48 v20120422"
+ set usage1="You should either pass 8 arguments to this script (or) set the variables within the script \n $usage "
+endif
+if ($#argv > 9) then
+ set basedir=$argv[1]
+ set indir=$argv[2]
+ set method=$argv[3]
+ set var=$argv[4]
+ set epoch=$argv[5]
+ set rip=$argv[6] 
+ set region=$argv[7]
+ set ver=$argv[8] 
+ set lons=$argv[9]
+ set lone=$argv[10]
+ set lats=$argv[11]
+ set late=$argv[12]
+ set grid=$argv[13] 
+ set prefix=$argv[14] #lets just pass it
+ set fprefix = "cattool.$prefix.nc"
+endif
+#################################### set the following options if using this script directly in batch mode ############ 
+#1 where is the git repo?
+if ! $?basedir then  
+	#set basedir = "/home/a1r/gitlab/"
+endif
+if (( $#argv < 2) && (! $?basedir)) then
+ echo $usage1
+ exit
+endif
+
+#2 where are the minifiles?
+if ! $?indir then
+#  set indir = "/work/a1r/NCPP2013/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/OneD/v20120422/"
+endif
+#3 what is the "method name" set in your dstemplate XML (used in the filenames produced)?
+if ! $?method then
+#  set method = GFDL-ARRMv1-FutUS48-xval-60lo0 
+endif
+#4 which CMIP variable?
+if ! $?var then
+#  set var = tasmax
+endif
+#5 which experiment epoch - amip or sst2090 ?
+if ! $?epoch then
+#  set epoch = sst2090 
+endif
+#6 which experiment rip?
+if ! $?rip then
+#  set rip = r1i1p1
+endif
+#7 which region was downscaled? (US48 or global)
+if ! $?region then
+#  set region = US48
+endif
+#8 which downscaled data version?
+if ! $?ver then 
+# set ver = v20120422
+endif
+
+########################## end of user input #############################
+# -------- no changes needed below --------------------------------------
+set workdir = $TMPDIR
+set outroot=$workdir$indir/../../../$region/$ver
+set auxfiledir=$basedir/utils/pp/auxfiles/ 
+#echo $outroot
+set root = $indir/../../../$region/$ver 
+#echo $root
+#exit
+
+set tooldir=$basedir/utils/pp/
+
+set exp = ${epoch}_${rip}
+set preprefix = ${var}_day_${method}
+if ($epoch == amip) set prefix = ${preprefix}_${exp}_19790101-20081231
+if ($epoch == sst2090) set prefix = ${preprefix}_${exp}_20860101-20951231
+
+##### output. Intermediate in vftmp #####
+mkdir -p $root
+mkdir -p $outroot
+cd $outroot
+#################
+
+#echo "==========================================================================="
+#echo "==========================================================================="
+#echo "  "
+#echo "Running cattool ... "
+#echo "  "
+#echo "==========================================================================="
+#echo "==========================================================================="
+#sample call /home/a1r/gitlab/vanilla/fudge2014/utils/pp/cattool /work/a1r/PROJECTS/DOWNSCALING/RedRiver/downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RRtxp1-CDFt-A38L01K00/tasmax/RR/OneD/v20140108/ tasmax_day_RRtxp1-CDFt-A38L01K00_rcp85_r1i1p1_RR_20060101-20991231 RR.nc /home/a1r/gitlab/vanilla/fudge2014/utils/pp/auxfiles/ 181 370 31 170 /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/red_river_0p1_masks.nc region=RR
+#
+
+echo "$tooldir/cattool $indir $prefix $fprefix $auxfiledir $lons $lone $lats $late $grid region=$region"
+
+$tooldir/cattool $indir $prefix $fprefix $auxfiledir $lons $lone $lats $late $grid region=$region
+set cattool_Exit = $?
+#echo "==========================================================================="
+#echo "  "
+#echo "cattool done."
+#echo "cattool EXIT STATUS: $cattool_Exit"
+if ($cattool_Exit == 1) then
+ echo "cattool exitted with an ERROR.... quitting PP job" 
+ echo "###########ERROR##############\n"	
+ rm -rf $outroot 
+ echo "cattool command that failed:\n"
+ echo "$tooldir/cattool $indir $prefix $fprefix.nc region=$region"
+ exit 1
+endif
+#echo "  "
+#echo "==========================================================================="
+
+#echo "==========================================================================="
+#echo "==========================================================================="
+#echo " "
+#echo "Running sdWriter ... "
+#echo " "
+#echo "==========================================================================="
+#echo "==========================================================================="
+
+#sample call
+#/home/a1r/gitlab/vanilla/fudge2014/utils/pp/sdWriter RR.nc RRtxp1-CDFt-A38L01K00 tasmax CDFtv1 /home/a1r/gitlab/vanilla/fudge2014/utils/pp/auxfiles/ testversion tasmax_day_RRtxp1-CDFt-A38L01K00_rcp85_r1i1p1_RR_20060101-20991231.nc region=RR
+
+echo "$tooldir/sdWriter $fprefix $exp $var $method $auxfiledir $ver region=$region"
+$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $ver $prefix.nc region=$region
+set sdWriter_Ex = $?
+#echo "sdWriter EXIT STATUS: $sdWriter_Ex"
+if ($sdWriter_Ex == 1) then
+ echo "sdWriter exitted with an ERROR.... quitting PP job"
+ rm -rf $outroot
+ echo "###########ERROR##############\n"
+ echo "sdWriter command that failed:\n"
+ echo "$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $ver region=$region"
+ exit 1
+endif
+endif
+#echo "==========================================================================="
+#echo "  "
+#echo "sdWriter done."
+echo "  "
+#echo "==========================================================================="
+
+# check for output file & if there, remove tmp file and correct offsets
+#\ls -l *${epoch}_${rip}*${region}*nc
+\ls -l ${prefix}.nc
+   if ($status == 0) then
+     set outfile = ${prefix}.nc   #(*${epoch}_${rip}*${region}*nc)
+     echo " "
+     module load gcp/2.1 	
+#uncomment later     \gcp $outfile $root/$outfile
+     echo "gcp $outfile $root/$outfile"
+     echo "Output file produced. See $root/"
+     \ls -l $root/$outfile
+   else
+     echo " "
+     echo "Expected output file was not created in $root/$outfile. Please check the output from cattool or sdWriter."
+     echo " "
+     exit 1
+   endif
+
+#rm -rf $outroot
+exit 0
+
+
