@@ -105,7 +105,7 @@ else if( ${AARMVAR} == "tasmin" ) then
 else if( ${AARMVAR} == "pr" ) then
  set CMIPNAME = "pr" ########
  set TMPCMIPNAME = "prnew"########temp name########### 
- set long_name = "Precipitation"
+ set long_name = "Downscaled Precipitation"
  set units = "kg/m2/s"
  set downscaling_method = $METHOD
  set coordinates = "height"
@@ -368,6 +368,7 @@ ${MASKNAME}@long_name = ${MASKVAR}@long_name;
 EOF
 set echo
 ncks -A -h -v ${MASKVAR} $IFILE refine.nc 
+endif
 set exitcode = $?
 if ($exitcode == 1) then
         echo "ERROR in ncks call ncks -A -h -v ${MASKVAR} $IFILE refine.nc"
