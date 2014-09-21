@@ -21,10 +21,11 @@ set lone = $6
 set lats = $7
 set late = $8
 set grid = $9 #gridspec file, typically the spatial mask
+set varname = $10 
 #######################################
-echo $prepath
-echo $prefix
-echo $OFILE
+#echo $prepath
+#echo $prefix
+#echo $OFILE
 
 while ( $inc > 0 )
  set opts = $argv[$inc] 
@@ -134,17 +135,17 @@ else
 #18[1]:18[9],na,19,37[0]
 echo "start"
  set argpath = "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
-echo $argpath
+#echo $argpath
 endif
 
-echo "while starts.. "
+#cecho "while starts.. "
 
 while ( $c <= $cend)
-	echo "loop $c"
+#	echo "loop $c"
         set argpath = `echo $argpath $prepath/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
         @ c++
 end
-echo "end while"
+#cecho "end while"
 
 if ( $region == 'global' ) then
  set argpath = `echo $argpath $prepath/${prefix}.115[0-2].nc`
@@ -160,7 +161,7 @@ echo "continue.."
 
 source ${auxfiledir}/loadit
 #echo "ncecat  $argpath $OFILE"
-ncecat -v tasmax -h $argpath $OFILE 
+ncecat -v ${varname} -h $argpath $OFILE 
 #tooooo slow ncwa -a record $OFILE $OFILE # Remove new degenerate record dimension
 ###########################################################################
 #echo "ncecat -h $argpath $OFILE"
@@ -170,7 +171,7 @@ echo "record arrangement in progress.."
 #ncpdq -O -h -a t,record,time $OFILE $OFILE
 #cncks -A -h --hdr -h -v lon $lonfile $OFILE
 
-ncpdq -O -h -v tasmax -a time,lat,lon,record $OFILE $OFILE
+ncpdq -O -h -v ${varname} -a time,lat,lon,record $OFILE $OFILE
 #add lat lon bounds info
 #ncks -A -h -v lat,lat_bnds $bndsfile $OFILE
 #ncks -A -h -v lon,lon_bnds $bndsfile $OFILE
