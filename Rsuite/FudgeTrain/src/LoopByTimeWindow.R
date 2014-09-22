@@ -67,7 +67,7 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
   #source("../../FudgePreDS/ApplyTemporalMask.R")
   #source("MaskMerge.R")
   #source("CrossValidate.R")
-  num.masks <- length(names(mask.struct$esd.gen$masks))
+  num.masks <- length(names(mask.struct[[3]]$masks))
   downscale.length <- length(esd.gen)
   downscale.vec <- rep(NA, downscale.length)
 #  dim(downscale.mat) <- c(num.masks, downscale.length)
@@ -88,9 +88,9 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
     if (window%%10==0 || window==1){
     message(paste("starting on window", window, "of", num.masks))
     }
-    window.predict <- ApplyTemporalMask(train.predictor, mask.struct$train.pred$masks[[window]])
-    window.target <- ApplyTemporalMask(train.target, mask.struct$train.targ$masks[[window]])
-    window.gen <- ApplyTemporalMask(esd.gen, mask.struct$esd.gen$masks[[window]])
+    window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
+    window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])    
+    window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
 #    downscale.mat[window,] <- window.gen  #I don't remember why this was neccesary. What else will it break?
     #If no cross-validation is being performed:
     if (kfold <= 1){
