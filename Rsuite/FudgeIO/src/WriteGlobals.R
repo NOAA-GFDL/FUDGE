@@ -1,4 +1,13 @@
 #Aparna Radhakrishnan, 08/06/2014
+#'Writes global variables to a netCDF file, given the filename
+#'---Inputs related to the file
+#'@param filename: The name of the file to which the global attributes are added.
+#'---Inputs related to the variables supplied: 
+#'@param kfold
+#'@param predictor, predictand: The variables being used to produce downscaled output, 
+#'and the variables describing the produced downscaled output. 
+#'@param label.training
+#'@param downscaling.method
 WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
