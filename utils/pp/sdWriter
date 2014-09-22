@@ -1,0 +1,505 @@
+#!/bin/csh 
+
+if ($#argv < 4) then
+   echo "ERROR: wrong number of arguments"
+   echo "  args = IFILE GFDLEXPNAME AARMVAR METHOD AUXFILEDIR DVERSION[drsFlag -drs] [drsRootDir] region=US48 [time_range] [OFILE] "
+   echo "#######Usage#######"
+   echo "Eg 1: sdWriter out.nc amip_r2i1p1 tasmax GFDL-ARRMv1-xval-30lo30 /home/a1r/gitlab/fudge/pp/auxfiles/ v20140402 region=US48" 
+   echo "Eg 2: sdWriter out.nc c360_hiram_H3 tasmax GFDL-ARRMv1-xval-30lo30 -drs /vftmp/Aparna.Radhakrishnan/ region=US48  "
+   exit 1
+endif
+set IFILE = $1
+set EXPNAME = $2
+set AARMVAR = $3
+set METHOD = $4
+set auxfiledir = $5 #new
+set dversion = $6 #new
+set drs = $7
+set obs = $8 #being passed 
+#set drs = $8
+#set obs = "OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)" # use as arg TODO
+set simple = 0
+#set exp_config_url = "http://gfdl.noaa.gov/esd_experiment_configs"
+if (($AARMVAR == "tasmax") || ($AARMVAR == "tasmin")) then
+set maskswitch = "on" ####saving mask fields 
+else
+set maskswitch = "off"
+endif
+# now being passed as an argset auxfiledir = "/home/esd/PROJECTS/DOWNSCALING/GESDF/pp/auxfiles/"
+################get DRS root if ON #############
+if ( "$drs" == '-drs') then
+ set drsRoot = $8 
+ echo "$drsRoot"
+else
+ set drsRoot = 'off' 
+ set OFILE = ''
+## but the last arg could be output file too ####
+if ( "$drs" =~ *".nc" ) then 
+ set OFILE=$drs
+ echo "User passed output file $OFILE" 
+endif
+################################################
+
+set time_range = ''         # optional
+#### get region details for lat lon bounds info appending ######
+set inc = $#argv
+echo $inc
+while ( $inc > 0 )
+ set opts = $argv[$inc]
+ if ( $opts == 'region=US48') then
+  @ inc1 = $inc + 1
+  set region = 'US48'
+  set i_offset = 747
+  set j_offset = 453
+  set bndsfile = "${auxfiledir}/us48bounds.nc"
+  @ inc = -1  #ends loop if region found
+ else if ( $opts == 'region=global') then
+   @ inc1 = $inc + 1
+   set region = 'global'
+   set bndsfile = "auxfiledir/globalbounds.nc"
+ else if ( $opts =~ region*) then # for any other region like RR, use common grid
+   echo ".. $opts"
+   set region = `echo "$opts" | cut -d'=' -f2`  #$opts |cut -d'=' -f1
+   echo "$region"
+#   set i_offset = 1 
+#   set j_offset  = 1 
+   set maskswitch = 'off'	
+   #bndsfile notused 
+   set bndsfile = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/red_river_0p1_masks.nc' #TODO ARG
+ endif
+  @ inc = $inc - 1
+end
+
+echo "Next steps in progress"
+ ##############################################
+#MASK DETAILS FOR TASMAX TASMIN
+set MASKNAME = "maskval"
+set MASKVAR = "maskv"  
+##################################################### 
+if (! -e $IFILE) then
+   echo "Error: input file does not exist"
+   exit 1
+endif
+echo `date`
+echo ${AARMVAR}
+##################prep for variable attributes##############################
+
+source ${auxfiledir}/loadit
+
+if( ${AARMVAR} == "tasmax" ) then
+ set CMIPNAME = "tasmax"
+ set TMPCMIPNAME = "tmax" 
+ set long_name = "Downscaled Daily Maximum Near-Surface Air Temperature"
+ set units = "K"
+ set downscaling_method = $METHOD 
+ set coordinates = "height"
+ set standard_name = "air_temperature"
+else if( ${AARMVAR} == "tasmin" ) then
+ set CMIPNAME = "tasmin"
+ set TMPCMIPNAME = "tmin"
+ set long_name = "Downscaled Daily Minimum Near-Surface Air Temperature"
+ set units = "K"
+ set downscaling_method = $METHOD 
+ set coordinates = "height"
+ set standard_name = "air_temperature"
+else if( ${AARMVAR} == "pr" ) then
+ set CMIPNAME = "pr" ########
+ set TMPCMIPNAME = "prnew"########temp name########### 
+ set long_name = "Downscaled Precipitation"
+ set units = "kg/m2/s"
+ set downscaling_method = $METHOD
+ set coordinates = "height"
+ set standard_name = "precipitation_flux"
+else
+ echo "Sorry, this variable is not supported by this tool yet. Quitting........"
+endif
+
+###################### prep for globals ###################################
+if (( ${EXPNAME} == "c360_hiram_H3" ) || (${EXPNAME} == "amip_r2i1p1" )) then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 1976-01-01 00:00:00"
+  set rip = "r2i1p1"
+  set realization = "2"
+  set initialization_method = "1"
+  set physics = "1"
+  set time_range = "19790101-20081231"      # default 30 year
+  echo experiment name:  $EXPNAME
+  set cmipexper = "amip"
+  set pred_rip = "r1i1p1"
+  set gfdl_experiment_name = "c360_hiram_H3"
+  set title = "GFDL-HIRAM-C360, AMIP (r2i1p1) big brother experiment downscaled output from $METHOD"
+  set comment = "GFDL experiment name = c360_hiram_H3. Downscaling method = Asynchronous Regional Regression Model (ARRM) of Katharine Hayhoe et al vMarch2012. CMIP5 experiment name = AMIP (r2i1p1). Big Brother experimental design: (a) Original GFDL-HIRAM-C360 model output interpolated to coarser CM2.1 atmospheric grid. (b) Training of downscaling performed using 'leave N out' approach. (c) Coarsened output from left-out time period input to downscaling equations derived in (b) to yield estimates of original C360 model results for cross validation."
+ set note = "CMIP5 experiment name = AMIP (r2i1p1). The high-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/). The sea-ice model assumes that each grid point is either fully ice-covered or ice-free and also assumes a uniform ice thickness of 2 meters. This realization was started on 1976 January 1 from initial conditions taken at 1977 January 1 from the GFDL-HIRAM-C360 AMIP experiment (r2i1p1). The first three years of this integration (1976-1978) have not been published."
+  echo "H3"
+else if (($EXPNAME == "c360_hiram_H2") || (${EXPNAME} == "amip_r1i1p1")) then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 1976-01-01 00:00:00"
+  set rip = "r1i1p1"
+  set realization = "1"
+  set initialization_method = "1"
+  set physics = "1"
+  set time_range = "19790101-20081231"      # default 30 year
+  echo experiment name:  $EXPNAME
+  set cmipexper = "amip"
+  set pred_rip = "r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_H2"
+  set title = "GFDL-HIRAM-C360, AMIP (r1i1p1) big brother experiment downscaled output from $METHOD"
+  set comment = "GFDL experiment name = c360_hiram_H2. Downscaling method = Asynchronous Regional Regression Model (ARRM) of Katharine Hayhoeet al  vMarch2012. CMIP5 experiment name = AMIP (r1i1p1). Big Brother experimental design: (a) Original GFDL-HIRAM-C360 model output interpolated to coarser CM2.1 atmospheric grid. (b) Training of downscaling performed using 'leave N out' approach. (c) Coarsened output from left-out time period input to downscaling equations derived in (b) to yield estimates of original C360 model results for cross validation."
+  set note = "CMIP5 experiment name = AMIP (r1i1p1). High-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/). The sea-ice model assumes that each grid point is either fully ice-covered or ice-free and also assumes a uniform ice thickness of 2 meters. This realization was started on 1976 January 1 from initial conditions taken at January 1 after several integration of the atmosphere-only model. The first three years of this integration (1976-1978) have not been published." 
+else if (($EXPNAME == "cm3_rcp85_X1") || (${EXPNAME} == "sst2090_r1i1p2")) then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 2083-01-01 00:00:00"
+  set rip = "r1i1p2"
+  set realization = "1"
+  set initialization_method = "1"
+  set physics = "2"
+  set time_range = "20860101-20951231" #10 years
+  echo experiment name:  $EXPNAME
+  set cmipexper = "sst2090"
+  set pred_rip = "r1i1p1,r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_cm3_rcp85_X1"
+  set title = "GFDL-HIRAM-C360, sst2090 (r1i1p2) big brother experiment downscaled output from $METHOD"
+  set comment = "$METHOD downscaling future scenario"
+  set note = "CMIP5 experiment name = 2090 time-slice (r1i1p2). Physics number (p2) = Future SST anomalies from GFDL-CM3. High-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/) plus a monthly mean SST and sea ice concentration anomaly computed as the difference between the GFDL-CM3 historical and RCP8.5 experiments. The sea-ice coverage is determined by truncating the resulting future sea-ice concentration to either 0 or 1. A uniform sea-ice thickness of 0.67 meters was used. This realization was started on January 1, 2083 from initial conditions taken after a three year spinup ending on January 1, 2086. The first three years of this integration (2083-2085) have not been published."
+else if (($EXPNAME == "cm3_rcp85_X3") || (${EXPNAME} == "sst2090_r2i1p2")) then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 2083-01-01 00:00:00"
+  set rip = "r2i1p2"
+  set realization = "2"
+  set initialization_method = "1"
+  set physics = "2"
+  set time_range = "20860101-20951231" #10 years
+  echo experiment name:  $EXPNAME
+  set cmipexper = "sst2090"
+  set pred_rip = "r1i1p1,r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_cm3_rcp85_X3"
+  set title = "GFDL-HIRAM-C360, sst2090 (r2i1p2) big brother experiment downscaled output from $METHOD"
+  set comment = "$METHOD downscaling future scenario"
+  set note = "CMIP5 experiment name = 2090 time-slice (r2i1p2). Physics number (p2) = Future SST anomalies from GFDL-CM3. High-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/) plus a monthly mean SST and sea ice concentration anomaly computed as the difference between the GFDL-CM3 historical and RCP8.5 experiments. The sea-ice coverage is determined by truncating the resulting future sea-ice concentration to either 0 or 1. A uniform sea-ice thickness of 0.67 meters was used. This realization was started on January 1, 2083 from initial conditions taken at January 1, 2085 of 2090 time-slice experiment (r1i1p2). The first three years of this integration (2083-2085) have not been published."
+else if (($EXPNAME == "cm3_rcp85_X4") || (${EXPNAME} == "sst2090_r3i1p2"))then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 2083-01-01 00:00:00"
+  set rip = "r3i1p2"
+  set realization = "3"
+  set initialization_method = "1"
+  set physics = "2"
+  set time_range = "20860101-20951231" #10 years
+  echo experiment name:  $EXPNAME
+  set cmipexper = "sst2090"
+  set pred_rip = "r1i1p1,r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_cm3_rcp85_X4"
+  set title = "GFDL-HIRAM-C360, sst2090 (r3i1p2) big brother experiment downscaled output from $METHOD"
+  set comment = "$METHOD downscaling future scenario"
+  set note = "CMIP5 experiment name = 2090 time-slice (r3i1p2). Physics number (p2) = Future SST anomalies from GFDL-CM3. High-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/) plus a monthly mean SST and sea ice concentration anomaly computed as the difference between the GFDL-CM3 historical and RCP8.5 experiments. The sea-ice coverage is determined by truncating the resulting future sea-ice concentration to either 0 or 1. A uniform sea-ice thickness of 0.67 meters was used. This realization was started on January 1, 2083 from initial conditions taken at January 1, 2084 of 2090 time-slice experiment (r2i1p2). The first three years of this integration (2083-2085) have not been published." 
+else if (($EXPNAME == "esm_rcp85_X1") || (${EXPNAME} == "sst2090_r1i1p1"))then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 2083-01-01 00:00:00"
+  set rip = "r1i1p1"
+  set realization = "1"
+  set initialization_method = "1"
+  set physics = "1"
+  set time_range = "20860101-20951231" #10 years
+  echo experiment name:  $EXPNAME
+  set cmipexper = "sst2090"
+  set pred_rip = "r1i1p1,r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_esm_rcp85_X1"
+  set title = "GFDL-HIRAM-C360, sst2090 (r1i1p1) big brother experiment downscaled output from $METHOD"
+  set comment = "$METHOD downscaling future scenario"
+  set note = "CMIP5 experiment name = 2090 time-slice (r1i1p1). Physics number (p1) = Future SST anomalies from GFDL-ESM2M. High-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/) plus a monthly mean SST and sea ice concentration anomaly computed as the difference between the GFDL-ESM2M historical and RCP8.5 experiments. The sea-ice coverage is determined by truncating the resulting future sea-ice concentration to either 0 or 1. A uniform sea-ice thickness of 1.19 meters was used. This realization was started on January 1, 2083 from initial conditions taken after a three year spinup ending on January 1, 2086. The first three years of this integration (2083-2085) have not been published."
+else if (($EXPNAME == "esm_rcp85_X2") || (${EXPNAME} == "sst2090_r2i1p1")) then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 2083-01-01 00:00:00"
+  set rip = "r2i1p1"
+  set realization = "2"
+  set initialization_method = "1"
+  set physics = "1"
+  set time_range = "20860101-20951231" #10 years
+  echo experiment name:  $EXPNAME
+  set cmipexper = "sst2090"
+  set pred_rip = "r1i1p1,r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_esm_rcp85_X2"
+  set title = "GFDL-HIRAM-C360, sst2090 (r2i1p1) big brother experiment downscaled output from $METHOD"
+  set comment = "$METHOD downscaling future scenario"
+  set note = "CMIP5 experiment name = 2090 time-slice (r2i1p1). Physics number (p1) = Future SST anomalies from GFDL-ESM2M. High-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/) plus a monthly mean SST and sea ice concentration anomaly computed as the difference between the GFDL-ESM2M historical and RCP8.5 experiments. The sea-ice coverage is determined by truncating the resulting future sea-ice concentration to either 0 or 1. A uniform sea-ice thickness of 1.19 meters was used. This realization was started on January 1, 2083 from initial conditions taken at January 1, 2084 of 2090 time-slice experiment (r1i1p1). The first three years of this integration (2083-2085) have not been published."
+else if (($EXPNAME == "esm_rcp85_X3") || (${EXPNAME} == "sst2090_r3i1p1")) then
+  set GFDLMODEL = "HIRAM-C360"
+  set tunits = "days since 2083-01-01 00:00:00"
+  set rip = "r3i1p1"
+  set realization = "3"
+  set initialization_method = "1"
+  set physics = "1"
+  set time_range = "20860101-20951231" #10 years
+  echo experiment name:  $EXPNAME
+  set cmipexper = "sst2090"
+  set pred_rip = "r1i1p1,r2i1p1"
+  set gfdl_experiment_name = "c360_hiram_esm_rcp85_X3"
+  set title = "GFDL-HIRAM-C360, sst2090 (r3i1p1) big brother experiment downscaled output from $METHOD"
+  set comment = "$METHOD downscaling future scenario"
+  set note = "CMIP5 experiment name = 2090 time-slice (r3i1p1). Physics number (p1) = Future SST anomalies from GFDL-ESM2M. The high-resolution GCM was run in AMIP mode with SST and sea ice concentration determined from the HadISST1 data set (http://hadobs.metoffice.com/hadisst/) plus a monthly mean SST and sea ice concentration anomaly computed as the difference between the GFDL-ESM2M historical and RCP8.5 experiments. The sea-ice coverage is determined by truncating the resulting future sea-ice concentration to either 0 or 1. A uniform sea-ice thickness of 1.19 meters was used. This realization was started on January 1, 2083 from initial conditions taken at January 1, 2085 of 2090 time-slice experiment (r1i1p1). The first three years of this integration (2083-2085) have not been published."
+else 
+  echo "keep it simple."	
+  set simple = 1	
+  set cmipexper = $EXPNAME	
+#  echo "Sorry. The experiment name you've provided can't be used with this tool at the moment. Quitting ......"
+#  exit 1
+endif
+#################### naming output file #######################################
+
+set frequency = "day"
+set model = $METHOD
+set predictor = "GFDL-HIRAM-C360-COARSENED"
+set predexper = 'amip'
+set predversion = 'v20110601'
+if($OFILE == "") then
+  #set OFILE = ${CMIPNAME}_${frequency}_${model}_${cmipexper}_${rip}_${region}_${predictor}_${time_range}.nc    # eg: tasmax_day_AARMv1-HIRAM-C360_amip_r2i1p1_19790101-20081231.nc
+  set OFILE = "ds.$IFILE"
+endif
+
+##################################################other elements############
+set tracking_id = `uuidgen`
+#set dversion = 'v20130626'
+set project = 'NCPP2013'
+set product = 'downscaled'
+set instituteid = 'NOAA-GFDL'
+set realm = 'atmos'
+set table = 'day'
+############################################################################
+
+####################################
+#set minifile_H3 = "/work/a1r/downscaling/AARMv1_test/"
+#set lonfile = "/work/a1r/downscaling/AARMv1_test/lon/lon.nc"
+###################################################################
+set moduleload = ${auxfiledir}/loadit
+
+csh $moduleload
+##################################################################
+########################DRS########################################
+if ( $drsRoot != 'off' ) then
+ echo "DRS ROOT activated..$drsRoot"
+ set drsstruct=${drsRoot}"/"${project}"/"${product}"/"${instituteid}"/"${predictor}"/"${cmipexper}"/"${frequency}"/"${realm}"/"${table}"/"${rip}"/"${predversion}"/"${model}"/"${CMIPNAME}"/"${region}"/"${dversion}"/"
+ echo "DRS destination $drsstruct"
+ mkdir -p $drsstruct
+ set OFILE = $drsstruct$OFILE 
+else
+ echo "DRS ROOT deactivated"
+endif
+if (-e $OFILE) then
+   echo "ERROR: output file exists - can not overwrite"
+   exit 1
+endif
+####IF PRECIP ; rename variable to prnew and work with that. This is because we can't create a new var 'v' using an existing var 'v'
+if ( ${AARMVAR} == "pr") then
+ set CMIPNAME=${TMPCMIPNAME} ##CMIPNAME=prnew
+endif
+######################################################################
+cat > refine.nco <<EOF
+
+lat[lat] = lat;
+lat@long_name = "lat";
+lat@units = "degrees_north";
+lat@axis = "Y";
+lat@bounds = "lat_bnds";
+lat@standard_name = "latitude";
+
+lon[lon] = lon;
+lon@long_name = "longitude";
+lon@units = "degrees_east";
+lon@axis = "X";
+lon@standard_name = "longitude";
+lon@bounds = "lon_bnds";
+
+time[time] = double(time);
+time@cartestian_axis = "T";
+time@axis = "T";
+
+height=0.d;
+height = 2;
+height@long_name = "height";
+height@units = "m";
+height@standard_name = "height";
+
+i_offset = i_offset;
+
+j_offset = j_offset;
+
+lon = lon;
+lat = lat;
+time = time; 
+i_offset = int(i_offset);
+j_offset = int(j_offset);
+
+${TMPCMIPNAME}[\$time,\$lat,\$lon] = 0.f;
+
+${TMPCMIPNAME} = ${AARMVAR};
+
+${TMPCMIPNAME}@long_name = "${long_name}";
+${TMPCMIPNAME}@units = "${units}";
+${TMPCMIPNAME}@downscaling_method = "$downscaling_method";
+${TMPCMIPNAME}@coordinates = "$coordinates";
+${TMPCMIPNAME}@standard_name = "$standard_name";
+
+
+EOF
+
+set echo
+# prepare new dimension variables
+ncap2 -hv -S refine.nco $IFILE refine.nc
+set exitcode = $?
+if ($exitcode == 1) then
+	echo "ERROR in ncap2 call ncap2 -hv -S refine.nco $IFILE refine.nc"
+        echo "QUITTING.."
+        exit 1 
+endif
+echo "done done"
+##############################################
+if (( ${AARMVAR} != "pr") & (( ${METHOD} != "GFDL-deltav1") & (${METHOD} != "GFDL-deltav2")) & (${METHOD} != "GFDL-quanmapv1")) then
+ if($maskswitch == "on") then
+ echo "ncap 2.........."
+cat > refine2.nco <<EOF
+${MASKNAME}[\$time,\$lat,\$lon] = 0.f;
+
+${MASKNAME} = ${MASKVAR};
+
+
+${MASKNAME}@comments = ${MASKVAR}@comments;
+${MASKNAME}@missing_value = ${MASKVAR}@missing_value;
+${MASKNAME}@long_name = ${MASKVAR}@long_name;
+
+EOF
+set echo
+ncks -A -h -v ${MASKVAR} $IFILE refine.nc 
+endif
+set exitcode = $?
+if ($exitcode == 1) then
+        echo "ERROR in ncks call ncks -A -h -v ${MASKVAR} $IFILE refine.nc"
+        echo "QUITTING."
+        exit 1
+endif
+#ncks -A -v lat_bnds,lon_bnds $IFILE refine.nc
+ncap2 -hv -S refine2.nco refine.nc refine2.nc
+set exitcode = $?
+if ($exitcode == 1) then
+        echo "ERROR in ncap2 call ncap2 -hv -S refine2.nco refine.nc refine2.nc"
+        echo "QUITTING."
+        exit 1
+endif  
+endif
+##############################################
+echo "done."
+##########precip special case###############
+if( ${AARMVAR} == "pr" ) then
+ ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc
+ set CMIPNAME=${AARMVAR}
+endif
+ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc
+
+# append new data dimensions into file
+ncks -h -A refine.nc $OFILE
+echo "done.."
+##########spl case #######################
+if (( ${AARMVAR} != "pr") & (( ${METHOD} != "GFDL-deltav1") & (${METHOD} != "GFDL-deltav2")) & (${METHOD} != "GFDL-quanmapv1")) then
+ if($maskswitch == "on") then
+ ncks -h -A refine2.nc $OFILE
+ ncks -O -h -x -v $MASKVAR $OFILE $OFILE
+rm -f refine2.nc refine2.nco
+endif
+endif
+echo "done.........."
+#########################################
+# writing globals
+set today = `date`
+ncatted -O -h -a Contact,global,a,c,"http://nomads.gfdl.noaa.gov/contacts.html" $OFILE
+ncatted -O -h -a Institute_id,global,a,c,"${instituteid}" $OFILE 
+ncatted -O -h -a Institution,global,a,c,"NOAA GFDL (201 Forrestal Rd, Princeton, NJ, 08540)" $OFILE
+ncatted -O -h -a conventions,global,a,c,"CF-1.4" $OFILE
+if ( (${METHOD} == "GFDL-deltav1") | ( ${METHOD} == "GFDL-deltav2" )) then
+ncatted -O -h -a history,global,a,c,"File processed at NOAA/GFDL using R statistical downscaling suite of tools, version v20130622 on Mon Jul  15 17:03:03 2013" $OFILE
+endif
+
+ncatted -O -h -a history,global,a,c,".Processed using NCO wrappers to standardize downscaled datasets on ${today}" $OFILE
+ncatted -O -h -a gfdl_experiment_name,global,a,c,"${EXPNAME}" $OFILE
+if($simple == 1) then
+set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME} 
+#ncatted -O -h -a title,global,o,c,"downscaled estimate of tasmax for the MPI-ESM-LR.rcp85_r1i1p1.2006-2099 experiment" $OFILE #TODO from R
+ncatted -O -h -a title,global,o,c,"${title}" $OFILE 
+ncatted -O -h -a downscaled_data_version,global,a,c,"${dversion}" $OFILE
+ncatted -O -h -a downscaling_model_type,global,a,c,"statistical" $OFILE
+ncatted -O -h -a frequency,global,a,c,"day" $OFILE
+ncatted -O -h -a region_id,global,a,c,"${region}" $OFILE
+ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE 
+ncatted -O -h -a comment,global,a,c,".OBS used: ${obs}" $OFILE
+ncatted -O -h -a resolution,global,a,c,"0.1x0.1degree" $OFILE
+#ncatted -O -h -a info,global,o,c,"time_mask: seasonal" $OFILE
+
+endif
+if($simple == 0) then
+ncatted -O -h -a title,global,a,c,"${title}" $OFILE
+ncatted -O -h -a comment,global,a,c,"${comment}" $OFILE
+ncatted -O -h -a gfdl_experiment_name,global,a,c,"${gfdl_experiment_name}" $OFILE
+ncatted -O -h -a experiment,global,a,c,"${cmipexper}" $OFILE
+ncatted -O -h -a experiment_id,global,a,c,"${cmipexper}_PerfectModel" $OFILE
+ncatted -O -h -a realization,global,a,c,"${realization}" $OFILE
+ncatted -O -h -a initialization_method,global,a,c,"${initialization_method}" $OFILE
+ncatted -O -h -a physics_version,global,a,c,"${physics}" $OFILE
+ncatted -O -h -a model_id,global,a,c,"${model}" $OFILE
+ncatted -O -h -a modeling_realm,global,a,c,"${realm}" $OFILE
+ncatted -O -h -a product,global,a,c,"${product}" $OFILE
+ncatted -O -h -a project_id,global,a,c,"${project}" $OFILE
+ncatted -O -h -a table_id,global,a,c,"${table}" $OFILE
+ncatted -O -h -a tracking_id,global,a,c,"${tracking_id}" $OFILE
+ncatted -O -h -a driving_model_id,global,a,c,"${predictor}" $OFILE
+ncatted -O -h -a driving_experiment_name,global,a,c,"amip" $OFILE
+ncatted -O -h -a driving_model_ensemble_member,global,a,c,"${rip}" $OFILE
+ncatted -O -h -a region_id,global,a,c,"${region}" $OFILE
+ncatted -O -h -a resolution_id,global,a,c,"hn25" $OFILE
+ncatted -O -h -a downscaled_data_version,global,a,c,"${dversion}" $OFILE
+ncatted -O -h -a driving_data_type,global,a,c,"GCM" $OFILE
+ncatted -O -h -a predictand_calibration_dataset,global,a,c,"GFDL-HIRAM-C360(the high resolution model output)" $OFILE
+ncatted -O -h -a downscaling_model_type,global,a,c,"statistical" $OFILE
+ncatted -O -h -a frequency,global,a,c,"day" $OFILE
+ncatted -O -h -a version,global,a,c,"v1" $OFILE
+ncatted -O -h -a note,global,a,c,"${note}" $OFILE
+endif
+
+#missing and fill values
+ncatted -O -h -a _FillValue,$CMIPNAME,o,f,1e+30 $OFILE
+ncatted -O -h -a missing_value,$CMIPNAME,o,f,1e+20 $OFILE
+ncatted -O -h -a _FillValue,$CMIPNAME,o,f,1e+20 $OFILE
+##############################################
+if (( ${AARMVAR} != "pr") & (( ${METHOD} != "GFDL-deltav1") & (${METHOD} != "GFDL-deltav2")) & ( ${METHOD} != "GFDL-quanmapv1") ) then
+if ($maskswitch == "on") then
+ ncatted -O -h -a _FillValue,$MASKNAME,o,f,1e+30 $OFILE
+ ncatted -O -h -a missing_value,$MASKNAME,o,f,1e+20 $OFILE
+ ncatted -O -h -a _FillValue,$MASKNAME,o,f,1e+20 $OFILE
+ ncrename -h -v ${MASKNAME},${MASKVAR} $OFILE
+endif
+endif
+##############################################
+if ( ${AARMVAR} != "tasmax" ) then 
+ncks -O -hxv  height $OFILE $OFILE
+ncatted -Oh -a coordinates,$CMIPNAME,d,, $OFILE 
+endif
+
+#add lat lon bounds info
+ncks -A -h -v lat_bnds $IFILE $OFILE
+ncks -A -h -v lon_bnds $IFILE $OFILE
+ncks -A -h -v time_bnds $IFILE $OFILE
+
+#######################################################
+echo "done"
+## fix time axes
+if($simple == 0) then
+if ( "${tunits}" == 'days since 2083-01-01 00:00:00') then
+ set timeInp = "${auxfiledir}/getTime/2086-2095/tasmax_day_GFDL-HIRAM-C360_sst2090_r1i1p2_20860101-20951231.nc"
+else if ( "${tunits}" == 'days since 1976-01-01 00:00:00') then
+ set timeInp = "${auxfiledir}/getTime/1979-2008/tasmax_day_GFDL-HIRAM-C360_amip_r1i1p1_19790101-20081231.nc"
+endif
+ncks -A -h -v time "${timeInp}" $OFILE
+ncks -A -h -v time_bnds "${timeInp}" $OFILE
+endif
+#######################################################
+rm -f refine.nc refine.nco
+ncks -O -h -x -v lon1 $OFILE $OFILE 
+echo `date`
+unset echo
+
