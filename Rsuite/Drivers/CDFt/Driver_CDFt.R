@@ -137,10 +137,12 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
   #Future data used in downscaling will be underneath the fut.time tag
   tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                      esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
+  names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
 }else{
   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
   tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                      esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
+  names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
 }
 
 #Check time masks for consistency against each other
