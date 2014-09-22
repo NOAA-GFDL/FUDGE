@@ -368,7 +368,7 @@ ${MASKNAME}@long_name = ${MASKVAR}@long_name;
 EOF
 set echo
 ncks -A -h -v ${MASKVAR} $IFILE refine.nc 
-endif
+#uncomment endif
 set exitcode = $?
 if ($exitcode == 1) then
         echo "ERROR in ncks call ncks -A -h -v ${MASKVAR} $IFILE refine.nc"
@@ -382,6 +382,7 @@ if ($exitcode == 1) then
         echo "ERROR in ncap2 call ncap2 -hv -S refine2.nco refine.nc refine2.nc"
         echo "QUITTING."
         exit 1
+endif #add endif here
 endif  
 endif
 ##############################################
@@ -473,6 +474,7 @@ if ($maskswitch == "on") then
  ncatted -O -h -a _FillValue,$MASKNAME,o,f,1e+20 $OFILE
  ncrename -h -v ${MASKNAME},${MASKVAR} $OFILE
 endif
+echo "towards the tail of the processing.."
 endif
 ##############################################
 if ( ${AARMVAR} != "tasmax" ) then 
