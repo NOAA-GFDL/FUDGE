@@ -375,7 +375,7 @@ commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", 
 time.mask.names <- ""
 for (i in 1:length(names(tmask.list))){
   var <- names(tmask.list[i])
-  time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ";", sep=""), collapse="")
+  time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
   print(time.mask.names)
 }
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
