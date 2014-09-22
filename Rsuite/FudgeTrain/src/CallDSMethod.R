@@ -63,8 +63,8 @@ callCDFt <- function (pred, targ, new, args){
       args <- c(npas=length(targ), args)
     }
     args.list <- c(list(targ, pred, new), args)
-#     out <- do.call("CDFt", args.list)$DS/(864000)
-#     print(summary(out))
+#    print("calling CDFt with args:")
+#    print(args)
     return(do.call("CDFt", args.list)$DS)
   }
 }

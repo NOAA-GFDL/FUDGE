@@ -7,22 +7,21 @@ The below workflow is tested on PAN only at this time.
 source setenv_fudge
 ###################
 
-2. Prepare experiment XML. There is a sample XML in the following location:
-/home/a1r/gitlab/vanilla/fudge2014/utils/xml/vanilla.xml 
+2. Prepare experiment XML
+sample: /home/a1r/gitlab/tasmax/fudge2014/utils/xml/cew/vanilla.seasonal2.tasmin.xml
 3. Run expergen to produce runscripts:
 expergen is now found within fudge2014/bin/
 
 Usage:
 
-expergen -i ../utils/xml/vanilla.xml  
+expergen -i ../utils/xml/vanilla.seasonal2.tasmin.xml
 
 Running the above will out a list of master scripts that can be submitted as a MOAB job. Next steps found below- 
 4. Script to Submit MOAB Jobs
 The submit_job script is found in fudge2014/bin/
 Usage:
-Please provide 4 arguments: master_script_dir lon_start lon_end timeSuffix. Eg: submit_job /home/a1r/gitlab/fudge//main/scripts/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/master/60L0/ 748 941 2014-05-01.10:43:23.858305 
-
-eg. /submit_job /home/a1r/gitlab/vanilla/fudge2014//scripts/tasmax/1pow5-txp1-GFDL-CDFtv1-A00X01K00/master 299 300 2014-09-06.17:24:52.009175 
+Please provide 4 arguments: master_script_dir lon_start lon_end timeSuffix.
+eg. /submit_job /home/a1r/gitlab/vanilla/fudge2014//scripts/tasmin/RRtnp1-CDFt-A38sL01K00/master/ 181 370 2014-09-06.17:24:52.009175 
 
 5. Monitor Job
 showq | grep USERNAME
@@ -31,11 +30,15 @@ showq -c |grep Aparna
 
 gfdl.5965056        C 0             p-0 ------      1.0 wi Aparna.Ra        f pp047.princeton.     2    00:01:02   Sat Sep  6 17:45:54
 
-sample op:
-ls -lt /work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/CDFt/tasmax/SCCSC0p1/OneD/v20140108/
-total 75648
--rw-r--r-- 1 Aparna.Radhakrishnan f 38730192 Sep  6 17:45 dstest2.tasmax_day_MPI-ESM-LR_rcp85_r1i1p1_SCCSC0p1_20060101-20991231.I299_J31-170.nc
--rw-r--r-- 1 Aparna.Radhakrishnan f 38730192 Sep  6 17:45 dstest2.tasmax_day_MPI-ESM-LR_rcp85_r1i1p1_SCCSC0p1_20060101-20991231.I300_J31-170.nc
-
+sample output location:
+/work/a1r/testing/tn//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RRtnp1-CDFt-A38sL01K00/tasmin/RR/OneD/v20140108/
+ 
 MOAB job logs can be found in : /work/$USER/fudge/stdout/
 
+6. After the MOAB jobs complete successfully, you should be post-process the output by using the tool: postProc.
+
+postProc -i ../utils/xml/vanilla.seasonal2.tasmin.xml
+
+Sample final output directory structure: 
+
+/work/a1r/testing/tn//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RRtnp1-CDFt-A38sL01K00/tasmin/RR/v20140108/tasmin_day_RRtnp1-CDFt-A38sL01K00_rcp85_r1i1p1_RR_20060101-20991231.nc 

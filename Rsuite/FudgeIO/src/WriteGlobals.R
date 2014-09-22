@@ -20,7 +20,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   comment.info <- paste('Output produced from ',downscaling.method,' downscaling ',sep='')
   }
   if(!is.na(kfold)){
-  comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation).',sep='') 
+  comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 
   }
   if(!is.na(ds.experiment)){
     comment.info <- paste(comment.info, 'with experiment configuration', ds.experiment, ").")
@@ -40,12 +40,12 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   ##info attribute
   info <- ""
   if(!is.na(time.masks)){
-    info <- paste("Path to time mask files:", time.masks, "\n", sep=" ")
+    info <- paste("Path to time mask files:", time.masks, ";", sep=" ")
   }
   if(ds.arguments!='na'){
     argnames <- ls.str(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
-    info <- paste(info, "Arguments used in downscaling function:", argstring, "\n", sep=" ")
+    info <- paste(info, "Arguments used in downscaling function:", argstring, ";", sep=" ")
   }
   if(post.process!=""){
     info <- paste(info, "Processing options: ", post.process, "\n", sep="")
