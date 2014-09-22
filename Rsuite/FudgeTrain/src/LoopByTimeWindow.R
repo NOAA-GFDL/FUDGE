@@ -89,19 +89,34 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
     message(paste("starting on window", window, "of", num.masks))
     }
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
-    window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])    
+    window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
-#    downscale.mat[window,] <- window.gen  #I don't remember why this was neccesary. What else will it break?
+    print('problem starts here')
+    print(kfold)
     #If no cross-validation is being performed:
     if (kfold <= 1){
       ######Investigate why I'm getting errors from checkvec
       ######No matter what I do to it.
-      newcheck <- convert.NAs(window.gen)
-      checkvector <- newcheck + checkvector
-      if (max(checkvector > 1)){
-        print(summary(checkvector))
-        print(which(checkvector > 1))
-        stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
+      if(length(mask.struct) <=3){
+        print("entering 3 case")
+        newcheck <- convert.NAs(window.gen)
+        checkvector <- newcheck + checkvector
+        if (max(checkvector > 1)){
+          print(summary(checkvector))
+          print(which(checkvector > 1))
+          stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
+        }
+      }else{
+        print("entering 4 case")
+        #print(mode(mask.struct[[4]]$masks[[window]]))
+        newcheck <- convert.NAs(mask.struct[[4]]$masks[[window]])
+        checkvector <- newcheck + checkvector
+        if (max(checkvector > 1)){
+          print(summary(checkvector))
+          print(which(checkvector > 1))
+          stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
+          
+        }
       }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
@@ -114,12 +129,21 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
                                                           args=downscale.args)
         }else{
           #If there is a 4th pruning mask, apply that afterwards
-          downscale.vec[!is.na(window.gen)] <- ApplyTemporalMask(CallDSMethod(ds.method = downscale.fxn,
+          time.trim.mask <- mask.struct[[4]]$masks[[window]]
+          temp.out <- window.gen
+#           print(length(window.gen))
+#           print(length(window.gen[!is.na(window.gen)]))
+#           print(length(temp.out))
+          temp.out[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
                                                                               train.predict = window.predict[!is.na(window.predict)], 
                                                                               train.target = window.target[!is.na(window.target)], 
                                                                               esd.gen = window.gen[!is.na(window.gen)], 
-                                                                              args=downscale.args), 
-                                                                 mask.struct[[4]]$masks[[window]])
+                                                                              args=downscale.args)
+#           print(length(time.trim.mask))
+#           print(length(!is.na(time.trim.mask)))
+#           print(length(downscale.vec[!is.na(time.trim.mask)]))
+          temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
+          downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
         }
         if(graph){
           if(masklines){
