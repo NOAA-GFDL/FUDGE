@@ -87,7 +87,7 @@ print(paste("Entire run with CDFt took", proc.time()[1]-start.time[1], "to compl
 #CDFt took **6 MINUTES** to run over the entire dataset. I think that this might be doing okay.
 
 #####And finally, source and run the sample driver scripts: 
-source("../../../drivers/CDFt/runcode_samplev2.1.R")
-##Note that there are a couple hard-coded args (output directory, setting current working directory)
-##that you might need to change to get the core driver to run.
-source("../../../drivers/CDFt/driverv2.1.R")
+# source("../../../drivers/CDFt/runcode_samplev2.1.R")
+# ##Note that there are a couple hard-coded args (output directory, setting current working directory)
+# ##that you might need to change to get the core driver to run.
+# source("../../../drivers/CDFt/driverv2.1.R")

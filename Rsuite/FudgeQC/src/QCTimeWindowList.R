@@ -1,3 +1,22 @@
+#'QCTimeWindowList.R
+#'QC functions that look for conflicts between the time windowing
+#'masks  provided for the downscaling function
+#'@param tmask.list: The list of time windows
+#'@param k: the kfold cross-validation
+#'returns nothing
+#'
+#'Note: The members of the time window mask may have different
+#'names depending on the XML, but the order will always be 
+#'the same: 
+#'[[1]]: The training predictor
+#'[[2]]: The training target
+#'[[3]]: The future predictor of esd generation argument; used
+#'to predict the future
+#'[[4]]: NOT YET IMPLEMENTED - the time pruning mask. Used
+#'on quantile mapping methods where train.and.use.same==TRUE
+#'to remove the tails from a distribution; if present, 
+#'masks 1-3 can overlap, but this mask cannot.
+
 QCTimeWindowList <- function(tmask.list, k=0){
   #All members of training (train predictor and train target)
   #should have same length and same start/end date

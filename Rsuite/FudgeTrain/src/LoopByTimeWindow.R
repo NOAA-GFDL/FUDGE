@@ -105,12 +105,22 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
       }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
+        if(length(mask.struct) <= 3){
         #perform downscaling on the series and merge into new vector
         downscale.vec[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
-                                                                           train.predict = window.predict[!is.na(window.predict)], 
-                                                                           train.target = window.target[!is.na(window.target)], 
-                                                                           esd.gen = window.gen[!is.na(window.gen)], 
-                                                                           args=downscale.args)
+                                                          train.predict = window.predict[!is.na(window.predict)], 
+                                                          train.target = window.target[!is.na(window.target)], 
+                                                          esd.gen = window.gen[!is.na(window.gen)], 
+                                                          args=downscale.args)
+        }else{
+          #If there is a 4th pruning mask, apply that afterwards
+          downscale.vec[!is.na(window.gen)] <- ApplyTemporalMask(CallDSMethod(ds.method = downscale.fxn,
+                                                                              train.predict = window.predict[!is.na(window.predict)], 
+                                                                              train.target = window.target[!is.na(window.target)], 
+                                                                              esd.gen = window.gen[!is.na(window.gen)], 
+                                                                              args=downscale.args), 
+                                                                 mask.struct[[4]]$masks[[window]])
+        }
         if(graph){
           if(masklines){
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
