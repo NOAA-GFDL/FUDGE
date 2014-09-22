@@ -58,7 +58,7 @@ rm(list=ls())
 #-------------  custom -----------------------#
         <PARAMS> 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
-
+        time.trim.mask <- <TIME.TRIM.MASK>
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
@@ -86,6 +86,18 @@ fut.indir_1 <- paste(TMPDIR,fut.indir_1,sep='')
 }
 if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
 target.indir_1 <- paste(TMPDIR,target.indir_1,sep='')
+}
+if((grepl('^/archive',target.time.window)) | (grepl('^/work',target.time.window))){
+target.time.window <- paste(TMPDIR,target.time.window,sep='')
+}
+if((grepl('^/archive',hist.time.window)) | (grepl('^/work',hist.time.window))){
+hist.time.window <- paste(TMPDIR,hist.time.window,sep='')
+}
+if((grepl('^/archive',fut.time.window)) | (grepl('^/work',fut.time.window))){
+fut.time.window <- paste(TMPDIR,fut.time.window,sep='')
+}
+if((grepl('^/archive',time.trim.mask)) | (grepl('^/work',time.trim.mask))){
+time.trim.mask <- paste(TMPDIR,time.trim.mask,sep='')
 }
 output.dir <- paste(TMPDIR,output.dir,sep='')
 #########################################################################

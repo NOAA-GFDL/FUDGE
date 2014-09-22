@@ -101,6 +101,10 @@ echo "debug"
 set ds_region = $argv[46]
 echo "debug 2"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "DS.REGION":"'"${ds_region}"'")
+set auxcustom = $argv[47]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "TIME.TRIM.MASK":"'"${auxcustom}"'")
+
+
 foreach var ($PREDICTOR)
  if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
   echo "WARNING This variable $var is not supported variable at this time. Please check back later. Thank you"

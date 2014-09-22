@@ -20,7 +20,6 @@ rootdir = "/archive/esd/PROJECTS/DOWNSCALING/"  #default
 projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
 project = "35" #default TODO get from XML
 ppn = 2 #TODO get from XML custom?
-
 def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
@@ -161,6 +160,17 @@ def listVars(uinput,basedir=None,force=False,pp=False):
  		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
+	auxcustom = "na"
+	if (params != 'na'):
+		splitparams = params.split(';')
+		#TODO support multiple auxfiles in custom
+        	for par in splitparams:
+            		getpar = par.split('=')
+	    		val = getpar[1]
+	    		if (val.startswith( "'/archive" )): 
+	    			print "file to be gcpied to vftmp: ",val
+				auxcustom = val
+			print "auxcustom:",auxcustom
         projectRoot = checkTags(dictParams,'oroot')
 	outdir = checkTags(dictParams,'outdir')
         ####### end get  dictParams ###########################
@@ -249,7 +259,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
             fut_freq = dict_fut['mip']
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
 
-	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver
+	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom
 ############end of listVars###################### 
 def main():
     #################### args parsing ############
@@ -298,7 +308,7 @@ def main():
                     			forOpt = False
                 		force = vals 
         #########  call listVars() #############################################################
-	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver= listVars(uinput,basedir,force)
+	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom= listVars(uinput,basedir,force)
         ######### call script creators..  #######################################################
         ############################### 1 ###############################################################
         #  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -323,6 +333,7 @@ def main():
         
         params_new =  '"'+str(params)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
+        make_code_cmd = make_code_cmd+" "+str(auxcustom)
 	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -337,9 +348,10 @@ def main():
         ###############################################################################################
         print "1- completed\n"
         ############################### 2 ################################################################
+	#target_time_window,hist_time_window,fut_time_window
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
-        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" "+outdir+" "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)
-        #print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
+        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" "+outdir+" "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window
+        print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
         p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         print "Step 2: Individual runscript  creation.. in progress"
         output1, errors1 = p1.communicate()
