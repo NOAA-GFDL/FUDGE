@@ -135,15 +135,15 @@ print("ylat: received")
 message("Reading in and checking time windowing masks")
 if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
   #Future data used in downscaling will be underneath the fut.time tag
-  if(!exists("time.trimming.window")){
+  if(!exists("time.trim.mask")){
   tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                      esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
   names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
   }else{
     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                        esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
-                                       time.prune.mask = time.trimming.window)
-    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trimming.window")
+                                       time.prune.mask = time.trim.mask)
+    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
   }
 }else{
   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
@@ -377,7 +377,7 @@ esd.final[is.na(esd.final)] <- 1.0e+20
 out.file <- paste(output.dir,"/", out.filename,sep='')
 
 #Create structure containing bounds and other vars
-bounds.list.combined <- c(spat.mask$vars, tmask.list[[3]]$vars)
+bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
 isBounds <- length(bounds.list.combined) > 1
 #Write to netCDF
 # ds.out.filename = WriteNC(out.file,esd.final,target.var,

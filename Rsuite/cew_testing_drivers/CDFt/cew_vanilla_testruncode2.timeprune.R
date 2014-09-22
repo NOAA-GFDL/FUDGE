@@ -60,7 +60,8 @@ output.dir <- '/home/cew/Code/testing/'
 #-------------  custom -----------------------#
  #       args=list(npas=300) 
 args=list('na')
-time.trimming.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
+#time.trimming.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
+time.trim.mask <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 
 ################### others ###################################

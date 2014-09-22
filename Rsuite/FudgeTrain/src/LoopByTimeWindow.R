@@ -91,8 +91,8 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
     window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
-    print('problem starts here')
-    print(kfold)
+#    print('problem starts here')
+#    print(kfold)
     #If no cross-validation is being performed:
     if (kfold <= 1){
       ######Investigate why I'm getting errors from checkvec
@@ -131,17 +131,13 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
           #If there is a 4th pruning mask, apply that afterwards
           time.trim.mask <- mask.struct[[4]]$masks[[window]]
           temp.out <- window.gen
-#           print(length(window.gen))
-#           print(length(window.gen[!is.na(window.gen)]))
-#           print(length(temp.out))
           temp.out[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
                                                                               train.predict = window.predict[!is.na(window.predict)], 
                                                                               train.target = window.target[!is.na(window.target)], 
-                                                                              esd.gen = window.gen[!is.na(window.gen)], 
-                                                                              args=downscale.args)
-#           print(length(time.trim.mask))
-#           print(length(!is.na(time.trim.mask)))
-#           print(length(downscale.vec[!is.na(time.trim.mask)]))
+                                                                              esd.gen = window.gen[!is.na(window.gen)],
+                                                       #At the moment, it not NULL, it passes the mask to the CDFt function
+                                                                              args=NULL)
+                                                                              #args=downscale.args)
           temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
           downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
         }
