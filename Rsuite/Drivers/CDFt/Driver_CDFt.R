@@ -15,7 +15,7 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/Drivers/',sep=''
 #-------Add traceback call for error handling -------
 stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
 options(error=traceback, warn = 1, showErrorCalls=TRUE)
-options('showErrorCalls'= FALSE)
+#options('showErrorCalls'= FALSE)
 #options(error=traceback)
 #options(showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
@@ -136,18 +136,18 @@ print("ylat: received")
 message("Reading in and checking time windowing masks")
 if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
   #Future data used in downscaling will be underneath the fut.time tag
-  if(time.trim.mask=='na'){
+  if(fut.time.trim.mask=='na'){
     #If there is no time trimming mask:
-    print(paste("time trimming mask", time.trim.mask))
+    print(paste("time trimming mask", fut.time.trim.mask))
     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                        esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
     names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
   }else{
     #If there is a time trimming mask
-    print(paste("time trimming mask", time.trim.mask))
+    print(paste("time trimming mask", fut.time.trim.mask))
     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                        esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
-                                       time.prune.mask = time.trim.mask)
+                                       time.prune.mask = fut.time.trim.mask)
     names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
   }
 }else{

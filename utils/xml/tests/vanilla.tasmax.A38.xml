@@ -67,7 +67,7 @@
         <output>
             <!--<root>/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/</root>-->
 	 <!-- override default root by providing root directory in the following --> 		
-            <root>/work/a1r/fudge/regr/vanilla_temp/</root>
+            <root>/work/cew/</root>
         </output>
     </core>
     <custom>
