@@ -96,9 +96,9 @@ hist.time.window <- paste(TMPDIR,hist.time.window,sep='')
 if((grepl('^/archive',fut.time.window)) | (grepl('^/work',fut.time.window))){
 fut.time.window <- paste(TMPDIR,fut.time.window,sep='')
 }
-if(time.trim.mask != 'na'){
-if((grepl('^/archive',time.trim.mask)) | (grepl('^/work',time.trim.mask))){
-time.trim.mask <- paste(TMPDIR,time.trim.mask,sep='')
+if(fut.time.trim.mask != 'na'){
+if((grepl('^/archive',fut.time.trim.mask)) | (grepl('^/work',fut.time.trim.mask))){
+fut.time.trim.mask <- paste(TMPDIR,fut.time.trim.mask,sep='')
 }
 }
 output.dir <- paste(TMPDIR,output.dir,sep='')
