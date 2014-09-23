@@ -98,7 +98,6 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
       ######Investigate why I'm getting errors from checkvec
       ######No matter what I do to it.
       if(length(mask.struct) <=3){
-        print("entering 3 case")
         newcheck <- convert.NAs(window.gen)
         checkvector <- newcheck + checkvector
         if (max(checkvector > 1)){
@@ -107,20 +106,20 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
           stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
         }
       }else{
-        print("entering 4 case")
         #print(mode(mask.struct[[4]]$masks[[window]]))
         newcheck <- convert.NAs(mask.struct[[4]]$masks[[window]])
         checkvector <- newcheck + checkvector
         if (max(checkvector > 1)){
           print(summary(checkvector))
           print(which(checkvector > 1))
-          stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
+          stop(paste("time trimming mask collision error on mask", window, "of", num.masks))
           
         }
       }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
         if(length(mask.struct) <= 3){
+          print("entering 3 option")
         #perform downscaling on the series and merge into new vector
         downscale.vec[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
                                                           train.predict = window.predict[!is.na(window.predict)], 
@@ -129,16 +128,30 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
                                                           args=downscale.args)
         }else{
           #If there is a 4th pruning mask, apply that afterwards
+          print("entering 4 option")
+          print(args)
           time.trim.mask <- mask.struct[[4]]$masks[[window]]
           temp.out <- window.gen
-          temp.out[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
+          out <- CallDSMethod(ds.method = downscale.fxn,
+                             train.predict = window.predict[!is.na(window.predict)], 
+                             train.target = window.target[!is.na(window.target)], 
+                             esd.gen = window.gen[!is.na(window.gen)])
+          print(length(out))
+          print(summary(out))
+          print(length(temp.out[!is.na(temp.out)]))
+          print(summary(temp.out[!is.na(temp.out)]))
+          temp.out[!is.na(temp.out)] <- CallDSMethod(ds.method = downscale.fxn,
                                                                               train.predict = window.predict[!is.na(window.predict)], 
                                                                               train.target = window.target[!is.na(window.target)], 
-                                                                              esd.gen = window.gen[!is.na(window.gen)],
+                                                                              esd.gen = window.gen[!is.na(window.gen)]) #,args=NULL)
                                                        #At the moment, it not NULL, it passes the mask to the CDFt function
-                                                                              args=NULL)
+                                                                              
                                                                               #args=downscale.args)
           temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
+          print(which(!is.na(time.trim.mask))[1:1000])
+          print(which(!is.na(temp.out))[1:1000])
+          print(length(temp.out2[!is.na(temp.out2)]))
+          print(summary(temp.out2[!is.na(temp.out2)]))
           downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
         }
         if(graph){
@@ -170,59 +183,3 @@ convert.NAs<-function(dataset){
   dataset2[!is.na(dataset)]<-1
   return(as.vector(dataset2))
 }
-  
-#   
-# 
-#   t.predictor <- ApplyTemporalMask(train.predictor, masknc=masklist[[1]], run=(kfold > 2)) #This option means that
-#   t.target <-ApplyTemporalMask(train.target, masknc=masklist[[2]])                         #pred.masks cannot collide
-#   new.predictor <- ApplyTemporalMask(esd.gen, masknc=masklist[[3]], run=TRUE)              #for k > 1
-#   num.masks <- length(t.predictor)
-#   out.chunk <- as.list(rep(NA, length(esd.gen)))
-#   output <-list(rep(out.chunk, num.masks))      #Pre-allocate output vector for speed and meory efficency
-#   
-# #  plot(train.predictor, train.target*15, type="n", main=paste("Mask and lines of best fit for k=", kfold, sep=""))
-# #  lines(train.predictor, train.target)
-# #  plot(train.predictor, train.target*2, type="n", main=paste("Mask and lines of best fit for kfold crossval"))
-# #  lines(train.predictor, train.target)
-#   if(graph){
-#     mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks)
-#     fit.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks*kfold)
-#     plot(seq(1:length(train.target)), train.target, type = "l", lwd = 3, main=paste("Mask and lines of best fit for time windowing"))
-#   }
-#   for (window in 1:num.masks){
-#     print(paste("starting on window", window, "of", num.masks))
-#     window.predict <- t.predictor[[window]]
-#     window.target <- t.target[[window]]
-#     window.gen <- new.predictor[[window]]
-#     output[[window]] <- window.gen
-# 
-#     if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
-#       #If there aren't any entire series of missing data, perform downscaling on the series
-#       output[[window]][!is.na(window.gen)] <- DownscaleWithAllArgs(ds.method = downscale.fxn,
-#                                                                    train.predict = window.predict[!is.na(window.predict)], 
-#                                                                    train.target = window.target[!is.na(window.target)], 
-#                                                                    esd.gen = window.gen[!is.na(window.gen)], 
-#                                                                    args=NULL)
-#       if(graph){
-#         if(masklines){
-#                abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as lines on graph
-#         }
-#         lines(seq(1:length(window.gen)), output[[window]], lty = window, lwd = 4, col=mask.cols[window])
-#       }
-#       
-#     }else{
-#       #Otherwise, you don't need to do anything because that loop should be full of NAs
-#       print(paste("Too many NAs in loop", window, "of", num.masks, "; passing loop without downscaling"))
-#     }
-#     print("********")
-#   }
-#   
-# #    abline(v=which(!is.na(new.predictor[[window]]))[1])                       #Option for plotting masks as bars on graph
-#     #lines(train.predictor, t.target[[window]], col=mask.cols[[window]])     #option for color-coding masks
-#   print("Merging masks from all time series")
-#   out.merge <- MaskMerge(output, collide=TRUE)
-# #   if(debug){
-# #     legend(legend = c(as.character(seq(1:num.masks))), pch = c(1:num.masks), col = mask.cols, "bottomright")
-# #   }
-#   return(out.merge)
-# }

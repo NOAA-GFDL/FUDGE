@@ -51,5 +51,13 @@ QCTimeWindowList <- function(tmask.list, k=0){
                length(tmask.list[[1]]$masks), ",", attr(tmask.list[[2]], "filename"), "had",
                length(tmask.list[[2]]$masks), ",", "and", attr(tmask.list[[3]], "filename"), "had", 
                length(tmask.list[[3]]$masks)))
+    if(length(tmask.list) > 3){
+      if(length(tmask.list[[1]]$masks)!= length(tmask.list[[4]]$masks)){
+        stop(paste("Time mask dimension error: time mask files are expected to have the", 
+                   "same number of masks per file, but", attr(tmask.list[[1]], "filename"), "had", 
+                   length(tmask.list[[1]]$masks), ",", "and", attr(tmask.list[[4]], "filename"), "had", 
+                   length(tmask.list[[4]]$masks)))
+      }
+    }
   }
 }
