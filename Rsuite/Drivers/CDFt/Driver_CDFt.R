@@ -405,13 +405,13 @@ ds.out.filename = WriteNC(out.file,esd.final,target.var,
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
 #Code for obtaining the filenames of all files from tmask.list
-commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
-time.mask.names <- ""
-for (i in 1:length(names(tmask.list))){
-  var <- names(tmask.list[i])
-  time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
-  print(time.mask.names)
-}
+# commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
+# time.mask.names <- ""
+# for (i in 1:length(names(tmask.list))){
+#   var <- names(tmask.list[i])
+#   time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
+#   print(time.mask.names)
+# }
 #Code for obtaining the options for precipitation and post-processing
 #(current PP options are profoundly unlikely to be triggered for anything not pr)
 post.process.string = ""
@@ -423,8 +423,8 @@ if(exists("pr.mask.opt")){
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
-             ds.arguments=args, time.masks=time.mask.names, ds.experiment=ds.experiment, 
-             post.process=post.process.string)
+             ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+             post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'))
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))

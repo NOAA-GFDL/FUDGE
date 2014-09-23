@@ -12,7 +12,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
-                         post.process=""){
+                         post.process="", time.trim.mask=FALSE){
 #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   comment.info <- ""
@@ -40,7 +40,14 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   ##info attribute
   info <- ""
   if(!is.na(time.masks)){
-    info <- paste("Path to time mask files:", time.masks, ";", sep=" ")
+    commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
+    time.mask.string <- ""
+    for (i in 1:length(names(tmask.list))){
+      var <- names(tmask.list[i])
+      time.mask.string <- paste(time.mask.string, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), 
+                                collapse=""))
+    }
+    info <- paste("Path to time mask files:", time.mask.string, ";", sep=" ")
   }
   if(ds.arguments!='na'){
     argnames <- ls.str(args)
@@ -48,7 +55,10 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste(info, "Arguments used in downscaling function:", argstring, ";", sep=" ")
   }
   if(post.process!=""){
-    info <- paste(info, "Processing options: ", post.process, "\n", sep="")
+    info <- paste(info, "Processing options: ", post.process, ";", sep="")
+  }
+  if(time.trim.mask){
+    info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
   }
   history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
   if(file.exists(filename)){ 
