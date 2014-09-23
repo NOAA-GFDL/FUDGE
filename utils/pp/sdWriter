@@ -389,11 +389,13 @@ endif
 echo "done."
 ##########precip special case###############
 if( ${AARMVAR} == "pr" ) then
+ echo "ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc"
  ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc
  set CMIPNAME=${AARMVAR}
-endif
+#a1r edit
+else
 ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc
-
+endif
 # append new data dimensions into file
 ncks -h -A refine.nc $OFILE
 echo "done.."
@@ -483,6 +485,7 @@ ncatted -Oh -a coordinates,$CMIPNAME,d,, $OFILE
 endif
 
 #add lat lon bounds info
+echo "grid bnds add-on..."
 ncks -A -h -v lat_bnds $IFILE $OFILE
 ncks -A -h -v lon_bnds $IFILE $OFILE
 ncks -A -h -v time_bnds $IFILE $OFILE
