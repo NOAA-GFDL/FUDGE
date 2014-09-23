@@ -38,6 +38,7 @@ rm(list=ls())
 	fut.freq_1 <- <F.FREQ> 
 	fut.indir_1 <- <F.INDIR>
 	fut.time.window <- <F.TIME.WINDOW>
+        fut.time.trim.mask <- <FUT.TIME.TRIM.MASK>
 #------------- target -------------------------# 
 	target.file.start.year_1 <- <T.FILE.START.YEAR> 
 	target.file.end.year_1 <- <T.FILE.END.YEAR> 
@@ -58,7 +59,6 @@ rm(list=ls())
 #-------------  custom -----------------------#
         <PARAMS> 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
-        time.trim.mask <- <TIME.TRIM.MASK>
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
@@ -96,8 +96,10 @@ hist.time.window <- paste(TMPDIR,hist.time.window,sep='')
 if((grepl('^/archive',fut.time.window)) | (grepl('^/work',fut.time.window))){
 fut.time.window <- paste(TMPDIR,fut.time.window,sep='')
 }
+if(time.trim.mask != 'na'){
 if((grepl('^/archive',time.trim.mask)) | (grepl('^/work',time.trim.mask))){
 time.trim.mask <- paste(TMPDIR,time.trim.mask,sep='')
+}
 }
 output.dir <- paste(TMPDIR,output.dir,sep='')
 #########################################################################
