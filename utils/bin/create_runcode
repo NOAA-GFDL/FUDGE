@@ -102,7 +102,7 @@ set ds_region = $argv[46]
 echo "debug 2"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "DS.REGION":"'"${ds_region}"'")
 set auxcustom = $argv[47]
-set TEMPLATE_LIST = ( $TEMPLATE_LIST "TIME.TRIM.MASK":"'"${auxcustom}"'")
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.TIME.TRIM.MASK":"'"${auxcustom}"'")
 
 
 foreach var ($PREDICTOR)

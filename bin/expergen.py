@@ -38,6 +38,8 @@ def checkTags(dictParams,key):
                                 val = 'na'
 			elif(key == 'experiment'):
 				val = 'na'
+                        elif(key == 'fut_time_trim_mask'):
+                                val = 'na'
 		        else:		
 				print "Error: Missing value for ",key
 				sys.exit(1)  
@@ -140,6 +142,10 @@ def listVars(uinput,basedir=None,force=False,pp=False):
         fut_file_start_time = checkTags(dictParams,'fut_file_start_time')
         fut_file_end_time = checkTags(dictParams,'fut_file_end_time')
         fut_time_window = checkTags(dictParams,'fut_time_window')
+ 	fut_time_trim_mask = checkTags(dictParams,'fut_time_trim_mask') 
+	######## use auxcustom ############
+	auxcustom = fut_time_trim_mask
+	###########################################
         output_grid = checkTags(dictParams,'output_grid')
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
@@ -160,7 +166,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
  		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
-	auxcustom = "na"
+	auxcustom1 = "na"  #auxcustom1 now not used
 	if (params != 'na'):
 		splitparams = params.split(';')
 		#TODO support multiple auxfiles in custom
@@ -169,8 +175,8 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 	    		val = getpar[1]
 	    		if (val.startswith( "'/archive" )): 
 	    			print "file to be gcpied to vftmp: ",val
-				auxcustom = val
-			print "auxcustom:",auxcustom
+				auxcustom1 = val
+			print "auxcustom1:",auxcustom1
         projectRoot = checkTags(dictParams,'oroot')
 	outdir = checkTags(dictParams,'outdir')
         ####### end get  dictParams ###########################

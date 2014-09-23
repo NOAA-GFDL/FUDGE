@@ -103,6 +103,9 @@ class XMLHandler:
                         dictParams['fut_train_end_time'] = fut_train_end_time
                         fut_time_window = fut_node.attrib['time_window']
                         dictParams['fut_time_window'] = fut_time_window
+			if 'time_trim_mask' in fut_node.attrib:
+                        	fut_time_trim_mask = fut_node.attrib['time_trim_mask']
+                        	dictParams['fut_time_trim_mask'] = fut_time_trim_mask
                 	for futid_node in fut_node.findall('.//dataset'):
                         	fut_id.append(futid_node.text)
                                 dictParams['fut_id'] = fut_id
@@ -140,7 +143,7 @@ class XMLHandler:
 		params = params_node.text	
 	#	dictParams[params_node.tag]=params
 		if(nparam > 1):
-	           delimit = ";"
+	           delimit = ","
 		else:
 		   delimit = ''	 
 	        #listParams = listParams + delimit + ""+params_node.tag+"='"+params+"'"
