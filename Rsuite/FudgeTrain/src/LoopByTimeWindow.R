@@ -127,7 +127,6 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
                                                           args=downscale.args)
         }else{
           #If there is a 4th pruning mask, apply that afterwards
-          print("entering 4 option")
           time.trim.mask <- mask.struct[[4]]$masks[[window]]
           temp.out <- window.gen
           out <- CallDSMethod(ds.method = downscale.fxn,
@@ -141,7 +140,8 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
           temp.out[!is.na(temp.out)] <- CallDSMethod(ds.method = downscale.fxn,
                                                                               train.predict = window.predict[!is.na(window.predict)], 
                                                                               train.target = window.target[!is.na(window.target)], 
-                                                                              esd.gen = window.gen[!is.na(window.gen)]) #,args=NULL)
+                                                                              esd.gen = window.gen[!is.na(window.gen)], 
+                                                     args=downscale.args)
                                                        #At the moment, it not NULL, it passes the mask to the CDFt function
                                                                               
                                                                               #args=downscale.args)
