@@ -45,7 +45,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     for (i in 1:length(names(tmask.list))){
       var <- names(tmask.list[i])
       time.mask.string <- paste(time.mask.string, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), 
-                                collapse=""))
+                                collapse="")
     }
     info <- paste("Path to time mask files:", time.mask.string, ";", sep=" ")
   }

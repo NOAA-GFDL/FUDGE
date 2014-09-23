@@ -119,7 +119,6 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
         if(length(mask.struct) <= 3){
-          print("entering 3 option")
         #perform downscaling on the series and merge into new vector
         downscale.vec[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
                                                           train.predict = window.predict[!is.na(window.predict)], 
@@ -129,17 +128,16 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
         }else{
           #If there is a 4th pruning mask, apply that afterwards
           print("entering 4 option")
-          print(args)
           time.trim.mask <- mask.struct[[4]]$masks[[window]]
           temp.out <- window.gen
           out <- CallDSMethod(ds.method = downscale.fxn,
                              train.predict = window.predict[!is.na(window.predict)], 
                              train.target = window.target[!is.na(window.target)], 
                              esd.gen = window.gen[!is.na(window.gen)])
-          print(length(out))
-          print(summary(out))
-          print(length(temp.out[!is.na(temp.out)]))
-          print(summary(temp.out[!is.na(temp.out)]))
+#           print(length(out))
+#           print(summary(out))
+#           print(length(temp.out[!is.na(temp.out)]))
+#           print(summary(temp.out[!is.na(temp.out)]))
           temp.out[!is.na(temp.out)] <- CallDSMethod(ds.method = downscale.fxn,
                                                                               train.predict = window.predict[!is.na(window.predict)], 
                                                                               train.target = window.target[!is.na(window.target)], 
@@ -148,10 +146,10 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
                                                                               
                                                                               #args=downscale.args)
           temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
-          print(which(!is.na(time.trim.mask))[1:1000])
-          print(which(!is.na(temp.out))[1:1000])
-          print(length(temp.out2[!is.na(temp.out2)]))
-          print(summary(temp.out2[!is.na(temp.out2)]))
+#           print(which(!is.na(time.trim.mask))[1:1000])
+#           print(which(!is.na(temp.out))[1:1000])
+#           print(length(temp.out2[!is.na(temp.out2)]))
+#           print(summary(temp.out2[!is.na(temp.out2)]))
           downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
         }
         if(graph){
