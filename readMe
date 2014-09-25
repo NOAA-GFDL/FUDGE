@@ -35,9 +35,20 @@ sample output location:
  
 MOAB job logs can be found in : /work/$USER/fudge/stdout/
 
+You can tell how many of the jobs have been successfully completed from the number of output minifiles in the output directory: 
+ls /work/a1r/testing/tn//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RRtnp1-CDFt-A38sL01K00/tasmin/RR/OneD/v20140108/ | wc -l
+
+An empty folder should return 1. A complete job over the entire Red River region should return 191. 
+If there are fewer minifiles in the output directory than the XMl specifies (via lons and lone), postProc will return a NetCDF file with all
+0 values for the variable of interest. 
+
 6. After the MOAB jobs complete successfully, you should be post-process the output by using the tool: postProc.
 
 postProc -i ../utils/xml/vanilla.seasonal2.tasmin.xml
+
+If you are re-post-processing a set of minfiles that failed, either remove the previous catted output, or use the -f option to force writing the output:
+
+postProc -fi ../utils/xml/vanilla.seasonal2.tasmin.xml
 
 Sample final output directory structure: 
 
