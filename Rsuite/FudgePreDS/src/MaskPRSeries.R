@@ -150,14 +150,14 @@ MaskPRSeries <- function(data, units, index){
   print(index)
   #   print(data[1:100])
   #   print(data[1:100] > index)
-#   units <- units.CF.convert(units)
+  units <- units.CF.convert(units)
   #Set options for determining what qualifies as a 'wet day'
   zero.thold = 0
-#   us.trace.thold = ud.convert(0.01, "inches/day", units)
-#   global.trace.thold = ud.convert(0.1, "mm/day", units)
+  us.trace.thold = ud.convert(0.01, "inches/day", units)
+  global.trace.thold = ud.convert(0.1, "mm/day", units)
   ####TODO: Move away from hard-coded constants
-  us.trace.thold = 2.939815e-06
-  global.trace.thold = 1.157407e-06
+#   us.trace.thold = 2.939815e-06
+#   global.trace.thold = 1.157407e-06
   switch(index, 
          #'zero' = return(replace.vals(data, data==zero.thold)),
          #'zero' = return(apply(apply(data, c(1,2,3), all.equal, zero.thold), c(1,2,3), isTRUE))
