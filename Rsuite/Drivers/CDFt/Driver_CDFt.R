@@ -427,7 +427,8 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-             post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'))
+             post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'), 
+             tempdir=TMPDIR)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))

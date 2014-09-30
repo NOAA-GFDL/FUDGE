@@ -12,7 +12,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
-                         post.process="", time.trim.mask=FALSE){
+                         post.process="", time.trim.mask=FALSE, 
+                         tempdir=""){
 #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   comment.info <- ""
@@ -44,7 +45,9 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     time.mask.string <- ""
     for (i in 1:length(names(tmask.list))){
       var <- names(tmask.list[i])
-      time.mask.string <- paste(time.mask.string, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), 
+      #Removes temp directory from filename in order to keep in line with archive
+      tmask.filename <- sub(pattern=tempdir, replacement="", x=eval(parse(text=commandstr[i])))
+      time.mask.string <- paste(time.mask.string, paste(var, ":", tmask.filename, ",", sep=""), 
                                 collapse="")
     }
     info <- paste("Path to time mask files:", time.mask.string, ";", sep=" ")

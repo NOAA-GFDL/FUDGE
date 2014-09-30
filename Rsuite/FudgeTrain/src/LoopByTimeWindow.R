@@ -97,12 +97,8 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
     window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
-#    print('problem starts here')
-#    print(kfold)
     #If no cross-validation is being performed:
     if (kfold <= 1){
-      ######Investigate why I'm getting errors from checkvec
-      ######No matter what I do to it.
       if(length(mask.struct) <=3){
         newcheck <- convert.NAs(window.gen)
         checkvector <- newcheck + checkvector
@@ -112,14 +108,12 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
           stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
         }
       }else{
-        #print(mode(mask.struct[[4]]$masks[[window]]))
         newcheck <- convert.NAs(mask.struct[[4]]$masks[[window]])
         checkvector <- newcheck + checkvector
         if (max(checkvector > 1)){
           print(summary(checkvector))
           print(which(checkvector > 1))
-          stop(paste("time trimming mask collision error on mask", window, "of", num.masks))
-          
+          stop(paste("time trimming mask collision error on mask", window, "of", num.masks))  
         }
       }
       #If there is enough data available in the window to perform downscaling
