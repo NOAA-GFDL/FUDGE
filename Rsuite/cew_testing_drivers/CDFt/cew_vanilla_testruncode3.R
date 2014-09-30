@@ -53,8 +53,10 @@ fut.time.trim.mask <- 'na'
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'CDFt' 
-	ds.experiment <- 'testing-mask-still-runs-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
+	ds.experiment <- 'testing-qc-mask4-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
+create.qc.mask <- TRUE
+qc.test <- 'kdAdjust'
 #-------------- output -----------------------#
 	#output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/1pow5-txp1-GFDL-CDFtv1-A00X01K00/tasmax/SCCSC0p1/OneD/v20140108/'
 output.dir <- '/home/cew/Code/testing/'

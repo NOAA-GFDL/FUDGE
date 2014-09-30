@@ -1,5 +1,5 @@
 TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.list, ds.method, k=0, time.steps=NA, 
-                        istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL){
+                        istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, qc.test='kdAdjust', create.qc.mask=FALSE){
 #' Function to loop through spatially,temporally and call the Training guts.
 #' @param target.masked.in, hist.masked.in, fut.masked.in: The historic target/predictor and 
 #' future predictor datasets to which spatial masks have been applied earlier
@@ -21,6 +21,11 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
      # Initialize ds.vector 
    message("Entering downscaling driver function")
      ds.vector =  array(NA,dim=c(dim(fut.masked.in))) #c(istart,loop.end,time.steps)
+   if(create.qc.mask){
+     qc.mask <-  array(NA,dim=c(dim(fut.masked.in)))
+   }else{
+     qc.mask <- NULL
+   }
      
      #TODO CEW: Add the cross-validation mask creation before looping over the timeseries
    #(assumes that all time series will be of same length)
@@ -39,14 +44,17 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[i.index,j.index,]))!=0){
-           #Talk to Aparna - this code should work for both one-D
-           #and 3-D data
-           ds.vector[i.index, j.index,] <- LoopByTimeWindow(train.predictor = hist.masked.in[i.index, j.index,], 
+           loop.temp <- LoopByTimeWindow(train.predictor = hist.masked.in[i.index, j.index,], 
                                                                  train.target = target.masked.in[i.index, j.index,], 
                                                                  esd.gen = fut.masked.in[i.index, j.index,], 
                                                                  mask.struct = mask.list, 
                                                                  downscale.fxn = ds.method, downscale.args = downscale.args, 
-                                                                 kfold=k, kfold.mask=NULL, graph=FALSE, masklines=FALSE)    
+                                                                 kfold=k, kfold.mask=NULL, graph=FALSE, masklines=FALSE, 
+                                         qc.test=qc.test, create.qc.mask=create.qc.mask)
+           ds.vector[i.index, j.index,] <- loop.temp$downscaled
+           if(create.qc.mask){
+             qc.mask[i.index, j.index, ] <- loop.temp$qc.mask
+           }
          }else{
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
            print(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
@@ -54,6 +62,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
        }
      }
      ####### Loop(1) ends ###################################
-     return(ds.vector)
+     return(list('esd.final' = ds.vector, 'qc.mask' = qc.mask))
      ############## end of TrainDriver.R ############################
 }

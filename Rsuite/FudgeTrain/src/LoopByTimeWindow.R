@@ -61,7 +61,8 @@
 #' later. 
 
 LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct, downscale.fxn, 
-                             downscale.args = NULL, kfold=0, kfold.mask=NULL, graph=FALSE, masklines=FALSE){
+                             downscale.args = NULL, kfold=0, kfold.mask=NULL, graph=FALSE, masklines=FALSE, 
+                             qc.test='kdAdjust', create.qc.mask=FALSE){
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
   #source("../../FudgePreDS/ApplyTemporalMask.R")
@@ -70,6 +71,11 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
   num.masks <- length(names(mask.struct[[3]]$masks))
   downscale.length <- length(esd.gen)
   downscale.vec <- rep(NA, downscale.length)
+  if(create.qc.mask){
+    qc.mask <- rep(NA, downscale.length)
+  }else{
+    qc.mask <- NULL
+  }
 #  dim(downscale.mat) <- c(num.masks, downscale.length)
   ##Create checkvector to test collision of kfold validation masks
   checkvector <- rep(0, downscale.length)
@@ -120,36 +126,34 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
       if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
         if(length(mask.struct) <= 3){
         #perform downscaling on the series and merge into new vector
-        downscale.vec[!is.na(window.gen)] <- CallDSMethod(ds.method = downscale.fxn,
+        temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                                           train.predict = window.predict[!is.na(window.predict)], 
                                                           train.target = window.target[!is.na(window.target)], 
                                                           esd.gen = window.gen[!is.na(window.gen)], 
                                                           args=downscale.args)
+        downscale.vec[!is.na(window.gen)] <- temp.out
+        if(create.qc.mask){
+          qc.mask[!is.na(window.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
+                                                      hist.pred = window.predict[!is.na(window.predict)], 
+                                                        hist.targ = window.target[!is.na(window.target)], 
+                                                        fut.pred = window.gen[!is.na(window.gen)])
+        }
         }else{
-          #If there is a 4th pruning mask, apply that afterwards
+          #If there is a 4th pruning mask (currently only supported by 1 scenario), apply that afterwards
           time.trim.mask <- mask.struct[[4]]$masks[[window]]
           temp.out <- window.gen
-          out <- CallDSMethod(ds.method = downscale.fxn,
-                             train.predict = window.predict[!is.na(window.predict)], 
-                             train.target = window.target[!is.na(window.target)], 
-                             esd.gen = window.gen[!is.na(window.gen)])
-#           print(length(out))
-#           print(summary(out))
-#           print(length(temp.out[!is.na(temp.out)]))
-#           print(summary(temp.out[!is.na(temp.out)]))
           temp.out[!is.na(temp.out)] <- CallDSMethod(ds.method = downscale.fxn,
-                                                                              train.predict = window.predict[!is.na(window.predict)], 
-                                                                              train.target = window.target[!is.na(window.target)], 
-                                                                              esd.gen = window.gen[!is.na(window.gen)], 
+                                                     train.predict = window.predict[!is.na(window.predict)], 
+                                                     train.target = window.target[!is.na(window.target)], 
+                                                     esd.gen = window.gen[!is.na(window.gen)], 
                                                      args=downscale.args)
-                                                       #At the moment, it not NULL, it passes the mask to the CDFt function
-                                                                              
-                                                                              #args=downscale.args)
           temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
-#           print(which(!is.na(time.trim.mask))[1:1000])
-#           print(which(!is.na(temp.out))[1:1000])
-#           print(length(temp.out2[!is.na(temp.out2)]))
-#           print(summary(temp.out2[!is.na(temp.out2)]))
+          if(create.qc.mask){
+            qc.mask[!is.na(time.trim.mask)] <- QCDSValues(data = temp.out.2, qc.test=qc.test,
+                                                            hist.pred = window.predict[!is.na(window.predict)], 
+                                                            hist.targ = window.target[!is.na(window.target)], 
+                                                            fut.pred = window.gen[!is.na(window.gen)])
+          }
           downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
         }
         if(graph){
@@ -170,7 +174,7 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
     }
   }
   #Exit loop
-  return(downscale.vec)
+  return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask))
 }
 
 #Converts NAs to 0, and all non-NA values to 1

@@ -1,5 +1,6 @@
 # Aparna Radhakrishnan 08/04/2014
-WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA, time.index.end=NA, downscale.tseries=NA, downscale.origin=NA,
+WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missval=1.e20,
+                     time.index.start=NA, time.index.end=NA, downscale.tseries=NA, downscale.origin=NA,
                      start.year="undefined",units ,calendar,lname=var.name,cfname=var.name, 
                      bounds=FALSE, bnds.list=NA) {
   #'Creates file filename (netCDF type) with the variable  var.name along with the 
@@ -92,9 +93,9 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA
     
     #Write the variable containing downscaled data
     if(exists("xlon") & (xlon != '')){
-      var.dat[[var.name]] <- ncvar_def(var.name,units,list(x,y,t1),1.e20,longname=lname,prec="double")
+      var.dat[[var.name]] <- ncvar_def(var.name,units,list(x,y,t1),missval=missval,longname=lname,prec=prec)
     }else{
-      var.dat[[var.name]] <- ncvar_def(var.name,units,list(y,t1),1.e20,longname=lname,prec="double")
+      var.dat[[var.name]] <- ncvar_def(var.name,units,list(y,t1),missval=missval,longname=lname,prec=prec)
     }
     
     #If bounds are present, define bounds and populate bounds variables
@@ -128,8 +129,8 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat, time.index.start=NA
       }
     }
     
-    print("creating nc objects")
-    nc.obj <- nc_create(filename,var.dat)
+    message("creating nc objects")
+    nc.obj <- nc_create(filename,var.dat, verbose=TRUE)
     print("placing nc vars")
     ncvar_put(nc.obj, var.dat[[var.name]], data.array)
     if(bounds){

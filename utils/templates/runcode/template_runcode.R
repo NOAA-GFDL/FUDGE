@@ -54,6 +54,9 @@ rm(list=ls())
         ds.method <- <METHOD> 
 	ds.experiment <- <DEXPER> 
 	k.fold <- <KFOLD> 
+####CEW Edit to create QC Masks
+        create.qc.mask <- TRUE
+        qc.test <- 'kdAdjust'
 #-------------- output -----------------------#
 	output.dir <- <OUTPUT.DIR>
 #-------------  custom -----------------------#

@@ -17,7 +17,7 @@
 #' 
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
-  library(CDFt)
+#  library(CDFt)
   return(switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),

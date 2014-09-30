@@ -7,6 +7,7 @@
 #
 
 library(ncdf4)
+library(CDFt)
 source("../../src/TrainDriver.R")
 source("../../src/LoopByTimeWindow.R")
 source("../../src/CallDSMethod.R")
@@ -86,6 +87,19 @@ all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in =
 print(paste("Entire run with CDFt took", proc.time()[1]-start.time[1], "to complete."))
 #CDFt took **6 MINUTES** to run over the entire dataset. I think that this might be doing okay.
 
+#####Run with and without QC mask:
+create.qc.mask <<- TRUE
+start.time <- proc.time()
+all.real.qc.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
+                                  mask.list = check.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
+                                  istart = NA,loop.start = NA,loop.end=NA, downscale.args=NULL, qc.test='kdAdjust')
+print(paste("Entire run with CDFt and a QC mask took", proc.time()[1]-start.time[1], "to complete."))
+create.qc.mask <<- FALSE
+start.time <- proc.time()
+all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
+                                  mask.list = check.mask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
+                                  istart = NA,loop.start = NA,loop.end=NA, downscale.args=NULL)
+print(paste("Entire run with CDFt and no QC mask took", proc.time()[1]-start.time[1], "to complete."))
 #####And finally, source and run the sample driver scripts: 
 # source("../../../drivers/CDFt/runcode_samplev2.1.R")
 # ##Note that there are a couple hard-coded args (output directory, setting current working directory)

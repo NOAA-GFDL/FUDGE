@@ -326,24 +326,26 @@ start.time <- proc.time()
 #source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
 #source("Rsuite/FudgeTrain/src/CallDSMethod.R")
 if (args!='na'){
-esd.final <- TrainDriver(target.masked.in = list.target$clim.in, 
+ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                           hist.masked.in = list.hist$clim.in, 
                           fut.masked.in = list.fut$clim.in, 
                           mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                          istart = NA,loop.start = NA,loop.end = NA, downscale.args=args)
+                          istart = NA,loop.start = NA,loop.end = NA, downscale.args=args, 
+                  create.qc.mask=create.qc.mask, qc.test=qc.test)
 }else{
-  esd.final <- TrainDriver(target.masked.in = list.target$clim.in, 
+  ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                            hist.masked.in = list.hist$clim.in, 
                            fut.masked.in = list.fut$clim.in, 
                            mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                           istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL)
+                           istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
+                    create.qc.mask=create.qc.mask, qc.test=qc.test)
 }
-print(summary(esd.final))
+print(summary(ds$esd.final))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 ##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
 #time.steps <- 34333 # No.of time steps in the downscaled output.
-time.steps <- dim(esd.final)[3]
+time.steps <- dim(ds$esd.final)[3]
 ##
 ############## end call TrainDriver ######################################
 
@@ -359,25 +361,25 @@ time.steps <- dim(esd.final)[3]
 
 #--QC Downscaled Values
 print("STATS: Downscaled output")
-MyStats(esd.final,verbose="yes")
+MyStats(ds$esd.final,verbose="yes")
 
-numzeroes <- sum(esd.final[!is.na(esd.final)] < 0)
+numzeroes <- sum(ds$esd.final[!is.na(ds$esd.final)] < 0)
 print(paste("Number of values in output < 0:", numzeroes))
 if(numzeroes > 0){
-  esd.final[esd.final < 0] <- 0
-  print(paste("Number of values in output < 0 after correction:", sum(esd.final[!is.na(esd.final)] < 0)))
+  ds$esd.final[ds$esd.final < 0] <- 0
+  print(paste("Number of values in output < 0 after correction:", sum(ds$esd.final[!is.na(ds$esd.final)] < 0)))
 }
 pr.post.process <- TRUE
 
 if('pr'%in%target.var && pr.post.process){ #TODO: Change to predictand.vars at some point
   print(paste("Adjusting pr values to pr threshold"))
-  esd.final <- as.numeric(esd.final) * MaskPRSeries(esd.final, units=list.fut$units$value , index = pr.mask.opt)
+  ds$esd.final <- as.numeric(ds$esd.final) * MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
 }
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 #Replace NAs by missing 
-###CEW edit: replaced ds.vector with esd.final
-esd.final[is.na(esd.final)] <- 1.0e+20
+###CEW edit: replaced ds.vector with ds$esd.final
+ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20
 
 #out.file <- paste(output.dir,"/","outtest", fut.filename,sep='')
 #out.file <- paste(output.dir,"/", fut.filename,sep='')
@@ -387,20 +389,21 @@ out.file <- paste(output.dir,"/", out.filename,sep='')
 bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
 isBounds <- length(bounds.list.combined) > 1
 #Write to netCDF
-# ds.out.filename = WriteNC(out.file,esd.final,target.var,
+# ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
 #                           xlon,ylat[loop.start:loop.end],time.index.start=0,
 #                           time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
 #                           units=list.fut$units$value,calendar= downscale.calendar,
 #                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
 #                           cfname=list.fut$cfname$value)
-ds.out.filename = WriteNC(out.file,esd.final,target.var,
+ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           xlon,ylat,
                           downscale.tseries=downscale.tseries, 
                           downscale.origin=downscale.origin, calendar = downscale.calendar,
                           #start.year=fut.train.start.year_1,
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined)
+                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
+                          )
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
@@ -429,10 +432,62 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
+if(create.qc.mask==TRUE){
+  qc.file <- paste(output.dir, "/QCMask/QCMask-", out.filename, sep="")
+  #paste(sub(pattern=".nc",replacement="", x=out.filename), 
+  #"-", qc.test, "-QCMask.nc", sep="")
+  
+  message(paste('attempting to write to', qc.file))
+  qc.out.filename = WriteNC(qc.file,ds$qc.mask,'qc_mask',
+                            xlon,ylat,prec='integer',missval=NULL,
+                            downscale.tseries=downscale.tseries, 
+                            downscale.origin=downscale.origin, calendar = downscale.calendar,
+                            #start.year=fut.train.start.year_1,
+                            units='boolean',
+                            lname=paste('QC Mask'),
+                            cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
+  )
+  message(paste('QC Mask output file:',qc.out.filename,sep=''))
+}
+#   qc.file <- paste(output.dir, "QCMasks", paste(sub(pattern=".nc",replacement="", x=out.filename), 
+#                                                 "-", qc.test, "-QCMask.nc", sep=""), 
+#                    sep="/")
+#   dirpop <- getwd()
+#   setwd(output.dir)
+#     qc.file <- paste("QCMasks", out.filename, sep="/")   
+#   #Copy without the variables from the original file
+#   qc.commandstring <- paste("ncks -x -v ", "'", predictor.vars, "' ", ds.out.filename, 
+#                                               " ", qc.file, sep="")
+#     message(qc.commandstring)
+#   system(qc.commandstring)
+#   qc.nc <- nc_open(qc.file, write=TRUE)
+#   qc.var <- ncvar_def("qc_mask", 
+#                        units='boolean', 
+#                        list(qc.nc$dim$lon, qc.nc$dim$lat, qc.nc$dim$time), 
+#                        prec='integer') #Got error when tried to specify 'short'
+#   qc.nc <- ncvar_add(qc.nc, qc.var, verbose=TRUE)
+#   print('qc mask added')
+#   ncvar_put(qc.nc, qc.var, ds$qc.mask, verbose=TRUE)
+#   nc_close(qc.nc)
+#   setwd(dirpop)
+
 print(paste("END TIME:",Sys.time(),sep=''))
 
 #options()[c('warn', 'error', 'showErrorCalls')]<-stored.opts
 
 ## End Of Program
 
-
+# qc.nc <- nc_open(qc.file)
+# qc.out.mask <- ncvar_get(qc.nc, 'qc_mask')
+# print(summary(as.vector(qc.out.mask)))
+# 
+# print(summary(ds$qc.mask))
+# 
+# qc.out <- qc.out.mask[!is.na(qc.out.mask)]
+# print(sum(qc.out==0))
+# 
+# qc.in <- ds$qc.mask[!is.na(ds$qc.mask)]
+# print(sum(qc.in==0))
+# 
+# print(sum(qc.in==1))
+# print(sum(qc.out==1))
