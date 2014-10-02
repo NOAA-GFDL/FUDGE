@@ -52,11 +52,11 @@ fut.time.trim.mask <- 'na'
         target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/'
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
-        ds.method <- 'CDFt' 
-	ds.experiment <- 'testing-qc-mask4-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
+        ds.method <- 'simple.bias.correct' 
+	ds.experiment <- 'testing-simple.bias-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
-create.qc.mask <- TRUE
-qc.test <- 'kdAdjust'
+create.qc.mask <- FALSE
+# qc.test <- 'kdAdjust'
 #-------------- output -----------------------#
 	#output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/1pow5-txp1-GFDL-CDFtv1-A00X01K00/tasmax/SCCSC0p1/OneD/v20140108/'
 output.dir <- '/home/cew/Code/testing/'
@@ -98,4 +98,4 @@ output.dir <- paste(TMPDIR,output.dir,sep='')
 #########################################################################
 #-------------------------------------------------#
 
-source(paste(FUDGEROOT,'Rsuite/Drivers/',ds.method,'/Driver_',ds.method,'.R',sep=''))
+source(paste(FUDGEROOT,'Rsuite/Drivers/','CDFt', '/Driver_','CDFt','.R',sep=''))

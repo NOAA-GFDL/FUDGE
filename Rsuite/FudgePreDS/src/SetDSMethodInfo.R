@@ -13,6 +13,7 @@ SetDSMethodInfo <- function(ds.method){
                 "simple.lm" = setSimpleLM(),
                 'CDFt' = setCDFt(),
                 'CDFtv1' = setCDFt(),
+                'simple.bias.correct' = setSimple.Bias.Correct(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
 }
@@ -42,4 +43,15 @@ setCDFt<- function(){
   train.and.use.same <<- TRUE
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c("npas", "dev")
+}
+
+setSimple.Bias.Correct <- function(){
+  #Sets global variables if the DS method used is CDFt
+  #Is it possible to use cross-validation with this method?
+  crossval.possible <<- TRUE
+  # Does this method use some of the same data to train the 
+  # ESD equations/quantiles AND generate the downscaled data?
+  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c("")
 }

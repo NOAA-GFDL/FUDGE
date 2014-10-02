@@ -21,6 +21,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   return(switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
+                'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                # 'CDFtv1' = callCDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
                 ReturnDownscaleError(ds.method)))
 }
@@ -67,4 +68,25 @@ callCDFt <- function (pred, targ, new, args){
 #    print(args)
     return(do.call("CDFt", args.list)$DS)
   }
+}
+
+callSimple.bias.correct <- function(pred, targ, new, args){
+  #Performs a simple bias correction adjustment,
+  #applying the mean difference between the
+  #predictor and target over the time series
+  #to the esd.gen dataset to give downscaled data.
+  
+#   #Set corrective error factor: 
+#   if(var=='pr'){
+#     correct.factor <- 6e-04
+#   }else{
+#     correct.factor <- 6
+#   }
+  
+  #compute difference for all time values
+  bias <- mean(pred-targ)
+  new.targ <- new-bias
+#   out.vec <- ifelse( (abs(data-fut.targ) <= correct.factor), 
+#                      yes=0, no=round.negative(data-fut.targ)) #round.negative(data-fut.targ)
+  return(new.targ)
 }
