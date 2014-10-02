@@ -1,8 +1,21 @@
 #'MaskPRSeries.R
 #'Function for setting all values of precip
 #'less than a threshold to NA
-#'@param data
-#'@param index: The kind of threshold to apply. 
+#'------Parameters related to the data being masked-------
+#'@param ref.data, adjust.data, adjust.future: The precipitation data
+#'for the target and predictor (ref and adjust), as well as an optional
+#'future dataset (adjust.fufutre, currently used for CDFt)
+#'@param ref.units, adjust.unts, adjust.future.units: The units of 
+#'precipitation. Defaults to kg m-2 s-1 for all pr units. 
+#'
+#'------Parameters related to the internal masking options-----
+#'@param opt.wetday: The kind of threshold to apply. Currently accepts
+#''us_trace' (0.01 in/day), 'global_trace' (0.1 mm/day), 'zero'
+#'(no precipitation), and a user-generated option of the same units
+#'as preciptation (i.e. 0.5). 
+#'@param lopt.drizzle
+#'@param lopt.conserve
+#'
 #'TODO: Discuss transformation options for the if...else case 
 #'with John.
 #'TODO: Discuss whether to do this before or after doing the masks. 

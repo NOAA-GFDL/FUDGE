@@ -1,38 +1,29 @@
-#'CreateQCMask.R
+#'QCDSValues.R
 #'
-#'Creates a mask of the downscaled data for which a 1 means that the data
+#'Creates a mask of the same dimensions as the downscaled data 
+#'for which the default behavior is that a 1 means that the data
 #'passes the QC check, and a 0 means that the data does not pass the QC
-#'check. 
+#'check. This behavior can change depending upon the QC function in question,
+#'but this is the general behavior to keep in mind.
 #'
-#'@param data
-#'@param qc.data
+#'@param data: The data undergoing a qc check.
+#'@param qc.data: The test being performed. Is used
+#'to call the qc-specific test.
 #'@param qc.test
+#'@param var: The variable being downscaled. 
+#'------Parameters required for kdAdjust-------
+#'@param hist.pred
+#'@param hist.targ
+#'@param fut.pred
+#'------Parameters related to time windowing----
 #'
 #'@returns A vector of values for the time series at the individual x,y, point
 #'with 0 for all values that did not pass the test and 1 for all values that did.
 #'
 
-# CreateQCMask <- function(data, qc.data=NULL, qc.test='sdev', var='tasmax', 
-#                          hist.pred=NULL, hist.targ=NULL, fut.pred=NULL, 
-#                          time.window=NULL, time.data.window=NULL){
-#   status=1
-#   qc.mask <- data
-#   #Loop by spatial coordiantes
-#   for (i in 1:dim(data)[1]){
-#     for (j in 1:dim(data)[2]){
-#       print(paste("on coordinate i coord", i, "of", dim(data)[1], 
-#                   'and j coord', j, "of", dim(data)[2], "."))
-#       qc.mask[i,j,]<- QCDSValues(data[i,j,], qc.test=qc.test, # qc.data[i,j,],
-#                                 hist.pred = hist.pred[i,j,], hist.targ = hist.targ[i,j,], fut.pred = fut.pred[i,j,], 
-#                                 time.window = time.window, time.data.window = time.data.window, var='tasmax')
-#     }
-#   }
-#   
-#   return(qc.mask)
-# }
 
 QCDSValues<-function(data, qc.data=NULL, qc.test, hist.pred=NULL, hist.targ=NULL, fut.pred=NULL, 
-                     var='tasmax',time.window=NULL, time.data.window=NULL){
+                     var='tasmax'){
   switch(qc.test, 
          'sdev' = return(callSdev(data, qc.data)),
          'sdev2' = return(callSdev2(data, qc.data)),
@@ -75,11 +66,11 @@ callKDAdjust <- function(data, hist.pred, hist.targ, fut.pred, var='tasmax',
     hist.bias <- mean(hist.pred-hist.targ)
     fut.targ <- fut.pred-hist.bias
     out.vec <- ifelse( (abs(data-fut.targ) <= correct.factor), 
-                       yes=1, no=0) #is.negative(data-fut.targ)
+                       yes=0, no=round.negative(data-fut.targ)) #round.negative(data-fut.targ)
     return(out.vec)
 }
 
-is.negative <- function(num){
+round.negative <- function(num){
   #assumes no 0 values are passed 
   return(ifelse(num > 0, 1, -1))
 }
