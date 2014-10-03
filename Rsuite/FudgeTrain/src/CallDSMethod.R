@@ -11,10 +11,7 @@
 #' @param args = NULL: a list of arguments to be passed to the downscaling function.
 #' Defaults to NULL (no arguments)
 #' @examples 
-#' @references \url{link to the FUDGE API documentation}
-#' TODO: Find a better name for this function
-#' TODO: Integrate properly with the 
-#' 
+#' @references \url{link to the FUDGE API documentation} 
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
 #  library(CDFt)

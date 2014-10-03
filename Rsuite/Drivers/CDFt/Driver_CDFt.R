@@ -428,7 +428,7 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
              post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'), 
-             tempdir=TMPDIR)
+             tempdir=TMPDIR, include.git.branch=TRUE)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))

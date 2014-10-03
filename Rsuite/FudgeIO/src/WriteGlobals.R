@@ -13,7 +13,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
                          post.process="", time.trim.mask=FALSE, 
-                         tempdir=""){
+                         tempdir="", include.git.branch=FALSE){
 #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   comment.info <- ""
@@ -62,6 +62,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(time.trim.mask){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
+  }
+  if(include.git.branch==TRUE){
+    branch.string <- system('git symbolic-ref HEAD')
+    commit.string <- system('git log | head -1')
+    info <- paste(info, "Git branch:", branch.string, commit.string)
   }
   history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
   if(file.exists(filename)){ 
