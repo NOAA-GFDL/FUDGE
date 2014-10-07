@@ -14,6 +14,8 @@ SetDSMethodInfo <- function(ds.method){
                 'CDFt' = setCDFt(),
                 'CDFtv1' = setCDFt(),
                 'simple.bias.correct' = setSimple.Bias.Correct(),
+                'nothing' = setNothing(), 'Nothing' = setNothing(),     
+                'general.bias.correct' = setGeneral.Bias.Correct(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
 }
@@ -46,6 +48,31 @@ setCDFt<- function(){
 }
 
 setSimple.Bias.Correct <- function(){
+  #Sets global variables if the DS method used is CDFt
+  #Is it possible to use cross-validation with this method?
+  crossval.possible <<- TRUE 
+  # Does this method use some of the same data to train the 
+  # ESD equations/quantiles AND generate the downscaled data?
+  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  #In hindsight, I am not even sure that this applies here. 
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c("ds.method", "qc.method")
+}
+
+setGeneral.Bias.Correct <- function(){
+  #Sets global variables if the DS method used is CDFt
+  #Is it possible to use cross-validation with this method?
+  crossval.possible <<- TRUE #TODO: ASK JRL about this! It might be possible to combine two methods
+  #for which that is not possible.
+  # Does this method use some of the same data to train the 
+  # ESD equations/quantiles AND generate the downscaled data?
+  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  #In hindsight, I am not even sure that this applies here. 
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c("ds.method", "qc.method", "compare.factor")
+}
+
+setNothing <- function(){
   #Sets global variables if the DS method used is CDFt
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE

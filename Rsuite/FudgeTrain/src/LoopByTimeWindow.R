@@ -60,9 +60,11 @@
 #' TODO: Currently will not accept lists as an argument for esd.gen and its cousisns, but that's solvable
 #' later. 
 
-LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct, downscale.fxn, 
-                             downscale.args = NULL, kfold=0, kfold.mask=NULL, graph=FALSE, masklines=FALSE, 
-                             qc.test='kdAdjust', create.qc.mask=FALSE){
+LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct, 
+                             create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
+                             graph=FALSE, masklines=FALSE, 
+                             qc.test='kdAdjust', create.qc.mask=FALSE, 
+                             create.postproc=FALSE, postproc.method='none', postproc.args=NULL){
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
   #source("../../FudgePreDS/ApplyTemporalMask.R")
@@ -70,21 +72,27 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
   #source("CrossValidate.R")
   num.masks <- length(names(mask.struct[[3]]$masks))
   downscale.length <- length(esd.gen)
-  downscale.vec <- rep(NA, downscale.length)
+  if(create.ds.out){
+    downscale.vec <- rep(NA, downscale.length)
+  }else{
+    downscale.vec <- NULL
+  }
   if(create.qc.mask){
     qc.mask <- rep(NA, downscale.length)
   }else{
     qc.mask <- NULL
   }
-#  dim(downscale.mat) <- c(num.masks, downscale.length)
+  if(create.postproc){
+    postproc.out <- rep(NA, downscale.length)
+  }else{
+    postproc.out <- NULL
+  }
   ##Create checkvector to test collision of kfold validation masks
   checkvector <- rep(0, downscale.length)
-#  dim(checkvector) <- c(num.masks, downscale.length)
-  
   #And finally, in order to see internal activity, add the graph options
   if(graph){
-#     mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks) #Try ivory next time you run it
-#     fit.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks*kfold)
+    #     mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks) #Try ivory next time you run it
+    #     fit.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks*kfold)
     mask.cols = rainbow(num.masks)
     fit.cols = rainbow(num.masks*kfold)
     plot(seq(1:length(train.target)), train.target, type = "l", lwd = 3, main=paste("Mask and lines of best fit for time windowing"))
@@ -92,48 +100,71 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
   
   for (window in 1:num.masks){
     if (window%%10==0 || window==1){
-    message(paste("starting on window", window, "of", num.masks))
+      message(paste("starting on window", window, "of", num.masks))
     }
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
     window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
     #If no cross-validation is being performed:
-    if (kfold <= 1){
-      if(length(mask.struct) <=3){
-        newcheck <- convert.NAs(window.gen)
-        checkvector <- newcheck + checkvector
-        if (max(checkvector > 1)){
-          print(summary(checkvector))
-          print(which(checkvector > 1))
-          stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
-        }
+    for(kmask in 1:length(kfold.mask)){
+      if (kfold > 1){
+        kfold.predict <- ApplyTemporalMask(window.predict, kfold.masks[[1]]$masks[[kmask]])
+        kfold.target <- ApplyTemporalMask(window.target, kfold.masks[[2]]$masks[[kmask]])
+        kfold.gen <- ApplyTemporalMask(window.gen, kfold.masks[[3]]$masks[[kmask]])
       }else{
-        newcheck <- convert.NAs(mask.struct[[4]]$masks[[window]])
-        checkvector <- newcheck + checkvector
-        if (max(checkvector > 1)){
-          print(summary(checkvector))
-          print(which(checkvector > 1))
-          stop(paste("time trimming mask collision error on mask", window, "of", num.masks))  
-        }
+        #TODO: Ask someone about how looping over a sinle element slows the code (OR DOES IT?)
+        kfold.predict <- window.predict
+        kfold.target <- window.target
+        kfold.gen <- window.gen
       }
+      #       #Create checkvectors for making sure masks do not apply
+      #       if(length(mask.struct) <=3){
+      #         newcheck <- convert.NAs(kfold.gen)
+      #         checkvector <- newcheck + checkvector
+      #         if (max(checkvector > 1)){
+      #           print(summary(checkvector))
+      #           print(which(checkvector > 1))
+      #           stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
+      #         }
+      #       }else{
+      #         newcheck <- convert.NAs(mask.struct[[4]]$masks[[window]])
+      #         checkvector <- newcheck + checkvector
+      #         if (max(checkvector > 1)){
+      #           print(summary(checkvector))
+      #           print(which(checkvector > 1))
+      #           stop(paste("time trimming mask collision error on mask", window, "of", num.masks))  
+      #         }
+      #       }
       #If there is enough data available in the window to perform downscaling
-      if (sum(!is.na(window.predict))!=0 && sum(!is.na(window.target))!=0 && sum(!is.na(window.gen))!=0){
+      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         if(length(mask.struct) <= 3){
-        #perform downscaling on the series and merge into new vector
-        temp.out <- CallDSMethod(ds.method = downscale.fxn,
-                                                          train.predict = window.predict[!is.na(window.predict)], 
-                                                          train.target = window.target[!is.na(window.target)], 
-                                                          esd.gen = window.gen[!is.na(window.gen)], 
-                                                          args=downscale.args)
-        downscale.vec[!is.na(window.gen)] <- temp.out
-        if(create.qc.mask){
-          qc.mask[!is.na(window.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
-                                                      hist.pred = window.predict[!is.na(window.predict)], 
-                                                        hist.targ = window.target[!is.na(window.target)], 
-                                                        fut.pred = window.gen[!is.na(window.gen)])
-        }
+          #perform downscaling on the series and merge into new vector
+          if(create.ds.out){
+            temp.out <- CallDSMethod(ds.method = downscale.fxn,
+                                     train.predict = kfold.predict[!is.na(kfold.predict)], 
+                                     train.target = kfold.target[!is.na(kfold.target)], 
+                                     esd.gen = kfold.gen[!is.na(kfold.gen)], 
+                                     args=downscale.args)
+            downscale.vec[!is.na(kfold.gen)] <- temp.out
+          }
+          if(create.qc.mask){
+            qc.mask[!is.na(kfold.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
+                                                     hist.pred = kfold.predict[!is.na(kfold.predict)], 
+                                                     hist.targ = kfold.target[!is.na(kfold.target)], 
+                                                     fut.pred = kfold.gen[!is.na(kfold.gen)])
+          }
+          if(create.postproc){
+            postproc.out[!is.na(kfold.gen)] <- CallPostProcMethod(data=kfold.gen[!is.na(kfold.gen)], 
+                                                                  mask=kfold.target[!is.na(kfold.target)], 
+                                                                  mask.data=kfold.predict[!is.na(kfold.predict)],
+                                                                  pp.method=postproc.method, args=postproc.args)
+            print(summary(postproc.out))
+            print(length(postproc.out))
+            print(length(!is.na(postproc.out)))
+          }
         }else{
           #If there is a 4th pruning mask (currently only supported by 1 scenario), apply that afterwards
+          #TODO: Test this bit, the masks are going to be significantly more complicated
           time.trim.mask <- mask.struct[[4]]$masks[[window]]
           temp.out <- window.gen
           temp.out[!is.na(temp.out)] <- CallDSMethod(ds.method = downscale.fxn,
@@ -144,9 +175,9 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
           temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
           if(create.qc.mask){
             qc.mask[!is.na(time.trim.mask)] <- QCDSValues(data = temp.out.2, qc.test=qc.test,
-                                                            hist.pred = window.predict[!is.na(window.predict)], 
-                                                            hist.targ = window.target[!is.na(window.target)], 
-                                                            fut.pred = window.gen[!is.na(window.gen)])
+                                                          hist.pred = window.predict[!is.na(window.predict)], 
+                                                          hist.targ = window.target[!is.na(window.target)], 
+                                                          fut.pred = window.gen[!is.na(window.gen)])
           }
           downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
         }
@@ -155,20 +186,21 @@ LoopByTimeWindow <- function(train.predictor, train.target, esd.gen, mask.struct
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
           }
           points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.vec[!is.na(window.gen)], 
-                pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
+                 pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
         }
         #Otherwise, you don't need to do anything because that loop should be full of NAs
       }else{
-        print(paste("Too many NAs in loop", window, "of", num.masks, "; passing loop without downscaling"))
+        print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
       }
-    #However, if cross-validation is being performed
-    } else { 
-      stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
-      #Remember to duplicate most of the structure from above; you're just adding a few new checks
     }
   }
+    #However, if cross-validation is being performed
+#   } else { 
+#     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
+#     #Remember to duplicate most of the structure from above; you're just adding a few new checks
+#   }
   #Exit loop
-  return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask))
+  return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask, 'postproc.out'=postproc.out))
 }
 
 #Converts NAs to 0, and all non-NA values to 1

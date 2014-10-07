@@ -13,8 +13,11 @@
 #''us_trace' (0.01 in/day), 'global_trace' (0.1 mm/day), 'zero'
 #'(no precipitation), and a user-generated option of the same units
 #'as preciptation (i.e. 0.5). 
-#'@param lopt.drizzle
-#'@param lopt.conserve
+#'@param lopt.drizzle : The option for applying a drizzle adjustment. 
+#'Converts the parameter for trace precipitation in the adjusted data
+#'to the 
+#'@param lopt.conserve: The option for preserving trace precipitation.
+#'If present, the 
 #'
 #'TODO: Discuss transformation options for the if...else case 
 #'with John.

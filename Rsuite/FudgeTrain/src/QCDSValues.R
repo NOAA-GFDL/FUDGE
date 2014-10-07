@@ -22,8 +22,8 @@
 #'
 
 
-QCDSValues<-function(data, qc.data=NULL, qc.test, hist.pred=NULL, hist.targ=NULL, fut.pred=NULL, 
-                     var='tasmax'){
+QCDSValues<-function(qc.test, data, hist.pred=NULL, hist.targ=NULL, fut.pred=NULL, 
+                     var='tasmax', qc.data=NULL){
   switch(qc.test, 
          'sdev' = return(callSdev(data, qc.data)),
          'sdev2' = return(callSdev2(data, qc.data)),

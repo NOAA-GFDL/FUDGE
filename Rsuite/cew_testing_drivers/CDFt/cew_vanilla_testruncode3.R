@@ -52,7 +52,8 @@ fut.time.trim.mask <- 'na'
         target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/'
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
-        ds.method <- 'simple.bias.correct' 
+       # ds.method <- 'simple.bias.correct' 
+ds.method <- 'general.bias.correct'
 	ds.experiment <- 'testing-simple.bias-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
 create.qc.mask <- FALSE
@@ -62,7 +63,8 @@ create.qc.mask <- FALSE
 output.dir <- '/home/cew/Code/testing/'
 #-------------  custom -----------------------#
  #       args=list(npas=300) 
-args=list('na')
+#args=list('na')
+args=list(ds.method='CDFt', qc.method='simple.bias.correct', qc.comparison=6)
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 
 ################### others ###################################

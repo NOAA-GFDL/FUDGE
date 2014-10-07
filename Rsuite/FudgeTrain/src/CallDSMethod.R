@@ -12,6 +12,7 @@
 #' Defaults to NULL (no arguments)
 #' @examples 
 #' @references \url{link to the FUDGE API documentation} 
+#' TODO: Find a better name for general.bias.corrector
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL){
 #  library(CDFt)
@@ -19,7 +20,8 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
-               # 'CDFtv1' = callCDFt(train.target, train.predict, esd.gen, npas=34333)$DS,  #This takes *SIX TIMES* as long to run
+                'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
+                'Nothing' = callNothing(train.predict, train.target, esd.gen, args),
                 ReturnDownscaleError(ds.method)))
 }
 
@@ -72,18 +74,66 @@ callSimple.bias.correct <- function(pred, targ, new, args){
   #applying the mean difference between the
   #predictor and target over the time series
   #to the esd.gen dataset to give downscaled data.
-  
-#   #Set corrective error factor: 
-#   if(var=='pr'){
-#     correct.factor <- 6e-04
-#   }else{
-#     correct.factor <- 6
-#   }
-  
-  #compute difference for all time values
   bias <- mean(pred-targ)
   new.targ <- new-bias
-#   out.vec <- ifelse( (abs(data-fut.targ) <= correct.factor), 
-#                      yes=0, no=round.negative(data-fut.targ)) #round.negative(data-fut.targ)
   return(new.targ)
+}
+
+callGeneral.Bias.Corrector <- function(pred, targ, new, args){
+  #Calls two downscaling methods: one used as a source of downscaling
+  #values, the other used as a check against those values. Those values
+  #are then compared; if the values are sufficiently similar to each other, 
+  #the downscaled values are used; otherwise, the qc values are used. Ideally, 
+  #the method used for QC should be less computationally-expensive than the 
+  #method used for downscaling. 
+  qc.method <- args$qc.method
+  args$qc.method <- NULL
+  ds.method <- args$ds.method
+  args$ds.method <- NULL
+  if(!is.null(args$compare.factor)){
+    correct.factor <- args$compare.factor
+    args$compare.factor <- NULL
+  }else{
+    correct.factor = 0.5
+  }
+  if(length(args)!=0) sample.args=args else sample.args=NULL
+  ds.vals <- CallDSMethod(ds.method=ds.method, pred, targ, new, sample.args)
+  qc.vals <- CallDSMethod(ds.method=qc.method, pred, targ, new, sample.args)
+  out.vals <- ifelse( (abs(ds.vals-qc.vals) < correct.factor), yes=ds.vals, no=qc.vals )
+  return(out.vals)
+}
+
+callNothing <- function(pred, targ, new, args){
+  #Does absolutely nothing to the downscaling values of the current 
+  #function. 
+  return(new)
+}
+
+##########Section for PP methods: Methods that take a dataset, adjust its values somehow, and 
+##########produce a vector of the same type. Note that there ***might*** be an overlap with the
+##########downscaling methods, but that's slightly incidental. 
+
+#'Methods in this section gernally assume four arguments: 
+#'@param data: The data to be adjusted. Generally a product of a previous
+#'downscaling run. 
+#'@param check: A vector of 1's and 0's representing the results of a 
+#'previous QC check on the data vector. A 1 means that the data passed,
+#' a 0 means that it failed.
+#'@param check.data: An optional parameter for some methods. Instead of
+#'attempting to correct the data parameter, the check.data vector is used
+#'to substitute for the corresponding value in data.
+#'@args: Optional arguments for the adjustment function. 
+
+postProc_byCheck <- function(data, check, check.data, args){
+  #TODO: At some point, include the var post-processing option
+  #and some sort of units check to go with it.
+  if(!is.null(args$compare.factor)){
+    correct.factor <- args$compare.factor
+    args$compare.factor <- NULL
+  }else{
+    correct.factor = 6
+  }
+  if(length(args)!=0) sample.args=args else sample.args=NULL
+  out.vals <- ifelse( (check==1), yes=data, no=check.data )
+  return(out.vals)
 }
