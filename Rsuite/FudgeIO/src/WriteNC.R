@@ -130,7 +130,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
     }
     
     message("creating nc objects")
-    nc.obj <- nc_create(filename,var.dat, verbose=TRUE)
+    nc.obj <- nc_create(filename,var.dat, verbose=FALSE)
     print("placing nc vars")
     ncvar_put(nc.obj, var.dat[[var.name]], data.array)
     if(bounds){

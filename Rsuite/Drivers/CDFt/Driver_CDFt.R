@@ -434,21 +434,23 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
 if(create.qc.mask==TRUE){
-  qc.file <- paste(output.dir, "/QCMask/QCMask-", out.filename, sep="")
-  #paste(sub(pattern=".nc",replacement="", x=out.filename), 
-  #"-", qc.test, "-QCMask.nc", sep="")
-  
-  message(paste('attempting to write to', qc.file))
-  qc.out.filename = WriteNC(qc.file,ds$qc.mask,'qc_mask',
-                            xlon,ylat,prec='integer',missval=NULL,
-                            downscale.tseries=downscale.tseries, 
-                            downscale.origin=downscale.origin, calendar = downscale.calendar,
-                            #start.year=fut.train.start.year_1,
-                            units='boolean',
-                            lname=paste('QC Mask'),
-                            cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
-  )
-  message(paste('QC Mask output file:',qc.out.filename,sep=''))
+  for (var in predictor.vars){
+    qc.file <- paste(output.dir, "/QCMask/", sub(var, paste(var, "qcmask", sep="-"), out.filename), sep="") #var, "-",
+    #paste(sub(pattern=".nc",replacement="", x=out.filename), 
+    #"-", qc.test, "-QCMask.nc", sep="")
+    
+    message(paste('attempting to write to', qc.file))
+    qc.out.filename = WriteNC(qc.file,ds$qc.mask,paste(var, 'qcmask', sep="-"),
+                              xlon,ylat,prec='integer',missval=NULL,
+                              downscale.tseries=downscale.tseries, 
+                              downscale.origin=downscale.origin, calendar = downscale.calendar,
+                              #start.year=fut.train.start.year_1,
+                              units='boolean',
+                              lname=paste('QC Mask'),
+                              cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
+    )
+    message(paste('QC Mask output file:',qc.out.filename,sep=''))
+  }
 }
 #   qc.file <- paste(output.dir, "QCMasks", paste(sub(pattern=".nc",replacement="", x=out.filename), 
 #                                                 "-", qc.test, "-QCMask.nc", sep=""), 
