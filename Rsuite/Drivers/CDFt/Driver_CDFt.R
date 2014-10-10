@@ -331,14 +331,14 @@ ds <- TrainDriver(target.masked.in = list.target$clim.in,
                           fut.masked.in = list.fut$clim.in, 
                           mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                           istart = NA,loop.start = NA,loop.end = NA, downscale.args=args, 
-                  create.qc.mask=create.qc.mask, qc.test=qc.test)
+                  create.qc.mask=create.qc.mask, qc.test=qc.method)
 }else{
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                            hist.masked.in = list.hist$clim.in, 
                            fut.masked.in = list.fut$clim.in, 
                            mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                            istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
-                    create.qc.mask=create.qc.mask, qc.test=qc.test)
+                    create.qc.mask=create.qc.mask, qc.test=qc.method)
 }
 print(summary(ds$esd.final))
 message("FUDGE training ends")
@@ -435,13 +435,33 @@ message(paste('Downscaled output file:',ds.out.filename,sep=''))
 
 if(create.qc.mask==TRUE){
   for (var in predictor.vars){
-    qc.file <- paste(output.dir, "/QCMask/", sub(var, paste(var, "qcmask", sep="-"), out.filename), sep="") #var, "-",
-    #paste(sub(pattern=".nc",replacement="", x=out.filename), 
-    #"-", qc.test, "-QCMask.nc", sep="")
-    
+    #ds$qc.mask[ds$qc.mask==1.0e+20] <- NA
+    var <- 'tasmax'
+    ds$qcmask2 <- ds$qcmask
+    ds$qc.mask2[is.na(ds$qc.mask)] <- as.double(1.0e20)
+#    qc.outdir <- paste(output.dir, "/QCMask/", sep="")
+    #qc.output.dir <- 
+#     qc.file <- paste(output.dir, "/QCMask/", sub(var, paste(var, "qcmask", sep="_"), out.filename), sep="") #var, "-",
+#     paste(sub(pattern=".nc",replacement="", x=out.filename), 
+#     "-", qc.method, "-QCMask.nc", sep="")
+    ###qc.method needs to get included in here SOMEWHERE.
+    qc.var <- paste(var, 'qcmask', sep="_")
+    if(Sys.info()['nodename']$nodename=='cew'){
+      #only activated for testing on CEW workstation
+      qc.outdir <- paste(output.dir, "/QCMask/", sep="")
+      qc.file <- paste(qc.outdir, "/QCMask/", sub(var, qc.var, out.filename), sep="") #var, "-",
+    }else{  
+      #presumably running on PP/AN; dir creation taken care of
+      qc.splitdir <- strsplit(output.dir, split="/")
+      qc.splitdir <- qc.splitdir[[1]]
+      qc.index <- length(qc.splitdir)-3
+      qc.outdir <- paste(c(qc.splitdir[1:qc.index], qc.var, qc.splitdir[(qc.index + 1):length(qc.splitdir)]),
+                         collapse="/")
+      qc.file <- paste(qc.outdir, sub(var, qc.var, out.filename), sep="")
+    }
     message(paste('attempting to write to', qc.file))
-    qc.out.filename = WriteNC(qc.file,ds$qc.mask,paste(var, 'qcmask', sep="-"),
-                              xlon,ylat,prec='integer',missval=NULL,
+    qc.out.filename = WriteNC(qc.file,ds$qc.mask2,qc.var,
+                              xlon,ylat,prec='double',missval=1.0e20,
                               downscale.tseries=downscale.tseries, 
                               downscale.origin=downscale.origin, calendar = downscale.calendar,
                               #start.year=fut.train.start.year_1,

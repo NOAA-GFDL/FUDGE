@@ -55,8 +55,8 @@ fut.time.trim.mask <- 'na'
 ds.method <- 'CDFt'
 	ds.experiment <- 'testing-new.mask.struct-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
-create.qc.mask <- FALSE
- qc.test <- 'kdAdjust'
+create.qc.mask <- TRUE
+ qc.method <- 'kdAdjust'
 #-------------- output -----------------------#
 	#output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/1pow5-txp1-GFDL-CDFtv1-A00X01K00/tasmax/SCCSC0p1/OneD/v20140108/'
 output.dir <- '/home/cew/Code/testing/'

@@ -66,7 +66,7 @@ callKDAdjust <- function(data, hist.pred, hist.targ, fut.pred, var='tasmax',
     hist.bias <- mean(hist.pred-hist.targ)
     fut.targ <- fut.pred-hist.bias
     out.vec <- ifelse( (abs(data-fut.targ) <= correct.factor), 
-                       yes=0, no=round.negative(data-fut.targ)) #round.negative(data-fut.targ)
+                       yes=1, no=0) #round.negative(data-fut.targ)
     return(out.vec)
 }
 

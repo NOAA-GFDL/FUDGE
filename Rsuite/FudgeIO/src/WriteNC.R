@@ -56,16 +56,18 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
       time1 <- downscale.tseries
       tunit <- downscale.origin
       print(tunit) 
+      print('defining time variable')
       t1 <- ncdim_def("time",tunit,time1,unlim=TRUE)
+      print(summary(t1))
     }else{
       time1 <- time.index.start:time.index.end
       tunit <- paste('days since ',start.year,'-01-01 12:00:00',sep='')
       print(tunit) 
       t1 <- ncdim_def("time",tunit,time1,unlim=TRUE)
     }
-    print(time.index.start)
-    print(time.index.end)
-    
+#    print(time.index.start)
+#    print(time.index.end)
+    print('timesries over')
     #Define Y
     y <- ncdim_def("lat","degrees_north",ylat)
     #Define X
@@ -95,7 +97,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
     if(exists("xlon") & (xlon != '')){
       var.dat[[var.name]] <- ncvar_def(var.name,units,list(x,y,t1),missval=missval,longname=lname,prec=prec)
     }else{
-      var.dat[[var.name]] <- ncvar_def(var.name,units,list(y,t1),missval=missval,longname=lname,prec=prec)
+      var.dat[[var.name]] <- ncvar_def(var.name,units,list(y,t1),missval=missval,longname=lname,prec=prec, verbose=TRUE)
     }
     
     #If bounds are present, define bounds and populate bounds variables
@@ -115,22 +117,22 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
         }
         #correct missing value
         if (bnds.list[[bnds.var]]$info$prec=="integer"){
-          missval=NULL
+          var.missval=NULL
         }else{
-          var.missval=1.e20
-        }
+         var.missval=1.e20
+       }
         #Finally, create the non-data variables
         var.dat[[bnds.var]] <- ncvar_def(bnds.var, 
                                         units=bnds.list[[bnds.var]]$info$units, 
                                         dim= var.dimlist, 
-                                        #missval = var.missval, 
+                                        missval = var.missval, 
                                         longname = bnds.list[[bnds.var]]$info$longname, 
                                         prec = bnds.list[[bnds.var]]$info$prec)
       }
     }
-    
+    save('var.dat', file="/home/cew/Code/testing/ncvars.out")
     message("creating nc objects")
-    nc.obj <- nc_create(filename,var.dat, verbose=FALSE)
+    nc.obj <- nc_create(filename,var.dat, verbose=TRUE)
     print("placing nc vars")
     ncvar_put(nc.obj, var.dat[[var.name]], data.array)
     if(bounds){
