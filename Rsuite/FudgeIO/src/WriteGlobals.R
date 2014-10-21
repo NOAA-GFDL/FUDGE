@@ -60,7 +60,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(post.process!=""){
     info <- paste(info, "Processing options: ", post.process, ";", sep="")
   }
-  if(time.trim.mask){
+  if(time.trim.mask!=FALSE){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
   }
   if(include.git.branch==TRUE){

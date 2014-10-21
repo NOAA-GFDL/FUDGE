@@ -417,7 +417,7 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
                           cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined, 
-                          is.adjusted=, adjust.method=
+                          #is.adjusted=, adjust.method=
 )
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
