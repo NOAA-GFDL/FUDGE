@@ -385,6 +385,19 @@ ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20
 #out.file <- paste(output.dir,"/", fut.filename,sep='')
 out.file <- paste(output.dir,"/", out.filename,sep='')
 
+####Start implementing checks for output dirs and /tmpdirs
+exists <- file.create(out.file)
+if(!exists){
+  print("creating output direcotries")
+  system(paste("mkdir -p ", output.dir, sep=""))
+  system(paste("mkdir -p ", "/", sub(TMPDIR, "", output.dir), sep=""))
+  #   if(create.qc.mask==TRUE){
+  #     system(paste("mkdir -p"))
+  #     system(paste("mkdir -p"))
+  #   }
+}
+
+
 #Create structure containing bounds and other vars
 bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
 isBounds <- length(bounds.list.combined) > 1
@@ -395,6 +408,7 @@ isBounds <- length(bounds.list.combined) > 1
 #                           units=list.fut$units$value,calendar= downscale.calendar,
 #                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
 #                           cfname=list.fut$cfname$value)
+#if(write.ds.out){
 ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           xlon,ylat,
                           downscale.tseries=downscale.tseries, 
@@ -402,8 +416,9 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           #start.year=fut.train.start.year_1,
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
-                          )
+                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined, 
+                          is.adjusted=, adjust.method=
+)
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
@@ -427,90 +442,195 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-             post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'), 
+             post.process=post.process.string, time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=TRUE)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
+#}
 
 if(create.qc.mask==TRUE){
   for (var in predictor.vars){
-    #ds$qc.mask[ds$qc.mask==1.0e+20] <- NA
-    var <- 'tasmax'
-    ds$qcmask2 <- ds$qcmask
-    ds$qc.mask2[is.na(ds$qc.mask)] <- as.double(1.0e20)
-#    qc.outdir <- paste(output.dir, "/QCMask/", sep="")
-    #qc.output.dir <- 
-#     qc.file <- paste(output.dir, "/QCMask/", sub(var, paste(var, "qcmask", sep="_"), out.filename), sep="") #var, "-",
-#     paste(sub(pattern=".nc",replacement="", x=out.filename), 
-#     "-", qc.method, "-QCMask.nc", sep="")
+    ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
     ###qc.method needs to get included in here SOMEWHERE.
     qc.var <- paste(var, 'qcmask', sep="_")
-    if(Sys.info()['nodename']$nodename=='cew'){
+    if(Sys.info()['nodename']=="cew"){ #'cew'
       #only activated for testing on CEW workstation
       qc.outdir <- paste(output.dir, "/QCMask/", sep="")
-      qc.file <- paste(qc.outdir, "/QCMask/", sub(var, qc.var, out.filename), sep="") #var, "-",
+      qc.file <- paste(qc.outdir, sub(pattern=var, replacement=qc.var, out.filename), sep="") #var, "-",
     }else{  
       #presumably running on PP/AN; dir creation taken care of
       qc.splitdir <- strsplit(output.dir, split="/")
       qc.splitdir <- qc.splitdir[[1]]
-      qc.index <- length(qc.splitdir)-3
+      qc.index <- length(qc.splitdir)-4
+      #assumes var_qcmask directory already created as part of the runscript process
       qc.outdir <- paste(c(qc.splitdir[1:qc.index], qc.var, qc.splitdir[(qc.index + 1):length(qc.splitdir)]),
                          collapse="/")
-      qc.file <- paste(qc.outdir, sub(var, qc.var, out.filename), sep="")
+      qc.file <- paste(qc.outdir, "/", sub(var, qc.var, out.filename), sep="")
+    }
+    ###Check to make sure that it is possible to create the qc file; create dirs if not
+    message("Attempting creation of QC file")
+    message(qc.file)
+    exists <- file.create(qc.file)
+    if(!exists){
+      message("creating QC directories")
+      message(dirname(qc.file))
+      system(paste("mkdir -p ", dirname(qc.file), sep=""))
+      message(sub(TMPDIR, "", dirname(qc.file)))
+      system(paste("mkdir -p ", "/", sub(TMPDIR, "", dirname(qc.file)), sep=""))
     }
     message(paste('attempting to write to', qc.file))
-    qc.out.filename = WriteNC(qc.file,ds$qc.mask2,qc.var,
-                              xlon,ylat,prec='double',missval=1.0e20,
+    qc.out.filename = WriteNC(qc.file,ds$qc.mask,qc.var,
+                              xlon,ylat,prec='float', #missval=1.0e20,
                               downscale.tseries=downscale.tseries, 
                               downscale.origin=downscale.origin, calendar = downscale.calendar,
                               #start.year=fut.train.start.year_1,
                               units='boolean',
                               lname=paste('QC Mask'),
-                              cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
+                              bounds=isBounds, bnds.list = bounds.list.combined
+    )
+    WriteGlobals(qc.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
+                 configURL,label.validation,institution='NOAA/GFDL',
+                 version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+                 ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+                 post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'), 
+                 tempdir=TMPDIR, include.git.branch=TRUE,
+                 is.qcmask=TRUE, qc.method=qc.method
     )
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
+    message("Attempting system GCP operation for the QC output file:")
+    commandstr <- paste("gcp ", qc.out.filename, " /", sub(TMPDIR, "", qc.out.filename), sep="")
+    message(commandstr)
+    system(commandstr)
   }
 }
-#   qc.file <- paste(output.dir, "QCMasks", paste(sub(pattern=".nc",replacement="", x=out.filename), 
-#                                                 "-", qc.test, "-QCMask.nc", sep=""), 
-#                    sep="/")
-#   dirpop <- getwd()
-#   setwd(output.dir)
-#     qc.file <- paste("QCMasks", out.filename, sep="/")   
-#   #Copy without the variables from the original file
-#   qc.commandstring <- paste("ncks -x -v ", "'", predictor.vars, "' ", ds.out.filename, 
-#                                               " ", qc.file, sep="")
-#     message(qc.commandstring)
-#   system(qc.commandstring)
-#   qc.nc <- nc_open(qc.file, write=TRUE)
-#   qc.var <- ncvar_def("qc_mask", 
-#                        units='boolean', 
-#                        list(qc.nc$dim$lon, qc.nc$dim$lat, qc.nc$dim$time), 
-#                        prec='integer') #Got error when tried to specify 'short'
-#   qc.nc <- ncvar_add(qc.nc, qc.var, verbose=TRUE)
-#   print('qc mask added')
-#   ncvar_put(qc.nc, qc.var, ds$qc.mask, verbose=TRUE)
-#   nc_close(qc.nc)
-#   setwd(dirpop)
 
-print(paste("END TIME:",Sys.time(),sep=''))
-
-#options()[c('warn', 'error', 'showErrorCalls')]<-stored.opts
-
-## End Of Program
-
-# qc.nc <- nc_open(qc.file)
-# qc.out.mask <- ncvar_get(qc.nc, 'qc_mask')
-# print(summary(as.vector(qc.out.mask)))
+# #Create structure containing bounds and other vars
+# bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
+# isBounds <- length(bounds.list.combined) > 1
+# #Write to netCDF
+# # ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
+# #                           xlon,ylat[loop.start:loop.end],time.index.start=0,
+# #                           time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
+# #                           units=list.fut$units$value,calendar= downscale.calendar,
+# #                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
+# #                           cfname=list.fut$cfname$value)
+# ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
+#                           xlon,ylat,
+#                           downscale.tseries=downscale.tseries, 
+#                           downscale.origin=downscale.origin, calendar = downscale.calendar,
+#                           #start.year=fut.train.start.year_1,
+#                           units=list.fut$units$value,
+#                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
+#                           cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
+#                           )
+# #Write Global attributes to downscaled netcdf
+# label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
+# label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
+# #Code for obtaining the filenames of all files from tmask.list
+# # commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
+# # time.mask.names <- ""
+# # for (i in 1:length(names(tmask.list))){
+# #   var <- names(tmask.list[i])
+# #   time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
+# #   print(time.mask.names)
+# # }
+# #Code for obtaining the options for precipitation and post-processing
+# #(current PP options are profoundly unlikely to be triggered for anything not pr)
+# post.process.string = ""
+# if(exists("pr.mask.opt")){
+#   post.process.string <- paste(post.process.string, "trace pr threshold:", pr.mask.opt, 
+#                                ", lopt.drizzle:", lopt.drizzle, ", lopt.conserve:", lopt.conserve, 
+#                                ", trace post-processing:", pr.post.process, sep="")
+# }
+# WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
+#              configURL,label.validation,institution='NOAA/GFDL',
+#              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+#              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+#              post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'), 
+#              tempdir=TMPDIR, include.git.branch=TRUE)
 # 
-# print(summary(ds$qc.mask))
+# #print(paste('Downscaled output file:',ds.out.filename,sep=''))
+# message(paste('Downscaled output file:',ds.out.filename,sep=''))
 # 
-# qc.out <- qc.out.mask[!is.na(qc.out.mask)]
-# print(sum(qc.out==0))
+# if(create.qc.mask==TRUE){
+#   for (var in predictor.vars){
+#     #ds$qc.mask[ds$qc.mask==1.0e+20] <- NA
+#     var <- 'tasmax'
+#     ds$qcmask2 <- ds$qcmask
+#     ds$qc.mask2[is.na(ds$qc.mask)] <- as.double(1.0e20)
+# #    qc.outdir <- paste(output.dir, "/QCMask/", sep="")
+#     #qc.output.dir <- 
+# #     qc.file <- paste(output.dir, "/QCMask/", sub(var, paste(var, "qcmask", sep="_"), out.filename), sep="") #var, "-",
+# #     paste(sub(pattern=".nc",replacement="", x=out.filename), 
+# #     "-", qc.method, "-QCMask.nc", sep="")
+#     ###qc.method needs to get included in here SOMEWHERE.
+#     qc.var <- paste(var, 'qcmask', sep="_")
+#     if(Sys.info()['nodename']$nodename=='cew'){
+#       #only activated for testing on CEW workstation
+#       qc.outdir <- paste(output.dir, "/QCMask/", sep="")
+#       qc.file <- paste(qc.outdir, "/QCMask/", sub(var, qc.var, out.filename), sep="") #var, "-",
+#     }else{  
+#       #presumably running on PP/AN; dir creation taken care of
+#       qc.splitdir <- strsplit(output.dir, split="/")
+#       qc.splitdir <- qc.splitdir[[1]]
+#       qc.index <- length(qc.splitdir)-3
+#       qc.outdir <- paste(c(qc.splitdir[1:qc.index], qc.var, qc.splitdir[(qc.index + 1):length(qc.splitdir)]),
+#                          collapse="/")
+#       qc.file <- paste(qc.outdir, sub(var, qc.var, out.filename), sep="")
+#     }
+#     message(paste('attempting to write to', qc.file))
+#     qc.out.filename = WriteNC(qc.file,ds$qc.mask2,qc.var,
+#                               xlon,ylat,prec='double',missval=1.0e20,
+#                               downscale.tseries=downscale.tseries, 
+#                               downscale.origin=downscale.origin, calendar = downscale.calendar,
+#                               #start.year=fut.train.start.year_1,
+#                               units='boolean',
+#                               lname=paste('QC Mask'),
+#                               cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined
+#     )
+#     message(paste('QC Mask output file:',qc.out.filename,sep=''))
+#   }
+# }
+# #   qc.file <- paste(output.dir, "QCMasks", paste(sub(pattern=".nc",replacement="", x=out.filename), 
+# #                                                 "-", qc.test, "-QCMask.nc", sep=""), 
+# #                    sep="/")
+# #   dirpop <- getwd()
+# #   setwd(output.dir)
+# #     qc.file <- paste("QCMasks", out.filename, sep="/")   
+# #   #Copy without the variables from the original file
+# #   qc.commandstring <- paste("ncks -x -v ", "'", predictor.vars, "' ", ds.out.filename, 
+# #                                               " ", qc.file, sep="")
+# #     message(qc.commandstring)
+# #   system(qc.commandstring)
+# #   qc.nc <- nc_open(qc.file, write=TRUE)
+# #   qc.var <- ncvar_def("qc_mask", 
+# #                        units='boolean', 
+# #                        list(qc.nc$dim$lon, qc.nc$dim$lat, qc.nc$dim$time), 
+# #                        prec='integer') #Got error when tried to specify 'short'
+# #   qc.nc <- ncvar_add(qc.nc, qc.var, verbose=TRUE)
+# #   print('qc mask added')
+# #   ncvar_put(qc.nc, qc.var, ds$qc.mask, verbose=TRUE)
+# #   nc_close(qc.nc)
+# #   setwd(dirpop)
 # 
-# qc.in <- ds$qc.mask[!is.na(ds$qc.mask)]
-# print(sum(qc.in==0))
+# print(paste("END TIME:",Sys.time(),sep=''))
 # 
-# print(sum(qc.in==1))
-# print(sum(qc.out==1))
+# #options()[c('warn', 'error', 'showErrorCalls')]<-stored.opts
+# 
+# ## End Of Program
+# 
+# # qc.nc <- nc_open(qc.file)
+# # qc.out.mask <- ncvar_get(qc.nc, 'qc_mask')
+# # print(summary(as.vector(qc.out.mask)))
+# # 
+# # print(summary(ds$qc.mask))
+# # 
+# # qc.out <- qc.out.mask[!is.na(qc.out.mask)]
+# # print(sum(qc.out==0))
+# # 
+# # qc.in <- ds$qc.mask[!is.na(ds$qc.mask)]
+# # print(sum(qc.in==0))
+# # 
+# # print(sum(qc.in==1))
+# # print(sum(qc.out==1))
