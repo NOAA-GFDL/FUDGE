@@ -22,7 +22,7 @@ def constructExpname(lname_project,lname_target,series,method,kfold,basedir):
 		print "project",lname_project,"not found in project_map."
 		sname_project = lname_project
 		print "Using ",lname_project," as default for sname_project(short name)"
-	print sname_project
+	#print sname_project
 	f.close()
         target_mappings = mapdir+"target_map"
         f = open(target_mappings,'r')
@@ -36,7 +36,7 @@ def constructExpname(lname_project,lname_target,series,method,kfold,basedir):
                 print "target",lname_target,"not found in target_map."
                 sname_target = lname_target
                 print "Using ",lname_target," as default for sname_target(short name)"
-        print sname_target
+       # print sname_target
 	f.close()
 	## get platform code
 	system,node,release,version,machine = os.uname()
