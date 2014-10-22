@@ -145,6 +145,7 @@ callEquiDistant <- function(LH, CH, CF, args){
   }else{
     size <- length(CF)
   }
+  prob<-c(0.001:1:size)/size
   #Create numerator and denominator of equation
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
