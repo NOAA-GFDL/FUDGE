@@ -63,8 +63,10 @@
 LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct, 
                              create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
                              graph=FALSE, masklines=FALSE, 
-                             qc.test='kdAdjust', create.qc.mask=FALSE, 
-                             create.postproc=FALSE, postproc.method='none', postproc.args=NULL){
+                             ds.orig=NA,
+                             s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args, 
+                             create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
+  {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
   #source("../../FudgePreDS/ApplyTemporalMask.R")
@@ -82,11 +84,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }else{
     qc.mask <- NULL
   }
-  if(create.postproc){
-    postproc.out <- rep(NA, downscale.length)
-  }else{
-    postproc.out <- NULL
-  }
+#   if(create.postproc){
+#     postproc.out <- rep(NA, downscale.length)
+#   }else{
+#     postproc.out <- NULL
+#   }
   ##Create checkvector to test collision of kfold validation masks
   checkvector <- rep(0, downscale.length)
   #And finally, in order to see internal activity, add the graph options
@@ -105,17 +107,28 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
     window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
+    if(!is.null(ds.orig)){
+      window.orig <- ApplyTemporalMask(ds.orig, mask.struct[[3]]$masks[[window]])
+    }else{
+      window.orig <- NA
+    }
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
         kfold.predict <- ApplyTemporalMask(window.predict, kfold.masks[[1]]$masks[[kmask]])
         kfold.target <- ApplyTemporalMask(window.target, kfold.masks[[2]]$masks[[kmask]])
         kfold.gen <- ApplyTemporalMask(window.gen, kfold.masks[[3]]$masks[[kmask]])
+        if(!is.null(ds.orig)){
+          kfold.orig <- ApplyTemporalMask(window.orig, kfold.masks[[3]]$masks[[kmask]])
+        }else{
+          kfold.orig <- NA
+        }
       }else{
         #TODO: Ask someone about how looping over a sinle element slows the code (OR DOES IT?)
         kfold.predict <- window.predict
         kfold.target <- window.target
         kfold.gen <- window.gen
+        kfold.orig <- window.orig
       }
       #       #Create checkvectors for making sure masks do not apply
       #       if(length(mask.struct) <=3){
@@ -140,6 +153,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         if(length(mask.struct) <= 3){
           #perform downscaling on the series and merge into new vector
           if(create.ds.out){
+            #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
             temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                      train.predict = kfold.predict[!is.na(kfold.predict)], 
                                      train.target = kfold.target[!is.na(kfold.target)], 
@@ -147,21 +161,36 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                      args=downscale.args)
             downscale.vec[!is.na(kfold.gen)] <- temp.out
           }
-          if(create.qc.mask){
-            qc.mask[!is.na(kfold.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
-                                                     hist.pred = kfold.predict[!is.na(kfold.predict)], 
-                                                     hist.targ = kfold.target[!is.na(kfold.target)], 
-                                                     fut.pred = kfold.gen[!is.na(kfold.gen)])
+          if(s5.adjust){
+            if(is.na(kfold.orig)){
+              #If there is ds data being passed in from outside, it gets checked
+              data <- temp.out
+            }else{
+              #otherwise, use the ds values from the run you have just completed
+              data <- kfold.orig[!is.na(kfold.orig)]
+            }
+            temp.out <- callS5Adjustment(s5.method=s5.method,s5.args=s5.args,
+                                         data = data, 
+                                         hist.pred = kfold.predict[!is.na(kfold.predict)], 
+                                         hist.targ = kfold.target[!is.na(kfold.target)], 
+                                         fut.pred = kfold.gen[!is.na(kfold.gen)], 
+                                         create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
+            qc.mask[!is.na(kfold.gen)] <- temp.out$qc.mask #A NULL assignment might cause problems here. Second if?
+            downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
+#             qc.mask[!is.na(kfold.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
+#                                                      hist.pred = kfold.predict[!is.na(kfold.predict)], 
+#                                                      hist.targ = kfold.target[!is.na(kfold.target)], 
+#                                                      fut.pred = kfold.gen[!is.na(kfold.gen)])
           }
-          if(create.postproc){
-            postproc.out[!is.na(kfold.gen)] <- CallPostProcMethod(data=kfold.gen[!is.na(kfold.gen)], 
-                                                                  mask=kfold.target[!is.na(kfold.target)], 
-                                                                  mask.data=kfold.predict[!is.na(kfold.predict)],
-                                                                  pp.method=postproc.method, args=postproc.args)
-            print(summary(postproc.out))
-            print(length(postproc.out))
-            print(length(!is.na(postproc.out)))
-          }
+#           if(create.postproc){
+#             postproc.out[!is.na(kfold.gen)] <- CallPostProcMethod(data=kfold.gen[!is.na(kfold.gen)], 
+#                                                                   mask=kfold.target[!is.na(kfold.target)], 
+#                                                                   mask.data=kfold.predict[!is.na(kfold.predict)],
+#                                                                   pp.method=postproc.method, args=postproc.args)
+#             print(summary(postproc.out))
+#             print(length(postproc.out))
+#             print(length(!is.na(postproc.out)))
+#           }
         }else{
           #If there is a 4th pruning mask (currently only supported by 1 scenario), apply that afterwards
           #TODO: Test this bit, the masks are going to be significantly more complicated
@@ -200,7 +229,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
 #   }
   #Exit loop
-  return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask, 'postproc.out'=postproc.out))
+  return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask)) #'postproc.out'=postproc.out))
 }
 
 #Converts NAs to 0, and all non-NA values to 1

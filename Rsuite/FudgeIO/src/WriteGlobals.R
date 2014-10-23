@@ -65,7 +65,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(include.git.branch==TRUE){
     branch.string <- system('git symbolic-ref HEAD')
-    commit.string <- system('git log | head -1')
+    #commit.string <- system('git log | head -1')
+    commit.string <- system('git describe --always --tag')
     info <- paste(info, "Git branch:", branch.string, commit.string)
   }
   history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')

@@ -98,6 +98,60 @@ all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in =
 print(paste("Entire run with CDFt took", proc.time()[1]-start.time[1], "to complete."))
 #CDFt took **6 MINUTES** to run over the entire dataset. I think that this might be doing okay.
 
+######Example code for running the 'adjustment of downscaled values' section (aka s5)
+setwd("~/Code/fudge2014/Rsuite/FudgeTrain/src/examples/")
+library(ncdf4)
+# source("../CrossValidate.R")
+# source("../MaskMerge.R")
+
+######
+###Example code for calling and testing the cross-validation functions
+
+#Source the relevant files in the directory
+#Don't need for now - tecchnically, everything is sourced
+
+##Example code for calling and testing the Fudge driver script and the time-windowing functions
+kfold=0
+ds.method='CDFt'
+train.and.use.same <<- TRUE
+#train_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231.nc"
+train.time.window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc"
+#esdgen_time_window = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20991231.nc"
+esdgen.time.window <- "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc"
+tmask.list <- CreateTimeWindowList(hist.train.mask = train.time.window, hist.targ.mask = train.time.window, 
+                                   esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
+
+#check.mask.list <- (hist.train.mask = train_time_window, hist.targ.mask = train_time_window, 
+#                              esd.gen.mask = esdgen_time_window, k=0, method='CDFt')
+#Then, read in data 
+historical_target = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/atmos/day/r0i0p0/v1.2/tasmax/SCCSC0p1/OneD/tasmax_day_livneh_historical_r0i0p0_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
+new.nc <- nc_open(historical_target)
+hist.targ <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+historical_predictor = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/historical/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_historical_r1i1p1_SCCSC0p1_19610101-20051231.I250_J31-170.nc"
+new.nc <- nc_open(historical_predictor)
+hist.pred <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+future_predictor <- "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/MPI-ESM-LR/rcp85/atmos/day/r1i1p1/v20111014/tasmax/SCCSC0p1/OneD/tasmax_day_MPI-ESM-LR_rcp85_r1i1p1_SCCSC0p1_20060101-20991231.I250_J31-170.nc"
+new.nc <- nc_open(future_predictor)
+fut.pred <- ncvar_get(new.nc, "tasmax", collapse_degen=FALSE)
+
+##Now, establish the results of the QC function in a call to TrainDriver
+start.time <- proc.time()
+corrected.cdft.data <- TrainDriver(target.masked.in = hist.targ, 
+                                  hist.masked.in = hist.pred,
+                                  fut.masked.in = fut.pred, 
+                                  mask.list = tmask.list, ds.method = 'CDFt', k=0,
+                                  ds.orig=NULL,
+                                  s5.adjust=TRUE, s5.method='kdAdjust', s5.args = NULL, 
+                                  create.qc.mask=TRUE, create.adjust.out=TRUE)
+print(paste("Entire run with CDFt qc masking took", proc.time()[1]-start.time[1], "to complete."))
+####Previous version for comparison
+start.time <- proc.time()
+all.real.CDFt.data <- TrainDriver(target.masked.in = hist.targ, hist.masked.in = hist.pred, fut.masked.in = fut.pred, 
+                                  mask.list = tmask.list, ds.method = 'CDFt', k=0, time.steps=NA, 
+                                  istart = NA,loop.start = NA,loop.end = NA)
+print(paste("Entire run without CDFt qc masking took", proc.time()[1]-start.time[1], "to complete."))
+
+
 ##########
 #####----Old code for calling and plotting time windowing / downscaling funcitons
 #####Probably still has a few useful calls in it
