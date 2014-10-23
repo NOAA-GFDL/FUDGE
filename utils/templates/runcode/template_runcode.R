@@ -56,15 +56,12 @@ rm(list=ls())
 	k.fold <- <KFOLD> 
 #-------------- output -----------------------#
 	output.dir <- <OUTPUT.DIR>
+	mask.output.dir <- <MASK.OUTPUT.DIR> 
 #-------------  custom -----------------------#
         <PARAMS> 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 #-------------- pp ---------------------------#
-        create.qc.masks <- <QC.SWITCH>
-        qc.method <- <QC.METHOD>	 
-        qc.varname <- <QC.VARNAME>
-        adjust.out <- <ADJUST.OUT>
-
+        mask.list <- <MASK.LIST>
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
@@ -108,6 +105,8 @@ fut.time.trim.mask <- paste(TMPDIR,fut.time.trim.mask,sep='')
 }
 }
 output.dir <- paste(TMPDIR,output.dir,sep='')
+mask.output.dir <- paste(TMPDIR,mask.output.dir,sep='')
+
 #########################################################################
 #-------------------------------------------------#
 
