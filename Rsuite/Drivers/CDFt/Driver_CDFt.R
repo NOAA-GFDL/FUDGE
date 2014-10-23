@@ -113,6 +113,19 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 message("Checking output directory")
 QCIO(output.dir)
 
+message("checking Section 5 options provided")
+qc.check <- 0
+for (element in section.5.list){
+  qc.check <- qc.check + as.numeric(section.5.list[[element]]$create.qc.mask)
+  if(qc.check==1){
+    qc.method <- section.5.list$s5.method
+  }
+}
+  if (qc.check > 1){
+    stop(paste("QC Mask Option Error: FUDGE expected 1 or 0 qc creation options and there were", qc.check))
+}
+qc.check <- as.logical(qc.check)
+
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only as a source of dimensions for writing the downscaled
 #### output to file, but as an immediate check upon the dimensions
@@ -445,13 +458,13 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
              post.process=post.process.string, time.trim.mask=fut.time.trim.mask, 
-             tempdir=TMPDIR, include.git.branch=TRUE)
+             tempdir=TMPDIR, include.git.branch=TRUE, FUDGEROOT=FUDGEROOT)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 #}
 
-if(create.qc.mask==TRUE){
+if(qc.check){ ##Created waaay back at the beginning, as part of the QC functions
   for (var in predictor.vars){
     ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
     ###qc.method needs to get included in here SOMEWHERE.
@@ -499,7 +512,7 @@ if(create.qc.mask==TRUE){
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                  post.process=post.process.string, 
                  time.trim.mask=fut.time.trim.mask, 
-                 tempdir=TMPDIR, include.git.branch=TRUE,
+                 tempdir=TMPDIR, include.git.branch=TRUE,FUDGEROOT=FUDGEROOT,
                  is.qcmask=TRUE, qc.method=qc.method)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
     message("Attempting system GCP operation for the QC output file:")
