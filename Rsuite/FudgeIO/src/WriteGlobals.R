@@ -13,7 +13,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
                          post.process="", time.trim.mask='na', 
-                         tempdir="", include.git.branch=FALSE, 
+                         tempdir="", include.git.branch=FALSE, FUDGEROOT="",
                          is.adjusted=FALSE, adjust.method=NA, 
                          is.qcmask=FALSE, qc.method=NA){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
@@ -77,6 +77,9 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
   }
   if(include.git.branch){
+    ###Hooboy...need to get a temporary change of directory in here. Or just pass FUDGEROOT like a responsible person.
+    popdir <- getwd()
+    setwd(FUDGEROOT)
     out <- pipe('git symbolic-ref HEAD')
     branch.string <- readLines(out)
     close(out)
@@ -84,9 +87,13 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     out <- pipe('git describe --always --tag')
     commit.string <- readLines(out)
     close(out)
+    message(paste( "Git branch:", branch.string, commit.string))
     info <- paste(info, "Git branch:", branch.string, commit.string)
+    setwd(popdir)
   }
-  history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
+  history <- paste('File processed at ',institution,
+                   '  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', 
+                   version ,' on ', date(), sep='')
   if(file.exists(filename)){ 
     print("File already exists. Open in WRITE MODE")
     nc.object = nc_open(filename,write=TRUE)

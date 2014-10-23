@@ -492,12 +492,13 @@ if(create.qc.mask==TRUE){
                               bounds=isBounds, bnds.list = bounds.list.combined
     )
     #For now, patch the variables in here until se get s5 formalized in the XML
-    qc.method='test'
+    qc.method='kdAdjust'
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
                  configURL,label.validation,institution='NOAA/GFDL',
                  version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-                 post.process=post.process.string, time.trim.mask=(fut.time.trim.mask=='na'), 
+                 post.process=post.process.string, 
+                 time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=TRUE,
                  is.qcmask=TRUE, qc.method=qc.method)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))

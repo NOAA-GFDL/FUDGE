@@ -130,9 +130,9 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
                                         prec = bnds.list[[bnds.var]]$info$prec)
       }
     }
-    save('var.dat', file="/home/cew/Code/testing/ncvars.out")
+    #save('var.dat', file="/home/cew/Code/testing/ncvars.out")
     message("creating nc objects")
-    nc.obj <- nc_create(filename,var.dat, verbose=TRUE)
+    nc.obj <- nc_create(filename,var.dat)
     print("placing nc vars")
     ncvar_put(nc.obj, var.dat[[var.name]], data.array)
     if(bounds){
