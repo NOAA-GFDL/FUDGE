@@ -12,31 +12,44 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
-                         post.process="", time.trim.mask=FALSE, 
-                         tempdir="", include.git.branch=FALSE){
-#a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
+                         post.process="", time.trim.mask='na', 
+                         tempdir="", include.git.branch=FALSE, 
+                         is.adjusted=FALSE, adjust.method=NA, 
+                         is.qcmask=FALSE, qc.method=NA){
+  #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   comment.info <- ""
   if(!is.na(downscaling.method)){ 
-  comment.info <- paste('Output produced from ',downscaling.method,' downscaling ',sep='')
+    comment.info <- paste('Output produced from ',downscaling.method,' downscaling ',sep='')
+  }
+  #Note: only ONE of is.adjusted or is.qcmask should be activated at once. See the driver script for fxn calls.
+  if(is.adjusted){
+    comment.info <- paste(comment.info, "adjusted with the", adjust.method, "method", ", and")
+  }
+  if (is.qcmask){
+    comment.info <- paste(comment.info, "passed through the QC masking check", qc.method, "and")
   }
   if(!is.na(kfold)){
-  comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 
+    comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 
   }
   if(!is.na(ds.experiment)){
     comment.info <- paste(comment.info, 'with experiment configuration', ds.experiment, ").")
   }
   if(!is.na(predictand)){
-  comment.info <- paste(comment.info, 'This is a downscaled estimate of ',predictand,sep='')
+    if(!is.qcmask){
+      comment.info <- paste(comment.info, 'This is a downscaled estimate of ',predictand,sep='')
+    }else{
+      comment.info <- paste(comment.info, 'This is a QC check for a downscaled estimate of ',predictand,sep='')
+    }
   }
   if(!is.na(label.validation)){
-  comment.info <- paste(comment.info,' for the ', label.validation,' experiment',sep='')
+    comment.info <- paste(comment.info,' for the ', label.validation,' experiment',sep='')
   }
   if(!is.na(label.training)){
-  comment.info <- paste(comment.info,' having done training using the ',label.training, ' time series',sep='')
+    comment.info <- paste(comment.info,' having done training using the ',label.training, ' time series',sep='')
   }
   if(!is.na(predictor)){
-  comment.info <- paste(comment.info, ', predictor(s) used: ',predictor,sep='')
+    comment.info <- paste(comment.info, ', predictor(s) used: ',predictor,sep='')
   }
   ##info attribute
   info <- ""
@@ -60,13 +73,17 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(post.process!=""){
     info <- paste(info, "Processing options: ", post.process, ";", sep="")
   }
-  if(time.trim.mask!=FALSE){
+  if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
   }
-  if(include.git.branch==TRUE){
-    branch.string <- system('git symbolic-ref HEAD')
-    #commit.string <- system('git log | head -1')
-    commit.string <- system('git describe --always --tag')
+  if(include.git.branch){
+    out <- pipe('git symbolic-ref HEAD')
+    branch.string <- readLines(out)
+    close(out)
+    #out <- pipe('git log | head -1')
+    out <- pipe('git describe --always --tag')
+    commit.string <- readLines(out)
+    close(out)
     info <- paste(info, "Git branch:", branch.string, commit.string)
   }
   history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
@@ -79,11 +96,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   ncatt_put(nc.object, 0 , "title", title )
   ncatt_put(nc.object, 0 , "history", history )
-  print("debug1")
+  #print("debug1")
   ncatt_put(nc.object, 0 , "institution", institution )
-  print("debug2")
+  #print("debug2")
   if(comment.info != ""){
-  ncatt_put(nc.object, 0 , "comment", comment.info )
+    ncatt_put(nc.object, 0 , "comment", comment.info )
   }
   if(info!=""){
     print("adding info attribute")
@@ -91,9 +108,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   #' TODO info versus comment global attribute
   if(!is.na(reference)){
-  ncatt_put(nc.object, 0 , "references", reference )
+    ncatt_put(nc.object, 0 , "references", reference )
   }
   nc_close(nc.object) 
   return(filename)
 }
-
