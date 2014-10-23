@@ -40,6 +40,12 @@ def checkTags(dictParams,key):
 				val = 'na'
                         elif(key == 'fut_time_trim_mask'):
                                 val = 'na'
+                        elif(key == 'qc_mask'):
+                                val = 'off'
+                        elif(key == 'qc_varname'):
+                                val = 'na'  
+                        elif(key == 'qc_type'):
+                                val = 'na'
 		        else:		
 				print "Error: Missing value for ",key
 				sys.exit(1)  
@@ -179,6 +185,13 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 			print "auxcustom1:",auxcustom1
         projectRoot = checkTags(dictParams,'oroot')
 	outdir = checkTags(dictParams,'outdir')
+	## pp section ##
+	qc_mask = checkTags(dictParams,'qc_mask')
+	adjust_out = checkTags(dictParams,'adjust_out')
+	qc_varname = checkTags(dictParams,'qc_varname')
+	if(qc_varname is None):
+		qc_varname = target+"_qcmask"
+	qc_type = checkTags(dictParams,'qc_type')
         ####### end get  dictParams ###########################
         ## OneD or ZeroD that's the question ##  
         if(region != "station"):
@@ -265,13 +278,13 @@ def listVars(uinput,basedir=None,force=False,pp=False):
             fut_freq = dict_fut['mip']
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
 
-	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom
+	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out
 ############end of listVars###################### 
 def main():
     #################### args parsing ############
         help = "#################Usage:##################\n dsTemplater -i <input XML> \n "
-        help = help + "Example 1: dsTemplater -i dstemplate.xml \n "
-        help = help + "Example 2: dsTemplater -i examples/dstemplate.60lo0FUTURE.xml \n"
+        help = help + "Example 1: expergen -i dstemplate.xml \n "
+        help = help + "Example 2: expergen -i examples/dstemplate.60lo0FUTURE.xml \n"
         #print usage
 	basedir = os.environ.get('BASEDIR')
         if(basedir is None):
@@ -314,7 +327,7 @@ def main():
                     			forOpt = False
                 		force = vals 
         #########  call listVars() #############################################################
-	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom= listVars(uinput,basedir,force)
+	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out= listVars(uinput,basedir,force)
         ######### call script creators..  #######################################################
         ############################### 1 ###############################################################
         #  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -339,7 +352,7 @@ def main():
         
         params_new =  '"'+str(params)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
-        make_code_cmd = make_code_cmd+" "+str(auxcustom)
+        make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)
 	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)

@@ -22,16 +22,22 @@ def postProc():
 	 userinput = "none"	
      parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
      parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
+     parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed", metavar="VNAME")
+
      (options, args) = parser.parse_args()
      if userinput == "none":
         print "Looking for XML location taken from command line option.."
         print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
+     vname = "" 
      for opts,vals in options.__dict__.items():
          	if(opts == 'uinput'):
                 	 uinput = vals
                  	 print uinput
 		if(opts == 'force'):
 			force = vals 
+		if(opts == 'vname'):
+			vname = vals
+			print "Variable to be post-processed: ",vname
      if uinput is None:	
         uinput = userinput
 	
@@ -45,7 +51,7 @@ def postProc():
      if(basedir is None):
            print "ERROR: BASEDIR environment variable not set"
 	   sys.exit(1)
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom = expergen.listVars(uinput,basedir=basedir,pp=True) 
+     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type = expergen.listVars(uinput,basedir=basedir,pp=True) 
      basedire = basedir	
      esdMethod = method
      varname = target 
@@ -66,6 +72,17 @@ def postProc():
      ver = dversion
      predModel = fut_model 	
      indir = outdir #Our mini op from dscaling is the input to PP  
+     ## if vname  contains the word mask, then yes let's set the indir differently  ##
+     if(vname is not None):
+    	 if "mask" in vname:
+		print "The variable you're trying to PP appears to be a mask variable"
+        	print "debug..",indir
+        	indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
+        	print "indir ",indir 
+      #if vname is passed, we assume we PP the target variable
+     else: 
+        vname = varname 
+        print "default target variable chose to be post-processed. Override with a -v varname.", vname
      obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
      if (cond == 1):
@@ -74,7 +91,7 @@ def postProc():
              				if (exists == False):
 
            					print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,varname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid)
+						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid)
 					else:
 						sys.exit("ERROR")
            			else:
@@ -112,7 +129,6 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
        	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 	error,output = p.communicate()
-
 	print p.returncode ,output, error
         word = "ERROR"
         if (p.returncode != 0):
