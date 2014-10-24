@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/x64/python/2.7.3/bin/python
 import expergen 
 import os,sys,subprocess
 from subprocess import PIPE
@@ -6,13 +6,21 @@ import optparse
 from optparse import OptionParser
 import shlex
 cnt = 0
+def fudgeVer():
+        try:
+		fudgeversion = 'fudge/'+os.environ['BRANCH'] 
+		print "version",fudgeversion        
+	except:
+		fudgeversion = "<undefined>"
+		
+	return fudgeversion
 def fudgeList():
      #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
      force = False #default
      usage = "\n############################################################################\n"
      parser = OptionParser(usage)
-     usage = usage + "Eg. python fudgeList -i ../utils/xml/tests/vanilla.tasmax.A38.xml -o /tmp/testsummary122 \n"
-     usage =  usage + "Eg. (with force option) python fudgeList -f -i ../utils/xml/tests/vanilla.tasmax.A38.xml -o /tmp/testsummary122"
+     usage = usage + "Eg. fudgeList -i ../utils/xml/tests/vanilla.tasmax.A38.xml -o /tmp/testsummary122 \n"
+     usage =  usage + "Eg. (with force option)fudgeList -f -i ../utils/xml/tests/vanilla.tasmax.A38.xml -o /tmp/testsummary122"
      parser = OptionParser(usage)
 
      try:
@@ -25,6 +33,8 @@ def fudgeList():
      parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
 
      parser.add_option("-o", "--outlog", dest="sumlogloc",help="pass location of summary log file", metavar="FILE")
+     parser.add_option("-v", "--fversion",action="store_true",default=False,help="Print FUDGE CODE VERSION. Default is set to FALSE/no-printing")
+
      (options, args) = parser.parse_args()
      #if userinput == "none":
        # print "Looking for XML location taken from command line option.."
@@ -37,6 +47,10 @@ def fudgeList():
                          sumlogloc = vals
 		if(opts == 'force'):
 			force = vals 
+                if(opts == 'fversion'):
+			print "fudge version retriever.."	
+                        fudgeversion = fudgeVer() 
+			print fudgeversion
      if uinput is None:	
         uinput = userinput
      if sumlogloc is None:
@@ -52,7 +66,7 @@ def fudgeList():
            print "ERROR: BASEDIR environment variable not set"
 	   sys.exit(1)
      print "==============================runtime log from parser==================================================="
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom = expergen.listVars(uinput,basedir=basedir,pp=True) 
+     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out = expergen.listVars(uinput,basedir=basedir,pp=True) 
      print "=================================================================================="		
      basedire = basedir	
      esdMethod = method
@@ -103,7 +117,7 @@ def fudgeList():
  
 							ascii = "ds.experiment:"+expconfig
 							ascii = ascii+"\n"+"xml.path:"+os.path.abspath(uinput)+"\n"
-							ascii = ascii+"FUDGE.version:"+"\n"
+							ascii = ascii+"FUDGE.version:"+fudgeversion+"\n"
 							delim="_"
 						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"0101-"+target_file_end_time+"1231"+".I*",file_j_range.replace('"','').strip()+".nc")	
 							target_file = delim.join(target_parts)	

@@ -74,12 +74,17 @@ endif
 ########################## end of user input #############################
 # -------- no changes needed below --------------------------------------
 set workdir = $TMPDIR
-set outroot=$workdir$indir/../../../$region/$ver
+if ( "$var" =~ *"mask"* ) then
+	echo "Mask outdir activated in ppFudge"
+	set postfix = "/../../../../$region/$ver"
+else
+        set postfix = "/../../../$region/$ver"
+endif
+set outroot=$workdir$indir${postfix}
+#echo $outroot
 set auxfiledir=$basedir/utils/pp/auxfiles/ 
 #echo $outroot
-set root = $indir/../../../$region/$ver 
-#echo $root
-#exit
+set root = $indir${postfix}
 
 set tooldir=$basedir/utils/pp/
 

@@ -83,6 +83,15 @@ endif
 echo `date`
 echo ${AARMVAR}
 ##################prep for variable attributes##############################
+# default #
+ set TMPCMIPNAME =  ${AARMVAR}_tmp
+ set CMIPNAME = $AARMVAR 
+ #set long_name = "Downscaled Daily Maximum Near-Surface Air Temperature"
+ #set units = "K"
+ set downscaling_method = $METHOD
+ #set coordinates = "height"
+ #set standard_name = "air_temperature"
+
 
 source ${auxfiledir}/loadit
 
@@ -110,10 +119,9 @@ else if( ${AARMVAR} == "pr" ) then
  set downscaling_method = $METHOD
  set coordinates = "height"
  set standard_name = "precipitation_flux"
-else
- echo "Sorry, this variable is not supported by this tool yet. Quitting........"
+#celse
+#c echo "Sorry, this variable is not supported by this tool yet. Quitting........"
 endif
-
 ###################### prep for globals ###################################
 if (( ${EXPNAME} == "c360_hiram_H3" ) || (${EXPNAME} == "amip_r2i1p1" )) then
   set GFDLMODEL = "HIRAM-C360"
@@ -329,15 +337,11 @@ i_offset = int(i_offset);
 j_offset = int(j_offset);
 
 ${TMPCMIPNAME}[\$time,\$lat,\$lon] = 0.f;
-
 ${TMPCMIPNAME} = ${AARMVAR};
-
-${TMPCMIPNAME}@long_name = "${long_name}";
-${TMPCMIPNAME}@units = "${units}";
 ${TMPCMIPNAME}@downscaling_method = "$downscaling_method";
-${TMPCMIPNAME}@coordinates = "$coordinates";
-${TMPCMIPNAME}@standard_name = "$standard_name";
-
+${TMPCMIPNAME}@long_name = ${AARMVAR}@long_name;
+${TMPCMIPNAME}@standard_name = ${AARMVAR}@standard_name;
+${TMPCMIPNAME}@units = ${AARMVAR}@units;
 
 EOF
 
@@ -422,7 +426,10 @@ endif
 ncatted -O -h -a history,global,a,c,".Processed using NCO wrappers to standardize downscaled datasets on ${today}" $OFILE
 ncatted -O -h -a gfdl_experiment_name,global,a,c,"${EXPNAME}" $OFILE
 if($simple == 1) then
-set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME} 
+set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME}
+if ( "$AARMVAR" =~ *"mask"* ) then
+	set title = "Auxiliary QC mask "${AARMVAR}" for fudge experiment: "${EXPNAME}
+endif
 #ncatted -O -h -a title,global,o,c,"downscaled estimate of tasmax for the MPI-ESM-LR.rcp85_r1i1p1.2006-2099 experiment" $OFILE #TODO from R
 ncatted -O -h -a title,global,o,c,"${title}" $OFILE 
 ncatted -O -h -a downscaled_data_version,global,a,c,"${dversion}" $OFILE
@@ -482,6 +489,8 @@ endif
 if ( ${AARMVAR} != "tasmax" ) then 
 ncks -O -hxv  height $OFILE $OFILE
 ncatted -Oh -a coordinates,$CMIPNAME,d,, $OFILE 
+else
+ncatted -O -h -a coordinates,$CMIPNAME,a,c,"height" $OFILE
 endif
 
 #add lat lon bounds info

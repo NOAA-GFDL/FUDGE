@@ -113,17 +113,19 @@ foreach i (`seq $lon_start 1 $lon_end`)
  endif
         echo "mkdir -p $OUTDIR" >> $runpath
 #Add line to create mask directory
-echo "mkdir -p $OUTDIR/QCMask/" >> $runpath
+        echo "mkdir -p $OUTDIR/${cmipvar}_qcmask" >> $runpath
+#end
         echo "mkdir -p "'$TMPDIR'"$OUTDIR/  ">> $runpath
 #Add line to create mask directory
-echo "mkdir -p "'$TMPDIR'"$OUTDIR/QCMask/  ">> $runpath
+echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
+#end
 echo "R --vanilla < $basedir/scripts/${cmipvar}/${dexper}/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix"."${tstamp} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix"."${tstamp} &"  >> $runpath
  echo "wait " >> $runpath 
 # Add lines to gcp output from VFTMP to /arch 
 
  echo "gcp -cd "'$TMPDIR'"$OUTDIR/*.I$counter"_"$dsuffix.nc $OUTDIR/ " >> $runpath 
 #Add a line to copy the mask dir as well
- echo "gcp -cd "'$TMPDIR'"$OUTDIR/QCMask/*.I$counter"_"$dsuffix.nc $OUTDIR/QCMask/ " >> $runpath 
+ echo "gcp -cd "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/*.I$counter"_"$dsuffix.nc $OUTDIR/${cmipvar}_qcmask/ " >> $runpath 
  echo $runpath
  chmod u+x  $runpath
 end
