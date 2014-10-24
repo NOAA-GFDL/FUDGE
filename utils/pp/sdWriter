@@ -426,7 +426,10 @@ endif
 ncatted -O -h -a history,global,a,c,".Processed using NCO wrappers to standardize downscaled datasets on ${today}" $OFILE
 ncatted -O -h -a gfdl_experiment_name,global,a,c,"${EXPNAME}" $OFILE
 if($simple == 1) then
-set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME} 
+set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME}
+if ( "$AARMVAR" =~ *"mask"* ) then
+	set title = "Auxiliary QC mask "${AARMVAR}" for fudge experiment: "${EXPNAME}
+endif
 #ncatted -O -h -a title,global,o,c,"downscaled estimate of tasmax for the MPI-ESM-LR.rcp85_r1i1p1.2006-2099 experiment" $OFILE #TODO from R
 ncatted -O -h -a title,global,o,c,"${title}" $OFILE 
 ncatted -O -h -a downscaled_data_version,global,a,c,"${dversion}" $OFILE
