@@ -19,6 +19,7 @@ SetDSMethodInfo <- function(ds.method){
          "BCQM" = setBiasCorrection(), 
          "EDQM" = setEquiDistant(), 
          "CFQM" = setChangeFactor(),
+         "DeltaSD" = setDeltaSD(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
 }
@@ -92,7 +93,7 @@ setBiasCorrection <- function(){
   crossval.possible <<- FALSE
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
-  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  train.and.use.same <<- TRUE 
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c("size")
 }
@@ -103,7 +104,7 @@ setEquiDistant <- function(){
   crossval.possible <<- FALSE
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
-  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  train.and.use.same <<- TRUE 
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c("size")
 }
@@ -114,7 +115,18 @@ setChangeFactor <- function(){
   crossval.possible <<- FALSE
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
-  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  train.and.use.same <<- TRUE 
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c("size")
+}
+
+setDeltaSD<- function(){
+  #Sets global variables if the DS method used is DeltaSD
+  #Is it possible to use cross-validation with this method?
+  crossval.possible <<- TRUE
+  # Does this method use some of the same data to train the 
+  # ESD equations/quantiles AND generate the downscaled data?
+  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c("OPT")
 }

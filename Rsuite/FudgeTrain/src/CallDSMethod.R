@@ -190,21 +190,14 @@ callChangeFactor <- function(LH, CH, CF, args){
 callDeltaSD <- function(LH,CH,CF,args){
   # 10/23/2014
   #'@author carlos.gaitan@noaa.gov
-  ###################################################################################################################################
-  
-  #FUNCTIONALITY:
-  #               The script uses the Delta Method to downscale coarse res. climate variables  
-  # MODEL INPUTS:
-  
+  #'@description The script uses the Delta Method to downscale coarse res. climate variables  
   #'@param LH: Local Historical (a.k.a. observations)
   #'@param CH: Coarse Historical (a.k.a. GCM historical)
   #'@param CF: Coarse Future (a.k.a GCM future)
   #'@param args: Cpntains OPT, acharacter string, that can be "mean" or "median". 
   #'Uses the difference between CF and CH means or medians (recommended "median")
-  
   # MODEL OUTPUTS
   #'@return SDF: Downscaled Future (Local)
-  
   ########################################
   # Delta Downscaling
   # 1) Calculate mean difference between CH and CF 
@@ -215,16 +208,12 @@ callDeltaSD <- function(LH,CH,CF,args){
     }
   if (OPT=="mean"){
     delta<-mean(CF)-mean(CH)
-  }
-  else if (OPT=="median") {  
+  }else if (OPT=="median") {  
     delta<-median(CF)-median(CH)
-  }
-  else {
+  }else {
     stop("DeltaSD Downscaling Error: Available options aremean or median, not", OPT) }
-  
   #  2) Add the difference from 1) to LH to obtain LF
   SDF<-LH+delta
-  
   return (SDF)
 }
 
