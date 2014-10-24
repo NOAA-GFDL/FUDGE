@@ -24,6 +24,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
+                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args),
                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method)))
 }
@@ -148,7 +149,11 @@ callEquiDistant <- function(LH, CH, CF, args){
   prob<-c(0.001:1:size)/size
   #Create numerator and denominator of equation
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+#   print(length(temporal))
+#   print(summary(temporal))
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+#   print(length(temporal2))
+#   print(summary(temporal2))
   
   # EQUIDISTANT CDF (Li et al. 2010)
   SDF<-CF + temporal-temporal2
@@ -181,6 +186,48 @@ callChangeFactor <- function(LH, CH, CF, args){
     #SDoutput<-list("SDF"=SDF,"SDH"=SDH)  
     return (SDF)
 }
+
+callDeltaSD <- function(LH,CH,CF,args){
+  # 10/23/2014
+  #'@author carlos.gaitan@noaa.gov
+  ###################################################################################################################################
+  
+  #FUNCTIONALITY:
+  #               The script uses the Delta Method to downscale coarse res. climate variables  
+  # MODEL INPUTS:
+  
+  #'@param LH: Local Historical (a.k.a. observations)
+  #'@param CH: Coarse Historical (a.k.a. GCM historical)
+  #'@param CF: Coarse Future (a.k.a GCM future)
+  #'@param args: Cpntains OPT, acharacter string, that can be "mean" or "median". 
+  #'Uses the difference between CF and CH means or medians (recommended "median")
+  
+  # MODEL OUTPUTS
+  #'@return SDF: Downscaled Future (Local)
+  
+  ########################################
+  # Delta Downscaling
+  # 1) Calculate mean difference between CH and CF 
+    if(!is.null(args$OPT)){
+      OPT <- args$OPT
+    }else{
+      stop(paste("DeltaSD Downscaling Error: OPT not found in args"))
+    }
+  if (OPT=="mean"){
+    delta<-mean(CF)-mean(CH)
+  }
+  else if (OPT=="median") {  
+    delta<-median(CF)-median(CH)
+  }
+  else {
+    stop("DeltaSD Downscaling Error: Available options aremean or median, not", OPT) }
+  
+  #  2) Add the difference from 1) to LH to obtain LF
+  SDF<-LH+delta
+  
+  return (SDF)
+}
+
 callNothing <- function(pred, targ, new, args){
   #Does absolutely nothing to the downscaling values of the current 
   #function. 

@@ -325,6 +325,7 @@ start.time <- proc.time()
 #source("Rsuite/drivers/TrainDriver.R")
 #source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
 #source("Rsuite/FudgeTrain/src/CallDSMethod.R")
+create.qc.mask <- FALSE
 if (args!='na'){
 ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                           hist.masked.in = list.hist$clim.in, 
