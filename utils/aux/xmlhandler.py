@@ -149,11 +149,34 @@ class XMLHandler:
 	        #listParams = listParams + delimit + ""+params_node.tag+"='"+params+"'"
 		listParams = listParams + delimit + ""+params_node.tag+"="+params+""
 	        dictParams['params']=listParams
-	if(debug == 1):
-       		 for x,v in dictParams.iteritems():
-                         print x,v
-		
-	return dictParams
 
+        for pp_node in tree.iter('pp'):
+            qcparam=0 #total number of qc paramsargs 
+            for qc_node in pp_node.findall('.//qc'):
+	        qc_mask = qc_node.attrib.get('qc_mask')
+		dictParams['qc_mask'] = qc_mask
+                adjust_out = qc_node.attrib.get('adjust_out')
+                dictParams['adjust_out'] = adjust_out 
+		qc_varname = qc_node.attrib.get('name')
+		dictParams['qc_varname'] = qc_varname
+	        qc_type =  qc_node.attrib.get('type')
+		dictParams['qc_type'] = qc_type 
+		## following not tested pass options tag within each qc embedded in pp ##
+	        for qc_params in qc_node.findall('.//options'):
+                   listQCParams = ''
+		   for options_node in qc_params:
+			qcparam = qcparam + 1	
+			qcparamstext = options_node.text
+			if(qcparam > 1):
+			   delimit = ","
+			else:
+			   delimit = ''
+                	listQCParams = listQCParams + delimit + ""+options_node.tag+"="+qcparamstext+""
+			print listQCParams
+                	dictParams['qcparams'] = listQCParams			
+        if(debug == 1):
+                 for x,v in dictParams.iteritems():
+                         print x,v
+        return dictParams
 
 
