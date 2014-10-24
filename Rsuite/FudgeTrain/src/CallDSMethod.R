@@ -21,7 +21,11 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                 'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
-                'Nothing' = callNothing(train.predict, train.target, esd.gen, args),
+                "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
+                "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
+                "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
+                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args),
+                'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method)))
 }
 
@@ -101,6 +105,116 @@ callGeneral.Bias.Corrector <- function(pred, targ, new, args){
   qc.vals <- CallDSMethod(ds.method=qc.method, pred, targ, new, sample.args)
   out.vals <- ifelse( (abs(ds.vals-qc.vals) < correct.factor), yes=ds.vals, no=qc.vals )
   return(out.vals)
+}
+
+callBiasCorrection <- function(LH, CH, CF, args){
+  #'Performs a bias correction adjustment with parameters
+  #'that I will ask CG about tomorrow
+  # first define vector with probabilities [0,1]
+  # LH: Local Historical (a.k.a. observations)
+  # CH: Coarse Historical (a.k.a. GCM historical)
+  # CF: Coarse Future (a.k.a GCM future)
+  if(!is.null(args$size)){
+    size <- args$size
+    args$size <- NULL
+  }else{
+    size <- length(CF)
+  }
+  prob<-c(0.001:1:size)/size
+  
+  # QM Change Factor
+  #
+  SDF<-quantile(LH,ecdf(CH)(quantile(CF,prob)),names=FALSE)
+  #CEW: creation of historical values commented out for the moment
+  #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
+  #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+  
+  return (SDF)
+}
+
+callEquiDistant <- function(LH, CH, CF, args){
+  #'Performs an equidistant correction adjustment with parameters
+  #'that I will ask CG about tomorrow
+  # first define vector with probabilities [0,1]
+  # LH: Local Historical (a.k.a. observations)
+  # CH: Coarse Historical (a.k.a. GCM historical)
+  # CF: Coarse Future (a.k.a GCM future)
+  #'Cites Li et. al. 2010
+  if(!is.null(args$size)){
+    size <- args$size
+    args$size <- NULL
+  }else{
+    size <- length(CF)
+  }
+  prob<-c(0.001:1:size)/size
+  #Create numerator and denominator of equation
+  temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+#   print(length(temporal))
+#   print(summary(temporal))
+  temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+#   print(length(temporal2))
+#   print(summary(temporal2))
+  
+  # EQUIDISTANT CDF (Li et al. 2010)
+  SDF<-CF + temporal-temporal2
+  #CEW creation of downscaled historical values turned off for the moment
+  #SDH<-CH + temporal-temporal2
+  #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+  return (SDF)
+}
+
+callChangeFactor <- function(LH, CH, CF, args){
+  #'The script uses the Quantile Mapping Change Factor
+  #'(Ho, 2012) CDF to downscale coarse res. climate variables
+  #'@param LH: Local Historical (a.k.a. observations)
+    #'@param CH: Coarse Historical (a.k.a. GCM historical)
+    #'@param CF: Coarse Future (a.k.a GCM future)
+    #'@param args: named list of arguments for the function
+    if(!is.null(args$size)){
+      size <- args$size
+      args$size <- NULL
+    }else{
+      size <- length(CF)
+    }
+    # first define vector with probabilities [0,1]
+    prob<-c(0.001:1:size)/size
+    
+    # QM Change Factor
+    SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
+    ##CEW: creation of historical quantiles turned off for the moment
+    #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
+    #SDoutput<-list("SDF"=SDF,"SDH"=SDH)  
+    return (SDF)
+}
+
+callDeltaSD <- function(LH,CH,CF,args){
+  # 10/23/2014
+  #'@author carlos.gaitan@noaa.gov
+  #'@description The script uses the Delta Method to downscale coarse res. climate variables  
+  #'@param LH: Local Historical (a.k.a. observations)
+  #'@param CH: Coarse Historical (a.k.a. GCM historical)
+  #'@param CF: Coarse Future (a.k.a GCM future)
+  #'@param args: Cpntains OPT, acharacter string, that can be "mean" or "median". 
+  #'Uses the difference between CF and CH means or medians (recommended "median")
+  # MODEL OUTPUTS
+  #'@return SDF: Downscaled Future (Local)
+  ########################################
+  # Delta Downscaling
+  # 1) Calculate mean difference between CH and CF 
+    if(!is.null(args$OPT)){
+      OPT <- args$OPT
+    }else{
+      stop(paste("DeltaSD Downscaling Error: OPT not found in args"))
+    }
+  if (OPT=="mean"){
+    delta<-mean(CF)-mean(CH)
+  }else if (OPT=="median") {  
+    delta<-median(CF)-median(CH)
+  }else {
+    stop("DeltaSD Downscaling Error: Available options aremean or median, not", OPT) }
+  #  2) Add the difference from 1) to LH to obtain LF
+  SDF<-LH+delta
+  return (SDF)
 }
 
 callNothing <- function(pred, targ, new, args){

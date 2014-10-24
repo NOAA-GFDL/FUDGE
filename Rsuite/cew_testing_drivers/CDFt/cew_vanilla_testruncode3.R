@@ -52,10 +52,10 @@ fut.time.trim.mask <- 'na'
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------- method name k-fold specs-----------------------#
        # ds.method <- 'simple.bias.correct' 
-ds.method <- 'CDFt'
-	ds.experiment <- 'testing-new.mask.struct-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
+ds.method <- 'BCQM'
+	ds.experiment <- 'testing-BCQM-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
-create.qc.mask <- TRUE
+create.qc.mask <- FALSE
  qc.method <- 'kdAdjust'
 #-------------- output -----------------------#
 	#output.dir <- '/work/a1r/PROJECTS/DOWNSCALING/3ToThe5th//downscaled/NOAA-GFDL/MPI-ESM-LR/rcp85_r1i1p1//atmos/day/r1i1p1/v20111014/1pow5-txp1-GFDL-CDFtv1-A00X01K00/tasmax/SCCSC0p1/OneD/v20140108/'
