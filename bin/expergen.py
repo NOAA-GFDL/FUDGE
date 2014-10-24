@@ -46,6 +46,8 @@ def checkTags(dictParams,key):
                                 val = 'na'  
                         elif(key == 'qc_type'):
                                 val = 'na'
+                        elif(key == 'adjust_out'):
+                                val = 'na'
 		        else:		
 				print "Error: Missing value for ",key
 				sys.exit(1)  
@@ -188,6 +190,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
 	adjust_out = checkTags(dictParams,'adjust_out')
+	#adjust_out = "na"
 	qc_varname = checkTags(dictParams,'qc_varname')
 	if(qc_varname is None):
 		qc_varname = target+"_qcmask"
