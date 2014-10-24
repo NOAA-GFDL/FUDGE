@@ -54,14 +54,14 @@ rm(list=ls())
         ds.method <- <METHOD> 
 	ds.experiment <- <DEXPER> 
 	k.fold <- <KFOLD> 
-####CEW Edit to create QC Masks
-        create.qc.mask <- TRUE
-        qc.method <- 'kdAdjust'
 #-------------- output -----------------------#
 	output.dir <- <OUTPUT.DIR>
+	mask.output.dir <- <MASK.OUTPUT.DIR> 
 #-------------  custom -----------------------#
         <PARAMS> 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
+#-------------- pp ---------------------------#
+        mask.list <- <MASK.LIST>
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
@@ -105,7 +105,9 @@ fut.time.trim.mask <- paste(TMPDIR,fut.time.trim.mask,sep='')
 }
 }
 output.dir <- paste(TMPDIR,output.dir,sep='')
+mask.output.dir <- paste(TMPDIR,mask.output.dir,sep='')
+
 #########################################################################
 #-------------------------------------------------#
 
-source(paste(FUDGEROOT,'Rsuite/Drivers/','CDFt','/Driver_','CDFt','.R',sep=''))
+source(paste(FUDGEROOT,'Rsuite/Drivers/',ds.method,'/Driver_',ds.method,'.R',sep=''))
