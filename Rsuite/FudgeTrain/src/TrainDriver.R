@@ -2,8 +2,9 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
                         create.ds.out=TRUE,
                         time.steps=NA, istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
                         ds.orig=NULL, #Correcting a dimension error
-                        s5.adjust=FALSE, s5.method='totally.fake', s5.args = NULL, 
-                        create.qc.mask=FALSE, create.adjust.out=FALSE){
+#                         s5.adjust=FALSE, s5.method='totally.fake', s5.args = NULL, 
+#                         create.qc.mask=FALSE, create.adjust.out=FALSE
+                        s5.instructions=list(onemask=list('na')), create.qc.mask=FALSE){
 #' Function to loop through spatially,temporally and call the Training guts.
 #' @param target.masked.in, hist.masked.in, fut.masked.in: The historic target/predictor and 
 #' future predictor datasets to which spatial masks have been applied earlier
@@ -33,9 +34,17 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
    }
    if(create.qc.mask){
      qc.mask <-  array(NA,dim=c(dim(fut.masked.in)))
+     s5.adjust <- TRUE
    }else{
      qc.mask <- NULL
+     s5.adjust <- FALSE
+     for (element in 1:length(s5.instructions)){
+       if(s5.instructions[[element]]$adjust.out!='na'){
+         s5.adjust <- TRUE
+       }
+     }
    }
+    
 
    print(k)
    if(k>1){
@@ -66,7 +75,8 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
                                          create.ds.out=create.ds.out, downscale.fxn = ds.method, downscale.args = downscale.args, 
                                          kfold=k, kfold.mask=kfold.mask, graph=FALSE, masklines=FALSE, 
                                          ds.orig=ds.orig[i.index, j.index,],
-                                         s5.adjust=s5.adjust, s5.method=s5.method, s5.args = s5.args, 
+                                         #s5.adjust=s5.adjust, s5.method=s5.method, s5.args = s5.args, 
+                                         s5.instructions=s5.instructions, s5.adjust=s5.adjust,
                                          create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out
                                          )
            if (create.ds.out || create.adjust.out){

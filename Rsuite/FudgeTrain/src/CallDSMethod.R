@@ -214,6 +214,8 @@ callDeltaSD <- function(LH,CH,CF,args){
     stop("DeltaSD Downscaling Error: Available options aremean or median, not", OPT) }
   #  2) Add the difference from 1) to LH to obtain LF
   SDF<-LH+delta
+    message(length(CF))
+    message(length(SDF))
   return (SDF)
 }
 

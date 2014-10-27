@@ -64,7 +64,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
                              graph=FALSE, masklines=FALSE, 
                              ds.orig=NA,
-                             s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args, 
+                             #s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args, 
+                             s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
   {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
@@ -160,6 +161,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                      esd.gen = kfold.gen[!is.na(kfold.gen)], 
                                      args=downscale.args)
             downscale.vec[!is.na(kfold.gen)] <- temp.out
+            print(summary(as.vector(downscale.vec)))
           }
           if(s5.adjust){
             if(is.na(kfold.orig)){
@@ -169,12 +171,13 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               #otherwise, use the ds values from the run you have just completed
               data <- kfold.orig[!is.na(kfold.orig)]
             }
-            temp.out <- callS5Adjustment(s5.method=s5.method,s5.args=s5.args,
+            temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
+              #s5.method=s5.method,s5.args=s5.args,
                                          data = data, 
                                          hist.pred = kfold.predict[!is.na(kfold.predict)], 
                                          hist.targ = kfold.target[!is.na(kfold.target)], 
-                                         fut.pred = kfold.gen[!is.na(kfold.gen)], 
-                                         create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
+                                         fut.pred = kfold.gen[!is.na(kfold.gen)])
+                                         #create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
             qc.mask[!is.na(kfold.gen)] <- temp.out$qc.mask #A NULL assignment might cause problems here. Second if?
             downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
 #             qc.mask[!is.na(kfold.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
