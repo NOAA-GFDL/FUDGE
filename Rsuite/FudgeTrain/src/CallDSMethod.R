@@ -57,16 +57,31 @@ callCDFt <- function (pred, targ, new, args){
   #Calls the CDFt function
   #If no argument is provided for npas, defaults to 
   #npas=length(targ)
+  ###Obtain required arguments (and throw errors if not specified)
+  if(!is.null(args$npas)){
+    npas <- args$npas
+    if(npas=='default'){
+      npas <- length(new)
+    }
+  }else{
+    stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
+  }
+  if(!is.null(args$dev)){
+    dev <- args$dev
+  }else{
+    stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
+  }
   if(is.null(args)){
     return(CDFt(targ, pred, new, npas=length(targ))$DS)
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
     ## explanation as to why. This way works.
-    if(!'npas'%in%names(args)){
-      args <- c(npas=length(targ), args)
-    }
-    args.list <- c(list(targ, pred, new), args)
+#     if(!'npas'%in%names(args)){
+#       args <- c(npas=length(targ), args)
+#     }
+#    args.list <- c(list(targ, pred, new), args)
+    args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
 #    print("calling CDFt with args:")
 #    print(args)
     return(do.call("CDFt", args.list)$DS)
@@ -114,12 +129,12 @@ callBiasCorrection <- function(LH, CH, CF, args){
   # LH: Local Historical (a.k.a. observations)
   # CH: Coarse Historical (a.k.a. GCM historical)
   # CF: Coarse Future (a.k.a GCM future)
-  if(!is.null(args$size)){
-    size <- args$size
-    args$size <- NULL
-  }else{
+#   if(!is.null(args$size)){
+#     size <- args$size
+#     args$size <- NULL
+#   }else{
     size <- length(CF)
-  }
+#   }
   prob<-c(0.001:1:size)/size
   
   # QM Change Factor
@@ -140,12 +155,12 @@ callEquiDistant <- function(LH, CH, CF, args){
   # CH: Coarse Historical (a.k.a. GCM historical)
   # CF: Coarse Future (a.k.a GCM future)
   #'Cites Li et. al. 2010
-  if(!is.null(args$size)){
-    size <- args$size
-    args$size <- NULL
-  }else{
+#   if(!is.null(args$size)){
+#     size <- args$size
+#     args$size <- NULL
+#   }else{
     size <- length(CF)
-  }
+#   }
   prob<-c(0.001:1:size)/size
   #Create numerator and denominator of equation
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
@@ -170,12 +185,12 @@ callChangeFactor <- function(LH, CH, CF, args){
     #'@param CH: Coarse Historical (a.k.a. GCM historical)
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'@param args: named list of arguments for the function
-    if(!is.null(args$size)){
-      size <- args$size
-      args$size <- NULL
-    }else{
+#     if(!is.null(args$size)){
+#       size <- args$size
+#       args$size <- NULL
+#     }else{
       size <- length(CF)
-    }
+#     }
     # first define vector with probabilities [0,1]
     prob<-c(0.001:1:size)/size
     
