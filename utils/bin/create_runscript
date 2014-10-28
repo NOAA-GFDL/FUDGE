@@ -12,8 +12,6 @@ set basedir=$argv[4]
 set varname=$argv[5]
 set cmipvar = $varname
 set method = $argv[6]
-set rundir=$basedir/scripts/$varname/$dexper/runscript 
-mkdir -p $rundir
 #### include varname in input dir path
 ## end of user input
 set counter=1
@@ -38,11 +36,14 @@ set AUX_CUSTOM=$argv[21]
 set TAR_TWIN=$argv[22]
 set HIS_TWIN=$argv[23]
 set FUT_TWIN=$argv[24]
- 
+set sbasedir=$argv[25]  
+set rundir=$sbasedir/runscript
+mkdir -p $rundir
+
 ######################################
 set ctr=1
 ##########
-set logdir=$basedir/scripts/${varname}/${dexper}/log/
+set logdir=$sbasedir/log/
 mkdir -p $logdir 
 set joblog=/work/$USER/fudge/stdout/
 mkdir -p $joblog
@@ -119,7 +120,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
 #Add line to create mask directory
 echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
 #end
-echo "R --vanilla < $basedir/scripts/${cmipvar}/${dexper}/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix"."${tstamp} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix"."${tstamp} &"  >> $runpath
+echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix"."${tstamp} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix"."${tstamp} &"  >> $runpath
  echo "wait " >> $runpath 
 # Add lines to gcp output from VFTMP to /arch 
 

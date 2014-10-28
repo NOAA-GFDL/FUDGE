@@ -3,7 +3,7 @@
         <grid region = "SCCSC0p1">
         <!-- lats, late are used to develope filenames -->
             <lons>181</lons>
-            <lone>370</lone>
+            <lone>181</lone>
             <!-- lons, lone used by DSTemplate to specify minifiles-->
             <!-- can theoretically specify one minifile (useful for testing)-->
 	    <!-- file_j_range used by DSTemplate to  identify minfile j suffix-->
@@ -67,6 +67,7 @@
         <output>
             <!-- root defaults to /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/-->
 	    <root>/work/a1r/</root>
+	    <script_root>/nbhome/a1r/tests/</script_root>  <!-- script prefix -->
         </output>
     </core>
     <custom>
