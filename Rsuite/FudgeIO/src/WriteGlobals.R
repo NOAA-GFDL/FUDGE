@@ -18,16 +18,16 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          is.qcmask=FALSE, qc.method=NA){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
-  comment.info <- ""
+  comment.info <- "Output produced from"
+  if (is.qcmask){
+    comment.info <- paste(comment.info, "a QC check", qc.method, "performed upon")
+  }
   if(!is.na(downscaling.method)){ 
-    comment.info <- paste('Output produced from ',downscaling.method,' downscaling ',sep='')
+    comment.info <- paste('downscaled output produced from ',downscaling.method,' downscaling ',sep='')
   }
   #Note: only ONE of is.adjusted or is.qcmask should be activated at once. See the driver script for fxn calls.
   if(is.adjusted){
-    comment.info <- paste(comment.info, "adjusted with the", adjust.method, "method", ", and")
-  }
-  if (is.qcmask){
-    comment.info <- paste(comment.info, "passed through the QC masking check", qc.method, "and")
+    comment.info <- paste(comment.info, "adjusted with the", adjust.method, "method(s)", ", and")
   }
   if(!is.na(kfold)){
     comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 

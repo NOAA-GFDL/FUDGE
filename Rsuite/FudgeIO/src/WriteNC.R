@@ -141,6 +141,11 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
       for (i in 1:length(bnds.names)){
         bnds.var <- bnds.names[i]
         ncvar_put(nc.obj, var.dat[[bnds.var]], bnds.list[[bnds.var]]$vals)
+        #The i_offset and j_offset attributes are very important for the functioning of the output netcdf
+        if(bnds.var=="i_offset" || bnds.var=="j_offset"){
+          ncatt_put(nc.obj, bnds.var, "missing_value", attr(bnds.list[[bnds.var]], "missing_value"))
+          ncatt_put(nc.obj, bnds.var, "comments", attr(bnds.list[[bnds.var]], "comments"))
+        }
       }
     }
     print("placing nc variables")
