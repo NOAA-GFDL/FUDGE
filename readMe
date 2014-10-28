@@ -17,11 +17,15 @@ Usage:
 expergen -i ../utils/xml/vanilla.seasonal2.tasmin.xml
 
 Running the above will out a list of master scripts that can be submitted as a MOAB job. Next steps found below- 
+
+Runscripts and R-log files are now placed in [script_root]/scripts/$subproject/$fudgeexperimentname/
+The script_root is retrieved from the XML as a user-defined prefix.
+
 4. Script to Submit MOAB Jobs
 The submit_job script is found in fudge2014/bin/
 Usage:
 Please provide 4 arguments: master_script_dir lon_start lon_end timeSuffix.
-eg. /submit_job /home/a1r/gitlab/vanilla/fudge2014//scripts/tasmin/RRtnp1-CDFt-A38sL01K00/master/ 181 370 2014-09-06.17:24:52.009175 
+eg. submit_job /nbhome/a1r/tests/scripts/RR/RRtna1r-CDFt-A38z-mL01K00/master/ 181 370 2014-10-28.17:10:56.771769
 
 5. Monitor Job
 showq | grep USERNAME
