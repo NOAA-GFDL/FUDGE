@@ -76,14 +76,17 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(ds.arguments!='na'){
     argnames <- ls.str(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
-    info <- paste(info, "Arguments used in downscaling function:", argstring, ";", sep=" ")
+    info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }
-  if(post.process!=""){
-    info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
+#   if(post.process!=""){
+#     info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
+#   }
+  if(pr.opts){
+    info <- paste(info, "Precipitation pre-processing options: ", pr.optstring, "; ", sep="")
   }
   if(is.adjusted){
     #Section 5 stuff
-    info <- paste(info, "post-processing and adjustment options:", adjust.method, ";", sep="")
+    info <- paste(info, "Downscaled value adjustment options: ", adjust.method, "; ", sep="")
   }
   if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
