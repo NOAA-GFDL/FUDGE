@@ -3,7 +3,7 @@
         <grid region = "SCCSC0p1">
         <!-- lats, late are used to develope filenames -->
             <lons>181</lons>
-            <lone>181</lone>
+            <lone>370</lone>
             <!-- lons, lone used by DSTemplate to specify minifiles-->
             <!-- can theoretically specify one minifile (useful for testing)-->
 	    <!-- file_j_range used by DSTemplate to  identify minfile j suffix-->
