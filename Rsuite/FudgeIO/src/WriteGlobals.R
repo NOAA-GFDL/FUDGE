@@ -12,22 +12,30 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
-                         post.process="", time.trim.mask='na', 
+                         time.trim.mask='na', 
                          tempdir="", include.git.branch=FALSE, FUDGEROOT="",
                          is.adjusted=FALSE, adjust.method=NA, 
-                         is.qcmask=FALSE, qc.method=NA){
+                         is.qcmask=FALSE, qc.method=NA, 
+                         pr.opts=FALSE, pr.optstring=NA, 
+                         is.transform=FALSE, transform=NA){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
-  comment.info <- "Output produced from"
+  comment.info <- "Output produced from "
   if (is.qcmask){
-    comment.info <- paste(comment.info, "a QC check", qc.method, "performed upon")
+    comment.info <- paste(comment.info, "a QC check ", qc.method, " performed upon ", sep="")
   }
   if(!is.na(downscaling.method)){ 
-    comment.info <- paste('downscaled output produced from ',downscaling.method,' downscaling ',sep='')
+    comment.info <- paste(comment.info, 'downscaled output via ',downscaling.method,' downscaling ',sep='')
   }
-  #Note: only ONE of is.adjusted or is.qcmask should be activated at once. See the driver script for fxn calls.
+  #Note: is.adjusted and is.qcmask can both be true, but is.qcmask only reports on the adjustments that took place before the mask
+  if(is.transform){
+    comment.info <- paste(comment.info, 'transformed and back-transformed with', transform)
+  }
+  if(pr.opts){
+    comment.info <- paste(comment.info, 'with precipitation adjustments described in more detail later,')
+  }
   if(is.adjusted){
-    comment.info <- paste(comment.info, "adjusted with the", adjust.method, "method(s)", ", and")
+    comment.info <- paste(comment.info, "adjusted with the", adjust.method, "method(s)", ", and", sep="")
   }
   if(!is.na(kfold)){
     comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 
@@ -71,7 +79,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste(info, "Arguments used in downscaling function:", argstring, ";", sep=" ")
   }
   if(post.process!=""){
-    info <- paste(info, "Processing options: ", post.process, ";", sep="")
+    info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
+  }
+  if(is.adjusted){
+    #Section 5 stuff
+    info <- paste(info, "post-processing and adjustment options:", adjust.method, ";", sep="")
   }
   if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
