@@ -5,6 +5,7 @@ from subprocess import PIPE
 import optparse
 from optparse import OptionParser
 import shlex
+import fudgeList
 cnt = 0
 def postProc():
      #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
@@ -88,11 +89,21 @@ def postProc():
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
      if (cond == 1):
            			if (os.path.exists(indir)):
-                                        exists = checkExists(varname,indir,region,ver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
+                                        exists = checkExists(vname,indir,region,ver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
              				if (exists == False):
 
            					print "PP Output does not exist already",indir
 						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid)
+						print "call_ppFudge: COMPLETE "
+						print "fudgeList invocation: BEGINS"
+						slogloc = sbase+"/"+"experiment_info"
+						fcmd = "python "+basedir+"/bin/fudgeList.py -i "+uinput+" -o "+slogloc 
+						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+						out, err = f.communicate() 
+						#print "fudgeList out", out
+						#if err is not None:
+						#	print "fudgeList err", err	
+						print "Summary Log File: ", slogloc	
 					else:
 						sys.exit("ERROR")
            			else:
@@ -103,7 +114,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
                                         filedire = indir+"/../../../"+region+"/"+ver+"/"
 				        if "mask" in var: #spl cases are not great
 	                                        filedire = indir+"/../../../../"+region+"/"+ver+"/"
-	
+						print "-----Looking for PP output in:", filedire		
                                         filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"0101"+"-"+end+"1231"+".nc"
 #                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
 
