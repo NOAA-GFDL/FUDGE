@@ -54,6 +54,7 @@ rm(list=ls())
         ds.method <- <METHOD> 
 	ds.experiment <- <DEXPER> 
 	k.fold <- <KFOLD> 
+	<PR_OPTS>
 #-------------- output -----------------------#
 	output.dir <- <OUTPUT.DIR>
 	mask.output.dir <- <MASK.OUTPUT.DIR> 
