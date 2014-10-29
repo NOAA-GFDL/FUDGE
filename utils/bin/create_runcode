@@ -113,6 +113,8 @@ set qc_type = $argv[50]
 #set TEMPLATE_LIST = ( $TEMPLATE_LIST "QC.METHOD":"'"${qc_type}"'")
 set adjust_out = $argv[51]
 #set TEMPLATE_LIST = ( $TEMPLATE_LIST "ADJUST.OUT":"'"${adjust_out}"'")
+set sbasedir = $argv[52]
+
 #########qclist################
 set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.mask='${qc_switch}'))"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
@@ -132,7 +134,7 @@ if ( $lon_end < $lon_start ) then
  exit
 endif
 
-set codeprefix=$basedir/scripts/${TARGET}/${dexper}/runcode/
+set codeprefix=$sbasedir/runcode/
 mkdir -p $codeprefix
 set cnter = 1
 

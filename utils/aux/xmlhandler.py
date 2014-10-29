@@ -131,6 +131,9 @@ class XMLHandler:
 	       for rootdir_node in output_node.findall('.//root'):
                   oroot = rootdir_node.text
                   dictParams['oroot'] = oroot 
+               for srootdir_node in output_node.findall('.//script_root'):
+                  sroot = srootdir_node.text
+                  dictParams['sroot'] = sroot
                for version_node in output_node.findall('.//version'):
                   dversion = version_node.text
                   dictParams['dversion'] = dversion 

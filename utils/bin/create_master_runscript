@@ -11,8 +11,8 @@ set varname=$argv[3]
 set method=$argv[4]
 set base=$argv[5] 
 set dexper=$argv[6]
-set basedir=$base/scripts/${varname}/${dexper}/master/
-set rundir=$base/scripts/${varname}/${dexper}/runscript/
+set basedir=$base/master/
+set rundir=$base/runscript/
 set i=1
 set dsuffix=$argv[7]
 ###############################
