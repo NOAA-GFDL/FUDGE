@@ -1,4 +1,5 @@
-TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.list, ds.method=NULL, k=0,  
+TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var='tasmax', 
+                        mask.list, ds.method=NULL, k=0,  
                         create.ds.out=TRUE,
                         time.steps=NA, istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
                         ds.orig=NULL, #Correcting a dimension error
@@ -71,6 +72,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, mask.li
            loop.temp <- LoopByTimeWindow(train.predictor = hist.masked.in[i.index, j.index,], 
                                          train.target = target.masked.in[i.index, j.index,], 
                                          esd.gen = fut.masked.in[i.index, j.index,], 
+                                         ds.var=ds.var,
                                          mask.struct = mask.list, 
                                          create.ds.out=create.ds.out, downscale.fxn = ds.method, downscale.args = downscale.args, 
                                          kfold=k, kfold.mask=kfold.mask, graph=FALSE, masklines=FALSE, 

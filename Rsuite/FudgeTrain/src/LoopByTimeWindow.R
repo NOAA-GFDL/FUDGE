@@ -63,7 +63,7 @@
 LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct, 
                              create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
                              graph=FALSE, masklines=FALSE, 
-                             ds.orig=NA,
+                             ds.orig=NA, ds.var='tasmax',
                              #s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args, 
                              s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
@@ -159,7 +159,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                      train.predict = kfold.predict[!is.na(kfold.predict)], 
                                      train.target = kfold.target[!is.na(kfold.target)], 
                                      esd.gen = kfold.gen[!is.na(kfold.gen)], 
-                                     args=downscale.args)
+                                     args=downscale.args, 
+                                     ds.var=ds.var)
             downscale.vec[!is.na(kfold.gen)] <- temp.out
             print(summary(as.vector(downscale.vec)))
           }

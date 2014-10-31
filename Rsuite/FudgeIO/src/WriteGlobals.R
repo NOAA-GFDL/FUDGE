@@ -92,7 +92,6 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
   }
   if(include.git.branch){
-    ###Hooboy...need to get a temporary change of directory in here. Or just pass FUDGEROOT like a responsible person.
     popdir <- getwd()
     setwd(FUDGEROOT)
     out <- pipe('git symbolic-ref HEAD')

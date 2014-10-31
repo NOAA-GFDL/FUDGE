@@ -55,7 +55,7 @@ fut.time.trim.mask <- 'na'
 ds.method <- 'CDFt'
 	ds.experiment <- 'testing-new.mask.struct-1pow5-txp1-GFDL-CDFtv1-A00X01K00' 
 	k.fold <- 0 
-mask.list <- list("method1"=list("type" = 'kdAdjust','adjust.out'='na', 'qc.mask'='off')) #Expected off for 'adjust.out is 'na' not 'off'
+mask.list <- list("method1"=list("type" = 'kdAdjust','adjust.out'='on', 'qc.mask'='on')) #Expected off for 'adjust.out is 'na' not 'off'
 #create.qc.mask <- TRUE
 # qc.method <- 'kdAdjust'
 #-------------- output -----------------------#
