@@ -39,6 +39,8 @@ def checkTags(dictParams,key):
 				val = 'na'
                         elif(key == 'params'):
                                 val = 'na'
+                        elif(key == 'pr_opts'):
+                                val = 'na'
 			elif(key == 'experiment'):
 				val = 'na'
                         elif(key == 'fut_time_trim_mask'):
@@ -177,7 +179,15 @@ def listVars(uinput,basedir=None,force=False,pp=False):
  		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
-	auxcustom1 = "na"  #auxcustom1 now not used
+	#### pr_opts #######
+        pr_opts = checkTags(dictParams,'pr_opts')
+	if(target != 'pr'):
+		if(pr_opts != 'na'):
+			print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
+			sys.exit()	 
+	print "pr_opts:---------------- ",pr_opts 
+        #### pr_opts #########
+	auxcustom1 = "na"  #$auxcustom1 now not used
 	if (params != 'na'):
 		splitparams = params.split(';')
 		#TODO support multiple auxfiles in custom
