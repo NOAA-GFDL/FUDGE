@@ -114,9 +114,17 @@ set qc_type = $argv[50]
 set adjust_out = $argv[51]
 #set TEMPLATE_LIST = ( $TEMPLATE_LIST "ADJUST.OUT":"'"${adjust_out}"'")
 set sbasedir = $argv[52]
-set branch = $argv[53]
+set pr_opts = $argv[53]
+###############################
+if($pr_opts == 'na') then
+ set TEMPLATE_LIST = ( $TEMPLATE_LIST "PR_OPTS":"" )
+else
+ set TEMPLATE_LIST = ( $TEMPLATE_LIST "PR_OPTS":"pr_opts=list("${pr_opts}")" )
+endif
+set branch = $argv[54]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "BRANCH":"'"${branch}"'")
- 
+
+
 #########qclist################
 set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.mask='${qc_switch}'))"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
