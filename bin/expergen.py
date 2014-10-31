@@ -298,6 +298,12 @@ def main():
 	basedir = os.environ.get('BASEDIR')
         if(basedir is None):
 	   print "Warning: BASEDIR environment variable not set"	
+	##### get version BRANCH info ######################
+        branch = os.environ.get('BRANCH')
+        if(branch is None):
+           print "Warning: BRANCH env variable not set. BRANCH will be set to undefined"
+           branch = "undefined"
+	####################################################
         parser = OptionParser(usage=help)
         parser.add_option("-i", "--file", dest="uinput",
         help="pass location of XML template", metavar="FILE")
@@ -361,7 +367,7 @@ def main():
         
         params_new =  '"'+str(params)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
-        make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)
+        make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(branch)
 	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)

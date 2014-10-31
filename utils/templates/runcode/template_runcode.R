@@ -69,6 +69,7 @@ rm(list=ls())
 #	FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
 	FUDGEROOT <- <FUDGEROOT>
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
+	BRANCH <- <BRANCH>
 ################ call main driver ###################################
 print(paste("START TIME:",Sys.time(),sep=''))
 
