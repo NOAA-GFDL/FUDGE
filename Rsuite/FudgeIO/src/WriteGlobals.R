@@ -12,31 +12,52 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          label.training=NA,downscaling.method=NA,reference=NA,label.validation=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
-                         post.process="", time.trim.mask=FALSE, 
-                         tempdir="", include.git.branch=FALSE){
-#a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
+                         time.trim.mask='na', 
+                         tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
+                         is.adjusted=FALSE, adjust.method=NA, 
+                         is.qcmask=FALSE, qc.method=NA, 
+                         pr.opts=FALSE, pr.optstring=NA, 
+                         is.transform=FALSE, transform=NA){
+  #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
-  comment.info <- ""
+  comment.info <- "Output produced from "
+  if (is.qcmask){
+    comment.info <- paste(comment.info, "a QC check ", qc.method, " performed upon ", sep="")
+  }
   if(!is.na(downscaling.method)){ 
-  comment.info <- paste('Output produced from ',downscaling.method,' downscaling ',sep='')
+    comment.info <- paste(comment.info, 'downscaled output via ',downscaling.method,' downscaling ',sep='')
+  }
+  #Note: is.adjusted and is.qcmask can both be true, but is.qcmask only reports on the adjustments that took place before the mask
+  if(is.transform){
+    comment.info <- paste(comment.info, 'transformed and back-transformed with', transform)
+  }
+  if(pr.opts){
+    comment.info <- paste(comment.info, 'with precipitation adjustments described in more detail later,')
+  }
+  if(is.adjusted){
+    comment.info <- paste(comment.info, "adjusted with the ", adjust.method, " method(s)", ", and ", sep="")
   }
   if(!is.na(kfold)){
-  comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 
+    comment.info <- paste(comment.info, 'based on ',kfold,'-fold',' cross-validation, ',sep='') #parenthesis removed
   }
   if(!is.na(ds.experiment)){
     comment.info <- paste(comment.info, 'with experiment configuration', ds.experiment, ").")
   }
   if(!is.na(predictand)){
-  comment.info <- paste(comment.info, 'This is a downscaled estimate of ',predictand,sep='')
+    if(!is.qcmask){
+      comment.info <- paste(comment.info, 'This is a downscaled estimate of ',predictand,sep='')
+    }else{
+      comment.info <- paste(comment.info, 'This is a QC check for a downscaled estimate of ',predictand,sep='')
+    }
   }
   if(!is.na(label.validation)){
-  comment.info <- paste(comment.info,' for the ', label.validation,' experiment',sep='')
+    comment.info <- paste(comment.info,' for the ', label.validation,' experiment',sep='')
   }
   if(!is.na(label.training)){
-  comment.info <- paste(comment.info,' having done training using the ',label.training, ' time series',sep='')
+    comment.info <- paste(comment.info,' having done training using the ',label.training, ' time series',sep='')
   }
   if(!is.na(predictor)){
-  comment.info <- paste(comment.info, ', predictor(s) used: ',predictor,sep='')
+    comment.info <- paste(comment.info, ', predictor(s) used: ',predictor,sep='')
   }
   ##info attribute
   info <- ""
@@ -55,20 +76,38 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(ds.arguments!='na'){
     argnames <- ls.str(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
-    info <- paste(info, "Arguments used in downscaling function:", argstring, ";", sep=" ")
+    info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }
-  if(post.process!=""){
-    info <- paste(info, "Processing options: ", post.process, ";", sep="")
+#   if(post.process!=""){
+#     info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
+#   }
+  if(pr.opts){
+    info <- paste(info, "Precipitation pre-processing options: ", pr.optstring, "; ", sep="")
   }
-  if(time.trim.mask!=FALSE){
+  if(is.adjusted){
+    #Section 5 stuff
+    info <- paste(info, "Downscaled value adjustment options: ", adjust.method, "; ", sep="")
+  }
+  if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
   }
-  if(include.git.branch==TRUE){
-    branch.string <- system('git symbolic-ref HEAD')
-    commit.string <- system('git log | head -1')
+  if(include.git.branch){
+    popdir <- getwd()
+    setwd(FUDGEROOT)
+    out <- pipe('git symbolic-ref HEAD')
+    branch.string <- readLines(out)
+    close(out)
+    #out <- pipe('git log | head -1')
+    out <- pipe('git describe --always --tag')
+    commit.string <- readLines(out)
+    close(out)
+    message(paste( "Git branch:", branch.string, commit.string))
     info <- paste(info, "Git branch:", branch.string, commit.string)
+    setwd(popdir)
   }
-  history <- paste('File processed at ',institution,'  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', version ,' on ', date(), sep='')
+  history <- paste('File processed at ',institution,
+                   '  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, in branch: ', 
+                   BRANCH ,' on ', date(), sep='')
   if(file.exists(filename)){ 
     print("File already exists. Open in WRITE MODE")
     nc.object = nc_open(filename,write=TRUE)
@@ -78,11 +117,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   ncatt_put(nc.object, 0 , "title", title )
   ncatt_put(nc.object, 0 , "history", history )
-  print("debug1")
+  #print("debug1")
   ncatt_put(nc.object, 0 , "institution", institution )
-  print("debug2")
+  #print("debug2")
   if(comment.info != ""){
-  ncatt_put(nc.object, 0 , "comment", comment.info )
+    ncatt_put(nc.object, 0 , "comment", comment.info )
   }
   if(info!=""){
     print("adding info attribute")
@@ -90,9 +129,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   #' TODO info versus comment global attribute
   if(!is.na(reference)){
-  ncatt_put(nc.object, 0 , "references", reference )
+    ncatt_put(nc.object, 0 , "references", reference )
   }
   nc_close(nc.object) 
   return(filename)
 }
-

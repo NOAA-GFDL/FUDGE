@@ -92,6 +92,8 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, get.bounds.vars=FALSE)
           var.list[[offsets[dim]]]$vals <- ncvar_get(mask.nc, offsets[dim])
           dim.string <- "NULL"
           var.list[[offsets[dim]]]$info <- create.ncvar.list(mask.nc, offsets[dim], dim.string)
+          attr(var.list[[offsets[dim]]], "comments") <- ncatt_get(mask.nc, offsets[dim], "comments")$value
+          attr(var.list[[offsets[dim]]], "missing_value") <- ncatt_get(mask.nc, offsets[dim], "missing_value")$value
         }
         #Assign the var list back into the dimension structure
         #dim.list$vars <- dim.var.list

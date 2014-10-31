@@ -8,16 +8,13 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',se
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/src/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/src/',sep=''), full.names=TRUE), source);
-#source("~/Code/fudge2014/Rsuite/drivers/LoadLib.R")
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/Drivers/',sep=''), full.names=TRUE), source);
+source("~/Code/fudge2014/Rsuite/Drivers/LoadLib.R")
+#sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/Drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
 #-------Add traceback call for error handling -------
 stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
 options(error=traceback, warn = 1, showErrorCalls=TRUE)
-#options('showErrorCalls'= FALSE)
-#options(error=traceback)
-#options(showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
 ###after this point. Probably not a component of a --vanilla run. 
 ###But it unquestionably simplifies debugging.
@@ -107,24 +104,13 @@ LoadLib(ds.method)
 message("Setting downscaling method information")
 SetDSMethodInfo(ds.method)
 message("Checking downscaling arguments")
-print(args)
 QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 #Check for writable output directory 
 message("Checking output directory")
 QCIO(output.dir)
 
-message("checking Section 5 options provided")
-qc.check <- 0
-for (element in section.5.list){
-  qc.check <- qc.check + as.numeric(section.5.list[[element]]$create.qc.mask)
-  if(qc.check==1){
-    qc.method <- section.5.list$s5.method
-  }
-}
-  if (qc.check > 1){
-    stop(paste("QC Mask Option Error: FUDGE expected 1 or 0 qc creation options and there were", qc.check))
-}
-qc.check <- as.logical(qc.check)
+message("Checking post-processing/section5 adjustments")
+adjust.list <- QCSection5(mask.list)
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only as a source of dimensions for writing the downscaled
@@ -335,26 +321,27 @@ source(paste(FUDGEROOT,'Rsuite/aux/','MyStats.R',sep=''))
 ################ call train driver ######################################
 print("FUDGE training begins...")
 start.time <- proc.time()
-#source("Rsuite/drivers/TrainDriver.R")
-#source("Rsuite/FudgeTrain/src/LoopByTimeWindow.R")
-#source("Rsuite/FudgeTrain/src/CallDSMethod.R")
-create.qc.mask <- FALSE
+
 if (args!='na'){
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
-                    fut.masked.in = list.fut$clim.in, 
+                    fut.masked.in = list.fut$clim.in, ds.var=target.var, 
                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=args,
-                    s5.adjust=TRUE, s5.method='kdAdjust', s5.args = NULL, 
-                    create.qc.mask=TRUE, create.adjust.out=FALSE)
+                    s5.instructions=mask.list, 
+                    create.qc.mask=adjust.list$qc.check)
+                    #s5.method='kdAdjust', s5.args = NULL, 
+                    #create.qc.mask=TRUE, create.adjust.out=FALSE)
 }else{
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
-                    fut.masked.in = list.fut$clim.in, 
+                    fut.masked.in = list.fut$clim.in, ds.var=target.var,
                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
-                    s5.adjust=TRUE, s5.method='kdAdjust', s5.args = NULL, 
-                    create.qc.mask=TRUE, create.adjust.out=FALSE)
+                    #s5.adjust=TRUE, s5.method='kdAdjust', s5.args = NULL, 
+                    #create.qc.mask=TRUE, create.adjust.out=FALSE
+                    s5.instructions=mask.list, 
+                    create.qc.mask=adjust.list$qc.check)
 }
 print(summary(ds$esd.final))
 message("FUDGE training ends")
@@ -397,34 +384,11 @@ if('pr'%in%target.var && pr.post.process){ #TODO: Change to predictand.vars at s
 ###CEW edit: replaced ds.vector with ds$esd.final
 ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20
 
-#out.file <- paste(output.dir,"/","outtest", fut.filename,sep='')
-#out.file <- paste(output.dir,"/", fut.filename,sep='')
 out.file <- paste(output.dir,"/", out.filename,sep='')
-
-####Start implementing checks for output dirs and /tmpdirs
-exists <- file.create(out.file)
-if(!exists){
-  print("creating output direcotries")
-  system(paste("mkdir -p ", output.dir, sep=""))
-  system(paste("mkdir -p ", "/", sub(TMPDIR, "", output.dir), sep=""))
-  #   if(create.qc.mask==TRUE){
-  #     system(paste("mkdir -p"))
-  #     system(paste("mkdir -p"))
-  #   }
-}
-
 
 #Create structure containing bounds and other vars
 bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
 isBounds <- length(bounds.list.combined) > 1
-#Write to netCDF
-# ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
-#                           xlon,ylat[loop.start:loop.end],time.index.start=0,
-#                           time.index.end=(time.steps-1),start.year=fut.train.start.year_1,
-#                           units=list.fut$units$value,calendar= downscale.calendar,
-#                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-#                           cfname=list.fut$cfname$value)
-#if(write.ds.out){
 ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           xlon,ylat,
                           downscale.tseries=downscale.tseries, 
@@ -432,20 +396,11 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           #start.year=fut.train.start.year_1,
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined, 
-                          #is.adjusted=, adjust.method=
-)
+                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined)
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
-#Code for obtaining the filenames of all files from tmask.list
-# commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
-# time.mask.names <- ""
-# for (i in 1:length(names(tmask.list))){
-#   var <- names(tmask.list[i])
-#   time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
-#   print(time.mask.names)
-# }
+
 #Code for obtaining the options for precipitation and post-processing
 #(current PP options are profoundly unlikely to be triggered for anything not pr)
 post.process.string = ""
@@ -454,18 +409,28 @@ if(exists("pr.mask.opt")){
                                ", lopt.drizzle:", lopt.drizzle, ", lopt.conserve:", lopt.conserve, 
                                ", trace post-processing:", pr.post.process, sep="")
 }
+
+###Code to determine whether or not to include the git branch
+if(Sys.getenv("USERNAME")=='cew'){
+  git.needed=TRUE
+}else{
+  #Someone else is running it, modules are available and preumably git branch not needed
+  git.needed=FALSE
+}
+
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-             post.process=post.process.string, time.trim.mask=fut.time.trim.mask, 
-             tempdir=TMPDIR, include.git.branch=TRUE, FUDGEROOT=FUDGEROOT)
+             time.trim.mask=fut.time.trim.mask, 
+             tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+             is.adjusted=!is.na(adjust.list$adjust.methods), adjust.method=adjust.list$adjust.methods)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 #}
 
-if(qc.check){ ##Created waaay back at the beginning, as part of the QC functions
+if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the QC functions
   for (var in predictor.vars){
     ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
     ###qc.method needs to get included in here SOMEWHERE.
@@ -475,25 +440,14 @@ if(qc.check){ ##Created waaay back at the beginning, as part of the QC functions
       qc.outdir <- paste(output.dir, "/QCMask/", sep="")
       qc.file <- paste(qc.outdir, sub(pattern=var, replacement=qc.var, out.filename), sep="") #var, "-",
     }else{  
-      #presumably running on PP/AN; dir creation taken care of
-      qc.splitdir <- strsplit(output.dir, split="/")
-      qc.splitdir <- qc.splitdir[[1]]
-      qc.index <- length(qc.splitdir)-4
-      #assumes var_qcmask directory already created as part of the runscript process
-      qc.outdir <- paste(c(qc.splitdir[1:qc.index], qc.var, qc.splitdir[(qc.index + 1):length(qc.splitdir)]),
-                         collapse="/")
-      qc.file <- paste(qc.outdir, "/", sub(var, qc.var, out.filename), sep="")
+      qc.file <- paste(mask.output.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
     }
     ###Check to make sure that it is possible to create the qc file; create dirs if not
     message("Attempting creation of QC file")
     message(qc.file)
     exists <- file.create(qc.file)
     if(!exists){
-      message("creating QC directories")
-      message(dirname(qc.file))
-      system(paste("mkdir -p ", dirname(qc.file), sep=""))
-      message(sub(TMPDIR, "", dirname(qc.file)))
-      system(paste("mkdir -p ", "/", sub(TMPDIR, "", dirname(qc.file)), sep=""))
+      print("ERROR! Dir creation script not beahving as expected!")
     }
     message(paste('attempting to write to', qc.file))
     qc.out.filename = WriteNC(qc.file,ds$qc.mask,qc.var,
@@ -506,19 +460,15 @@ if(qc.check){ ##Created waaay back at the beginning, as part of the QC functions
                               bounds=isBounds, bnds.list = bounds.list.combined
     )
     #For now, patch the variables in here until se get s5 formalized in the XML
-    qc.method='kdAdjust'
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
                  configURL,label.validation,institution='NOAA/GFDL',
                  version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-                 post.process=post.process.string, 
+                 #post.process=post.process.string, 
                  time.trim.mask=fut.time.trim.mask, 
-                 tempdir=TMPDIR, include.git.branch=TRUE,FUDGEROOT=FUDGEROOT,
-                 is.qcmask=TRUE, qc.method=qc.method)
+                 tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
+                 is.qcmask=TRUE, qc.method=adjust.list$qc.method, 
+                 is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
-    message("Attempting system GCP operation for the QC output file:")
-    commandstr <- paste("gcp ", qc.out.filename, " /", sub(TMPDIR, "", qc.out.filename), sep="")
-    message(commandstr)
-    system(commandstr)
   }
 }
