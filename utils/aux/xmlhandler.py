@@ -137,6 +137,21 @@ class XMLHandler:
                for version_node in output_node.findall('.//version'):
                   dversion = version_node.text
                   dictParams['dversion'] = dversion 
+	####### Get pr_opts #########################
+            for pr_node in tree.iter('pr_opts'):
+            	listParams_pr = ''
+            	pr_nparam=0 #total number of custom params
+            	for pr_params_node in pr_node:
+                	pr_nparam = pr_nparam + 1
+                	pr_params = pr_params_node.text
+                	if(pr_nparam > 1):
+                   		delimit = ","
+                	else:
+                   		delimit = ''
+                	listParams_pr = listParams_pr + delimit + ""+pr_params_node.tag+"="+pr_params+""
+                	dictParams['pr_opts']=listParams_pr
+
+        ####### end get pr_opts ###################### 
 	#### Get custom method params ##############
         for custom_node in tree.iter('custom'):
 	    listParams = ''	
