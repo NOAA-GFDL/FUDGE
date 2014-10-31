@@ -13,7 +13,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
                          time.trim.mask='na', 
-                         tempdir="", include.git.branch=FALSE, FUDGEROOT="",
+                         tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
                          is.adjusted=FALSE, adjust.method=NA, 
                          is.qcmask=FALSE, qc.method=NA, 
                          pr.opts=FALSE, pr.optstring=NA, 
@@ -35,10 +35,10 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     comment.info <- paste(comment.info, 'with precipitation adjustments described in more detail later,')
   }
   if(is.adjusted){
-    comment.info <- paste(comment.info, "adjusted with the", adjust.method, "method(s)", ", and", sep="")
+    comment.info <- paste(comment.info, "adjusted with the ", adjust.method, " method(s)", ", and ", sep="")
   }
   if(!is.na(kfold)){
-    comment.info <- paste(comment.info, '(based on ',kfold,'-fold',' cross-validation), ',sep='') 
+    comment.info <- paste(comment.info, 'based on ',kfold,'-fold',' cross-validation, ',sep='') #parenthesis removed
   }
   if(!is.na(ds.experiment)){
     comment.info <- paste(comment.info, 'with experiment configuration', ds.experiment, ").")
@@ -106,8 +106,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     setwd(popdir)
   }
   history <- paste('File processed at ',institution,
-                   '  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, version: ', 
-                   version ,' on ', date(), sep='')
+                   '  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, in branch: ', 
+                   BRANCH ,' on ', date(), sep='')
   if(file.exists(filename)){ 
     print("File already exists. Open in WRITE MODE")
     nc.object = nc_open(filename,write=TRUE)

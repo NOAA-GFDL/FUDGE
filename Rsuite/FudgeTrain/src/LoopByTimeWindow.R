@@ -162,7 +162,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                      args=downscale.args, 
                                      ds.var=ds.var)
             downscale.vec[!is.na(kfold.gen)] <- temp.out
-            print(summary(as.vector(downscale.vec)))
+            #print(summary(as.vector(downscale.vec)))
           }
           if(s5.adjust){
             if(is.na(kfold.orig)){
