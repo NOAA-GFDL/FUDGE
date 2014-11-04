@@ -170,6 +170,9 @@ class XMLHandler:
 
         for pp_node in tree.iter('pp'):
             qcparam=0 #total number of qc paramsargs 
+#req list(mask1=list(type='kdAdjust', adjust.out='on', qc.mask='off')) 
+	    qc_type = list('na')	
+	    listQCParams = "'na'"
             for qc_node in pp_node.findall('.//qc'):
 	        qc_mask = qc_node.attrib.get('qc_mask')
 		dictParams['qc_mask'] = qc_mask
@@ -180,18 +183,24 @@ class XMLHandler:
 	        qc_type =  qc_node.attrib.get('type')
 		dictParams['qc_type'] = qc_type 
 		## following not tested pass options tag within each qc embedded in pp ##
-	        for qc_params in qc_node.findall('.//options'):
-                   listQCParams = ''
-		   for options_node in qc_params:
+	   #     listQCParams = list('na')
+	   #     for qc_params in qc_node.findall('.//options'):
+		for options_node in qc_node:
 			qcparam = qcparam + 1	
 			qcparamstext = options_node.text
+			print qcparamstext,"debug debug ---------" 
 			if(qcparam > 1):
 			   delimit = ","
 			else:
+			   listQCParams = ''	
 			   delimit = ''
                 	listQCParams = listQCParams + delimit + ""+options_node.tag+"="+qcparamstext+""
-			print listQCParams
-                	dictParams['qcparams'] = listQCParams			
+			print "listQCParams",listQCParams
+                	dictParams['qcparams'] = listQCParams	
+	    if(qc_type != list('na')):	
+	    	masklist = "list(mask1=list(type='"+qc_type+"',adjust.out='"+adjust_out+"',qc.mask='"+qc_mask+"',qc_options=list("+listQCParams+")))"
+		dictParams['masklists'] = masklist
+	    	print "DEBUG -------",masklist
         if(debug == 1):
                  for x,v in dictParams.iteritems():
                          print x,v
