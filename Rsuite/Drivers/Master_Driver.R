@@ -367,13 +367,6 @@ time.steps <- dim(ds$esd.final)[3]
 #print("STATS: Downscaled output")
 #MyStats(ds$esd.final,verbose="yes")
 
-# numzeroes <- sum(ds$esd.final[!is.na(ds$esd.final)] < 0)
-# print(paste("Number of values in output < 0:", numzeroes))
-# if(numzeroes > 0){
-#   ds$esd.final[ds$esd.final < 0] <- 0
-#   print(paste("Number of values in output < 0 after correction:", sum(ds$esd.final[!is.na(ds$esd.final)] < 0)))
-# }
-
 if('pr'%in%target.var && exists('pr_opts')){
   if(!is.null(grep('out', names(pr_opts)))){
     print(paste("Adjusting downscaled pr values"))
@@ -381,10 +374,13 @@ if('pr'%in%target.var && exists('pr_opts')){
     print(dim(out.mask))
     if(pr_opts$pr_conserve_out=='on'){
       #ds$esd.final <- apply(c(ds$esd.final, out.mask), c(1,2), conserve.prseries)
+      #There has got to be a wya to do this with 'apply' and its friends, but I'm not sure that it;s worth it
       for(i in 1:length(ds$esd.final[,1,1])){
         for(j in 1:length(ds$esd.final[1,,1])){
           ds$esd.final[i,j,]<- conserve.prseries(data=!is.na(ds$esd.final[i,j,]), 
                                                  mask=!is.na(out.mask[i,j,]))
+          #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
+          #However, there are checks external to the function to get that, so it might not be as much of an issue.
         }
       }
     }

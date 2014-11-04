@@ -9,7 +9,7 @@
 #'@param s5.instructions: A list of commands controlling which adjustment steps
 #'are preformed, and in what order, as well as whether ar QC mask is to be calculated
 #'at any point. Consists of a list of lists with elements of the form
-#'list(type='SBiasCorr', qc.mask='on', adjust.out='off')
+#'list(type='SBiasCorr', qc.mask='on', adjust.out='off', args=list('na'))
 #'@param var: The variable being downscaled. 
 #'------Parameters required for kdAdjust-------
 #'#'@param data: The data undergoing a qc check/adjustment steps
@@ -73,15 +73,17 @@ callSdev2 <- function(data, qc.data){
 callSBCorr <- function(test, input, adjusted.output){
   #Set corrective error factor:
   print("entering simple bias correction func")
-  if(!is.null(test$args$correct.factor)){
-    correct.factor <- correct.factor
+  print(test$qc_options)
+  if(!is.null(test$qc_options$toplim) && !is.null(test$qc_options$botlim)){
+    toplim <- test$qc_options$toplim
+    botlim <- test$qc_options$botlim
   }else{
-    correct.factor <- 6
+    stop("Section 5 Adjustment Error: Arguments toplim and botlim are not present for the SBiasCorr function. Please check your XML.")
   }
     #compute difference for all time values
     hist.bias <- mean(input$hist.pred-input$hist.targ)
     fut.targ <- input$fut.pred-hist.bias
-  mask.vec <- ifelse( (abs(adjusted.output$ds.out-fut.targ) <= correct.factor), 
+  mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out-fut.targ) & (adjusted.output$ds.out-fut.targ) < toplim), 
                       yes=1, no=0)
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
   print(test$qc.mask)
