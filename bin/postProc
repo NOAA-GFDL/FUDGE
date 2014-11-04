@@ -96,7 +96,7 @@ def postProc():
 						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid)
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
-						slogloc = sbase+"/"+"experiment_info"
+						slogloc = sbase+"/"+"experiment_info.txt"
 						fcmd = "python "+basedir+"/bin/fudgeList.py -i "+uinput+" -o "+slogloc 
 						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 						out, err = f.communicate() 
@@ -107,7 +107,7 @@ def postProc():
 						slogloc_alt = indir+"../../../../"
 						if("mask" in vname): 
                                                 	slogloc_alt = indir+"../../../../../"
-						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info")	
+						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
 					        shutil.copy2(slogloc, slogloc_alt)
 					else:
 						sys.exit("ERROR")
