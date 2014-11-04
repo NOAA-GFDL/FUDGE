@@ -127,9 +127,12 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "BRANCH":"'"${branch}"'")
 
 #########qclist################
 set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.mask='${qc_switch}'))"
-set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
 
 ############################### 
+#better way to get masklist and options #todo clean up irrelevant options in this
+set masklist = $argv[55]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
+########################### 
 foreach var ($PREDICTOR)
  if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
   echo "WARNING This variable $var is not supported variable at this time. Please check back later. Thank you"
