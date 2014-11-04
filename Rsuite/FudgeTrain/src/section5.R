@@ -6,15 +6,16 @@
 #'check. This behavior can change depending upon the QC function in question,
 #'but this is the general behavior to keep in mind.
 #'
-#'@param data: The data undergoing a qc check.
-#'@param qc.data: The test being performed. Is used
-#'to call the qc-specific test.
-#'@param qc.test
+#'@param s5.instructions: A list of commands controlling which adjustment steps
+#'are preformed, and in what order, as well as whether ar QC mask is to be calculated
+#'at any point. Consists of a list of lists with elements of the form
+#'list(type='SBiasCorr', qc.mask='on', adjust.out='off')
 #'@param var: The variable being downscaled. 
 #'------Parameters required for kdAdjust-------
-#'@param hist.pred
-#'@param hist.targ
-#'@param fut.pred
+#'#'@param data: The data undergoing a qc check/adjustment steps
+#'@param hist.pred: The historic predictor of a dataset
+#'@param hist.targ: 
+#'@param fut.pred: 
 #'------Parameters related to time windowing----
 #'
 #'@returns A vector of values for the time series at the individual x,y, point

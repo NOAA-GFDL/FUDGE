@@ -10,6 +10,7 @@
 #' @param esd.gen: a vector of the data used to generate downscaled data 
 #' @param args = NULL: a list of arguments to be passed to the downscaling function.
 #' Defaults to NULL (no arguments)
+#' @param ds.var: The target variable. Can be used to key off of some methods. 
 #' @examples 
 #' @references \url{link to the FUDGE API documentation} 
 #' TODO: Find a better name for general.bias.corrector
