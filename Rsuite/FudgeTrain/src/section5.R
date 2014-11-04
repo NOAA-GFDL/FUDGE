@@ -26,7 +26,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                    hist.pred = NA, 
                    hist.targ = NA, 
                    fut.pred = NA, 
-                   create.qc.mask=FALSE, create.adjust.out=TRUE){
+                   create.qc.mask=FALSE, create.adjust.out=FALSE){
 #   function(qc.test, data, hist.pred=NULL, hist.targ=NULL, fut.pred=NULL, var='tasmax', 
 #                      qc.data=NULL, qc.mask=NULL){
 #  element.list <- list( list("s5.method" = s5.method, "s5.args" = s5.args, 
@@ -41,6 +41,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'sdev' = return(callSdev(test, input, adjusted.output)),
                               'sdev2' = return(callSdev2(test,  input, adjusted.output)),
                               'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
+                              'Nothing' = return(callNoMethod(test, input, adjusted.output)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input."))
     )
@@ -99,4 +100,12 @@ callSBCorr <- function(test, input, adjusted.output){
 round.negative <- function(num){
   #assumes no 0 values are passed 
   return(ifelse(num > 0, 1, -1))
+}
+
+callSBCorr <- function(test, input, adjusted.output){
+  return(adjusted.output)
+}
+
+callNoMethod <- function(test, input, adjusted.output){
+  return(adjusted.output)
 }

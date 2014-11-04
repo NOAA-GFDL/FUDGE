@@ -16,7 +16,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
                          is.adjusted=FALSE, adjust.method=NA, 
                          is.qcmask=FALSE, qc.method=NA, 
-                         pr.opts=FALSE, pr.optstring=NA, 
+                         pr.process=FALSE, pr_opts=NA, 
                          is.transform=FALSE, transform=NA){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
@@ -31,8 +31,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(is.transform){
     comment.info <- paste(comment.info, 'transformed and back-transformed with', transform)
   }
-  if(pr.opts){
-    comment.info <- paste(comment.info, 'with precipitation adjustments described in more detail later,')
+  if(pr.process){
+    comment.info <- paste(comment.info, 'adjusted for precipitation,')
   }
   if(is.adjusted){
     comment.info <- paste(comment.info, "adjusted with the ", adjust.method, " method(s)", ", and ", sep="")
@@ -81,8 +81,9 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
 #   if(post.process!=""){
 #     info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
 #   }
-  if(pr.opts){
-    info <- paste(info, "Precipitation pre-processing options: ", pr.optstring, "; ", sep="")
+  if(pr.process){
+    pr.optstring <- paste(ls.str(pr_opts), pr_opts, sep="=", collapse=", ")
+    info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
   }
   if(is.adjusted){
     #Section 5 stuff

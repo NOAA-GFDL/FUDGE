@@ -26,7 +26,7 @@
 #'TODO: Add *major* lat/lon coordiante agreement QC checks
 
 AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1', 
-                          adjust.data, adjust.units='kg m-2 s-1', 
+                          adjust.data=NA, adjust.units='kg m-2 s-1', 
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
                           lopt.graphics=FALSE, verbose=TRUE,
                           adjust.future=NA, adjust.future.units='kg m-2 s-1'){
@@ -105,29 +105,21 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
         if(j%%10==0 || j==1){
           print("entering conserve option")
         }
-        total.trace.pr <- sum(loop.ref[loop.ref.wetdays==FALSE])
+  #      total.trace.pr <- sum(loop.ref[loop.ref.wetdays==FALSE])
         ####REALLY think about how to do this compare
-        pr.adjust <- total.trace.pr/sum(loop.ref.wetdays[!is.na(loop.ref.wetdays)])
-        loop.ref[loop.ref.wetdays==TRUE] <- (loop.ref[loop.ref.wetdays==TRUE] + pr.adjust)
+  #      pr.adjust <- total.trace.pr/sum(loop.ref.wetdays[!is.na(loop.ref.wetdays)])
+  #      loop.ref[loop.ref.wetdays==TRUE] <- (loop.ref[loop.ref.wetdays==TRUE] + pr.adjust)
+        loop.ref <- conserve.prseries(loop.ref, loop.ref.wetdays)
         
         ###And do the same thing for the adjusted data
         if(j%%10==0 || j==1){
           print("starting adjust section")
         }
-        total.trace.pr <- sum(loop.adj[loop.adj.wetdays==FALSE])
-        pr.adjust <- total.trace.pr/sum(loop.adj.wetdays)
-        #         print(sum(loop.adj.wetdays))
-        #         print(pr.adjust)
-#         print(paste("pr adjust:", pr.adjust))
-#         if(pr.adjust >0){
-#        print(paste("pr adjust", pr.adjust))
-#         }
-#         print(paste("loop adjust:", sum(loop.adj)))
-        loop.adj[loop.adj.wetdays==TRUE] <- (loop.adj[loop.adj.wetdays==TRUE]  + pr.adjust)
-#         loop.new <- (loop.adj + rep(pr.adjust, length(loop.adj)))
-#         print(paste("loop adjust:", sum(loop.new)))
-#         print(sum(loop.new-loop.adj))
-#         loop.adj[loop.adj.wetdays==TRUE] <- loop.new[loop.adj.wetdays==TRUE]
+#         total.trace.pr <- sum(loop.adj[loop.adj.wetdays==FALSE])
+#         pr.adjust <- total.trace.pr/sum(loop.adj.wetdays)
+#         loop.adj[loop.adj.wetdays==TRUE] <- (loop.adj[loop.adj.wetdays==TRUE]  + pr.adjust)
+ #       loop.adj[loop.adj.wetdays==TRUE] <- conserve.prseries(loop.adj, loop.adj.wetdays)
+        loop.adj <- conserve.prseries(loop.adj, loop.adj.wetdays)
         ###and the future, if that applies
         if(length(adjust.future) > 1){ #|| !is.na(adjust.future)){
           # print("line 118")
@@ -154,6 +146,15 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   }
   print("about to return results")
   return(out.list)
+}
+
+conserve.prseries <- function(data, mask){
+  print(length(data))
+  print(length(mask))
+  total.trace.pr <- sum(data[mask==FALSE])
+  pr.adjust <- total.trace.pr/sum(mask)
+  data[mask==TRUE]  <- data[mask==TRUE] + pr.adjust
+  return(data)
 }
 
 
@@ -198,79 +199,3 @@ units.CF.convert <- function(unit.string){
   unitlist<-sub('kg m-2 s-1', "l m-2 s-1", unit.string)
   #unitlist<-sub('C', "°C", unitlist)
 }
-# 
-# 
-# ####Consider carefully how to store each when returning from adjust/transforms
-# fraction.wet.ref <- sum(ref.wetdays[!is.na(ref.wetdays)]) / sum(!is.na(ref.wetdays))
-# print(fraction.wet.ref)
-# #Possibly problematic because it counts all days with "NA" as having no precipitation
-# fraction.wet.ref <- sum(ref.wetdays[!is.na(ref.wetdays)]) / sum(!is.na(ref.wetdays))
-# print(fraction.wet.adj)
-# if (lopt.drizzle == TRUE) {
-#   # Perform the following calculations and adjustments to the GCM time series
-#   # only if the user has asked for the drizzle adjusment to be applied 
-#   print(" Consider applying drizzle adjustment ")
-#   if (fraction.wet.adj > fraction.wet.ref) {
-#     print(" Need to do drizzle adjustment")
-#     #      print(c(fraction.wet.adj," > ",fraction.wet.ref), sep =" ")
-#     first.above.threshold <- quantile(ref.data,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)  
-#     small.fraction <- 1.0/length(!is.na(ref.data))
-#     last.below.threshold <- quantile(ref.data, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
-#     #       if (under.development == TRUE) {
-#     #         print(c(" last, first", last.below.threshold, first.above.threshold))
-#     #         print(c(" last, first", last.below.threshold, first.above.threshold))
-#     #       }
-#     num.zero.in.adjusted <- ((1.0-fraction.wet.ref)*length(adjust.data)) - 1
-#     threshold.wetday.adj <- quantile(adjust.data, names = FALSE,
-#                                      probs=(num.zero.in.adjusted/length(adjust.data)), 
-#                                      na.rm=TRUE)
-#     print(threshold.wetday.adj)
-#     print(paste("threshold:", threshold.wetday.adj))
-#     #adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, threshold.wetday.adj)
-#     adjust.wetdays <- adjust.data > threshold.wetday.adj
-#     print(paste("length of adjust.wetdays:", length(adjust.wetdays)))
-#     if(!is.na(adjust.future)){
-#       print('calculating future parameters')
-#       #future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, threshold.wetday.adj)
-#       future.wetdays <- adjust.future > threshold.wetday.adj
-#     }
-#   } else {
-#     print(" No need to do drizzle adjustment")
-#     #       print(c(fraction.wet.adj," <= ",fraction.wet.ref), sep =" ")
-#     #      threshold.wetday.adj <- threshold.wetday.ref
-#   }
-# } else {
-#   print(" Not considering drizzle adjustment ")
-#   #    threshold.wetday.adj <- threshold.wetday.ref
-# }
-# ####And add the conserve option
-# ###Evenly divides all trace precipitation on 'dry' days
-# ###between the wet days of the dataset
-# ###Should be performed by all the 
-# if(lopt.conserve==TRUE){
-#   print("entering conserve option")
-#   total.trace.pr <- sum(ref.data[!is.na(ref.data) && ref.wetdays==FALSE])
-#   pr.adjust <- total.trace.pr/sum(ref.wetdays[!is.na(ref.wetdays)])
-#   print(total.trace.pr)
-#   print(pr.adjust)
-#   print(sum(ref.wetdays[!is.na(ref.wetdays)]))
-#   print(dim(ref.wetdays))
-#   print(dim(ref.data))
-#   ref.data[!is.na(ref.data) && ref.wetdays==TRUE] <- (ref.data + pr.adjust)
-#   
-#   ###And do the same thing for the adjusted data
-#   print("starting adjust section")
-#   total.trace.pr <- sum(adjust.data[!is.na(adjust.data) && adjust.wetdays==FALSE])
-#   pr.adjust <- total.trace.pr/sum(adjust.wetdays)
-#   print(sum(adjust.wetdays))
-#   print(pr.adjust)
-#   adjust.data[adjust.wetdays==TRUE] <- adjust.data + pr.adjust
-#   ###and the future, if that applies
-#   if(!is.na(adjust.future)){
-#     total.trace.pr <- sum(adjust.future[!is.na(adjust.future) && future.wetdays==FALSE])
-#     pr.adjust <- total.trace.pr/sum(future.wetdays)
-#     print(sum(future.wetdays))
-#     print(pr.adjust)
-#     adjust.data[future.wetdays==TRUE] <- adjust.future + pr.adjust
-#   }
-# }

@@ -208,15 +208,16 @@ for (predictor.var in predictor.vars){
   print("ReadNC: success..3")
 
   ####Precipitation changes go here
-  if(predictor.var=='pr'){
+  if(predictor.var=='pr' && exists('pr_opts')){
     #Options currently hard-coded
-    pr.mask.opt = 'us_trace'
-    lopt.drizzle = TRUE
-    lopt.conserve= TRUE
-    print("Number of NAs in var:")
-    print(sum(is.na(list.hist$clim.in)))
-    print("Number of zeroes in var:")
-    print(sum(list.hist$clim.in==0))
+    pr.mask.opt = pr_opts$pr_threshold_in
+    lopt.drizzle = pr_opts$freq_adj=='on'
+    lopt.conserve= pr_opts$pr_conserve_in=='on'
+    #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
+#     print("Number of NAs in var:")
+#     print(sum(is.na(list.hist$clim.in)))
+#     print("Number of zeroes in var:")
+#     print(sum(list.hist$clim.in==0))
     if(train.and.use.same==TRUE){
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
@@ -224,17 +225,17 @@ for (predictor.var in predictor.vars){
                                 lopt.graphics=FALSE, verbose=TRUE,
                                 adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
       list.target$clim.in <- temp.out$ref$data
-      list.target$pr_mask <-temp.out$ref$pr_mask
+      #list.target$pr_mask <-temp.out$ref$pr_mask
       list.hist$clim.in <- temp.out$adjust$data
-      list.hist$pr_mask <-temp.out$adjust$pr_mask
+      #list.hist$pr_mask <-temp.out$adjust$pr_mask
       list.fut$clim.in <- temp.out$future$data
-      list.fut$pr_mask <-temp.out$future$pr_mask
+      #list.fut$pr_mask <-temp.out$future$pr_mask
       #remove from workspace to keep memory overhead low
       remove(temp.out)
     }else{
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
-                                opt.wetday=opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
+                                opt.wetday=opt.wetday, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
                                 lopt.graphics=FALSE, verbose=TRUE,
                                 adjust.future=NA, adjust.future.units=NA)
       list.target$clim.in <- temp.out$ref$data
@@ -285,7 +286,7 @@ QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = l
 # + + + function MyStats + + + moved to MyStats.R
 ##  CEW edit
 #source(paste(FUDGEROOT,'/Rsuite/aux/','MyStats.R',sep=''))
-source(paste(FUDGEROOT,'Rsuite/aux/','MyStats.R',sep=''))
+#source(paste(FUDGEROOT,'Rsuite/aux/','MyStats.R',sep=''))
 # use the my_stats function to compute the statistics of the user-specified variable
 # 
 # print("STATS: Training Target")
@@ -363,20 +364,32 @@ time.steps <- dim(ds$esd.final)[3]
 #TODO Diana
 
 #--QC Downscaled Values
-print("STATS: Downscaled output")
-MyStats(ds$esd.final,verbose="yes")
+#print("STATS: Downscaled output")
+#MyStats(ds$esd.final,verbose="yes")
 
-numzeroes <- sum(ds$esd.final[!is.na(ds$esd.final)] < 0)
-print(paste("Number of values in output < 0:", numzeroes))
-if(numzeroes > 0){
-  ds$esd.final[ds$esd.final < 0] <- 0
-  print(paste("Number of values in output < 0 after correction:", sum(ds$esd.final[!is.na(ds$esd.final)] < 0)))
-}
-pr.post.process <- TRUE
+# numzeroes <- sum(ds$esd.final[!is.na(ds$esd.final)] < 0)
+# print(paste("Number of values in output < 0:", numzeroes))
+# if(numzeroes > 0){
+#   ds$esd.final[ds$esd.final < 0] <- 0
+#   print(paste("Number of values in output < 0 after correction:", sum(ds$esd.final[!is.na(ds$esd.final)] < 0)))
+# }
 
-if('pr'%in%target.var && pr.post.process){ #TODO: Change to predictand.vars at some point
-  print(paste("Adjusting pr values to pr threshold"))
-  ds$esd.final <- as.numeric(ds$esd.final) * MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
+if('pr'%in%target.var && exists('pr_opts')){
+  if(!is.null(grep('out', names(pr_opts)))){
+    print(paste("Adjusting downscaled pr values"))
+    out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
+    print(dim(out.mask))
+    if(pr_opts$pr_conserve_out=='on'){
+      #ds$esd.final <- apply(c(ds$esd.final, out.mask), c(1,2), conserve.prseries)
+      for(i in 1:length(ds$esd.final[,1,1])){
+        for(j in 1:length(ds$esd.final[1,,1])){
+          ds$esd.final[i,j,]<- conserve.prseries(data=!is.na(ds$esd.final[i,j,]), 
+                                                 mask=!is.na(out.mask[i,j,]))
+        }
+      }
+    }
+    ds$esd.final <- as.numeric(ds$esd.final) * out.mask
+  }
 }
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
@@ -403,12 +416,12 @@ label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.yea
 
 #Code for obtaining the options for precipitation and post-processing
 #(current PP options are profoundly unlikely to be triggered for anything not pr)
-post.process.string = ""
-if(exists("pr.mask.opt")){
-  post.process.string <- paste(post.process.string, "trace pr threshold:", pr.mask.opt, 
-                               ", lopt.drizzle:", lopt.drizzle, ", lopt.conserve:", lopt.conserve, 
-                               ", trace post-processing:", pr.post.process, sep="")
-}
+# post.process.string = ""
+# if(exists("pr.mask.opt")){
+#   post.process.string <- paste(post.process.string, "trace pr threshold:", pr.mask.opt, 
+#                                ", lopt.drizzle:", lopt.drizzle, ", lopt.conserve:", lopt.conserve, 
+#                                ", trace post-processing:", pr.post.process, sep="")
+# }
 
 ###Code to determine whether or not to include the git branch
 if(Sys.getenv("USERNAME")=='cew'){
@@ -424,7 +437,8 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-             is.adjusted=!is.na(adjust.list$adjust.methods), adjust.method=adjust.list$adjust.methods)
+             is.adjusted=!is.na(adjust.list$adjust.methods), adjust.method=adjust.list$adjust.methods, 
+             pr.process=exists('pr_opts'), pr_opts=pr_opts)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
@@ -468,7 +482,8 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                  time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
                  is.qcmask=TRUE, qc.method=adjust.list$qc.method, 
-                 is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc)
+                 is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc, 
+                 pr.process=exists('pr_opts'), pr_opts=pr_opts)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }
 }

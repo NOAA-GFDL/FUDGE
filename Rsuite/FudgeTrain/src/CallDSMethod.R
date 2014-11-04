@@ -25,7 +25,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
- #                "DeltaSDm" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method)))
 }
@@ -239,9 +238,11 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
     return (SDF)
 }
 
-callNothing <- function(pred, targ, new, args){
+callNothing <- function(pred=NA, targ=NA, new=NA, args=NA){
   #Does absolutely nothing to the downscaling values of the current 
   #function. 
+#   print('inside method')
+#   print(summary(new))
   return(new)
 }
 
