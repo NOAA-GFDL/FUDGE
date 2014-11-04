@@ -172,6 +172,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               #otherwise, use the ds values from the run you have just completed
               data <- kfold.orig[!is.na(kfold.orig)]
             }
+            print("results before adjust section")
+            print(summary(data), digits=6)
             temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
               #s5.method=s5.method,s5.args=s5.args,
                                          data = data, 
@@ -179,13 +181,16 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                          hist.targ = kfold.target[!is.na(kfold.target)], 
                                          fut.pred = kfold.gen[!is.na(kfold.gen)])
                                          #create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
+            if(!is.null(temp.out$qc.mask)){
             qc.mask[!is.na(kfold.gen)] <- temp.out$qc.mask #A NULL assignment might cause problems here. Second if?
+            }else{
+              #Try not doing anything
+            }
             downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
-#             qc.mask[!is.na(kfold.gen)] <- QCDSValues(data = temp.out, qc.test=qc.test,
-#                                                      hist.pred = kfold.predict[!is.na(kfold.predict)], 
-#                                                      hist.targ = kfold.target[!is.na(kfold.target)], 
-#                                                      fut.pred = kfold.gen[!is.na(kfold.gen)])
+                      print("results after adjust section")
+                      print(summary(temp.out$ds.out), digits=6)
           }
+
 #           if(create.postproc){
 #             postproc.out[!is.na(kfold.gen)] <- CallPostProcMethod(data=kfold.gen[!is.na(kfold.gen)], 
 #                                                                   mask=kfold.target[!is.na(kfold.target)], 

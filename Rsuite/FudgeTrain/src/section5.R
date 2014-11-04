@@ -36,6 +36,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
+    print(summary(test$type))
     #message(test)
     adjusted.output <- switch(test$type, 
                               'sdev' = return(callSdev(test, input, adjusted.output)),
@@ -43,8 +44,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
                               'Nothing' = return(callNoMethod(test, input, adjusted.output)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
-                                         "is not supported for callS5Adjustment. Please check your input."))
-    )
+                                         "is not supported for callS5Adjustment. Please check your input.")))
   }
   return(adjusted.output)
 }
@@ -70,7 +70,8 @@ callSdev2 <- function(data, qc.data){
 }
 
 callSBCorr <- function(test, input, adjusted.output){
-  #Set corrective error factor: 
+  #Set corrective error factor:
+  print("entering simple bias correction func")
   if(!is.null(test$args$correct.factor)){
     correct.factor <- correct.factor
   }else{
@@ -82,12 +83,13 @@ callSBCorr <- function(test, input, adjusted.output){
   mask.vec <- ifelse( (abs(adjusted.output$ds.out-fut.targ) <= correct.factor), 
                       yes=1, no=0)
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
+  print(test$qc.mask)
   if(test$qc.mask=='on'){
     out.list$qc.mask <- mask.vec
   }
-  if(test$adjust.out!='na'){ #The 'off/na thing is distracting
- #   adjust.vec <- ifelse( (abs(adjusted.output$data-fut.targ) <= correct.factor), 
-  #                        yes=adjusted.output$data, no=fut.targ)
+  if(test$adjust.out=='on'){ #The 'off/na thing is distracting  ##Switched from !='na' to 'on'
+#    adjust.vec <- ifelse( (abs(adjusted.output$data-fut.targ) <= correct.factor), 
+#                          yes=adjusted.output$data, no=fut.targ)
     adjust.vec <- ifelse( (mask.vec==1), yes=adjusted.output$ds.out, no=fut.targ)
     out.list$ds.out <- adjust.vec
   }else{
@@ -100,12 +102,4 @@ callSBCorr <- function(test, input, adjusted.output){
 round.negative <- function(num){
   #assumes no 0 values are passed 
   return(ifelse(num > 0, 1, -1))
-}
-
-callSBCorr <- function(test, input, adjusted.output){
-  return(adjusted.output)
-}
-
-callNoMethod <- function(test, input, adjusted.output){
-  return(adjusted.output)
 }

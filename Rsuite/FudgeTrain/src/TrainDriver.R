@@ -40,7 +40,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      qc.mask <- NULL
      s5.adjust <- FALSE
      for (element in 1:length(s5.instructions)){
-       if(s5.instructions[[element]]$adjust.out!='na'){
+       if(s5.instructions[[element]]$adjust.out=='on'){ #Changed from not-'na' to 'on'
          s5.adjust <- TRUE
        }
      }

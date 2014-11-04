@@ -61,7 +61,8 @@ callCDFt <- function (pred, targ, new, args){
   if(!is.null(args$npas)){
     npas <- args$npas
     if(npas=='default'){
-      npas <- length(new)
+      #npas <- length(new)
+      npas=length(targ)
     }
   }else{
     stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
@@ -238,13 +239,13 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
     return (SDF)
 }
 
-callNothing <- function(pred=NA, targ=NA, new=NA, args=NA){
-  #Does absolutely nothing to the downscaling values of the current 
-  #function. 
-#   print('inside method')
-#   print(summary(new))
-  return(new)
-}
+# callNothing <- function(pred=NA, targ=NA, new=NA, args=NA){
+#   #Does absolutely nothing to the downscaling values of the current 
+#   #function. 
+# #   print('inside method')
+# #   print(summary(new))
+#   return(new)
+# }
 
 ##########Section for PP methods: Methods that take a dataset, adjust its values somehow, and 
 ##########produce a vector of the same type. Note that there ***might*** be an overlap with the
