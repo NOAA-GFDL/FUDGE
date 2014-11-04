@@ -131,7 +131,14 @@ set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.
 ############################### 
 #better way to get masklist and options #todo clean up irrelevant options in this
 set masklist = $argv[55]
+echo $masklist
+echo "debug"
+if($masklist == na) then
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":'"na"')
+else
+echo $masklist
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
+endif
 ########################### 
 foreach var ($PREDICTOR)
  if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
