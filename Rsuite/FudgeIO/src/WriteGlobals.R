@@ -82,7 +82,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
 #     info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
 #   }
   if(pr.process){
-    pr.optstring <- paste(ls.str(pr_opts), pr_opts, sep="=", collapse=", ")
+    pr.optstring <- paste(names(pr_opts), pr_opts, sep="=", collapse=", ")
     info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
   }
   if(is.adjusted){
