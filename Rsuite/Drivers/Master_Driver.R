@@ -110,7 +110,12 @@ message("Checking output directory")
 QCIO(output.dir)
 
 message("Checking post-processing/section5 adjustments")
+if(mask.list!='na'){
 adjust.list <- QCSection5(mask.list)
+}else{
+  adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
+                      "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA)
+}
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only as a source of dimensions for writing the downscaled
@@ -285,36 +290,10 @@ QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = l
 
 # + + + function MyStats + + + moved to MyStats.R
 ##  CEW edit
-#source(paste(FUDGEROOT,'/Rsuite/aux/','MyStats.R',sep=''))
-#source(paste(FUDGEROOT,'Rsuite/aux/','MyStats.R',sep=''))
-# use the my_stats function to compute the statistics of the user-specified variable
-# 
-# print("STATS: Training Target")
-# liststats <- MyStats(list.target$clim.in,verbose="yes")
-# print("STATS: Historical Predictors")
-# liststats <- MyStats(list.hist$clim.in,verbose="yes")
-# print("STATS: Future predictors")
-# liststats <- MyStats(list.fut$clim.in,verbose="yes")
-
-####Read in time masks and perform QC operations
-#source('Rsuite/FudgePreDS/src/QCTimeMask.R')
-
-
 
 # -- QC of input data ends --#
 
 # ----- Begin segment like FUDGE Schematic Section 3: Apply Distribution Transform -----
-
-# If indicated by the user-specified logical variable lopt.wetday,
-# classify each day as being a wetday or not, according to the method
-# indicated by the user-specified numerical variable opt.wetday
-# Note: function WetDayID is in file task1_WetDayID.R
-
-# If the user-specified numerical variable opt.transform > 1, then initiate a
-# data transformation processed using the method indicated by the user-specified
-# numerical variable opt.transform
-# Note: function TransformData is in file task1_transform.R
-
 
 # ----- Begin segment FUDGE Schematic Section 4: ESD Method Training and Generation -----
 
