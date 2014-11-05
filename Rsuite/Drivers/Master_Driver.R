@@ -434,6 +434,7 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.m
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
              is.adjusted=!is.na(adjust.list$adjust.methods), adjust.method=adjust.list$adjust.methods, 
+             adjust.args=adjust.list$adjust.args,
              pr.process=exists('pr_opts'), pr_opts=pr_opts)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
@@ -477,8 +478,9 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                  #post.process=post.process.string, 
                  time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
-                 is.qcmask=TRUE, qc.method=adjust.list$qc.method, 
+                 is.qcmask=TRUE, qc.method=adjust.list$qc.method, qc.args=adjust.list$qc.args,
                  is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc, 
+                 adjust.args=adjust.list$adjust.pre.qc.args,
                  pr.process=exists('pr_opts'), pr_opts=pr_opts)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }

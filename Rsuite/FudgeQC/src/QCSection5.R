@@ -21,17 +21,39 @@ QCSection5 <- function(mask.list){
   qc.method <- ""
   adjust.pre.qc <- list()
   adjust.methods <- list()
+  adjust.args <- ""
+  adjust.pre.qc.args = ""
+  qc.args = ""
   for (element in 1:length(mask.list)){
     #message(mask.list[[element]])
-    if(mask.list[[element]]$adjust.out!='na'){
-      adjust.methods <- c(adjust.methods, mask.list[[element]]$type)
-    }
     qc.check <- qc.check + as.numeric(mask.list[[element]]$qc.mask=='on')
     if(qc.check==1){
+      #Check for QC options
       qc.method <- mask.list[[element]]$type
+      if(!is.null(names(mask.list[[element]]$qc_options))){
+        arg.names <- names(mask.list[[element]]$qc_options)
+        args <- mask.list[[element]]$qc_options
+        arg.string <- paste(arg.names, args, sep="=", collapse=", ")
+      }else{
+        arg.string = "NA"
+      }
+      qc.args <- paste(qc.method, ":", arg.string, ";", sep="") 
       if(length(adjust.pre.qc)==0){
         adjust.pre.qc <- adjust.methods
+        adjust.pre.qc.args <- adjust.args
       }
+    }
+    if(mask.list[[element]]$adjust.out=='on'){
+      #Check for adjustment options (performed AFTER QC in the adjustment functions)
+      adjust.methods <- c(adjust.methods, mask.list[[element]]$type)
+      if(!is.null(names(mask.list[[element]]$qc_options))){
+        arg.names <- names(mask.list[[element]]$qc_options)
+        args <- mask.list[[element]]$qc_options
+        arg.string <- paste(arg.names, args, sep="=", collapse=", ")
+      }else{
+        arg.string = "NA"
+      }
+      adjust.args <- paste(adjust.args, paste(mask.list[[element]]$type, " ", arg.string, sep=""), ";", sep="")
     }
   }
   if (qc.check > 1){
@@ -41,9 +63,11 @@ QCSection5 <- function(mask.list){
   print(length(adjust.pre.qc))
   print(length(adjust.methods))
   #Convert argument lists to strings for easier storage
-  s5.settings <- list('qc.check' = qc.check, 'qc.method'=qc.method, 
-                      'adjust.pre.qc'=convert.list.to.string(adjust.pre.qc), 
-                      'adjust.methods'=convert.list.to.string(adjust.methods))
+  s5.settings <- list('adjust.methods'=convert.list.to.string(adjust.methods), 
+                      'adjust.args' = adjust.args,
+                      'adjust.pre.qc'=convert.list.to.string(adjust.pre.qc),
+                      'adjust.pre.qc.args' = adjust.pre.qc.args,
+                      'qc.check' = qc.check, 'qc.method'=qc.method, 'qc.args'=qc.args)
   return(s5.settings)
 }
 

@@ -71,6 +71,8 @@ callSdev2 <- function(data, qc.data){
 }
 
 callSBCorr <- function(test, input, adjusted.output){
+  #Outputs a mask where NA values show flagged data and 
+  #1's show good data
   #Set corrective error factor:
   print("entering simple bias correction func")
   print(test$qc_options)
@@ -84,7 +86,7 @@ callSBCorr <- function(test, input, adjusted.output){
     hist.bias <- mean(input$hist.pred-input$hist.targ)
     fut.targ <- input$fut.pred-hist.bias
   mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out-fut.targ) & (adjusted.output$ds.out-fut.targ) < toplim), 
-                      yes=1, no=0)
+                      yes=1, no=NA)
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
   print(test$qc.mask)
   if(test$qc.mask=='on'){
@@ -93,7 +95,7 @@ callSBCorr <- function(test, input, adjusted.output){
   if(test$adjust.out=='on'){ #The 'off/na thing is distracting  ##Switched from !='na' to 'on'
 #    adjust.vec <- ifelse( (abs(adjusted.output$data-fut.targ) <= correct.factor), 
 #                          yes=adjusted.output$data, no=fut.targ)
-    adjust.vec <- ifelse( (mask.vec==1), yes=adjusted.output$ds.out, no=fut.targ)
+    adjust.vec <- ifelse( (is.na(mask.vec)), yes=fut.targ, no=adjusted.output$ds.out)
     out.list$ds.out <- adjust.vec
   }else{
     #You don't need to do anything - it is already done!

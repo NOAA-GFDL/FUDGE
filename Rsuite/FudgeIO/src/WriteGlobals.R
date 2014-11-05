@@ -14,8 +14,8 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
                          time.trim.mask='na', 
                          tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
-                         is.adjusted=FALSE, adjust.method=NA, 
-                         is.qcmask=FALSE, qc.method=NA, 
+                         is.adjusted=FALSE, adjust.method=NA, adjust.args=NA,
+                         is.qcmask=FALSE, qc.method=NA, qc.args=NA,
                          pr.process=FALSE, pr_opts=NA, 
                          is.transform=FALSE, transform=NA){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
@@ -87,7 +87,16 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(is.adjusted){
     #Section 5 stuff
-    info <- paste(info, "Downscaled value adjustment options: ", adjust.method, "; ", sep="")
+    if(is.qcmask){
+      qc.string = " before QC masks applied"
+    }else{
+      qc.string = ""
+    }
+    info <- paste(info, "Arguments used in adjustment functions", qc.string, ": ", adjust.args, "", sep="")
+  }
+  if(is.qcmask){
+    #More section 5 stuff
+    info <- paste(info, "Arguments used in calculation of the QC mask: ", qc.args, sep="")
   }
   if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
