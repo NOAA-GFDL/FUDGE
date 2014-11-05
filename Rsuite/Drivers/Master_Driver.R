@@ -216,7 +216,7 @@ for (predictor.var in predictor.vars){
   if(predictor.var=='pr' && exists('pr_opts')){
     #Options currently hard-coded
     pr.mask.opt = pr_opts$pr_threshold_in
-    lopt.drizzle = pr_opts$freq_adj=='on'
+    lopt.drizzle = pr_opts$pr_freqadj_in=='on'
     lopt.conserve= pr_opts$pr_conserve_in=='on'
     #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
 #     print("Number of NAs in var:")
