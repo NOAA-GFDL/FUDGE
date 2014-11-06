@@ -224,6 +224,8 @@ for (predictor.var in predictor.vars){
 #     print("Number of zeroes in var:")
 #     print(sum(list.hist$clim.in==0))
     if(train.and.use.same==TRUE){
+      save.targ.in <- list.target$clim.in
+      save.hist.in <- list.hist$clim.in
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
                                 opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
@@ -237,6 +239,8 @@ for (predictor.var in predictor.vars){
       #list.fut$pr_mask <-temp.out$future$pr_mask
       #remove from workspace to keep memory overhead low
       remove(temp.out)
+      save.targ.out <- list.target$clim.in
+      save.hist.out <- list.hist$clim.in
     }else{
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
@@ -356,6 +360,7 @@ if('pr'%in%target.var && exists('pr_opts')){
       #There has got to be a wya to do this with 'apply' and its friends, but I'm not sure that it;s worth it
       for(i in 1:length(ds$esd.final[,1,1])){
         for(j in 1:length(ds$esd.final[1,,1])){
+          print(paste(i, j, sep=", "))
           ds$esd.final[i,j,]<- conserve.prseries(data=!is.na(ds$esd.final[i,j,]), 
                                                  mask=!is.na(out.mask[i,j,]))
           #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
@@ -363,7 +368,14 @@ if('pr'%in%target.var && exists('pr_opts')){
         }
       }
     }
+    message("finished pr adjustment; applying mask")
+    print(summary(out.mask))
+    print(summary(ds$esd.final[!is.na(ds$esd.final)]))
     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
+    safe.out <- as.numeric(ds$esd.final) * out.mask
+    print(summary(ds$esd.final[!is.na(ds$esd.final)]))
+    out.select <- ds$esd.final[!is.na(ds$esd.final)]
+    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
   }
 }
 

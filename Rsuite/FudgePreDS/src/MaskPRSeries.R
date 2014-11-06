@@ -43,7 +43,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   if(length(adjust.future) > 1 ){ #|| !is.na(adjust.future)){
     future.data.new <- adjust.future
   }
-  print(dim(ref.data))
+  #print(dim(ref.data))
   for (i in 1:dim(ref.data)[1]){
     for (j in 1:dim(ref.data)[2]){ 
       loop.ref <- ref.data[i,j,][!is.na(ref.data[i,j,])]
@@ -51,27 +51,21 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
       loop.adj <- adjust.data[i,j,][!is.na(adjust.data[i,j,])]
       loop.adj.wetdays <- adjust.wetdays[i,j,][!is.na(adjust.wetdays[i,j,])]
       if(length(adjust.future) > 1) {#||!is.na(adjust.future)){
-        #print(length(adjust.future))
         loop.fut <- adjust.future[i,j,][!is.na(adjust.future[i,j,])]
         loop.fut.wetdays <- future.wetdays[i,j,][!is.na(future.wetdays[i,j,])]
       }
       if (lopt.drizzle == TRUE && length(loop.ref)!=0) { #Avoid running if all NA values present
         fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
-        #         print(fraction.wet.ref)
         fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
-        #         print(fraction.wet.adj)
         # Perform the following calculations and adjustments to the GCM time series
         # only if the user has asked for the drizzle adjusment to be applied 
         if(j%%10==0 || j==1){
           print(" Consider applying drizzle adjustment")
         }
-      #  print(fraction.wet.adj)
-      #  print(fraction.wet.ref)
         if (fraction.wet.adj > fraction.wet.ref) {
           if(j%%10==0 || j==1){
             print(" Need to do drizzle adjustment")
           }
-          #      print(c(fraction.wet.adj," > ",fraction.wet.ref), sep =" ")
           first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)  
           small.fraction <- 1.0/length(loop.ref)
           last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
@@ -83,7 +77,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
           threshold.wetday.adj <- quantile(loop.adj, names = FALSE,
                                            probs=(num.zero.in.adjusted/length(loop.adj)), 
                                            na.rm=TRUE)
-          #           print(threshold.wetday.adj)
+                     print(threshold.wetday.adj)
                     print(paste("threshold:", threshold.wetday.adj))
           loop.adj.wetdays <- loop.adj > threshold.wetday.adj
           #           print(paste("length of adj.wetdays:", length(adj.wetdays)))
@@ -122,8 +116,8 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
         loop.adj <- conserve.prseries(loop.adj, loop.adj.wetdays)
         ###and the future, if that applies
         if(length(adjust.future) > 1){ #|| !is.na(adjust.future)){
-          # print("line 118")
           total.trace.pr <- sum(loop.fut[loop.fut.wetdays==FALSE])
+          
           pr.adjust <- total.trace.pr/sum(loop.fut.wetdays)
           loop.fut[loop.fut.wetdays==TRUE] <- (loop.fut[loop.fut.wetdays==TRUE] + pr.adjust)
         }
@@ -149,8 +143,8 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
 }
 
 conserve.prseries <- function(data, mask){
-  print(length(data))
-  print(length(mask))
+#   print(length(data))
+#   print(length(mask))
   total.trace.pr <- sum(data[mask==FALSE])
   pr.adjust <- total.trace.pr/sum(mask)
   data[mask==TRUE]  <- data[mask==TRUE] + pr.adjust
@@ -164,7 +158,7 @@ MaskPRSeries <- function(data, units, index){
   #'depending upon the argument passed. 
   #'Requires the Udunits2 package to 
   #'work. 
-  print(index)
+  print(paste("Entering masking function with threshold", index))
   #   print(data[1:100])
   #   print(data[1:100] > index)
   units <- units.CF.convert(units)
