@@ -147,7 +147,11 @@ conserve.prseries <- function(data, mask){
 #   print(length(mask))
   total.trace.pr <- sum(data[mask==FALSE])
   pr.adjust <- total.trace.pr/sum(mask)
+  print("data before adjustment")
+  print(summary(data))
   data[mask==TRUE]  <- data[mask==TRUE] + pr.adjust
+  print("data after adjustment")
+  print(summary(data))
   return(data)
 }
 

@@ -224,8 +224,8 @@ for (predictor.var in predictor.vars){
 #     print("Number of zeroes in var:")
 #     print(sum(list.hist$clim.in==0))
     if(train.and.use.same==TRUE){
-      save.targ.in <- list.target$clim.in
-      save.hist.in <- list.hist$clim.in
+ #     save.targ.in <- list.target$clim.in
+ #     save.hist.in <- list.hist$clim.in
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
                                 opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
@@ -239,8 +239,8 @@ for (predictor.var in predictor.vars){
       #list.fut$pr_mask <-temp.out$future$pr_mask
       #remove from workspace to keep memory overhead low
       remove(temp.out)
-      save.targ.out <- list.target$clim.in
-      save.hist.out <- list.hist$clim.in
+#      save.targ.out <- list.target$clim.in
+#      save.hist.out <- list.hist$clim.in
     }else{
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
@@ -327,7 +327,7 @@ if (args!='na'){
                     s5.instructions=mask.list, 
                     create.qc.mask=adjust.list$qc.check)
 }
-print(summary(ds$esd.final))
+print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 ##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
@@ -358,11 +358,16 @@ if('pr'%in%target.var && exists('pr_opts')){
     if(pr_opts$pr_conserve_out=='on'){
       #ds$esd.final <- apply(c(ds$esd.final, out.mask), c(1,2), conserve.prseries)
       #There has got to be a wya to do this with 'apply' and its friends, but I'm not sure that it;s worth it
+#       for(i in 1:length(ds$esd.final[,1,1])){
+#         for(j in 1:length(ds$esd.final[1,,1])){
       for(i in 1:length(ds$esd.final[,1,1])){
         for(j in 1:length(ds$esd.final[1,,1])){
-          print(paste(i, j, sep=", "))
-          ds$esd.final[i,j,]<- conserve.prseries(data=!is.na(ds$esd.final[i,j,]), 
-                                                 mask=!is.na(out.mask[i,j,]))
+ #         print(paste(i, j, sep=", "))
+          esd.select <- ds$esd.final[i,j,]
+          mask.select <- out.mask[i,j,]
+          esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
+                                                 mask=mask.select[!is.na(mask.select)])
+          ds$esd.final[i,j,]<- esd.select
           #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
           #However, there are checks external to the function to get that, so it might not be as much of an issue.
         }
@@ -372,8 +377,8 @@ if('pr'%in%target.var && exists('pr_opts')){
     print(summary(out.mask))
     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
-    safe.out <- as.numeric(ds$esd.final) * out.mask
-    print(summary(ds$esd.final[!is.na(ds$esd.final)]))
+#    safe.out <- as.numeric(ds$esd.final) * out.mask
+ #   print(summary(ds$esd.final[!is.na(ds$esd.final)]))
     out.select <- ds$esd.final[!is.na(ds$esd.final)]
     print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
   }
