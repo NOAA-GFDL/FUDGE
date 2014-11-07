@@ -219,13 +219,9 @@ for (predictor.var in predictor.vars){
     lopt.drizzle = pr_opts$pr_freqadj_in=='on'
     lopt.conserve= pr_opts$pr_conserve_in=='on'
     #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
-#     print("Number of NAs in var:")
-#     print(sum(is.na(list.hist$clim.in)))
-#     print("Number of zeroes in var:")
-#     print(sum(list.hist$clim.in==0))
+    print(summary(list.target$clim.in[!is.na(list.target$clim.in)]))
+    print(summary(list.fut$clim.in))
     if(train.and.use.same==TRUE){
- #     save.targ.in <- list.target$clim.in
- #     save.hist.in <- list.hist$clim.in
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
                                 opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
@@ -238,9 +234,9 @@ for (predictor.var in predictor.vars){
       list.fut$clim.in <- temp.out$future$data
       #list.fut$pr_mask <-temp.out$future$pr_mask
       #remove from workspace to keep memory overhead low
+      print(summary(list.target$clim.in))
+      print(summary(list.fut$clim.in))
       remove(temp.out)
-#      save.targ.out <- list.target$clim.in
-#      save.hist.out <- list.hist$clim.in
     }else{
       temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
                                 adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
@@ -261,17 +257,8 @@ clim.var.in <- list.fut$clim.in
 # ----- Begin segment like FUDGE Schematic Section 3: Pre-processing of Input Data -----
 
 # Spatial Range For Predictors -------------------------
-#TODO cew: Explore passing spat.mask.ncobj as second arg, 
-#making checks currently done internal to the function that relies on the path to outside. 
-#This way, we open the file just once. spat.mask.ncobj potentially to be used in final sections
 
 message("Applying spatial masks")
-# #spat.mask.path <- list.files(path=paste(spat.mask.dir_1),
-# #                             pattern=paste("[.]","I",i.file,"_",file.j.range, sep=""), full.names=TRUE)
-# spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-# print(paste("Spatial mask to be applied:", spat.mask.filename))
-# spat.mask.nc <- OpenNC(spat.mask.dir_1,spat.mask.filename)
-# spat.mask <- ReadMaskNC(spat.mask.nc)
 
 list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
 print("ApplySpatialMask target: success..1")
@@ -292,15 +279,11 @@ QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = l
 
 # compute the statistics of the vector to be passed into the downscaling training
 
-# + + + function MyStats + + + moved to MyStats.R
-##  CEW edit
-
 # -- QC of input data ends --#
 
 # ----- Begin segment like FUDGE Schematic Section 3: Apply Distribution Transform -----
 
 # ----- Begin segment FUDGE Schematic Section 4: ESD Method Training and Generation -----
-
 
 ################ call train driver ######################################
 print("FUDGE training begins...")
@@ -314,16 +297,12 @@ if (args!='na'){
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=args,
                     s5.instructions=mask.list, 
                     create.qc.mask=adjust.list$qc.check)
-                    #s5.method='kdAdjust', s5.args = NULL, 
-                    #create.qc.mask=TRUE, create.adjust.out=FALSE)
 }else{
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var,
                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
-                    #s5.adjust=TRUE, s5.method='kdAdjust', s5.args = NULL, 
-                    #create.qc.mask=TRUE, create.adjust.out=FALSE
                     s5.instructions=mask.list, 
                     create.qc.mask=adjust.list$qc.check)
 }
@@ -332,7 +311,7 @@ message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 ##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
 #time.steps <- 34333 # No.of time steps in the downscaled output.
-time.steps <- dim(ds$esd.final)[3]
+#time.steps <- dim(ds$esd.final)[3]
 ##
 ############## end call TrainDriver ######################################
 
@@ -357,7 +336,7 @@ if('pr'%in%target.var && exists('pr_opts')){
     print(dim(out.mask))
     if(pr_opts$pr_conserve_out=='on'){
       #ds$esd.final <- apply(c(ds$esd.final, out.mask), c(1,2), conserve.prseries)
-      #There has got to be a wya to do this with 'apply' and its friends, but I'm not sure that it;s worth it
+      #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it
 #       for(i in 1:length(ds$esd.final[,1,1])){
 #         for(j in 1:length(ds$esd.final[1,,1])){
       for(i in 1:length(ds$esd.final[,1,1])){
@@ -377,10 +356,9 @@ if('pr'%in%target.var && exists('pr_opts')){
     print(summary(out.mask))
     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
-#    safe.out <- as.numeric(ds$esd.final) * out.mask
- #   print(summary(ds$esd.final[!is.na(ds$esd.final)]))
-    out.select <- ds$esd.final[!is.na(ds$esd.final)]
-    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
+    print(summary(ds$esd.final[!is.na(ds$esd.final)]))
+#    out.select <- ds$esd.final[!is.na(ds$esd.final)]
+#    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
   }
 }
 
@@ -405,15 +383,6 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
-
-#Code for obtaining the options for precipitation and post-processing
-#(current PP options are profoundly unlikely to be triggered for anything not pr)
-# post.process.string = ""
-# if(exists("pr.mask.opt")){
-#   post.process.string <- paste(post.process.string, "trace pr threshold:", pr.mask.opt, 
-#                                ", lopt.drizzle:", lopt.drizzle, ", lopt.conserve:", lopt.conserve, 
-#                                ", trace post-processing:", pr.post.process, sep="")
-# }
 
 ###Code to determine whether or not to include the git branch
 if(Sys.getenv("USERNAME")=='cew'){
@@ -471,7 +440,6 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                  configURL,label.validation,institution='NOAA/GFDL',
                  version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-                 #post.process=post.process.string, 
                  time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
                  is.qcmask=TRUE, qc.method=adjust.list$qc.method, qc.args=adjust.list$qc.args,

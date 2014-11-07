@@ -155,6 +155,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #perform downscaling on the series and merge into new vector
           if(create.ds.out){
             #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
+            print(summary(kfold.predict))
+            print(summary(kfold.target))
+            print(summary(kfold.gen))
             temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                      train.predict = kfold.predict[!is.na(kfold.predict)], 
                                      train.target = kfold.target[!is.na(kfold.target)], 

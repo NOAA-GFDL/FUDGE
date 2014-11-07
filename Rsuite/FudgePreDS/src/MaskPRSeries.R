@@ -177,7 +177,7 @@ MaskPRSeries <- function(data, units, index){
          #'zero' = return(replace.vals(data, data==zero.thold)),
          #'zero' = return(apply(apply(data, c(1,2,3), all.equal, zero.thold), c(1,2,3), isTRUE))
          #Ignore the above. Machine precision or no, it's hideous. 
-         'zero' = return(data==zero.thold),
+         'zero' = return(data > zero.thold),
          'us_trace' = return(data > us.trace.thold), 
          'global_trace' = return(data > global.trace.thold), 
          return((data > index))) #If own threshold supplied,
