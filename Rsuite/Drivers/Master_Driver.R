@@ -331,14 +331,17 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 
 if('pr'%in%target.var && exists('pr_opts')){
   if(!is.null(grep('out', names(pr_opts)))){
+    ####For NOW: Apply 0-threshold, regardless of other input, in order to 
+    ###avoid negative pr values (conserve is not sufficient)
+    ###CG option: test at later date? 
+#     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = 'zero')
+#     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
     print(paste("Adjusting downscaled pr values"))
     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
     print(dim(out.mask))
     if(pr_opts$pr_conserve_out=='on'){
       #ds$esd.final <- apply(c(ds$esd.final, out.mask), c(1,2), conserve.prseries)
-      #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it
-#       for(i in 1:length(ds$esd.final[,1,1])){
-#         for(j in 1:length(ds$esd.final[1,,1])){
+      #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
       for(i in 1:length(ds$esd.final[,1,1])){
         for(j in 1:length(ds$esd.final[1,,1])){
  #         print(paste(i, j, sep=", "))

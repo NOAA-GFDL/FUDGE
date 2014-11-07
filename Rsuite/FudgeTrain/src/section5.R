@@ -43,6 +43,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'sdev' = return(callSdev(test, input, adjusted.output)),
                               'sdev2' = return(callSdev2(test,  input, adjusted.output)),
                               'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
+                              'flag.neg' = return(callFlagNegativeValues(test, input, adjusted.output)),
                               'Nothing' = return(callNoMethod(test, input, adjusted.output)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
@@ -104,6 +105,20 @@ callSBCorr <- function(test, input, adjusted.output){
     return(out.list)
 }
 
+callFlagNegativeValues <- function(test, input, adjusted.output){
+  #Flags negative values in the downscaled output with NA
+  #with the expectation that they may get adjusted later. 
+  mask.vec <- ifelse( adjusted.output$ds.out > 0, yes=1, no=NA)
+  out.list <- adjusted.output
+  if(test$qc.mask=='on'){
+    out.list$qc.mask <- mask.vec
+  }
+  if(test$adjust.out=='on'){
+    adjust.vec <- ifelse( (is.na(mask.vec)), yes=0, no=adjusted.output$ds.out)
+    out.list$ds.out <- adjust.vec
+  }
+  return(out.list)
+}
 round.negative <- function(num){
   #assumes no 0 values are passed 
   return(ifelse(num > 0, 1, -1))
