@@ -97,7 +97,7 @@ def postProc():
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
 						slogloc = sbase+"/"+"experiment_info.txt"
-						fcmd = "python "+basedir+"/bin/fudgeList.py -i "+uinput+" -o "+slogloc 
+						fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
 						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 						out, err = f.communicate() 
 						#print "fudgeList out", out
