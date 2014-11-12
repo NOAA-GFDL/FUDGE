@@ -487,7 +487,7 @@ echo "towards the tail of the processing.."
 endif
 ##############################################
 #todo rm thisif ( ${AARMVAR} != "tasmax" ) then 
-if (($AARMVAR != "tasmax") || ($AARMVAR != "tasmin")) then
+if (($AARMVAR != "tasmax") & ($AARMVAR != "tasmin")) then
 ncks -O -hxv  height $OFILE $OFILE
 ncatted -Oh -a coordinates,$CMIPNAME,d,, $OFILE 
 else
