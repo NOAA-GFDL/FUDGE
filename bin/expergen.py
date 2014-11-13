@@ -20,6 +20,7 @@ rootdir = "/archive/esd/PROJECTS/DOWNSCALING/"  #default
 projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
 project = "35" #default TODO get from XML
 ppn = 2 #TODO get from XML custom?
+overwrite = False #default don't overwrite existing output or scripts
 def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
@@ -284,14 +285,17 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 	    print "Output directory is :",outdir
 #new
 	    if (pp == False):	
-                    	for lon in (lons,lone):
-	                	exists = checkExisting(outdir,lon,dsuffix,target,freq,dmodel,dexper,ens,fut_train_start_time,fut_train_end_time,'mini')
-			 	#print "Exists? ",exists
+                    	for lon in range(int(lons),int(lone)):
+	                	exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
                          	if (exists == True) & (force == False):
-                                	sys.exit("ERROR: Output already exists. Use -f to override existing output. Quitting now..")
+                                	print "\033[1;41mERROR code -7: Output already exists. Use -f to override existing output. Quitting now..\033[1;m",'\n',outdir
+					sys.exit(-7)
                          	if (exists == True) & (force == True):
-                                	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
-
+					print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
+                               # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
+					global overwrite
+					overwrite = True	
+					break	
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
@@ -370,9 +374,13 @@ def main():
 	scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
         for sd in scriptdir:
        		 if os.listdir(sd):
-			print "ERROR: Directory already exists. Clean up and try again please:",sd 
-                        print "ERROR code -6: script directory already exists.Check -- ",scriptdir
+		    if (overwrite == False):    
+			print '\033[1;41mERROR: Scripts Directory already exists. Clean up and try again please (Use -f if output already exists and you want to overwrite it when you re-run after cleaning scripts directory)\033[1;m',sd
+                        print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
                 	sys.exit(-6)
+		    if (overwrite == True):
+			print "Warning: Scripts Directory already exists. But, since -f is turned on, the scripts and existing OneD output will be overwritten" 
+			break 
         script1Loc = basedir+"/utils/bin/create_runcode"
         make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
         make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
@@ -457,17 +465,23 @@ def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,en
     stdoutdir = projectRoot+"/"+category+"/"+instit+"/"+predModel+"/"+dexperonly+"/"+freq+"/"+realm+"/"+mip+"/"+ens+"/"+pversion+"/"+dmodel+"/"+predictand+"/"+ds_region+"/"+dim+"/"+dversion+"/"  
     return stdoutdir  
 
-def checkExisting(dire,lon,Jsuffix,variable,freq,method,scenario,ens,start_year_s1,end_year_s1,fileid):
-	## to check if the given directory structure and ffilenams already exist in the file system.  Even if there is a single output file that already exists, the program quits. Use -f to force overwriting.
+#def checkExisting(dire,lon,Jsuffix,variable,freq,method,scenario,ens,start_year_s1,end_year_s1,fileid):
+def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_year_s1,end_year_s1,fileid,region):
+
+	## to check if the given directory structure and ffilenams already exist in the file system.  Even if there is a single output file that already exists, the program quits. Use -f to force overwriting.-tasmin_day_RRtnp1-CDFt-B38atL01K00_rcp85_r1i1p1_r1i1p1_RR_20060101-20991231.I369_"J31-170".nc
+
 	#filename  out.file1_a <- paste(variable,'_',freq,'_',method,'_',scenario1,'_',ens,'_',start_year_s1,'-',end_year_s1,fileid,sep='')
+#checkExisting(outdir,lon,dsuffix,target,freq,dmodel,dexper,ens,fut_train_start_time,fut_train_end_time,'mini')
+
 	exists = False 
         if(os.path.exists(dire)):
-		print "---------Output directory",dire,"already exists"
+		#print "Warning Warning---------Output directory",dire,"already exists"
 		filesuff = ".nc"
+	        Jsuffix = Jsuffix.replace('"', '').strip()
 	        fileid= ".I"+str(lon)+"_"+str(Jsuffix)+filesuff
-                filename = variable+"_"+freq+"_"+method+"_"+scenario+"_"+str(ens)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
+                filename = variable+"_"+"day"+"_"+exper+"_"+str(scenario)+"_"+str(region)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
 		if(os.path.exists(dire+"/"+filename)):
-			print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
+		#	print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
 			exists = True 
         return exists			
 if __name__ == '__main__':
