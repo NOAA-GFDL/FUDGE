@@ -367,11 +367,12 @@ def main():
 
 	# If the runscript directory already exists, please quit
 	#/home/a1r/gitlab/cew/fudge2014///scripts/tasmax/35txa-CDFt-A00X01K02
-	scriptdir = basedir+"/scripts/"+target+"/"+expconfig
-
-	if(os.path.exists(scriptdir)):
-		print "Warning: script directory already exists.",scriptdir
-		#print "ERROR: Directory already exists. Clean up and try again please:",scriptdir 
+	scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
+        for sd in scriptdir:
+       		 if os.listdir(sd):
+			print "ERROR: Directory already exists. Clean up and try again please:",sd 
+                        print "ERROR code -6: script directory already exists.Check -- ",scriptdir
+                	sys.exit(-6)
         script1Loc = basedir+"/utils/bin/create_runcode"
         make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
         make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
