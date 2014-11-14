@@ -133,7 +133,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 			dversion='v20140108'
         print "----Downscaling XML template-", uinput
         print "----Downscaled data version-", dversion
-        print "----Force Override existing output Flag-", force
+      #  print "----Force Override existing output Flag-", force
         ###################################
         print "Input from XML"
         print "########################"
@@ -220,6 +220,17 @@ def listVars(uinput,basedir=None,force=False,pp=False):
         qc_params = checkTags(dictParams,'qcparams') 
 	#new way of getting masklist
 	masklists = checkTags(dictParams,'masklists')
+	preexist = checkTags(dictParams,'preexist')
+	#TODO add preexist as another return variable
+	print "preexist"+preexist
+	if(preexist == 'exit'):
+		force = False
+        elif(preexist == 'erase'):
+		force = True
+	else:
+	        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase'} for ifpreexist tag in XML \033[1;m",preexist
+		sys.exit(-2)
+        print "----Force Override existing output Flag-", force
         ####### end get  dictParams ###########################
         ## OneD or ZeroD that's the question ##  
         if(region != "station"):
@@ -288,7 +299,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
                     	for lon in range(int(lons),int(lone)):
 	                	exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
                          	if (exists == True) & (force == False):
-                                	print "\033[1;41mERROR code -7: Output already exists. Use -f to override existing output. Quitting now..\033[1;m",'\n',outdir
+                                	print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
 					sys.exit(-7)
                          	if (exists == True) & (force == True):
 					print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
@@ -296,6 +307,8 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 					global overwrite
 					overwrite = True	
 					break	
+	    if(force == True):
+		overwrite = True
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
@@ -329,7 +342,7 @@ def main():
         parser = OptionParser(usage=help)
         parser.add_option("-i", "--file", dest="uinput",
         help="pass location of XML template", metavar="FILE")
-        parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
+      #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
         #parser.add_option("-v", "--version",action="store_true", dest="version",default="v20120422", help="Assign version for downscaled data. Default is set to v20120422")        
         
         (options, args) = parser.parse_args()
@@ -371,12 +384,12 @@ def main():
                 		else:
                     			print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
                     			sys.exit()
-            		if(opts == 'force'):
-                		if (vals == True):
-                    			forOpt = False
-                		force = vals 
+      #      		if(opts == 'force'):
+      #          		if (vals == True):
+      #              			forOpt = False
+      #          		force = vals 
         #########  call listVars() #############################################################
-	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists= listVars(uinput,basedir,force)
+	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists= listVars(uinput,basedir)
         ######### call script creators..  #######################################################
         ############################### 1 ###############################################################
         #  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -387,11 +400,16 @@ def main():
         for sd in scriptdir:
        		 if os.listdir(sd):
 		    if (overwrite == False):    
-			print '\033[1;41mERROR: Scripts Directory already exists. Clean up and try again please (Use -f if output already exists and you want to overwrite it when you re-run after cleaning scripts directory)\033[1;m',sd
+			print '\033[1;41mERROR: Scripts Directory already exists. Clean up and try again please (Use <ifpreexist>erase</ifpreexist> if output already exists and you want to overwrite it when you re-run after cleaning scripts directory)\033[1;m',sd
                         print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
                 	sys.exit(-6)
 		    if (overwrite == True):
-			print "Warning: Scripts Directory already exists. But, since -f is turned on, the scripts and existing OneD output will be overwritten" 
+			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist>erase</ifpreexist> is turned on, the scripts and any existing OneD output will be overwritten.\033[1;m "
+			print "..Now invoking scrubber utility..........."
+			print "DUMMY SCRUBBER CALL "
+		        sys.exit()	
+			#check return code
+			print "continue expergen run...................." 
 			break 
         script1Loc = basedir+"/utils/bin/create_runcode"
         make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
@@ -480,7 +498,7 @@ def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,en
 #def checkExisting(dire,lon,Jsuffix,variable,freq,method,scenario,ens,start_year_s1,end_year_s1,fileid):
 def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_year_s1,end_year_s1,fileid,region):
 
-	## to check if the given directory structure and ffilenams already exist in the file system.  Even if there is a single output file that already exists, the program quits. Use -f to force overwriting.-tasmin_day_RRtnp1-CDFt-B38atL01K00_rcp85_r1i1p1_r1i1p1_RR_20060101-20991231.I369_"J31-170".nc
+	## to check if the given directory structure and ffilenams already exist in the file system.  Even if there is a single output file that already exists, the program quits. Use ifpreexist erase to force overwriting.-tasmin_day_RRtnp1-CDFt-B38atL01K00_rcp85_r1i1p1_r1i1p1_RR_20060101-20991231.I369_"J31-170".nc
 
 	#filename  out.file1_a <- paste(variable,'_',freq,'_',method,'_',scenario1,'_',ens,'_',start_year_s1,'-',end_year_s1,fileid,sep='')
 #checkExisting(outdir,lon,dsuffix,target,freq,dmodel,dexper,ens,fut_train_start_time,fut_train_end_time,'mini')

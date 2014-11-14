@@ -26,6 +26,13 @@ class XMLHandler:
      		print "returns entire tree with tags and attribs:"    
      		for node in tree.iter():
         		print node.tag, node.attrib
+	# Get ifpreexist 
+        for preexist_node in tree.iter('ifpreexist'):
+		preexist = preexist_node.text 
+		preexist = preexist.lstrip()
+		preexist = preexist.rstrip()
+	        dictParams['preexist'] = preexist
+		#print "debug debug ....."+preexist+"test" 
 	# Scan through input tag
 	############# Get generic input attribs ##############################
 	for input_node in tree.iter('input'):
