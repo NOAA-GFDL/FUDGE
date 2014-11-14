@@ -313,7 +313,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 ############end of listVars###################### 
 def main():
     #################### args parsing ############
-        help = "#################Usage:##################\n dsTemplater -i <input XML> \n "
+        help = "#################Usage:(run from AN nodes)##################\n dsTemplater -i <input XML> \n "
         help = help + "Example 1: expergen -i dstemplate.xml \n "
         help = help + "Example 2: expergen -i examples/dstemplate.60lo0FUTURE.xml \n"
         #print usage
@@ -336,6 +336,18 @@ def main():
         verOpt = True #default 
         forOpt = True #default
         inter = 'on' #for debugging
+#########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
+        system,node,release,version,machine = os.uname()
+        if(node.startswith('pp')):
+                print "Running on PP(PAN) node", node
+        if(node.startswith('an')):
+                print "Running on AN(PAN) node", node
+        else:
+                 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
+		 sys.exit(-5)
+
+   
+######################################################################################### 
         if (inter == 'off'):
 		uinput = 'dstemplate.xml'
 	        dversion = "v20120422"
