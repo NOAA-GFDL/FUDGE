@@ -93,8 +93,9 @@ def postProc():
      	else: 
         	vname = varname 
         	print "default target variable chose to be post-processed. Override with a -v varname.", vname
-	##### lets run the checker first ###############
+	##### lets run the checker on OneD first ###############
 	tnum = int(lone) - int(lons) + 1 
+	print "checker on OneD"
        	checker.checker(indir,tnum)
         ################################################
 	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
@@ -146,6 +147,10 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 						exists = True
 						print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
 					print filename
+					if(exists == False):
+					###final checker test for extraneous existing files ######
+				        	print "checker on TwoD " 
+				        	checker.checker(filedire,2)
 				        return exists		
 
 def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid):

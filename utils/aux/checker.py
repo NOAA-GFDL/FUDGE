@@ -29,4 +29,4 @@ def checker(path,cnt=0):
 	       print "\033[1;31mPlease verify this, clean-up directory and try again. CANNOT RUN postProc at this time.\033[1;m"
 	       print "List of BAD files",listbad
 	       sys.exit(-10)   	
-       print "checker : complete: success"  				
+       print "\033[1;42m checker : complete: success\033[1;m"  				
