@@ -230,7 +230,7 @@ def listVars(uinput,basedir=None,force=False,pp=False):
 	else:
 	        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase'} for ifpreexist tag in XML \033[1;m",preexist
 		sys.exit(-2)
-        print "----Force Override existing output Flag-", force
+        #print "----Force Override existing output Flag-", force
         ####### end get  dictParams ###########################
         ## OneD or ZeroD that's the question ##  
         if(region != "station"):

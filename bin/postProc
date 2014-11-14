@@ -6,6 +6,7 @@ import optparse
 from optparse import OptionParser
 import shlex
 import fudgeList
+import checker
 cnt = 0
 def postProc():
      #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
@@ -23,7 +24,7 @@ def postProc():
 	 userinput = "none"	
      parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
      parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed", metavar="VNAME")
+     parser.add_option("-v", "--vname", dest="vname",help="pass comman-separated variable names to be post-processed", metavar="VNAME")
 
      (options, args) = parser.parse_args()
      if userinput == "none":
@@ -37,8 +38,8 @@ def postProc():
 		if(opts == 'force'):
 			force = vals 
 		if(opts == 'vname'):
-			vname = vals
-			print "Variable to be post-processed: ",vname
+			lvname = vals
+			print "Variable(s) to be post-processed: ",vname
      if uinput is None:	
         uinput = userinput
 	
@@ -50,7 +51,7 @@ def postProc():
 ################ get BASEDIR #################
      basedir = os.environ.get('BASEDIR')
      if(basedir is None):
-           print "ERROR: BASEDIR environment variable not set"
+           print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
 	   sys.exit(1)
      output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists = expergen.listVars(uinput,basedir=basedir,pp=True) 
      basedire = basedir	
@@ -74,20 +75,31 @@ def postProc():
      predModel = fut_model 	
      indir = outdir #Our mini op from dscaling is the input to PP  
      ## if vname  contains the word mask, then yes let's set the indir differently  ##
-     if(vname is not None):
-    	 if "mask" in vname:
-		print "The variable you're trying to PP appears to be a mask variable"
-        	print "debug..",indir
-        	#indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
-                indir = indir+"/"+target+"_qcmask/"
-        	print "indir ",indir 
-      #if vname is passed, we assume we PP the target variable
-     else: 
-        vname = varname 
-        print "default target variable chose to be post-processed. Override with a -v varname.", vname
-     obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
+     listvname = []	
+     if(lvname is not None):
+     	listvname = lvname.split(',')  
+     else:
+	listvname.append(varname)	
+     for vname in listvname:
+	print "Processing variable ",vname 
+    	if(vname is not None):
+    	 	if "mask" in vname:
+			print "The variable you're trying to PP appears to be a mask variable"
+        		print "debug..",indir
+        		#indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
+                	indir = indir+"/"+target+"_qcmask/"
+        		print "indir ",indir 
+      	#if vname is passed, we assume we PP the target variable
+     	else: 
+        	vname = varname 
+        	print "default target variable chose to be post-processed. Override with a -v varname.", vname
+	##### lets run the checker first ###############
+	tnum = int(lone) - int(lons) + 1 
+       	checker.checker(indir,tnum)
+        ################################################
+	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
-     if (cond == 1):
+     	if (cond == 1):
            			if (os.path.exists(indir)):
                                         exists = checkExists(vname,indir,region,ver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
              				if (exists == False):
@@ -112,7 +124,7 @@ def postProc():
 					else:
 						sys.exit("ERROR")
            			else:
-                			print "ERROR Input directory ",indir," does not exist. Aborting exec. "
+                			print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
                 			sys.exit()
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
@@ -123,7 +135,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
                                         filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"0101"+"-"+end+"1231"+".nc"
 #                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
 
-					print "test test",filedire,filename	
+					#print "test test",filedire,filename	
                                         if not os.path.exists(filedire+"/"+filename):                
                                            exists = False  
                                         else:
@@ -132,7 +144,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 						exists = False
 					   else:
 						exists = True
-						print "ERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now.."
+						print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
 					print filename
 				        return exists		
 
@@ -152,10 +164,10 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	print p.returncode ,output, error
         word = "ERROR"
         if (p.returncode != 0):
-         print "!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan"
+         print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
          sys.exit(0)
 	if word in error:
-         print "!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan"
+         print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
          sys.exit(0)
          ############################################################################################
         global cnt

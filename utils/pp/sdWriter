@@ -429,14 +429,17 @@ if($simple == 1) then
 set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME}
 if ( "$AARMVAR" =~ *"mask"* ) then
 	set title = "Auxiliary QC mask "${AARMVAR}" for fudge experiment: "${EXPNAME}
+else
+ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE
 endif
+
 #ncatted -O -h -a title,global,o,c,"downscaled estimate of tasmax for the MPI-ESM-LR.rcp85_r1i1p1.2006-2099 experiment" $OFILE #TODO from R
 ncatted -O -h -a title,global,o,c,"${title}" $OFILE 
 ncatted -O -h -a downscaled_data_version,global,a,c,"${dversion}" $OFILE
 ncatted -O -h -a downscaling_model_type,global,a,c,"statistical" $OFILE
 ncatted -O -h -a frequency,global,a,c,"day" $OFILE
 ncatted -O -h -a region_id,global,a,c,"${region}" $OFILE
-ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE 
+#cncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE 
 ncatted -O -h -a comment,global,a,c,".OBS used: ${obs}" $OFILE
 ncatted -O -h -a resolution,global,a,c,"0.1x0.1degree" $OFILE
 #ncatted -O -h -a info,global,o,c,"time_mask: seasonal" $OFILE
