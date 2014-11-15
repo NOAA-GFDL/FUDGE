@@ -402,19 +402,31 @@ def main():
 	#/home/a1r/gitlab/cew/fudge2014///scripts/tasmax/35txa-CDFt-A00X01K02
 	scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
         for sd in scriptdir:
+	    if(os.path.exists(sd)):
        		 if os.listdir(sd):
 		    if (overwrite == False):    
-			print '\033[1;41mERROR: Scripts Directory already exists. Clean up and try again please (Use <ifpreexist>erase</ifpreexist> if output already exists and you want to overwrite it when you re-run after cleaning scripts directory)\033[1;m',sd
+			print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for yyou)\033[1;m',sd
                         print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
                 	sys.exit(-6)
 		    if (overwrite == True):
 			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist>erase</ifpreexist> is turned on, the scripts and any existing OneD output will be overwritten.\033[1;m "
-			print "..Now invoking scrubber utility..........."
-			print "DUMMY SCRUBBER CALL "
-		        #sys.exit()	
+			print "Now invoking cleanup utility..........."
+		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
+		        cleaner_cmd = cleaner_script+" d "+uinput 
+	                print "cleaner_cmd"		
+	                pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 			#check return code
+        		output0, errors0 = pclean.communicate()
+        		if(pclean.returncode != 0):
+         			print "033[1;41mCleaner Step:!!!! FAILED !!!!, please contact developer.033[1;m"
+         			print output0, errors0
+        			sys.exit(1)
+			else:
+				print output0,errors0
 			print "continue expergen run...................." 
 			break 
+	    else:
+		   print "scriptdir "+sd+" does not exist. Looks like a clean slate "
         script1Loc = basedir+"/utils/bin/create_runcode"
         make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
         make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
@@ -443,7 +455,7 @@ def main():
         #cprint output,errors
         ###############################################################################################
         print "1- completed\n"
-        print "debug............msub turned ",msub
+        #print "debug............msub turned ",msub
         ############################### 2 ################################################################
 	#target_time_window,hist_time_window,fut_time_window
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
