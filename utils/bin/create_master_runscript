@@ -11,6 +11,7 @@ set varname=$argv[3]
 set method=$argv[4]
 set base=$argv[5] 
 set dexper=$argv[6]
+
 set basedir=$base/master/
 set rundir=$base/runscript/
 set i=1
@@ -18,6 +19,9 @@ set dsuffix=$argv[7]
 ###############################
 set tstamp = $argv[8]
 set ppn = $argv[9]
+#new msub option
+set msub = $argv[10]
+#new ends
 if ( $lon_end < $lon_start ) then
  echo "Err:  Please check second argument: lon_end  should be greater than lon_start"
  exit
@@ -51,8 +55,19 @@ echo "#PBS -o /work/$USER/fudge/stdout/fudge."'${MOAB_JOBNAME}.${MOAB_JOBID} '  
 
 echo "#PBS -q batch " >> ${masterloc}
 
+############# notific email ##########
+if($msub == 'True') then
+source /usr/local/Modules/3.1.6/init/csh
+module load moab
+if ($?NEMSemail)  then
+   set msub_string = "-m ae -M $NEMSemail"
+else
+   set msub_string = ""
+endif
+endif
+######################################
 #### 
-echo $masterloc
+#echo $masterloc
 #Insert submit job here. msub $masterloc 
 foreach i (`seq $sub_lon_start 1 $sub_lon_end`)
   set counter=$i
@@ -77,4 +92,11 @@ echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix"."$tstamp &" >>
 end
 set lon_start=`expr $sub_lon_end + 1`
 #set lon_end=`expr $sub_lon_end`
+if($msub == 'True') then
+	echo "msub $masterloc"
+	msub $msub_string $masterloc
+else
+echo $msub
+        echo "$masterloc"
+endif
 end

@@ -121,7 +121,7 @@ def getDir(listDir,label):
                 i = i + 1
                 dire = dictDIR[dir_lo].strip()
 	return dire	
-def listVars(uinput,basedir=None,force=False,pp=False):
+def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "PP option is set to ",pp
         if os.path.exists(uinput):
 		handler = xmlhandler.XMLHandler(  )
@@ -343,10 +343,12 @@ def main():
         parser.add_option("-i", "--file", dest="uinput",
         help="pass location of XML template", metavar="FILE")
       #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
+        parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
         #parser.add_option("-v", "--version",action="store_true", dest="version",default="v20120422", help="Assign version for downscaled data. Default is set to v20120422")        
         
         (options, args) = parser.parse_args()
-        verOpt = True #default 
+        verOpt = True #default
+	msub = False 
         forOpt = True #default
         inter = 'on' #for debugging
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
@@ -384,12 +386,14 @@ def main():
                 		else:
                     			print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
                     			sys.exit()
-      #      		if(opts == 'force'):
-      #          		if (vals == True):
-      #              			forOpt = False
-      #          		force = vals 
+            		if(opts == 'msub'):
+                		if (vals == True):
+                    			msub = True 
+				else:
+					msub = False
+                		msub = vals 
         #########  call listVars() #############################################################
-	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists= listVars(uinput,basedir)
+	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists= listVars(uinput,basedir,msub)
         ######### call script creators..  #######################################################
         ############################### 1 ###############################################################
         #  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -407,7 +411,7 @@ def main():
 			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist>erase</ifpreexist> is turned on, the scripts and any existing OneD output will be overwritten.\033[1;m "
 			print "..Now invoking scrubber utility..........."
 			print "DUMMY SCRUBBER CALL "
-		        sys.exit()	
+		        #sys.exit()	
 			#check return code
 			print "continue expergen run...................." 
 			break 
@@ -439,6 +443,7 @@ def main():
         #cprint output,errors
         ###############################################################################################
         print "1- completed\n"
+        print "debug............msub turned ",msub
         ############################### 2 ################################################################
 	#target_time_window,hist_time_window,fut_time_window
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
@@ -458,11 +463,11 @@ def main():
         
         ###################################### 3 ################################################################
         script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
-        create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(predictor)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)
+        create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(predictor)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
         print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
         p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        #cprint create_master_cmd
-        #print "Create master script .. in progress"
+        print create_master_cmd
+        print "Create master script .. in progress"
         output2, errors2 = p2.communicate()
         #######
         if(p2.returncode != 0):
