@@ -1,3 +1,30 @@
+11/15/2014
+postProc changes:
+Aparna Radhakrishnan
+1. Ability to post post-process two fields at a time (e.g. tasmin, tasmin_qcmask)
+2. BasicChecker before post post-processing begins (this is coded in a way it can be a potential generic stand-alone tool) 
+      -- Quits if there are extraneous files in OneD directory
+      -- Quits if there are extraneous files in twoD catted directory
+      -- Quits if the total number of minifiles does not match the expected number (lon range)
+      -- Quits if atleast one of the files in the OneD or existing twoD directory is Zero bytes. 
+    
+3. Color coding Error messages.
+4. Fix predictand_calibration_dataset global attribute (item from QC results from ESD call 11/12/14)----- removed if the variable is a mask. 
+
+expergen changes: 
+Aparna Radhakrishnan
+1. Changes to use <ifprefixexist>tags for anti-clobber feature.
+   -- If  <ifprefixexist> has exit: if either OneD output OR scripts already exist, expergen throws errors and exits.
+   -- If  <ifprefixexist> has erase:  if either OneD output OR scripts already exist, expergen throws warning messages, then executes the external cleaner/scrubber script (from cew). After this expergen continues it's regular workflow of creating runscripts, etc. 
+   --- If platform is anything other than PAN, expergen quits with an error at this time. 
+   --- Errors/warnings color coding
+2. "automatic msub" option added to expergen. This is a command-line option --msub. When you pass --msub to expergen, expergen not only creates master runscripts for you, but also submits them to MOAB automatically. By default, this is turned off. One can always opt to use the existing submit_job script to submit jobs as well. 
+
+cleanup-script with XML as input
+Carolyn Whitlock
+--
+incomplete release notes
+--
 08/07/2014
 
 a1r, Placing set of FudgeIO functions
