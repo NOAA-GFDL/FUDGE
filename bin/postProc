@@ -122,6 +122,12 @@ def postProc():
                                                 	slogloc_alt = indir+"../../../../../"
 						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
 					        shutil.copy2(slogloc, slogloc_alt)
+                                        ###final checker test for extraneous existing files ######
+                       		                print "checker on TwoD "
+                                                filedirect = indir+"/../../../"+region+"/"+ver+"/"
+                                                if "mask" in vname: #spl cases are not great
+                                                	filedirect = indir+"/../../../../"+region+"/"+ver+"/"
+                                        	checker.checker(filedirect,2,"warning")
 					else:
 						sys.exit("ERROR")
            			else:
@@ -150,7 +156,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 					if(exists == False):
 					###final checker test for extraneous existing files ######
 				        	print "checker on TwoD " 
-				        	checker.checker(filedire,2)
+				  #      	checker.checker(filedire,2)
 				        return exists		
 
 def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid):
