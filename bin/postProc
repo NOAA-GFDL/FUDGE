@@ -24,7 +24,7 @@ def postProc():
 	 userinput = "none"	
      parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
      parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     parser.add_option("-v", "--vname", dest="vname",help="pass comman-separated variable names to be post-processed", metavar="VNAME")
+     parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
 
      (options, args) = parser.parse_args()
      if userinput == "none":
