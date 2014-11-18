@@ -8,7 +8,7 @@
 #set scriptdir = $2
 # parentdir, project, experiment_name
 
-unset echo
+set echo
 
 set opt = $1
 
@@ -34,7 +34,7 @@ echo $outdir
 set outcount=`echo $outdir | wc -m`
 set outcount=`expr $outcount - 12`
 set outdir=`echo $outdir | tail -c $outcount`
-echo $outdir
+set outdir=`dirname "$outdir" | xargs dirname | xargs dirname | xargs dirname`
 
 set exp_name=`grep 'ds.experiment' $temp_file`
 echo $exp_name
