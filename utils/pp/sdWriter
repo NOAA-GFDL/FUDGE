@@ -429,6 +429,8 @@ if($simple == 1) then
 set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAME}
 if ( "$AARMVAR" =~ *"mask"* ) then
 	set title = "Auxiliary QC mask "${AARMVAR}" for fudge experiment: "${EXPNAME}
+	set mcom = "Flagged cases = missing; Non-flagged cases = 1.0" 
+	ncatted -O -h -a comments,${AARMVAR},a,c,"${mcom}" $OFILE
 else
 ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE
 endif
