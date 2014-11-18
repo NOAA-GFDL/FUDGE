@@ -141,6 +141,9 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(!is.na(reference)){
     ncatt_put(nc.object, 0 , "references", reference )
   }
+  if(is.qcmask){
+    ncatt_put(nc.object, paste(predictand, "_qcmask",sep=""), "comments", "Flagged cases = missing; Non-flagged cases = 1.0" )
+  }
   nc_close(nc.object) 
   return(filename)
 }

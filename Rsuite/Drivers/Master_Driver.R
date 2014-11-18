@@ -434,7 +434,7 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                               downscale.tseries=downscale.tseries, 
                               downscale.origin=downscale.origin, calendar = downscale.calendar,
                               #start.year=fut.train.start.year_1,
-                              units='boolean',
+                              units="1",
                               lname=paste('QC Mask'),
                               bounds=isBounds, bnds.list = bounds.list.combined
     )
