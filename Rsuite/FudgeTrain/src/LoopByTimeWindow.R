@@ -155,9 +155,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #perform downscaling on the series and merge into new vector
           if(create.ds.out){
             #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
-            print(summary(kfold.predict))
-            print(summary(kfold.target))
-            print(summary(kfold.gen))
+            #print(summary(kfold.predict))
+            #print(summary(kfold.target))
+            #print(summary(kfold.gen))
             temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                      train.predict = kfold.predict[!is.na(kfold.predict)], 
                                      train.target = kfold.target[!is.na(kfold.target)], 
@@ -175,8 +175,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               #otherwise, use the ds values from the run you have just completed
               data <- kfold.orig[!is.na(kfold.orig)]
             }
-            print("results before adjust section")
-            print(summary(data), digits=6)
+            #print("results before adjust section")
+            #print(summary(data), digits=6)
             temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
               #s5.method=s5.method,s5.args=s5.args,
                                          data = data, 
@@ -190,8 +190,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               #Try not doing anything
             }
             downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
-                      print("results after adjust section")
-                      print(summary(temp.out$ds.out), digits=6)
+                      #print("results after adjust section")
+                      #print(summary(temp.out$ds.out), digits=6)
           }
 
 #           if(create.postproc){
