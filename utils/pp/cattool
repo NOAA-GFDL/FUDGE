@@ -113,7 +113,7 @@ if (! -d $prepath) then
 endif
 
 if (-e $OFILE) then
-   echo "ERROR: output file exists - can not overwrite"
+   echo "ERROR:Oops Intermediate cattool output file from previous run exists - can not overwrite.Try again after few seconds"
    exit 1
 endif
 
