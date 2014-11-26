@@ -71,23 +71,23 @@ foreach i (`seq $lon_start 1 $lon_end`)
  if ($AUX_CUSTOM != 'na') then
 	 set auxdir = `dirname $AUX_CUSTOM`
          echo 'mkdir -p $TMPDIR'$auxdir  >> $runpath
-         echo "gcp -cd $AUX_CUSTOM "'$TMPDIR'$auxdir/  >> $runpath
+         echo "gcp --sync -cd $AUX_CUSTOM "'$TMPDIR'$auxdir/  >> $runpath
  endif
  ## new performance ##
  if ($TAR_TWIN != 'na') then
          set tardir = `dirname $TAR_TWIN`
          echo 'mkdir -p $TMPDIR'$tardir  >> $runpath
-         echo "gcp -cd $TAR_TWIN "'$TMPDIR'$tardir/  >> $runpath
+         echo "gcp --sync -cd $TAR_TWIN "'$TMPDIR'$tardir/  >> $runpath
  endif
  if ($HIS_TWIN != 'na') then
          set hisdir = `dirname $HIS_TWIN`
          echo 'mkdir -p $TMPDIR'$hisdir  >> $runpath
-         echo "gcp -cd $HIS_TWIN "'$TMPDIR'$hisdir/  >> $runpath
+         echo "gcp --sync -cd $HIS_TWIN "'$TMPDIR'$hisdir/  >> $runpath
  endif
  if ($FUT_TWIN != 'na') then
          set futdir = `dirname $FUT_TWIN`
          echo 'mkdir -p $TMPDIR'$futdir  >> $runpath
-         echo "gcp -cd $FUT_TWIN "'$TMPDIR'$futdir/  >> $runpath
+         echo "gcp --sync -cd $FUT_TWIN "'$TMPDIR'$futdir/  >> $runpath
  endif
  ## new ##
 
@@ -101,7 +101,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
  echo 'mkdir -p $TMPDIR'$FUT_PRED_DIR  >> $runpath 
  endif
  if ($SPAT_MASK_DIR != 'NA/') then
-        echo "gcp -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
  	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}0101-${T_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
