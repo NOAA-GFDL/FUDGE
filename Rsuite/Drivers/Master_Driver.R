@@ -25,8 +25,8 @@ options(error=error.handler.function, warn = 1, showErrorCalls=TRUE)
 ###after this point. Probably not a component of a --vanilla run. 
 ###But it unquestionably simplifies debugging.
 
-message("Deliberately attempting to break code")
-message(stillfakevar)
+#message("Deliberately attempting to break code")
+#message(stillfakevar)
 
 
 #------- Add libraries -------------
