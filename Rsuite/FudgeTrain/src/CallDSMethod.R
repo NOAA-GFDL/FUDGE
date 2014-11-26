@@ -216,32 +216,40 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
     #'@param LH: Local Historical (a.k.a. observations)
     #'@param CH: Coarse Historical (a.k.a. GCM historical)
     #'@param CF: Coarse Future (a.k.a GCM future)
-    #'@param args: Cpntains OPT, acharacter string, that can be "mean" or "median". 
-    #'Uses the difference between CF and CH means or medians (recommended "median")
-    # MODEL OUTPUTS
+    #'@param args: A list containing two arguments: deltatype, one of 'mean' or 'median', 
+    #' which will be used to determine what single value will be used for the difference
+    #' between the CH and CF, and deltaop, one of 'ratio' or 'add', which will be used 
+    #' to determine the mthod for calculating the delta
+    #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
+    #' a delta that is applied to the LH (observational) data
     #'@return SDF: Downscaled Future (Local)
     ########################################
     # Delta Downscaling
     # 1) Calculate mean difference between CH and CF 
-    if(!is.null(args$OPT)){
-      OPT <- args$OPT
+    if(!is.null(args$deltatype)){
+      deltatype <- args$deltatype
     }else{
-      stop(paste("DeltaSD Downscaling Error: OPT not found in args"))
+      stop(paste("DeltaSD Downscaling Error: deltatype not found in args"))
     }
-    #  2) Add the difference from 1) to LH to obtain LF, or multiply if * in effect
-    always.pos.vars <- c("pr", "humidity", "wind speed")
-    if(!(ds.var%in%always.pos.vars)){
+    if(!is.null(args$deltaop)){
+      deltaop <- args$deltaop
+    }else{
+      stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
+    }
+    if(deltaop=='add'){
       #Downscale by difference delta
-      delta<-do.call(OPT, list(CF))-do.call(OPT, list(CH))
+      delta<-do.call(deltatype, list(CF))-do.call(deltatype, list(CH))
       message("ignore warning message; vector recycling in effect")
       CF[1:length(CF)] <- LH
       SDF<- CF+delta
-    }else{
+    }else if(deltaop=='ratio'){
       #Downscale by percentage delta (never negative)
-      delta<-do.call(OPT, list(CF))/do.call(OPT, list(CH))
+      delta<-do.call(OPT, list(deltatype))/do.call(deltatype, list(CH))
       message("ignore warning message; vector recycling in effect")
       CF[1:length(CF)] <- LH
       SDF<-CF*delta
+    }else{
+      stop(paste("DeltaSD Downscaling Error: deltaop", deltaop, "is not one of 'ratio' or 'add'"))
     }
     return (SDF)
 }
@@ -253,32 +261,3 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
 # #   print(summary(new))
 #   return(new)
 # }
-
-##########Section for PP methods: Methods that take a dataset, adjust its values somehow, and 
-##########produce a vector of the same type. Note that there ***might*** be an overlap with the
-##########downscaling methods, but that's slightly incidental. 
-
-#'Methods in this section gernally assume four arguments: 
-#'@param data: The data to be adjusted. Generally a product of a previous
-#'downscaling run. 
-#'@param check: A vector of 1's and 0's representing the results of a 
-#'previous QC check on the data vector. A 1 means that the data passed,
-#' a 0 means that it failed.
-#'@param check.data: An optional parameter for some methods. Instead of
-#'attempting to correct the data parameter, the check.data vector is used
-#'to substitute for the corresponding value in data.
-#'@args: Optional arguments for the adjustment function. 
-
-postProc_byCheck <- function(data, check, check.data, args){
-  #TODO: At some point, include the var post-processing option
-  #and some sort of units check to go with it.
-  if(!is.null(args$compare.factor)){
-    correct.factor <- args$compare.factor
-    args$compare.factor <- NULL
-  }else{
-    correct.factor = 6
-  }
-  if(length(args)!=0) sample.args=args else sample.args=NULL
-  out.vals <- ifelse( (check==1), yes=data, no=check.data )
-  return(out.vals)
-}
