@@ -1,4 +1,4 @@
-module load python/2.7.3
+module load python/2.7.1
 setenv BASEDIR "/home/cew/Code/fudge2014/" 
 setenv PYTHONPATH ${BASEDIR}/utils/aux/
 alias expergen python $BASEDIR/bin/expergen.py
