@@ -4,11 +4,14 @@
 if (($?argv == '-h') ||($#argv < 4)) then
    echo "Usage: Please provide valid arguments"
    echo "  args = INDIR MINIFILEPREFIX OFILE AUXDIR region=region_name"
-   echo "  region_name will appear in metadata and DRS 
+   echo "  region_name will appear in metadata and DRS "
    echo " Eg: cattool  $TMPDIR/archive/a1r/v0122v4/30lo30/ tasmax_day_GFDL-ARRMv1-xval-30lo30_amip_r2i1p1_19790101-20081231 outH3.nc /home/a1r/gitlab/ region=US48"
 
    exit 1
 endif
+echo "trying with delib. attempt to break and no quote after DRS"
+#echo $fakevar
+
 set inc = $#argv # ? to #
 #echo $inc
 #######################################################
