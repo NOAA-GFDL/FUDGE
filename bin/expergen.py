@@ -237,6 +237,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
          dim = "OneD"
         else:
          dim = "ZeroD"
+	print(dim)
         if(output_grid == 'station'):
                 if(latjstart == latjend):
                         dsuffix = "J"+str(latjstart)
@@ -248,9 +249,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		output_grid = "US48"
                 dsuffix = "J454-567"
 		region = output_grid
+		dim1 = dim
         elif(region == 'global'):
                 dsuffix = "J1-720"
 		region = output_grid
+		dim1 = dim
         else:
 	   if(file_j_range != ''):
 	   	dsuffix=file_j_range
@@ -258,6 +261,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		dim = output_grid+"/"+dim1
 	   else:
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
+	print(dim1)
         ############ target get dir info ########################
 	dict_target,listt = getFacets(target_id,target,dim,'target_id')
 	#print dict_target

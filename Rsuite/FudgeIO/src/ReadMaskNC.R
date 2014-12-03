@@ -17,7 +17,7 @@
 ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, get.bounds.vars=FALSE) {
   message('Obtaining mask vars')
   mask.var <- names(mask.nc$var)[which(regexpr(pattern="mask", names(mask.nc$var)) != -1)]
-  if(is.null(mask.var)){
+  if(identical(mask.var, character(0))){
     stop(paste("Mask name error: no variable within the file", mask.nc$filename, 
                "has a name that matches the pattern 'mask'. "))
   }
