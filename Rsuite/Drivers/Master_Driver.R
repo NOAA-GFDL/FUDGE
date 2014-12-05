@@ -15,9 +15,11 @@ source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
 #-------Add traceback call for error handling -------
 stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
 error.handler.function <- function(){
-  message(traceback)
+  #message(writeLines(traceback()))
+  traceback()
   message("Quitting gracefully with exit status 1")
-  quit(save="no", status=1, runlast=FALSE)
+  #If quitting from a non-interactive session, a status of 1 should be sent. Test this.
+  #quit(save="no", status=1, runLast=FALSE, save=FALSE) #runLast=FALSE
 }
 #previously traceback
 options(error=error.handler.function, warn = 1, showErrorCalls=TRUE)
@@ -137,52 +139,52 @@ adjust.list <- QCSection5(mask.list)
 
 # # spatial mask read check
  message("Checking for spatial masks vars")
-# spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-# spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
-# print('OpenNC spatial mask: success..1') 
-# 
-# #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-# spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
-# print('ReadMaskNC spatial mask: success..1')
-# 
-# print("get xlon,ylat")
-# xlon <- sort(spat.mask$dim$lon)
-# print("xlon: received")
-# ylat <- sort(spat.mask$dim$lat)
-# print("ylat: received")
+spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
+spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
+print('OpenNC spatial mask: success..1') 
+
+#ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
+spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
+print('ReadMaskNC spatial mask: success..1')
+
+print("get xlon,ylat")
+xlon <- sort(spat.mask$dim$lon)
+print("xlon: received")
+ylat <- sort(spat.mask$dim$lat)
+print("ylat: received")
 
 message("Reading in and checking time windowing masks")
-# if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
-#   #Future data used in downscaling will be underneath the fut.time tag
-#   if(fut.time.trim.mask=='na'){
-#     #If there is no time trimming mask:
-#     print(paste("time trimming mask", fut.time.trim.mask))
-#     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-#                                        esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
-#     names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
-#   }else{
-#     #If there is a time trimming mask
-#     print(paste("time trimming mask", fut.time.trim.mask))
-#     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-#                                        esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
-#                                        time.prune.mask = fut.time.trim.mask)
-#     names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
-#   }
-# }else{
-#   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-#   tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-#                                      esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
-#   names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
-# }
-# 
-# print(names(tmask.list))
-# 
-# #Check time masks for consistency against each other
-# QCTimeWindowList(tmask.list, k=k.fold)
-# #Obtain time series and other information for later checks
-# downscale.tseries <- tmask.list[[length(tmask.list)]]$dim$tseries
-# downscale.origin <- attr(tmask.list[[length(tmask.list)]]$dim$tseries, "origin")
-# downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar")
+if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
+  #Future data used in downscaling will be underneath the fut.time tag
+  if(fut.time.trim.mask=='na'){
+    #If there is no time trimming mask:
+    print(paste("time trimming mask", fut.time.trim.mask))
+    tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
+    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+  }else{
+    #If there is a time trimming mask
+    print(paste("time trimming mask", fut.time.trim.mask))
+    tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
+                                       time.prune.mask = fut.time.trim.mask)
+    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
+  }
+}else{
+  #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                     esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
+  names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
+}
+
+print(names(tmask.list))
+
+#Check time masks for consistency against each other
+QCTimeWindowList(tmask.list, k=k.fold)
+#Obtain time series and other information for later checks
+downscale.tseries <- tmask.list[[length(tmask.list)]]$dim$tseries
+downscale.origin <- attr(tmask.list[[length(tmask.list)]]$dim$tseries, "origin")
+downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar")
 
 ### Now, access input data sets
 ### For the variables specified in predictor.vars

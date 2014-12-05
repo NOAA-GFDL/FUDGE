@@ -25,11 +25,15 @@ def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
 		else:
-			if(key == 'maskvar'):
-				print "use output_grid/region name in XML instead -- applicable for US48/PM"
-				key='output_grid'
-				val = checkTags(dictParams.key)
-			elif(key == 'oroot'):
+			###CEW mod 12-5: MJN spatial masks use same format as everything else for US48/PM
+			#if(key == 'maskvar'): 
+				#print "use output_grid/region name in XML instead -- applicable for US48/PM"
+				#key='output_grid'
+				#print "About to check the mask var"
+				#val = checkTags(dictParams.key)
+				#print "Done checking maskvar"
+			#elif(key == 'oroot'):
+			if(key == 'oroot'):
 				#projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/RedRiver/"
 				print "use output root default value", projectRoot
 				val = projectRoot
@@ -165,6 +169,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	auxcustom = fut_time_trim_mask
 	###########################################
         output_grid = checkTags(dictParams,'output_grid')
+	###CEW edit
+	print "About to call checkTags on region"
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
         file_j_range = checkTags(dictParams,'file_j_range')
@@ -248,11 +254,12 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         elif((output_grid == 'US48') | (output_grid == 'us48')):
 		output_grid = "US48"
                 dsuffix = "J454-567"
-		region = output_grid
+		#CEW comment out for the PM data
+		#region = output_grid
 		dim1 = dim
         elif(region == 'global'):
                 dsuffix = "J1-720"
-		region = output_grid
+		#region = output_grid
 		dim1 = dim
         else:
 	   if(file_j_range != ''):
