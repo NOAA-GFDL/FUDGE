@@ -139,13 +139,17 @@ adjust.list <- QCSection5(mask.list)
 
 # # spatial mask read check
  message("Checking for spatial masks vars")
+if(spat.mask.dir_1!="none"){
+#spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
 spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
 spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
 print('OpenNC spatial mask: success..1') 
-
 #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
 spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
 print('ReadMaskNC spatial mask: success..1')
+}else{
+  message("no spatial mask included")
+}
 
 print("get xlon,ylat")
 xlon <- sort(spat.mask$dim$lon)
@@ -188,6 +192,10 @@ downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar"
 
 ### Now, access input data sets
 ### For the variables specified in predictor.vars
+target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
+print(target.filename)
+out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+print(out.filename)
 for (predictor.var in predictor.vars){
   print(paste("predictor:",predictor.var,sep='')) 
   #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
@@ -197,17 +205,11 @@ for (predictor.var in predictor.vars){
   ######################## input minifiles ####################
   
   ###CEW edit 8-28: Will not run without initializing predictor.var
-  
-
   hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
   print(hist.filename)
   fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 #  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 #  print(fut.filename)
-  target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
-  print(target.filename)
-  out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-  print(out.filename)
   
   # load the sample input datasets to numeric vectors
   hist.ncobj <- OpenNC(hist.indir_1,hist.filename)

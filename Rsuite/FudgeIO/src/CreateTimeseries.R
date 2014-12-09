@@ -22,20 +22,20 @@ CreateTimeseries <- function(timeseries, origin, calendar, sourcefile="some file
   seconds.per.day <- 86400
   if (is.null(origin)){
     warning(paste("NetCDF formatting warning: file", sourcefile, 
-                  "used as a source of masks, does not have units underneath ncobject$dim$time$units."))
+                  "used as a source of time coordinates, does not have units underneath ncobject$dim$time$units."))
   }
   origin <- substr(origin, regexpr("[[:digit:]]", origin)[1], nchar(origin))
   #Check calendar
   if (is.null(calendar)){
     warning(paste("NetCDF formatting warning: file", sourcefile, 
-                  "used as a source of masks, does not have a calendar", 
+                  "used as a source of time coordinates, does not have a calendar", 
                   "underneath this$dim$time$calendar."))
   }
   if (calendar %in% c('Julian', 'julian', "JULIAN")){
     all.time <- CheckJulian(calendar, timeseries, origin)
     attr(all.time, "calendar") <- "julian"
   } else if (!calendar%in%c('gregorian', 'proleptic_gregorian', '365-day', 'noleap', '360', '360-day')){
-    warning(paste("NetCDF formatting warning: file", sourcefile, "used as a source of masks,",
+    warning(paste("NetCDF formatting warning: file", sourcefile, "used as a source of time coordinates,",
                   'contained calendar', calendar,',not recognized by PCICt'))
   }else{
     origin.time <- as.PCICt(origin, calendar)
