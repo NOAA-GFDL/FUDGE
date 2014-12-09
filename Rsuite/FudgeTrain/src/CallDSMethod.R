@@ -244,7 +244,7 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
       SDF<- CF+delta
     }else if(deltaop=='ratio'){
       #Downscale by percentage delta (never negative)
-      delta<-do.call(OPT, list(deltatype))/do.call(deltatype, list(CH))
+      delta<-do.call(deltatype, list(CF))/do.call(deltatype, list(CH))
       message("ignore warning message; vector recycling in effect")
       CF[1:length(CF)] <- LH
       SDF<-CF*delta
