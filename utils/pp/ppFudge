@@ -9,6 +9,7 @@
 #PBS -q batch
 #
 #unset echo
+echo "entering pp_fudge"
 if ($#argv < 9) then
  set usage=" (run on PAN) Please provide 8 command line arguments- basedir indir method var epoch rip region ver \n"
  set usage="$usage Eg. ppFudge /home/a1r/gitlab/ /work/a1r/NCPP2013/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/OneD/v20120422/ GFDL-ARRMv1-FutUS48-xval-60lo0 tasmax sst2090 r1i1p1 US48 v20120422"

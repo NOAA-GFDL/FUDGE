@@ -1,4 +1,4 @@
-#!/usr/local/python/2.7.3/bin/python
+#!/usr/local/python/2.7.1/bin/python
 import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
