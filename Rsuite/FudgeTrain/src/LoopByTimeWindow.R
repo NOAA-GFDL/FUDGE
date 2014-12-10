@@ -102,9 +102,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
-    if (window%%10==0 || window==1){
-      message(paste("starting on window", window, "of", num.masks))
-    }
+    #if (window%%10==0 || window==1){
+    #  message(paste("starting on window", window, "of", num.masks))
+    #}
     window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
     window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
     window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
