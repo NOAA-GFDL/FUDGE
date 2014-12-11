@@ -16,7 +16,7 @@
 #' TODO: Find a better name for general.bias.corrector
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant'){
-#  library(CDFt)
+  #  library(CDFt)
   return(switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
@@ -69,7 +69,7 @@ callCDFt <- function (pred, targ, new, args){
       #for results prior to 10-20-14
       npas=length(targ)
     }else if(npas=='future_predictor'){
-        npas=length(new)
+      npas=length(new)
     }
   }else{
     stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
@@ -85,13 +85,13 @@ callCDFt <- function (pred, targ, new, args){
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
     ## explanation as to why. This way works.
-#     if(!'npas'%in%names(args)){
-#       args <- c(npas=length(targ), args)
-#     }
-#    args.list <- c(list(targ, pred, new), args)
+    #     if(!'npas'%in%names(args)){
+    #       args <- c(npas=length(targ), args)
+    #     }
+    #    args.list <- c(list(targ, pred, new), args)
     args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
-#    print("calling CDFt with args:")
-#    print(args)
+    #    print("calling CDFt with args:")
+    #    print(args)
     return(do.call("CDFt", args.list)$DS)
   }
 }
@@ -137,21 +137,25 @@ callBiasCorrection <- function(LH, CH, CF, args){
   # LH: Local Historical (a.k.a. observations)
   # CH: Coarse Historical (a.k.a. GCM historical)
   # CF: Coarse Future (a.k.a GCM future)
-#   if(!is.null(args$size)){
-#     size <- args$size
-#     args$size <- NULL
-#   }else{
-    size <- length(CF)
-#   }
+  # args: A vector of arguments to the function. 
+  #currently takes one: preserve.order="true"
+  #or preserve.order="false"
+  #   if(!is.null(args$size)){
+  #     size <- args$size
+  #     args$size <- NULL
+  #   }else{
+  size <- length(CF)
   prob<-c(0.001:1:size)/size
-  
+  #check the order preservation status
+    in.sort <- order(CF)
+    CF.out <- CF[in.sort]
   # QM Change Factor
   #
-  SDF<-quantile(LH,ecdf(CH)(quantile(CF,prob)),names=FALSE)
+  SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
   #CEW: creation of historical values commented out for the moment
   #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-  
+    SDF <- SDF[order(in.sort)]
   return (SDF)
 }
 
@@ -163,26 +167,24 @@ callEquiDistant <- function(LH, CH, CF, args){
   # CH: Coarse Historical (a.k.a. GCM historical)
   # CF: Coarse Future (a.k.a GCM future)
   #'Cites Li et. al. 2010
-#   if(!is.null(args$size)){
-#     size <- args$size
-#     args$size <- NULL
-#   }else{
-    size <- length(CF)
-#   }
+  size <- length(CF)
   prob<-c(0.001:1:size)/size
+  
+  #check order preservation status
+    in.sort <- order(CF)
+    CF.out <- CF[in.sort]
+
   #Create numerator and denominator of equation
-  temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   print(length(temporal))
-#   print(summary(temporal))
-  temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   print(length(temporal2))
-#   print(summary(temporal2))
+  temporal<-quantile(LH,(ecdf(CF.out)(quantile(CF.out,prob))),names=FALSE)
+  temporal2<-quantile(CH,(ecdf(CF.out)(quantile(CF.out,prob))),names=FALSE)
   
   # EQUIDISTANT CDF (Li et al. 2010)
-  SDF<-CF + temporal-temporal2
+  SDF<-CF.out + temporal-temporal2
   #CEW creation of downscaled historical values turned off for the moment
   #SDH<-CH + temporal-temporal2
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+
+    SDF <- SDF[order(in.sort)] 
   return (SDF)
 }
 
@@ -193,20 +195,26 @@ callChangeFactor <- function(LH, CH, CF, args){
     #'@param CH: Coarse Historical (a.k.a. GCM historical)
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'@param args: named list of arguments for the function
-#     if(!is.null(args$size)){
-#       size <- args$size
-#       args$size <- NULL
-#     }else{
-      size <- length(CF)
-#     }
+    #     if(!is.null(args$size)){
+    #       size <- args$size
+    #       args$size <- NULL
+    #     }else{
+    size <- length(CF)
     # first define vector with probabilities [0,1]
     prob<-c(0.001:1:size)/size
     
+    #Check for arg for specifying calendar order preservation
+      in.sort <- order(CF)
+      CF.out <- CF[in.sort]
+
     # QM Change Factor
-    SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
+    SDF<-quantile(CF.out,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
-    #SDoutput<-list("SDF"=SDF,"SDH"=SDH)  
+    #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+
+      SDF <- SDF[order(in.sort)]
+ 
     return (SDF)
 }
 
@@ -261,3 +269,4 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
 # #   print(summary(new))
 #   return(new)
 # }
+
