@@ -152,7 +152,7 @@ callBiasCorrection <- function(LH, CH, CF, args){
   # QM Change Factor
   #
   #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
-  SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
+  SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
   #CEW: creation of historical values commented out for the moment
   #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
