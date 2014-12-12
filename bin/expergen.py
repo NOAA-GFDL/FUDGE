@@ -246,10 +246,12 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
                         sys.exit()
         elif((output_grid == 'US48') | (output_grid == 'us48')):
 		output_grid = "US48"
+		dim1=dim
                 dsuffix = "J454-567"
 		region = output_grid
         elif(region == 'global'):
                 dsuffix = "J1-720"
+		dim1=dim
 		region = output_grid
         else:
 	   if(file_j_range != ''):

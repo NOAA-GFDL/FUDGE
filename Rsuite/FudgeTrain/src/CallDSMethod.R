@@ -151,6 +151,7 @@ callBiasCorrection <- function(LH, CH, CF, args){
     CF.out <- CF[in.sort]
   # QM Change Factor
   #
+  #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
   SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
   #CEW: creation of historical values commented out for the moment
   #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
@@ -218,7 +219,7 @@ callChangeFactor <- function(LH, CH, CF, args){
     return (SDF)
 }
 
-callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
+callDeltaSD <- function(LH,CH,CF,args){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #'@param LH: Local Historical (a.k.a. observations)
