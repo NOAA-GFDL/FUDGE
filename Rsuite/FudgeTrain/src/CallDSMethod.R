@@ -22,7 +22,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                 'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
-                "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
+                "BCQM" = callBiasCorrection(train.target, train.predict, esd.gen, args), 
                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
@@ -144,6 +144,23 @@ callBiasCorrection <- function(LH, CH, CF, args){
   #     size <- args$size
   #     args$size <- NULL
   #   }else{
+  if(!is.null(args$flip)){
+    if(args$flip=="true"){
+      size <- length(CF)
+      prob<-c(0.001:1:size)/size
+      #check the order preservation status
+      in.sort <- order(CF)
+      CF.out <- CF[in.sort]
+      # QM Change Factor
+      #
+      #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
+      SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
+      #CEW: creation of historical values commented out for the moment
+      #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
+      #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+      SDF <- SDF[order(in.sort)]
+    }
+  }else{
   size <- length(CF)
   prob<-c(0.001:1:size)/size
   #check the order preservation status
@@ -151,13 +168,14 @@ callBiasCorrection <- function(LH, CH, CF, args){
     CF.out <- CF[in.sort]
   # QM Change Factor
   #
-  #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
-  SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
+  SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
+  #SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
   #CEW: creation of historical values commented out for the moment
   #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
     SDF <- SDF[order(in.sort)]
   return (SDF)
+  }
 }
 
 callEquiDistant <- function(LH, CH, CF, args){
