@@ -162,7 +162,7 @@ callBiasCorrection <- function(LH, CH, CF, args){
     }
   }else{
   size <- length(CF)
-  prob<-c(0.001:1:size)/size
+  prob<-seq(from=1/size, by=1, to=size)/size
   #check the order preservation status
     in.sort <- order(CF)
     CF.out <- CF[in.sort]
@@ -187,15 +187,24 @@ callEquiDistant <- function(LH, CH, CF, args){
   # CF: Coarse Future (a.k.a GCM future)
   #'Cites Li et. al. 2010
   size <- length(CF)
-  prob<-c(0.001:1:size)/size
+  prob<-seq(from=1/size, by=1, to=size)/size
   
   #check order preservation status
-    in.sort <- order(CF)
-    CF.out <- CF[in.sort]
+#    in.sort <- order(CF)
+#    CF.out <- CF[in.sort]
 
   #Create numerator and denominator of equation
-  temporal<-quantile(LH,(ecdf(CF.out)(quantile(CF.out,prob))),names=FALSE)
-  temporal2<-quantile(CH,(ecdf(CF.out)(quantile(CF.out,prob))),names=FALSE)
+  #First scale with local historical and reorder
+  temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+  LH.interp <- interpolate.points(LH, size)
+  LH.order <- order(LH.interp)
+  temporal <- temporal(LH.order)
+  
+  #And then scale with climate historical
+  temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+  CH.interp <- interpolate.points(CH, size)
+  CH.order <- order(CH.interp)
+  temporal <- temporal(CH.order)
   
   # EQUIDISTANT CDF (Li et al. 2010)
   SDF<-CF.out + temporal-temporal2
@@ -220,20 +229,22 @@ callChangeFactor <- function(LH, CH, CF, args){
     #     }else{
     size <- length(CF)
     # first define vector with probabilities [0,1]
-    prob<-c(0.001:1:size)/size
+    prob<-seq(from=1/size, by=1, to=size)/size
     
     #Check for arg for specifying calendar order preservation
-      in.sort <- order(CF)
-      CF.out <- CF[in.sort]
+      #in.sort <- order(LH)
+      #LH.out <- LH[in.sort]
+    #in.sort <- order(CF)
+    #CF.out <- CF[in.sort]
+    LH.interp <- interpolate.points(LH, size)
+    LH.order <- order(LH.interp)
 
     # QM Change Factor
-    SDF<-quantile(CF.out,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
+    SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-
-      SDF <- SDF[order(in.sort)]
- 
+      SDF <- SDF[order(LH.order)]
     return (SDF)
 }
 
@@ -289,3 +300,55 @@ callDeltaSD <- function(LH,CH,CF,args){
 #   return(new)
 # }
 
+interpolate.points <- function(invec, len.outvec){
+  #Adds or subtracts points in a vector invec, maintaining its
+  #distribution, in order to match an input length, len.outvec.
+  #Is not meant to be called if len.outvec == len(invec)
+  #Note: successfully resisted urge to name it Procrustes.
+  outvec <- rep(NA, len.outvec)
+  
+  if(length(invec) > len.outvec){
+    #If fewer points are needed
+    changevec <- round((length(invec)/len.outvec)*seq(1:len.outvec))
+    for (i in 1:len.outvec){
+      #This is going to need to be updated with a constant random seed
+      if(is.na(outvec[i])){ #If cell not occupied
+        outvec[i] <- invec[changevec[i]]
+      }
+    }
+  }else{
+    #If more points are needed
+    #You will add either one or two points each time
+    #Add the first and last indices to the output vector
+    outvec[1] <- invec[1]
+    outvec[length(outvec)] <- invec[length(invec)] 
+    #Remove for next step
+    #Note: this will fail for n < 3 points, but that seems unlikely here
+    invec <- invec[seq(2,(length(invec)-1))] #-1
+    
+    changevec <- round((length(invec)/(len.outvec-2))*seq(1:(len.outvec-2)))
+    #changevec <- changevec +1
+    #changevec[changevec==len.outvec] <- len.outvec-1
+    #unique.indices <- unique(changevec)
+    
+    for (i in 1:(length(invec))){ #unique.indices
+      #index <- unique.indices[i]
+      index <- i
+      index.map <- which(changevec==index)[1]
+      outvec[index.map+1] <- invec[i]
+    }
+    interp.indices <- which(!is.na(outvec))
+    for(j in 2:length(interp.indices)){
+      startval <- outvec[interp.indices[j-1]]
+      endval <- outvec[interp.indices[j]]
+      vec.len <- (interp.indices[j]-interp.indices[j-1] + 1)
+      outvec[interp.indices[j-1]:interp.indices[j]] <- interp.points(startval, endval, vec.len)
+    }
+  }
+  return(outvec)
+}
+
+interp.points <- function(startpoint, endpoint, len.out){
+  #Linera interpolation of len.outvalues between two points, including the starting point
+  return(startpoint + ((endpoint-startpoint)/(len.out-1))*seq(from=0, by=1, to=(len.out-1)))
+}
