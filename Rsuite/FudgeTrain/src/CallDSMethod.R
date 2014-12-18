@@ -308,13 +308,6 @@ interpolate.points <- function(invec, len.outvec){
     set.seed(seed=8675309, kind="Mersenne-Twister", normal.kind="Inversion")
     indices <- sort(sample.int(n=length(invec), len.outvec, replace=FALSE))
     outvec <- invec[indices]
-#     changevec <- round((length(invec)/len.outvec)*seq(1:len.outvec))
-#     for (i in 1:len.outvec){
-#       #This is going to need to be updated with a constant random seed
-#       if(is.na(outvec[i])){ #If cell not occupied
-#         outvec[i] <- invec[changevec[i]]
-#       }
-#     }
   }else{
     #If more points are needed
     #You will add either one or two points each time
