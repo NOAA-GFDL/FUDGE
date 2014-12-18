@@ -198,21 +198,21 @@ callEquiDistant <- function(LH, CH, CF, args){
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
   LH.interp <- interpolate.points(LH, size)
   LH.order <- order(LH.interp)
-  temporal <- temporal(LH.order)
+  temporal <- temporal[LH.order]
   
   #And then scale with climate historical
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
   CH.interp <- interpolate.points(CH, size)
   CH.order <- order(CH.interp)
-  temporal <- temporal(CH.order)
+  temporal <- temporal[CH.order]
   
   # EQUIDISTANT CDF (Li et al. 2010)
-  SDF<-CF.out + temporal-temporal2
+  SDF<-CF + temporal-temporal2
   #CEW creation of downscaled historical values turned off for the moment
   #SDH<-CH + temporal-temporal2
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
 
-    SDF <- SDF[order(in.sort)] 
+    #SDF <- SDF[order(in.sort)] 
   return (SDF)
 }
 
@@ -232,10 +232,6 @@ callChangeFactor <- function(LH, CH, CF, args){
     prob<-seq(from=1/size, by=1, to=size)/size
     
     #Check for arg for specifying calendar order preservation
-      #in.sort <- order(LH)
-      #LH.out <- LH[in.sort]
-    #in.sort <- order(CF)
-    #CF.out <- CF[in.sort]
     LH.interp <- interpolate.points(LH, size)
     LH.order <- order(LH.interp)
 
@@ -309,13 +305,16 @@ interpolate.points <- function(invec, len.outvec){
   
   if(length(invec) > len.outvec){
     #If fewer points are needed
-    changevec <- round((length(invec)/len.outvec)*seq(1:len.outvec))
-    for (i in 1:len.outvec){
-      #This is going to need to be updated with a constant random seed
-      if(is.na(outvec[i])){ #If cell not occupied
-        outvec[i] <- invec[changevec[i]]
-      }
-    }
+    set.seed(seed=8675309, kind="Mersenne-Twister", normal.kind="Inversion")
+    indices <- sort(sample.int(n=length(invec), len.outvec, replace=FALSE))
+    outvec <- invec[indices]
+#     changevec <- round((length(invec)/len.outvec)*seq(1:len.outvec))
+#     for (i in 1:len.outvec){
+#       #This is going to need to be updated with a constant random seed
+#       if(is.na(outvec[i])){ #If cell not occupied
+#         outvec[i] <- invec[changevec[i]]
+#       }
+#     }
   }else{
     #If more points are needed
     #You will add either one or two points each time
@@ -342,7 +341,9 @@ interpolate.points <- function(invec, len.outvec){
       startval <- outvec[interp.indices[j-1]]
       endval <- outvec[interp.indices[j]]
       vec.len <- (interp.indices[j]-interp.indices[j-1] + 1)
-      outvec[interp.indices[j-1]:interp.indices[j]] <- interp.points(startval, endval, vec.len)
+      if(vec.len > 2){ #If the two are not right next to each other
+        outvec[interp.indices[j-1]:interp.indices[j]] <- interp.points(startval, endval, vec.len)
+      }
     }
   }
   return(outvec)
@@ -351,4 +352,5 @@ interpolate.points <- function(invec, len.outvec){
 interp.points <- function(startpoint, endpoint, len.out){
   #Linera interpolation of len.outvalues between two points, including the starting point
   return(startpoint + ((endpoint-startpoint)/(len.out-1))*seq(from=0, by=1, to=(len.out-1)))
+  #return(approx(x=c(startpoint, endpoint), y=NULL, n=len.out, method='linear')$x)
 }
