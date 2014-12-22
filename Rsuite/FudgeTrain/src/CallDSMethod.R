@@ -5,28 +5,39 @@
 #' esd.gen. No cross-validation is used for these methods. 
 #' 
 #' @param ds.method: a string representation of the downscaling data to be used. 
-#' @param train.predict: a vector of predictor data
-#' @param train.target: a vector of the target data
-#' @param esd.gen: a vector of the data used to generate downscaled data 
+#' @param train.predict: A list of vectors of train.predictor data. For any downscaling run, 
+#' there can be multiple predictor datasets - both in a multivariate sense and a multiple point
+#' sense.
+#' @param train.target: a vector of train.target data. For any downscaling run, there should 
+#' only ever be one target dataset of one variable length.
+#' @param esd.gen: A list of lists of vectors of esd generation data. For any downscaling run, 
+#' if we attempt to train the data and apply it as separate steps, it should be possible to 
+#' apply that training to several possible realizations - each of which is effectively a 
+#' train.predict data structure. 
 #' @param args = NULL: a list of arguments to be passed to the downscaling function.
 #' Defaults to NULL (no arguments)
 #' @param ds.var: The target variable. Can be used to key off of some methods. 
 #' @examples 
 #' @references \url{link to the FUDGE API documentation} 
 #' TODO: Find a better name for general.bias.corrector
+#' TODO: Modify methods other than simple.lm for this kind of dataset manipulation. 
+#' TODO: add explicit rather than implicit multivariate support
+#' TODO: Find better way to initialize the output storage vectors
+#' TODO: Seriously, THERE HAS GOT TO BE A LESS COMPLEX WAY
 
-CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant'){
+CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant', ds.lengths=list("none")){
 #  library(CDFt)
   return(switch(ds.method, 
-                "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
-                'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
-                'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
-                'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
-                "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
-                "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
-                "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
-                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
-                'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
+                "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen, args),
+                "multivar.lm" = callMulti.lm(train.predict, train.target, esd.gen, args, ds.lengths),
+#                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
+#                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
+#                 'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
+#                 "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
+#                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
+#                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
+#                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
+#                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method)))
 }
 
@@ -47,11 +58,66 @@ callSimple.lm <- function(pred, targ, new, args){
   }
   trained.function<-function(x){
     print(lm.intercept)
-    print(lm.slope)
-    return( lm.intercept + unlist(x)*lm.slope)
+    print(lm.slope1)
+    return( lm.intercept + unlist(x)*lm.slope1 + unlist(x)*lm.slope2)
   }
   #insert save command for saving 
   return(trained.function(new))
+}
+
+callMulti.lm <- function(pred, targ, new, args, ds.lengths){
+  #Creates a simple linear model without a cross-validation step. 
+  #Mostly used to check that the procedure is working
+  #esdgen.lengths <- length(new[[seq(1:length(new))]][[1]])
+  
+  #Initialize output structure
+  print("inside ds fxn")
+  #ds.lengths <- lapply(new, attr, "ds.length")
+  #output <- rep(list("empty"), length(names(new)))
+  #print(length(output))
+  #names(output) <- names(new)
+ # print(summary(output))
+  output <- list()
+  print("looping on new")
+  print(ds.lengths)
+  print(mode(ds.lengths))
+  for(el in 1:length(new)){
+    print(el)
+    print(ds.lengths[[el]])
+    new.list <- rep(NA, ds.lengths[[el]])
+    output[[names(new)[el]]] <- new.list
+    print("assignment")
+    print(length(output[[el]]))
+    print(paste("lenght of output:", length(output)))
+  }
+  
+  #First, get matrix of predictor values to use for prediction
+  pred.mat <- matrix(unlist(pred, use.names=FALSE), ncol=length(pred), byrow=FALSE)
+  print("dimensions of predictor matrix")
+  print(dim(pred.mat))
+  print(length(unlist(targ)))
+  lm.coef <- coef(lm(unlist(targ) ~ pred.mat))
+  
+  for (i in 1:length(new)){ #new is organized first by RIP, then component
+    new.name <- names(new)[i]
+    #initialize ouput vector
+    #out.vec <- rep(NA, length(new$rip[1]))
+    new.mat <- matrix(unlist(new[i], use.names=FALSE), ncol=length(pred), byrow=FALSE)
+    #Note that this assumes that the order of the points/vars
+    #is the same for the predictor as the esd.gen datasets
+    #Multiply over all the columns
+    no.intercept <- sweep(x=new.mat, MARGIN=2, lm.coef[2:length(lm.coef)], "*")
+    #Replace any NA values with 0 for the addition step
+    no.intercept[is.na(no.intercept)] <- 0
+    no.intercept <- apply(X=no.intercept, MARGIN=1, "sum")
+    outvec <- no.intercept + lm.coef[1]
+    print(mode(outvec))
+    print(summary(outvec))
+    output[new.name] <- list(outvec)
+    print(summary(output))
+  }
+  print(summary(output))
+  return(output)
 }
 
 callCDFt <- function (pred, targ, new, args){

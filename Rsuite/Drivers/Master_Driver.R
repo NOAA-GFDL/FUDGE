@@ -140,15 +140,15 @@ adjust.list <- QCSection5(mask.list)
 # # spatial mask read check
  message("Checking for spatial masks vars")
 if(spat.mask.dir_1!="none"){
-#spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
-spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
-print('OpenNC spatial mask: success..1') 
-#ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
-print('ReadMaskNC spatial mask: success..1')
+  #spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
+  spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
+  spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
+  print('OpenNC spatial mask: success..1') 
+  #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
+  spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
+  print('ReadMaskNC spatial mask: success..1')
 }else{
-  message("no spatial mask included")
+  message("no spatial mask included; skipping to next step")
 }
 
 print("get xlon,ylat")
@@ -196,8 +196,13 @@ target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,targe
 print(target.filename)
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 print(out.filename)
-for (predictor.var in predictor.vars){
+list.target <- ReadNC(OpenNC(target.indir_1, target.filename), dim="spatial")#,dstart=c(1,1,1),dcount=c(1,140,16436)
+
+for (predictor.var in 1:length(predictor.vars)){
+  #for (i in 1:length(i.files)){ #At some point, discuss how to pass this from the input r code
+  #Note that this loop could probably give you the corresponding index of the input directories
   print(paste("predictor:",predictor.var,sep='')) 
+  var <- predictor.vars[predictor.var]
   #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
   #There is also probably an elegant way to generalize this for an unknown number of input files, but that 
   #should wait for later. See QCINput for more information on what that might look like.
@@ -208,27 +213,24 @@ for (predictor.var in predictor.vars){
   hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
   print(hist.filename)
   fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-#  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-#  print(fut.filename)
-  
+
   # load the sample input datasets to numeric vectors
   hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
   print("OpenNC: success..1")
-  target.ncobj <- OpenNC(target.indir_1,target.filename)
-  print("OpenNC: success..2")
-  fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
-  print("OpenNC: success..3")
-  
-  #Read in sample data
-  list.hist <- ReadNC(nc.object = hist.ncobj,
-                      var.name=predictor.var)#dstart=c(1,1,1),dcount=c(1,140,16436)
-  print("ReadNC: success..1")
-  list.fut  <- ReadNC(fut.ncobj,var.name=predictor.var) #,dstart=c(1,1,1),dcount=c(1,140,34333) aka length(xlon), lenght(ylat)
-  #Also temporarily hard-coded due to longer timeseries and length of mask files
-  print("ReadNC: success..2")
-  list.target <- ReadNC(target.ncobj,var.name=predictor.var) #,dstart=c(1,1,1),dcount=c(1,140,16436)
-  #Temporarily hard-coded due to longer time series on train.target
-  print("ReadNC: success..3")
+  #CEW: Assumes that predictor.vars is a character vector
+  #temp.list <- ReadNC(nc.object = hist.ncobj, var.name=predictor.var, dim='spatial')#dstart=c(1,1,1),dcount=c(1,140,16436)
+  ds.struct$hist[[var]] <- ReadNC(nc.object = hist.ncobj, var.name=var, dim="none")
+  #Now start on multiple realizations present
+  #seriosly talk to Aparna about how to specify this
+  for(rip in 1:length(rips)){
+    fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
+    print("OpenNC: success..3")
+    if(!is.null(ds.struct$esd[[var]][[rip]]$dim)){ #If time dimension has not yet been obtained
+      ds.struct$esd[[var]][[rip]] <- ReadNC(fut.ncobj,var.name=var, rip=rip, dim='temporal')
+    }else{
+      ds.struct$esd[[var]][[rip]][[paste(var, rip, sep=".")]] <- ReadNC(fut.ncobj, var.name=var, dim="none")
+    }
+  }
 
   ####Precipitation changes go here
   if(predictor.var=='pr' && exists('pr_opts')){
