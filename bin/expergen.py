@@ -173,6 +173,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "About to call checkTags on region"
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
+        spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
+	#print "spat_mask_ID:", spat_mask_ID
         file_j_range = checkTags(dictParams,'file_j_range')
         lats = checkTags(dictParams,'lats')
         late = checkTags(dictParams,'late')
