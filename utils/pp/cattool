@@ -32,26 +32,26 @@ set varname = $10
 
 while ( $inc > 0 )
  set opts = $argv[$inc] 
- if ( $opts == 'region=US48') then
-  @ inc1 = $inc + 1  
-  set region = 'US48' 
-  set lons = 748
-  set lone = 941
-  set lats = 454
-  set late = 567
-  set c = 75 ## c is used in while loop  
-  set cend = 93 ## see while #93
-  set lonfile = ${auxfiledir}/us48lon.nc
-  echo "Selected region: "$region ",Longitude index range- "$lons":"$lone  
- else if ( $opts == 'region=global') then
-   @ inc1 = $inc + 1
-   set region = 'global'
-   set lons = 1
-   set lone = 1152
-   set c = $lons
-   set cend = 114
-   set lonfile = ${auxfiledir}/globallon.nc
- else if ( $opts =~ region*) then # for any other region like RR, use common grid
+# if ( $opts == 'region=US48') then
+#  @ inc1 = $inc + 1  
+#  set region = 'US48' 
+#  set lons = 748
+#  set lone = 941
+#  set lats = 454
+#  set late = 567
+#  set c = 75 ## c is used in while loop  
+#  set cend = 93 ## see while #93
+#  set lonfile = ${auxfiledir}/us48lon.nc
+#  echo "Selected region: "$region ",Longitude index range- "$lons":"$lone  
+# else if ( $opts == 'region=global') then
+#   @ inc1 = $inc + 1
+#   set region = 'global'
+#   set lons = 1
+#   set lone = 1152
+#   set c = $lons
+#   set cend = 114
+#   set lonfile = ${auxfiledir}/globallon.nc
+   if ( $opts =~ region*) then # for any other region like RR, use common grid
    echo $opts	 
    echo "..Using passed lons $lons,lone $lone,lats $lats,late $late"
    set region = `echo "$opts" | cut -d'=' -f2`  #$opts |cut -d'=' -f1 
@@ -62,7 +62,7 @@ while ( $inc > 0 )
    set endonce = 0
    ############ removing hardwires assumptions about file prefixes ###############
    foreach ival (`seq $lons 1 $lone`)
-	   echo $ival
+#	   echo $ival
            @ cmod = $ival % 10
         if (($endonce == 0) & ($cmod != 0))then
            if($ccheck != 0) then
@@ -86,7 +86,7 @@ while ( $inc > 0 )
 		set cstart = 0	
 	  else	
 		set clast = `echo "$ival" | cut -d$cmod -f1`
-		echo "debug debug ..........$clast ival $ival"
+		#echo "debug debug ..........$clast ival $ival"
 		set endonce = 1 
 	        set clastsub1 = $cmod 
 	  endif
@@ -95,7 +95,7 @@ while ( $inc > 0 )
    	#set cend = 36 
    end
 ## c is actually cstart 
-echo $endonce
+#echo $endonce
 @ cend = $clast - $endonce 
 if($cend <= $clast) then
 	echo "all points covered, disregard ctail"
@@ -160,7 +160,7 @@ if ( $region == 'global' ) then
 #c set argpath = `echo $argpath $prepath/${prefix}.I94[0-1]_J${lats}-${late}.nc`
 else
  set argpath = `echo $argpath $prepath/${prefix}.I${clast}[0-${clastsub1}]_J${lats}-${late}.nc`
- echo $argpath
+#c echo $argpath
 endif 
 if (($region == 'US48') | ($region == 'PM')) then
 echo "skip.."#c set argpath = `echo $argpath $prepath/${prefix}.I94[1]_J${lats}-${late}.nc`
