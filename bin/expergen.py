@@ -174,6 +174,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
         spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
+	ds_region = spat_mask_ID
 	#print "spat_mask_ID:", spat_mask_ID
         file_j_range = checkTags(dictParams,'file_j_range')
         lats = checkTags(dictParams,'lats')
@@ -189,7 +190,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	if(experiment == 'na'): #if not present in XML
 	        proj = checkTags(dictParams,'project')
                 series = checkTags(dictParams,'series') #experiment series
- 		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+ 		experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
