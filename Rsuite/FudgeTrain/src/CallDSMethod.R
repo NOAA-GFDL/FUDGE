@@ -17,7 +17,8 @@
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant'){
   #  library(CDFt)
-  return(switch(ds.method, 
+  #print(paste("start time:", date()))
+  out <- switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
@@ -25,9 +26,14 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "BCQM" = callBiasCorrection(train.target, train.predict, esd.gen, args), 
                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
+                "CFQMv2" = callCFQMv2(train.target, train.predict, esd.gen, args),
+                "BCQMv2" = callBCQMv2(train.target, train.predict, esd.gen, args),
+                "EDQMv2" = callEDQMv2(train.target, train.predict, esd.gen, args),
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
-                ReturnDownscaleError(ds.method)))
+                ReturnDownscaleError(ds.method))
+  #print(paste("stop time:", date()))
+  return(out)  
 }
 
 ReturnDownscaleError <- function(ds.method){
@@ -196,15 +202,23 @@ callEquiDistant <- function(LH, CH, CF, args){
   #Create numerator and denominator of equation
   #First scale with local historical and reorder
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-  LH.interp <- interpolate.points(LH, size)
-  LH.order <- order(LH.interp)
-  temporal <- temporal[LH.order]
+#   LH.interp <- interpolate.points(LH, size)
+#   LH.order <- order(LH.interp)
+  #Check for arg for specifying calendar order preservation
+  LH.sorted <- order(LH)
+  LH.interp <- interpolate.points(LH, size, 'linear')
+  LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
+  temporal <- temporal[LH.sortorder]
   
   #And then scale with climate historical
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-  CH.interp <- interpolate.points(CH, size)
-  CH.order <- order(CH.interp)
-  temporal <- temporal[CH.order]
+#   CH.interp <- interpolate.points(CH, size)
+#   CH.order <- order(CH.interp)
+  #Check for arg for specifying calendar order preservation
+  CH.sorted <- order(CH)
+  CH.interp <- interpolate.points(CH, size, 'linear')
+  CH.sortorder <- interpolate.points(CH.sorted, size, 'repeat')
+  temporal <- temporal[CH.sortorder]
   
   # EQUIDISTANT CDF (Li et al. 2010)
   SDF<-CF + temporal-temporal2
@@ -232,15 +246,17 @@ callChangeFactor <- function(LH, CH, CF, args){
     prob<-seq(from=1/size, by=1, to=size)/size
     
     #Check for arg for specifying calendar order preservation
-    LH.interp <- interpolate.points(LH, size)
-    LH.order <- order(LH.interp)
+    LH.sorted <- order(LH)
+    LH.interp <- interpolate.points(LH, size, 'linear')
+    LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
+    #LH.order <- order(LH.interp)
 
     # QM Change Factor
     SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-      SDF <- SDF[order(LH.order)]
+      SDF <- SDF[order(LH.sortorder)]
     return (SDF)
 }
 
@@ -296,7 +312,7 @@ callDeltaSD <- function(LH,CH,CF,args){
 #   return(new)
 # }
 
-interpolate.points <- function(invec, len.outvec){
+interpolate.points <- function(invec, len.outvec, interp.mode='linear'){
   #Adds or subtracts points in a vector invec, maintaining its
   #distribution, in order to match an input length, len.outvec.
   #Is not meant to be called if len.outvec == len(invec)
@@ -309,41 +325,172 @@ interpolate.points <- function(invec, len.outvec){
     indices <- sort(sample.int(n=length(invec), len.outvec, replace=FALSE))
     outvec <- invec[indices]
   }else{
-    #If more points are needed
-    #You will add either one or two points each time
-    #Add the first and last indices to the output vector
-    outvec[1] <- invec[1]
-    outvec[length(outvec)] <- invec[length(invec)] 
-    #Remove for next step
-    #Note: this will fail for n < 3 points, but that seems unlikely here
-    invec <- invec[seq(2,(length(invec)-1))] #-1
-    
-    changevec <- round((length(invec)/(len.outvec-2))*seq(1:(len.outvec-2)))
-    #changevec <- changevec +1
-    #changevec[changevec==len.outvec] <- len.outvec-1
-    #unique.indices <- unique(changevec)
-    
-    for (i in 1:(length(invec))){ #unique.indices
-      #index <- unique.indices[i]
-      index <- i
-      index.map <- which(changevec==index)[1]
-      outvec[index.map+1] <- invec[i]
-    }
-    interp.indices <- which(!is.na(outvec))
-    for(j in 2:length(interp.indices)){
-      startval <- outvec[interp.indices[j-1]]
-      endval <- outvec[interp.indices[j]]
-      vec.len <- (interp.indices[j]-interp.indices[j-1] + 1)
-      if(vec.len > 2){ #If the two are not right next to each other
-        outvec[interp.indices[j-1]:interp.indices[j]] <- interp.points(startval, endval, vec.len)
-      }
-    }
+    #okay, trying a new technique here: 
+    set.seed(seed=8675309, kind="Mersenne-Twister", normal.kind="Inversion")
+    indices <- sort(c(seq(1:length(invec)), sample.int(n=(length(invec)), (len.outvec-length(invec)), replace=TRUE)))
+    outvec <- invec[indices]
+#     #If more points are needed
+#     #You will add either one or two points each time
+#     #Add the first and last indices to the output vector
+#     outvec[1] <- invec[1]
+#     outvec[length(outvec)] <- invec[length(invec)] 
+#     #Remove for next step
+#     #Note: this will fail for n < 3 points, but that seems unlikely here
+#     invec <- invec[seq(2,(length(invec)-1))] #-1
+#     
+#     changevec <- round((length(invec)/(len.outvec-2))*seq(1:(len.outvec-2)))
+#     #changevec <- changevec +1
+#     #changevec[changevec==len.outvec] <- len.outvec-1
+#     #unique.indices <- unique(changevec)
+#     
+#     for (i in 1:(length(invec))){ #unique.indices
+#       #index <- unique.indices[i]
+#       index <- i
+#       index.map <- which(changevec==index)[1]
+#       outvec[index.map+1] <- invec[i]
+#     }
+#     interp.indices <- which(!is.na(outvec))
+#     for(j in 2:length(interp.indices)){
+#       startval <- outvec[interp.indices[j-1]]
+#       endval <- outvec[interp.indices[j]]
+#       vec.len <- (interp.indices[j]-interp.indices[j-1] + 1)
+#       if(vec.len > 2){ #If the two are not right next to each other
+#         outvec[interp.indices[j-1]:interp.indices[j]] <- interp.points(startval, endval, vec.len, 
+#                                                                        mode=interp.mode)
+#       }
+#     }
   }
   return(outvec)
 }
 
-interp.points <- function(startpoint, endpoint, len.out){
+interp.points <- function(startpoint, endpoint, len.out, mode){
   #Linera interpolation of len.outvalues between two points, including the starting point
-  return(startpoint + ((endpoint-startpoint)/(len.out-1))*seq(from=0, by=1, to=(len.out-1)))
+  if(mode=='linear'){
+    return(startpoint + ((endpoint-startpoint)/(len.out-1))*seq(from=0, by=1, to=(len.out-1)))
+  }else{
+    return(c(startpoint, rep(endpoint, len.out-1)))
+  }
   #return(approx(x=c(startpoint, endpoint), y=NULL, n=len.out, method='linear')$x)
+}
+
+####CG DS method
+callCFQMv2<-function(LH,CH,CF,args)
+{ 
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)
+  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.LHsorted<-temp[order(temp$LH),]
+  temp.LHsorted$qLH<-quantile(temp.LHsorted$LH,prob,na.rm =TRUE)
+  temp.LHsorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.LHsorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.final<-temp.LHsorted[order(temp.LHsorted$index),]
+  
+  SDF<-temp.final$qCFecdfCHqLH
+  return(SDF)
+}
+
+callCFQMv2<-function(LH,CH,CF,args){
+  #'Calls the latest version of the CFQM function
+  #'as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.LHsorted<-temp[order(temp$LH),]
+  temp.LHsorted$qLH<-quantile(temp.LHsorted$LH,prob,na.rm =TRUE)
+  temp.LHsorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.LHsorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp<-temp.LHsorted[order(temp.LHsorted$index, na.last=FALSE),]
+  
+  SDF<-temp$qCFecdfCHqLH
+  return(SDF)
+}
+
+callBCQMv2<-function(LH,CH,CF,args){
+  #' Calls latest version od BCQM function
+  #' as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)
+    
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.CFsorted<-temp[order(temp$CF),]
+  temp.CFsorted$qCF<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+  temp.CFsorted$ecdfCHqCF<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+  temp.CFsorted$qLHecdfCHqCF<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp<-temp.CFsorted[order(temp.CFsorted$index),]
+  
+  #SDF<-temp.final$qCFecdfCHqLH
+  return(temp$qLHecdfCHqCF)
+}
+
+callEDQMv2<-function(LH,CH,CF,args){ 
+  #' Calls latest version odf the EDQM function
+  #' as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
+                   EquiDistant=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.CFsorted<-temp[order(temp$CF),]
+  temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+  
+  temp.CFsorted$qLHecdfCFqCF<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qCHecdfCFqCF<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
+  temp<-temp.CFsorted[order(temp.CFsorted$index),]
+  print(summary(temp))
+  print(names(temp))
+  
+  #SDF<-temp$qCFecdfCHqLH
+  return(temp$EquiDistant)
 }
