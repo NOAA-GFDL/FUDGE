@@ -327,7 +327,10 @@ interpolate.points <- function(invec, len.outvec, interp.mode='linear'){
   }else{
     #okay, trying a new technique here: 
     set.seed(seed=8675309, kind="Mersenne-Twister", normal.kind="Inversion")
-    indices <- sort(c(seq(1:length(invec)), sample.int(n=(length(invec)), (len.outvec-length(invec)), replace=TRUE)))
+    #Need one set of vectors for every point in the out vector, 
+    #And one set of randomly selected points for the remainder
+    indices <- sort(c( rep(seq(1:length(invec)), floor(len.outvec/length(invec)) ), 
+                      sample.int(n=(length(invec)), size=(len.outvec%%length(invec)), replace=FALSE)))
     outvec <- invec[indices]
 #     #If more points are needed
 #     #You will add either one or two points each time

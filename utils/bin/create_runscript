@@ -100,8 +100,10 @@ foreach i (`seq $lon_start 1 $lon_end`)
  if ($FUT_PRED_DIR != 'NA/') then
  echo 'mkdir -p $TMPDIR'$FUT_PRED_DIR  >> $runpath 
  endif
+# if ($SPAT_MASK_DIR != 'NA/') then
+#        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  if ($SPAT_MASK_DIR != 'NA/') then
-        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+        echo "gcp --sync -cd $SPAT_MASK_DIR/*I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
  	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}0101-${T_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 

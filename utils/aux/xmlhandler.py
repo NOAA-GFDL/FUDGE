@@ -44,6 +44,8 @@ class XMLHandler:
     		dictParams['spat_mask'] = spat_mask
     		maskvar = input_node.attrib.get('maskvar')
     		dictParams['maskvar'] = maskvar
+                spat_mask_ID = input_node.attrib.get('spat_mask_ID')
+                dictParams['spat_mask_ID'] = spat_mask_ID 
 	# Get grid information
 	############## get grid info ######################################### 
 	for grid_node in tree.iter('grid'):

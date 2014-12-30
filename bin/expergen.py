@@ -25,11 +25,15 @@ def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
 		else:
-			if(key == 'maskvar'):
-				print "use output_grid/region name in XML instead -- applicable for US48/PM"
-				key='output_grid'
-				val = checkTags(dictParams.key)
-			elif(key == 'oroot'):
+			###CEW mod 12-5: MJN spatial masks use same format as everything else for US48/PM
+			#if(key == 'maskvar'): 
+				#print "use output_grid/region name in XML instead -- applicable for US48/PM"
+				#key='output_grid'
+				#print "About to check the mask var"
+				#val = checkTags(dictParams.key)
+				#print "Done checking maskvar"
+			#elif(key == 'oroot'):
+			if(key == 'oroot'):
 				#projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/RedRiver/"
 				print "use output root default value", projectRoot
 				val = projectRoot
@@ -165,8 +169,13 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	auxcustom = fut_time_trim_mask
 	###########################################
         output_grid = checkTags(dictParams,'output_grid')
+	###CEW edit
+	print "About to call checkTags on region"
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
+        spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
+	ds_region = spat_mask_ID
+	#print "spat_mask_ID:", spat_mask_ID
         file_j_range = checkTags(dictParams,'file_j_range')
         lats = checkTags(dictParams,'lats')
         late = checkTags(dictParams,'late')
@@ -181,7 +190,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	if(experiment == 'na'): #if not present in XML
 	        proj = checkTags(dictParams,'project')
                 series = checkTags(dictParams,'series') #experiment series
- 		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+ 		experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
@@ -237,6 +246,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
          dim = "OneD"
         else:
          dim = "ZeroD"
+	print(dim)
         if(output_grid == 'station'):
                 if(latjstart == latjend):
                         dsuffix = "J"+str(latjstart)
@@ -248,10 +258,13 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		output_grid = "US48"
 		dim1=dim
                 dsuffix = "J454-567"
-		region = output_grid
+		#CEW comment out for the PM data
+		#region = output_grid
+		dim1 = dim
         elif(region == 'global'):
                 dsuffix = "J1-720"
 		dim1=dim
+		#A1R uncomment during PM edit; no region yet.
 		region = output_grid
         else:
 	   if(file_j_range != ''):
@@ -260,6 +273,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		dim = output_grid+"/"+dim1
 	   else:
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
+	print(dim1)
         ############ target get dir info ########################
 	dict_target,listt = getFacets(target_id,target,dim,'target_id')
 	#print dict_target
