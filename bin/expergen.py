@@ -429,7 +429,8 @@ def main():
 			print "Now invoking cleanup utility..........."
 		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
 		        cleaner_cmd = cleaner_script+" d "+uinput 
-	                print "cleaner_cmd"		
+	                print "cleaner_cmd"
+			print cleaner_cmd		
 	                pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 			#check return code
         		output0, errors0 = pclean.communicate()

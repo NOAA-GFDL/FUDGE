@@ -37,25 +37,45 @@ set outdir=`echo $outdir | tail -c $outcount`
 set outdir=`dirname "$outdir" | xargs dirname | xargs dirname | xargs dirname`
 
 set exp_name=`grep 'ds.experiment' $temp_file`
-echo $exp_name
 set expcount=`echo $exp_name | wc -m`
 set expcount=`expr $expcount - 14`
 set exp_name=`echo $exp_name | tail -c $expcount`
 echo $exp_name
 
+set maskregion=`grep 'region:' $temp_file`
+set regcount=`echo $maskregion | wc -m`
+set regcount=`expr $regcount - 7`
+set maskregion=`echo $maskregion | tail -c $regcount`
+echo "the mask region is: $maskregion"
+
 
 
 if ( $opt == 'd') then
 	if (-e $outdir) then
-	rm -r $outdir
+		rm -r $outdir
 	else echo "$outdir could not be removed; does not exist"
 	endif
-	if (-e $scriptdir/scripts/RR/$exp_name) then
-	rm -r $scriptdir/scripts/RR/$exp_name
-	else echo "$scriptdir could not be removed; does not exist"
+	if (-e $scriptdir/scripts/$maskregion/$exp_name) then
+		rm -r $scriptdir/scripts/$maskregion/$exp_name
+	else echo "$scriptdir/scripts/$maskregion/$exp_name could not be removed; does not exist"
 	endif
-else if ($opt == '-m') then
+else if ($opt == 'm') then
 	echo "Move option is not yet supported"
+	#Count number of experiments existing on system with that filename
+	set num_exp_existing=`dirname $outdir | xargs ls | grep $exp_name | wc -l`
+	set suffix="~$num_exp_existing"
+	set new_outdir="$outdir$suffix"
+	set new_scriptdir="$scriptdir/scripts/$maskregion/$exp_name$suffix"
+	if (-e $new_outdir) then
+		echo "Error in move option: dir $new_outdir already exists. Please check and delete."
+		exit 1
+	else mv $outdir $new_outdir
+	endif
+	if (-e $new_scriptdir) then
+		echo "Error in move option: dir $new_scriptdir already exists. Please check and delete."
+		exit 1
+	else mv $scriptdir/scripts/$maskregion/$exp_name $new_scriptdir
+	endif	
 endif
 
 exit 0
