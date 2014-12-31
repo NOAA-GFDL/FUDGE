@@ -16,18 +16,24 @@
 #' TODO: Find a better name for general.bias.corrector
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant'){
-#  library(CDFt)
-  return(switch(ds.method, 
+  #  library(CDFt)
+  #print(paste("start time:", date()))
+  out <- switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                 'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
-                "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
+                "BCQM" = callBiasCorrection(train.target, train.predict, esd.gen, args), 
                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
+                "CFQMv2" = callCFQMv2(train.target, train.predict, esd.gen, args),
+                "BCQMv2" = callBCQMv2(train.target, train.predict, esd.gen, args),
+                "EDQMv2" = callEDQMv2(train.target, train.predict, esd.gen, args),
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
-                ReturnDownscaleError(ds.method)))
+                ReturnDownscaleError(ds.method))
+  #print(paste("stop time:", date()))
+  return(out)  
 }
 
 ReturnDownscaleError <- function(ds.method){
@@ -69,7 +75,7 @@ callCDFt <- function (pred, targ, new, args){
       #for results prior to 10-20-14
       npas=length(targ)
     }else if(npas=='future_predictor'){
-        npas=length(new)
+      npas=length(new)
     }
   }else{
     stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
@@ -85,13 +91,13 @@ callCDFt <- function (pred, targ, new, args){
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
     ## explanation as to why. This way works.
-#     if(!'npas'%in%names(args)){
-#       args <- c(npas=length(targ), args)
-#     }
-#    args.list <- c(list(targ, pred, new), args)
+    #     if(!'npas'%in%names(args)){
+    #       args <- c(npas=length(targ), args)
+    #     }
+    #    args.list <- c(list(targ, pred, new), args)
     args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
-#    print("calling CDFt with args:")
-#    print(args)
+    #    print("calling CDFt with args:")
+    #    print(args)
     return(do.call("CDFt", args.list)$DS)
   }
 }
@@ -137,22 +143,45 @@ callBiasCorrection <- function(LH, CH, CF, args){
   # LH: Local Historical (a.k.a. observations)
   # CH: Coarse Historical (a.k.a. GCM historical)
   # CF: Coarse Future (a.k.a GCM future)
-#   if(!is.null(args$size)){
-#     size <- args$size
-#     args$size <- NULL
-#   }else{
-    size <- length(CF)
-#   }
-  prob<-c(0.001:1:size)/size
-  
+  # args: A vector of arguments to the function. 
+  #currently takes one: preserve.order="true"
+  #or preserve.order="false"
+  #   if(!is.null(args$size)){
+  #     size <- args$size
+  #     args$size <- NULL
+  #   }else{
+  if(!is.null(args$flip)){
+    if(args$flip=="true"){
+      size <- length(CF)
+      prob<-c(0.001:1:size)/size
+      #check the order preservation status
+      in.sort <- order(CF)
+      CF.out <- CF[in.sort]
+      # QM Change Factor
+      #
+      #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
+      SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
+      #CEW: creation of historical values commented out for the moment
+      #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
+      #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+      SDF <- SDF[order(in.sort)]
+    }
+  }else{
+  size <- length(CF)
+  prob<-seq(from=1/size, by=1, to=size)/size
+  #check the order preservation status
+    in.sort <- order(CF)
+    CF.out <- CF[in.sort]
   # QM Change Factor
   #
-  SDF<-quantile(LH,ecdf(CH)(quantile(CF,prob)),names=FALSE)
+  SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
+  #SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
   #CEW: creation of historical values commented out for the moment
   #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-  
+    SDF <- SDF[order(in.sort)]
   return (SDF)
+  }
 }
 
 callEquiDistant <- function(LH, CH, CF, args){
@@ -163,26 +192,41 @@ callEquiDistant <- function(LH, CH, CF, args){
   # CH: Coarse Historical (a.k.a. GCM historical)
   # CF: Coarse Future (a.k.a GCM future)
   #'Cites Li et. al. 2010
-#   if(!is.null(args$size)){
-#     size <- args$size
-#     args$size <- NULL
-#   }else{
-    size <- length(CF)
-#   }
-  prob<-c(0.001:1:size)/size
+  size <- length(CF)
+  prob<-seq(from=1/size, by=1, to=size)/size
+  
+  #check order preservation status
+#    in.sort <- order(CF)
+#    CF.out <- CF[in.sort]
+
   #Create numerator and denominator of equation
+  #First scale with local historical and reorder
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   print(length(temporal))
-#   print(summary(temporal))
+#   LH.interp <- interpolate.points(LH, size)
+#   LH.order <- order(LH.interp)
+  #Check for arg for specifying calendar order preservation
+  LH.sorted <- order(LH)
+  LH.interp <- interpolate.points(LH, size, 'linear')
+  LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
+  temporal <- temporal[LH.sortorder]
+  
+  #And then scale with climate historical
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   print(length(temporal2))
-#   print(summary(temporal2))
+#   CH.interp <- interpolate.points(CH, size)
+#   CH.order <- order(CH.interp)
+  #Check for arg for specifying calendar order preservation
+  CH.sorted <- order(CH)
+  CH.interp <- interpolate.points(CH, size, 'linear')
+  CH.sortorder <- interpolate.points(CH.sorted, size, 'repeat')
+  temporal <- temporal[CH.sortorder]
   
   # EQUIDISTANT CDF (Li et al. 2010)
   SDF<-CF + temporal-temporal2
   #CEW creation of downscaled historical values turned off for the moment
   #SDH<-CH + temporal-temporal2
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+
+    #SDF <- SDF[order(in.sort)] 
   return (SDF)
 }
 
@@ -193,24 +237,30 @@ callChangeFactor <- function(LH, CH, CF, args){
     #'@param CH: Coarse Historical (a.k.a. GCM historical)
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'@param args: named list of arguments for the function
-#     if(!is.null(args$size)){
-#       size <- args$size
-#       args$size <- NULL
-#     }else{
-      size <- length(CF)
-#     }
+    #     if(!is.null(args$size)){
+    #       size <- args$size
+    #       args$size <- NULL
+    #     }else{
+    size <- length(CF)
     # first define vector with probabilities [0,1]
-    prob<-c(0.001:1:size)/size
+    prob<-seq(from=1/size, by=1, to=size)/size
     
+    #Check for arg for specifying calendar order preservation
+    LH.sorted <- order(LH)
+    LH.interp <- interpolate.points(LH, size, 'linear')
+    LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
+    #LH.order <- order(LH.interp)
+
     # QM Change Factor
     SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
-    #SDoutput<-list("SDF"=SDF,"SDH"=SDH)  
+    #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+      SDF <- SDF[order(LH.sortorder)]
     return (SDF)
 }
 
-callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
+callDeltaSD <- function(LH,CH,CF,args){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #'@param LH: Local Historical (a.k.a. observations)
@@ -261,3 +311,189 @@ callDeltaSD <- function(LH,CH,CF,args, ds.var='tasmax'){
 # #   print(summary(new))
 #   return(new)
 # }
+
+interpolate.points <- function(invec, len.outvec, interp.mode='linear'){
+  #Adds or subtracts points in a vector invec, maintaining its
+  #distribution, in order to match an input length, len.outvec.
+  #Is not meant to be called if len.outvec == len(invec)
+  #Note: successfully resisted urge to name it Procrustes.
+  outvec <- rep(NA, len.outvec)
+  
+  if(length(invec) > len.outvec){
+    #If fewer points are needed
+    set.seed(seed=8675309, kind="Mersenne-Twister", normal.kind="Inversion")
+    indices <- sort(sample.int(n=length(invec), len.outvec, replace=FALSE))
+    outvec <- invec[indices]
+  }else{
+    #okay, trying a new technique here: 
+    set.seed(seed=8675309, kind="Mersenne-Twister", normal.kind="Inversion")
+    #Need one set of vectors for every point in the out vector, 
+    #And one set of randomly selected points for the remainder
+    indices <- sort(c( rep(seq(1:length(invec)), floor(len.outvec/length(invec)) ), 
+                      sample.int(n=(length(invec)), size=(len.outvec%%length(invec)), replace=FALSE)))
+    outvec <- invec[indices]
+#     #If more points are needed
+#     #You will add either one or two points each time
+#     #Add the first and last indices to the output vector
+#     outvec[1] <- invec[1]
+#     outvec[length(outvec)] <- invec[length(invec)] 
+#     #Remove for next step
+#     #Note: this will fail for n < 3 points, but that seems unlikely here
+#     invec <- invec[seq(2,(length(invec)-1))] #-1
+#     
+#     changevec <- round((length(invec)/(len.outvec-2))*seq(1:(len.outvec-2)))
+#     #changevec <- changevec +1
+#     #changevec[changevec==len.outvec] <- len.outvec-1
+#     #unique.indices <- unique(changevec)
+#     
+#     for (i in 1:(length(invec))){ #unique.indices
+#       #index <- unique.indices[i]
+#       index <- i
+#       index.map <- which(changevec==index)[1]
+#       outvec[index.map+1] <- invec[i]
+#     }
+#     interp.indices <- which(!is.na(outvec))
+#     for(j in 2:length(interp.indices)){
+#       startval <- outvec[interp.indices[j-1]]
+#       endval <- outvec[interp.indices[j]]
+#       vec.len <- (interp.indices[j]-interp.indices[j-1] + 1)
+#       if(vec.len > 2){ #If the two are not right next to each other
+#         outvec[interp.indices[j-1]:interp.indices[j]] <- interp.points(startval, endval, vec.len, 
+#                                                                        mode=interp.mode)
+#       }
+#     }
+  }
+  return(outvec)
+}
+
+interp.points <- function(startpoint, endpoint, len.out, mode){
+  #Linera interpolation of len.outvalues between two points, including the starting point
+  if(mode=='linear'){
+    return(startpoint + ((endpoint-startpoint)/(len.out-1))*seq(from=0, by=1, to=(len.out-1)))
+  }else{
+    return(c(startpoint, rep(endpoint, len.out-1)))
+  }
+  #return(approx(x=c(startpoint, endpoint), y=NULL, n=len.out, method='linear')$x)
+}
+
+####CG DS method
+callCFQMv2<-function(LH,CH,CF,args)
+{ 
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)
+  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.LHsorted<-temp[order(temp$LH),]
+  temp.LHsorted$qLH<-quantile(temp.LHsorted$LH,prob,na.rm =TRUE)
+  temp.LHsorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.LHsorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.final<-temp.LHsorted[order(temp.LHsorted$index),]
+  
+  SDF<-temp.final$qCFecdfCHqLH
+  return(SDF)
+}
+
+callCFQMv2<-function(LH,CH,CF,args){
+  #'Calls the latest version of the CFQM function
+  #'as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.LHsorted<-temp[order(temp$LH),]
+  temp.LHsorted$qLH<-quantile(temp.LHsorted$LH,prob,na.rm =TRUE)
+  temp.LHsorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.LHsorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp<-temp.LHsorted[order(temp.LHsorted$index, na.last=FALSE),]
+  
+  SDF<-temp$qCFecdfCHqLH
+  return(SDF)
+}
+
+callBCQMv2<-function(LH,CH,CF,args){
+  #' Calls latest version od BCQM function
+  #' as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)
+    
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.CFsorted<-temp[order(temp$CF),]
+  temp.CFsorted$qCF<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+  temp.CFsorted$ecdfCHqCF<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+  temp.CFsorted$qLHecdfCHqCF<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp<-temp.CFsorted[order(temp.CFsorted$index),]
+  
+  #SDF<-temp.final$qCFecdfCHqLH
+  return(temp$qLHecdfCHqCF)
+}
+
+callEDQMv2<-function(LH,CH,CF,args){ 
+  #' Calls latest version odf the EDQM function
+  #' as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
+                   EquiDistant=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.CFsorted<-temp[order(temp$CF),]
+  temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+  
+  temp.CFsorted$qLHecdfCFqCF<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qCHecdfCFqCF<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
+  temp<-temp.CFsorted[order(temp.CFsorted$index),]
+  print(summary(temp))
+  print(names(temp))
+  
+  #SDF<-temp$qCFecdfCHqLH
+  return(temp$EquiDistant)
+}
