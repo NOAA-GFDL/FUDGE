@@ -58,22 +58,31 @@ get.space.vars <- function(nc.object, var){
   axes <- c("X", "Y")
   file.axes <- nc.get.dim.axes(nc.object, var)
   if(is.null(file.axes)){
-    stop(paste("Error in ReadNC: File", test.nc$filename, "has no variable", var, "; please examine your inputs."))
+    stop(paste("Error in ReadNC: File", nc.object$filename, "has no variable", var, "; please examine your inputs."))
   }else{
     spat.axes <- file.axes[file.axes%in%axes]
-    spat.vars <- names(spat.axes)
+    spat.varnames <- names(file.axes[file.axes%in%axes])
   }
   #Obtain any dimensions that reference space
-  for (sd in 1:length(spat.vars)){
+  for (sd in 1:length(spat.varnames)){
     ax <- spat.axes[[sd]]
-    spat.dims[dim] <- nc.get.dim.for.axis(nc,object, var, ax)    
+    dim <- spat.varnames[[sd]]
+    spat.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)  
   }
   #Obtain any dimensions that are not time
   #Obtain any variables that do not reference time
-  vars.present <- names(test.nc$var)[names(test.nc$var!=var)]
+  #THIS is the bit that was tripping you up last time. deal with it, please.
+  vars.present <- names(nc.object$var)[names(nc.object$var)!=var]
+  spat.vars <- list()
   for(i in 1:length(vars.present)){
-    if(! ("time"%in%lapply(nc.object$var[vars.present]$dim, obtain.ncvar.dimnames))){
-      
+    var.loop <- vars.present[i]
+    if(! ("time"%in%lapply(nc.object$var[[var.loop]]$dim, obtain.ncvar.dimnames))){
+      spat.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
+      #Grab attributes of interest (mostly units, but other things could be added)
+      units <- ncatt_get(nc.object, var.loop, 'units')
+      if(units$hasatt){
+        attr(spat.vars[[var.loop]], which="units") <- units
+      }
     }
   }
   return(list("dim"=spat.dims, "vars"=spat.vars))
@@ -82,12 +91,55 @@ get.space.vars <- function(nc.object, var){
 get.time.vars <- function(nc.object, var){
   #Obtains time vars, calendar attributes and all vars that depend on time
   #that are not the main var of interest
+  message('getting time vars')
   axes<- c("T")
+  file.axes <- nc.get.dim.axes(nc.object, var)
+  if(is.null(file.axes)){
+    stop(paste("Error in ReadNC: File", nc.object$filename, "has no variable", var, "; please examine your inputs."))
+  }else{
+    time.axes <- file.axes[file.axes%in%axes]
+    time.varnames <- names(file.axes[file.axes%in%axes])
+  }
+  print(time.axes)
+  print(time.varnames)
+  #Obtain any dimensions that reference time
+  time.dims <- list()
+  for (td in 1:length(time.varnames)){
+    ax <- time.axes[[td]]
+    dim <- time.varnames[[td]]
+    print(dim)
+    time.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)  
+  }
+  #Obtain any dimensions that are not time
+  #Obtain any variables that do not reference time
+  #THIS is the bit that was tripping you up last time. deal with it, please.
+  if(length(time.varnames > 1)){
+  vars.present <- names(nc.object$var)[names(nc.object$var)!=var]
+  print(vars.present)
+  time.vars <- list()
+  for(i in 1:length(vars.present)){
+    var.loop <- vars.present[i]
+    #Obtain all vars that have a dim named 'time'
+    if( "time"%in%lapply(nc.object$var[[var.loop]]$dim, obtain.ncvar.dimnames) ){
+      time.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
+      #Grab attributes of interest (mostly units, but other things could be added)
+      units <- ncatt_get(nc.object, var.loop, 'units')
+      if(units$hasatt){
+        attr(time.vars[[var.loop]], which="units") <- units
+      }
+    }
+  }
+  }else{
+    message("No variables but the main variable found using time dimension; continue on.")
+    time.dims[[dim]]
+  }
+  return(list("dim"=time.dims, "vars"=time.vars))
 }
 
 obtain.ncvar.dimnames <- function(nc.obj){
   #obtains one of the names of the dimensions of a netcdf 
   #variable
+  print(names(nc.obj))
   return(nc.obj[['name']])
 }
 

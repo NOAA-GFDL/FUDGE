@@ -145,17 +145,17 @@ if(spat.mask.dir_1!="none"){
   spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
   print('OpenNC spatial mask: success..1') 
   #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-  spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)
+  spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)#TODO: remove opt for getting the bounds vars from fxn
   print('ReadMaskNC spatial mask: success..1')
 }else{
   message("no spatial mask included; skipping to next step")
 }
 
-print("get xlon,ylat")
-xlon <- sort(spat.mask$dim$lon)
-print("xlon: received")
-ylat <- sort(spat.mask$dim$lat)
-print("ylat: received")
+# print("get xlon,ylat")
+# xlon <- sort(spat.mask$dim$lon)
+# print("xlon: received")
+# ylat <- sort(spat.mask$dim$lat)
+# print("ylat: received")
 
 message("Reading in and checking time windowing masks")
 if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
@@ -164,7 +164,7 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
     #If there is no time trimming mask:
     print(paste("time trimming mask", fut.time.trim.mask))
     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)
+                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)#TODO: Edit createtimewindowlist, too
     names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
   }else{
     #If there is a time trimming mask
@@ -183,12 +183,12 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
 
 print(names(tmask.list))
 
-#Check time masks for consistency against each other
-QCTimeWindowList(tmask.list, k=k.fold)
-#Obtain time series and other information for later checks
-downscale.tseries <- tmask.list[[length(tmask.list)]]$dim$tseries
-downscale.origin <- attr(tmask.list[[length(tmask.list)]]$dim$tseries, "origin")
-downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar")
+# #Check time masks for consistency against each other
+# QCTimeWindowList(tmask.list, k=k.fold)
+# #Obtain time series and other information for later checks
+# downscale.tseries <- tmask.list[[length(tmask.list)]]$dim$tseries
+# downscale.origin <- attr(tmask.list[[length(tmask.list)]]$dim$tseries, "origin")
+# downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar")
 
 ### Now, access input data sets
 ### For the variables specified in predictor.vars
@@ -219,7 +219,7 @@ for (predictor.var in 1:length(predictor.vars)){
   print("OpenNC: success..1")
   #CEW: Assumes that predictor.vars is a character vector
   #temp.list <- ReadNC(nc.object = hist.ncobj, var.name=predictor.var, dim='spatial')#dstart=c(1,1,1),dcount=c(1,140,16436)
-  ds.struct$hist[[var]] <- ReadNC(nc.object = hist.ncobj, var.name=var, dim="none")
+  ds.struct$hist[[var]] <- ReadNC(nc.object = hist.ncobj, var.name=var, dim="spatial")
   #Now start on multiple realizations present
   #seriosly talk to Aparna about how to specify this
   for(rip in 1:length(rips)){
