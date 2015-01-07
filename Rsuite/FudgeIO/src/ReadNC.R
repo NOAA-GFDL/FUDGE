@@ -78,10 +78,23 @@ get.space.vars <- function(nc.object, var){
     var.loop <- vars.present[i]
     if(! ("time"%in%lapply(nc.object$var[[var.loop]]$dim, obtain.ncvar.dimnames))){
       spat.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
-      #Grab attributes of interest (mostly units, but other things could be added)
-      units <- ncatt_get(nc.object, var.loop, 'units')
-      if(units$hasatt){
-        attr(spat.vars[[var.loop]], which="units") <- units
+      #Grab the bits used to build the vars later
+      att.vector <- c(nc.object$var[[var.loop]]$units, nc.object$var[[var.loop]]$longname, 
+                      nc.object$var[[var.loop]]$missval, nc.object$var[[var.loop]]$prec)
+      att.vector[5] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",")
+      names(att.vector) <- c("units", "longname", "missval", "prec", "dimids")
+      att.vector[att.vector==""] <- NULL
+      att.vector[att.vector=='int'] <- "integer"
+#      att.vector[att.vector=='NA'] <- NULL
+      print(att.vector)
+      for (a in 1:length(att.vector)){
+        attr(spat.vars[[var.loop]], which=names(att.vector)[[a]]) <- att.vector[[a]]
+      }
+      #And finally, grab the comments attribute, which is important
+      #for i and j offsets (but not much else)
+      comments <- ncatt_get(nc.object, var.loop, 'comments')
+      if(comments$hasatt){
+        attr(spat.vars[[var.loop]], which='comments') <- comments$value
       }
     }
   }
@@ -114,21 +127,37 @@ get.time.vars <- function(nc.object, var){
   #Obtain any variables that do not reference time
   #THIS is the bit that was tripping you up last time. deal with it, please.
   if(length(time.varnames > 1)){
-  vars.present <- names(nc.object$var)[names(nc.object$var)!=var]
-  print(vars.present)
-  time.vars <- list()
-  for(i in 1:length(vars.present)){
-    var.loop <- vars.present[i]
-    #Obtain all vars that have a dim named 'time'
-    if( "time"%in%lapply(nc.object$var[[var.loop]]$dim, obtain.ncvar.dimnames) ){
-      time.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
-      #Grab attributes of interest (mostly units, but other things could be added)
-      units <- ncatt_get(nc.object, var.loop, 'units')
-      if(units$hasatt){
-        attr(time.vars[[var.loop]], which="units") <- units
+    vars.present <- names(nc.object$var)[names(nc.object$var)!=var]
+    print(vars.present)
+    time.vars <- list()
+    for(i in 1:length(vars.present)){
+      var.loop <- vars.present[i]
+      #Obtain all vars that have a dim named 'time'
+      if( "time"%in%lapply(nc.object$var[[var.loop]]$dim, obtain.ncvar.dimnames) ){
+        time.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
+        #Grab bits needed to construct vars later; store as attributes
+        att.vector <- c(nc.object$var[[var.loop]]$units, nc.object$var[[var.loop]]$longname, 
+                        nc.object$var[[var.loop]]$missval, nc.object$var[[var.loop]]$prec)
+        att.vector[5] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",")
+        names(att.vector) <- c("units", "longname", "missval", "prec", "dimids")
+#         print(att.vector)
+        att.vector[att.vector==""] <- NULL
+#        att.vector[is.null(att.vector)] <- ""
+        att.vector[att.vector=='int'] <- "integer"
+#        att.vector[att.vector=='NA'] <- NULL
+#         print(att.vector)
+        for (a in 1:length(att.vector)){
+          print(a)
+          attr(time.vars[[var.loop]], which=names(att.vector)[[a]]) <- att.vector[[a]]
+        }
+        #And finally, grab the comments attribute, which is important
+        #for i and j offsets (but not much else)
+        comments <- ncatt_get(nc.object, var.loop, 'comments')
+        if(comments$hasatt){
+          attr(time.vars[[var.loop]], which='comments') <- comments$value
+        }
       }
     }
-  }
   }else{
     message("No variables but the main variable found using time dimension; continue on.")
     time.dims[[dim]]
@@ -142,4 +171,3 @@ obtain.ncvar.dimnames <- function(nc.obj){
   print(names(nc.obj))
   return(nc.obj[['name']])
 }
-
