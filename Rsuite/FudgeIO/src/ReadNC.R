@@ -41,8 +41,6 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   #######################################################
   listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units, 
                   "dim"=temp.list$dim, 'vars'=temp.list$vars)
-  #print("debug .......")
-  #print(clim.in)
   
   ###Add attributes for later QC checking against each other
   attr(listout, "calendar") <- nc.object$dim$time$calendar
@@ -64,6 +62,7 @@ get.space.vars <- function(nc.object, var){
     spat.varnames <- names(file.axes[file.axes%in%axes])
   }
   #Obtain any dimensions that reference space
+  spat.dims <- list()
   for (sd in 1:length(spat.varnames)){
     ax <- spat.axes[[sd]]
     dim <- spat.varnames[[sd]]
@@ -83,10 +82,7 @@ get.space.vars <- function(nc.object, var){
                       nc.object$var[[var.loop]]$missval, nc.object$var[[var.loop]]$prec)
       att.vector[5] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",")
       names(att.vector) <- c("units", "longname", "missval", "prec", "dimids")
-      att.vector[att.vector==""] <- NULL
       att.vector[att.vector=='int'] <- "integer"
-#      att.vector[att.vector=='NA'] <- NULL
-      print(att.vector)
       for (a in 1:length(att.vector)){
         attr(spat.vars[[var.loop]], which=names(att.vector)[[a]]) <- att.vector[[a]]
       }
@@ -113,14 +109,11 @@ get.time.vars <- function(nc.object, var){
     time.axes <- file.axes[file.axes%in%axes]
     time.varnames <- names(file.axes[file.axes%in%axes])
   }
-  print(time.axes)
-  print(time.varnames)
   #Obtain any dimensions that reference time
   time.dims <- list()
   for (td in 1:length(time.varnames)){
     ax <- time.axes[[td]]
     dim <- time.varnames[[td]]
-    print(dim)
     time.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)  
   }
   #Obtain any dimensions that are not time
@@ -128,7 +121,6 @@ get.time.vars <- function(nc.object, var){
   #THIS is the bit that was tripping you up last time. deal with it, please.
   if(length(time.varnames > 1)){
     vars.present <- names(nc.object$var)[names(nc.object$var)!=var]
-    print(vars.present)
     time.vars <- list()
     for(i in 1:length(vars.present)){
       var.loop <- vars.present[i]
@@ -140,14 +132,8 @@ get.time.vars <- function(nc.object, var){
                         nc.object$var[[var.loop]]$missval, nc.object$var[[var.loop]]$prec)
         att.vector[5] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",")
         names(att.vector) <- c("units", "longname", "missval", "prec", "dimids")
-#         print(att.vector)
-        att.vector[att.vector==""] <- NULL
-#        att.vector[is.null(att.vector)] <- ""
         att.vector[att.vector=='int'] <- "integer"
-#        att.vector[att.vector=='NA'] <- NULL
-#         print(att.vector)
         for (a in 1:length(att.vector)){
-          print(a)
           attr(time.vars[[var.loop]], which=names(att.vector)[[a]]) <- att.vector[[a]]
         }
         #And finally, grab the comments attribute, which is important
@@ -168,6 +154,5 @@ get.time.vars <- function(nc.object, var){
 obtain.ncvar.dimnames <- function(nc.obj){
   #obtains one of the names of the dimensions of a netcdf 
   #variable
-  print(names(nc.obj))
   return(nc.obj[['name']])
 }

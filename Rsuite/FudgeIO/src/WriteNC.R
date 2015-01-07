@@ -48,35 +48,6 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
     
     FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
     
-    #Define the time dimension
-    #CEW 1-5-2014: now assumed to be an already-existing dimension; 
-    #same for xlon and ylat
-#     print(is.na(downscale.origin))
-#     print(downscale.origin)
-#     if (!is.na(downscale.origin)){
-#       print("Creating cloned timeseries")
-#       time1 <- downscale.tseries
-#       tunit <- downscale.origin
-#       print(tunit) 
-#       print('defining time variable')
-#       t1 <- ncdim_def("time",tunit,time1,unlim=TRUE)
-#       print(summary(t1))
-#     }else{
-#       time1 <- time.index.start:time.index.end
-#       tunit <- paste('days since ',start.year,'-01-01 12:00:00',sep='')
-#       print(tunit) 
-#       t1 <- ncdim_def("time",tunit,time1,unlim=TRUE)
-#     }
-# #    print(time.index.start)
-# #    print(time.index.end)
-#     print('timesries over')
-#     #Define Y
-#     y <- ncdim_def("lat","degrees_north",ylat)
-#     #Define X
-#     if(exists("xlon") & (xlon != '')){
-#       x <- ncdim_def("lon","degrees_east",xlon)
-#     }
-    
     #' If CFNAME undefined in the call, pull information from CF.R. Use default otherwise. 
     print(cfname)
     if(cfname == var.name){
@@ -93,58 +64,19 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
     }
     
     #Define variable list and populate it
-    var.dat <- list()
-    
+    var.dat <- list()    
     #Write the variable containing downscaled data
     if(exists("xlon") & (xlon != '')){
       var.dat[[var.name]] <- ncvar_def(var.name,units,list(xlon,ylat,downscale.tseries),missval=missval,longname=lname,prec=prec)#x,y,t1
     }else{
       var.dat[[var.name]] <- ncvar_def(var.name,units,list(ylat, downscale.tseries),missval=missval,longname=lname,prec=prec, verbose=TRUE)
     }
-    
-    #If bounds are present, define bounds and populate bounds variables
-    #CEW edit 1-5: Assume being cloned and carried over wholesale from the input data 
-#     if(bounds){
-#       bnds <- ncdim_def("bnds", "", c(1,2))
-#       #If bnds is true, the bounds strucutre will presumably be full of all bnds
-#       #presumably gotten from combining the bnds from the first with the bnds from the latter
-#       bnds.names <- names(bnds.list)
-#       for (i in 1:length(bnds.names)){
-#         bnds.var <- bnds.names[i]
-#         print(bnds.var)
-#         carried.dim <- eval(parse( text=bnds.list[[bnds.var]]$info$dim)) #one of x, y, or t1; 
-#         if(!is.null(carried.dim)){ #If a bounds variable                 #see ReadMaskNC for more detail
-#           var.dimlist <- list(bnds, carried.dim)
-#         }else{  #If an I or J offset
-#           var.dimlist=NULL
-#         }
-#         #correct missing value
-#         if (bnds.list[[bnds.var]]$info$prec=="integer"){
-#           var.missval=NULL
-#         }else{
-#          var.missval=1.e20
-#        }
-#         #Finally, create the non-data variables
-#         var.dat[[bnds.var]] <- ncvar_def(bnds.var, 
-#                                         units=bnds.list[[bnds.var]]$info$units, 
-#                                         dim= var.dimlist, 
-#                                         missval = var.missval, 
-#                                         longname = bnds.list[[bnds.var]]$info$longname, 
-#                                         prec = bnds.list[[bnds.var]]$info$prec)
-#       }
-#     }
     #1-5 alternate structure
     bnds <- ncdim_def("bnds", "", c(1,2))
-    b.len <- as.character(bnds$len)
-    x.len <- as.character(xlon$len)
-    y.len <- as.character(ylat$len)
-    t.len <- as.character(downscale.tseries$len)
     for (v in 1:length(var.data)){
-      print(v)
       var <- names(var.data)[v]
-      print(paste("defining var", var))
+      message(paste("defining var", var))
       var.dim <- unlist(strsplit(attr(var.data[[v]], "dimids"), ","))
-      print(var.dim)
       var.dimlist <- list()
       #if(is.null(var.dim)){
       if(var.dim=='NA'){
@@ -160,9 +92,6 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
                                      "time"=downscale.tseries) #There should probably be an error here, but not sure what it would be
         }
       }
-      print(paste("number of dimensions for var", var, ":", length(var.dimlist)))
-      print(paste("units of var:", attr(var.data[[var]], "units")))
-      print(mode(attr(var.data[[var]], "units")))
       var.dat[[var]] <- ncvar_def(var, #var.data[[v]], #Don't forget to add the data in somewhere 
                                   units=attr(var.data[[var]], "units"), #Add check for adding units back in if not present
                                   #units="",
@@ -173,61 +102,39 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
                                   )
     }
     print(length(var.dat))
-    save('var.dat', file="/home/cew/Code/testing/ncvars.out")
+    #save('var.dat', file="/home/cew/Code/testing/ncvars.out")
     message("creating nc objects")
-    print(filename)
     nc.obj <- nc_create(filename, var.dat)
-    print("placing nc vars")
+    message("placing nc vars")
     ncvar_put(nc.obj, var.dat[[var.name]], data.array)
     for (v in 1:length(var.data)){
       loop.var <- names(var.data)[[v]]
-      print(paste("adding", loop.var))
-      #print(var.dat[[loop.var]])
+      message(paste("adding", loop.var, "and attributes"))
       ncvar_put(nc.obj, var.dat[[loop.var]], var.data[[loop.var]])
       all.att.list <- attributes(var.data[[loop.var]])
       all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "missval", "longname", "prec", "dim", "dimids"))]
-#       print("attributes to add not in the code:")
-#       print(all.att.list)
       if(length(all.att.list) > 0){
         for (at in 1:length(all.att.list)){
           ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])
         }
       }
-    }
-#     if(bounds){
-#       message("Adding variables associated with bounds")
-#       bnds.names <- names(bnds.list)
-#       for (i in 1:length(bnds.names)){
-#         bnds.var <- bnds.names[i]
-#         ncvar_put(nc.obj, var.dat[[bnds.var]], bnds.list[[bnds.var]]$vals)
-#         #The i_offset and j_offset attributes are very important for the functioning of the output netcdf
-#         if(bnds.var=="i_offset" || bnds.var=="j_offset"){
-#           ncatt_put(nc.obj, bnds.var, "missing_value", attr(bnds.list[[bnds.var]], "missing_value"))
-#           ncatt_put(nc.obj, bnds.var, "comments", attr(bnds.list[[bnds.var]], "comments"))
-#         }
-#       }
-#     }
-#     print("placing nc variables")
-#     # gets CF mappings from CF.R if user does not pass these 
-#     #TODO create grid coordinate bounds variables  
-# 
-#     #This all might not be needed. See if it throws an error when you run it.
-#     # lets make it close to CF compliancy,shall we
-# #     ncatt_put(nc.obj,"time","calendar",calendar)
-# #     ncatt_put(nc.obj,"time","standard_name","time")
-# #     ncatt_put(nc.obj,"time","axis",'T')
-# #     ncatt_put(nc.obj,"lat","axis",'Y')
-# #     ncatt_put(nc.obj,"lon","axis",'X')
-#     if(bounds){
-#       #Link bounds variables to the corresponding dims
-#       ncatt_put(nc.obj, "lat", 'bounds', 'lat_bnds')
-#       ncatt_put(nc.obj, "lon", 'bounds', 'lon_bnds')
-#       ncatt_put(nc.obj, "time", 'bounds', 'time_bnds')
-#     }
-#     ncatt_put(nc.obj,"lat","standard_name","latitude")
-#     ncatt_put(nc.obj,"lat","long_name","latitude")
-#     ncatt_put(nc.obj,"lon","standard_name","longitude")
-#     ncatt_put(nc.obj,"lon","long_name","longitude")
+    }   
+    #Link axes to the dimensions
+    ncatt_put(nc.obj,"time","axis",'T')
+    ncatt_put(nc.obj,"lat","axis",'Y')
+    ncatt_put(nc.obj,"lon","axis",'X')
+
+      #Link bounds variables to the corresponding dims
+      ncatt_put(nc.obj, "lat", 'bounds', 'lat_bnds')
+      ncatt_put(nc.obj, "lon", 'bounds', 'lon_bnds')
+      ncatt_put(nc.obj, "time", 'bounds', 'time_bnds')
+    #And establish long names in the code
+    ncatt_put(nc.obj,"time","standard_name","time")
+    ncatt_put(nc.obj, "time", "long_name", "time")
+    ncatt_put(nc.obj,"lat","standard_name","latitude")
+    ncatt_put(nc.obj,"lat","long_name","latitude")
+    ncatt_put(nc.obj,"lon","standard_name","longitude")
+    ncatt_put(nc.obj,"lon","long_name","longitude")
     ncatt_put(nc.obj,var.dat[[var.name]],"units",units)
     ncatt_put(nc.obj,var.dat[[var.name]],"standard_name",cfname)
     ########### write grid coordinate bounds ####################

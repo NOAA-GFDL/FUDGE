@@ -145,7 +145,7 @@ if(spat.mask.dir_1!="none"){
   spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
   print('OpenNC spatial mask: success..1') 
   #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
-  spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=TRUE)#TODO: remove opt for getting the bounds vars from fxn
+  spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=FALSE)#TODO: remove opt for getting the bounds vars from fxn
   print('ReadMaskNC spatial mask: success..1')
 }else{
   message("no spatial mask included; skipping to next step")
@@ -191,111 +191,122 @@ print(names(tmask.list))
 # downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar")
 
 ### Now, access input data sets
-### For the variables specified in predictor.vars
-target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
+
+#Obtain target data first - target data has spatial coords, and will *not* have multiple vars present
+message("Reading in target data")
+target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,
+                                   target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
 print(target.filename)
-out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial")#,dstart=c(1,1,1),dcount=c(1,140,16436)
+message("Applying spatial mask to target data")
+list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
+
+#TODO: When multiple RIP support is enabled, move the output files to the inner RIP loop
+out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
+                                fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 print(out.filename)
-list.target <- ReadNC(OpenNC(target.indir_1, target.filename), dim="spatial")#,dstart=c(1,1,1),dcount=c(1,140,16436)
 
-for (predictor.var in 1:length(predictor.vars)){
-  #for (i in 1:length(i.files)){ #At some point, discuss how to pass this from the input r code
-  #Note that this loop could probably give you the corresponding index of the input directories
-  print(paste("predictor:",predictor.var,sep='')) 
-  var <- predictor.vars[predictor.var]
-  #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
-  #There is also probably an elegant way to generalize this for an unknown number of input files, but that 
-  #should wait for later. See QCINput for more information on what that might look like.
+#When available, loop over all minifiles selected
+#for ( c(startlon, startlat) in minifiles)){
+  for (predictor.var in 1:length(predictor.vars)){
+    #for (i in 1:length(i.files)){ #At some point, discuss how to pass this from the input r code
+    #Note that this loop could probably give you the corresponding index of the input directories
+    print(paste("predictor:",predictor.var,sep='')) 
+    p.var <- predictor.vars[predictor.var]
+    #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
+    #There is also probably an elegant way to generalize this for an unknown number of input files, but that 
+    #should wait for later. See QCINput for more information on what that might look like.
+    
+    ######################## input minifiles ####################
   
-  ######################## input minifiles ####################
-  
-  ###CEW edit 8-28: Will not run without initializing predictor.var
-  hist.filename <- GetMiniFileName(predictor.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
-  print(hist.filename)
-  fut.filename <- GetMiniFileName(predictor.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-
-  # load the sample input datasets to numeric vectors
-  hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
-  print("OpenNC: success..1")
-  #CEW: Assumes that predictor.vars is a character vector
-  #temp.list <- ReadNC(nc.object = hist.ncobj, var.name=predictor.var, dim='spatial')#dstart=c(1,1,1),dcount=c(1,140,16436)
-  ds.struct$hist[[var]] <- ReadNC(nc.object = hist.ncobj, var.name=var, dim="spatial")
-  #Now start on multiple realizations present
-  #seriosly talk to Aparna about how to specify this
-  for(rip in 1:length(rips)){
-    fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
-    print("OpenNC: success..3")
-    if(!is.null(ds.struct$esd[[var]][[rip]]$dim)){ #If time dimension has not yet been obtained
-      ds.struct$esd[[var]][[rip]] <- ReadNC(fut.ncobj,var.name=var, rip=rip, dim='temporal')
-    }else{
-      ds.struct$esd[[var]][[rip]][[paste(var, rip, sep=".")]] <- ReadNC(fut.ncobj, var.name=var, dim="none")
-    }
-  }
-
-  ####Precipitation changes go here
-  if(predictor.var=='pr' && exists('pr_opts')){
-    #Options currently hard-coded
-    pr.mask.opt = pr_opts$pr_threshold_in
-    lopt.drizzle = pr_opts$pr_freqadj_in=='on'
-    lopt.conserve= pr_opts$pr_conserve_in=='on'
-    #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
-    print(summary(list.target$clim.in[!is.na(list.target$clim.in)]))
-    print(summary(list.fut$clim.in))
-    if(train.and.use.same==TRUE){
-      temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
-                                adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
-                                opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
-                                lopt.graphics=FALSE, verbose=TRUE,
-                                adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
-      list.target$clim.in <- temp.out$ref$data
-      #list.target$pr_mask <-temp.out$ref$pr_mask
-      list.hist$clim.in <- temp.out$adjust$data
-      #list.hist$pr_mask <-temp.out$adjust$pr_mask
-      list.fut$clim.in <- temp.out$future$data
-      #list.fut$pr_mask <-temp.out$future$pr_mask
-      #remove from workspace to keep memory overhead low
-      print(summary(list.target$clim.in))
+    #Obtain coarse GCM data
+    message("Obtaining Coarse Historical data (predictor)")
+    hist.filename <- GetMiniFileName(p.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,
+                                     hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
+    print(hist.filename)
+    hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
+    #TODO: When multiple var support is implemented, organize the $hist structure by variable
+    #temp.list <- ReadNC(nc.object = hist.ncobj, var.name=predictor.var, dim='spatial')#dstart=c(1,1,1),dcount=c(1,140,16436)
+    #ds.struct$hist[[var]] <- ReadNC(nc.object = hist.ncobj, var.name=var)
+    list.hist <- ReadNC(nc.object = hist.ncobj, var.name=p.var)
+    print("Applying spatial mask to coarse predictor dataset")
+    list.hist$clim.in <- ApplySpatialMask(list.hist$clim.in, spat.mask$masks[[1]])
+    #Re-initialize RIPs and RIP organization when the input structures can handle it
+    #for(rip in 1:length(rips)){
+    message(paste("Obtaining future predictor dataset for var (var) and rip (rip)"))
+      fut.filename <- GetMiniFileName(p.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,
+                                    fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+      fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
+      list.fut <- ReadNC(fut.ncobj,var.name=p.var, dim='temporal') #rip=rip, 
+      print("Applying spatial mask to future predictor dataset")
+      list.fut$clim.in <- ApplySpatialMask(list.fut$clim.in, spat.mask$masks[[1]])
+      #if(!is.null(ds.struct$esd[[rip]]$dim)){ #If time dimension has not yet been obtained
+        #ds.temp <- ReadNC(fut.ncobj,var.name=var, rip=rip, dim='temporal')
+        #ds.struct$esd[[rip]][[var]] <- c(ds.temp$clim.in, ds.temp$cfname, ds.temp$long_name, ds.temp$units)
+        #ds.struct$esd[[rip]][["dim"]] <- ds.temp$dim
+        #ds.struct$esd[[rip]][["vars"]] <- ds.temp$vars
+        #remove(ds.temp)
+      #}else{
+        ##TODO: the structure here was an alternative. Keep it in mind for later. 
+        #ds.struct$esd[[rip]][[var]][[paste(var, rip, sep=".")]] <- ReadNC(fut.ncobj, var.name=var, dim="none")
+      #}
+    #} RIP for loop
+    
+    ####Precipitation changes go here
+    if(predictor.var=='pr' && exists('pr_opts')){
+      #Options currently hard-coded
+      pr.mask.opt = pr_opts$pr_threshold_in
+      lopt.drizzle = pr_opts$pr_freqadj_in=='on'
+      lopt.conserve= pr_opts$pr_conserve_in=='on'
+      #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
+      print(summary(list.target$clim.in[!is.na(list.target$clim.in)]))
       print(summary(list.fut$clim.in))
-      remove(temp.out)
-    }else{
-      temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
-                                adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
-                                opt.wetday=opt.wetday, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
-                                lopt.graphics=FALSE, verbose=TRUE,
-                                adjust.future=NA, adjust.future.units=NA)
-      list.target$clim.in <- temp.out$ref$data
-      list.target$pr_mask <-temp.out$ref$pr_mask
-      list.hist$clim.in <- temp.out$adjust$data
-      list.hist$pr_mask <-temp.out$adjust$pr_mask
+      if(train.and.use.same==TRUE){
+        temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
+                                  adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
+                                  opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
+                                  lopt.graphics=FALSE, verbose=TRUE,
+                                  adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
+        list.target$clim.in <- temp.out$ref$data
+        #list.target$pr_mask <-temp.out$ref$pr_mask
+        list.hist$clim.in <- temp.out$adjust$data
+        #list.hist$pr_mask <-temp.out$adjust$pr_mask
+        list.fut$clim.in <- temp.out$future$data
+        #list.fut$pr_mask <-temp.out$future$pr_mask
+        #remove from workspace to keep memory overhead low
+        print(summary(list.target$clim.in))
+        print(summary(list.fut$clim.in))
+        remove(temp.out)
+      }else{
+        temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
+                                  adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
+                                  opt.wetday=opt.wetday, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
+                                  lopt.graphics=FALSE, verbose=TRUE,
+                                  adjust.future=NA, adjust.future.units=NA)
+        list.target$clim.in <- temp.out$ref$data
+        list.target$pr_mask <-temp.out$ref$pr_mask
+        list.hist$clim.in <- temp.out$adjust$data
+        list.hist$pr_mask <-temp.out$adjust$pr_mask
+      }
     }
   }
-}
+#} #Goes with looping over multiple available minifiles
 
 # simulate the user-specified choice of climate variable name to be processed
 # TODO: Talk to Aparna about this, because it still needs work.
-clim.var.in <- list.fut$clim.in
+#clim.var.in <- list.fut$clim.in
 # ----- Begin segment like FUDGE Schematic Section 3: Pre-processing of Input Data -----
 
-# Spatial Range For Predictors -------------------------
-
-message("Applying spatial masks")
-
-list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
-print("ApplySpatialMask target: success..1")
-list.hist$clim.in <- ApplySpatialMask(list.hist$clim.in, spat.mask$masks[[1]])
-print("ApplySpatialMask target: success..2")
-list.fut$clim.in <- ApplySpatialMask(list.fut$clim.in, spat.mask$masks[[1]])
-print("ApplySpatialMask target: success..3")
 #- - - - - Loop through masked.data to downscale points ------------- #
 
 # ----- Begin segment like FUDGE Schematic Section 3: QC of Data After Pre-Processing -----#
 
 #Perform a check upon the time series, dimensions and method of the downscaling 
 #input and output to assure compliance
-message("Checking input data")
-
-QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = list.fut, 
-            k = k.fold, ds.method=ds.method, calendar=downscale.calendar)
+#TODO: Are these checks still neccessary in any sense?
+# message("Checking input data")
+# QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = list.fut, 
+#             k = k.fold, ds.method=ds.method, calendar=downscale.calendar)
 
 # compute the statistics of the vector to be passed into the downscaling training
 
@@ -309,23 +320,30 @@ QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = l
 print("FUDGE training begins...")
 start.time <- proc.time()
 
-if (args!='na'){
+#TODO: Why is there an if statment here? This seems unnessecary....
+#Edit 1-5 for a smaller if and a single call
+
+#args should always exist; it's specified in the runcode
+if (args=='na'){
+  ds.args=NULL
+}
+
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                    istart = NA,loop.start = NA,loop.end = NA, downscale.args=args,
+                    istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
                     s5.instructions=mask.list, 
                     create.qc.mask=adjust.list$qc.check)
-}else{
-  ds <- TrainDriver(target.masked.in = list.target$clim.in, 
-                    hist.masked.in = list.hist$clim.in, 
-                    fut.masked.in = list.fut$clim.in, ds.var=target.var,
-                    mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                    istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
-                    s5.instructions=mask.list, 
-                    create.qc.mask=adjust.list$qc.check)
-}
+# }else{
+#   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
+#                     hist.masked.in = list.hist$clim.in, 
+#                     fut.masked.in = list.fut$clim.in, ds.var=target.var,
+#                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
+#                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
+#                     s5.instructions=mask.list, 
+#                     create.qc.mask=adjust.list$qc.check)
+#}
 print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -388,21 +406,33 @@ if('pr'%in%target.var && exists('pr_opts')){
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 #Replace NAs by missing 
 ###CEW edit: replaced ds.vector with ds$esd.final
-ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20
+ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
+#Or: replace within the loop, adding in a missval. That is def. a thing that you could do.
 
+
+#So: for all RIPs in the list of rips to work with, write data as a separate file. 
+#This means that each RIP needs to be a separate file, and therefore *one* out.filename
+#is probably not sufficient. Therefore, have a chat with the ESD team about where the 
+#RIP of the input data would be put for safekeeping. 
+
+#for (rip in 1:length(rips.list)){
 out.file <- paste(output.dir,"/", out.filename,sep='')
 
 #Create structure containing bounds and other vars
 bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
 isBounds <- length(bounds.list.combined) > 1
 ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
-                          xlon,ylat,
-                          downscale.tseries=downscale.tseries, 
-                          downscale.origin=downscale.origin, calendar = downscale.calendar,
+                          xlon=list.target$dim$lon,ylat=list.target$dim$lat,
+                          downscale.tseries=list.fut$dim$time, 
+                          var.data=c(list.target$vars, list.fut$vars),
+                          #downscale.origin=downscale.origin, calendar = downscale.calendar,
                           #start.year=fut.train.start.year_1,
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value, bounds=isBounds, bnds.list = bounds.list.combined)
+                          cfname=list.fut$cfname$value 
+                          #bounds=isBounds, bnds.list = bounds.list.combined
+                          )
+
 #Write Global attributes to downscaled netcdf
 label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
 label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
@@ -471,4 +501,5 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                  pr.process=exists('pr_opts'), pr_opts=pr_opts)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }
+#}
 }

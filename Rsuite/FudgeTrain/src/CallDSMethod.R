@@ -30,14 +30,14 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   return(switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen, args),
                 "multivar.lm" = callMulti.lm(train.predict, train.target, esd.gen, args, ds.lengths),
-#                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
-#                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
-#                 'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
-#                 "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
-#                 "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
-#                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
-#                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
-#                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
+                'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
+                'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
+                'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
+                "BCQM" = callBiasCorrection(train.predict, train.target, esd.gen, args), 
+                "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
+                "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
+                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
+                'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method)))
 }
 
