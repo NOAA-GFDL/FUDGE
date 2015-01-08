@@ -118,6 +118,7 @@ def fudgeList():
 							ascii = "ds.experiment:"+expconfig
 							ascii = ascii+"\n"+"xml.path:"+os.path.abspath(uinput)+"\n"
 							ascii = ascii+"FUDGE.version:"+fudgeversion+"\n"
+							ascii = ascii+"region:"+region+"\n"
 							delim="_"
 						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"0101-"+target_file_end_time+"1231"+".I*",file_j_range.replace('"','').strip()+".nc")	
 							target_file = delim.join(target_parts)	

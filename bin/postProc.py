@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python/2.7.1/bin/python
 import expergen 
 import os,sys,subprocess,shutil
 from subprocess import PIPE

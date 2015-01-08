@@ -65,14 +65,16 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
    #time masks. You're just doing a compression step immediately after one but not the other.
    print(dim(target.masked.in))
      for(i.index in 1:length(target.masked.in[,1,1])){  #Most of the time, this will be 1
-       for(j.index in 1:length(target.masked.in[1,,1])){ 
-         message(paste("Begin processing point with i = ", i.index, "and j =", j.index))
+       for(j.index in 1:length(target.masked.in[1,,1])){
+#          if(j.index%%10==0 || j.index==1){          
+#          }   #Moved to both branches of the if test
          ##I'm not entirely sure what this is supposed to do, and I'm relucant to tinker with it too much.
          #if(sum(!is.na(target.masked.in[1,j.index,]))!=length(target.masked.in[,,1])){   ##Why was this specified as [1,jindex,1]?
          #TODO: Specify better method for determining whether to call a downscaling function
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[i.index,j.index,]))!=0){
+           message(paste("Begin processing point with i = ", i.index, "and j =", j.index))
            loop.temp <- LoopByTimeWindow(train.predictor = hist.masked.in[i.index, j.index,], 
                                          train.target = target.masked.in[i.index, j.index,], 
                                          esd.gen = fut.masked.in[i.index, j.index,], 
@@ -99,10 +101,8 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
 #            }
          }else{
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
-#            print(paste("number of non-NAs in train.targ:", sum(!is.na(target.masked.in[i.index,j.index,]))))
-#            print(paste("number of non-NAs in hist.pred:", sum(!is.na(hist.masked.in[i.index,j.index,]))))
-#            print(paste("number of non-NAs in fut.pred:", sum(!is.na(fut.masked.in[i.index,j.index,]))))
-           print(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
+            message(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
+           }
          }
        }
      }

@@ -1,4 +1,4 @@
-#!/usr/local/python/2.7.3/bin/python
+#!/usr/local/python/2.7.1/bin/python
 import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
@@ -173,6 +173,9 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "About to call checkTags on region"
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
+        spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
+	ds_region = spat_mask_ID
+	#print "spat_mask_ID:", spat_mask_ID
         file_j_range = checkTags(dictParams,'file_j_range')
         lats = checkTags(dictParams,'lats')
         late = checkTags(dictParams,'late')
@@ -187,7 +190,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	if(experiment == 'na'): #if not present in XML
 	        proj = checkTags(dictParams,'project')
                 series = checkTags(dictParams,'series') #experiment series
- 		experiment,ds_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+ 		experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
         ##################################################### 
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
@@ -253,14 +256,16 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
                         sys.exit()
         elif((output_grid == 'US48') | (output_grid == 'us48')):
 		output_grid = "US48"
+		dim1=dim
                 dsuffix = "J454-567"
 		#CEW comment out for the PM data
 		#region = output_grid
 		dim1 = dim
         elif(region == 'global'):
                 dsuffix = "J1-720"
-		#region = output_grid
-		dim1 = dim
+		dim1=dim
+		#A1R uncomment during PM edit; no region yet.
+		region = output_grid
         else:
 	   if(file_j_range != ''):
 	   	dsuffix=file_j_range
@@ -424,7 +429,8 @@ def main():
 			print "Now invoking cleanup utility..........."
 		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
 		        cleaner_cmd = cleaner_script+" d "+uinput 
-	                print "cleaner_cmd"		
+	                print "cleaner_cmd"
+			print cleaner_cmd		
 	                pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 			#check return code
         		output0, errors0 = pclean.communicate()

@@ -9,6 +9,7 @@
 #PBS -q batch
 #
 #unset echo
+echo "entering pp_fudge"
 if ($#argv < 9) then
  set usage=" (run on PAN) Please provide 8 command line arguments- basedir indir method var epoch rip region ver \n"
  set usage="$usage Eg. ppFudge /home/a1r/gitlab/ /work/a1r/NCPP2013/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/OneD/v20120422/ GFDL-ARRMv1-FutUS48-xval-60lo0 tasmax sst2090 r1i1p1 US48 v20120422"
@@ -31,6 +32,7 @@ if ($#argv > 9) then
  set prefix=$argv[14] #lets just pass it
  set fprefix = "cattool.$prefix.nc"
  set targetid=$argv[15] #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
+ set cgrid=$argv[16]
 endif
 #################################### set the following options if using this script directly in batch mode ############ 
 #1 where is the git repo?
@@ -139,8 +141,8 @@ endif
 #sample call
 #/home/a1r/gitlab/vanilla/fudge2014/utils/pp/sdWriter RR.nc RRtxp1-CDFt-A38L01K00 tasmax CDFtv1 /home/a1r/gitlab/vanilla/fudge2014/utils/pp/auxfiles/ testversion tasmax_day_RRtxp1-CDFt-A38L01K00_rcp85_r1i1p1_RR_20060101-20991231.nc region=RR
 
-echo "$tooldir/sdWriter $fprefix $exp $var $method $auxfiledir $ver $prefix.nc $targetid region=$region"
-$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $ver $prefix.nc $targetid region=$region
+echo "$tooldir/sdWriter $fprefix $exp $var $method $auxfiledir $ver $prefix.nc $targetid $cgrid region=$region"
+$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $ver $prefix.nc $targetid $cgrid region=$region
 set sdWriter_Ex = $?
 #echo "sdWriter EXIT STATUS: $sdWriter_Ex"
 if ($sdWriter_Ex == 1) then

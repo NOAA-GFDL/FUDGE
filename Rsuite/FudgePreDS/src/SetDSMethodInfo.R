@@ -95,7 +95,7 @@ setBiasCorrection <- function(){
   # ESD equations/quantiles AND generate the downscaled data?
   train.and.use.same <<- TRUE 
   # What are the arguments to the args() parameter that are accepted? 
-  names.of.args <<- c("size")
+  names.of.args <<- c("size", "flip")
 }
 
 setEquiDistant <- function(){
