@@ -99,6 +99,9 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
 #            }
          }else{
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
+#            print(paste("number of non-NAs in train.targ:", sum(!is.na(target.masked.in[i.index,j.index,]))))
+#            print(paste("number of non-NAs in hist.pred:", sum(!is.na(hist.masked.in[i.index,j.index,]))))
+#            print(paste("number of non-NAs in fut.pred:", sum(!is.na(fut.masked.in[i.index,j.index,]))))
            print(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
          }
        }

@@ -14,7 +14,7 @@ QCTimeMask<-function(time.mask.obj, run=FALSE){
   message("Checking time windowing mask")
   #   thisnc <- nc_open(mask.nc)
   #   time.mask.obj <- ReadMaskNC(thisnc)
-  time.length <- length(time.mask.obj$dim$time)
+  time.length <- length(time.mask.obj$dim$time$vals)
   ###Pre-allocaate vector and loop over the available masks
   checkvector <- rep(0, time.length)
   #Loop over the names of each mask in the file

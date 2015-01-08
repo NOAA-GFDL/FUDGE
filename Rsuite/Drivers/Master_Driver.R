@@ -139,7 +139,7 @@ adjust.list <- QCSection5(mask.list)
 
 # # spatial mask read check
  message("Checking for spatial masks vars")
-if(spat.mask.dir_1!="none"){
+if(spat.mask.dir_1!="na"){
   #spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
   spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
   spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
@@ -148,40 +148,48 @@ if(spat.mask.dir_1!="none"){
   spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=FALSE)#TODO: remove opt for getting the bounds vars from fxn
   print('ReadMaskNC spatial mask: success..1')
 }else{
+  spat.mask <- NULL
   message("no spatial mask included; skipping to next step")
 }
 
-# print("get xlon,ylat")
-# xlon <- sort(spat.mask$dim$lon)
-# print("xlon: received")
-# ylat <- sort(spat.mask$dim$lat)
-# print("ylat: received")
-
 message("Reading in and checking time windowing masks")
+#Either all data will use a time-windowing mask, or none will use it. 
 if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test settings)
   #Future data used in downscaling will be underneath the fut.time tag
   if(fut.time.trim.mask=='na'){
     #If there is no time trimming mask:
     print(paste("time trimming mask", fut.time.trim.mask))
-    tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)#TODO: Edit createtimewindowlist, too
-    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+    if(target.time.window!='na'){
+      #If there are masks included (this should be the most common use case)
+      message('Creating list of time windows')
+      tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                         esd.gen.mask = fut.time.window, k=k.fold, method=ds.method)#TODO: Edit createtimewindowlist, too
+      names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+    }else{
+      #Otherwise, if there were no masks included at all
+      message("no time windows included; moving on to next step")
+      tmask.list <- list("na")
+    }
   }else{
-    #If there is a time trimming mask
+    #If there is a time trimming mask, and there are masks of all kinds
     print(paste("time trimming mask", fut.time.trim.mask))
     tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                        esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
                                        time.prune.mask = fut.time.trim.mask)
     names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
   }
-}else{
+}else{ #Once esd.gen implemented, should be most common use case
   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
+  if(target.time.window!='na'){
   tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                      esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
   names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
+  }else{
+    #Otherwise, if there were no masks included at all
+    message("no time windows included; moving on to next step")
+    tmask.list <- list("na")
+  }
 }
-
-print(names(tmask.list))
 
 # #Check time masks for consistency against each other
 # QCTimeWindowList(tmask.list, k=k.fold)
@@ -292,15 +300,6 @@ print(out.filename)
   }
 #} #Goes with looping over multiple available minifiles
 
-# simulate the user-specified choice of climate variable name to be processed
-# TODO: Talk to Aparna about this, because it still needs work.
-#clim.var.in <- list.fut$clim.in
-# ----- Begin segment like FUDGE Schematic Section 3: Pre-processing of Input Data -----
-
-#- - - - - Loop through masked.data to downscale points ------------- #
-
-# ----- Begin segment like FUDGE Schematic Section 3: QC of Data After Pre-Processing -----#
-
 #Perform a check upon the time series, dimensions and method of the downscaling 
 #input and output to assure compliance
 #TODO: Are these checks still neccessary in any sense?
@@ -308,15 +307,6 @@ print(out.filename)
 # QCInputData(train.predictor = list.hist, train.target = list.target, esd.gen = list.fut, 
 #             k = k.fold, ds.method=ds.method, calendar=downscale.calendar)
 
-# compute the statistics of the vector to be passed into the downscaling training
-
-# -- QC of input data ends --#
-
-# ----- Begin segment like FUDGE Schematic Section 3: Apply Distribution Transform -----
-
-# ----- Begin segment FUDGE Schematic Section 4: ESD Method Training and Generation -----
-
-################ call train driver ######################################
 print("FUDGE training begins...")
 start.time <- proc.time()
 
@@ -326,6 +316,8 @@ start.time <- proc.time()
 #args should always exist; it's specified in the runcode
 if (args=='na'){
   ds.args=NULL
+}else{
+  ds.args=args
 }
 
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
@@ -335,15 +327,6 @@ if (args=='na'){
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
                     s5.instructions=mask.list, 
                     create.qc.mask=adjust.list$qc.check)
-# }else{
-#   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
-#                     hist.masked.in = list.hist$clim.in, 
-#                     fut.masked.in = list.fut$clim.in, ds.var=target.var,
-#                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-#                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
-#                     s5.instructions=mask.list, 
-#                     create.qc.mask=adjust.list$qc.check)
-#}
 print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -419,8 +402,9 @@ ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing
 out.file <- paste(output.dir,"/", out.filename,sep='')
 
 #Create structure containing bounds and other vars
-bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
-isBounds <- length(bounds.list.combined) > 1
+
+#bounds.list.combined <- c(spat.mask$vars, tmask.list[[length(tmask.list)]]$vars)
+#isBounds <- length(bounds.list.combined) > 1
 ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           xlon=list.target$dim$lon,ylat=list.target$dim$lat,
                           downscale.tseries=list.fut$dim$time, 
@@ -445,7 +429,7 @@ if(Sys.getenv("USERNAME")=='cew'){
   git.needed=FALSE
 }
 
-WriteGlobals(ds.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
+WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
@@ -480,13 +464,17 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
     }
     message(paste('attempting to write to', qc.file))
     qc.out.filename = WriteNC(qc.file,ds$qc.mask,qc.var,
-                              xlon,ylat,prec='float', #missval=1.0e20,
-                              downscale.tseries=downscale.tseries, 
-                              downscale.origin=downscale.origin, calendar = downscale.calendar,
+                              xlon=list.target$dim$lon,ylat=list.target$dim$lat,
+                              downscale.tseries=list.fut$dim$time, 
+                              var.data=c(list.target$vars, list.fut$vars),
+                              prec='float',missval=1.0e20,
+                              #xlon,ylat,prec='float', #missval=1.0e20,
+                              #downscale.tseries=downscale.tseries, 
+                              #downscale.origin=downscale.origin, calendar = downscale.calendar,
                               #start.year=fut.train.start.year_1,
                               units="1",
-                              lname=paste('QC Mask'),
-                              bounds=isBounds, bnds.list = bounds.list.combined
+                              lname=paste('QC Mask')
+                              #bounds=isBounds, bnds.list = bounds.list.combined
     )
     #For now, patch the variables in here until se get s5 formalized in the XML
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,

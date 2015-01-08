@@ -10,13 +10,17 @@
 #' some assumptions being made about what is and is not a mask
 ApplySpatialMask<-function(data, mask){   #, maskname="spatial_mask", dataLon, dataLat
   #Assume a 2-D mask and 3-D data
-  if(length(mask[1,])!=length(data[1,,1])||length(mask[,1])!=length(data[,1,1])){
-    stop(paste("Spatial mask dimension error: mask was of dimensions", dim(mask)[1], dim(mask)[2], 
-               "and was expected to be of dimensions", data_dim[1], data_dim[2]))
+  if(!is.null(mask)){
+    if(length(mask[1,])!=length(data[1,,1])||length(mask[,1])!=length(data[,1,1])){
+      stop(paste("Spatial mask dimension error: mask was of dimensions", dim(mask)[1], dim(mask)[2], 
+                 "and was expected to be of dimensions", data_dim[1], data_dim[2]))
+    }
+    return(matrimult(data, mask))  
+  }else{
+    message("No spatial mask included; passing data as-is")
+    return(data)
   }
-  return(matrimult(data, mask))  
 }
-
 #Multiplies the lat./lon. mask by the spatial data at each timestep
 #Assumes a 3-D matrix of original data.
 #This is a strictly internal method, so it shouldn't need the lovely
@@ -29,24 +33,3 @@ matrimult<-function(mat,n){
   }
   return(ret)
 }
- 
-#   #Furthermore, assument that this logic is unnessecary - there should be an
-#   #appropriately-formatted mask file present with only the lon/lat coords needed there
-#   
-# #   if (!identical(c(length(masknc$dim$lon$vals), length(masknc$dim$lat$vals)), data_dim[1:2])){
-# #     print("Locating matching x-y coordiantes in data and mask")
-# #     startLon <- match(dataLon[1], masknc$dim$lon$vals)
-# #     startLat <- match(dataLat[1], masknc$dim$lat$vals)
-# #     lonLength <- length(dataLon)
-# #     latLength <- length(dataLat) #Note: this method assumes that grid steps will be the same. Valid? For now.
-# #   }else{
-# #     startLon <- 1
-# #     startLat <- 1
-# #     lonLength <- masknc$dim$lon$len
-# #     latLength<- masknc$dim$lat$len
-# #   }
-# #   mask<-ncvar_get(masknc, maskname, 
-# #                   start=c(startLon, startLat), count=c(lonLength, latLength), collapse_degen=FALSE)
-# #   nc_close(masknc)
-#   mask <- ncvar_get(mask.nc, mask.var, collapse_degen=FALSE)
-#   nc_close(mask.nc)

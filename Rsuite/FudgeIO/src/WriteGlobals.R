@@ -57,11 +57,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     comment.info <- paste(comment.info,' having done training using the ',label.training, ' time series',sep='')
   }
   if(!is.na(predictor)){
-    comment.info <- paste(comment.info, ', predictor(s) used: ',predictor,sep='')
+    comment.info <- paste(comment.info, ', predictor(s) used: ', paste(predictor, collapse=", ") ,sep='')
   }
   ##info attribute
   info <- ""
-  if(!is.na(time.masks)){
+  if(time.masks!='na'){
     commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
     time.mask.string <- ""
     for (i in 1:length(names(tmask.list))){
@@ -72,15 +72,14 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                                 collapse="")
     }
     info <- paste("Path to time mask files:", time.mask.string, ";", sep=" ")
+  }else{
+    info <- paste("No time masks were used to process this data; ")
   }
   if(ds.arguments!='na'){
     argnames <- ls.str(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }
-#   if(post.process!=""){
-#     info <- paste(info, "precipitation processing options: ", post.process, ";", sep="")
-#   }
   if(pr.process){
     pr.optstring <- paste(names(pr_opts), pr_opts, sep="=", collapse=", ")
     info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
@@ -92,11 +91,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     }else{
       qc.string = ""
     }
-    info <- paste(info, "Arguments used in adjustment functions", qc.string, ": ", adjust.args, "", sep="")
+    info <- paste(info, "Arguments used in adjustment functions", qc.string, ": ", adjust.args, "; ", sep="")
   }
   if(is.qcmask){
     #More section 5 stuff
-    info <- paste(info, "Arguments used in calculation of the QC mask: ", qc.args, sep="")
+    info <- paste(info, "Arguments used in calculation of the QC mask: ", qc.args, "; ", sep="")
   }
   if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
@@ -127,9 +126,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   ncatt_put(nc.object, 0 , "title", title )
   ncatt_put(nc.object, 0 , "history", history )
-  #print("debug1")
   ncatt_put(nc.object, 0 , "institution", institution )
-  #print("debug2")
   if(comment.info != ""){
     ncatt_put(nc.object, 0 , "comment", comment.info )
   }

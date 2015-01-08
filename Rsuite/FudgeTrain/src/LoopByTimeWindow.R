@@ -73,7 +73,15 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #source("../../FudgePreDS/ApplyTemporalMask.R")
   #source("MaskMerge.R")
   #source("CrossValidate.R")
-  num.masks <- length(names(mask.struct[[3]]$masks))
+  if(mask.struct[[1]]!='na'){
+    #If there are masks included:
+    mask.data.by.time.window <- TRUE
+    num.masks <- length(names(mask.struct[[3]]$masks))
+  }else{
+    #If there are no masks (so whole time series is used)
+    mask.data.by.time.window <- FALSE
+    num.masks <- 1
+  }
   downscale.length <- length(esd.gen)
   if(create.ds.out){
     downscale.vec <- rep(NA, downscale.length)
@@ -105,9 +113,15 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #if (window%%10==0 || window==1){
     #  message(paste("starting on window", window, "of", num.masks))
     #}
-    window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
-    window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
-    window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
+    if(mask.data.by.time.window){
+      window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
+      window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
+      window.gen <- ApplyTemporalMask(esd.gen, mask.struct[[3]]$masks[[window]])
+    }else{
+      window.predict <- train.predictor
+      window.target <- train.target
+      window.gen <- esd.gen
+    }
     if(!is.null(ds.orig)){
       window.orig <- ApplyTemporalMask(ds.orig, mask.struct[[3]]$masks[[window]])
     }else{
@@ -131,24 +145,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         kfold.gen <- window.gen
         kfold.orig <- window.orig
       }
-      #       #Create checkvectors for making sure masks do not apply
-      #       if(length(mask.struct) <=3){
-      #         newcheck <- convert.NAs(kfold.gen)
-      #         checkvector <- newcheck + checkvector
-      #         if (max(checkvector > 1)){
-      #           print(summary(checkvector))
-      #           print(which(checkvector > 1))
-      #           stop(paste("esd.gen mask collision error on mask", window, "of", num.masks))
-      #         }
-      #       }else{
-      #         newcheck <- convert.NAs(mask.struct[[4]]$masks[[window]])
-      #         checkvector <- newcheck + checkvector
-      #         if (max(checkvector > 1)){
-      #           print(summary(checkvector))
-      #           print(which(checkvector > 1))
-      #           stop(paste("time trimming mask collision error on mask", window, "of", num.masks))  
-      #         }
-      #       }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         if(length(mask.struct) <= 3){
