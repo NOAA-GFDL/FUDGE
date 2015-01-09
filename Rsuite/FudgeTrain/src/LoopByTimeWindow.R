@@ -63,7 +63,7 @@
 LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct, 
                              create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
                              graph=FALSE, masklines=FALSE, 
-                             ds.orig=NA, ds.var='tasmax',
+                             ds.orig=NULL, ds.var='tasmax',
                              #s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args, 
                              s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
@@ -75,6 +75,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #source("CrossValidate.R")
   if(mask.struct[[1]]!='na'){
     #If there are masks included:
+    print("why are you here?")
     mask.data.by.time.window <- TRUE
     num.masks <- length(names(mask.struct[[3]]$masks))
   }else{
