@@ -75,7 +75,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #source("CrossValidate.R")
   if(mask.struct[[1]]!='na'){
     #If there are masks included:
-    print("why are you here?")
     mask.data.by.time.window <- TRUE
     num.masks <- length(names(mask.struct[[3]]$masks))
   }else{
@@ -161,6 +160,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                      esd.gen = kfold.gen[!is.na(kfold.gen)], 
                                      args=downscale.args, 
                                      ds.var=ds.var)
+            gc() #Does this solve the CDFt memory allocation weirdness?
             downscale.vec[!is.na(kfold.gen)] <- temp.out
             #print(summary(as.vector(downscale.vec)))
           }
