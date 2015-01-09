@@ -160,7 +160,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                      esd.gen = kfold.gen[!is.na(kfold.gen)], 
                                      args=downscale.args, 
                                      ds.var=ds.var)
-            gc() #Does this solve the CDFt memory allocation weirdness?
+            #gc() #Does this solve the CDFt memory allocation weirdness?
+            #No it does not. This is strange and exciting.
             downscale.vec[!is.na(kfold.gen)] <- temp.out
             #print(summary(as.vector(downscale.vec)))
           }

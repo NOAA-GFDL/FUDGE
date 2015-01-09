@@ -302,10 +302,8 @@ callChangeFactor <- function(LH, CH, CF, args){
     #'@param CH: Coarse Historical (a.k.a. GCM historical)
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'@param args: named list of arguments for the function
-    #     if(!is.null(args$size)){
-    #       size <- args$size
-    #       args$size <- NULL
-    #     }else{
+
+    #Edited 1-9-15 to organize vectors by the CF vector
     size <- length(CF)
     # first define vector with probabilities [0,1]
     prob<-seq(from=1/size, by=1, to=size)/size
@@ -321,7 +319,9 @@ callChangeFactor <- function(LH, CH, CF, args){
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+    
       SDF <- SDF[order(LH.sortorder)]
+    SDF <- SDF[order(CF)]
     return (SDF)
 }
 

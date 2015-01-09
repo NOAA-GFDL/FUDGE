@@ -61,7 +61,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   ##info attribute
   info <- ""
-  if(time.masks!='na'){
+  if(time.masks[[1]]!='na'){
     commandstr <- paste("attr(tmask.list[['", names(tmask.list), "']],'filename')", sep="")
     time.mask.string <- ""
     for (i in 1:length(names(tmask.list))){
@@ -75,7 +75,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }else{
     info <- paste("No time masks were used to process this data; ")
   }
-  if(ds.arguments!='na'){
+  if(ds.arguments[[1]]!='na'){
     argnames <- ls.str(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
