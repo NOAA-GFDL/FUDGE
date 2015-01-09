@@ -96,11 +96,9 @@ while ( $inc > 0 )
    	#set cend = 36 
    end
 ## c is actually cstart 
-<<<<<<< HEAD
+
 echo $endonce
-=======
-#echo $endonce
->>>>>>> PM_region
+
 @ cend = $clast - $endonce 
 if($cend <= $clast) then
 	echo "all points covered, disregard ctail"
@@ -165,11 +163,8 @@ if ( $region == 'global' ) then
 #c set argpath = `echo $argpath $prepath/${prefix}.I94[0-1]_J${lats}-${late}.nc`
 else
  set argpath = `echo $argpath $prepath/${prefix}.I${clast}[0-${clastsub1}]_J${lats}-${late}.nc`
-<<<<<<< HEAD
  echo $argpath
-=======
-#c echo $argpath
->>>>>>> PM_region
+
 endif 
 if (($region == 'US48') | ($region == 'PM')) then
 echo "skip.."#c set argpath = `echo $argpath $prepath/${prefix}.I94[1]_J${lats}-${late}.nc`
