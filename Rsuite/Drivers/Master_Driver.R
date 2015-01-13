@@ -260,8 +260,12 @@ print(out.filename)
       #}
     #} RIP for loop
     
-    ####Precipitation changes go here
-    if(predictor.var=='pr' && exists('pr_opts')){
+    #It is likely that pre- processing could be variable specific (i.e. precipitation)
+    #That would seem to require another tag in the 
+    
+    
+    ###Precipitation changes go here
+    if(target.var=='pr' && exists('pr_opts')){
       #Options currently hard-coded
       pr.mask.opt = pr_opts$pr_threshold_in
       lopt.drizzle = pr_opts$pr_freqadj_in=='on'
@@ -391,6 +395,8 @@ if('pr'%in%target.var && exists('pr_opts')){
 ###CEW edit: replaced ds.vector with ds$esd.final
 ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
 #Or: replace within the loop, adding in a missval. That is def. a thing that you could do.
+#But it should probably wait until there is a possibility that there might be more than
+#one downscaled output.
 
 
 #So: for all RIPs in the list of rips to work with, write data as a separate file. 

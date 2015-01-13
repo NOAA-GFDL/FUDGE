@@ -81,6 +81,7 @@ else if ($opt == 'm') then
 			set is_written=1
 		endif	
 	end
+endif
 exit 0
 
 
