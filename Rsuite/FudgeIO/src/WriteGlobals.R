@@ -26,11 +26,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     comment.info <- paste(comment.info, "a QC check ", qc.method, " performed upon ", sep="")
   }
   if(!is.na(downscaling.method)){ 
-    comment.info <- paste(comment.info, 'downscaled output via ',downscaling.method,' downscaling ',sep='')
+    comment.info <- paste(comment.info, 'downscaled output via ',downscaling.method,' downscaling',sep='')
   }
   #
   if(grid_region!='somewhere'){
-    comment.info <- paste(comment.info, 'on the subset', mask_region, 'of the', grid_region, 'grid')
+    comment.info <- paste(comment.info, 'on the subset', mask_region, 'of the', grid_region, 'grid ')
   }
   #Note: is.adjusted and is.qcmask can both be true, but is.qcmask only reports on the adjustments that took place before the mask
   if(is.transform){
