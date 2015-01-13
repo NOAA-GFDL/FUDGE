@@ -67,6 +67,7 @@ callSimple.lm <- function(pred, targ, new, args){
     return( lm.intercept + unlist(x)*lm.slope)  # + unlist(x)*lm.slope2) #Messily edited multivariate fxn? I don't remember this.
   }
   #insert save command for saving 
+  #May be rendered obsolete if going to a model that uekeeps everything in memory and trains each time.
   return(trained.function(new))
 }
 
