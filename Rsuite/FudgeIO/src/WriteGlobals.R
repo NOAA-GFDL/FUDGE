@@ -13,6 +13,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          institution='NOAA/GFDL',version='undefined',title="undefined", 
                          ds.arguments='na', time.masks=NA, ds.experiment = 'unknown-experiment', 
                          time.trim.mask='na', 
+                         grid_region='somewhere', mask_region='somewhere_subset',
                          tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
                          is.adjusted=FALSE, adjust.method=NA, adjust.args=NA,
                          is.qcmask=FALSE, qc.method=NA, qc.args=NA,
@@ -26,6 +27,10 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(!is.na(downscaling.method)){ 
     comment.info <- paste(comment.info, 'downscaled output via ',downscaling.method,' downscaling ',sep='')
+  }
+  #
+  if(grid_region!='somewhere'){
+    comment.info <- paste(comment.info, 'on the subset', mask_region, 'of the', grid_region, 'grid')
   }
   #Note: is.adjusted and is.qcmask can both be true, but is.qcmask only reports on the adjustments that took place before the mask
   if(is.transform){
