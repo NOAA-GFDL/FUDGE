@@ -80,27 +80,34 @@ if (TMPDIR == ""){
   stop("ERROR: TMPDIR is not set. Please set it and try it") 
   }
 #########################################################################
+if(spat.mask.dir_1 != 'na'){
 if((grepl('^/archive',spat.mask.dir_1)) | (grepl('^/work',spat.mask.dir_1))){
 spat.mask.dir_1 <- paste(TMPDIR,spat.mask.dir_1,sep='')
-}
+}}
+if(hist.dir_1 != 'na'){
 if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
 hist.indir_1 <- paste(TMPDIR,hist.indir_1,sep='')
-}
+}}
+if(fut.indir_1 != 'na'){
 if((grepl('^/archive',fut.indir_1)) | (grepl('^/work',fut.indir_1))){
 fut.indir_1 <- paste(TMPDIR,fut.indir_1,sep='')
-}
+}}
+if(hist.indir_1 != 'na'){
 if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
 target.indir_1 <- paste(TMPDIR,target.indir_1,sep='')
-}
+}}
+if(target.time.window != 'na'){
 if((grepl('^/archive',target.time.window)) | (grepl('^/work',target.time.window))){
 target.time.window <- paste(TMPDIR,target.time.window,sep='')
-}
+}}
+if(hist.time.window != 'na'){
 if((grepl('^/archive',hist.time.window)) | (grepl('^/work',hist.time.window))){
 hist.time.window <- paste(TMPDIR,hist.time.window,sep='')
-}
+}}
+if(fut.time.window != 'na'){
 if((grepl('^/archive',fut.time.window)) | (grepl('^/work',fut.time.window))){
 fut.time.window <- paste(TMPDIR,fut.time.window,sep='')
-}
+}}
 if(fut.time.trim.mask != 'na'){
 if((grepl('^/archive',fut.time.trim.mask)) | (grepl('^/work',fut.time.trim.mask))){
 fut.time.trim.mask <- paste(TMPDIR,fut.time.trim.mask,sep='')

@@ -64,7 +64,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
  echo "mkdir -p "$logdir  >> $runpath
 
 ## Add lines to gcp input from /arch to VFTMP for processing
- if ($SPAT_MASK_DIR != 'NA/') then
+ if ($SPAT_MASK_DIR != 'na') then
          echo 'mkdir -p $TMPDIR'$SPAT_MASK_DIR  >> $runpath
  endif
  
@@ -102,7 +102,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
  endif
 # if ($SPAT_MASK_DIR != 'NA/') then
 #        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
- if ($SPAT_MASK_DIR != 'NA/') then
+ if ($SPAT_MASK_DIR != 'na') then
         echo "gcp --sync -cd $SPAT_MASK_DIR/*I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
