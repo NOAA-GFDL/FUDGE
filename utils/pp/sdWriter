@@ -20,6 +20,7 @@ set grid = $9
 #set drs = $8
 #set obs = "OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)" # use as arg TODO
 set simple = 0
+echo "debug ....."
 #set exp_config_url = "http://gfdl.noaa.gov/esd_experiment_configs"
 if (($AARMVAR == "tasmax") || ($AARMVAR == "tasmin")) then
 set maskswitch = "on" ####saving mask fields 
