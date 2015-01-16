@@ -84,7 +84,7 @@ if(spat.mask.dir_1 != 'na'){
 if((grepl('^/archive',spat.mask.dir_1)) | (grepl('^/work',spat.mask.dir_1))){
 spat.mask.dir_1 <- paste(TMPDIR,spat.mask.dir_1,sep='')
 }}
-if(hist.dir_1 != 'na'){
+if(hist.indir_1 != 'na'){
 if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
 hist.indir_1 <- paste(TMPDIR,hist.indir_1,sep='')
 }}
