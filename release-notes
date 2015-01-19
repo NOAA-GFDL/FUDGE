@@ -1,3 +1,9 @@
+01/13/2015
+Aparna Radhakrishnan
+1.Changes to support absence of spatial and temporal masks in XML (tested only in expergen)
+2. Previous changes to support PM  merged
+3. This version not to be used with postProc (updates to follow)
+ 
 11/15/2014
 postProc changes:
 Aparna Radhakrishnan

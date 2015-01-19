@@ -62,7 +62,7 @@ while ( $inc > 0 )
    set endonce = 0
    ############ removing hardwires assumptions about file prefixes ###############
    foreach ival (`seq $lons 1 $lone`)
-	   echo $ival
+#	   echo $ival
            @ cmod = $ival % 10
         if (($endonce == 0) & ($cmod != 0))then
            if($ccheck != 0) then
@@ -86,7 +86,7 @@ while ( $inc > 0 )
 		set cstart = 0	
 	  else	
 		set clast = `echo "$ival" | cut -d$cmod -f1`
-		echo "debug debug ..........$clast ival $ival"
+		#echo "debug debug ..........$clast ival $ival"
 
 		set endonce = 1 
 	        set clastsub1 = $cmod 
@@ -163,7 +163,7 @@ if ( $region == 'global' ) then
 #c set argpath = `echo $argpath $prepath/${prefix}.I94[0-1]_J${lats}-${late}.nc`
 else
  set argpath = `echo $argpath $prepath/${prefix}.I${clast}[0-${clastsub1}]_J${lats}-${late}.nc`
- echo $argpath
+#c echo $argpath
 
 endif 
 if (($region == 'US48') | ($region == 'PM')) then
@@ -175,23 +175,37 @@ echo "continue.."
 
 source ${auxfiledir}/loadit
 #echo "ncecat  $argpath $OFILE"
-ncecat -v ${varname} -h $argpath $OFILE 
-#tooooo slow ncwa -a record $OFILE $OFILE # Remove new degenerate record dimension
-###########################################################################
-#echo "ncecat -h $argpath $OFILE"
+############if spat mask is na ############
+if ($grid == 'na') then
+set ctr = 0 
+echo "debg1"
+#cset tmpfile = "tmp_${OFILE}_$ctr.nc"
+set tmpfile = ""
+foreach argh ($argpath)
+ncpdq -A -a lon,lat,time $argh tmp_${OFILE}_$ctr.nc
+set tmpfile = `echo $tmpfile tmp_${OFILE}_$ctr.nc`
+@ ctr = $ctr + 1
+end
+ncrcat -h $tmpfile out_$OFILE.nc 
+ncpdq -a time,lat,lon out_$OFILE.nc $OFILE 
+foreach tmp ($tmpfile)
+rm -f $tmp
+rm -f out_$OFILE.nc
+end
+exit
+endif
+############################################
+############if spat mask is not na ############
+if ($grid != 'na') then
+ncecat -v ${varname} -h $argpath $OFILE
 echo "catting ..done"
 echo "record arrangement in progress.."
-#ncpdq -O -h -a time,lat,record $OFILE $OFILE 
-#ncpdq -O -h -a t,record,time $OFILE $OFILE
-#cncks -A -h --hdr -h -v lon $lonfile $OFILE
-
 ncpdq -O -h -v ${varname} -a time,lat,lon,record $OFILE $OFILE
 #add lat lon bounds info
-#ncks -A -h -v lat,lat_bnds $bndsfile $OFILE
-#ncks -A -h -v lon,lon_bnds $bndsfile $OFILE
 ncrename -h  -v lon,lon1 $OFILE 
 ncrename -h -d lon,lon1 $OFILE
 ncks -A -h -v lat,lat_bnds,lon,lon_bnds $grid $OFILE 
 #### take time_bnds,i_offset,j_offset from the first minifile
 ncks -A -h -v time_bnds,i_offset,j_offset "$prepath/${prefix}.I${lons}_J${lats}-${late}.nc" $OFILE
+endif
 

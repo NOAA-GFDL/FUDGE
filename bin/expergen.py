@@ -25,14 +25,6 @@ def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
 		else:
-			###CEW mod 12-5: MJN spatial masks use same format as everything else for US48/PM
-			#if(key == 'maskvar'): 
-				#print "use output_grid/region name in XML instead -- applicable for US48/PM"
-				#key='output_grid'
-				#print "About to check the mask var"
-				#val = checkTags(dictParams.key)
-				#print "Done checking maskvar"
-			#elif(key == 'oroot'):
 			if(key == 'oroot'):
 				#projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/RedRiver/"
 				print "use output root default value", projectRoot
@@ -61,6 +53,16 @@ def checkTags(dictParams,key):
                         elif(key == 'adjust_out'):
                                 val = 'na'
                         elif(key == 'masklists'):
+                                val = 'na'
+                        elif(key == 'target_time_window'):
+                                val = 'na'
+                        elif(key == 'hist_time_window'):
+                                val = 'na'
+                        elif(key == 'fut_time_window'):
+                                val = 'na'
+                        elif(key == 'spat_mask'):
+                                val = 'na'
+                        elif(key == 'maskvar'):
                                 val = 'na'
 		        else:		
 				print "Error: Missing value for ",key

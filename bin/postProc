@@ -57,7 +57,10 @@ def postProc():
      basedire = basedir	
      esdMethod = method
      varname = target 
-     grid = spat_mask+"../"+region+".nc"
+     if(spat_mask != 'na'):
+     	grid = spat_mask+"../"+region+".nc"
+     else:
+	grid = 'na'
      region = ds_region
      outrec = outdir.split('_')
      #amip = outrec[0] 

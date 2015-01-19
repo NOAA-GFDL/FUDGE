@@ -40,10 +40,12 @@ class XMLHandler:
                 dictParams['predictor_list'] = predictor_list 
     		target = input_node.attrib.get('target')
 		dictParams['target'] = target
-    		spat_mask = input_node.attrib.get('spat_mask')
-    		dictParams['spat_mask'] = spat_mask
-    		maskvar = input_node.attrib.get('maskvar')
-    		dictParams['maskvar'] = maskvar
+                if 'spat_mask' in input_node.attrib:
+    			spat_mask = input_node.attrib.get('spat_mask')
+    			dictParams['spat_mask'] = spat_mask
+                if 'maskvar' in input_node.attrib:
+    			maskvar = input_node.attrib.get('maskvar')
+    			dictParams['maskvar'] = maskvar
                 spat_mask_ID = input_node.attrib.get('spat_mask_ID')
                 dictParams['spat_mask_ID'] = spat_mask_ID 
 	# Get grid information
@@ -79,8 +81,9 @@ class XMLHandler:
 			dictParams['hist_train_start_time'] = hist_train_start_time	
                         hist_train_end_time = hist_node.attrib['train_end_time']
 			dictParams['hist_train_end_time'] = hist_train_end_time
-		        hist_time_window = hist_node.attrib['time_window']
-                        dictParams['hist_time_window'] = hist_time_window
+                        if 'time_window' in hist_node.attrib:
+		        	hist_time_window = hist_node.attrib['time_window']
+                        	dictParams['hist_time_window'] = hist_time_window
     			for histid_node in hist_node.findall('.//dataset'):
 #TODO id lists
         			hist_id.append(histid_node.text)
@@ -95,8 +98,9 @@ class XMLHandler:
                         dictParams['target_train_start_time'] = target_train_start_time
                         target_train_end_time = target_node.attrib['train_end_time']
                         dictParams['target_train_end_time'] = target_train_end_time
-                        target_time_window = target_node.attrib['time_window']
-                        dictParams['target_time_window'] = target_time_window
+                        if 'time_window' in target_node.attrib:
+                        	target_time_window = target_node.attrib['time_window']
+                        	dictParams['target_time_window'] = target_time_window
                         for targetid_node in target_node.findall('.//dataset'):
                                 target_id.append(targetid_node.text)
                                 dictParams['target_id'] = target_id
@@ -110,8 +114,9 @@ class XMLHandler:
                         dictParams['fut_train_start_time'] = fut_train_start_time
                         fut_train_end_time = fut_node.attrib['train_end_time']
                         dictParams['fut_train_end_time'] = fut_train_end_time
-                        fut_time_window = fut_node.attrib['time_window']
-                        dictParams['fut_time_window'] = fut_time_window
+                        if 'time_window' in fut_node.attrib:
+                        	fut_time_window = fut_node.attrib['time_window']
+                       	        dictParams['fut_time_window'] = fut_time_window
 			if 'time_trim_mask' in fut_node.attrib:
                         	fut_time_trim_mask = fut_node.attrib['time_trim_mask']
                         	dictParams['fut_time_trim_mask'] = fut_time_trim_mask
