@@ -9,7 +9,6 @@ if (($?argv == '-h') ||($#argv < 4)) then
 
    exit 1
 endif
-echo "trying with delib. attempt to break and no quote after DRS"
 #echo $fakevar
 
 set inc = $#argv # ? to #
@@ -60,7 +59,7 @@ while ( $inc > 0 )
    set ccheck = 1
    set cend = 0 
    set endonce = 0
-   ############ removing hardwires assumptions about file prefixes ###############
+   ############ removing hardwired assumptions about file prefixes ###############
    foreach ival (`seq $lons 1 $lone`)
 #	   echo $ival
            @ cmod = $ival % 10

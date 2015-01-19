@@ -220,23 +220,23 @@ callBiasCorrection <- function(LH, CH, CF, args){
   #     size <- args$size
   #     args$size <- NULL
   #   }else{
-  if(!is.null(args$flip)){
-    if(args$flip=="true"){
-      size <- length(CF)
-      prob<-c(0.001:1:size)/size
-      #check the order preservation status
-      in.sort <- order(CF)
-      CF.out <- CF[in.sort]
-      # QM Change Factor
-      #
-      #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
-      SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
-      #CEW: creation of historical values commented out for the moment
-      #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
-      #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-      SDF <- SDF[order(in.sort)]
-    }
-  }else{
+#   if(!is.null(args$flip)){
+#     if(args$flip=="true"){
+#       size <- length(CF)
+#       prob<-c(0.001:1:size)/size
+#       #check the order preservation status
+#       in.sort <- order(CF)
+#       CF.out <- CF[in.sort]
+#       # QM Change Factor
+#       #
+#       #SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
+#       SDF<-quantile(LH,ecdf(CF.out)(quantile(CH,prob)),names=FALSE)
+#       #CEW: creation of historical values commented out for the moment
+#       #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
+#       #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+#       SDF <- SDF[order(in.sort)]
+#     }
+#   }else{
   size <- length(CF)
   prob<-seq(from=1/size, by=1, to=size)/size
   #check the order preservation status
@@ -251,7 +251,6 @@ callBiasCorrection <- function(LH, CH, CF, args){
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
     SDF <- SDF[order(in.sort)]
   return (SDF)
-  }
 }
 
 callEquiDistant <- function(LH, CH, CF, args){
@@ -266,30 +265,17 @@ callEquiDistant <- function(LH, CH, CF, args){
   prob<-seq(from=1/size, by=1, to=size)/size
   
   #check order preservation status
-#    in.sort <- order(CF)
+    in.sort <- order(CF)
 #    CF.out <- CF[in.sort]
 
   #Create numerator and denominator of equation
   #First scale with local historical and reorder
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   LH.interp <- interpolate.points(LH, size)
-#   LH.order <- order(LH.interp)
-  #Check for arg for specifying calendar order preservation
-  LH.sorted <- order(LH)
-  LH.interp <- interpolate.points(LH, size, 'linear')
-  LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
-  temporal <- temporal[LH.sortorder]
+  temporal <- temporal[in.sort]
   
   #And then scale with climate historical
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   CH.interp <- interpolate.points(CH, size)
-#   CH.order <- order(CH.interp)
-  #Check for arg for specifying calendar order preservation
-  #1-12-2014: all orders should be based off of CF, not CH
-  CH.sorted <- order(CF)
-  CH.interp <- interpolate.points(CH, size, 'linear')
-  CH.sortorder <- interpolate.points(CH.sorted, size, 'repeat')
-  temporal <- temporal[CH.sortorder]
+  temporal2 <- temporal2[in.sort]
   
   # EQUIDISTANT CDF (Li et al. 2010)
   SDF<-CF + temporal-temporal2
@@ -325,8 +311,7 @@ callChangeFactor <- function(LH, CH, CF, args){
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-#    
-#      SDF <- SDF[order(LH.sortorder)]
+    
     SDF <- SDF[order(CF)]
     return (SDF)
 }
