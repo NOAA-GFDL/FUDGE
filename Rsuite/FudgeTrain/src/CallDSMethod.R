@@ -39,7 +39,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "CFQMv2" = callCFQMv2(train.target, train.predict, esd.gen, args),
                 "BCQMv2" = callBCQMv2(train.target, train.predict, esd.gen, args),
                 "EDQMv2" = callEDQMv2(train.target, train.predict, esd.gen, args),
-                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var),
+                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
                 'Nothing' = callNothing(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method))
   #print(paste("stop time:", date()))
@@ -63,10 +63,11 @@ callSimple.lm <- function(pred, targ, new, args){
   }
   trained.function<-function(x){
     print(lm.intercept)
-    print(lm.slope1)
-    return( lm.intercept + unlist(x)*lm.slope1 + unlist(x)*lm.slope2)
+    print(lm.slope)
+    return( lm.intercept + unlist(x)*lm.slope)  # + unlist(x)*lm.slope2) #Messily edited multivariate fxn? I don't remember this.
   }
   #insert save command for saving 
+  #May be rendered obsolete if going to a model that uekeeps everything in memory and trains each time.
   return(trained.function(new))
 }
 
@@ -151,7 +152,9 @@ callCDFt <- function (pred, targ, new, args){
     stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
   }
   if(is.null(args)){
-    return(CDFt(targ, pred, new, npas=length(targ))$DS)
+    #return(CDFt(targ, pred, new, npas=length(targ))$DS)
+    temp <- CDFt(targ, pred, new, npas=length(targ))$DS
+    return(as.numeric(temp))
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
@@ -163,7 +166,9 @@ callCDFt <- function (pred, targ, new, args){
     args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
     #    print("calling CDFt with args:")
     #    print(args)
-    return(do.call("CDFt", args.list)$DS)
+    #return(do.call("CDFt", args.list)$DS)
+    temp <- do.call("CDFt", args.list)$DS
+    return(as.numeric(temp))
   }
 }
 
@@ -280,7 +285,8 @@ callEquiDistant <- function(LH, CH, CF, args){
 #   CH.interp <- interpolate.points(CH, size)
 #   CH.order <- order(CH.interp)
   #Check for arg for specifying calendar order preservation
-  CH.sorted <- order(CH)
+  #1-12-2014: all orders should be based off of CF, not CH
+  CH.sorted <- order(CF)
   CH.interp <- interpolate.points(CH, size, 'linear')
   CH.sortorder <- interpolate.points(CH.sorted, size, 'repeat')
   temporal <- temporal[CH.sortorder]
@@ -309,9 +315,9 @@ callChangeFactor <- function(LH, CH, CF, args){
     prob<-seq(from=1/size, by=1, to=size)/size
     
     #Check for arg for specifying calendar order preservation
-    LH.sorted <- order(LH)
-    LH.interp <- interpolate.points(LH, size, 'linear')
-    LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
+#     LH.sorted <- order(LH)
+#     LH.interp <- interpolate.points(LH, size, 'linear')
+#     LH.sortorder <- interpolate.points(LH.sorted, size, 'repeat')
     #LH.order <- order(LH.interp)
 
     # QM Change Factor
@@ -319,8 +325,8 @@ callChangeFactor <- function(LH, CH, CF, args){
     ##CEW: creation of historical quantiles turned off for the moment
     #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
     #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-    
-      SDF <- SDF[order(LH.sortorder)]
+#    
+#      SDF <- SDF[order(LH.sortorder)]
     SDF <- SDF[order(CF)]
     return (SDF)
 }
@@ -339,8 +345,10 @@ callDeltaSD <- function(LH,CH,CF,args){
     #' a delta that is applied to the LH (observational) data
     #'@return SDF: Downscaled Future (Local)
     ########################################
-    # Delta Downscaling
-    # 1) Calculate mean difference between CH and CF 
+    #Note: preferred behavior is to truncate vectors
+    #rather than randomply sampling iff too short.
+    
+    # Obtain options
     if(!is.null(args$deltatype)){
       deltatype <- args$deltatype
     }else{
@@ -351,22 +359,63 @@ callDeltaSD <- function(LH,CH,CF,args){
     }else{
       stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
     }
-    if(deltaop=='add'){
-      #Downscale by difference delta
-      delta<-do.call(deltatype, list(CF))-do.call(deltatype, list(CH))
-      message("ignore warning message; vector recycling in effect")
-      CF[1:length(CF)] <- LH
-      SDF<- CF+delta
-    }else if(deltaop=='ratio'){
-      #Downscale by percentage delta (never negative)
-      delta<-do.call(deltatype, list(CF))/do.call(deltatype, list(CH))
-      message("ignore warning message; vector recycling in effect")
-      CF[1:length(CF)] <- LH
-      SDF<-CF*delta
+    #Decide how many iterations of the delta method to perform
+    #based on the relative lengths of the historical
+    #and future data (future should be <= historical)
+    if(length(LH) <= length(CF)){
+      #If the future and historical periods are unequal, truncate the vectors
+      #That...raises an interesting question: should the CH vector be truncated as well?
+      #Technically, it doesn't need to be.
+      SDF <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop)
     }else{
-      stop(paste("DeltaSD Downscaling Error: deltaop", deltaop, "is not one of 'ratio' or 'add'"))
-    }
+      #Otherwise, if the vectors are uneven then add the 
+      write.len <- 1
+      out.len <- length(CF)
+      in.len <- length(LH)
+      SDF <- rep(NA, out.len)
+      while(write.len < out.len){
+        #delta.downscale removes NAs in the output vector
+        tempvec <- delta.downscale(LH, CH, CF[write.len:(write.len + in.len)], 
+                                                             deltatype, deltaop)
+        SDF[write.len:length(tempvec)] <- tempvec
+        write.len <- write.len + in.len
+      }
     return (SDF)
+    }
+}
+
+delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop){
+  #Calculates a delta after removing NAs and applies it to a target vector.
+  #Helper method for callDeltaSD, but might be used elsewhere.
+  #Make sure that there are no NA values in the current vector
+  delta.fut <- delta.fut[!is.na(delta.fut)]
+  if(deltaop=='add'){
+    #Downscale by difference delta
+    delta<-do.call(deltatype, list(delta.fut))-do.call(deltatype, list(delta.hist))
+#     message("ignore warning message; vector recycling in effect")
+#     message("trying without vector recycling in effect")
+    #       LH.interpolated <- interpolate.points(LH, length(CF))
+    #       CF.order <- order(CF)
+    #       LH.interpolated <- LH.interpolated[CF.order]      
+    #CF[1:length(CF)] <- LH
+    #SDF<- CF+delta
+    out <- delta.fut + delta
+  }else if(deltaop=='ratio'){
+    #Downscale by percentage delta (never negative)
+    delta<-do.call(deltatype, list(delta.fut))/do.call(deltatype, list(delta.hist))
+#     message("ignore warning message; vector recycling in effect")
+    #       message("trying without vector recycling in effect")
+    #       LH.interpolated <- interpolate.points(LH, length(CF))
+    #       CF.order <- order(CF)
+    #       LH.interpolated <- LH.interpolated[CF.order]
+    #       CF[1:length(CF)] <- LH
+    #       SDF<-CF*delta
+    #SDF <- LH.interpolated*delta
+    out <- delta.fut*delta
+  }else{
+    stop(paste("delta.downscale Downscaling Error: deltaop", deltaop, "is not one of 'ratio' or 'add'"))
+  }
+  return(out)
 }
 
 # callNothing <- function(pred=NA, targ=NA, new=NA, args=NA){
