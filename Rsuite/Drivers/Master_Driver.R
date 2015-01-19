@@ -260,8 +260,17 @@ print(out.filename)
       #}
     #} RIP for loop
     
-    ####Precipitation changes go here
-    if(predictor.var=='pr' && exists('pr_opts')){
+    #It is likely that pre- processing could be variable specific (i.e. precipitation)
+    #That would seem to require another tag in the XML to distringuish
+    #as well as *another* tag to cover modifications to the future predictor
+    #and target datasets - though then again, that could also be covered by the
+    #ideaof pre-processing operating only on those three datasets. 
+    #In that case, you do need a separate pre- and post-processing structure to handle things - 
+    #but you can still make it a bit more flexible.
+    
+    
+    ###Precipitation changes go here
+    if(target.var=='pr' && exists('pr_opts')){
       #Options currently hard-coded
       pr.mask.opt = pr_opts$pr_threshold_in
       lopt.drizzle = pr_opts$pr_freqadj_in=='on'
@@ -391,6 +400,8 @@ if('pr'%in%target.var && exists('pr_opts')){
 ###CEW edit: replaced ds.vector with ds$esd.final
 ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
 #Or: replace within the loop, adding in a missval. That is def. a thing that you could do.
+#But it should probably wait until there is a possibility that there might be more than
+#one downscaled output.
 
 
 #So: for all RIPs in the list of rips to work with, write data as a separate file. 
@@ -433,9 +444,10 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
              configURL,label.validation,institution='NOAA/GFDL',
              version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+             grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-             is.adjusted=!is.na(adjust.list$adjust.methods), adjust.method=adjust.list$adjust.methods, 
+             is.adjusted=!(adjust.list$adjust.methods=='na'), adjust.method=adjust.list$adjust.methods, 
              adjust.args=adjust.list$adjust.args,
              pr.process=exists('pr_opts'), pr_opts=pr_opts)
 
@@ -481,6 +493,7 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                  configURL,label.validation,institution='NOAA/GFDL',
                  version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+                 grid_region=grid, mask_region=ds.region,
                  time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
                  is.qcmask=TRUE, qc.method=adjust.list$qc.method, qc.args=adjust.list$qc.args,
