@@ -64,14 +64,26 @@ callPR <- function(test, input, adjusted.output){
   #as output by the precipitation adjustment
   #functions
   
+  #Obtain function args
+  if('pr_threshold_in'%in%test && 'pr_freqadj_in'%in%test
+     && 'pr_conserve_in'%in%test){
+  pr.mask.opt = pr_opts$pr_threshold_in
+  lopt.drizzle = pr_opts$pr_freqadj_in=='on'
+  lopt.conserve= pr_opts$pr_conserve_in=='on'
+  }else{
+    stop(paste("Precipitation Pre-Processing Argument Error: one or more of pr_threshold_in, 
+               ir_freqadj_in, or pr_conserve_in not present in arguments to precipitation
+               pre-processing function."))
+  }
+  
   #at the end, instructions are unchanged
-  return(list(input=AdjustWetdays(ref.data=input$hist.targ, ref.units=attr(input$hist.targ, "units"), 
+  return(list('input'=AdjustWetdays(ref.data=input$hist.targ, ref.units=attr(input$hist.targ, "units"), 
                                   adjust.data=input$hist.pred, adjust.units=attr(input$hist.pred, "units"), 
                                   adjust.future=input$fut.pred, adjust.future.units=attr(input$fut.pred, "units"),
                                   opt.wetday=test$opt.wetday, 
                                   lopt.drizzle=test$lopt.drizzle, 
                                   lopt.conserve=test$lopt.conserve), 
-              s5.list=s5.list))
+              's5.list'=s5.list))
   
 }
 
