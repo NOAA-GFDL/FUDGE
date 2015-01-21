@@ -330,14 +330,15 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
-	    target_freq = dict_target['mip']
+	    #CEW edit for testing purposes mip to freq
+	    target_freq = dict_target['freq']
 	    target_ver = dict_target['ver']
 	    hist_scenario = dict_hist['exp']+"_"+dict_hist['rip']
-	    hist_freq = dict_hist['mip']
+	    hist_freq = dict_hist['freq'] #CEW edit to test
             hist_model = dict_hist['model']
 	    fut_scenario = dict_fut['exp']+"_"+dict_fut['rip']	
             fut_model = dict_fut['model']
-            fut_freq = dict_fut['mip']
+            fut_freq = dict_fut['freq'] #CEW edit mip to freq
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
 
 	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists
