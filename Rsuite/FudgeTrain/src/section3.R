@@ -1,4 +1,10 @@
-#'calls5Adjustment.R
+#'calls3Adjustment.R
+#'
+#'Initial stab at a pre-processing function called the same way
+#'that the post-processing functions are. It's going to be needed
+#'for the transforms soon, anyway.
+#'IMPORTANT DIFFERENCE: There will never be any masks on these, 
+#'or at least not for the first six months. 
 #'
 #'Creates a mask of the same dimensions as the downscaled data 
 #'for which the default behavior is that a 1 means that the data
@@ -21,37 +27,64 @@
 #'@returns A vector of values for the time series at the individual x,y, point
 #'with 0 for all values that did not pass the test and 1 for all values that did.
 #'CEW edit 10-22 to incorporate the proposed looping structure
-callS5Adjustment<-function(s5.instructions=list('na'),
+callS3Adjustment<-function(s3.instructions=list('na'),
                    data = NA, #downscaled data - from this run or another
                    hist.pred = NA, 
                    hist.targ = NA, 
                    fut.pred = NA, 
-                   create.qc.mask=FALSE, create.adjust.out=FALSE){
+                   create.qc.mask=FALSE, create.adjust.out=FALSE, 
+                   s5.instructions=list('na')){
   #Create list of variables that will not change with iteration
   #input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred)
   #Define data that will change with iteration
-  qc.mask <- NULL  #If no mask generated, will keep being null forever
-  #adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
   adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred), 
-                        adjusted.output=list())
+                        s5.list=s5.list)
   
-  for(element in 1:length(s5.instructions)){
+  for(element in 1:length(s3.instructions)){
     test <- s5.instructions[[element]]
-    #adjusted.output <- switch(test$type, 
+    #Note that BOTH ELEMENTS get returned for the adjusted output. 
+    #The transforms may have elements that will depend on the conditions of the initial transform, 
+    #and the order of the backtransform is going to be dependant on the order of the elements
+    #that go into it. 
     adjusted.list <- switch(test$type,
-                              'sdev' = return(callSdev(test, input, adjusted.output)),
-                              'sdev2' = return(callSdev2(test,  input, adjusted.output)),
-                              'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
-                              'flag.neg' = return(callFlagNegativeValues(test, input, adjusted.output)),
-                              'Nothing' = return(callNoMethod(test, input, adjusted.output)),
+                              'sdev' = return(callSdev(test, adjusted.list$input, adjusted.list$s5.list)),
+                              'pr' = return(callPR(test, adjusted.list$input, adjusted.list$s5.list)),
+                              #'sdev2' = return(callSdev2(test,  input, adjusted.output)),
+                              #'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
+                              #'flag.neg' = return(callFlagNegativeValues(test, input, adjusted.output)),
+                              #'Nothing' = return(callNoMethod(test, input, adjusted.output)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
-  if(post.process){
-    return(adjusted.list$adjusted.output)
+  return(adjusted.list)
+}
+
+callPR <- function(test, input, adjusted.output){
+  #Outputs a set of adjusted input datasets
+  #as output by the precipitation adjustment
+  #functions
+  
+  #Obtain function args
+  if('pr_threshold_in'%in%test && 'pr_freqadj_in'%in%test
+     && 'pr_conserve_in'%in%test){
+  pr.mask.opt = pr_opts$pr_threshold_in
+  lopt.drizzle = pr_opts$pr_freqadj_in=='on'
+  lopt.conserve= pr_opts$pr_conserve_in=='on'
   }else{
-    return(adjusted.list$input)
+    stop(paste("Precipitation Pre-Processing Argument Error: one or more of pr_threshold_in, 
+               ir_freqadj_in, or pr_conserve_in not present in arguments to precipitation
+               pre-processing function."))
   }
+  
+  #at the end, instructions are unchanged
+  return(list('input'=AdjustWetdays(ref.data=input$hist.targ, ref.units=attr(input$hist.targ, "units"), 
+                                  adjust.data=input$hist.pred, adjust.units=attr(input$hist.pred, "units"), 
+                                  adjust.future=input$fut.pred, adjust.future.units=attr(input$fut.pred, "units"),
+                                  opt.wetday=test$opt.wetday, 
+                                  lopt.drizzle=test$lopt.drizzle, 
+                                  lopt.conserve=test$lopt.conserve), 
+              's5.list'=s5.list))
+  
 }
 
 callSdev <- function(test, input, adjusted.output){
@@ -71,7 +104,7 @@ callSdev <- function(test, input, adjusted.output){
   if(test$adjust.out=='on'){
     adjust.vec <- ifelse( (is.na(mask.vec)), 
                           yes=ifelse( (1==sign(out.mean-adjusted.output$ds.out)), 
-                                       out.mean-out.comp, out.mean+out.comp ), 
+                                      out.mean-out.comp, out.mean+out.comp ), 
                           no=adjusted.output$ds.out)
     out.list$ds.out <- adjust.vec
   }
