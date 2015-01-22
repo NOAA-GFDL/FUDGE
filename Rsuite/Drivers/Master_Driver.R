@@ -261,12 +261,7 @@ print(out.filename)
     #} RIP for loop
     
     #It is likely that pre- processing could be variable specific (i.e. precipitation)
-    #That would seem to require another tag in the XML to distringuish
-    #as well as *another* tag to cover modifications to the future predictor
-    #and target datasets - though then again, that could also be covered by the
-    #ideaof pre-processing operating only on those three datasets. 
-    #In that case, you do need a separate pre- and post-processing structure to handle things - 
-    #but you can still make it a bit more flexible.
+    #That would seem to require another tag in the 
     
     
     ###Precipitation changes go here
