@@ -62,8 +62,8 @@ callSimple.lm <- function(pred, targ, new, args){
                   "and intercept was", lm.slope, ": therefore no ESD values will be generated."))
   }
   trained.function<-function(x){
-    print(lm.intercept)
-    print(lm.slope)
+    #print(lm.intercept)
+    #print(lm.slope)
     return( lm.intercept + unlist(x)*lm.slope)  # + unlist(x)*lm.slope2) #Messily edited multivariate fxn? I don't remember this.
   }
   #insert save command for saving 
@@ -353,7 +353,8 @@ callDeltaSD <- function(LH,CH,CF,args){
       #Technically, it doesn't need to be.
       SDF <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop)
     }else{
-      #Otherwise, if the vectors are uneven then add the 
+      #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
+      #where n=length(CF)/length(LH)
       write.len <- 1
       out.len <- length(CF)
       in.len <- length(LH)

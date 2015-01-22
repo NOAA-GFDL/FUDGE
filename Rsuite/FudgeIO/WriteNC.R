@@ -66,7 +66,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
     #Define variable list and populate it
     var.dat <- list()    
     #Write the variable containing downscaled data
-    if(exists("xlon") & (xlon != '')){
+    if(exists("xlon") & (xlon[1] != '')){
       var.dat[[var.name]] <- ncvar_def(var.name,units,list(xlon,ylat,downscale.tseries),missval=missval,longname=lname,prec=prec)#x,y,t1
     }else{
       var.dat[[var.name]] <- ncvar_def(var.name,units,list(ylat, downscale.tseries),missval=missval,longname=lname,prec=prec, verbose=TRUE)
@@ -79,7 +79,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
       var.dim <- unlist(strsplit(attr(var.data[[v]], "dimids"), ","))
       var.dimlist <- list()
       #if(is.null(var.dim)){
-      if(var.dim=='NA'){
+      if(var.dim[1]=='NA'){
         var.dimlist <- NULL
       }else{
         for(d in 1:length(var.dim)){

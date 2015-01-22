@@ -4,10 +4,10 @@
 
 ############### Library calls, source necessary functions ###################################################
 #TODO the following sapplys and sourcing should be a library call
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/src/',sep=''), full.names=TRUE), source);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/src/',sep=''), full.names=TRUE), source);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/src/',sep=''), full.names=TRUE), source);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/src/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), full.names=TRUE), source);
 source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
 #sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/Drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
@@ -121,6 +121,7 @@ SetDSMethodInfo(ds.method)
 message("Checking downscaling arguments")
 QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 #Check for writable output directory 
+#TODO: remove this; only needed if testing R code separately
 message("Checking output directory")
 QCIO(output.dir)
 
@@ -133,8 +134,7 @@ adjust.list <- QCSection5(mask.list)
 }
 
 #### Then, read in spatial and temporal masks. Those will be used
-#### not only as a source of dimensions for writing the downscaled
-#### output to file, but as an immediate check upon the dimensions
+#### not only for the masks, but as an immediate check upon the dimensions
 #### of the files being read in.
 
 # # spatial mask read check
@@ -223,7 +223,7 @@ print(out.filename)
     p.var <- predictor.vars[predictor.var]
     #TODO with multiple predictors, use this as outer loop before retrieving input files,assign names with predictor.var as suffix. 
     #There is also probably an elegant way to generalize this for an unknown number of input files, but that 
-    #should wait for later. See QCINput for more information on what that might look like.
+    #should wait for later. See QCInput for more information on what that might look like.
     
     ######################## input minifiles ####################
   
@@ -318,7 +318,7 @@ start.time <- proc.time()
 #Edit 1-5 for a smaller if and a single call
 
 #args should always exist; it's specified in the runcode
-if (args=='na'){
+if (args[1]=='na'){
   ds.args=NULL
 }else{
   ds.args=args
@@ -356,16 +356,10 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 
 if('pr'%in%target.var && exists('pr_opts')){
   if(!is.null(grep('out', names(pr_opts)))){
-    ####For NOW: Apply 0-threshold, regardless of other input, in order to 
-    ###avoid negative pr values (conserve is not sufficient)
-    ###CG option: test at later date? 
-#     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = 'zero')
-#     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
     print(paste("Adjusting downscaled pr values"))
     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
     print(dim(out.mask))
     if(pr_opts$pr_conserve_out=='on'){
-      #ds$esd.final <- apply(c(ds$esd.final, out.mask), c(1,2), conserve.prseries)
       #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
       for(i in 1:length(ds$esd.final[,1,1])){
         for(j in 1:length(ds$esd.final[1,,1])){
@@ -415,12 +409,9 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           xlon=list.target$dim$lon,ylat=list.target$dim$lat,
                           downscale.tseries=list.fut$dim$time, 
                           var.data=c(list.target$vars, list.fut$vars),
-                          #downscale.origin=downscale.origin, calendar = downscale.calendar,
-                          #start.year=fut.train.start.year_1,
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
                           cfname=list.fut$cfname$value 
-                          #bounds=isBounds, bnds.list = bounds.list.combined
                           )
 
 #Write Global attributes to downscaled netcdf
