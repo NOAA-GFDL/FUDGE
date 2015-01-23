@@ -292,10 +292,10 @@ list.target$clim.in <- temp.output$input$hist.targ
 list.hist$clim.in <- temp.output$input$hist.pred
 list.fut$clim.in <- temp.output$input$fut.pred
 
-temp.output.old <- temp.output
-remove(temp.output)
+#temp.output.old <- temp.output
+#remove(temp.output)
 
-stop("no need to downscale")
+#stop("no need to downscale")
     
     
     
@@ -361,6 +361,11 @@ if (args[1]=='na'){
   ds.args=args
 }
 
+###More hasty modifications to test against previous results
+adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
+                                 "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA)
+mask.list <- adjust.list
+
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
@@ -390,6 +395,10 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 #--QC Downscaled Values
 #print("STATS: Downscaled output")
 #MyStats(ds$esd.final,verbose="yes")
+
+###Hasty modifications for testing against earlier pr results
+pr.mask.opt <- post_ds$mask1$qc_args$thold
+
 
 if('pr'%in%target.var && exists('pr_opts')){
   if(!is.null(grep('out', names(pr_opts)))){
@@ -427,7 +436,7 @@ if('pr'%in%target.var && exists('pr_opts')){
 ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
 #Or: replace within the loop, adding in a missval. That is def. a thing that you could do.
 #But it should probably wait until there is a possibility that there might be more than
-#one downscaled output.
+#one downscaled output, and how you'd decide to loop over those.
 
 
 #So: for all RIPs in the list of rips to work with, write data as a separate file. 

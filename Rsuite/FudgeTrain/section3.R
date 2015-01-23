@@ -19,14 +19,14 @@
 #'@param var: The variable being downscaled. 
 #'------Parameters required for SBiasCorr-------
 #'#'@param data: The data undergoing a qc check/adjustment steps
-#'@param hist.pred: The historic predictor of a dataset
-#'@param hist.targ: 
-#'@param fut.pred: 
+#'@param hist.pred: The historic predictor(s) of a downscaling run
+#'@param hist.targ: The historic target of a downscaling fun
+#'@param fut.pred: The future predcictor(s) of a downscaling run
 #'------Parameters related to time windowing----
 #'
 #'@returns A vector of values for the time series at the individual x,y, point
 #'with 0 for all values that did not pass the test and 1 for all values that did.
-#'CEW edit 10-22 to incorporate the proposed looping structure
+
 callS3Adjustment<-function(s3.instructions=list('na'),
                    hist.pred = NA, 
                    hist.targ = NA, 
@@ -45,8 +45,9 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #The transforms may have elements that will depend on the conditions of the initial transform, 
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
+    #TODO: ask Carlos about transform behavior. They seem as if they should operate in the same loop as
+    #the 
     adjusted.list <- switch(test$type,
-                              #'sdev' = return(callSdev(test, adjusted.list$input, adjusted.list$s5.list)),
                               'PR' = return(callPR(test, adjusted.list$input, adjusted.list$s5.list)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
@@ -58,11 +59,10 @@ callPR <- function(test, input, postproc.output){
   #Outputs a set of adjusted input datasets
   #as output by the precipitation adjustment
   #functions
-  
-  print(test)
+  #Note: you get truly SPECTACULAR fatal errors if one of the units values
+  #passed to the function is null. 
+
   pr.names <- (names(test$pp.args))
-  
-  
   #Obtain function args
   if('thold'%in%pr.names && 'freqadj'%in%pr.names && 'conserve'%in%pr.names){
     threshold   =  test$pp.args$thold
@@ -75,11 +75,6 @@ callPR <- function(test, input, postproc.output){
   }
   
   #at the end, instructions are unchanged
-  print(dim(input$hist.targ))
-  print(length(input$hist.targ))
-  print(attr(input$hist.pred, "units"))
-  print(attr(input$fut.pred, "units"))
-#  stop("this is also causing an error")
   temp.out <- AdjustWetdays(ref.data=input$hist.targ, ref.units=attr(input$hist.targ, "units")$value, 
                                          adjust.data=input$hist.pred, adjust.units=attr(input$hist.pred, "units")$value, 
                                          adjust.future=input$fut.pred, adjust.future.units=attr(input$fut.pred, "units")$value,
