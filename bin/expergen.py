@@ -517,6 +517,15 @@ def main():
 	shutil.copy2(uinput, cdir)
         print "Config XML saved in ",cdir 
         print "RunScripts will be saved under:",sbase
+	ppbase = sbase+"/postProc_command"
+	try:
+	  ppfile = open(ppbase, 'w')
+	  pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
+	  ppfile.write(pp_cmnd)
+	  ppfile.close()
+	except:
+	  print "Unable to create postProc command file. You may want to check your settings."
+	print "postProc command will be saved under:",ppbase
 	print "----See readMe in fudge2014 directory for the next steps----"
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
