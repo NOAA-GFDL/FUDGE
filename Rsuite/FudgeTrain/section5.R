@@ -51,14 +51,28 @@ callS5Adjustment<-function(s5.instructions=list('na'),
   return(adjusted.output)
 }
 
-callSdev <- function(data, qc.data){
-  #returns TRUE if more than half of the values in data
-  #differ from qc.data by less than the standard deviation
-  #of qc.data
-  qc.stdev <- sd(qc.data, na.rm=FALSE)
-  stdev.vec <- abs(qc.data-data) > qc.stdev
-  print(sum(stdev.vec)/(length(data)/2))
-  return( sum(stdev.vec) >= (length(data)/2) )
+callSdev <- function(test, input, adjusted.output){
+  #Outputs a mask where NA values show flagged data
+  #and ones show good data
+  #with the test defined as output within
+  #two standard deviations of the total downscaled output
+  out.sdev <- sd(adjusted.output$ds.out)
+  out.comp <- out.sedev*2
+  out.mean <- mean(adjusted.output$ds.out)
+  mask.vec <- ifelse( (out.comp <= abs(adjusted.output$ds.out-mean)), 
+                      yes=1, no=NA)
+  out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
+  if(test$qc.mask=='on'){
+    out.list$qc.mask <- mask.vec
+  }
+  if(test$adjust.out=='on'){
+    adjust.vec <- ifelse( (is.na(mask.vec)), 
+                          yes=ifelse( (1==sign(out.mean-adjusted.output$ds.out)), 
+                                      out.mean-out.comp, out.mean+out.comp ), 
+                          no=adjusted.output$ds.out)
+    out.list$ds.out <- adjust.vec
+  }
+  return(out.list)
 }
 
 callSdev2 <- function(data, qc.data){

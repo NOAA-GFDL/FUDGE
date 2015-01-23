@@ -126,8 +126,8 @@ message("Checking output directory")
 QCIO(output.dir)
 
 message("Checking post-processing/section5 adjustments")
-if(mask.list!='na'){
-adjust.list <- QCSection5(mask.list)
+if(post_ds!='na'){
+adjust.list <- QCSection5(post_ds)
 }else{
   adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
                       "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA)
@@ -260,49 +260,86 @@ print(out.filename)
       #}
     #} RIP for loop
     
+  }#Goes with looping over multiple available minifiles
+    
     #It is likely that pre- processing could be variable specific (i.e. precipitation)
-    #That would seem to require another tag in the 
+    #That would seem to require another tag in the XML
+    
+    
+
+
+ preproc.outloop <- lapply(pre_ds, index.a.list, 'loc', 'outloop')
+# adjusted.list <- list(input=list('hist.pred' = list.hist$clim.in, 'hist.targ' = list.target$clim.in, 'fut.pred' = list.fut$clim.in), 
+#                       s5.list=post_ds)
+# #adjusted.list <- list(input=list('hist.pred' = seq(1:100), 'hist.targ' = seq(1:100), 'fut.pred' = seq(1:100)), 
+# #                      s5.list=post_ds)
+# #adjusted.list <- list(input=input.list, s5.list=post_ds)
+# stop(paste("This is just before everything breaks"))
+# output <- callPR(test=preproc.outloop[[1]], 
+#                  input=adjusted.list$input,
+#                  postproc.output=adjusted.list$s5.list)
+
+#Okay, this structure sort of implies a variable attribute rather than a variable element in a list
+temp.output <- callS3Adjustment(s3.instructions=preproc.outloop, 
+                                hist.pred = list.hist$clim.in, 
+                                hist.targ = list.target$clim.in, 
+                                fut.pred = list.fut$clim.in,  
+                                s5.instructions=post_ds)
+#  adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred), 
+#s5.list=s5.list)
+post_ds <- temp.output$s5.list
+list.target$clim.in <- temp.output$input$hist.targ
+list.hist$clim.in <- temp.output$input$hist.pred
+list.fut$clim.in <- temp.output$input$fut.pred
+
+temp.output.old <- temp.output
+remove(temp.output)
+
+stop("no need to downscale")
+    
+    
     
     
     ###Precipitation changes go here
-    if(target.var=='pr' && exists('pr_opts')){
-      #Options currently hard-coded
-      pr.mask.opt = pr_opts$pr_threshold_in
-      lopt.drizzle = pr_opts$pr_freqadj_in=='on'
-      lopt.conserve= pr_opts$pr_conserve_in=='on'
-      #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
-      print(summary(list.target$clim.in[!is.na(list.target$clim.in)]))
-      print(summary(list.fut$clim.in))
-      if(train.and.use.same==TRUE){
-        temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
-                                  adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
-                                  opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
-                                  lopt.graphics=FALSE, verbose=TRUE,
-                                  adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
-        list.target$clim.in <- temp.out$ref$data
-        #list.target$pr_mask <-temp.out$ref$pr_mask
-        list.hist$clim.in <- temp.out$adjust$data
-        #list.hist$pr_mask <-temp.out$adjust$pr_mask
-        list.fut$clim.in <- temp.out$future$data
-        #list.fut$pr_mask <-temp.out$future$pr_mask
-        #remove from workspace to keep memory overhead low
-        print(summary(list.target$clim.in))
-        print(summary(list.fut$clim.in))
-        remove(temp.out)
-      }else{
-        temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
-                                  adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
-                                  opt.wetday=opt.wetday, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
-                                  lopt.graphics=FALSE, verbose=TRUE,
-                                  adjust.future=NA, adjust.future.units=NA)
-        list.target$clim.in <- temp.out$ref$data
-        list.target$pr_mask <-temp.out$ref$pr_mask
-        list.hist$clim.in <- temp.out$adjust$data
-        list.hist$pr_mask <-temp.out$adjust$pr_mask
-      }
-    }
-  }
-#} #Goes with looping over multiple available minifiles
+#     if(target.var=='pr' && exists('pr_opts')){
+#       #Options currently hard-coded
+#       pr.mask.opt = pr_opts$pr_threshold_in
+#       lopt.drizzle = pr_opts$pr_freqadj_in=='on'
+#       lopt.conserve= pr_opts$pr_conserve_in=='on'
+#       #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
+#       print(summary(list.target$clim.in[!is.na(list.target$clim.in)]))
+#       print(summary(list.fut$clim.in))
+#       if(train.and.use.same==TRUE){
+#         temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
+#                                   adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
+#                                   opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
+#                                   lopt.graphics=FALSE, verbose=TRUE,
+#                                   adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
+#         list.target$clim.in <- temp.out$ref$data
+#         #list.target$pr_mask <-temp.out$ref$pr_mask
+#         list.hist$clim.in <- temp.out$adjust$data
+#         #list.hist$pr_mask <-temp.out$adjust$pr_mask
+#         list.fut$clim.in <- temp.out$future$data
+#         #list.fut$pr_mask <-temp.out$future$pr_mask
+#         #remove from workspace to keep memory overhead low
+#         print(summary(list.target$clim.in))
+#         print(summary(list.fut$clim.in))
+#         remove(temp.out)
+#       }else{
+#         temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
+#                                   adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
+#                                   opt.wetday=opt.wetday, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
+#                                   lopt.graphics=FALSE, verbose=TRUE,
+#                                   adjust.future=NA, adjust.future.units=NA)
+#         list.target$clim.in <- temp.out$ref$data
+#         list.target$pr_mask <-temp.out$ref$pr_mask
+#         list.hist$clim.in <- temp.out$adjust$data
+#         list.hist$pr_mask <-temp.out$adjust$pr_mask
+#       }
+#     }
+#   }
+
+#} 
 
 #Perform a check upon the time series, dimensions and method of the downscaling 
 #input and output to assure compliance

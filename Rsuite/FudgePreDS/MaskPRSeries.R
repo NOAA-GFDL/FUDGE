@@ -30,6 +30,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
                           lopt.graphics=FALSE, verbose=TRUE,
                           adjust.future=NA, adjust.future.units='kg m-2 s-1'){
+  
   ref.wetdays <- MaskPRSeries(ref.data, ref.units, opt.wetday)
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
   #print(length(adjust.future))
@@ -43,7 +44,7 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   if(length(adjust.future) > 1 ){ #|| !is.na(adjust.future)){
     future.data.new <- adjust.future
   }
-  #print(dim(ref.data))
+  print(dim(ref.data))
   for (i in 1:dim(ref.data)[1]){
     for (j in 1:dim(ref.data)[2]){ 
       loop.ref <- ref.data[i,j,][!is.na(ref.data[i,j,])]
