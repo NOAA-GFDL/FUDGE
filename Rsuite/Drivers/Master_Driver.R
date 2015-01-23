@@ -296,6 +296,8 @@ list.fut$clim.in <- temp.output$input$fut.pred
 #remove(temp.output)
 
 #stop("no need to downscale")
+
+
     
     
     
@@ -429,6 +431,14 @@ if('pr'%in%target.var && exists('pr_opts')){
 #    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
   }
 }
+
+message("checking summary data")
+print(summary(as.vector(temp.output$input$hist.targ), digits=6))
+print(summary(as.vector(temp.output$input$hist.pred), digits=6))
+print(summary(as.vector(temp.output$input$fut.pred), digits=6))
+print(summary(as.vector(ds$esd.final), digits=6))
+
+#summary(as.vector(ds$esd.final))
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 #Replace NAs by missing 

@@ -36,8 +36,8 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   ref.wetdays <- ref.data > wetday.convert
   
   #Initialize the adjusted reference vectors
-  adjust.wetdays <- adjust.data
-  future.wetdays <- adjust.future
+  adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
+  future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
   
   ##Loop over all lat/lon points available in the input datasets
   print(dim(ref.data))
@@ -45,7 +45,6 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   for (i in 1:dim(ref.data)[1]){
     for (j in 1:dim(ref.data)[2]){ 
       loop.ref <- ref.data[i,j,][!is.na(ref.data[i,j,])]
-      
       loop.ref.wetdays <- ref.wetdays[i,j,][!is.na(ref.wetdays[i,j,])]
       loop.adj <- adjust.data[i,j,][!is.na(adjust.data[i,j,])]
       loop.adj.wetdays <- adjust.wetdays[i,j,][!is.na(adjust.wetdays[i,j,])]
