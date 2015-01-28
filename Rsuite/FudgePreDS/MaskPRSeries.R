@@ -30,6 +30,15 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
                           lopt.graphics=FALSE, verbose=TRUE,
                           adjust.future=NA, adjust.future.units='kg m-2 s-1'){
+  
+  #Debug code for testing
+  print("ref.data")
+  print(summary(ref.data))
+  print("adjust.data")
+  print(summary(adjust.data))
+  print("adjust.future")
+  print(summary(adjust.future))
+  
   ref.wetdays <- MaskPRSeries(ref.data, ref.units, opt.wetday)
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
   #print(length(adjust.future))
@@ -139,6 +148,12 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
     out.list$future <- list("data" = as.numeric(future.wetdays)*adjust.future, "pr_mask" = future.wetdays)
   }
   print("about to return results")
+  print("ref.data")
+  print(summary(as.numeric(ref.wetdays)*ref.data))
+  print("adjust.data")
+  print(summary(as.numeric(adjust.wetdays)*adjust.data))
+  print("adjust.future")
+  print(summary(as.numeric(future.wetdays)*adjust.future))
   return(out.list)
 }
 
