@@ -331,7 +331,7 @@ callDeltaSD <- function(LH,CH,CF,args){
     #'@return SDF: Downscaled Future (Local)
     ########################################
     #Note: preferred behavior is to truncate vectors
-    #rather than randomply sampling iff too short.
+    #rather than randomly sampling iff too short.
     
     # Obtain options
     if(!is.null(args$deltatype)){
@@ -344,14 +344,26 @@ callDeltaSD <- function(LH,CH,CF,args){
     }else{
       stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
     }
+    if(!is.null(args$keep.zeroes)){
+      keep.zeroes <- args$keep.zeroes
+    }else{
+      stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
+    }
     #Decide how many iterations of the delta method to perform
     #based on the relative lengths of the historical
-    #and future data (future should be <= historical)
-    if(length(LH) <= length(CF)){
+    #and future data (future should be >= historical) #Switch 1-28 from <  
+    if(length(LH) >= length(CF)){
       #If the future and historical periods are unequal, truncate the vectors
       #That...raises an interesting question: should the CH vector be truncated as well?
-      #Technically, it doesn't need to be.
-      SDF <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop)
+      #Technically, it doesn't need to be for the code to work...
+      if(keep.zeroes){
+#        print('keeping zeroes')
+        SDF <- LH[1:length(CF)]
+          out.temp <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop, keep.zeroes)
+          SDF[SDF!=0] <- out.temp
+      }else{
+        SDF <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop)
+      }
     }else{
       #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
       #where n=length(CF)/length(LH)
@@ -359,45 +371,62 @@ callDeltaSD <- function(LH,CH,CF,args){
       out.len <- length(CF)
       in.len <- length(LH)
       SDF <- rep(NA, out.len)
+      #vector comparisons take a long time relative to other things
+      if(keep.zeroes){
+        comp.indices <- which(LH!=0)
+      }
       while(write.len < out.len){
         #delta.downscale removes NAs in the output vector
         tempvec <- delta.downscale(LH, CH, CF[write.len:(write.len + in.len)], 
-                                                             deltatype, deltaop)
-        SDF[write.len:length(tempvec)] <- tempvec
+                                                             deltatype, deltaop, keep.zeroes)
+        if(keep.zeroes){
+          sd.write.indices <- (write.len-1) + comp.indices
+          sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] #Remove any that might lead to a longer write index
+          SDF[sd.write.indices] <- tempvec
+        }else{
+           SDF[write.len:length(tempvec)] <- tempvec
+        }
         write.len <- write.len + in.len
       }
-    return (SDF)
     }
+#     print("Number of NA values in DeltaSD")
+    num.na <- (sum(is.na(SDF)))
+    if(num.na > 0){
+      print(num.na)
+      stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
+    }
+    return(SDF)
 }
 
-delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop){
+delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, keep.zeroes=FALSE){
   #Calculates a delta after removing NAs and applies it to a target vector.
   #Helper method for callDeltaSD, but might be used elsewhere.
   #Make sure that there are no NA values in the current vector
-  delta.fut <- delta.fut[!is.na(delta.fut)]
+  if(keep.zeroes){
+#     print('activating keep zeroes case')
+#     print(summary(delta.fut))
+    delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
+    delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+    delta.hist <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+#     print(summary(delta.fut))
+#     print(summary(delta.hist))
+#     print(summary(delta.targ))
+  }
   if(deltaop=='add'){
     #Downscale by difference delta
     delta<-do.call(deltatype, list(delta.fut))-do.call(deltatype, list(delta.hist))
-#     message("ignore warning message; vector recycling in effect")
-#     message("trying without vector recycling in effect")
-    #       LH.interpolated <- interpolate.points(LH, length(CF))
-    #       CF.order <- order(CF)
-    #       LH.interpolated <- LH.interpolated[CF.order]      
-    #CF[1:length(CF)] <- LH
-    #SDF<- CF+delta
-    out <- delta.fut + delta
+    out <- delta.targ + delta #CHANGED FROM delta.fut
   }else if(deltaop=='ratio'){
-    #Downscale by percentage delta (never negative)
+    #Downscale by percentage delta (never negative, but aoocasionally NaN)
     delta<-do.call(deltatype, list(delta.fut))/do.call(deltatype, list(delta.hist))
-#     message("ignore warning message; vector recycling in effect")
-    #       message("trying without vector recycling in effect")
-    #       LH.interpolated <- interpolate.points(LH, length(CF))
-    #       CF.order <- order(CF)
-    #       LH.interpolated <- LH.interpolated[CF.order]
-    #       CF[1:length(CF)] <- LH
-    #       SDF<-CF*delta
-    #SDF <- LH.interpolated*delta
-    out <- delta.fut*delta
+#     print(paste('delta:', delta))
+    #Loud warning message for divide-by-0 case
+    if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
+      message(paste("Warning in delta.downscale: Calculated delta is either NaN or Inf and will produce",
+                    "non-numeric results. Returning values without delta."))
+      return(delta.targ)
+    }
+    out <- delta.targ*delta #CHANGED FROM delta.fut
   }else{
     stop(paste("delta.downscale Downscaling Error: deltaop", deltaop, "is not one of 'ratio' or 'add'"))
   }
