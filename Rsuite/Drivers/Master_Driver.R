@@ -433,7 +433,7 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
              grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-             is.adjusted=!(adjust.list$adjust.methods=='na'), adjust.method=adjust.list$adjust.methods, 
+             is.adjusted=!is.na(adjust.list$adjust.methods), adjust.method=adjust.list$adjust.methods, 
              adjust.args=adjust.list$adjust.args,
              pr.process=exists('pr_opts'), pr_opts=pr_opts)
 
