@@ -28,16 +28,9 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE, 
                           lopt.graphics=FALSE, verbose=TRUE){
   
-  print("ref.data")
-  print(summary(ref.data))
-  print("adjust.data")
-  print(summary(adjust.data))
-  print("adjust.future")
-  print(summary(adjust.future))
-  
-#   ref.wetdays    <- MaskPRSeries(ref.data, ref.units, opt.wetday)
-#   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
-#   future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
+  #   ref.wetdays    <- MaskPRSeries(ref.data, ref.units, opt.wetday)
+  #   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
+  #   future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
   
   wetday.convert <- convert.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
@@ -105,9 +98,9 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
         loop.adj <- conserve.prseries(loop.adj, loop.adj.wetdays)
         ###and the future, if that applies
         loop.fut <- conserve.prseries(loop.fut, loop.fut.wetdays)
-#           total.trace.pr <- sum(loop.fut[loop.fut.wetdays==FALSE])
-#           pr.adjust <- total.trace.pr/sum(loop.fut.wetdays)
-#           loop.fut[loop.fut.wetdays==TRUE] <- (loop.fut[loop.fut.wetdays==TRUE] + pr.adjust)
+        #           total.trace.pr <- sum(loop.fut[loop.fut.wetdays==FALSE])
+        #           pr.adjust <- total.trace.pr/sum(loop.fut.wetdays)
+        #           loop.fut[loop.fut.wetdays==TRUE] <- (loop.fut[loop.fut.wetdays==TRUE] + pr.adjust)
       } 
       ref.data[i,j,][!is.na(ref.data[i,j,])] <- loop.ref
       # loop.ref.wetdays never gets modified 
@@ -121,13 +114,6 @@ AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1',
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
                    "future" = list("data" = as.numeric(future.wetdays)*adjust.future, "pr_mask" = future.wetdays))
-  print("about to return results")
-  print("ref.data")
-  print(summary(as.numeric(ref.wetdays)*ref.data))
-  print("adjust.data")
-  print(summary(as.numeric(adjust.wetdays)*adjust.data))
-  print("adjust.future")
-  print(summary(as.numeric(future.wetdays)*adjust.future))
   return(out.list)
 }
 
@@ -164,7 +150,7 @@ MaskPRSeries <- function(data, units, index){
          'us_trace' = return(data > us.trace.thold), 
          'global_trace' = return(data > global.trace.thold), 
          return((data > index))) #If own threshold supplied,
-                                 #It is assumed that you know the units  
+  #It is assumed that you know the units  
 }
 
 convert.threshold <- function(index, units){
@@ -183,7 +169,7 @@ convert.threshold <- function(index, units){
          'us_trace' = return(us.trace.thold), 
          'global_trace' = return(global.trace.thold), 
          return((index))) #If own threshold supplied,
-                          #It is assumed that you know the units  
+  #It is assumed that you know the units  
 }
 
 replace.vals<-function(series, tf.index){
