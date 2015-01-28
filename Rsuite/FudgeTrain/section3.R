@@ -81,6 +81,6 @@ callPR <- function(test, input, postproc.output){
                                          opt.wetday=threshold, 
                                          lopt.drizzle=lopt.drizzle, 
                                          lopt.conserve=lopt.conserve)
-  return(list('input'=list('hist.pred' = temp.out$ref$data, 'hist.targ' = temp.out$adjust$data, 'fut.pred' = temp.out$future$data),
+  return(list('input'=list('hist.targ' = temp.out$ref$data, 'hist.pred' = temp.out$adjust$data, 'fut.pred' = temp.out$future$data),
               's5.list'=postproc.output))
 }
