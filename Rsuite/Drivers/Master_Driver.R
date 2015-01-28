@@ -285,6 +285,20 @@ temp.output <- callS3Adjustment(s3.instructions=preproc.outloop,
                                 hist.targ = list.target$clim.in, 
                                 fut.pred = list.fut$clim.in,  
                                 s5.instructions=post_ds)
+
+
+# load("/home/cew/Code/testing/pr_pp_old_out.file")
+# 
+# print('hist.targ')
+# print(hist(list.target$clim.in-temp.output$input$hist.targ))
+# 
+# print('hist.pred')
+# print(hist(list.hist$clim.in-temp.output$input$hist.pred))
+# 
+# print('fut.pred')
+# print(hist(list.fut$clim.in-temp.output$input$fut.pred))
+# stop('no need to go further')
+
 #  adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred), 
 #s5.list=s5.list)
 post_ds <- temp.output$s5.list
@@ -403,7 +417,8 @@ pr.mask.opt <- post_ds$mask1$qc_args$thold
 
 
 if('pr'%in%target.var && exists('pr_opts')){
-  if(!is.null(grep('out', names(pr_opts)))){
+#  if(!is.null(grep('out', names(pr_opts)))){ #THIS RUNS ALL THE TIME; changing to test properly
+  if(pr.post.proc){
     print(paste("Adjusting downscaled pr values"))
     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
     print(dim(out.mask))
@@ -443,7 +458,9 @@ print(summary(as.vector(ds$esd.final), digits=6))
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 #Replace NAs by missing 
 ###CEW edit: replaced ds.vector with ds$esd.final
-ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
+
+#ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
+
 #Or: replace within the loop, adding in a missval. That is def. a thing that you could do.
 #But it should probably wait until there is a possibility that there might be more than
 #one downscaled output, and how you'd decide to loop over those.
