@@ -1,23 +1,37 @@
 # Aparna Radhakrishnan 08/04/2014
 ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=FALSE) {
-  #'Reads data from netCDF file object
-  #'Returns netCDF variable data
-  #'uses get.var.ncdf
-  #'Returned values will be in ordinary R double precision if the netCDF variable type is float or double. 
-  #'Returned values will be in R's integer storage mode if the netCDF variable type is short or int. 
-  #'Returned values will be of character type if the netCDF variable is of character type.
-  #'[count]: A vector of integers indicating the count of values to read along each dimension (order is X-Y-Z-T). 
-  #'[start]: A vector of indices indicating where to start reading the passed values (begin- ning at 1). 
-  #'The length of this vector must equal the number of dimensions the variable has. Order is X-Y-Z-T 
-  #'(i.e., the time dimension is last). If not specified, reading starts at the beginning of the file (1,1,1,...). 
-  #'the 'dim' argument controls whether or not to look for dimensions and the variables that read off of those
-  #'dimensions and add them to the output structure. 
+  #'Reads data from a variable of a netCDF file object
+  #'Returns netCDF variable data and, if dim!= 'none', one or more dimensions of that
+  #'netCDF object
+  #'-----Arguments-----
+  #'@param nc.object: A NetCDF object returned from nc_open of R's ncdf4 package
+  #'@param var.name: The name of the variable within the NetCDf file
+  #'@param dstart: A vector of indices indicating where to start reading the passed values (begin- ning at 1).
+  #'@param dcount: A vector of integers indicating the count of values to read along the variable (order is X-Y-Z-T).
+  #'@param dim: Which dimensions to include in the netCDF object. Can be one of 'temporal', 
+  #'which queries the dimension associated with the T axis, 'spatial', which queries the dimensions associated with the
+  #'X and Y axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
+  #''temporal' returns all variables that reference the T axis underneath the $vars list of the output, and 
+  #'
+  #'@returns A list containing the following elements: 
+  #'  $clim.in: A 3-dimensional array of the values in the variable with the same dimensions
+  #'      as the input dataset. Returned values will be in ordinary R double precision if the netCDF 
+  #'      variable type is float or double. Has a 'filename' attribute that points to the input file, 
+  #'      which is used for error messages. If dim='temporal', then it also has a calendar attribute.
+  #'  $dim: The dimension(s) queried in the file, of class ncdim4. Very useful for writing to file. 
+  #'  $vars: The variables *not* the variable of interest that use the dimensions queried 
+  #'      (i.e. lat_bnds, j_offset, height).
+  #'  $cfname: The CF-standard name of the variable. Only applies to tasmax, tasmin and pr.
+  #'  $long_name: The long name of the variable. Derived from the long_name attribute of the netCDF object.
+  #'  $units: The units of the variable of interest. Derived from the units attribute of the netCDF object.
+  #'
+  #'@include ncdf4, ncdf4.helpers
 
   
   if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
   clim.in <- ncvar_get(nc.object)            
   }else {
-    message('obtaining vars')
+    message('obtaining variable slice')
   clim.in <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
     message('vars obtained')
   }

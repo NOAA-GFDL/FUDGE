@@ -36,7 +36,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      if(create.qc.mask){
        qc.mask <-  array(NA,dim=c(dim(fut.masked.in)))
        s5.adjust <- TRUE
-     }else if(s5.instructions!='na'){
+     }else if(s5.instructions[[1]]!='na'){
        qc.mask <- NULL
        s5.adjust <- FALSE
        for (element in 1:length(s5.instructions)){
