@@ -305,57 +305,7 @@ post_ds <- temp.output$s5.list
 list.target$clim.in <- temp.output$input$hist.targ
 list.hist$clim.in <- temp.output$input$hist.pred
 list.fut$clim.in <- temp.output$input$fut.pred
-
-#temp.output.old <- temp.output
-#remove(temp.output)
-
-#stop("no need to downscale")
-
-
-    
-    
-    
-    
-    ###Precipitation changes go here
-#     if(target.var=='pr' && exists('pr_opts')){
-#       #Options currently hard-coded
-#       pr.mask.opt = pr_opts$pr_threshold_in
-#       lopt.drizzle = pr_opts$pr_freqadj_in=='on'
-#       lopt.conserve= pr_opts$pr_conserve_in=='on'
-#       #Yes, it is going to break if one option is not specified. That's not a *bad* thing.
-#       print(summary(list.target$clim.in[!is.na(list.target$clim.in)]))
-#       print(summary(list.fut$clim.in))
-#       if(train.and.use.same==TRUE){
-#         temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units$value, 
-#                                   adjust.data=list.hist$clim.in, adjust.units=list.hist$units$value, 
-#                                   opt.wetday=pr.mask.opt, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
-#                                   lopt.graphics=FALSE, verbose=TRUE,
-#                                   adjust.future=list.fut$clim.in, adjust.future.units=list.fut$units$value)
-#         list.target$clim.in <- temp.out$ref$data
-#         #list.target$pr_mask <-temp.out$ref$pr_mask
-#         list.hist$clim.in <- temp.out$adjust$data
-#         #list.hist$pr_mask <-temp.out$adjust$pr_mask
-#         list.fut$clim.in <- temp.out$future$data
-#         #list.fut$pr_mask <-temp.out$future$pr_mask
-#         #remove from workspace to keep memory overhead low
-#         print(summary(list.target$clim.in))
-#         print(summary(list.fut$clim.in))
-#         remove(temp.out)
-#       }else{
-#         temp.out <- AdjustWetdays(ref.data=list.target$clim.in, ref.units=list.target$units, 
-#                                   adjust.data=list.hist$clim.in, adjust.units=list.hist$units, 
-#                                   opt.wetday=opt.wetday, lopt.drizzle=lopt.drizzle, lopt.conserve=lopt.conserve, 
-#                                   lopt.graphics=FALSE, verbose=TRUE,
-#                                   adjust.future=NA, adjust.future.units=NA)
-#         list.target$clim.in <- temp.out$ref$data
-#         list.target$pr_mask <-temp.out$ref$pr_mask
-#         list.hist$clim.in <- temp.out$adjust$data
-#         list.hist$pr_mask <-temp.out$adjust$pr_mask
-#       }
-#     }
-#   }
-
-#} 
+remove(temp.output)
 
 #Perform a check upon the time series, dimensions and method of the downscaling 
 #input and output to assure compliance
@@ -413,45 +363,54 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 #MyStats(ds$esd.final,verbose="yes")
 
 ###Hasty modifications for testing against earlier pr results
-pr.mask.opt <- post_ds$mask1$qc_args$thold
+# pr.mask.opt <- post_ds$mask1$qc_args$thold
+# pr.post.proc <- TRUE
+postproc.outloop <- lapply(post_ds, index.a.list, 'loc', 'outloop')
 
+temp.postproc <- callS5Adjustment(postproc.outloop,
+                                 data = ds$esd.final,
+                                 hist.pred = list.hist$clim.in, 
+                                 hist.targ = list.target$clim.in, 
+                                 fut.pred  = list.fut$clim.in)
+ds$esd.final <- temp.postproc$ds.out
+ds$qc.mask <- temp.postproc$qc.mask
 
-if('pr'%in%target.var && exists('pr_opts')){
-#  if(!is.null(grep('out', names(pr_opts)))){ #THIS RUNS ALL THE TIME; changing to test properly
-  if(pr.post.proc){
-    print(paste("Adjusting downscaled pr values"))
-    out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
-    print(dim(out.mask))
-    if(pr_opts$pr_conserve_out=='on'){
-      #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
-      for(i in 1:length(ds$esd.final[,1,1])){
-        for(j in 1:length(ds$esd.final[1,,1])){
- #         print(paste(i, j, sep=", "))
-          esd.select <- ds$esd.final[i,j,]
-          mask.select <- out.mask[i,j,]
-          esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
-                                                 mask=mask.select[!is.na(mask.select)])
-          ds$esd.final[i,j,]<- esd.select
-          #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
-          #However, there are checks external to the function to get that, so it might not be as much of an issue.
-        }
-      }
-    }
-    message("finished pr adjustment; applying mask")
-    print(summary(out.mask))
-    print(summary(ds$esd.final[!is.na(ds$esd.final)]))
-    ds$esd.final <- as.numeric(ds$esd.final) * out.mask
-    print(summary(ds$esd.final[!is.na(ds$esd.final)]))
-#    out.select <- ds$esd.final[!is.na(ds$esd.final)]
-#    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
-  }
-}
+# if('pr'%in%target.var && exists('pr_opts')){
+# #  if(!is.null(grep('out', names(pr_opts)))){ #THIS RUNS ALL THE TIME; changing to test properly
+#   if(pr.post.proc){
+#     print(paste("Adjusting downscaled pr values"))
+#     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
+#     print(dim(out.mask))
+#     if(pr_opts$pr_conserve_out=='on'){
+#       #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
+#       for(i in 1:length(ds$esd.final[,1,1])){
+#         for(j in 1:length(ds$esd.final[1,,1])){
+#  #         print(paste(i, j, sep=", "))
+#           esd.select <- ds$esd.final[i,j,]
+#           mask.select <- out.mask[i,j,]
+#           esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
+#                                                  mask=mask.select[!is.na(mask.select)])
+#           ds$esd.final[i,j,]<- esd.select
+#           #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
+#           #However, there are checks external to the function to get that, so it might not be as much of an issue.
+#         }
+#       }
+#     }
+#     message("finished pr adjustment; applying mask")
+#     print(summary(out.mask))
+#     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
+#     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
+#     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
+# #    out.select <- ds$esd.final[!is.na(ds$esd.final)]
+# #    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
+#   }
+# }
 
 message("checking summary data")
-print(summary(as.vector(temp.output$input$hist.targ), digits=6))
-print(summary(as.vector(temp.output$input$hist.pred), digits=6))
-print(summary(as.vector(temp.output$input$fut.pred), digits=6))
-print(summary(as.vector(ds$esd.final), digits=6))
+# print(summary(as.vector(temp.output$input$hist.targ), digits=6))
+# print(summary(as.vector(temp.output$input$hist.pred), digits=6))
+# print(summary(as.vector(temp.output$input$fut.pred), digits=6))
+# print(summary(as.vector(ds$esd.final), digits=6))
 
 #summary(as.vector(ds$esd.final))
 

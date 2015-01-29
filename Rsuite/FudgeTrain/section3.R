@@ -48,14 +48,14 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #TODO: ask Carlos about transform behavior. They seem as if they should operate in the same loop as
     #the 
     adjusted.list <- switch(test$type,
-                              'PR' = return(callPR(test, adjusted.list$input, adjusted.list$s5.list)),
+                              'PR' = return(callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
   return(adjusted.list)
 }
 
-callPR <- function(test, input, postproc.output){
+callPRPreproc <- function(test, input, postproc.output){
   #Outputs a set of adjusted input datasets
   #as output by the precipitation adjustment
   #functions
