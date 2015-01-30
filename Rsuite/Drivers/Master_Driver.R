@@ -140,9 +140,9 @@ if(exists('pr_opts')){ #put better check in here once you are done with the test
 #Initialize instructions for pre- and post-ds adjustment
 post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
 post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
-qc.maskopts <- qc.inloop(postproc.outloop, postproc.inloop)
-pre.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
-pre.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
+qc.maskopts <- qc.mask.check(post.ds.train, post.ds)
+pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
+pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 #Generate metadata references for the pre- and post-processing functions
 
 
@@ -343,7 +343,7 @@ adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA,
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
                     s3.instructions=pre.ds.train,
                     s5.instructions=post.ds.train, 
-                    create.qc.mask=(adjust.list$qc.inloop))
+                    create.qc.mask=(qc.maskopts$qc.inloop))
 print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -372,7 +372,7 @@ if(length(post.ds) !=0){
                                     hist.targ = list.target$clim.in, 
                                     fut.pred  = list.fut$clim.in)
   ds$esd.final <- temp.postproc$ds.out
-  if(adjust.list$qc.outloop){
+  if(qc.maskopts$qc.outloop){
     ds$qc.mask <- temp.postproc$qc.mask
   }
   remove(temp.postproc)
@@ -430,16 +430,20 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
              grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-             is.pre.ds.adjust='change this later',
-             is.adjusted=!(adjust.list$adjust.methods=='na'), adjust.method=adjust.list$adjust.methods, 
-             adjust.args=adjust.list$adjust.args,
-             pr.process=exists('pr_opts'), pr_opts=pr_opts)
+             is.pre.ds.adjust=(length(pre.ds)+length(pre.ds.train) > 0),
+             pre.ds.adjustments=c(pre.ds, pre.ds.train),
+             is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
+             post.ds.adjustments=c(post.ds.train, post.ds)
+             #is.adjusted=!(adjust.list$adjust.methods=='na'), adjust.method=adjust.list$adjust.methods, 
+             #adjust.args=adjust.list$adjust.args,
+             #pr.process=exists('pr_opts'), pr_opts=pr_opts
+             )
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 #}
 
-if(adjust.list$qc.inloop || adjust.list$ qc.outloop){ ##Created waaay back at the beginning, as part of the QC functions
+if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the beginning, as part of the QC functions
   for (var in predictor.vars){
     ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
     ###qc.method needs to get included in here SOMEWHERE.
@@ -476,7 +480,7 @@ if(adjust.list$qc.inloop || adjust.list$ qc.outloop){ ##Created waaay back at th
                  time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
                  is.qcmask=TRUE, 
-                 qc.method=adjust.list$qc.method, qc.args=adjust.list$qc.args,
+                 qc.method=qc.maskotps$qc.method, qc.args=qc.maskopts$qc.args,
                  is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc, 
                  adjust.args=adjust.list$adjust.pre.qc.args,
                  pr.process=exists('pr_opts'), pr_opts=pr_opts)

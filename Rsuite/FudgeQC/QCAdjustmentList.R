@@ -71,24 +71,6 @@ QCAdjustmentList <- function(mask.list){
   return(s5.settings)
 }
 
-convert.list.to.string <- function(this.vector){
-  #Converts a list into a string representation
-  #Does not assume that the list is named
-  #(easy to convert though; just count off of the names)
-  if(length(this.vector)!=0){
-    if(length(this.vector) > 1){
-    out <- paste(c(this.vector[1:length(this.vector)-1], paste("and", this.vector[length(this.vector)])), collapse=",")
-    return(out)
-    }else{
-      #no 'and' needed
-      return(paste(this.vector))
-    }
-  }else{
-    #No string to convert
-    return(NA)
-  }
-}
-
 qc.mask.check <- function(inloop, outloop){
   #' Checks for the existance of zero or one
   #' calls to create a qc mask in the post-processing

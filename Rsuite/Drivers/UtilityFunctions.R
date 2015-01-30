@@ -15,7 +15,7 @@ index.a.list <- function(list, index, val){
   # (helper function for lapply - doesn't speed code, 
   #  but will make it more readable)
   if(list[[index]]==val){
-    return(list)
+      return(list)
   }
 }
 
@@ -26,6 +26,24 @@ compact <- function(x){
   #Taken from a forum post by Hadley Wickham
   #as the preferred way to deal with nulls in apply()
   Filter(Negate(is.null), x)
+}
+  
+convert.list.to.string <- function(this.vector){
+  #Converts a list into a string representation
+  #Does not assume that the list is named
+  #(easy to convert though; just count off of the names)
+  if(length(this.vector)!=0){
+    if(length(this.vector) > 1){
+      out <- paste(c(this.vector[1:length(this.vector)-1], paste("and", this.vector[length(this.vector)])), collapse=",")
+      return(out)
+    }else{
+      #no 'and' needed
+      return(paste(this.vector))
+    }
+  }else{
+    #No string to convert
+    return(NA)
+  }
 }
 
 adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){

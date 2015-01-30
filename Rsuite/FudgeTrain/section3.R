@@ -41,6 +41,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
   
   for(element in 1:length(s3.instructions)){
     test <- s3.instructions[[element]]
+    print(test)
     #Note that BOTH ELEMENTS get returned for the adjusted output. 
     #The transforms may have elements that will depend on the conditions of the initial transform, 
     #and the order of the backtransform is going to be dependant on the order of the elements
