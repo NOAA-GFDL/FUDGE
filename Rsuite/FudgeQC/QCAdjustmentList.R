@@ -95,9 +95,12 @@ qc.mask.check <- function(inloop, outloop){
   #' adjustment lists, and throws an error if there
   #' are more calls for a qc mask than expected
   #'   inloop.count <- length(compact(lapply(inloop, index.a.list, 'qc.mask', 'on')))
-  outloop.list <- length(compact(lapply(outloop, index.a.list, 'qc.mask', 'on')))
-  inloop.list <- length(outloop.list)
-  outloop.count <- length(inloop.list)
+  outloop.list <- compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))
+  inloop.list <- compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))
+  outloop.count <- length(outloop.list)
+  inloop.count <- length(inloop.list)
+  print(outloop.list)
+  print(inloop.list)
   if(inloop.count + outloop.count > 1){
     stop(paste("Error in qc.mask.check: There are", inloop.count, "calls to create a", 
                "qc mask inside the time windows and", outloop.count, "calls to create a", 
@@ -113,10 +116,11 @@ qc.mask.check <- function(inloop, outloop){
     qc.method <- ""
     qc.args <- ""
   }
-  return(list('qc.inloop'=(inloop.cout > 0), 'qc.outloop'=(outloop.count > 0)), 
-         'qc.method'=ifelse(inloop.count > 0,
-                          compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))[[1]]$type,
-                          compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))[[1]]$type)
+  return(list('qc.inloop'=(inloop.count > 0), 'qc.outloop'=(outloop.count > 0), 
+              'qc.method'=ifelse(inloop.count > 0,
+                                 compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))[[1]]$type,
+                                 compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))[[1]]$type), 
+              'qc.args'=qc.args)
   )
 }
 
