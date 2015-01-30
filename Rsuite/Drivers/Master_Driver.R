@@ -9,6 +9,7 @@ sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), full.names=TRUE), source);
 source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
+source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
 #sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/Drivers/',sep=''), full.names=TRUE), source);
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
@@ -125,13 +126,35 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 message("Checking output directory")
 QCIO(output.dir)
 
-message("Checking post-processing/section5 adjustments")
-if(post_ds!='na'){
-adjust.list <- QCSection5(post_ds)
-}else{
-  adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
-                      "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA)
+if(exists('pr_opts')){ #put better check in here once you are done with the testing
+  message('Conversion of pre- and post-processing input')
+  if(exists('pr_opts')){
+    pp.out <- adapt.pp.input(mask.list, pr_opts)
+  }else{
+    pp.out <- adapt.pp.input(mask.list)
+  }
+  pre_ds <- pp.out$pre_ds
+  post_ds <- pp.out$post_ds
 }
+
+#Initialize instructions for pre- and post-ds adjustment
+post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
+post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
+qc.maskopts <- qc.inloop(postproc.outloop, postproc.inloop)
+pre.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
+pre.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
+#Generate metadata references for the pre- and post-processing functions
+
+
+message("Checking post-processing/section5 adjustments")
+
+# if(pre_ds!='na'){
+# adjust.list <- QCAdjustmentList(post_ds)
+# }else{
+#   adjust.list <- list("adjust.methods"=NA, "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
+#                       "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA)
+# }
+
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only for the masks, but as an immediate check upon the dimensions
@@ -267,45 +290,25 @@ print(out.filename)
     
     
 
-
- preproc.outloop <- lapply(pre_ds, index.a.list, 'loc', 'outloop')
-# adjusted.list <- list(input=list('hist.pred' = list.hist$clim.in, 'hist.targ' = list.target$clim.in, 'fut.pred' = list.fut$clim.in), 
-#                       s5.list=post_ds)
-# #adjusted.list <- list(input=list('hist.pred' = seq(1:100), 'hist.targ' = seq(1:100), 'fut.pred' = seq(1:100)), 
-# #                      s5.list=post_ds)
-# #adjusted.list <- list(input=input.list, s5.list=post_ds)
-# stop(paste("This is just before everything breaks"))
-# output <- callPR(test=preproc.outloop[[1]], 
-#                  input=adjusted.list$input,
-#                  postproc.output=adjusted.list$s5.list)
-
-#Okay, this structure sort of implies a variable attribute rather than a variable element in a list
-temp.output <- callS3Adjustment(s3.instructions=preproc.outloop, 
-                                hist.pred = list.hist$clim.in, 
-                                hist.targ = list.target$clim.in, 
-                                fut.pred = list.fut$clim.in,  
-                                s5.instructions=post_ds)
-
-
-# load("/home/cew/Code/testing/pr_pp_old_out.file")
-# 
-# print('hist.targ')
-# print(hist(list.target$clim.in-temp.output$input$hist.targ))
-# 
-# print('hist.pred')
-# print(hist(list.hist$clim.in-temp.output$input$hist.pred))
-# 
-# print('fut.pred')
-# print(hist(list.fut$clim.in-temp.output$input$fut.pred))
-# stop('no need to go further')
-
-#  adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred), 
-#s5.list=s5.list)
-post_ds <- temp.output$s5.list
-list.target$clim.in <- temp.output$input$hist.targ
-list.hist$clim.in <- temp.output$input$hist.pred
-list.fut$clim.in <- temp.output$input$fut.pred
-remove(temp.output)
+message('Looking for pre-processing functions to apply')
+#preproc.outloop <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
+print('preproc application successful')
+#Okay, this structure sort of implies a variable ATTRIBUTE rather than a variable element in a list
+#Which should be added to ReadNC
+if(length(pre.ds) !=0){
+  message('Applying S3 Adjustment')
+  temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
+                                  hist.pred = list.hist$clim.in, 
+                                  hist.targ = list.target$clim.in, 
+                                  fut.pred = list.fut$clim.in,  
+                                  s5.instructions=post.ds)
+  #Assign output and remove temporary output 
+  post_ds <- temp.output$s5.list
+  list.target$clim.in <- temp.output$input$hist.targ
+  list.hist$clim.in <- temp.output$input$hist.pred
+  list.fut$clim.in <- temp.output$input$fut.pred
+  remove(temp.output)
+}
 
 #Perform a check upon the time series, dimensions and method of the downscaling 
 #input and output to assure compliance
@@ -317,9 +320,6 @@ remove(temp.output)
 print("FUDGE training begins...")
 start.time <- proc.time()
 
-#TODO: Why is there an if statment here? This seems unnessecary....
-#Edit 1-5 for a smaller if and a single call
-
 #args should always exist; it's specified in the runcode
 if (args[1]=='na'){
   ds.args=NULL
@@ -329,16 +329,21 @@ if (args[1]=='na'){
 
 ###More hasty modifications to test against previous results
 adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
-                                 "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA)
-mask.list <- adjust.list
+                                 "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA, "qc.inloop"=TRUE, "qc.outloop"=FALSE)
+#This seems unnesseacary and on the list of things that need to get modified
+#mask.list <- adjust.list
+
+# loop.postproc <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
+# loop.preproc <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
-                    s5.instructions=mask.list, 
-                    create.qc.mask=adjust.list$qc.check)
+                    s3.instructions=pre.ds.train,
+                    s5.instructions=post.ds.train, 
+                    create.qc.mask=(adjust.list$qc.inloop))
 print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -356,69 +361,29 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 
 
 # ----- Begin segment like FUDGE Schematic Section 5: Apply Distribution Back-Transform -----
-#TODO Diana
 
-#--QC Downscaled Values
-#print("STATS: Downscaled output")
-#MyStats(ds$esd.final,verbose="yes")
-
-###Hasty modifications for testing against earlier pr results
-# pr.mask.opt <- post_ds$mask1$qc_args$thold
-# pr.post.proc <- TRUE
-postproc.outloop <- lapply(post_ds, index.a.list, 'loc', 'outloop')
-
-temp.postproc <- callS5Adjustment(postproc.outloop,
-                                 data = ds$esd.final,
-                                 hist.pred = list.hist$clim.in, 
-                                 hist.targ = list.target$clim.in, 
-                                 fut.pred  = list.fut$clim.in)
-ds$esd.final <- temp.postproc$ds.out
-ds$qc.mask <- temp.postproc$qc.mask
-
-# if('pr'%in%target.var && exists('pr_opts')){
-# #  if(!is.null(grep('out', names(pr_opts)))){ #THIS RUNS ALL THE TIME; changing to test properly
-#   if(pr.post.proc){
-#     print(paste("Adjusting downscaled pr values"))
-#     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
-#     print(dim(out.mask))
-#     if(pr_opts$pr_conserve_out=='on'){
-#       #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
-#       for(i in 1:length(ds$esd.final[,1,1])){
-#         for(j in 1:length(ds$esd.final[1,,1])){
-#  #         print(paste(i, j, sep=", "))
-#           esd.select <- ds$esd.final[i,j,]
-#           mask.select <- out.mask[i,j,]
-#           esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
-#                                                  mask=mask.select[!is.na(mask.select)])
-#           ds$esd.final[i,j,]<- esd.select
-#           #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
-#           #However, there are checks external to the function to get that, so it might not be as much of an issue.
-#         }
-#       }
-#     }
-#     message("finished pr adjustment; applying mask")
-#     print(summary(out.mask))
-#     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
-#     ds$esd.final <- as.numeric(ds$esd.final) * out.mask
-#     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
-# #    out.select <- ds$esd.final[!is.na(ds$esd.final)]
-# #    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
-#   }
-# }
+#Call the Section 5 Adjustments to be applied to post-downscaled output
+message("Calling Section 5 Adjustments")
+post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
+if(length(post.ds) !=0){
+  temp.postproc <- callS5Adjustment(post.ds,
+                                    data = ds$esd.final,
+                                    hist.pred = list.hist$clim.in, 
+                                    hist.targ = list.target$clim.in, 
+                                    fut.pred  = list.fut$clim.in)
+  ds$esd.final <- temp.postproc$ds.out
+  if(adjust.list$qc.outloop){
+    ds$qc.mask <- temp.postproc$qc.mask
+  }
+  remove(temp.postproc)
+}
 
 message("checking summary data")
-# print(summary(as.vector(temp.output$input$hist.targ), digits=6))
-# print(summary(as.vector(temp.output$input$hist.pred), digits=6))
-# print(summary(as.vector(temp.output$input$fut.pred), digits=6))
-# print(summary(as.vector(ds$esd.final), digits=6))
-
-#summary(as.vector(ds$esd.final))
+print(summary(as.vector(ds$esd.final), digits=6))
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 #Replace NAs by missing 
-###CEW edit: replaced ds.vector with ds$esd.final
-
-#ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
+ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
 
 #Or: replace within the loop, adding in a missval. That is def. a thing that you could do.
 #But it should probably wait until there is a possibility that there might be more than
@@ -465,6 +430,7 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
              grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+             is.pre.ds.adjust='change this later',
              is.adjusted=!(adjust.list$adjust.methods=='na'), adjust.method=adjust.list$adjust.methods, 
              adjust.args=adjust.list$adjust.args,
              pr.process=exists('pr_opts'), pr_opts=pr_opts)
@@ -473,7 +439,7 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 #}
 
-if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the QC functions
+if(adjust.list$qc.inloop || adjust.list$ qc.outloop){ ##Created waaay back at the beginning, as part of the QC functions
   for (var in predictor.vars){
     ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
     ###qc.method needs to get included in here SOMEWHERE.
@@ -498,13 +464,8 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                               downscale.tseries=list.fut$dim$time, 
                               var.data=c(list.target$vars, list.fut$vars),
                               prec='float',missval=1.0e20,
-                              #xlon,ylat,prec='float', #missval=1.0e20,
-                              #downscale.tseries=downscale.tseries, 
-                              #downscale.origin=downscale.origin, calendar = downscale.calendar,
-                              #start.year=fut.train.start.year_1,
                               units="1",
                               lname=paste('QC Mask')
-                              #bounds=isBounds, bnds.list = bounds.list.combined
     )
     #For now, patch the variables in here until se get s5 formalized in the XML
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
@@ -514,7 +475,8 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
                  grid_region=grid, mask_region=ds.region,
                  time.trim.mask=fut.time.trim.mask, 
                  tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
-                 is.qcmask=TRUE, qc.method=adjust.list$qc.method, qc.args=adjust.list$qc.args,
+                 is.qcmask=TRUE, 
+                 qc.method=adjust.list$qc.method, qc.args=adjust.list$qc.args,
                  is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc, 
                  adjust.args=adjust.list$adjust.pre.qc.args,
                  pr.process=exists('pr_opts'), pr_opts=pr_opts)

@@ -5,6 +5,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                         ds.orig=NULL, #Correcting a dimension error
                         #                         s5.adjust=FALSE, s5.method='totally.fake', s5.args = NULL, 
                         #                         create.qc.mask=FALSE, create.adjust.out=FALSE
+                        s3.instructions=list(onemask=list('na')),
                         s5.instructions=list(onemask=list('na')), create.qc.mask=FALSE){
   #' Function to loop through spatially,temporally and call the Training guts.
   #' @param target.masked.in, hist.masked.in, fut.masked.in: The historic target/predictor and 
@@ -33,10 +34,11 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      }else{
        ds.out <- NULL
      }
+     
      if(create.qc.mask){
        qc.mask <-  array(NA,dim=c(dim(fut.masked.in)))
        s5.adjust <- TRUE
-     }else if(s5.instructions[[1]]!='na'){
+     }else if(length(s5.instructions!=0)){ #s5.instructions[[1]]!='na' #!is.null(s5.instructions[[1]])
        qc.mask <- NULL
        s5.adjust <- FALSE
        for (element in 1:length(s5.instructions)){
@@ -48,6 +50,13 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
        #If s5.instructions=='na'
        qc.mask <- NULL
        s5.adjust <- FALSE
+     }
+     
+     if(length(s3.instructions!=0)){ #!is.null(s3.instructions[[1]])
+       #All pre-processing can do is adjust values; that will always happen
+       s3.adjust <- TRUE
+     }else{
+       s3.adjust <- FALSE
      }
      
      
@@ -66,11 +75,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      print(dim(target.masked.in))
      for(i.index in 1:length(target.masked.in[,1,1])){  #Most of the time, this will be 1
        for(j.index in 1:length(target.masked.in[1,,1])){
-         #          if(j.index%%10==0 || j.index==1){          
-         #          }   #Moved to both branches of the if test
-         ##I'm not entirely sure what this is supposed to do, and I'm relucant to tinker with it too much.
-         #if(sum(!is.na(target.masked.in[1,j.index,]))!=length(target.masked.in[,,1])){   ##Why was this specified as [1,jindex,1]?
-         #TODO: Specify better method for determining whether to call a downscaling function
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[i.index,j.index,]))!=0){
@@ -84,6 +88,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                                          kfold=k, kfold.mask=kfold.mask, graph=FALSE, masklines=FALSE, 
                                          ds.orig=ds.orig[i.index, j.index,],
                                          #s5.adjust=s5.adjust, s5.method=s5.method, s5.args = s5.args, 
+                                         s3.instructions=s3.instructions, s3.adjust=s3.adjust,
                                          s5.instructions=s5.instructions, s5.adjust=s5.adjust,
                                          create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out
            )

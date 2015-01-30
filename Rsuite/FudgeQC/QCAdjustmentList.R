@@ -1,4 +1,4 @@
-#'QCSection5.R
+#'QCAdjustmentList.R
 #'@description Parses the list of options provided for adjustment, checks
 #'for internal consistency (throwing errors if checks are failed) and 
 #'returns information useful in developing file metadata. 
@@ -13,7 +13,7 @@
 #'@author Carolyn Whitlock
 #'
 
-QCSection5 <- function(mask.list){
+QCAdjustmentList <- function(mask.list){
   ##Note:masklist is the same things as section.5.list provided earlier, 
   ##and NOT to be confused with tmask.list
   message("checking Section 5 options provided")
@@ -87,6 +87,37 @@ convert.list.to.string <- function(this.vector){
     #No string to convert
     return(NA)
   }
+}
+
+qc.mask.check <- function(inloop, outloop){
+  #' Checks for the existance of zero or one
+  #' calls to create a qc mask in the post-processing
+  #' adjustment lists, and throws an error if there
+  #' are more calls for a qc mask than expected
+  #'   inloop.count <- length(compact(lapply(inloop, index.a.list, 'qc.mask', 'on')))
+  outloop.list <- length(compact(lapply(outloop, index.a.list, 'qc.mask', 'on')))
+  inloop.list <- length(outloop.list)
+  outloop.count <- length(inloop.list)
+  if(inloop.count + outloop.count > 1){
+    stop(paste("Error in qc.mask.check: There are", inloop.count, "calls to create a", 
+               "qc mask inside the time windows and", outloop.count, "calls to create a", 
+               "qc mask outside of them, and there should only be one. Please check input."))
+  }
+  if(inloop.count > 0){
+    qc.method <- inloop.list[[1]]$type
+    qc.args <- inloop.list[[1]]$qc_args
+  }else if(outloop.cout > 0){
+    qc.method <- outloop.list[[1]]$type
+    qc.args <- outloop.list[[1]]$qc_args
+  }else{
+    qc.method <- ""
+    qc.args <- ""
+  }
+  return(list('qc.inloop'=(inloop.cout > 0), 'qc.outloop'=(outloop.count > 0)), 
+         'qc.method'=ifelse(inloop.count > 0,
+                          compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))[[1]]$type,
+                          compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))[[1]]$type)
+  )
 }
 
 #Code for obtaining the filenames of all files from tmask.list
