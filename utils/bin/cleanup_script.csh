@@ -32,7 +32,8 @@ echo $outdir
 set outcount=`echo $outdir | wc -m`
 set outcount=`expr $outcount - 12`
 set outdir=`echo $outdir | tail -c $outcount`
-set outdir=`dirname "$outdir" | xargs dirname | xargs dirname | xargs dirname`
+set outdir=`dirname "$outdir" | xargs dirname | xargs dirname ` #| xargs dirname
+echo "output path: $outdir"
 
 set exp_name=`grep 'ds.experiment' $temp_file`
 set expcount=`echo $exp_name | wc -m`
@@ -51,7 +52,7 @@ echo "the mask region is: $maskregion"
 if ( $opt == 'd') then
 	if (-e $outdir) then
 		rm -r $outdir
-	else echo "$outdir could not be removed; does not exist"
+	else echo "$outdir could not be removed; does not exist. Has the experiment been run yet?"
 	endif
 	if (-e $scriptdir/scripts/$maskregion/$exp_name) then
 		rm -r $scriptdir/scripts/$maskregion/$exp_name
