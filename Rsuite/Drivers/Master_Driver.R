@@ -434,9 +434,6 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
              pre.ds.adjustments=c(pre.ds, pre.ds.train),
              is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
              post.ds.adjustments=c(post.ds.train, post.ds)
-             #is.adjusted=!(adjust.list$adjust.methods=='na'), adjust.method=adjust.list$adjust.methods, 
-             #adjust.args=adjust.list$adjust.args,
-             #pr.process=exists('pr_opts'), pr_opts=pr_opts
              )
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
