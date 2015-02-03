@@ -364,7 +364,6 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 
 #Call the Section 5 Adjustments to be applied to post-downscaled output
 message("Calling Section 5 Adjustments")
-post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
 if(length(post.ds) !=0){
   temp.postproc <- callS5Adjustment(post.ds,
                                     data = ds$esd.final,
