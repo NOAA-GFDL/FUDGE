@@ -74,7 +74,10 @@ def postProc():
      exper_rip = fut_scenario
      scenario = exper_rip.split('_')[0]
      ens = exper_rip.split('_')[1]	
-     ver = dversion
+     #ver = dversion
+     ver = "na" 	
+     actualver = ""
+     #a1r, comment out above because as per new directory strucytre, there is no dversion. 	
      predModel = fut_model 	
      indir = outdir #Our mini op from dscaling is the input to PP  
      ## if vname  contains the word mask, then yes let's set the indir differently  ##
@@ -105,9 +108,10 @@ def postProc():
         ################################################
 	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
+
      	if (cond == 1):
            			if (os.path.exists(indir)):
-                                        exists = checkExists(vname,indir,region,ver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
+                                        exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
              				if (exists == False):
 
            					print "PP Output does not exist already",indir
@@ -129,9 +133,9 @@ def postProc():
 					        shutil.copy2(slogloc, slogloc_alt)
                                         ###final checker test for extraneous existing files ######
                        		                print "checker on TwoD "
-                                                filedirect = indir+"/../../../"+region+"/"+ver+"/"
+                                                filedirect = indir+"/../../../"+region+"/"+actualver+"/"
                                                 if "mask" in vname: #spl cases are not great
-                                                	filedirect = indir+"/../../../../"+region+"/"+ver+"/"
+                                                	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
                                         	checker.checker(filedirect,2,"warning")
 					else:
 						sys.exit("ERROR")

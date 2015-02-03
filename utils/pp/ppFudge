@@ -24,6 +24,12 @@ if ($#argv > 9) then
  set rip=$argv[6] 
  set region=$argv[7]
  set ver=$argv[8] 
+ #a1r changes to support new DRS inhouse 
+ set oldver = $ver
+ if ($ver == "na") then
+	set ver = ""
+	echo "Versioning info being removed...................."
+ endif
  set lons=$argv[9]
  set lone=$argv[10]
  set lats=$argv[11]
@@ -141,8 +147,8 @@ endif
 #sample call
 #/home/a1r/gitlab/vanilla/fudge2014/utils/pp/sdWriter RR.nc RRtxp1-CDFt-A38L01K00 tasmax CDFtv1 /home/a1r/gitlab/vanilla/fudge2014/utils/pp/auxfiles/ testversion tasmax_day_RRtxp1-CDFt-A38L01K00_rcp85_r1i1p1_RR_20060101-20991231.nc region=RR
 
-echo "$tooldir/sdWriter $fprefix $exp $var $method $auxfiledir $ver $prefix.nc $targetid $cgrid region=$region"
-$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $ver $prefix.nc $targetid $cgrid region=$region
+echo "$tooldir/sdWriter $fprefix $exp $var $method $auxfiledir $oldver $prefix.nc $targetid $cgrid region=$region"
+$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $oldver $prefix.nc $targetid $cgrid region=$region
 set sdWriter_Ex = $?
 #echo "sdWriter EXIT STATUS: $sdWriter_Ex"
 if ($sdWriter_Ex == 1) then
@@ -150,7 +156,7 @@ if ($sdWriter_Ex == 1) then
  rm -rf $outroot
  echo "###########ERROR##############\n"
  echo "sdWriter command that failed:\n"
- echo "$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $ver $prefix.nc $targetid region=$region"
+ echo "$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $oldver $prefix.nc $targetid region=$region"
 
  exit 1
 endif
