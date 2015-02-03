@@ -355,7 +355,7 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 #MyStats(ds$esd.final,verbose="yes")
 
 if('pr'%in%target.var && exists('pr_opts')){
-  if(pr.post.proc){
+  #if(pr.post.proc){
     print(paste("Adjusting downscaled pr values"))
     out.mask <- MaskPRSeries(ds$esd.final, units=list.fut$units$value , index = pr.mask.opt)
     print(dim(out.mask))
@@ -381,7 +381,7 @@ if('pr'%in%target.var && exists('pr_opts')){
     print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 #    out.select <- ds$esd.final[!is.na(ds$esd.final)]
 #    print(paste("total non-zeroes and ones in the output file:", sum(out.select[out.select!=1&out.select!=0])))
-  }
+  #}
 }
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
