@@ -83,6 +83,8 @@ qc.mask.check <- function(inloop, outloop){
   inloop.count <- length(inloop.list)
   print(outloop.list)
   print(inloop.list)
+  print(inloop.count)
+  print(outloop.count)
   if(inloop.count + outloop.count > 1){
     stop(paste("Error in qc.mask.check: There are", inloop.count, "calls to create a", 
                "qc mask inside the time windows and", outloop.count, "calls to create a", 
@@ -91,7 +93,7 @@ qc.mask.check <- function(inloop, outloop){
   if(inloop.count > 0){
     qc.method <- inloop.list[[1]]$type
     qc.args <- inloop.list[[1]]$qc_args
-  }else if(outloop.cout > 0){
+  }else if(outloop.count > 0){
     qc.method <- outloop.list[[1]]$type
     qc.args <- outloop.list[[1]]$qc_args
   }else{
@@ -99,9 +101,7 @@ qc.mask.check <- function(inloop, outloop){
     qc.args <- ""
   }
   return(list('qc.inloop'=(inloop.count > 0), 'qc.outloop'=(outloop.count > 0), 
-              'qc.method'=ifelse(inloop.count > 0,
-                                 compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))[[1]]$type,
-                                 compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))[[1]]$type), 
+              'qc.method'=qc.method, 
               'qc.args'=qc.args)
   )
 }
@@ -114,3 +114,7 @@ qc.mask.check <- function(inloop, outloop){
 #   time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
 #   print(time.mask.names)
 # }
+
+# ifelse(inloop.count > 0,
+#        compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))[[1]]$type,
+#        compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))[[1]]$type)

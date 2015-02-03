@@ -20,11 +20,13 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
 #                          pr.process=FALSE, pr_opts=NA, 
 #                          is.transform=FALSE, transform=NA
                          is.pre.ds.adjust=FALSE,
-                         pre.ds.adjustments=c(pre.ds, pre.ds.train),
+                         pre.ds.adjustments=list('na'),
                          is.post.ds.adjust=FALSE,
-                         post.ds.adjustments=c(post.ds.train, post.ds)){
+                         post.ds.adjustments=list('na')){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
+  #'#TODO CEW: What is the purpose of the comments attribute? 
+  #'TODO CEW: What would an apprioriate title attribute actually be?
   comment.info <- "Output produced from "
   if (is.qcmask){
     comment.info <- paste(comment.info, "a QC check ", qc.method, " performed upon ", sep="")
@@ -44,14 +46,16 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
 #     comment.info <- paste(comment.info, 'adjusted for precipitation,')
 #   }
   if(is.pre.ds.adjust){
-    pre.methods <- lapply(post.ds, '[[', "type")
+    pre.methods <- lapply(pre.ds.adjustments, '[[', "type")
     comment.info <- paste(comment.info, "adjusted with the ", convert.list.to.string(pre.methods),
                           " method(s) before downscaling", sep="")
   }
   if(is.post.ds.adjust){
-    post.methods <- lapply(post.ds, '[[', "type")
+    print(post.ds.adjustments)
+    post.methods <- lapply(post.ds.adjustments, '[[', "type")
+    print(post.methods)
     if(!is.pre.ds.adjust){
-      comment.info <- paste(comment.info, "adjusted with the", convert.list.to.string "method(s) after downscaling")
+      comment.info <- paste(comment.info, "adjusted with the", convert.list.to.string(post.methods), "method(s) after downscaling")
     }else{
       comment.info <- paste(comment.info, "and the", convert.list.to.string(post.methods),
                             "method(s) after downscaling")
@@ -100,27 +104,40 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }
-  if(pr.process){
-    pr.optstring <- paste(names(pr_opts), pr_opts, sep="=", collapse=", ")
-    info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
-  }
+#   if(pr.process){
+#     pr.optstring <- paste(names(pr_opts), pr_opts, sep="=", collapse=", ")
+#     info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
+#   }
   if(is.pre.ds.adjust || is.post.ds.adjust){
     #Section 5 and Section 3 stuff
     if(is.qcmask){
-      qc.string = "before QC masks applied"
+      qc.string = "before QC masks applied "
     }else{
       qc.string = ""
     }
-    info <- paste(info, "Arguments used in adjustment functions", qc.string,)
-    if(pre.ds.adjust){
+    print(qc.string)
+    info <- paste(info, "Arguments used in adjustment functions", qc.string)
+    if(is.pre.ds.adjust){
       pre.args <- paste(lapply(pre.ds, '[[', "pp.args"), collapse=",")
+      #These next two might need to be in reverse order
       pre.args <- gsub('\"', "", pre.args)
-      pre.string <- convert.list.to.string(paste(pre.methods, pre.args))
-      info <- paste(info, "before downscaling",  ": ", adjust.args, "; ", sep="")
+      pre.args <- sub('list', "", pre.args)
+      pre.string <- convert.list.to.string(paste(pre.methods, pre.args, sep=":"))
+      info <- paste(info, "before downscaling",  ": ", pre.string, sep="")
     }
-    if(post.ds.adjust){
-      info <- paste(info, )
+    if(is.post.ds.adjust){
+      if(is.pre.ds.adjust){
+        info <- paste(info, "and")
+      }
+      post.args <- paste(lapply(post.ds, '[[', "qc_args"), collapse=",")
+      post.args <- gsub('\"', "", post.args)
+      post.args <- sub('list', "", post.args)
+      print(post.args)
+      post.string <- convert.list.to.string(paste(post.methods, post.args, sep=":"))
+      print(post.string)
+      info <- paste(info, "after downscaling:", post.string)
     }
+    info <- paste(info, ";")
   }
   if(is.qcmask){
     #More section 5 stuff

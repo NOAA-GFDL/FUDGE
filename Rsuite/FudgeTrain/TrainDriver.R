@@ -34,18 +34,17 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      }else{
        ds.out <- NULL
      }
-     
      if(create.qc.mask){
        qc.mask <-  array(NA,dim=c(dim(fut.masked.in)))
        s5.adjust <- TRUE
-     }else if(length(s5.instructions!=0)){ #s5.instructions[[1]]!='na' #!is.null(s5.instructions[[1]])
+     }else if(length(s5.instructions) > 0){ #s5.instructions[[1]]!='na' #!is.null(s5.instructions[[1]])
        qc.mask <- NULL
-       s5.adjust <- FALSE
-       for (element in 1:length(s5.instructions)){
-         if(s5.instructions[[element]]$adjust.out=='on'){ #Changed from not-'na' to 'on'
-           s5.adjust <- TRUE
-         }
-       }
+       s5.adjust <- TRUE #It's binary: you either make adjustments, or create a qc mask. It never does nothing. #FALSE
+#        for (element in 1:length(s5.instructions)){
+#          if(s5.instructions[[element]]$adjust.out=='on'){ #Changed from not-'na' to 'on'
+#            s5.adjust <- TRUE
+#          }
+#        }
      }else{
        #If s5.instructions=='na'
        qc.mask <- NULL

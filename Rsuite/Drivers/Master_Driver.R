@@ -127,7 +127,7 @@ message("Checking output directory")
 QCIO(output.dir)
 
 if(exists('pr_opts')){ #put better check in here once you are done with the testing
-  message('Conversion of pre- and post-processing input')
+  message('Conversion of pre- and post- downscaling adjustment input')
   if(exists('pr_opts')){
     pp.out <- adapt.pp.input(mask.list, pr_opts)
   }else{
@@ -303,7 +303,7 @@ if(length(pre.ds) !=0){
                                   fut.pred = list.fut$clim.in,  
                                   s5.instructions=post.ds)
   #Assign output and remove temporary output 
-  post_ds <- temp.output$s5.list
+  post.ds <- temp.output$s5.list
   list.target$clim.in <- temp.output$input$hist.targ
   list.hist$clim.in <- temp.output$input$hist.pred
   list.fut$clim.in <- temp.output$input$fut.pred
@@ -472,18 +472,20 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
                               lname=paste('QC Mask')
     )
     #For now, patch the variables in here until se get s5 formalized in the XML
-    WriteGlobals(qc.out.filename,k.fold,target.var,predictor.var,label.training,ds.method,
+    WriteGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                  configURL,label.validation,institution='NOAA/GFDL',
                  version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                  grid_region=grid, mask_region=ds.region,
                  time.trim.mask=fut.time.trim.mask, 
-                 tempdir=TMPDIR, include.git.branch=git.needed,FUDGEROOT=FUDGEROOT,BRANCH=BRANCH,
-                 is.qcmask=TRUE, 
-                 qc.method=qc.maskotps$qc.method, qc.args=qc.maskopts$qc.args,
-                 is.adjusted=!is.na(adjust.list$adjust.pre.qc), adjust.method=adjust.list$adjust.pre.qc, 
-                 adjust.args=adjust.list$adjust.pre.qc.args,
-                 pr.process=exists('pr_opts'), pr_opts=pr_opts)
+                 tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+                 is.qcmask=TRUE,
+                 qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
+                 is.pre.ds.adjust=(length(pre.ds)+length(pre.ds.train) > 0),
+                 pre.ds.adjustments=c(pre.ds, pre.ds.train),
+                 is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
+                 post.ds.adjustments=c(post.ds.train, post.ds)
+    )
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }
 #}
