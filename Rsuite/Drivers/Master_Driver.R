@@ -126,7 +126,7 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 message("Checking output directory")
 QCIO(output.dir)
 
-if(exists('pr_opts')){ #put better check in here once you are done with the testing
+if(!exists('pre_ds')){ #put better check in here once you are done with the testing
   message('Conversion of pre- and post- downscaling adjustment input')
   if(exists('pr_opts')){
     pp.out <- adapt.pp.input(mask.list, pr_opts)
@@ -136,6 +136,8 @@ if(exists('pr_opts')){ #put better check in here once you are done with the test
   pre_ds <- pp.out$pre_ds
   post_ds <- pp.out$post_ds
 }
+print(pre_ds)
+print(post_ds)
 
 #Initialize instructions for pre- and post-ds adjustment
 post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
