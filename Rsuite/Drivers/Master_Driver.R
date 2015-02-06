@@ -490,3 +490,6 @@ if(adjust.list$qc.check){ ##Created waaay back at the beginning, as part of the 
   }
 #}
 }
+#Do not change formatting of this: it is used as a flag by two components of the
+#regression testing scripts parsing stdout
+message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
