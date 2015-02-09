@@ -20,6 +20,7 @@ SetDSMethodInfo <- function(ds.method){
          "EDQM" = setEquiDistant(), 
          "CFQM" = setChangeFactor(),
          "DeltaSD" = setDeltaSD(),
+         "EDQMv2" = setEquiDistant(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
 }

@@ -18,14 +18,17 @@ gcp --sync -cd /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskd
 #Obs dataset
 mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/[VAR]/[GRID]/OneD//
 #Historic predictor dataset
-mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[HIST_GCM]/historical//atmos/day/[HIST_RIP]/[HIST_DVERSION]/[VAR]/SCCSC0p1/OneD//
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[HIST_GCM]/historical//atmos/day/[HIST_RIP]/[HIST_DVERSION]/[VAR]/[GRID]/OneD//
 #Future dataset
-mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[FUT_GCM]/[SCENARIO]//atmos/day/[FUT_RIP]/[FUT_DVERSION]/[VAR]/SCCSC0p1/OneD//
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[FUT_GCM]/[SCENARIO]//atmos/day/[FUT_RIP]/[FUT_DVERSION]/[VAR]/[GRID]/OneD//
 
 gcp --sync -cd /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD//*I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD//
-gcp -cd /archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical/day/atmos/day/r0i0p0/v1p2/[VAR]/[GRID]/OneD///*[HIST_DATE_RANGE].I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/VAR/SCCSC0p1/OneD///
-gcp -cd /archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical/day/atmos/day/r1i1p1/v20111006/[VAR]/[GRID]/OneD///*[HIST_DATE_RANGE].I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[HIST_GCM]/historical//atmos/day/r1i1p1/v20111006/VAR/SCCSC0p1/OneD///
-gcp -cd /archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[FUT_GCM]/[FUT_SCENARIO]/day/atmos/day/[FUT_RIP]/[FUT_DATA_VERSION]/VAR/SCCSC0p1/OneD///*[FUT_DATE_RANGE].I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/[FUT_SCENARIO]//atmos/day/[FUT_RIP]/[FUT_DATA_VERSION]/[VAR]/[GRID]/OneD///
+
+gcp -cd /archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical/day/atmos/day/r0i0p0/v1p2/[VAR]/[GRID]/OneD///*[HIST_DATE_RANGE].I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/VAR/[GRID]/OneD///
+
+gcp -cd /archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical/day/atmos/day/r1i1p1/v20111006/[VAR]/[GRID]/OneD///*[HIST_DATE_RANGE].I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[HIST_GCM]/historical//atmos/day/r1i1p1/v20111006/[VAR]/[GRID]/OneD///
+
+gcp -cd /archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//[FUT_GCM]/[FUT_SCENARIO]/day/atmos/day/[FUT_RIP]/[FUT_DATA_VERSION]/VAR/[GRID]/OneD///*[FUT_DATE_RANGE].I[LONVAL]_[LATRANGE].nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/[FUT_SCENARIO]//atmos/day/[FUT_RIP]/[FUT_DATA_VERSION]/[VAR]/[GRID]/OneD///
 
 #This probably is not neccessary, but the next line probably is
 mkdir -p $TMPDIR/$outdir

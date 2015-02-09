@@ -27,7 +27,7 @@ import re
 def main():
 	#Assume that you are running this to test the version of FUDGE that is ready to use (i.e. with env variable $BASEDIR
 	#regdir = "/archive/esd/REGRESSION_TESTS/"
-	regdir = '/home/cew/Code/testing/'
+	regdir = '/home/cew/Code/testing/compare.test/'
 	#regdir = '/work/cew/testing/'
 
 	olddir = regdir + "/old_output/"
@@ -61,23 +61,35 @@ def main():
 	(options, args) = parser.parse_args()
 	
 	if(options.run_runcode | options.run_all):
-		commandfile = rundir +"/runcode_commands"
-		#commandfile = "/home/cew/Code/testing/cmndfile.txt"
+		#commandfile = rundir +"/runcode_commands"
+		commandfile = rundir + "regression_test_planning.csv"
 		teststatus = 0
 		mode='runcode'
 		with open(commandfile, 'rb') as instructions:
-			instructreader = csv.DictReader(instructions, delimiter=' ', quotechar='"') #DictReader
-		     	for row in instructreader:
+			print commandfile
+			print "file opened"
+			instructreader = csv.DictReader(instructions, delimiter=';', quotechar='"') #DictReader
+			numvals = instructreader.line_num
+			print numvals
+			row = instructreader.next()
+			print row
+				#if ( ("#" not in row[0]) ): #TODO: fix this
+			compareRuncode(row, olddir, newdir, basedir, mode)
+			print "starting loop"
+		     	for i in range(1, (numvals)) :
 			#Expected return is a list of strings of this format: 
 			#0: the runcode being run through the testing suite
 			#1: a brief description of the input 
 			#2: the name of the output file
 			#Lines with "#" at the beginning are comments
+				print i
+				row = instructreader.next()
 				print row
-				if ( ("#" not in row[0]) ): #TODO: fix this
-					newstatus = compareRuncode(row, olddir, newdir, basedir, mode)
+				#if ( ("#" not in row[0]) ): #TODO: fix this
+				compareRuncode(row, olddir, newdir, basedir, mode)
+				#newstatus = compareRuncode(row, olddir, newdir, basedir, mode)
 					#Honestly, this is probably better suited to running as a python subfxn
-	        			teststatus = teststatus + int(newstatus)
+	        		teststatus = teststatus + int(newstatus)
 		#If, at the end of everything, all tests were passed: 
 		if (teststatus==0):
 			print "All runcode regression tests passed. Congratulations."
@@ -99,7 +111,9 @@ def main():
 			instructreader = csv.reader(instructions, delimiter=' ', quotechar='"')
 		     	for row in instructreader:
 				print row
-				newstatus = compareRuncode(row, mode, olddir, newdir, basedir, mode)
+				compareRuncode(row, mode, olddir, newdir, basedir, mode)
+				break
+				#newstatus = compareRuncode(row, mode, olddir, newdir, basedir, mode)
 	        		teststatus = teststatus + int(newstatus)
 		if (teststatus==0): 
 			print "All xml/entire workflow tests passed. Congratulations."
@@ -116,26 +130,29 @@ def compareRuncode(row, olddir, newdir, basedir, mode):
 	#Creates the args for calling a c-shell script that 
 	#the status of a nccmp and writes the results (and stdout)
 	#to file
-	oldfile = olddir + row[1]
+	oldfile = olddir + row['NAME']
 	summfile = newdir + "/test_status.summary"
 	logfile = newdir + "/stdout.log"
-	description = "'" + row[2] + "'"
+	description = "'" + row['Purpose'] + "'"
 	#location of script to be called:
 	c_shell_script = basedir + "Regression_tests/run_reg_tests_from_file_old.csh" #old
 	#Do a find and replace on a template to get your replacements
 	if (mode=='xml'):
 		instructions = basedir + "/Regression_tests/xmls/xml_template"
-		newinstructions = newdir + "/runcodes_and_scripts/" + row[0]
+		newinstructions = newdir + "/runcodes_and_scripts/" + row['NAME']
 		shutil.copy2(instructions, newinstructions)
-		replaceValues(newinstructions, rowdict, olddir, newdir, basedir)
+		replaceValues(newinstructions, row, olddir, newdir, basedir)
 	elif (mode=='runcode'):
-		instructions = basedir + "/Regression_tests/runcodes/runcode_template"
-		newinstructions = newdir + "/runcodes_and_scripts/" + row[0]
+		os.makedirs(newdir + "/runcodes_and_scripts/")
+		instructions = basedir + "/Regression_tests/runcodes/template-runcode3.R"
+		newinstructions = newdir + "/runcodes_and_scripts/" + row['NAME']
 		shutil.copy2(instructions, newinstructions)
-		replaceValues(newinstructions, rowdict, olddir, newdir, basedir)
-		script = basedir + "/Regression_tests/runcodes/runscript_template"
-		newscript = newdir + "/runcodes_and_scripts/" + row[0] + ".script"
-		replaceValues(newscript2, rowdict, olddir, newdir, basedir)
+		replaceValues(newinstructions, row, olddir, newdir, basedir)
+		print "starting on runscript"
+		script = basedir + "/Regression_tests/runcodes/template-runscript-test2"
+		newscript = newdir + "/runcodes_and_scripts/" + row['NAME'] + ".script"
+		shutil.copy2(script, newscript)
+		replaceValues(newscript, row, olddir, newdir, basedir)
 	else:
 		print "Error in compareRuncode: Invalid option for mode."
     	#with fileinput.input(inplace=True) as f:
@@ -147,22 +164,27 @@ def compareRuncode(row, olddir, newdir, basedir, mode):
 	for i in range(1, len(command_tup)):
 		commandstr = commandstr + " " + command_tup[i]
 	print commandstr
-	proc_out = subprocess.Popen(commandstr,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	#proc_out = subprocess.Popen(commandstr,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 	#check return code
-        output0, errors0 = proc_out.communicate()
-	print output0, errors0
-	return proc_out.returncode
+        #output0, errors0 = proc_out.communicate()
+	#print output0, errors0
+	#return proc_out.returncode
 
-def replaceValues(rowdict, olddir, newdir, basedir, newfile):
+def replaceValues(newfile, rowdict, olddir, newdir, basedir):
 	#Copies the template runcode/runscript/xml to a new directory and 
 	#from there, substitues the values pointed to in the input dict
 	#for the values flagged in the input template
 	#This assumes that line is a string. Check on that? 
-	for line in open(newfile, 'r+'):
+	openfile = open(newfile, 'r+', inplace=True)
+	for line in openfile:
 		for key in rowdict.keys(): #Can solve this by making everything in obnoxious capital letters
-			if ("[" + key + "]") in line:
-				line = re.sub( ("[" + key "]"), rowdict[key], line) #can this be rewritten with line instead?
-		newfile.write(line)
+			keystr = "[" + key + "]"
+			if keystr in line:
+				print key
+				line = line.replace(keystr, rowdict[key]) #can this be rewritten with line instead?
+				print line
+		openfile.write(line)
+	openfile.close()
 				
 		#Most stuff, though, should be a simple find and replace. 
 	

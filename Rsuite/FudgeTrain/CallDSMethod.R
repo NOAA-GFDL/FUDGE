@@ -569,7 +569,7 @@ callEDQMv2<-function(LH,CH,CF,args){
   #' as of 12-29
   lengthCF<-length(CF)
   lengthCH<-length(CH)
-  lengthLH<-length(LH)  
+  lengthLH<-length(LH)
   
   if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
   
@@ -585,15 +585,20 @@ callEDQMv2<-function(LH,CH,CF,args){
   temp$LH[1:lengthLH]<-LH
   
   temp.CFsorted<-temp[order(temp$CF),]
-  temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+  #Combine needed to deal with cases where CH longer than CF
+  if (lengthCH-lengthCF > 0){
+    temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (lengthCH-lengthCF)))
+  }else{
+    temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+  }
   
-  temp.CFsorted$qLHecdfCFqCF<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp.CFsorted$qCHecdfCFqCF<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qLHecdfCFqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qCHecdfCFqCF[1:lengthCF]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
   temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
   temp<-temp.CFsorted[order(temp.CFsorted$index),]
   print(summary(temp))
   print(names(temp))
   
   #SDF<-temp$qCFecdfCHqLH
-  return(temp$EquiDistant)
+  return(temp$EquiDistant[!is.na(temp$EquiDistant)])
 }
