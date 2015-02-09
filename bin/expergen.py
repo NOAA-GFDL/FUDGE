@@ -21,6 +21,7 @@ projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th"
 project = "35" #default TODO get from XML
 ppn = 2 #TODO get from XML custom?
 overwrite = False #default don't overwrite existing output or scripts
+preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
 def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
@@ -69,10 +70,13 @@ def checkTags(dictParams,key):
 				sys.exit(1)  
 		return val 
 
-def getFacets(listDatasetID,var,dim,label="label"):
+def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
         ctr = 0
 	dictDS = {}
 	listDS = []
+	if(output_grid == "na"):
+		print "ERROR, output_grid not accepted as na"
+		sys.exit(1)
         for itemj in listDatasetID:
                 #print "counter .......",ctr
                 ds_title = label+str(ctr)
@@ -101,7 +105,7 @@ def getFacets(listDatasetID,var,dim,label="label"):
                 hi_expname = hi_exp+"_"+hi_rip
                 hi_expname = hi_expname
 #                dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
-                hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+dim+"/"
+                hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+output_grid+"/"+dim+"/"
 		dictDS['proj']=hi_proj
                 dictDS['product']=hi_product
                 dictDS['instit']=hi_instit
@@ -119,9 +123,11 @@ def getFacets(listDatasetID,var,dim,label="label"):
         return dictDS,listDS
 
 def getDir(listDir,label):
+#GCM_DATA.CMIP5.BOGUS.amip.day.atmos.anomSbx7C360LR.r1i1p1.v1
 	i=0
 	dictDIR = {}
         for getdir in listDir:
+		print getdir
                 dir_lo = label+str(i)
                 dictDIR[dir_lo] = rootdir+"/"+getdir
                 i = i + 1
@@ -238,8 +244,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		force = False
         elif(preexist == 'erase'):
 		force = True
+	elif(preexist == 'move'):
+		force = True #new move feature in clobber - support
 	else:
-	        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase'} for ifpreexist tag in XML \033[1;m",preexist
+	        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
 		sys.exit(-2)
         #print "----Force Override existing output Flag-", force
         ####### end get  dictParams ###########################
@@ -277,13 +285,13 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
 	print(dim1)
         ############ target get dir info ########################
-	dict_target,listt = getFacets(target_id,target,dim,'target_id')
+	dict_target,listt = getFacets(target_id,target,dim,'target_id',output_grid)
 	#print dict_target
 	############ historical predictor ######################
-        dict_hist,listh = getFacets(hist_id,predictor,dim,'hist_id')
+        dict_hist,listh = getFacets(hist_id,predictor,dim,'hist_id',output_grid)
 	#print dict_hist
 	########### future predictor information ############## 
-        dict_fut,listf = getFacets(fut_id,predictor,dim,'fut_id')
+        dict_fut,listf = getFacets(fut_id,predictor,dim,'fut_id',output_grid)
 	#print dict_fut
 	###########  esdgen information ####################################
 
@@ -309,7 +317,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    ens = dict_fut['rip']
             predictand = target
             #dversion from command line args. default value is v20120422
-            outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,dversion)
+            outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
             #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
 #new
@@ -326,18 +334,23 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 					overwrite = True	
 					break	
 	    if(force == True):
-		overwrite = True
+		overwrite = True 
+		if(preexist == 'move'):
+			global preexist_glob
+			preexist_glob = 'move'
+			print "preexist turned ON................"
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
-	    target_freq = dict_target['mip']
+	    #CEW edit for testing purposes mip to freq
+	    target_freq = dict_target['freq']
 	    target_ver = dict_target['ver']
 	    hist_scenario = dict_hist['exp']+"_"+dict_hist['rip']
-	    hist_freq = dict_hist['mip']
+	    hist_freq = dict_hist['freq'] #CEW edit to test
             hist_model = dict_hist['model']
 	    fut_scenario = dict_fut['exp']+"_"+dict_fut['rip']	
             fut_model = dict_fut['model']
-            fut_freq = dict_fut['mip']
+            fut_freq = dict_fut['freq'] #CEW edit mip to freq
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
 
 	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists
@@ -430,7 +443,15 @@ def main():
 			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist>erase</ifpreexist> is turned on, the scripts and any existing OneD output will be overwritten.\033[1;m "
 			print "Now invoking cleanup utility..........."
 		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
-		        cleaner_cmd = cleaner_script+" d "+uinput 
+			if(preexist_glob == 'erase'):
+				print "Lets erase it ........... ifpreexist"
+		        	cleaner_cmd = cleaner_script+" d "+uinput 
+			else: 
+				if(preexist_glob != 'move') & (preexist_glob != 'exit'):
+					print "CHECK ifpreexist settings, quitting now"
+					sys.exit(1)
+				print "Lets move it............... if preexist" 
+                               	cleaner_cmd = cleaner_script+" m "+uinput
 	                print "cleaner_cmd"
 			print cleaner_cmd		
 	                pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)

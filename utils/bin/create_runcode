@@ -140,12 +140,6 @@ echo $masklist
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
 endif
 ########################### 
-foreach var ($PREDICTOR)
- if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
-  echo "WARNING This variable $var is not supported variable at this time. Please check back later. Thank you"
-  exit
- endif
-end
 
 set lon_end = $iend
 set lon_start = $istart
