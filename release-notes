@@ -28,6 +28,13 @@ Aparna Radhakrishnan
 
 cleanup-script with XML as input
 Carolyn Whitlock
+1. Cleanup script accepts 2 possible options: 'e' for erase, and 'm' for move, which moves the experiment experiment-name to experiment-name~1
+2. Cleanup script no longer throws an error when trying to remove nonexistant directory
+
+R Code:
+Carolyn Whitlock
+1. Added method BCQM for formal Red River runs (other DS methods exist, but are in the process of QC)
+2. 
 --
 incomplete release notes
 --
