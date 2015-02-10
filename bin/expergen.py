@@ -16,7 +16,7 @@ dictDS_lo = {}
 list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
-rootdir = "/archive/esd/PROJECTS/DOWNSCALING/"  #default
+rootdir = ''
 projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
 project = "35" #default TODO get from XML
 ppn = 2 #TODO get from XML custom?
@@ -221,6 +221,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 				auxcustom1 = val
 			print "auxcustom1:",auxcustom1
         projectRoot = checkTags(dictParams,'oroot')
+	global rootdir 
+        rootdir = checkTags(dictParams,'in_root') 
 	outdir = checkTags(dictParams,'outdir')
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
