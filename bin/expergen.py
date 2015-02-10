@@ -154,6 +154,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         ###### get dictParams #################################
         predictor =  checkTags(dictParams,'predictor_list')
         target = checkTags(dictParams,'target') 
+        target_ID = checkTags(dictParams,'target_ID')
         target_id = checkTags(dictParams,'target_id')
         target_train_start_time = checkTags(dictParams,'target_train_start_time')
         target_train_end_time = checkTags(dictParams,'target_train_end_time')
@@ -197,8 +198,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	######## construct experiment config name ###########
 	if(experiment == 'na'): #if not present in XML
 	        proj = checkTags(dictParams,'project')
+	        project_ID = checkTags(dictParams,'project_ID')
                 series = checkTags(dictParams,'series') #experiment series
- 		experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+ 		#experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+                experiment,dsold_region = naming.constructExpname(project_ID,target_ID,series,method,kfold,basedir,dumb="yes")
         ##################################################### 
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
