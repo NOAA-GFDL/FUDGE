@@ -228,6 +228,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	global rootdir 
         rootdir = checkTags(dictParams,'in_root') 
 	outdir = checkTags(dictParams,'outdir')
+	out_dir = checkTags(dictParams,'out_dir')
+        out_dir = out_dir.strip()
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
 	sbase = sroot+"/scripts/"+ds_region+"/"+experiment+"/"
@@ -310,7 +312,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "future predictor dir",fut_pred_dir
 
 	#### get outdir #####
-        if(outdir == 'na'):
+        if(out_dir != 'na'):
             category = 'downscaled'
             instit="NOAA-GFDL"
             predModel = dict_fut['model'] 
@@ -323,7 +325,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    ens = dict_fut['rip']
             predictand = target
             #dversion from command line args. default value is v20120422
-            outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
+	    if (out_dir == 'na'):
+#Commenting the following since xmlGen now constructs outpath and is already set in xml
+            	outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
+	    else:
+		outdir = out_dir
             #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
 #new
