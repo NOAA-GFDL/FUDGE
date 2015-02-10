@@ -177,6 +177,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	######## use auxcustom ############
 	auxcustom = fut_time_trim_mask
 	###########################################
+        dim = checkTags(dictParams,'dim')
         output_grid = checkTags(dictParams,'output_grid')
 	###CEW edit
 	print "About to call checkTags on region"
@@ -256,12 +257,12 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		sys.exit(-2)
         #print "----Force Override existing output Flag-", force
         ####### end get  dictParams ###########################
-        ## OneD or ZeroD that's the question ##  
-        if(region != "station"):
-         dim = "OneD"
-        else:
-         dim = "ZeroD"
-	print(dim)
+        ## OneD or ZeroD that's the question and starting feb 10 2015 this will be received from xml##  
+        #if(region != "station"):
+        # dim = "OneD"
+        #else:
+        # dim = "ZeroD"
+	#print(dim)
         if(output_grid == 'station'):
                 if(latjstart == latjend):
                         dsuffix = "J"+str(latjstart)
