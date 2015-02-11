@@ -370,7 +370,6 @@ if(length(post.ds) !=0){
                                     hist.pred = list.hist$clim.in, 
                                     hist.targ = list.target$clim.in, 
                                     fut.pred  = list.fut$clim.in)
-  stop('you wanted a look at this')
   ds$esd.final <- temp.postproc$ds.out
   if(qc.maskopts$qc.outloop){
     ds$qc.mask <- temp.postproc$qc.mask
