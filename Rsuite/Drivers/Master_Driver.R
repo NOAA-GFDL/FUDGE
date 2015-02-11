@@ -224,8 +224,6 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
 # downscale.calendar <- attr(tmask.list[[length(tmask.list)]]$dim$time, "calendar")
 
 ### Now, access input data sets
-
-#Obtain target data first - target data has spatial coords, and will *not* have multiple vars present
 message("Reading in target data")
 target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                    target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
@@ -372,6 +370,7 @@ if(length(post.ds) !=0){
                                     hist.pred = list.hist$clim.in, 
                                     hist.targ = list.target$clim.in, 
                                     fut.pred  = list.fut$clim.in)
+  stop('you wanted a look at this')
   ds$esd.final <- temp.postproc$ds.out
   if(qc.maskopts$qc.outloop){
     ds$qc.mask <- temp.postproc$qc.mask
@@ -431,11 +430,14 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
              grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
              tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-             is.pre.ds.adjust=(length(pre.ds)+length(pre.ds.train) > 0),
-             pre.ds.adjustments=c(pre.ds, pre.ds.train),
-             is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
-             post.ds.adjustments=c(post.ds.train, post.ds)
-             )
+#              is.pre.ds.adjust=(length(pre.ds)+length(pre.ds.train) > 0),
+#              pre.ds.adjustments=c(pre.ds, pre.ds.train),
+#              is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
+#              post.ds.adjustments=c(post.ds.train, post.ds)
+             is.pre.ds.adjust=(length(pre_ds) > 0),
+             pre.ds.adjustments=pre_ds,
+             is.post.ds.adjust=(length(post_ds) > 0),
+             post.ds.adjustments=post_ds)
 
 #print(paste('Downscaled output file:',ds.out.filename,sep=''))
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
@@ -479,11 +481,14 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
                  tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                  is.qcmask=TRUE,
                  qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
-                 is.pre.ds.adjust=(length(pre.ds)+length(pre.ds.train) > 0),
-                 pre.ds.adjustments=c(pre.ds, pre.ds.train),
-                 is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
-                 post.ds.adjustments=c(post.ds.train, post.ds)
-    )
+#                  is.pre.ds.adjust=(length(pre.ds)+length(pre.ds.train) > 0),
+#                  pre.ds.adjustments=pre_ds, #Check on this later for an error
+#                  is.post.ds.adjust=(length(post.ds)+length(post.ds.train) > 0),
+#                  post.ds.adjustments=c(post.ds.train, post.ds)
+                 is.pre.ds.adjust=(length(pre_ds) > 0),
+                 pre.ds.adjustments=pre_ds,
+                 is.post.ds.adjust=(length(post_ds) > 0),
+                 post.ds.adjustments=post_ds)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }
 #}

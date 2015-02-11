@@ -142,12 +142,19 @@ callPRPostproc <- function(test, input, adjusted.output){
   #bias and conservation of the total precipitation per time range
   
   #Find arguments to pre-processing function
-  arg.names <- names(test$qc_args)
+  arg.names <- names(test$qc_args) #qc_args #pp_args
   if('thold'%in%arg.names && 'conserve'%in%arg.names){
     #Never adjusting to another frequency at this point in the process
     lopt.drizzle=FALSE
   }else{
     stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
+  }
+  if('fut.prmask'%in%arg.names){
+    message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
+    adjusted.output$ds.out[test$qc_args$fut.prmask==0] <- 0
+    test$qc_args$fut.prmask <- 'calculated from the input pr data'
+  }else{
+    message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
   }
   #Obtain mask of days that will be eliminated
   out.mask <- MaskPRSeries(adjusted.output$ds.out, units=attr(input$hist.targ, "units")$value, index=test$qc_args$thold)

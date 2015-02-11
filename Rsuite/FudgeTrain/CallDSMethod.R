@@ -131,11 +131,20 @@ callCDFt <- function (pred, targ, new, args){
   #If no argument is provided for npas, defaults to 
   #npas=length(targ)
   ###Obtain required arguments (and throw errors if not specified)
+  if(!is.null(args$dev)){
+    dev <- args$dev
+  }else{
+    stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
+  }
   if(!is.null(args$npas)){
     npas <- args$npas
     if(npas=='default' || npas==0){
       #npas = shorter of future predictor/esd.gen or training target
       npas=ifelse(length(targ) > length(new), length(new), length(targ))
+      #npas *has* to be an integer larger than dev, or else there will be errors
+      npas=ifelse(npas > dev, npas, (npas+dev))
+      print(npas)
+      print(dev)
     }else if(npas=='training_target'){
       #Note: this option is needed to duplicate 'default'
       #for results prior to 10-20-14
@@ -145,11 +154,6 @@ callCDFt <- function (pred, targ, new, args){
     }
   }else{
     stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
-  }
-  if(!is.null(args$dev)){
-    dev <- args$dev
-  }else{
-    stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
   }
   if(is.null(args)){
     #return(CDFt(targ, pred, new, npas=length(targ))$DS)

@@ -164,15 +164,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
             #print(summary(kfold.predict))
             #print(summary(kfold.target))
-            #print(summary(kfold.gen))
             temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                      train.predict = kfold.predict[!is.na(kfold.predict)], 
                                      train.target = kfold.target[!is.na(kfold.target)], 
                                      esd.gen = kfold.gen[!is.na(kfold.gen)], 
                                      args=downscale.args, 
                                      ds.var=ds.var)
-            #gc() #Does this solve the CDFt memory allocation weirdness?
-            #No it does not. This is strange and exciting.
             downscale.vec[!is.na(kfold.gen)] <- temp.out
           }
           #And adjust the downscaled output, if applicable
@@ -236,6 +233,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.vec[!is.na(window.gen)], 
                  pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
         }
+        print("Number of NAs in downscaled output:")
+        print(summary(downscale.vec))
         #Otherwise, you don't need to do anything because that loop should be full of NAs
       }else{
         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
@@ -248,6 +247,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
   #   }
   #Exit loop
+  print(length(downscale.vec))
+  print(sum(is.na(downscale.vec)))
   return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask)) #'postproc.out'=postproc.out))
 }
 

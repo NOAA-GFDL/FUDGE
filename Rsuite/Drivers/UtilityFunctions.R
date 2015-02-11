@@ -67,7 +67,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
     pre_ds$propts <- list(type='PR', var='pr', apply='all', loc='outloop', 
                           pp.args=list(thold=pr_opts$pr_threshold_in,
                                        freqadj=pr_opts$pr_freqadj_in,
-                                       conserve=pr_opts$pr_conserve_in))
+                                       conserve=pr_opts$pr_conserve_in, 
+                                       apply_0_mask=pr_opts$apply_0_mask))
     post_ds$propts <- list(type='PR', 
                            adjust.out='on', 
                            qc.mask='off', 
