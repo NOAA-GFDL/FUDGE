@@ -233,8 +233,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.vec[!is.na(window.gen)], 
                  pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
         }
-        print("Number of NAs in downscaled output:")
-        print(summary(downscale.vec))
         #Otherwise, you don't need to do anything because that loop should be full of NAs
       }else{
         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
@@ -247,8 +245,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
   #   }
   #Exit loop
-  print(length(downscale.vec))
-  print(sum(is.na(downscale.vec)))
   return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask)) #'postproc.out'=postproc.out))
 }
 

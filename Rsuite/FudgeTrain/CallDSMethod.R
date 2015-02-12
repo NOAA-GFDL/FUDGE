@@ -148,7 +148,6 @@ callCDFt <- function (pred, targ, new, args){
       npas=length(new)
     }
     if(npas <= dev){
-      npas <- 10
       stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was", 
                  npas, "and dev was", dev))
     }

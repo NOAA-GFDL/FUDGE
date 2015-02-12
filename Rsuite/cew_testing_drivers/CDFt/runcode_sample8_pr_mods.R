@@ -56,7 +56,7 @@ target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/PerfectModel/masks/time
 #------------- method name k-fold specs-----------------------#
 #ds.method <- 'DeltaSD' 
 ds.method <- 'CDFt'
-ds.experiment <- 'PMprp1-CDFt-A18-pr-bugfix4' #DO NOT CHANGE WHILE TESTING IN multi_pp_opts
+ds.experiment <- 'PMprp1-CDFt-A18-pr-bugfix5' #DO NOT CHANGE WHILE TESTING IN multi_pp_opts
 k.fold <- 0 
 #pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='on',pr_conserve_in='on',pr_threshold_out='us_trace',pr_conserve_out='off')
 #-------------- output -----------------------#
@@ -76,7 +76,7 @@ args=list(npas=0,dev=2)
 #           )
 pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
              pr_threshold_out='zero',pr_conserve_out='on', #'us_trace'
-             apply_0_mask='on')
+             apply_0_mask='off')
 #mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
 mask.list <- list('na')
 ###Note that the above section CURRENTLY DOES NOT WORK! There is a check for a 

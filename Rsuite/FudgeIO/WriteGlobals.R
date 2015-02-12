@@ -121,7 +121,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
       pre.args <- paste(lapply(pre.ds.adjustments, '[[', "pp.args"), collapse=",")
       #These next two might need to be in reverse order
       pre.args <- gsub('\"', "", pre.args)
-      pre.args <- sub('list', "", pre.args)
+      pre.args <- gsub('list', "", pre.args)
       pre.string <- convert.list.to.string(paste(pre.methods, pre.args, sep=":"))
       info <- paste(info, "before downscaling",  ": ", pre.string, sep="")
       print(paste('pre string:', pre.string))
@@ -135,7 +135,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
       }
       post.args <- paste(lapply(post.ds.adjustments, '[[', "qc_args"), collapse=",")
       post.args <- gsub('\"', "", post.args)
-      post.args <- sub('list', "", post.args)
+      post.args <- gsub('list', "", post.args)
       post.string <- convert.list.to.string(paste(post.methods, post.args, sep=":"))
       info <- paste(info, "after downscaling:", post.string)
       print(paste('post_string:', post.string))
