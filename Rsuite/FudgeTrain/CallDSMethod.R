@@ -139,12 +139,7 @@ callCDFt <- function (pred, targ, new, args){
   if(!is.null(args$npas)){
     npas <- args$npas
     if(npas=='default' || npas==0){
-      #npas = shorter of future predictor/esd.gen or training target
       npas=ifelse(length(targ) > length(new), length(new), length(targ))
-      #npas *has* to be an integer larger than dev, or else there will be errors
-      npas=ifelse(npas > dev, npas, (npas+dev))
-      print(npas)
-      print(dev)
     }else if(npas=='training_target'){
       #Note: this option is needed to duplicate 'default'
       #for results prior to 10-20-14
@@ -152,26 +147,40 @@ callCDFt <- function (pred, targ, new, args){
     }else if(npas=='future_predictor'){
       npas=length(new)
     }
+    if(npas <= dev){
+      npas <- 10
+      stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was", 
+                 npas, "and dev was", dev))
+    }
   }else{
     stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
   }
   if(is.null(args)){
     #return(CDFt(targ, pred, new, npas=length(targ))$DS)
-    temp <- CDFt(targ, pred, new, npas=length(targ))$DS
+    temp <- tryCatch({CDFt(targ, pred, new, npas=length(targ))$DS}, 
+                     error=function(err){
+                         err$message <- paste(err$message,"This error often displays when the samples",
+                                              "input to CDFt are uneven and/or too small.\n",
+                                              "Please check your input vectors and pre-ds adjustment.\n"
+                         )
+                       stop(err)
+                     }
+    )
     return(as.numeric(temp))
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
     ## explanation as to why. This way works.
-    #     if(!'npas'%in%names(args)){
-    #       args <- c(npas=length(targ), args)
-    #     }
-    #    args.list <- c(list(targ, pred, new), args)
     args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
-    #    print("calling CDFt with args:")
-    #    print(args)
-    #return(do.call("CDFt", args.list)$DS)
-    temp <- do.call("CDFt", args.list)$DS
+    temp <- tryCatch({do.call("CDFt", args.list)$DS}, 
+                     error=function(err){
+                         err$message <- paste(err$message,"This error often displays when the samples",
+                                              "input to CDFt are uneven and/or too small.\n",
+                                              "Please check your input vectors and pre-ds adjustment.\n"
+                         )
+                       stop(err)
+                     }
+    )
     return(as.numeric(temp))
   }
 }
