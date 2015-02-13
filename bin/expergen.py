@@ -562,7 +562,7 @@ def main():
 	except:
   		print "Unable to create postProc command file. You may want to check your settings."
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)" 
-	print "Please use this script to run post post-processing, postProc when downscaling jobs are complete",ppbase
+	print "\033[1;42m Please use this script to run post post-processing, postProc when downscaling jobs are complete \033[1;m",ppbase
 ##################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
