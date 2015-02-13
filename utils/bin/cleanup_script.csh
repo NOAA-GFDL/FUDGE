@@ -62,28 +62,39 @@ else if ($opt == 'm') then
 	echo "Move option activated; move in progress"
 	#Count number of experiments existing on system with that filename
 	set num_exp_existing=`dirname $outdir | xargs ls | grep $exp_name | wc -l`
-	set is_written = 0
-	while( $is_written == 0)
+	set is_written = 3
+	while( $is_written == 3)
 		set suffix="~$num_exp_existing"
 		set new_outdir="$outdir$suffix"
 		set new_scriptdir="$scriptdir/scripts/$maskregion/$exp_name$suffix"
-		if (-e $new_outdir || -e $new_scriptdir) then
+		if (-e $new_scriptdir | -e $new_outdir) then
 			echo "Error in move option: dir $new_outdir or dir $new_scriptdir already exists. Trying a new name" 
 			set num_exp_existing=`expr $num_exp_existing + 1`
-		endif
-		if (-e $new_scriptdir) then
-			echo "Error in move option: dir $new_scriptdir already exists. Please check and delete."
-			exit 1
+#		if (-e $new_scriptdir) then
+#			echo "Error in move option: dir $new_scriptdir already exists. Please check and delete."
+#			exit 1
 		else
 			if (-e $outdir) then 
 				echo "Moving older output from $outdir to $new_outdir"		
-				mv $outdir $new_outdir				
+				mv $outdir $new_outdir
+				set outdir_written=$status				
+			else
+				echo "No directory $outdir found; no move performed"
+				set outdir_written=0
 			endif
-			if (-e $scriprdir/scripts/$maskregion/$exp_name) then
+			if (-e $scriptdir/scripts/$maskregion/$exp_name) then
 				echo "Moving older ouput from $scriptdir/scripts/$maskregion/$exp_name to $new_scriptdir"
 				mv $scriptdir/scripts/$maskregion/$exp_name $new_scriptdir
+				set scriptdir_written=$status
+			else
+				echo "No directory $scriptdir found; no move performed"
+				set scriptdir_written=0
 			endif
-			set is_written=1
+			set is_written=`expr $outdir_written + $scriptdir_written`
+			if ($is_written>0) then
+				echo "One or more of the output or script directories existed and failed to be moved; please check directories" 
+				exit $is_written
+			endif
 		endif	
 	end
 endif
