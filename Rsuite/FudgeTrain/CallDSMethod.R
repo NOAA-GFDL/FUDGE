@@ -156,32 +156,35 @@ callCDFt <- function (pred, targ, new, args){
   }
   if(is.null(args)){
     #return(CDFt(targ, pred, new, npas=length(targ))$DS)
-    temp <- tryCatch({CDFt(targ, pred, new, npas=length(targ))$DS}, 
-                     error=function(err){
-                         err$message <- paste(err$message,"This error often displays when the samples",
-                                              "input to CDFt are uneven and/or too small.\n",
-                                              "Please check your input vectors and pre-ds adjustment.\n"
-                         )
-                       stop(err)
-                     }
-    )
-    return(as.numeric(temp))
+    temp <- CDFt(targ, pred, new, npas=length(targ))$DS
+#     temp <- tryCatch({CDFt(targ, pred, new, npas=length(targ))$DS}, 
+#                      error=function(err){
+#                          err$message <- paste(err$message,"This error often displays when the samples",
+#                                               "input to CDFt are uneven and/or too small.\n",
+#                                               "Please check your input vectors and pre-ds adjustment.\n"
+#                          )
+#                        stop(err)
+#                      }
+#     )
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
     ## fail to run with an 'unused arguments' error, without any decent
     ## explanation as to why. This way works.
     args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
-    temp <- tryCatch({do.call("CDFt", args.list)$DS}, 
-                     error=function(err){
-                         err$message <- paste(err$message,"This error often displays when the samples",
-                                              "input to CDFt are uneven and/or too small.\n",
-                                              "Please check your input vectors and pre-ds adjustment.\n"
-                         )
-                       stop(err)
-                     }
-    )
-    return(as.numeric(temp))
+    ###SOMETHING about this seems to be causing non-reproducability with previous CDFt results. 
+    ###Investigate it later; for now, merge the later version into darkchocolate
+    temp <- do.call("CDFt", args.list)$DS
+#     temp <- tryCatch({do.call("CDFt", args.list)$DS}, 
+#                      error=function(err){
+#                          err$message <- paste(err$message,"This error often displays when the samples",
+#                                               "input to CDFt are uneven and/or too small.\n",
+#                                               "Please check your input vectors and pre-ds adjustment.\n"
+#                          )
+#                        stop(err)
+#                      }
+#     )
   }
+  return(as.numeric(temp))
 }
 
 callSimple.bias.correct <- function(pred, targ, new, args){

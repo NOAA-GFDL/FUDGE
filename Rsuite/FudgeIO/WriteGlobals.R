@@ -118,11 +118,11 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     print(qc.string)
     info <- paste(info, "Arguments used in adjustment functions", qc.string)
     if(is.pre.ds.adjust){
-      pre.args <- paste(lapply(pre.ds.adjustments, '[[', "pp.args"), collapse=",")
+      pre.args <- paste(lapply(pre.ds.adjustments, '[[', "pp.args"))
       #These next two might need to be in reverse order
       pre.args <- gsub('\"', "", pre.args)
       pre.args <- gsub('list', "", pre.args)
-      pre.string <- convert.list.to.string(paste(pre.methods, pre.args, sep=":"))
+      pre.string <- convert.list.to.string(paste(pre.methods, pre.args, sep=":", collapse=","))
       info <- paste(info, "before downscaling",  ": ", pre.string, sep="")
       print(paste('pre string:', pre.string))
     }
@@ -133,10 +133,10 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
       if('propts'%in%names(post.ds.adjustments)){
         pr_opts$qc_args$fut.prmask <- "future_pr_mask"
       }
-      post.args <- paste(lapply(post.ds.adjustments, '[[', "qc_args"), collapse=",")
+      post.args <- paste(lapply(post.ds.adjustments, '[[', "qc_args"))
       post.args <- gsub('\"', "", post.args)
       post.args <- gsub('list', "", post.args)
-      post.string <- convert.list.to.string(paste(post.methods, post.args, sep=":"))
+      post.string <- convert.list.to.string(paste(post.methods, post.args, sep=":", collapse=","))
       info <- paste(info, "after downscaling:", post.string)
       print(paste('post_string:', post.string))
     }

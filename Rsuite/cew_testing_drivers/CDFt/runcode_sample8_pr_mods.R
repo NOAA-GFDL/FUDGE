@@ -77,8 +77,8 @@ args=list(npas=0,dev=2)
 pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
              pr_threshold_out='zero',pr_conserve_out='on', #'us_trace'
              apply_0_mask='off')
-#mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
-mask.list <- list('na')
+mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
+#mask.list <- list('na')
 ###Note that the above section CURRENTLY DOES NOT WORK! There is a check for a 
 ###argument named propts later that only gets added if the adaptation function is invoked!
 
