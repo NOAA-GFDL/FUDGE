@@ -288,7 +288,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	   if(file_j_range != ''):
 	   	dsuffix=file_j_range
 		dim1 = dim
-		dim = output_grid+"/"+dim1
+	#comment out RR a1r	dim = output_grid+"/"+dim1
 	   else:
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
 	print(dim1)
