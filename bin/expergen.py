@@ -16,7 +16,7 @@ dictDS_lo = {}
 list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
-rootdir = "/archive/esd/PROJECTS/DOWNSCALING/"  #default
+rootdir = ''
 projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
 project = "35" #default TODO get from XML
 ppn = 2 #TODO get from XML custom?
@@ -154,6 +154,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         ###### get dictParams #################################
         predictor =  checkTags(dictParams,'predictor_list')
         target = checkTags(dictParams,'target') 
+        target_ID = checkTags(dictParams,'target_ID')
         target_id = checkTags(dictParams,'target_id')
         target_train_start_time = checkTags(dictParams,'target_train_start_time')
         target_train_end_time = checkTags(dictParams,'target_train_end_time')
@@ -176,6 +177,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	######## use auxcustom ############
 	auxcustom = fut_time_trim_mask
 	###########################################
+        dim = checkTags(dictParams,'dim')
         output_grid = checkTags(dictParams,'output_grid')
 	###CEW edit
 	print "About to call checkTags on region"
@@ -197,8 +199,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	######## construct experiment config name ###########
 	if(experiment == 'na'): #if not present in XML
 	        proj = checkTags(dictParams,'project')
+	        project_ID = checkTags(dictParams,'project_ID')
                 series = checkTags(dictParams,'series') #experiment series
- 		experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+ 		#experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+                experiment,dsold_region = naming.constructExpname(project_ID,target_ID,series,method,kfold,basedir,dumb="yes")
         ##################################################### 
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
@@ -221,7 +225,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 				auxcustom1 = val
 			print "auxcustom1:",auxcustom1
         projectRoot = checkTags(dictParams,'oroot')
+	global rootdir 
+        rootdir = checkTags(dictParams,'in_root') 
 	outdir = checkTags(dictParams,'outdir')
+	out_dir = checkTags(dictParams,'out_dir')
+        out_dir = out_dir.strip()
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
 	sbase = sroot+"/scripts/"+ds_region+"/"+experiment+"/"
@@ -251,12 +259,12 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		sys.exit(-2)
         #print "----Force Override existing output Flag-", force
         ####### end get  dictParams ###########################
-        ## OneD or ZeroD that's the question ##  
-        if(region != "station"):
-         dim = "OneD"
-        else:
-         dim = "ZeroD"
-	print(dim)
+        ## OneD or ZeroD that's the question and starting feb 10 2015 this will be received from xml##  
+        #if(region != "station"):
+        # dim = "OneD"
+        #else:
+        # dim = "ZeroD"
+	#print(dim)
         if(output_grid == 'station'):
                 if(latjstart == latjend):
                         dsuffix = "J"+str(latjstart)
@@ -304,7 +312,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "future predictor dir",fut_pred_dir
 
 	#### get outdir #####
-        if(outdir == 'na'):
+        if(out_dir != 'na'):
             category = 'downscaled'
             instit="NOAA-GFDL"
             predModel = dict_fut['model'] 
@@ -317,7 +325,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    ens = dict_fut['rip']
             predictand = target
             #dversion from command line args. default value is v20120422
-            outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
+	    if (out_dir == 'na'):
+#Commenting the following since xmlGen now constructs outpath and is already set in xml
+            	outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
+	    else:
+		outdir = out_dir
             #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
 #new
@@ -482,7 +494,7 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"' 
-	print make_code_cmd
+	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
@@ -518,7 +530,7 @@ def main():
         create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(predictor)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
         print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
         p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        print create_master_cmd
+        #cprint create_master_cmd
         print "Create master script .. in progress"
         output2, errors2 = p2.communicate()
         #######
@@ -548,6 +560,19 @@ def main():
 	  print "Unable to create postProc command file. You may want to check your settings."
 	print "postProc command will be saved under:",ppbase
 	print "----See readMe in fudge2014 directory for the next steps----"
+
+############### crte ppscript #################
+	ppbase = sbase+"/postProc_command"
+	try:
+  		ppfile = open(ppbase, 'w')
+  		pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v   "+target+","+target+"_qcmask\n"
+  		ppfile.write(pp_cmnd)
+  		ppfile.close()
+	except:
+  		print "Unable to create postProc command file. You may want to check your settings."
+	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)" 
+	print "\033[1;42m Please use this script to run post post-processing, postProc when downscaling jobs are complete \033[1;m",ppbase
+##################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc

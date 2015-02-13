@@ -5,6 +5,7 @@ fut_id = []
 esdgen_id = []
 predictor_list = []
 target = ''
+target_ID = ''
 target_id = []
 class XMLHandler:
   def __init__(self):
@@ -40,6 +41,8 @@ class XMLHandler:
                 dictParams['predictor_list'] = predictor_list 
     		target = input_node.attrib.get('target')
 		dictParams['target'] = target
+                target_ID = input_node.attrib.get('target_ID')
+                dictParams['target_ID'] = target_ID
                 if 'spat_mask' in input_node.attrib:
     			spat_mask = input_node.attrib.get('spat_mask')
     			dictParams['spat_mask'] = spat_mask
@@ -48,6 +51,12 @@ class XMLHandler:
     			dictParams['maskvar'] = maskvar
                 spat_mask_ID = input_node.attrib.get('spat_mask_ID')
                 dictParams['spat_mask_ID'] = spat_mask_ID 
+                in_root = input_node.attrib.get('in_root')
+                dictParams['in_root'] = in_root 
+		# Get dim info
+                for dim_node in input_node.findall('.//dim'):
+                        dim = dim_node.text
+                        dictParams['dim'] = dim 
 	# Get grid information
 	############## get grid info ######################################### 
 	for grid_node in tree.iter('grid'):
@@ -132,6 +141,8 @@ class XMLHandler:
 	        dictParams['experiment'] = exper_node.text
             for proj_node in core_node.findall('.//project'):
                 dictParams['project'] = proj_node.text
+            for projID_node in core_node.findall('.//project_ID'):
+                dictParams['project_ID'] = projID_node.text
             for series_node in core_node.findall('.//exper_series'):
                 dictParams['series'] = series_node.text
 
@@ -151,6 +162,9 @@ class XMLHandler:
                for version_node in output_node.findall('.//version'):
                   dversion = version_node.text
                   dictParams['dversion'] = dversion 
+               for outdir_node in output_node.findall('.//out_dir'):
+                  out_dir = outdir_node.text
+                  dictParams['out_dir'] = out_dir
 	####### Get pr_opts #########################
             for pr_node in tree.iter('pr_opts'):
             	listParams_pr = ''

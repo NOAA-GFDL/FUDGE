@@ -106,13 +106,13 @@ foreach i (`seq $lon_start 1 $lon_end`)
         echo "gcp --sync -cd $SPAT_MASK_DIR/*I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
- 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}0101-${T_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
+ 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
  endif
  if ($HIST_PRED_DIR != 'NA/') then
- 	echo "gcp -cd $HIST_PRED_DIR/*${H_FILE_START_YEAR}0101-${H_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR/  >> $runpath 
+ 	echo "gcp -cd $HIST_PRED_DIR/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR/  >> $runpath 
  endif
  if ($FUT_PRED_DIR != 'NA/') then
- 	echo "gcp -cd $FUT_PRED_DIR/*${F_FILE_START_YEAR}0101-${F_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR/  >> $runpath 
+ 	echo "gcp -cd $FUT_PRED_DIR/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR/  >> $runpath 
  endif
         echo "mkdir -p $OUTDIR" >> $runpath
 #Add line to create mask directory
