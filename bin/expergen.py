@@ -494,7 +494,7 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"' 
-	print make_code_cmd
+	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
@@ -530,7 +530,7 @@ def main():
         create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(predictor)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
         print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
         p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        print create_master_cmd
+        #cprint create_master_cmd
         print "Create master script .. in progress"
         output2, errors2 = p2.communicate()
         #######
@@ -551,6 +551,19 @@ def main():
         print "Config XML saved in ",cdir 
         print "RunScripts will be saved under:",sbase
 	print "----See readMe in fudge2014 directory for the next steps----"
+
+############### crte ppscript #################
+	ppbase = sbase+"/postProc_command"
+	try:
+  		ppfile = open(ppbase, 'w')
+  		pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v   "+target+","+target+"_qcmask\n"
+  		ppfile.write(pp_cmnd)
+  		ppfile.close()
+	except:
+  		print "Unable to create postProc command file. You may want to check your settings."
+	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)" 
+	print "Please use this script to run post post-processing, postProc when downscaling jobs are complete",ppbase
+##################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc

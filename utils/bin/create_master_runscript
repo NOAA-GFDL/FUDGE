@@ -96,7 +96,7 @@ if($msub == 'True') then
 	echo "msub $masterloc"
 	msub $msub_string $masterloc
 else
-echo $msub
+#echo $msub
         echo "$masterloc"
 endif
 end
