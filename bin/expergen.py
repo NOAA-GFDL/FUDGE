@@ -272,23 +272,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
                 else:
                         print "Please specify a single station. "
                         sys.exit()
-        elif((output_grid == 'US48') | (output_grid == 'us48')):
-		output_grid = "US48"
-		dim1=dim
-                dsuffix = "J454-567"
-		#CEW comment out for the PM data
-		#region = output_grid
-		dim1 = dim
-        elif(region == 'global'):
-                dsuffix = "J1-720"
-		dim1=dim
-		#A1R uncomment during PM edit; no region yet.
-		region = output_grid
         else:
 	   if(file_j_range != ''):
 	   	dsuffix=file_j_range
 		dim1 = dim
-		dim = output_grid+"/"+dim1
+	#comment out RR a1r	dim = output_grid+"/"+dim1
 	   else:
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
 	print(dim1)
