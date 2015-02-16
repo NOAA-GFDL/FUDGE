@@ -150,8 +150,15 @@ MaskPRSeries <- function(data, units, index){
   units <- units.CF.convert(units)
   #Set options for determining what qualifies as a 'wet day'
   zero.thold = 0
-  us.trace.thold = ud.convert(0.01, "inches/day", units)
-  global.trace.thold = ud.convert(0.1, "mm/day", units)
+  if(!is.null(units)){
+    us.trace.thold = ud.convert(0.01, "inches/day", units)
+    global.trace.thold = ud.convert(0.1, "mm/day", units)
+  }else{
+    if (index=='us_trace'||index=='global_trace'){
+      stop(paste("Error in MaskPRSeries: arg units was null,", 
+                 "and is required for calculating index", index))
+    }
+  }
   switch(index, 
          'zero' = return(data > zero.thold),
          'us_trace' = return(data > us.trace.thold), 
