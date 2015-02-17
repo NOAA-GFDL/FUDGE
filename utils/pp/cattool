@@ -142,19 +142,19 @@ if ( $region == 'global' ) then
 else
 #   echo $chead"[$sub1]:"$chead"[$sub2]",$ctail,$c,$cend"[$cendsub1]"
 #18[1]:18[9],na,19,37[0]
-echo "start"
+echo "start.."
 set argpath = "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
-#cecho $argpath
+echo "$argpath"
+echo "$prepath/I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
 endif
 
-#cecho "while starts.. "
-
+echo "while starts.. "
 while ( $c <= $cend)
-#	echo "loop $c"
+	#cecho "loop $c $argpath"
         set argpath = `echo $argpath $prepath/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
         @ c++
 end
-#cecho "end while"
+echo "end while"
 
 if ( $region == 'global' ) then
  set argpath = `echo $argpath $prepath/${prefix}.115[0-2].nc`
