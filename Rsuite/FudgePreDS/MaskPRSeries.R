@@ -12,27 +12,33 @@
 #'@param opt.wetday: The kind of threshold to apply. Currently accepts
 #''us_trace' (0.01 in/day), 'global_trace' (0.1 mm/day), 'zero'
 #'(no precipitation), and a user-generated option of the same units
-#'as preciptation (i.e. 0.5). 
+#'as preciptation (i.e. 0.5). If units provided are NULL (as may be the 
+#'case for synthetic data), will only accept 'zero' or a user-defined
+#'threshold.
 #'@param lopt.drizzle : The option for applying a drizzle adjustment. 
 #'Converts the parameter for trace precipitation in the adjusted data
 #'to the 
 #'@param lopt.conserve: The option for preserving trace precipitation.
-#'If present, the 
+#'If present, the total amount of precipitation is conserved in the input 
+#'datasets; missing trace precipitation is averaged over the days with
+#'precipitation greater than the threshold.
+#'@param zero.to.na: Converts days with precipitation below the threshold
+#'to NA instead of 0, so that downscaling only takes place on those days 
+#'with precipitation greater than the trace. Days are converted back to 0
+#'after downscaling based on the future predictor (CF, MF) mask during
+#'post-downscaling adjustment.
 #'
 #'TODO: Add *major* lat/lon coordiante agreement QC checks
 #'
 
-AdjustWetdays <- function(ref.data, ref.units='kg m-2 s-1', 
-                          adjust.data=NA, adjust.units='kg m-2 s-1', 
-                          adjust.future=NA, adjust.future.units='kg m-2 s-1',
+AdjustWetdays <- function(ref.data, ref.units=NULL, 
+                          adjust.data=NA, adjust.units=NULL, 
+                          adjust.future=NA, adjust.future.units=NULL,
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE,
                           zero.to.na=FALSE,
                           lopt.graphics=FALSE, verbose=TRUE){
   
-  #   ref.wetdays    <- MaskPRSeries(ref.data, ref.units, opt.wetday)
-  #   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
-  #   future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
-  
+  #Convert the threshold and create the reference mask
   wetday.convert <- convert.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
   
@@ -155,7 +161,7 @@ MaskPRSeries <- function(data, units, index){
     global.trace.thold = ud.convert(0.1, "mm/day", units)
   }else{
     if (index=='us_trace'||index=='global_trace'){
-      stop(paste("Error in MaskPRSeries: arg units was null,", 
+      stop(paste("Error in MaskPRSeries: argument units was null,", 
                  "and is required for calculating index", index))
     }
   }
@@ -173,11 +179,22 @@ convert.threshold <- function(index, units){
   #'Requires the Udunits2 package to 
   #'work. 
   print(paste("Converting threshold", index))
-  units <- units.CF.convert(units)
-  #Set options for determining what qualifies as a 'wet day'
-  zero.thold = 0
-  us.trace.thold = ud.convert(0.01, "inches/day", units)
-  global.trace.thold = ud.convert(0.1, "mm/day", units)
+  if(!is.null(units)){
+    units <- units.CF.convert(units)
+    #Set options for determining what qualifies as a 'wet day'
+    zero.thold = 0
+    us.trace.thold = ud.convert(0.01, "inches/day", units)
+    global.trace.thold = ud.convert(0.1, "mm/day", units)
+  }else{
+    #Null case can pop up in synthetic data and should be dealt with
+    if (index=='us_trace'||index=='global_trace'){
+      stop(paste("Error in MaskPRSeries: argument units was null,", 
+                 "and is required for calculating index", index))
+    }else{
+      #Zero is only constant that needs to be set
+      zero.thold=0
+    }
+  }
   switch(index, 
          'zero' = return(zero.thold),
          'us_trace' = return(us.trace.thold), 
