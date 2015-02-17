@@ -93,11 +93,7 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
                  ind = 3
                 hi_model = hi[ind]
                 hi_exp = hi[ind+1]
-                if(hi[ind+2] != 'day'):
-                 ind = ind-1
-                 hi_freq = ''
-                else:
-                 hi_freq = hi[ind+2]
+                hi_freq = hi[ind+2]
                 hi_realm = hi[ind+3]
                 hi_mip = hi[ind+4]
                 hi_rip = hi[ind+5]
@@ -467,6 +463,7 @@ def main():
 			break 
 	    else:
 		   print "scriptdir "+sd+" does not exist. Looks like a clean slate "
+        #print  "hist_freq"+hist_freq
         script1Loc = basedir+"/utils/bin/create_runcode"
         make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
         make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
@@ -482,7 +479,7 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"' 
-	#cprint make_code_cmd
+	print make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
@@ -538,15 +535,6 @@ def main():
 	shutil.copy2(uinput, cdir)
         print "Config XML saved in ",cdir 
         print "RunScripts will be saved under:",sbase
-	ppbase = sbase+"/postProc_command"
-	try:
-	  ppfile = open(ppbase, 'w')
-	  pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
-	  ppfile.write(pp_cmnd)
-	  ppfile.close()
-	except:
-	  print "Unable to create postProc command file. You may want to check your settings."
-	print "postProc command will be saved under:",ppbase
 	print "----See readMe in fudge2014 directory for the next steps----"
 
 ############### crte ppscript #################
