@@ -231,6 +231,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	sbase = sroot+"/scripts/"+ds_region+"/"+experiment+"/"
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
+        print "qc_mask....... ",qc_mask
 	adjust_out = checkTags(dictParams,'adjust_out')
 	#adjust_out = "na"
 	qc_varname = checkTags(dictParams,'qc_varname')
@@ -541,7 +542,11 @@ def main():
 	ppbase = sbase+"/postProc_command"
 	try:
   		ppfile = open(ppbase, 'w')
-  		pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v   "+target+","+target+"_qcmask\n"
+#check if qc_mask is relevant  
+		if(qc_mask != 'off'):
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
+	 	else:
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+"\n"
   		ppfile.write(pp_cmnd)
   		ppfile.close()
 	except:

@@ -84,9 +84,11 @@ endif
 set workdir = $TMPDIR
 if ( "$var" =~ *"mask"* ) then
 	echo "Mask outdir activated in ppFudge"
-	set postfix = "/../../../../$region/$ver"
+#old	set postfix = "/../../../../$region/$ver"
+	set postfix = "/../$ver"
 else
-        set postfix = "/../../../$region/$ver"
+#old        set postfix = "/../../../$region/$ver"
+        set postfix = "/../$ver"
 endif
 set outroot=$workdir$indir${postfix}
 #echo $outroot
