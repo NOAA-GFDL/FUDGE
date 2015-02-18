@@ -44,6 +44,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   units <- ncatt_get(nc.object, var.name, attname)
   #######################################################
   #Control getting the dimensions and other variables in the output file
+  dim.list <- list(dim=list(), vars=list())
   for(d in 1:length(dim)){
     temp.list <- switch(dim[d], 
                         "spatial"=get.space.vars(nc.object, var.name), 
@@ -51,10 +52,13 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
                         #If other arg or "nothing", do nothing
                         list("dim"=list("none"), 'vars'=list("none"))
                         )
+    dim.list$dim <- c(dim.list$dim, temp.list$dim)
+    dim.list$vars <- c(dim.list$vars, temp.list$vars)
+    print(names(dim.list$dim))
   }
   #######################################################
   listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units, 
-                  "dim"=temp.list$dim, 'vars'=temp.list$vars)
+                  "dim"=dim.list$dim, 'vars'=dim.list$vars)
   
   ###Add attributes for later QC checking against each other
   attr(listout, "calendar") <- nc.object$dim$time$calendar
@@ -67,6 +71,7 @@ get.space.vars <- function(nc.object, var){
   #Obtains spatial vars, grid specs and all vars not the main var of interest
   #that depend upon those vars
   #Axes with spatial information
+  message('getting spatial vars')
   axes <- c("X", "Y")
   file.axes <- nc.get.dim.axes(nc.object, var)
   if(is.null(file.axes)){
