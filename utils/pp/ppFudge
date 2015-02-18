@@ -81,7 +81,8 @@ endif
 
 ########################## end of user input #############################
 # -------- no changes needed below --------------------------------------
-set workdir = $TMPDIR
+mkdir -p $TMPDIR/ppscratch/
+set workdir = `mktemp -d -p $TMPDIR/ppscratch/` ####$TMPDIR
 if ( "$var" =~ *"mask"* ) then
 	echo "Mask outdir activated in ppFudge"
 #old	set postfix = "/../../../../$region/$ver"
@@ -91,7 +92,8 @@ else
         set postfix = "/../$ver"
 endif
 set outroot=$workdir$indir${postfix}
-#echo $outroot
+echo "==========="
+echo $outroot
 set auxfiledir=$basedir/utils/pp/auxfiles/ 
 #echo $outroot
 set root = $indir${postfix}
@@ -108,7 +110,7 @@ mkdir -p $root
 mkdir -p $outroot
 cd $outroot
 #################
-
+#echo $outroot
 #echo "==========================================================================="
 #echo "==========================================================================="
 #echo "  "
@@ -130,7 +132,8 @@ set cattool_Exit = $?
 if ($cattool_Exit == 1) then
  echo "cattool exitted with an ERROR.... quitting PP job" 
  echo "###########ERROR##############\n"	
- rm -rf $outroot 
+ echo "rm -rf $workdir " 
+ rm -rf $workdir
  echo "cattool command that failed:\n"
  echo "$tooldir/cattool $indir $prefix $fprefix.nc region=$region"
  exit 1
@@ -155,7 +158,7 @@ set sdWriter_Ex = $?
 #echo "sdWriter EXIT STATUS: $sdWriter_Ex"
 if ($sdWriter_Ex == 1) then
  echo "sdWriter exitted with an ERROR.... quitting PP job"
- rm -rf $outroot
+ rm -rf $workdir
  echo "###########ERROR##############\n"
  echo "sdWriter command that failed:\n"
  echo "$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $oldver $prefix.nc $targetid region=$region"
@@ -191,7 +194,7 @@ echo" source ${auxfiledir}/loadit"
      exit 1
    endif
 
-rm -rf $outroot
+rm -rf $workdir 
 exit 0
 
 

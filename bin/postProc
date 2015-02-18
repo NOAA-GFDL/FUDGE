@@ -126,16 +126,19 @@ def postProc():
 						#if err is not None:
 						#	print "fudgeList err", err	
 						print "Summary Log File: ", slogloc
-						slogloc_alt = indir+"../../../../"
+						slogloc_alt = indir+"../../../"
 						if("mask" in vname): 
-                                                	slogloc_alt = indir+"../../../../../"
+                                                	slogloc_alt = indir+"../../../../"
 						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
 					        shutil.copy2(slogloc, slogloc_alt)
                                         ###final checker test for extraneous existing files ######
                        		                print "checker on TwoD "
-                                                filedirect = indir+"/../../../"+region+"/"+actualver+"/"
+                                               # filedirect = indir+"/../../../"+region+"/"+actualver+"/"
+					        filedirect = indir+"/../"
                                                 if "mask" in vname: #spl cases are not great
-                                                	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
+                                                #	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
+							filedirect = indir+"/../"
+
                                         	checker.checker(filedirect,2,"warning")
 					else:
 						sys.exit("ERROR")
