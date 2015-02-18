@@ -148,7 +148,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 				        if "mask" in var: #spl cases are not great
 	                                        filedire = indir+"/../../../../"+region+"/"+ver+"/"
 						print "-----Looking for PP output in:", filedire		
-                                        filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"0101"+"-"+end+"1231"+".nc"
+                                        filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
 #                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
 
 					#print "test test",filedire,filename	
