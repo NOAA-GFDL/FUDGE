@@ -1,3 +1,28 @@
+1/19/2014
+1. Support for updated input and output directory structure (based on document provided by MJN and KD, sent Jan 16)
+ - Related expergen,postProc changes.
+ - Disabled features that existed within expergen to construct output path (commented); most of FUDGE experiment name construction and now uses dumb param.
+2. XML1.9 support for the following new/updated attributes and tags
+(listing just for future reference)
+- target_ID,in_root,dim,file_start_time/end_time/train_start_time/end_time with MMDD included. 
+- project_ID, absolutely out_dir
+3. Make optional spatial masks and temporal masks
+4. Support for sourcing ppscript 
+- If mask is relevant, that variable gets added. 
+5. Tested with synthetic dataset "example", PM "example", RR "example". More tests to follow. 
+6. ppFudge uses unique temp directory. 
+7. cleanup-script with XML as input
+- Cleanup script accepts 2 possible options: 'e' for erase, and 'm' for move, which moves the experiment experiment-name to experiment-name~n, where n is the number of experiments by that name in the current directory
+- Cleanup script no longer throws an error when trying to remove nonexistant directory
+8. R code changes
+- Added method BCQM and EDQM for formal Red River runs (other DS methods exist, but are in the process of QC)
+- Added new option for precipitation pre- and post- downscaling adjustment to downscale only days with precipitation and apply the mask of days with 0 pr from the future predictor dataset to the downscaled output at the end; option can be turned on or off via the XML
+-  Units and calendar are optional for the input datasets, with the exeption of pr with the us_trace or global thresholds, which both require unit conversion
+- FudgeIO's ReadNC functions can directly clone dimensions and variables that are not the vars of interest, and write them to the output file
+- Support for downscaling any variable
+
+--
+
 01/13/2015
 Aparna Radhakrishnan
 1.Changes to support absence of spatial and temporal masks in XML (tested only in expergen)
@@ -26,15 +51,6 @@ Aparna Radhakrishnan
    --- Errors/warnings color coding
 2. "automatic msub" option added to expergen. This is a command-line option --msub. When you pass --msub to expergen, expergen not only creates master runscripts for you, but also submits them to MOAB automatically. By default, this is turned off. One can always opt to use the existing submit_job script to submit jobs as well. 
 
-cleanup-script with XML as input
-Carolyn Whitlock
-1. Cleanup script accepts 2 possible options: 'e' for erase, and 'm' for move, which moves the experiment experiment-name to experiment-name~1
-2. Cleanup script no longer throws an error when trying to remove nonexistant directory
-
-R Code:
-Carolyn Whitlock
-1. Added method BCQM for formal Red River runs (other DS methods exist, but are in the process of QC)
-2. 
 --
 incomplete release notes
 --
