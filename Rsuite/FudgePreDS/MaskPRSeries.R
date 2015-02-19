@@ -82,13 +82,13 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
                                              na.rm=TRUE)
             print(paste("threshold:", threshold.wetday.adj))
             #If it would result in changed results, apply
-            if(threshold.wetday.adj > wetday.convert){
+#            if(threshold.wetday.adj > wetday.convert){
               loop.adj.wetdays <- loop.adj > threshold.wetday.adj
               loop.fut.wetdays <- loop.fut > threshold.wetday.adj
-            }else{
-              loop.adj.wetdays <- loop.adj > wetday.convert
-              loop.fut.wetdays <- loop.fut > wetday.convert
-            }
+#             }else{
+#               loop.adj.wetdays <- loop.adj > wetday.convert
+#               loop.fut.wetdays <- loop.fut > wetday.convert
+#             }
           }
         }
       } else {
