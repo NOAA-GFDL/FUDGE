@@ -56,8 +56,8 @@ rm(list=ls())
 	k.fold <- 0 
 	
 #-------------- output -----------------------#
-	output.dir <- '/work/cew//downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD/'
-	mask.output.dir <- '/work/cew//downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD//syn_qcmask/' 
+	output.dir <- '/home/cew/Code/testing/'
+	mask.output.dir <- '/home/cew/Code/testing/' 
 #-------------  custom -----------------------#
         args=list(dev=1,npas=0) 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
@@ -75,10 +75,11 @@ rm(list=ls())
 print(paste("START TIME:",Sys.time(),sep=''))
 
 #----------Use /vftmp as necessary---------------# 
-TMPDIR = Sys.getenv(c("TMPDIR"))
-if (TMPDIR == ""){
-  stop("ERROR: TMPDIR is not set. Please set it and try it") 
-  }
+#TMPDIR = Sys.getenv(c("TMPDIR"))
+TMPDIR = ""
+# if (TMPDIR == ""){
+#   stop("ERROR: TMPDIR is not set. Please set it and try it") 
+#   }
 #########################################################################
 if(spat.mask.dir_1 != 'na'){
 if((grepl('^/archive',spat.mask.dir_1)) | (grepl('^/work',spat.mask.dir_1))){
