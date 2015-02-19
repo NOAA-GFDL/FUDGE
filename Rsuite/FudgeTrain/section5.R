@@ -22,7 +22,6 @@
 #'with 0 for all values that did not pass the test and 1 for all values that did.
 #'CEW edit 10-22 to incorporate the proposed looping structure
 callS5Adjustment<-function(s5.instructions=list('na'),
-  #s5.method='totally.fake',s5.args='na',
                    data = NA, #downscaled data - from this run or another
                    hist.pred = NA, 
                    hist.targ = NA, 
@@ -39,11 +38,14 @@ callS5Adjustment<-function(s5.instructions=list('na'),
     test <- s5.instructions[[element]]
     #print(summary(test$type))
     #message(test)
+#     print(test$type)
+#     print(test)
     adjusted.output <- switch(test$type, 
                               'sdev' = return(callSdev(test, input, adjusted.output)),
                               'sdev2' = return(callSdev2(test,  input, adjusted.output)),
                               'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
                               'flag.neg' = return(callFlagNegativeValues(test, input, adjusted.output)),
+                              'PR' = return(callPRPostproc(test, input, adjusted.output)),
                               'Nothing' = return(callNoMethod(test, input, adjusted.output)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
@@ -51,14 +53,28 @@ callS5Adjustment<-function(s5.instructions=list('na'),
   return(adjusted.output)
 }
 
-callSdev <- function(data, qc.data){
-  #returns TRUE if more than half of the values in data
-  #differ from qc.data by less than the standard deviation
-  #of qc.data
-  qc.stdev <- sd(qc.data, na.rm=FALSE)
-  stdev.vec <- abs(qc.data-data) > qc.stdev
-  print(sum(stdev.vec)/(length(data)/2))
-  return( sum(stdev.vec) >= (length(data)/2) )
+callSdev <- function(test, input, adjusted.output){
+  #Outputs a mask where NA values show flagged data
+  #and ones show good data
+  #with the test defined as output within
+  #two standard deviations of the total downscaled output
+  out.sdev <- sd(adjusted.output$ds.out)
+  out.comp <- out.sedev*2
+  out.mean <- mean(adjusted.output$ds.out)
+  mask.vec <- ifelse( (out.comp <= abs(adjusted.output$ds.out-mean)), 
+                      yes=1, no=NA)
+  out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
+  if(test$qc.mask=='on'){
+    out.list$qc.mask <- mask.vec
+  }
+  if(test$adjust.out=='on'){
+    adjust.vec <- ifelse( (is.na(mask.vec)), 
+                          yes=ifelse( (1==sign(out.mean-adjusted.output$ds.out)), 
+                                      out.mean-out.comp, out.mean+out.comp ), 
+                          no=adjusted.output$ds.out)
+    out.list$ds.out <- adjust.vec
+  }
+  return(out.list)
 }
 
 callSdev2 <- function(data, qc.data){
@@ -119,6 +135,60 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   }
   return(out.list)
 }
+
+callPRPostproc <- function(test, input, adjusted.output){
+  #Performs the adjustments needed for post-downscaling precipitation
+  #on the downscaled ouput, including a threshold adjustment for drizzle
+  #bias and conservation of the total precipitation per time range
+  
+  #Find arguments to pre-processing function
+  arg.names <- names(test$qc_args) #qc_args #pp_args
+  if('thold'%in%arg.names && 'conserve'%in%arg.names){
+    #Never adjusting to another frequency at this point in the process
+    lopt.drizzle=FALSE
+  }else{
+    stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
+  }
+  if('fut.prmask'%in%arg.names){
+    message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
+    adjusted.output$ds.out[test$qc_args$fut.prmask==0] <- 0
+    test$qc_args$fut.prmask <- 'calculated from the input pr data'
+  }else{
+    message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
+  }
+  #Obtain mask of days that will be eliminated
+  out.mask <- MaskPRSeries(adjusted.output$ds.out, units=attr(input$hist.targ, "units")$value, index=test$qc_args$thold)
+  #Apply the conserve option to the data
+  if(test$qc_args$conserve=='on'){
+    #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
+    for(i in 1:length(adjusted.output$ds.out[,1,1])){
+      for(j in 1:length(adjusted.output$ds.out[1,,1])){
+        esd.select <- adjusted.output$ds.out[i,j,]
+        mask.select <- out.mask[i,j,]
+        esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
+                                                           mask=mask.select[!is.na(mask.select)])
+        adjusted.output$ds.out[i,j,]<- esd.select
+        #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
+        #However, there are checks external to the function to get that, so it might not be as much of an issue.
+      }
+    }
+  }
+  #Apply the mask
+  adjusted.output$ds.out <- as.numeric(adjusted.output$ds.out) * out.mask
+
+#   pr.adjusted <- AdjustWetdays(ref.data=input$hist.targ, ref.units=attr(input$hist.targ, "units")$value, 
+#                             adjust.data=input$hist.pred, adjust.units=attr(input$hist.pred, "units")$value, 
+#                             adjust.future=input$fut.pred, adjust.future.units=attr(input$fut.pred, "units")$value,
+#                             opt.wetday=test$qc_args$thold, 
+#                             lopt.drizzle=FALSE, 
+#                             lopt.conserve=test$qc_args$conserve)
+  if(test$qc.mask=='on'){
+    adjusted.output$qc.mask <- out.mask
+  }
+  return(adjusted.output)          
+}
+
+
 round.negative <- function(num){
   #assumes no 0 values are passed 
   return(ifelse(num > 0, 1, -1))

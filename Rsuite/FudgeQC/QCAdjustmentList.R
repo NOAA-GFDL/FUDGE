@@ -1,4 +1,4 @@
-#'QCSection5.R
+#'QCAdjustmentList.R
 #'@description Parses the list of options provided for adjustment, checks
 #'for internal consistency (throwing errors if checks are failed) and 
 #'returns information useful in developing file metadata. 
@@ -13,7 +13,7 @@
 #'@author Carolyn Whitlock
 #'
 
-QCSection5 <- function(mask.list){
+QCAdjustmentList <- function(mask.list){
   ##Note:masklist is the same things as section.5.list provided earlier, 
   ##and NOT to be confused with tmask.list
   message("checking Section 5 options provided")
@@ -71,22 +71,39 @@ QCSection5 <- function(mask.list){
   return(s5.settings)
 }
 
-convert.list.to.string <- function(this.vector){
-  #Converts a list into a string representation
-  #Does not assume that the list is named
-  #(easy to convert though; just count off of the names)
-  if(length(this.vector)!=0){
-    if(length(this.vector) > 1){
-    out <- paste(c(this.vector[1:length(this.vector)-1], paste("and", this.vector[length(this.vector)])), collapse=",")
-    return(out)
-    }else{
-      #no 'and' needed
-      return(paste(this.vector))
-    }
-  }else{
-    #No string to convert
-    return(NA)
+qc.mask.check <- function(inloop, outloop){
+  #' Checks for the existance of zero or one
+  #' calls to create a qc mask in the post-processing
+  #' adjustment lists, and throws an error if there
+  #' are more calls for a qc mask than expected
+  #'   inloop.count <- length(compact(lapply(inloop, index.a.list, 'qc.mask', 'on')))
+  outloop.list <- compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))
+  inloop.list <- compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))
+  outloop.count <- length(outloop.list)
+  inloop.count <- length(inloop.list)
+  print(outloop.list)
+  print(inloop.list)
+  print(inloop.count)
+  print(outloop.count)
+  if(inloop.count + outloop.count > 1){
+    stop(paste("Error in qc.mask.check: There are", inloop.count, "calls to create a", 
+               "qc mask inside the time windows and", outloop.count, "calls to create a", 
+               "qc mask outside of them, and there should only be one. Please check input."))
   }
+  if(inloop.count > 0){
+    qc.method <- inloop.list[[1]]$type
+    qc.args <- inloop.list[[1]]$qc_args
+  }else if(outloop.count > 0){
+    qc.method <- outloop.list[[1]]$type
+    qc.args <- outloop.list[[1]]$qc_args
+  }else{
+    qc.method <- ""
+    qc.args <- ""
+  }
+  return(list('qc.inloop'=(inloop.count > 0), 'qc.outloop'=(outloop.count > 0), 
+              'qc.method'=qc.method, 
+              'qc.args'=qc.args)
+  )
 }
 
 #Code for obtaining the filenames of all files from tmask.list
@@ -97,3 +114,7 @@ convert.list.to.string <- function(this.vector){
 #   time.mask.names <- paste(time.mask.names, paste(var, ":", eval(parse(text=commandstr[i])), ",", sep=""), collapse="")
 #   print(time.mask.names)
 # }
+
+# ifelse(inloop.count > 0,
+#        compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))[[1]]$type,
+#        compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))[[1]]$type)

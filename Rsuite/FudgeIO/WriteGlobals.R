@@ -15,12 +15,18 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          time.trim.mask='na', 
                          grid_region='somewhere', mask_region='somewhere_subset',
                          tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
-                         is.adjusted=FALSE, adjust.method=NA, adjust.args=NA,
+#                         is.adjusted=FALSE, adjust.method=NA, adjust.args=NA,
                          is.qcmask=FALSE, qc.method=NA, qc.args=NA,
-                         pr.process=FALSE, pr_opts=NA, 
-                         is.transform=FALSE, transform=NA){
+#                          pr.process=FALSE, pr_opts=NA, 
+#                          is.transform=FALSE, transform=NA
+                         is.pre.ds.adjust=FALSE,
+                         pre.ds.adjustments=list('na'),
+                         is.post.ds.adjust=FALSE,
+                         post.ds.adjustments=list('na')){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
+  #'#TODO CEW: What is the purpose of the comments attribute? 
+  #'TODO CEW: What would an apprioriate title attribute actually be?
   comment.info <- "Output produced from "
   if (is.qcmask){
     comment.info <- paste(comment.info, "a QC check ", qc.method, " performed upon ", sep="")
@@ -33,17 +39,30 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     comment.info <- paste(comment.info, 'on the subset', mask_region, 'of the', grid_region, 'grid ')
   }
   #Note: is.adjusted and is.qcmask can both be true, but is.qcmask only reports on the adjustments that took place before the mask
-  if(is.transform){
-    comment.info <- paste(comment.info, 'transformed and back-transformed with', transform)
+#   if(is.transform){
+#     comment.info <- paste(comment.info, 'transformed and back-transformed with', transform)
+#   }
+#   if(pr.process){
+#     comment.info <- paste(comment.info, 'adjusted for precipitation,')
+#   }
+  if(is.pre.ds.adjust){
+    pre.methods <- lapply(pre.ds.adjustments, '[[', "type")
+    comment.info <- paste(comment.info, "adjusted with the ", convert.list.to.string(pre.methods),
+                          " method(s) before downscaling", sep="")
   }
-  if(pr.process){
-    comment.info <- paste(comment.info, 'adjusted for precipitation,')
-  }
-  if(is.adjusted){
-    comment.info <- paste(comment.info, "adjusted with the ", adjust.method, " method(s)", ", and ", sep="")
+  if(is.post.ds.adjust){
+    print(post.ds.adjustments)
+    post.methods <- lapply(post.ds.adjustments, '[[', "type")
+    print(post.methods)
+    if(!is.pre.ds.adjust){
+      comment.info <- paste(comment.info, "adjusted with the", convert.list.to.string(post.methods), "method(s) after downscaling")
+    }else{
+      comment.info <- paste(comment.info, "and the", convert.list.to.string(post.methods),
+                            "method(s) after downscaling")
+    }
   }
   if(!is.na(kfold)){
-    comment.info <- paste(comment.info, 'based on ',kfold,'-fold',' cross-validation, ',sep='') #parenthesis removed
+    comment.info <- paste(comment.info, ', and based on ',kfold,'-fold',' cross-validation, ',sep='') #parenthesis removed
   }
   if(!is.na(ds.experiment)){
     comment.info <- paste(comment.info, 'with experiment configuration', ds.experiment, ").")
@@ -85,18 +104,43 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }
-  if(pr.process){
-    pr.optstring <- paste(names(pr_opts), pr_opts, sep="=", collapse=", ")
-    info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
-  }
-  if(is.adjusted){
-    #Section 5 stuff
+#   if(pr.process){
+#     pr.optstring <- paste(names(pr_opts), pr_opts, sep="=", collapse=", ")
+#     info <- paste(info, "Precipitation pre-processing and post-processing options: ", pr.optstring, "; ", sep="")
+#   }
+  if(is.pre.ds.adjust || is.post.ds.adjust){
+    #Section 5 and Section 3 stuff
     if(is.qcmask){
-      qc.string = " before QC masks applied"
+      qc.string = "before QC masks applied "
     }else{
       qc.string = ""
     }
-    info <- paste(info, "Arguments used in adjustment functions", qc.string, ": ", adjust.args, "; ", sep="")
+    print(qc.string)
+    info <- paste(info, "Arguments used in adjustment functions", qc.string)
+    if(is.pre.ds.adjust){
+      pre.args <- paste(lapply(pre.ds.adjustments, '[[', "pp.args"))
+      #These next two might need to be in reverse order
+      pre.args <- gsub('\"', "", pre.args)
+      pre.args <- gsub('list', "", pre.args)
+      pre.string <- convert.list.to.string(paste(pre.methods, pre.args, sep=":", collapse=","))
+      info <- paste(info, "before downscaling",  ": ", pre.string, sep="")
+      print(paste('pre string:', pre.string))
+    }
+    if(is.post.ds.adjust){
+      if(is.pre.ds.adjust){
+        info <- paste(info, "and")
+      }
+      if('propts'%in%names(post.ds.adjustments)){
+        pr_opts$qc_args$fut.prmask <- "future_pr_mask"
+      }
+      post.args <- paste(lapply(post.ds.adjustments, '[[', "qc_args"))
+      post.args <- gsub('\"', "", post.args)
+      post.args <- gsub('list', "", post.args)
+      post.string <- convert.list.to.string(paste(post.methods, post.args, sep=":", collapse=","))
+      info <- paste(info, "after downscaling:", post.string)
+      print(paste('post_string:', post.string))
+    }
+    info <- paste(info, ";")
   }
   if(is.qcmask){
     #More section 5 stuff

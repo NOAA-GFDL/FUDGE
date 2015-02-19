@@ -42,6 +42,8 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   long_name <- ncatt_get(nc.object, var.name, attname)
   attname <- 'units' 
   units <- ncatt_get(nc.object, var.name, attname)
+    attr(clim.in, "units") <- units
+  ###Test code for determining what happens for unitless vars
   #######################################################
   #Control getting the dimensions and other variables in the output file
   dim.list <- list(dim=list(), vars=list())

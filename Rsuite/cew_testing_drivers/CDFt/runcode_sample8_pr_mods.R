@@ -26,7 +26,9 @@ hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 hist.model_1 <- 'GFDL-HIRAM-C360-COARSENED' 
 hist.freq_1 <- 'day' 
 hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///NCPP2013/modified/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/pr/OneD/' 
-hist.time.window <- 'na' 
+#hist.time.window <- 'na' 
+hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/PerfectModel/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
+
 #------------ future predictor(s) -------------# 
 fut.file.start.year_1 <- 2086 
 fut.file.end.year_1 <- 2095 
@@ -37,7 +39,8 @@ fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 fut.model_1 <- 'GFDL-HIRAM-C360-COARSENED' 
 fut.freq_1 <- 'day' 
 fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///NCPP2013/modified/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/pr/OneD/'
-fut.time.window <- 'na'
+#fut.time.window <- 'na'
+fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/PerfectModel/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
 fut.time.trim.mask <- 'na'
 #------------- target -------------------------# 
 target.file.start.year_1 <- 1979 
@@ -49,37 +52,36 @@ target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1
 target.model_1 <- 'GFDL-HIRAM-C360'
 target.freq_1 <- 'day' 
 target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///NCPP2013/modified/NOAA-GFDL/GFDL-HIRAM-C360/amip/day/atmos/day/r1i1p1/v20110601/pr/OneD/'
-target.time.window <- 'na'
+#target.time.window <- 'na'
+target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/PerfectModel/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
 #------------- method name k-fold specs-----------------------#
 #ds.method <- 'DeltaSD' 
 ds.method <- 'CDFt'
-ds.experiment <- 'PMprp1-CDFt-A18-pr_mod_test_i-2' #DO NOT CHANGE WHILE TESTING IN multi_pp_opts
+ds.experiment <- 'PMprp1-CDFt-A18-pr-bugfix5' #DO NOT CHANGE WHILE TESTING IN multi_pp_opts
 k.fold <- 0 
-pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='on',pr_conserve_in='on',pr_threshold_out='us_trace',pr_conserve_out='off')
+#pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='on',pr_conserve_in='on',pr_threshold_out='us_trace',pr_conserve_out='off')
 #-------------- output -----------------------#
 output.dir <- '/home/cew/Code/testing/'
 mask.output.dir <- '/home/cew/Code/testing/' 
 #-------------  custom -----------------------#
 #args=list(deltaop='ratio',deltatype='median', keep.zeroes=TRUE) 
-args=list(npas=0,dev=1)
+args=list(npas=0,dev=2)
 #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 #-------------- pp ---------------------------#
-        mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
-###Commented out to test the conversion functions
 # pre_ds = list(mask1=list(type='PR', var='pr', loc='outloop', 
 #                          pp.args=list(thold='us_trace',freqadj='on',conserve='on')))
 # post_ds = list(mask1=list(type='PR', qc.mask='off', adjust.out='on', loc='outloop', 
-#                          qc_args=list(thold='us_trace', conserve='off')),
-#               mask2=list(type='flag.neg',adjust.out='off',qc.mask='on', loc='inloop',
-#                          qc_options=list('na')))
-
-#post_ds <- list('na')
-
-###Need to test post-processing
-pr.post.proc <- TRUE
-
-##               mask2=list(type='flag.neg',adjust.out='off',qc.mask='on', loc='inloop',
-##                          qc_options=list('na')))
+#                          qc_args=list(thold='us_trace', conserve='off')) #,
+#               #mask2=list(type='flag.neg',adjust.out='off',qc.mask='on', loc='inloop',
+#                #          qc_options=list('na'))
+#           )
+pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
+             pr_threshold_out='zero',pr_conserve_out='on', #'us_trace'
+             apply_0_mask='off')
+mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
+#mask.list <- list('na')
+###Note that the above section CURRENTLY DOES NOT WORK! There is a check for a 
+###argument named propts later that only gets added if the adaptation function is invoked!
 
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 

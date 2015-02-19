@@ -64,7 +64,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
                              graph=FALSE, masklines=FALSE, 
                              ds.orig=NULL, ds.var='tasmax',
-                             #s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args, 
+                             #s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args,
+                             s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
 {
@@ -110,9 +111,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
-    #if (window%%10==0 || window==1){
-    #  message(paste("starting on window", window, "of", num.masks))
-    #}
     if(mask.data.by.time.window){
       window.predict <- ApplyTemporalMask(train.predictor, mask.struct[[1]]$masks[[window]])
       window.target <- ApplyTemporalMask(train.target, mask.struct[[2]]$masks[[window]])
@@ -148,23 +146,33 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         if(length(mask.struct) <= 3){
+          #Adjust the values of the downscaled ouptut, if applicable
+          if(s3.adjust){
+            temp.out <- callS3Adjustment(s3.instructions=s3.list, 
+                                            hist.pred = kfold.predict, 
+                                            hist.targ = kfold.target, 
+                                            fut.pred = kfold.gen,  
+                                            s5.instructions=s5.list)
+            s5.instructions <- temp.out$s5.list
+            kfold.target <- temp.out$input$hist.targ
+            kfold.predict <- temp.out$input$hist.pred
+            kfold.gen <- temp.out$input$fut.pred
+            remove(temp.output)
+          }
           #perform downscaling on the series and merge into new vector
           if(create.ds.out){
             #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
             #print(summary(kfold.predict))
             #print(summary(kfold.target))
-            #print(summary(kfold.gen))
             temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                      train.predict = kfold.predict[!is.na(kfold.predict)], 
                                      train.target = kfold.target[!is.na(kfold.target)], 
                                      esd.gen = kfold.gen[!is.na(kfold.gen)], 
                                      args=downscale.args, 
                                      ds.var=ds.var)
-            #gc() #Does this solve the CDFt memory allocation weirdness?
-            #No it does not. This is strange and exciting.
             downscale.vec[!is.na(kfold.gen)] <- temp.out
-            #print(summary(as.vector(downscale.vec)))
           }
+          #And adjust the downscaled output, if applicable
           if(s5.adjust){
             if(is.na(kfold.orig)){
               #If there is ds data being passed in from outside, it gets checked
@@ -173,8 +181,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               #otherwise, use the ds values from the run you have just completed
               data <- kfold.orig[!is.na(kfold.orig)]
             }
-            #print("results before adjust section")
-            #print(summary(data), digits=6)
             temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
                                          #s5.method=s5.method,s5.args=s5.args,
                                          data = data, 
