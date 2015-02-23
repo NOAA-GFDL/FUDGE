@@ -15,14 +15,14 @@ set newdir = $3
 set summfile = $4
 set logfile  = $5
 set mode = $6
-set test_args = "$argv[7-$#argv]"
-set test_args  = "${test_args}"
-set test_meaning = ""
-foreach i ( $test_args )
-	echo $i
-	set test_meaning = `echo "$test_meaning $i"`
-end
-echo $test_meaning
+#set test_args = "$argv[7-$#argv]"
+#set test_args  = "${test_args}"
+#set test_meaning = ""
+#foreach i ( $test_args )
+#	echo $i
+#	set test_meaning = `echo "$test_meaning $i"`
+#end
+#echo $test_meaning
 
 ##...how on EARTH am I geting syntax errors from a check for file existance. HOW?
 #echo "does the logfile exist? `-e $logfile`"
@@ -46,20 +46,21 @@ if ($mode == 'runcode') then
 	#chmod o+rx $newdir/runscript
 	#sed -i "s@<OUTPUT_DIR>@$newdir@g" $newdir/runscript
 	#Run the R runcode test
-	#echo "Running the R code test"
+	echo "Running the R code test"
 	echo "Rscript $newdir/runcode >>& $logfile"
-	#Rscript $newdir/runcode >>& $logfile
-	tcsh $newdir/runscript $newdir $newdir/runcode $logfile
+	Rscript $newdir/runcode >>& $logfile
+	#tcsh $newdir/runscript $newdir $newdir/runcode $logfile
 	#set dsout = `tail $logfile -n 50 | grep -oP "Downscaled output file:\K.*"` #as opposed to version without /vftmp
+	sleep 30
 	set dsout = `tail $logfile -n 10 | grep -oP "Final Downscaled output file location:\K.*"`
 	#if (! -e $dsout) then
 	#	sleep 60 #give file system time to catch up
 
 	#ls $dsout 2>&1 /dev/null
-	#if ($status != 0) then
-	#	sleep 60
-	set counter = 0
-	set ncc_status = 1
+	if ($status != 0) then
+		sleep 60
+	##set counter = 0
+	##set ncc_status = 1
 	#while ($ncc_status != 0)
 	#	echo $counter
 	#	set counter = `expr ${counter} + 1`
@@ -134,14 +135,14 @@ set test_str = `printf "%-20s" ${runcode}`
 set testtime = `printf "%-16s" ${start_time}`
 if ($ncc_status == 0) then
 	set statstring = `printf "%-10s" "PASSED"`
-	set linevar = `echo "$test_str $statstring $testtime $test_meaning $dsout"`
+	set linevar = `echo "$test_str $statstring $testtime $dsout"`
 	#echo `printf $test_str, $statstring, $testtime, $test_meaning, "\n"` >> $summfile
 	echo $linevar >> $summfile
 	exit 0
 else
 	set statstring = `printf "%-10s" "FAILED"`
 	#echo `printf $test_str, $statstring, $testtime, $test_meaning, "\n"` >> $summfile
-	set linevar = `echo "$test_str $statstring $testtime $test_meaning $dsout"`
+	set linevar = `echo "$test_str $statstring $testtime $dsout"`
 	#echo `printf $test_str, $statstring, $testtime, $test_meaning, "\n"` >> $summfile
 	echo $linevar >> $summfile
 	exit 1

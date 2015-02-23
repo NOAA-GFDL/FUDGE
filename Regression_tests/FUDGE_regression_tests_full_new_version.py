@@ -30,6 +30,8 @@ def main():
 	                  help="run only the regression tests using full XML", default=False)
 	parser.add_option("-a", "--all", action='store_true', dest="run_all",
 	                  help="run both runcode and XML regression tests", default=False)
+	parser.add_option("-i", "--input", dest="input",
+                  help="input file of commands to be run", metavar="FILE")
 	parser.add_option("-s", "--store_results", action='store_true', dest='save_results', 
                           help="save results for later analysis", default=False)
 #if options.save_results
@@ -43,13 +45,20 @@ def main():
 	olddir = regdir + "/old_output/"
 	datestring = time.strftime("%y-%m-%d:%X") #Need string representation of the date to separate dirs	
 	newdir = regdir + "/new_output/"+datestring+"/"
-	if(options.save_results)
+	os.makedirs(newdir)
+	if(options.save_results==False): 
+	#Given the options in the R code, this needs to be turned on REGARDLESS of whether or not you want to save results
 		tmpdir = os.environ.get('TMPDIR')
-		if (tmpdir is None)
+		if (tmpdir is None):
 			print "Error: TMPDIR not set for the system. This is about to cause major issues."
 			sys.exit(1)
-		newdir = tmpdir + "/" + newdir
-	os.makedirs(newdir)
+		newtmpdir = tmpdir + "/" + newdir
+		print "making output dir " + newtmpdir
+		os.makedirs(newtmpdir)
+	else:
+		print "There should be something that goes here maybe?"
+	
+	#sys.exit(1)
 
 	###CEW edit: this needs to be changed to something else. Maybe check for creation in c-shell script?
 	summary_file = newdir + "/test_status.summary"
@@ -66,13 +75,10 @@ def main():
 	#and the input directory/filename to get the results that you are looking for....
 	#Honestly, you can view the creation of the input and output dirs as a further form of testing on the
 	#consistency of your input...
-	
-	if(options.run_runcode | options.run_all):
-		commandfile = rundir +"/runcode_commands"
-		#commandfile = "/home/cew/Code/testing/cmndfile.txt"
+	if(os.path.exists(options.input)):
+		#Do all the things related to the test
 		teststatus = 0
-		mode='runcode'
-		with open(commandfile, 'rb') as instructions:
+		with open(options.input, 'rb') as instructions:
 			instructreader = csv.reader(instructions, delimiter=' ', quotechar='"')
 		     	for row in instructreader:
 			#Expected return is a list of strings of this format: 
@@ -82,60 +88,41 @@ def main():
 			#Lines with "#" at the beginning are comments
 				print row
 				if ( ("#" not in row[0]) ): #TODO: fix this
-					newstatus = compareRuncode(row, olddir, newdir, basedir, mode)
+					newstatus = compareRuncode(row, olddir, newdir, basedir)
 					#Honestly, this is probably better suited to running as a python subfxn
 	        			teststatus = teststatus + int(newstatus)
 		#If, at the end of everything, all tests were passed: 
 		if (teststatus==0):
-			print "All runcode regression tests passed. Congratulations."
+			print "All regression tests in file "+ options.input + " passed. Congratulations."
 		else:
-			print "Runcode regression tests not passed. Please check these tests:" 
+			print "Regression tests not passed. Please check these tests:" 
 			for line in open(summary_file):
 	 			if "FAILED" in line:
 	  				print line
 			print "Regression test summary output located at:" + summary_file
 			print "Regression test logfile output located at:" + newdir + "/stdout.log"
 			sys.exit(1)
-	
-	if( options.run_xml | options.run_all): 
-		commandfile = xmldir +"/xml_commands"
-		#commandfile = "/home/cew/Code/testing/cmndfile.txt"
-		teststatus = 0
-		mode = 'xml'
-		with open(commandfile, 'rb') as instructions:
-			instructreader = csv.reader(instructions, delimiter=' ', quotechar='"')
-		     	for row in instructreader:
-				print row
-				newstatus = compareRuncode(row, mode, olddir, newdir, basedir, mode)
-	        		teststatus = teststatus + int(newstatus)
-		if (teststatus==0): 
-			print "All xml/entire workflow tests passed. Congratulations."
-		else:
-			print "XML/entire workflow tests not passed. Please check these tests:"
-			for line in open(summary_file):
-	 			if "FAILED" in line:
-	  				print line
-			sys.exit(1)
-	print "All tests specified have passed. Summary output is located at:" + summary_file 
+	print "All tests have passed. Summary output is located at:" + summary_file 
 	sys.exit(0)
 
-def compareRuncode(row, olddir, newdir, basedir, mode):
+def compareRuncode(row, olddir, newdir, basedir):
 	#Creates the args for calling a c-shell script that 
 	#the status of a nccmp and writes the results (and stdout)
 	#to file
+	oldfile = olddir + row[1]
+	summfile = newdir + "/test_status.summary"
+	logfile = newdir + "/stdout.log"
+	#description = "'" + row[2] + "'"
+	mode=row[2]
 	if (mode=='xml'):
 		script = basedir + "/Regression_tests/xmls/" + row[0]
 	elif (mode=='runcode'):
 		script = basedir + "/Regression_tests/runcodes/" + row[0]
 	else:
 		print "Error in compareRuncode: Invalid option for mode."
-	oldfile = olddir + row[1]
-	summfile = newdir + "/test_status.summary"
-	logfile = newdir + "/stdout.log"
-	description = "'" + row[2] + "'"
 	#location of script to be called:
 	c_shell_script = basedir + "Regression_tests/run_reg_tests_from_file_old.csh" #old
-	command_tup  = (c_shell_script, script, oldfile, newdir, summfile, logfile, mode, description)
+	command_tup  = (c_shell_script, script, oldfile, newdir, summfile, logfile, mode)
 	commandstr = command_tup[0]
 	for i in range(1, len(command_tup)):
 		commandstr = commandstr + " " + command_tup[i]
