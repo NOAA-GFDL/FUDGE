@@ -34,11 +34,11 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                 'general.bias.correct' = callGeneral.Bias.Corrector(train.predict, train.target, esd.gen, args),
                 "BCQM" = callBiasCorrection(train.target, train.predict, esd.gen, args), 
-                "EDQM" = callEDQM(train.target, train.predict, esd.gen, args), 
+                "EDQM" = callEquiDistant(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callChangeFactor(train.target, train.predict, esd.gen, args), 
-#                 "CFQMv2" = callCFQMv2(train.target, train.predict, esd.gen, args),
-#                 "BCQMv2" = callBCQMv2(train.target, train.predict, esd.gen, args),
-#                 "EDQMv2" = callEDQMv2(train.target, train.predict, esd.gen, args),
+                "CFQM_DF" = callCFQMv2(train.target, train.predict, esd.gen, args),
+                "BCQM_DF" = callBCQMv2(train.target, train.predict, esd.gen, args),
+                "EDQM_DF" = callEDQMv2(train.target, train.predict, esd.gen, args),
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
                 ReturnDownscaleError(ds.method))
   #print(paste("stop time:", date()))
@@ -213,7 +213,7 @@ callBiasCorrection <- function(LH, CH, CF, args){
   return (SDF)
 }
 
-callEDQM<-function(LH,CH,CF,args){ 
+callEDQMv2<-function(LH,CH,CF,args){ 
   #'Performs an equidistant correction adjustment
   # LH: Local Historical (a.k.a. observations)
   # CH: Coarse Historical (a.k.a. GCM historical)
@@ -255,38 +255,38 @@ callEDQM<-function(LH,CH,CF,args){
   return(temp$EquiDistant[!is.na(temp$EquiDistant)])
 }
 
-# callEquiDistant <- function(LH, CH, CF, args){
-#   #'Performs an equidistant correction adjustment
-#   # first define vector with probabilities [0,1]
-#   # LH: Local Historical (a.k.a. observations)
-#   # CH: Coarse Historical (a.k.a. GCM historical)
-#   # CF: Coarse Future (a.k.a GCM future)
-#   #'Cites Li et. al. 2010
-#   size <- length(CF)
-#   prob<-seq(from=1/size, by=1, to=size)/size
-#   
-#   #check order preservation status
-#     in.sort <- order(CF)
-# #    CF.out <- CF[in.sort]
-# 
-#   #Create numerator and denominator of equation
-#   #First scale with local historical and reorder
-#   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   temporal <- temporal[in.sort]
-#   
-#   #And then scale with climate historical
-#   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-#   temporal2 <- temporal2[in.sort]
-#   
-#   # EQUIDISTANT CDF (Li et al. 2010)
-#   SDF<-CF + temporal-temporal2
-#   #CEW creation of downscaled historical values turned off for the moment
-#   #SDH<-CH + temporal-temporal2
-#   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-# 
-#     #SDF <- SDF[order(in.sort)] 
-#   return (SDF)
-# }
+callEquiDistant <- function(LH, CH, CF, args){
+  #'Performs an equidistant correction adjustment
+  # first define vector with probabilities [0,1]
+  # LH: Local Historical (a.k.a. observations)
+  # CH: Coarse Historical (a.k.a. GCM historical)
+  # CF: Coarse Future (a.k.a GCM future)
+  #'Cites Li et. al. 2010
+  size <- length(CF)
+  prob<-seq(from=1/size, by=1, to=size)/size
+  
+  #check order preservation status
+    in.sort <- order(CF)
+#    CF.out <- CF[in.sort]
+
+  #Create numerator and denominator of equation
+  #First scale with local historical and reorder
+  temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+  temporal <- temporal[in.sort]
+  
+  #And then scale with climate historical
+  temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
+  temporal2 <- temporal2[in.sort]
+  
+  # EQUIDISTANT CDF (Li et al. 2010)
+  SDF<-CF + temporal-temporal2
+  #CEW creation of downscaled historical values turned off for the moment
+  #SDH<-CH + temporal-temporal2
+  #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
+
+    #SDF <- SDF[order(in.sort)] 
+  return (SDF)
+}
 
 callChangeFactor <- function(LH, CH, CF, args){
   #'The script uses the Quantile Mapping Change Factor
