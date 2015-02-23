@@ -92,10 +92,9 @@ callSBCorr <- function(test, input, adjusted.output){
   #1's show good data
   #Set corrective error factor:
   print("entering simple bias correction func")
-  print(test$qc_options)
-  if(!is.null(test$qc_options$toplim) && !is.null(test$qc_options$botlim)){
-    toplim <- test$qc_options$toplim
-    botlim <- test$qc_options$botlim
+  if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
+    toplim <- test$qc_args$toplim
+    botlim <- test$qc_args$botlim
   }else{
     stop("Section 5 Adjustment Error: Arguments toplim and botlim are not present for the SBiasCorr function. Please check your XML.")
   }
