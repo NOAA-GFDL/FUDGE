@@ -1,0 +1,17 @@
+#!/bin/tcsh
+#PBS -S /bin/tcsh
+#PBS -l nodes=1:ppn=2,walltime=12:00:00
+#PBS -r y
+#PBS -j oe
+#PBS -N fudge_postProc
+#PBS -E
+#PBS -o /work/$USER/fudge/stdout/fudge_postProc_.m${MOAB_JOBNAME}.${MOAB_JOBID}
+#PBS -q batch
+
+#### load fudge ##
+module use -a /home/a1r/esdmodules/modulefiles/
+module load fudge/candy-testing
+##################
+
+source <POSTPROC_CMD>
+

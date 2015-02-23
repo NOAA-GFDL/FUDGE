@@ -47,7 +47,7 @@ def constructExpname(lname_project,lname_target,series,method,kfold,basedir,dumb
 	if(node.startswith('pp')):
 		print "Running on PP(PAN) node", node
 		plat = "p1" 
-	if(node.startswith('an')):
+	elif(node.startswith('an')):
                 print "Running on AN(PAN) node", node
 		plat = "p1"
 	else:
