@@ -213,48 +213,6 @@ callBiasCorrection <- function(LH, CH, CF, args){
   return (SDF)
 }
 
-callEDQMv2<-function(LH,CH,CF,args){ 
-  #'Performs an equidistant correction adjustment
-  # LH: Local Historical (a.k.a. observations)
-  # CH: Coarse Historical (a.k.a. GCM historical)
-  # CF: Coarse Future (a.k.a GCM future)
-  #'Cites Li et. al. 2010
-  #' Calls latest version of the EDQM function
-  #' as of 12-29
-  lengthCF<-length(CF)
-  lengthCH<-length(CH)
-  lengthLH<-length(LH)
-  
-  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-  
-  # first define vector with probabilities [0,1]
-  prob<-seq(0.001,0.999,length.out=lengthCF)
-  
-  # initialize data.frame
-  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                   qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
-                   EquiDistant=rep(NA,maxdim))
-  temp$CF[1:lengthCF]<-CF
-  temp$CH[1:lengthCH]<-CH
-  temp$LH[1:lengthLH]<-LH
-  
-  temp.CFsorted<-temp[order(temp$CF),]
-  #Combine needed to deal with cases where CH longer than CF
-  if (lengthCH-lengthCF > 0){
-    temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (lengthCH-lengthCF)))
-  }else{
-    temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
-  }
-  
-  temp.CFsorted$qLHecdfCFqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp.CFsorted$qCHecdfCFqCF[1:lengthCF]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-  # EQUIDISTANT CDF (Li et al. 2010)
-  temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
-  temp<-temp.CFsorted[order(temp.CFsorted$index),]
-  
-  return(temp$EquiDistant[!is.na(temp$EquiDistant)])
-}
-
 callEquiDistant <- function(LH, CH, CF, args){
   #'Performs an equidistant correction adjustment
   # first define vector with probabilities [0,1]
@@ -267,24 +225,22 @@ callEquiDistant <- function(LH, CH, CF, args){
   
   #check order preservation status
     in.sort <- order(CF)
-#    CF.out <- CF[in.sort]
+    CF.out <- CF[in.sort]
 
   #Create numerator and denominator of equation
   #First scale with local historical and reorder
   temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-  temporal <- temporal[in.sort]
   
   #And then scale with climate historical
   temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-  temporal2 <- temporal2[in.sort]
   
   # EQUIDISTANT CDF (Li et al. 2010)
-  SDF<-CF + temporal-temporal2
+  SDF<-CF.out + temporal-temporal2
   #CEW creation of downscaled historical values turned off for the moment
   #SDH<-CH + temporal-temporal2
   #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
 
-    #SDF <- SDF[order(in.sort)] 
+    SDF <- SDF[order(in.sort)] 
   return (SDF)
 }
 
@@ -424,6 +380,47 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
 }
 
 
+callEDQMv2<-function(LH,CH,CF,args){ 
+  #'Performs an equidistant correction adjustment
+  # LH: Local Historical (a.k.a. observations)
+  # CH: Coarse Historical (a.k.a. GCM historical)
+  # CF: Coarse Future (a.k.a GCM future)
+  #'Cites Li et. al. 2010
+  #' Calls latest version of the EDQM function
+  #' as of 12-29
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                   qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
+                   EquiDistant=rep(NA,maxdim))
+  temp$CF[1:lengthCF]<-CF
+  temp$CH[1:lengthCH]<-CH
+  temp$LH[1:lengthLH]<-LH
+  
+  temp.CFsorted<-temp[order(temp$CF),]
+  #Combine needed to deal with cases where CH longer than CF
+  if (lengthCH-lengthCF > 0){
+    temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (lengthCH-lengthCF)))
+  }else{
+    temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+  }
+  
+  temp.CFsorted$qLHecdfCFqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qCHecdfCFqCF[1:lengthCF]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  # EQUIDISTANT CDF (Li et al. 2010)
+  temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
+  temp<-temp.CFsorted[order(temp.CFsorted$index),]
+  
+  return(temp$EquiDistant[!is.na(temp$EquiDistant)])
+}
 
 ####CG DS method
 callCFQMv2<-function(LH,CH,CF,args){
