@@ -3,6 +3,7 @@ import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
 import sys, subprocess
+import fudgeList
 from subprocess import PIPE 
 import optparse
 from optparse import OptionParser
@@ -575,6 +576,15 @@ def main():
 		print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"
 	else:
 		print "postProc_command cannot be created. postProc_source does not exist"
+################ step 5 fudgeList invocation ##############################################
+        slogloc = sbase+"/"+"experiment_info.txt"
+        fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        out, err = f.communicate()
+        #print "fudgeList out", out
+        #if err is not None:
+        #       print "fudgeList err", err
+        print "Summary Log File: ", slogloc
 ####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
