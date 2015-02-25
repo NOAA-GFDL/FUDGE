@@ -2,8 +2,6 @@
 #Runs regression tests for FUDGE and writes stdout to an output logfile
 #and test results to a summary file
 
-set echo 
-
 #Test for i=300th minifiles with original settings, data only
 #set origfile = /work/cew/testing/300-301-old/v20140108/tasmax_day_RRtxp1-CDFt-A38-oldL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
 #set compfile = /home/cew/Code/testing/reg_tests//tasmax_day_sample-reg-test_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
@@ -42,23 +40,23 @@ if ($mode == 'runcode') then
 	cp $runcode $newdir/runcode #This gets overwritten if there is more than one test, but I don't think that's a problem
 	sed -i "s@<OUTPUT_DIR>@$newdir@g" $newdir/runcode
 	#The runscript should get modified too, for responsibilty reasons
-	cp $runcode.script $newdir/runscript
+	#cp $runcode.script $newdir/runscript
 	#chmod o+rx $newdir/runscript
 	#sed -i "s@<OUTPUT_DIR>@$newdir@g" $newdir/runscript
 	#Run the R runcode test
 	echo "Running the R code test"
-	echo "Rscript $newdir/runcode >>& $logfile"
+	echo "Rscript $newdir/runcode" >>& $logfile
 	Rscript $newdir/runcode >>& $logfile
 	#tcsh $newdir/runscript $newdir $newdir/runcode $logfile
 	#set dsout = `tail $logfile -n 50 | grep -oP "Downscaled output file:\K.*"` #as opposed to version without /vftmp
-	sleep 30
+	sleep 10
 	set dsout = `tail $logfile -n 10 | grep -oP "Final Downscaled output file location:\K.*"`
 	#if (! -e $dsout) then
 	#	sleep 60 #give file system time to catch up
 
 	#ls $dsout 2>&1 /dev/null
-	if ($status != 0) then
-		sleep 60
+#	if ($status != 0) then
+#		sleep 60
 	##set counter = 0
 	##set ncc_status = 1
 	#while ($ncc_status != 0)
@@ -135,14 +133,14 @@ set test_str = `printf "%-20s" ${runcode}`
 set testtime = `printf "%-16s" ${start_time}`
 if ($ncc_status == 0) then
 	set statstring = `printf "%-10s" "PASSED"`
-	set linevar = `echo "$test_str $statstring $testtime $dsout"`
+	set linevar = `echo "$test_str $statstring $testtime $dsout $oldfile"`
 	#echo `printf $test_str, $statstring, $testtime, $test_meaning, "\n"` >> $summfile
 	echo $linevar >> $summfile
 	exit 0
 else
 	set statstring = `printf "%-10s" "FAILED"`
 	#echo `printf $test_str, $statstring, $testtime, $test_meaning, "\n"` >> $summfile
-	set linevar = `echo "$test_str $statstring $testtime $dsout"`
+	set linevar = `echo "$test_str $statstring $testtime $dsout $oldfile"`
 	#echo `printf $test_str, $statstring, $testtime, $test_meaning, "\n"` >> $summfile
 	echo $linevar >> $summfile
 	exit 1

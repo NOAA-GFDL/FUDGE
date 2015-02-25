@@ -1,7 +1,10 @@
 #Lines with a '#' will not be parsed by the regression test script
 #And empty newlines at the end of the file will cause errors
 #tasmax_CDFt_test_1 tasmax_CDFt_1.nc "Trying to establish whether the new runcodes work as planned"
-tasmax_CDFt_test_2 tasmax_CDFt_2.nc runcode
+#tasmax_DC_test1.R tasmax_CDFt_1.nc runcode
+#tasmax_DC_test2.R tasmax_CDFt_2.nc runcode
+#pr_DC_test3.R pr_CDFt_3.nc runcode
+darkchocolate_PM_tasmin.xml regression_test_tasmin.nc xml
 #tasmax_CDFt_test_3 tasmax_CDFt_3.nc "Dev=1, npas=0"
 #pr_CDFT_test_1
 #pr_CDFT_test_2

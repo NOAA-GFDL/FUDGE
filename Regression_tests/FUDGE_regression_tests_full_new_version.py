@@ -24,16 +24,18 @@ import csv
 
 def main():
 	parser = OptionParser()
-	parser.add_option("-r", "--runcode", action='store_true', dest='run_runcode',
-	                  help="run only regression tests using runcode", default=False)
-	parser.add_option("-x", "--xml", action='store_false', dest="run_xml",
-	                  help="run only the regression tests using full XML", default=False)
-	parser.add_option("-a", "--all", action='store_true', dest="run_all",
-	                  help="run both runcode and XML regression tests", default=False)
+	#parser.add_option("-r", "--runcode", action='store_true', dest='run_runcode',
+#	                  help="run only regression tests using runcode", default=False)
+	#parser.add_option("-x", "--xml", action='store_false', dest="run_xml",
+#	                  help="run only the regression tests using full XML", default=False)
+	#parser.add_option("-a", "--all", action='store_true', dest="run_all",
+#	                  help="run both runcode and XML regression tests", default=False)
 	parser.add_option("-i", "--input", dest="input",
                   help="input file of commands to be run", metavar="FILE")
 	parser.add_option("-s", "--store_results", action='store_true', dest='save_results', 
                           help="save results for later analysis", default=False)
+	parser.add_option("-o", "--output_directory", dest="outdir", default="/archive/esd/REGRESSION_TESTS/results/", 
+                          help="set a directory to save the results")
 #if options.save_results
 	(options, args) = parser.parse_args()
 
@@ -41,27 +43,28 @@ def main():
 	#regdir = "/archive/esd/REGRESSION_TESTS/"
 	regdir = '/home/cew/Code/testing/'
 	#regdir = '/work/cew/testing/'
-
 	olddir = regdir + "/old_output/"
+
 	datestring = time.strftime("%y-%m-%d:%X") #Need string representation of the date to separate dirs	
-	newdir = regdir + "/new_output/"+datestring+"/"
-	os.makedirs(newdir)
-	if(options.save_results==False): 
+	newdir = options.outdir +datestring+"/"	
 	#Given the options in the R code, this needs to be turned on REGARDLESS of whether or not you want to save results
-		tmpdir = os.environ.get('TMPDIR')
-		if (tmpdir is None):
-			print "Error: TMPDIR not set for the system. This is about to cause major issues."
-			sys.exit(1)
-		newtmpdir = tmpdir + "/" + newdir
-		print "making output dir " + newtmpdir
-		os.makedirs(newtmpdir)
+	tmpdir = os.environ.get('TMPDIR')
+	if (tmpdir is None):
+		print "Error: TMPDIR not set for the system. This is about to cause major issues."
+		sys.exit(1)
+	#newtmpdir = tmpdir + "/" + newdir
+	newtmpdir = tmpdir + "/" + datestring
+	print "Making tmp output dir " + newtmpdir
+	os.makedirs(newtmpdir)
+	if(options.save_results==True): 
+		print "Making output dir " + newdir
+		os.makedirs(newdir)
 	else:
-		print "There should be something that goes here maybe?"
-	
-	#sys.exit(1)
+		print "Establishing tmpdir as newdir"
+		newdir = newtmpdir	
 
 	###CEW edit: this needs to be changed to something else. Maybe check for creation in c-shell script?
-	summary_file = newdir + "/test_status.summary"
+	summary_file = newtmpdir + "/test_status.summary"
 
 	basedir = os.environ.get('BASEDIR')
 	if(basedir is None):
@@ -88,9 +91,17 @@ def main():
 			#Lines with "#" at the beginning are comments
 				print row
 				if ( ("#" not in row[0]) ): #TODO: fix this
-					newstatus = compareRuncode(row, olddir, newdir, basedir)
+					newstatus = compareRuncode(row, olddir, newtmpdir, basedir)
 					#Honestly, this is probably better suited to running as a python subfxn
 	        			teststatus = teststatus + int(newstatus)
+		if(options.save_results==True):
+			print "Tests complete, copying to output..."
+			commandstr = "gcp --sync -cd -r "+ newtmpdir + " " + os.path.dirname(newdir)
+			print commandstr
+			proc_out = subprocess.Popen(commandstr,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+       			output0, errors0 = proc_out.communicate()
+			print output0, errors0
+			print "...and done!"
 		#If, at the end of everything, all tests were passed: 
 		if (teststatus==0):
 			print "All regression tests in file "+ options.input + " passed. Congratulations."
@@ -99,19 +110,19 @@ def main():
 			for line in open(summary_file):
 	 			if "FAILED" in line:
 	  				print line
-			print "Regression test summary output located at:" + summary_file
+			print "Regression test summary output located at:" + newdir + "/test_status.summary"
 			print "Regression test logfile output located at:" + newdir + "/stdout.log"
 			sys.exit(1)
 	print "All tests have passed. Summary output is located at:" + summary_file 
 	sys.exit(0)
 
-def compareRuncode(row, olddir, newdir, basedir):
+def compareRuncode(row, olddir, newtmpdir, basedir):
 	#Creates the args for calling a c-shell script that 
 	#the status of a nccmp and writes the results (and stdout)
 	#to file
 	oldfile = olddir + row[1]
-	summfile = newdir + "/test_status.summary"
-	logfile = newdir + "/stdout.log"
+	summfile = newtmpdir + "/test_status.summary"
+	logfile = newtmpdir + "/stdout.log"
 	#description = "'" + row[2] + "'"
 	mode=row[2]
 	if (mode=='xml'):
@@ -122,7 +133,7 @@ def compareRuncode(row, olddir, newdir, basedir):
 		print "Error in compareRuncode: Invalid option for mode."
 	#location of script to be called:
 	c_shell_script = basedir + "Regression_tests/run_reg_tests_from_file_old.csh" #old
-	command_tup  = (c_shell_script, script, oldfile, newdir, summfile, logfile, mode)
+	command_tup  = (c_shell_script, script, oldfile, newtmpdir, summfile, logfile, mode)
 	commandstr = command_tup[0]
 	for i in range(1, len(command_tup)):
 		commandstr = commandstr + " " + command_tup[i]
