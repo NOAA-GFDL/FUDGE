@@ -96,7 +96,7 @@ else if ($mode == 'xml') then
 	echo "python $BASEDIR/bin/expergen.py -i $newdir/xml --msub" >> $logfile
 	python $BASEDIR/bin/expergen.py -i $newdir/xml --msub >>& $logfile
 	#Obtain the postproc command that will be sourced
-	set pp_cmnd  = `tail $logfile | grep -oP ' Please use this script to run post post-processing, postProc when downscaling jobs are complete \K.*'`
+	set pp_cmnd  = `tail $logfile | grep -oPF ' Please use this script to run post post-processing, postProc when downscaling jobs are complete \033[1;m \K.*'`
 	echo $pp_cmnd
 	sleep 60
 	echo "Waiting 1 min; see if done"
