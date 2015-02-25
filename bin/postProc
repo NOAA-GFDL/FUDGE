@@ -25,7 +25,7 @@ def postProc():
      #parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
-     parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME", nargs='+')
+     parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
      args = vars(parser.parse_args())
 
      if userinput == "none":
@@ -41,6 +41,9 @@ def postProc():
 			force = valu
         if(argu == 'vname'):
 			lvname = valu 
+		        lvname1 = ' '.join(lvname)
+		        lvname = lvname1.split(',')
+			print lvname1 
 			print "Variable(s) to be post-processed: ",lvname
      if uinput is None:	
         uinput = userinput
@@ -89,7 +92,10 @@ def postProc():
      else:
 	listvname.append(varname)	
      for vname in listvname:
+	print vname,"check 1"
         vname = vname.strip(",")
+        print vname,"check xi21"
+
         vname = vname.strip()
 	print "Processing variable ",vname 
     	if(vname is not None):

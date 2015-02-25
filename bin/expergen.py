@@ -559,7 +559,7 @@ def main():
         if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
                 ppLoc = basedir+"/utils/bin/"+"create_postProc"
-                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir
+                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" "+tstamp
                 print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
                 p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
                 output4, error4 = p4.communicate()
@@ -571,9 +571,9 @@ def main():
                 print "4- completed"
                 print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
                 print "----------------------------------------"
-		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"
+		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+tstamp
 
-		print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"
+		print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command_"+tstamp
 	else:
 		print "postProc_command cannot be created. postProc_source does not exist"
 ################ step 5 fudgeList invocation ##############################################
