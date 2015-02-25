@@ -1,0 +1,63 @@
+<downscale>
+    <!-- Created using XMLgen; /home/esd/MJN_sandbox/darkchocolate/XMLgen/XMLgen.non-syn.csh; 02.18.2015 -->
+    <!-- xmlGenDir = /home/esd/MJN_sandbox/darkchocolate/XMLgen -->
+    <ifpreexist>erase</ifpreexist>
+    <input predictor_list = "tasmin" target = "tasmin" target_ID = "tn" spat_mask = "na" maskvar = "na" spat_mask_ID = "US48" in_root = "/archive/esd/PROJECTS/DOWNSCALING">
+        <dim>OneD</dim>
+        <grid region = "US48">
+            <lons>748</lons>
+            <lone>941</lone>
+	    <lats>454</lats>
+	    <late>567</late>	
+            <file_j_range>"J454-567"</file_j_range>
+        </grid>
+        <training>
+            <historical_predictor
+                file_start_time = "19790101"
+                file_end_time = "20081231"
+                train_start_time = "19790101"
+                train_end_time = "20081231"
+ 		time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
+            >
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.day.r2i1p1.v20110601</dataset>
+            </historical_predictor>
+            <historical_target
+                file_start_time = "19790101"
+                file_end_time = "20081231"
+                train_start_time = "19790101"
+                train_end_time = "20081231"
+		time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
+             >
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.day.r2i1p1.v20110601</dataset>
+            </historical_target>
+            <future_predictor
+                file_start_time = "20860101"
+                file_end_time = "20951231"
+                train_start_time = "20860101"
+                train_end_time = "20951231"
+                time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
+            >
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.r1i1p1.v20110601</dataset>
+            </future_predictor>
+        </training>
+        <esdgen>
+        </esdgen>
+    </input>    
+    <core>
+        <method name="CDFt"> </method>
+	<exper_series>A2e1X01</exper_series> 
+	<project>Perfect Model</project>
+	<project_ID>PM</project_ID>
+        <kfold>0</kfold>
+        <output>
+            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMtnp1-CDFt-A2e1tntestX01K00/tasmin/US48/OneD/</out_dir>
+            <script_root>SCRIPT_DIR/regression_test_1</script_root>
+        </output>
+    </core>
+    <custom>
+        <dev>1</dev>
+        <npas>0</npas>
+    </custom>
+    <pp>
+    </pp>
+</downscale>

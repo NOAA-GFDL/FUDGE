@@ -86,8 +86,17 @@ gcp_to_TMPDIR <- function(directory, TMPDIR){
     directory.tmp <- paste(TMPDIR,spat.mask.dir_1,sep='')
     if(!file.exists(directory.tmp)){
       #Gcp should already be loaded by setenv_fudge or the module if you are running this
-      commandstr <- paste("gcp -cd", directory, directory.tmp)
-      system(commandstr)
+      if(system('gcp --version')!=0){
+        loadstr = 'source /usr/share/Modules/init/sh;module load gcp;'
+      }else{
+        loadstr = ""
+      }
+      commandstr <- paste(loadstr, "gcp -cd", directory, directory.tmp)
+      sys.status <- system(commandstr)
+      if (sys.status!=0){
+        warning(paste("Error in gcp_to_TMPDIR; exited with status", sys.status, "; returning orig file"))
+        return(directory)
+      }
     }
     return(directory.tmp)
   }else{

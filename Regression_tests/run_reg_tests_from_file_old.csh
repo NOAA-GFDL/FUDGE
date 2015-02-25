@@ -2,6 +2,8 @@
 #Runs regression tests for FUDGE and writes stdout to an output logfile
 #and test results to a summary file
 
+set echo
+
 #Test for i=300th minifiles with original settings, data only
 #set origfile = /work/cew/testing/300-301-old/v20140108/tasmax_day_RRtxp1-CDFt-A38-oldL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
 #set compfile = /home/cew/Code/testing/reg_tests//tasmax_day_sample-reg-test_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
@@ -76,19 +78,26 @@ else if ($mode == 'xml') then
 	#set outdir = dirname $logfile #Not sure this is neccessary. Try it and see if it breaks?
 	set temp_file  = "$newdir/fudgelist.tmp"
 	#TODO: Set up the sed script replacement for the XMLs
-	cp $runcode $newdir/runcode
-	sed -i "s@OUTPUT_DIR@$newdir/dsout/@" $newdir/runcode
-	sed -i "s@SCRIPT_DIR@$newdir/scripts/@" $newdir/runcode
-	echo "python /$BASEDIR/bin/fudgeList.py -i $newdir/runcode -o $temp_file -f"
-	python $BASEDIR/bin/fudgeList.py -i $newdir/runcode -o $temp_file -f
+	cp $runcode $newdir/xml
+	if (! -e $newdir/dsout) then
+		#mkdir $newdir/dsout/
+		#mkdir $newdir/scripts/
+	endif
+	#removed 'dsout' and 'scripts' from create calls
+	sed -i "s@OUTPUT_DIR@$newdir/@" $newdir/xml
+	sed -i "s@SCRIPT_DIR@$newdir/@" $newdir/xml
+	echo "python /$BASEDIR/bin/fudgeList.py -i $newdir/xml -o $temp_file -f"
+	python $BASEDIR/bin/fudgeList.py -i $newdir/xml -o $temp_file -f
 	set full_out=`grep -oP 'output.path:\K.*' $temp_file`
 	#full_out will point to OneD directory
 	#Now, finally, run expergen
 	echo "Calling expergen" >> $logfile
-	echo "$BASEDIR/expergen.py $runcode --msub" >> $logfile
-	$BASEDIR/expergen.py $runcode --msub >> $logfile
+	#replaced $runcode with $newdir/xml
+	echo "python $BASEDIR/bin/expergen.py -i $newdir/xml --msub" >> $logfile
+	python $BASEDIR/bin/expergen.py -i $newdir/xml --msub >>& $logfile
 	#Obtain the postproc command that will be sourced
-	set pp_cmnd  = tail $logfile | `grep -oP 'postProc command will be saved under: \K.*'`
+	set pp_cmnd  = `tail $logfile | grep -oP ' Please use this script to run post post-processing, postProc when downscaling jobs are complete \K.*'`
+	echo $pp_cmnd
 	sleep 60
 	echo "Waiting 1 min; see if done"
 	set isdone = 1
