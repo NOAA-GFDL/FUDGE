@@ -9,6 +9,7 @@ set postproc_cmd = $argv[1]
 set sbasedir = $argv[2]
 set basedir = $argv[3]
 set tstamp = $argv[4]
+set branch = $argv[5]
 set codepath=$sbasedir/postProc/postProc_command_$tstamp
 mkdir -p $sbasedir/postProc/
 
@@ -17,6 +18,7 @@ set template = $basedir/utils/templates/postproc/template_postProc
   unalias cp
   cp -f $template $codepath
   sed -i 's%<'POSTPROC_CMD'>%'$postproc_cmd% $codepath
+  sed -i 's%<'BRANCH'>%'fudge/$branch% $codepath
   echo "postProc command script location: $codepath"
   chmod u+x $codepath
  else 

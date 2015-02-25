@@ -8,10 +8,11 @@
 #PBS -o /work/$USER/fudge/stdout/fudge_postProc_.m${MOAB_JOBNAME}.${MOAB_JOBID}
 #PBS -q batch
 
-#### load fudge ##
-module use -a /home/a1r/esdmodules/modulefiles/
-module load fudge/candy-testing
-##################
-
+	echo "Setting FUDGE environment.."
+	# If a1r/cew is testing from a non-esd module, change the following for testing only
+  
+	module use -a /home/esd/local/modulefiles/
+	module load <BRANCH> 
+	##################
 source <POSTPROC_CMD>
 
