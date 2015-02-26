@@ -102,16 +102,16 @@ else if ($mode == 'xml') then
 	echo "Waiting 1 min; see if done"
 	set isdone = 1
 	set attempts = 0
-	while (${attempts} < 10)
+	while ( ${attempts} < 10 )
 		source $pp_cmnd
 		set pp_status = $status
 		echo $pp_status
-		if (${pp_status}==0) then
+		if ( ${pp_status} == 0 ) then
 			echo "done"
 			set attempts = 20
 			set isdone = 0
 		#Error code associated with calling pp before complete; may apply to other things but need to check
-		else if(${pp_status}==245) then 
+		else if( ${pp_status} == 245 ) then 
 			echo "notdone"
 			set attempts = `expr ${attempts} + 1`
 			echo "not done, waiting one more minute" >> $logfile
@@ -122,7 +122,7 @@ else if ($mode == 'xml') then
 			set attempts = 20 
 		endif
 	end
-	if ($isdone==0) then
+	if ( $isdone == 0 ) then
 		#The new directory structure is going to make this SO MUCH EASIER, because it doesn't have the version dir
 		set dsout_dir = $full_out/../../
 		#For the moment, just assume that you will NEVER run the qcmasks for the regression tests. 

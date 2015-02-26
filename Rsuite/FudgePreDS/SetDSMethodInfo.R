@@ -22,6 +22,7 @@ SetDSMethodInfo <- function(ds.method){
          "BCQM_DF" = setBiasCorrection(), 
          "EDQM_DF" = setEquiDistant(), 
          "CFQM_DF" = setChangeFactor(),
+         "QMAP" = setChangeFactor(),
          "DeltaSD" = setDeltaSD(),
          "EDQMv2" = setEquiDistant(),
                 ReturnDownscaleError(ds.method))

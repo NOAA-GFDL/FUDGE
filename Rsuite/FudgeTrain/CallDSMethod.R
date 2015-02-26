@@ -40,6 +40,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "BCQM_DF" = callBCQMv2(train.target, train.predict, esd.gen, args),
                 "EDQM_DF" = callEDQMv2(train.target, train.predict, esd.gen, args),
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
+                "QMAP" = QMAP(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method))
   #print(paste("stop time:", date()))
   return(out)  
@@ -401,6 +402,10 @@ callEDQMv2<-function(LH,CH,CF,args){
   temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                    qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
                    EquiDistant=rep(NA,maxdim))
+  
+  SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
+                  LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),
+                  EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
   temp$CF[1:lengthCF]<-CF
   temp$CH[1:lengthCH]<-CH
   temp$LH[1:lengthLH]<-LH
@@ -476,6 +481,12 @@ callBCQMv2<-function(LH,CH,CF,args){
   temp.CFsorted$ecdfCHqCF<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
   temp.CFsorted$qLHecdfCHqCF<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
   temp<-temp.CFsorted[order(temp.CFsorted$index),]
+  #
+  temp.CFsorted2<-temp[order(temp$CF),]
+  temp.CFsorted2$qLH<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)
+  temp.CFsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.CFsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),]
   
   #SDF<-temp.final$qCFecdfCHqLH
   return(temp$qLHecdfCHqCF)
@@ -513,4 +524,61 @@ interp.points <- function(startpoint, endpoint, len.out, mode){
     return(c(startpoint, rep(endpoint, len.out-1)))
   }
   #return(approx(x=c(startpoint, endpoint), y=NULL, n=len.out, method='linear')$x)
+}
+
+QMAP<-function(LH,CH,CF,args){
+  lengthCF<-length(CF)
+  lengthCH<-length(CH)
+  lengthLH<-length(LH)
+  
+  
+  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  
+  # first define vector with probabilities [0,1]
+  prob<-seq(0.001,0.999,length.out=lengthCF)
+  
+  # initialize data.frame
+  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+  SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
+  
+  SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF
+  SDF$CH[1:lengthCH]<-temp$CH[1:lengthCH]<-CH
+  SDF$LH[1:lengthLH]<-temp$LH[1:lengthLH]<-LH
+  
+  # CHANGE FACTOR QMAP
+  temp.CFsorted2<-temp[order(temp$CF),]
+  temp.CFsorted2$qLH<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)
+  temp.CFsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.CFsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),]
+  #DEC 29 2014 Coarse Future and the SD output are now highly correlated
+  
+  
+  ###### BIAS CORRECTION QMAP (~CDFt)
+  temp.CFsorted<-temp[order(temp$CF),]
+  temp.CFsorted$qCF<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+  temp.CFsorted$ecdfCHqCF<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+  temp.CFsorted$qLHecdfCHqCF<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.BCQM<-temp.CFsorted[order(temp.CFsorted$index),]
+  
+  ##### EQUIDISTANT QMAP
+  
+  temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+  
+  temp.CFsorted$qLHecdfCFqCF<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qCHecdfCFqCF<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
+  temp.EDQM<-temp.CFsorted[order(temp.CFsorted$index),]
+  
+  ##### EQUIRATIO QMAP
+  temp.CFsorted$EquiRatio<-temp.CFsorted$CF* (temp.CFsorted$qLHecdfCFqCF/temp.CFsorted$qCHecdfCFqCF)
+  temp.ERQM<-temp.CFsorted[order(temp.CFsorted$index),]
+  
+  ### Assign downscaled output to the SDF (Statistically Downscaled Future) list
+  
+  SDF$CFQM<-temp.CFQM2$qCFecdfCHqLH
+  SDF$BCQM<-temp.BCQM$qLHecdfCHqCF
+  SDF$EDQM<-temp.EDQM$EquiDistant
+  SDF$ERQM<-temp.ERQM$EquiRatio
+  return(SDF$EDQM)
 }
