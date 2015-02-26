@@ -1,3 +1,11 @@
+02/24/2014
+(a1r)
+1. expergen call fudgeList outputting summary log in scripts directory. (postProc - fudgeList calls unchanged )
+2. postProc parser switched, whitespaces parsable from -v.
+3. postProc exits if variable not found in OneD.
+4. postProc_command is now a msub friendly script. postProc_command structure is different and is saved in scripts directory.
+5. workflow can be run on PP nodes as well. 
+ 
 1/19/2014
 1. Support for updated input and output directory structure (based on document provided by MJN and KD, sent Jan 16)
  - Related expergen,postProc changes.

@@ -2,8 +2,7 @@
 import expergen 
 import os,sys,subprocess,shutil
 from subprocess import PIPE
-import optparse
-from optparse import OptionParser
+import argparse
 import shlex
 import fudgeList
 import checker
@@ -13,8 +12,7 @@ def postProc():
      force = False #default
      usage = "\n############################################################################"
      usage = usage + "\nEg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
-	
-     parser = OptionParser(usage)
+     parser = argparse.ArgumentParser(description=usage)	
      usage = "Eg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
      try:
 	userinput 
@@ -22,24 +20,31 @@ def postProc():
      except:
 #	 print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.." 	
 	 userinput = "none"	
-     parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
-     parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
+     #parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
+     parser.add_argument("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
+     #parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
+     parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
+     #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
+     parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
+     args = vars(parser.parse_args())
 
-     (options, args) = parser.parse_args()
      if userinput == "none":
         print "Looking for XML location taken from command line option.."
         print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
-     vname = "" 
-     for opts,vals in options.__dict__.items():
-         	if(opts == 'uinput'):
-                	 uinput = vals
+     vname = ""
+     for argu,valu in args.iteritems(): 
+        if(argu == 'uinput'):
+			 print "test"
+                	 uinput = valu  
                  	 print uinput
-		if(opts == 'force'):
-			force = vals 
-		if(opts == 'vname'):
-			lvname = vals
-			print "Variable(s) to be post-processed: ",vname
+        if(argu == 'force'):
+			force = valu
+        if(argu == 'vname'):
+			lvname = valu 
+		        lvname1 = ' '.join(lvname)
+		        lvname = lvname1.split(',')
+			print lvname1 
+			print "Variable(s) to be post-processed: ",lvname
      if uinput is None:	
         uinput = userinput
 	
@@ -83,10 +88,15 @@ def postProc():
      ## if vname  contains the word mask, then yes let's set the indir differently  ##
      listvname = []	
      if(lvname is not None):
-     	listvname = lvname.split(',')  
+     	listvname = lvname #.split(',')  
      else:
 	listvname.append(varname)	
      for vname in listvname:
+	print vname,"check 1"
+        vname = vname.strip(",")
+        print vname,"check xi21"
+
+        vname = vname.strip()
 	print "Processing variable ",vname 
     	if(vname is not None):
     	 	if "mask" in vname:
@@ -104,7 +114,7 @@ def postProc():
 	##### lets run the checker on OneD first ###############
 	tnum = int(lone) - int(lons) + 1 
 	print "checker on OneD"
-       	checker.checker(indir,tnum)
+       	checker.checker(indir,tnum,varname=vname)
         ################################################
 	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"

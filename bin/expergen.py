@@ -3,6 +3,7 @@ import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
 import sys, subprocess
+import fudgeList
 from subprocess import PIPE 
 import optparse
 from optparse import OptionParser
@@ -539,7 +540,10 @@ def main():
 	print "----See readMe in fudge2014 directory for the next steps----"
 
 ############### crte ppscript #################
-	ppbase = sbase+"/postProc_command"
+        print(sbase+"/postProc/aux/")
+
+        os.makedirs(sbase+"/postProc/aux/")
+        ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
 	try:
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
@@ -551,9 +555,41 @@ def main():
   		ppfile.close()
 	except:
   		print "Unable to create postProc command file. You may want to check your settings."
-	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)" 
-	print "\033[1;42m Please use this script to run post post-processing, postProc when downscaling jobs are complete \033[1;m",ppbase
-##################################################
+		print create_pp_cmd
+        if(os.path.exists(ppbase)):
+######################### write postProc_job to be used ############################
+                ppLoc = basedir+"/utils/bin/"+"create_postProc"
+                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" "+tstamp+" "+branch
+                print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+                p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+                output4, error4 = p4.communicate()
+                if(p4.returncode != 0):
+                        print "Step4:!!!! FAILED !!!!, please contact developer."
+                        print output4, error4
+                        sys.exit(-4)
+                print output4, error4
+                print "4- completed"
+                print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+                print "----------------------------------------"
+		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+tstamp
+                try:  
+   			NEMSemail = os.environ["NEMSemail"]
+                        print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command_"+tstamp
+		except KeyError: 
+   			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
+			print "msub "+sbase+"postProc/postProc_command_"+tstamp
+	else:
+		print "postProc_command cannot be created. postProc_source does not exist"
+################ step 5 fudgeList invocation ##############################################
+        slogloc = sbase+"/"+"experiment_info.txt"
+        fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        out, err = f.communicate()
+        #print "fudgeList out", out
+        #if err is not None:
+        #       print "fudgeList err", err
+        print "Summary Log File: ", slogloc
+####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc

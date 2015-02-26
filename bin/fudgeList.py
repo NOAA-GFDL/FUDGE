@@ -71,7 +71,10 @@ def fudgeList():
      basedire = basedir	
      esdMethod = method
      varname = target 
-     grid = spat_mask+"../"+region+".nc"
+     if(spat_mask == "na"):
+	grid = "na"
+     else:	
+     	grid = spat_mask+"../"+region+".nc"
      region = ds_region
      outrec = outdir.split('_')
      #amip = outrec[0] 
