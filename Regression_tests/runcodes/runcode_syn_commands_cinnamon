@@ -1,0 +1,10 @@
+#Lines with a '#" will not be parsed by the regression test script
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledBC/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-BC_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledCF/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-CF_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledED/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-ED_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledBC-gl/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-BC-gl_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledCF-gl/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-CF-gl_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledED-gl/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-ED-gl_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledBC-gr/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-BC-gr_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledCF-gr/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-CF-gr_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode
+/archive/esd/PROJECTS/DOWNSCALING/downscaled/synthetic/LocalFutureDownscaledED-gr/fut/atmos/downscaled/r0i0p1/v20150225/tasmax/SinglePt/OneD/tasmax_day_txCFG-ED-gr_fut_r0i0p1_SinglePt_19610101-19621231.I1_J1-1.nc runcode

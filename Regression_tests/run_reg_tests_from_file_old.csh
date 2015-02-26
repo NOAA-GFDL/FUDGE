@@ -96,21 +96,23 @@ else if ($mode == 'xml') then
 	echo "python $BASEDIR/bin/expergen.py -i $newdir/xml --msub" >> $logfile
 	python $BASEDIR/bin/expergen.py -i $newdir/xml --msub >>& $logfile
 	#Obtain the postproc command that will be sourced
-	set pp_cmnd  = `tail $logfile | grep -oPF ' Please use this script to run post post-processing, postProc when downscaling jobs are complete \033[1;m \K.*'`
+	set pp_cmnd  = `tail -n 20 $logfile | grep -oP 'postProc command script location: \K.*'`
 	echo $pp_cmnd
 	sleep 60
 	echo "Waiting 1 min; see if done"
 	set isdone = 1
 	set attempts = 0
 	while (${attempts} < 10)
-		source pp_cmnd
+		source $pp_cmnd
 		set pp_status = $status
 		echo $pp_status
-		if ($pp_status==0) then
+		if (${pp_status}==0) then
+			echo "done"
 			set attempts = 20
 			set isdone = 0
 		#Error code associated with calling pp before complete; may apply to other things but need to check
-		else if($pp_status==246) then 
+		else if(${pp_status}==245) then 
+			echo "notdone"
 			set attempts = `expr ${attempts} + 1`
 			echo "not done, waiting one more minute" >> $logfile
 			sleep 60
