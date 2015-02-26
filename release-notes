@@ -1,3 +1,9 @@
+02/26/2014
+1. checker count bugfix on 1 and 2d with varname param. Plus postProc/ppFudge fixes to output masks
+dir relative to out_dir
+2. postProc template updates <BRANCH> inclusion. 
+3. expergen uses NEMSemail if available to print msub email notification syntax along with postProc_command
+
 02/24/2014
 (a1r)
 1. expergen call fudgeList outputting summary log in scripts directory. (postProc - fudgeList calls unchanged )

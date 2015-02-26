@@ -86,7 +86,7 @@ set workdir = `mktemp -d -p $TMPDIR/ppscratch/` ####$TMPDIR
 if ( "$var" =~ *"mask"* ) then
 	echo "Mask outdir activated in ppFudge"
 #old	set postfix = "/../../../../$region/$ver"
-	set postfix = "/../$ver"
+	set postfix = "/../../$ver"
 else
 #old        set postfix = "/../../../$region/$ver"
         set postfix = "/../$ver"

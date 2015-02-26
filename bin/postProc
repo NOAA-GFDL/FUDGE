@@ -101,7 +101,6 @@ def postProc():
     	if(vname is not None):
     	 	if "mask" in vname:
 			print "The variable you're trying to PP appears to be a mask variable"
-        		print "debug..",indir
         		#indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
                 	indir = indir+"/"+target+"_qcmask/"
         		print "indir ",indir 
@@ -147,7 +146,7 @@ def postProc():
 					        filedirect = indir+"/../"
                                                 if "mask" in vname: #spl cases are not great
                                                 #	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
-							filedirect = indir+"/../"
+							filedirect = indir+"/../../"
 
                                         	checker.checker(filedirect,2,"warning")
 					else:
