@@ -2,7 +2,7 @@
 #Runs regression tests for FUDGE and writes stdout to an output logfile
 #and test results to a summary file
 
-set echo
+#set echo
 
 #Test for i=300th minifiles with original settings, data only
 #set origfile = /work/cew/testing/300-301-old/v20140108/tasmax_day_RRtxp1-CDFt-A38-oldL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
@@ -89,6 +89,7 @@ else if ($mode == 'xml') then
 	echo "python /$BASEDIR/bin/fudgeList.py -i $newdir/xml -o $temp_file -f"
 	python $BASEDIR/bin/fudgeList.py -i $newdir/xml -o $temp_file -f
 	set full_out=`grep -oP 'output.path:\K.*' $temp_file`
+	#set varname = `grep -oP '
 	#full_out will point to OneD directory
 	#Now, finally, run expergen
 	echo "Calling expergen" >> $logfile
@@ -103,7 +104,7 @@ else if ($mode == 'xml') then
 	set isdone = 1
 	set attempts = 0
 	while ( ${attempts} < 10 )
-		source $pp_cmnd
+		source $pp_cmnd >>& $logfile
 		set pp_status = $status
 		echo $pp_status
 		if ( ${pp_status} == 0 ) then
@@ -124,10 +125,14 @@ else if ($mode == 'xml') then
 	end
 	if ( $isdone == 0 ) then
 		#The new directory structure is going to make this SO MUCH EASIER, because it doesn't have the version dir
-		set dsout_dir = $full_out/../../
+		#set dsout_dir = $full_out/../../
+		set dsout_dir = `dirname $full_out`
 		#For the moment, just assume that you will NEVER run the qcmasks for the regression tests. 
 		#It should be accurate enough to buy some room to test things
-		set dsout = `find $dsout_dir`
+		#set dsout = `find $dsout_dir`
+		ls $dsout_dir
+		set dsout = `ls $dsout_dir/*.nc`
+		echo $dsout
 		echo "nccmp -d $dsout $oldfile" >> $logfile
 		nccmp -d $dsout $oldfile
 		set ncc_status = $status

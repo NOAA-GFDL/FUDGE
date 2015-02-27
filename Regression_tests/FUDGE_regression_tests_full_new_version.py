@@ -15,7 +15,7 @@
 
 #Import commands
 import time
-import pprint,getopt, os, shutil
+import pprint,getopt, os, shutil, re
 import sys, subprocess
 from subprocess import PIPE 
 import optparse
@@ -45,21 +45,28 @@ def main():
 	#regdir = '/work/cew/testing/'
 	olddir = regdir + "/old_output/"
 
-	datestring = time.strftime("%y-%m-%d:%X") #Need string representation of the date to separate dirs	
-	newdir = options.outdir +datestring+"/"	
+	datestring = time.strftime("%y-%m-%d:%X") #Need string representation of the date to separate dirs
+	#Need to replace ":" with "_" for anything that uses templates and sed terminators
+	datestring_dir = re.sub(":", "_", datestring)
+	newdir = options.outdir +datestring_dir+"/"	
 	#Given the options in the R code, this needs to be turned on REGARDLESS of whether or not you want to save results
 	tmpdir = os.environ.get('TMPDIR')
 	if (tmpdir is None):
 		print "Error: TMPDIR not set for the system. This is about to cause major issues."
 		sys.exit(1)
 	#newtmpdir = tmpdir + "/" + newdir
-	newtmpdir = tmpdir + "/" + datestring
+	newtmpdir = tmpdir + "/" + datestring_dir
 	print "Making tmp output dir " + newtmpdir
 	os.makedirs(newtmpdir)
 	if(options.save_results==True): 
 		print "Making output dir " + newdir
 		os.makedirs(newdir)
+		newdir_xml = newdir
 	else:
+		print "Making tmp work output dir (for any XML tests)"
+		user = os.environ.get('USER')
+		newdir_xml  = "/work/" + user + "/fudge_regtets/" + datestring_dir + "/"
+		os.makedirs(newdir_xml)
 		print "Establishing tmpdir as newdir"
 		newdir = newtmpdir	
 
@@ -91,11 +98,11 @@ def main():
 			#Lines with "#" at the beginning are comments
 				print row
 				if ( ("#" not in row[0]) ): #TODO: fix this
-					newstatus = compareRuncode(row, olddir, newtmpdir, basedir)
+					newstatus = compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml)
 					#Honestly, this is probably better suited to running as a python subfxn
 	        			teststatus = teststatus + int(newstatus)
 		if(options.save_results==True):
-			print "Tests complete, copying to output..."
+			print "Tests complete, copying runcode results to output..."
 			commandstr = "gcp --sync -cd -r "+ newtmpdir + " " + os.path.dirname(newdir)
 			print commandstr
 			proc_out = subprocess.Popen(commandstr,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -113,10 +120,11 @@ def main():
 			print "Regression test summary output located at:" + newdir + "/test_status.summary"
 			print "Regression test logfile output located at:" + newdir + "/stdout.log"
 			sys.exit(1)
+	print "Tests ran from " + datestring + " to " + time.strftime("%y-%m-%d:%X")
 	print "All tests have passed. Summary output is located at:" + summary_file 
 	sys.exit(0)
 
-def compareRuncode(row, olddir, newtmpdir, basedir):
+def compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml):
 	#Creates the args for calling a c-shell script that 
 	#the status of a nccmp and writes the results (and stdout)
 	#to file
@@ -127,6 +135,7 @@ def compareRuncode(row, olddir, newtmpdir, basedir):
 	mode=row[2]
 	if (mode=='xml'):
 		script = basedir + "/Regression_tests/xmls/" + row[0]
+		newtmpdir = newdir_xml
 	elif (mode=='runcode'):
 		script = basedir + "/Regression_tests/runcodes/" + row[0]
 	else:
