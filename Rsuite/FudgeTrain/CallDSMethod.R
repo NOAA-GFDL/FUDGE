@@ -431,15 +431,38 @@ callEDQMv2<-function(LH,CH,CF,args){
 callCFQMv2<-function(LH,CH,CF,args){
   #'Calls the latest version of the CFQM function
   #'as of 12-29
+  #'2-27-2015 edit: added an argument for determining
+  #'whether data is sorted by the CH or CF vectors
+  # Obtain options
+  if(!is.null(args$sort)){
+    #can be one of 'future' or 'historical'
+    sort.opt <- args$sort
+    if(sort.opt=='future'){
+      sort.opt <- 'CF'
+    }else if(sort.opt=='historical'){
+      sort.opt <- 'CH'
+    }else{
+      stop(paste("CFQM_DF Downscaling Error: arg sort was", sort.opt, "not 'future' or 'historical"))
+    }
+  }else{
+    stop(paste("CFQM_DF Downscaling Error: sort not found in args"))
+  }
+  
   lengthCF<-length(CF)
   lengthCH<-length(CH)
   lengthLH<-length(LH)  
   
-  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+  if (lengthCF>lengthCH){
+    maxdim=lengthCF
+    longest.dim <- 'CF'
+    }else{
+     maxdim=lengthCH
+     longest.dim <- 'CH'
+    }
   
   # first define vector with probabilities [0,1]
   prob<-seq(0.001,0.999,length.out=lengthCF)
-  
+    
   # initialize data.frame
   temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                    qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
@@ -447,13 +470,27 @@ callCFQMv2<-function(LH,CH,CF,args){
   temp$CH[1:lengthCH]<-CH
   temp$LH[1:lengthLH]<-LH
   
-  temp.LHsorted<-temp[order(temp$LH),]
-  temp.LHsorted$qLH<-quantile(temp.LHsorted$LH,prob,na.rm =TRUE)
-  temp.LHsorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-  temp.LHsorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp<-temp.LHsorted[order(temp.LHsorted$index, na.last=FALSE),]
+  if (longest.dim!=sort.opt){
+    print(paste(longest.dim, sort.opt, sep=" : "))
+    sort.vec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
+
+    temp$sortVec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
+    sort.opt <- 'sortVec'
+  }
+#   save(list=c('temp'), file="/home/cew/Code/testing/test.save")
+#   stop('problem')
+#   sort.opt <- 'CF'
+  #If the longest dim is used, sorting is straightforward
+  temp.opt.sorted<-temp[order(temp[[sort.opt]]),] #sorts by sort.opt
+  #i.e. all temp.LHsorted to temp.CFsorted
+  temp.opt.sorted$qLH<-quantile(temp.opt.sorted$LH,prob,na.rm =TRUE)
+  temp.opt.sorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.opt.sorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)
+                                         (quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp<-temp.opt.sorted[order(temp.opt.sorted$index),] #, na.last=FALSE
   
   SDF<-temp$qCFecdfCHqLH
+#  print(cor(temp$CF, SDF))
   return(SDF)
 }
 
@@ -580,5 +617,5 @@ QMAP<-function(LH,CH,CF,args){
   SDF$BCQM<-temp.BCQM$qLHecdfCHqCF
   SDF$EDQM<-temp.EDQM$EquiDistant
   SDF$ERQM<-temp.ERQM$EquiRatio
-  return(SDF$EDQM)
+  return(SDF$CFQM)
 }
