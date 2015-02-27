@@ -511,26 +511,20 @@ callBCQMv2<-function(LH,CH,CF,args){
   prob<-seq(0.001,0.999,length.out=lengthCF)
   
   # initialize data.frame
-  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+  temp<-data.frame(index=c(seq(1,lengthCF), rep(NA,maxdim-lengthCF)),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                    qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
   temp$CF[1:lengthCF]<-CF
   temp$CH[1:lengthCH]<-CH
   temp$LH[1:lengthLH]<-LH
   
   temp.CFsorted<-temp[order(temp$CF),]
-  temp.CFsorted$qCF<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
-  temp.CFsorted$ecdfCHqCF<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
-  temp.CFsorted$qLHecdfCHqCF<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+  temp.CFsorted$qCF[1:lengthCF]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+  temp.CFsorted$ecdfCHqCF[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+  temp.CFsorted$qLHecdfCHqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
   temp<-temp.CFsorted[order(temp.CFsorted$index),]
-  #
-  temp.CFsorted2<-temp[order(temp$CF),]
-  temp.CFsorted2$qLH<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)
-  temp.CFsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-  temp.CFsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),]
   
   #SDF<-temp.final$qCFecdfCHqLH
-  return(temp$qLHecdfCHqCF)
+  return(temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)])
 }
 
 ################### Interpolation functions
