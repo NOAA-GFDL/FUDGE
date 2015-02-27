@@ -450,7 +450,7 @@ callCFQMv2<-function(LH,CH,CF,args){
   
   lengthCF<-length(CF)
   lengthCH<-length(CH)
-  lengthLH<-length(LH)  
+  lengthLH<-length(LH) 
   
   if (lengthCF>lengthCH){
     maxdim=lengthCF
@@ -464,7 +464,8 @@ callCFQMv2<-function(LH,CH,CF,args){
   prob<-seq(0.001,0.999,length.out=lengthCF)
     
   # initialize data.frame
-  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+  temp<-data.frame(index=c(seq(1,lengthCF), rep(NA, maxdim-lengthCF)), #making changes to index to make sure that they make sense
+                   CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                    qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
   temp$CF[1:lengthCF]<-CF
   temp$CH[1:lengthCH]<-CH
@@ -483,15 +484,18 @@ callCFQMv2<-function(LH,CH,CF,args){
   #If the longest dim is used, sorting is straightforward
   temp.opt.sorted<-temp[order(temp[[sort.opt]]),] #sorts by sort.opt
   #i.e. all temp.LHsorted to temp.CFsorted
-  temp.opt.sorted$qLH<-quantile(temp.opt.sorted$LH,prob,na.rm =TRUE)
-  temp.opt.sorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-  temp.opt.sorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)
-                                         (quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp<-temp.opt.sorted[order(temp.opt.sorted$index),] #, na.last=FALSE
-  
+  temp.opt.sorted$qLH[1:lengthCF]<-quantile(temp.opt.sorted$LH,prob,na.rm =TRUE)
+  temp.opt.sorted$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+  temp.opt.sorted$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Added parenthesis befpre ecdf
+#   save(list=c('temp', 'temp.opt.sorted'), file="/home/cew/Code/testing/test.save")
+#   stop('problem') 
+  temp<-temp.opt.sorted[order(temp.opt.sorted$index),] #, na.last=FALSE #removed order
   SDF<-temp$qCFecdfCHqLH
 #  print(cor(temp$CF, SDF))
-  return(SDF)
+#   print(length(SDF))
+#   print(summary(SDF))
+#   print(sum(!is.na(SDF)))
+  return(SDF[!is.na(SDF)])
 }
 
 callBCQMv2<-function(LH,CH,CF,args){
