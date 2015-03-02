@@ -496,3 +496,8 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
 #regression testing scripts parsing stdout
 #message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
 message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
+corr.future <- cor(as.vector(ds$esd.final), as.vector(list.fut$clim.in), use='pairwise.complete.obs')
+message('printing corr.future')
+message(corr.future)
+print(sum(is.na(ds$esd.final)))
+print(sum(is.na(list.fut$clim.in)))
