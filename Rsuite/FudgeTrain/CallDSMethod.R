@@ -252,19 +252,43 @@ callChangeFactor <- function(LH, CH, CF, args){
     #'@param CH: Coarse Historical (a.k.a. GCM historical)
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'@param args: named list of arguments for the function
-
+    
+    #Edit 3-2-2014 to add opt to sort by any vector
+    if(!is.null(args$sort)){
+      #can be one of 'future' or 'historical'
+      sort.opt <- args$sort
+      if(sort.opt=='future'){
+        sort.opt <- 'CF'
+      }else if(sort.opt=='historical'){
+        sort.opt <- 'CH'
+      }else if(sort.opt=='target'){
+        sort.opt <- 'LH'
+      }else{
+        stop(paste("CFQM Downscaling Error: arg sort was", sort.opt, "not 'future' or 'historical"))
+      }
+    }else{
+      stop(paste("CFQM Downscaling Error: sort not found in args"))
+    }
+    
     #Edited 1-9-15 to organize vectors by the CF vector
     size <- length(CF)
+    if(sort.opt=='CF'){
+      sort.vec <- order(CF)
+    }else{
+      if (sort.opt=='CH'){
+        sort.vec <- order(rep(CH, length.out=length(CF)))
+      }else{
+        sort.vec <- order(rep(LH, length.out=length(CF)))
+      }
+      CF <- CF[sort.vec]
+    }
     # first define vector with probabilities [0,1]
     prob<-seq(from=1/size, by=1, to=size)/size
     
     # QM Change Factor
     SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
-    ##CEW: creation of historical quantiles turned off for the moment
-    #SDH<-quantile(CH,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
-    #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-    
-    SDF <- SDF[order(CF)]
+    SDF <- SDF[order(sort.vec)]
+    #print(cor(SDF, sort.vec))
     return (SDF)
 }
 
@@ -441,6 +465,8 @@ callCFQMv2<-function(LH,CH,CF,args){
       sort.opt <- 'CF'
     }else if(sort.opt=='historical'){
       sort.opt <- 'CH'
+    }else if(sort.opt=='target'){
+      sort.opt <- 'LH'
     }else{
       stop(paste("CFQM_DF Downscaling Error: arg sort was", sort.opt, "not 'future' or 'historical"))
     }
@@ -454,10 +480,10 @@ callCFQMv2<-function(LH,CH,CF,args){
   
   if (lengthCF>lengthCH){
     maxdim=lengthCF
-    longest.dim <- 'CF'
+    longest.dim <- 'F'
     }else{
      maxdim=lengthCH
-     longest.dim <- 'CH'
+     longest.dim <- 'H'
     }
   
   # first define vector with probabilities [0,1]
@@ -471,10 +497,9 @@ callCFQMv2<-function(LH,CH,CF,args){
   temp$CH[1:lengthCH]<-CH
   temp$LH[1:lengthLH]<-LH
   
-  if (longest.dim!=sort.opt){
+  if (regexpr(longest.dim, sort.opt) < 0){ #If maxdim is not of the same time period as the sort vector
     print(paste(longest.dim, sort.opt, sep=" : "))
-    sort.vec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
-
+    #sort.vec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
     temp$sortVec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
     sort.opt <- 'sortVec'
   }
@@ -483,18 +508,13 @@ callCFQMv2<-function(LH,CH,CF,args){
 #   sort.opt <- 'CF'
   #If the longest dim is used, sorting is straightforward
   temp.opt.sorted<-temp[order(temp[[sort.opt]]),] #sorts by sort.opt
+  #temp.opt.sorted <- temp
   #i.e. all temp.LHsorted to temp.CFsorted
   temp.opt.sorted$qLH[1:lengthCF]<-quantile(temp.opt.sorted$LH,prob,na.rm =TRUE)
   temp.opt.sorted$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
   temp.opt.sorted$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Added parenthesis befpre ecdf
-#   save(list=c('temp', 'temp.opt.sorted'), file="/home/cew/Code/testing/test.save")
-#   stop('problem') 
-  temp<-temp.opt.sorted[order(temp.opt.sorted$index),] #, na.last=FALSE #removed order
+  temp<-temp.opt.sorted[order(temp.opt.sorted$index, na.last=TRUE),] #, na.last=FALSE #removed order #temp.opt.sorted$index
   SDF<-temp$qCFecdfCHqLH
-#  print(cor(temp$CF, SDF))
-#   print(length(SDF))
-#   print(summary(SDF))
-#   print(sum(!is.na(SDF)))
   return(SDF[!is.na(SDF)])
 }
 
