@@ -140,9 +140,12 @@ def main():
 			print "Regression test summary output located at:" + newdir + "/test_status.summary"
 			print "Regression test logfile output located at:" + newdir + "/stdout.log"
 			sys.exit(1)
-	print "Tests ran from " + datestring + " to " + time.strftime("%y-%m-%d:%X")
-	print "All tests have passed. Summary output is located at:" + summary_file 
-	sys.exit(0)
+		print "Tests ran from " + datestring + " to " + time.strftime("%y-%m-%d:%X")
+		print "All tests have passed. Summary output is located at:" + summary_file 
+		sys.exit(0)
+	else:
+		print options.input + " does not exist. Please check your input"
+		sys.exit(1)
 
 def compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml, logfile, summfile):
 	#Creates the args for calling a c-shell script that 
@@ -171,6 +174,8 @@ def compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml, logfile, summfil
 	#check return code
         output0, errors0 = proc_out.communicate()
 	print output0, errors0
+	#Add temporary code to run the correlations after the new data is added
+	#Rscript /home/cew/Code/calculate_CF_correlation.R
 	return proc_out.returncode
 
 #Main method invocation

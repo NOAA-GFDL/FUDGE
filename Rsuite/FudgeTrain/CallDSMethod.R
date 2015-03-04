@@ -468,7 +468,7 @@ callCFQMv2<-function(LH,CH,CF,args){
     }else if(sort.opt=='target'){
       sort.opt <- 'LH'
     }else{
-      stop(paste("CFQM_DF Downscaling Error: arg sort was", sort.opt, "not 'future' or 'historical"))
+      stop(paste("CFQM_DF Downscaling Error: arg sort was", sort.opt, "not 'future', 'historical', or 'target'"))
     }
   }else{
     stop(paste("CFQM_DF Downscaling Error: sort not found in args"))

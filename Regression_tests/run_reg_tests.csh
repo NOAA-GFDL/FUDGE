@@ -3,8 +3,8 @@
 #and test results to a summary file
 
 #set echo
-module load nco
-module load nccmp
+#module load nco
+#module load nccmp
 
 #Test for i=300th minifiles with original settings, data only
 #set origfile = /work/cew/testing/300-301-old/v20140108/tasmax_day_RRtxp1-CDFt-A38-oldL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
@@ -17,6 +17,10 @@ set newdir = $3
 set summfile = $4
 set logfile  = $5
 set mode = $6
+#do a nccmp on a var if that option presents itself
+#if ($argv > 6){
+#	set varstring = "-v $7"
+#}
 #set test_args = "$argv[7-$#argv]"
 #set test_args  = "${test_args}"
 #set test_meaning = ""
@@ -86,10 +90,10 @@ else if ($mode == 'xml') then
 	#Obtain the postproc command that will be sourced
 	set pp_cmnd  = `tail -n 20 $logfile | grep -oP 'postProc command script location: \K.*'`
 	echo $pp_cmnd
-	sleep 60
 	echo "Waiting 1 min; see if done"
+	sleep 60
 	set isdone = 1
-	set attempts = 10
+	set attempts = 0
 	while ( ${attempts} < 10 )
 		source $pp_cmnd >>& $logfile
 		set pp_status = $status
@@ -125,7 +129,8 @@ else if ($mode == 'xml') then
 		set ncc_status = $status
 		echo "Status of the nccmp: $ncc_status" >> $logfile 
 	else
-		$dsout = "`dirname $full_out`/*.nc"
+		set dsout = "`dirname $full_out`/*.nc"
+		echo $dsout
 		echo "Time out error: After 10 minutes, script has not completed. Please check out dir for more information"
 		echo "Time out error: After 10 minutes, script has not completed. Please check out dir for more information" >> $logfile
 		set ncc_status = 100 
