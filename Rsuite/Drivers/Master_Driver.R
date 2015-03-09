@@ -505,6 +505,10 @@ message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
 # for (j in 1:length(cor.vector)){
 #   cor.var <- cor.vector[j]
 #   cor.out <- eval(parse(text=cor.var))
-#   out.cor <- cor(ds$esd.final, cor.out, use='pairwise.complete.obs')
+#   if(length(cor.out) > length(ds$esd.final)){
+#     out.cor <- cor(as.vector(ds$esd.final), as.vector(cor.out)[1:length(ds$esd.final)], use='pairwise.complete.obs')
+#   }else{
+#   out.cor <- cor(as.vector(ds$esd.final)[1:length(cor.out)], as.vector(cor.out), use='pairwise.complete.obs')
+#   }
 #   print(paste("ds$esd.final", ",", cor.var, "):", out.cor, sep=""))
 # }
