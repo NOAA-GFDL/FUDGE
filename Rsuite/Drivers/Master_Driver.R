@@ -424,7 +424,8 @@ if(Sys.getenv("USERNAME")=='cew'){
 
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
-             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
+                                                                                               ds.method, ds.experiment), 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
              grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
@@ -473,7 +474,8 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
     #For now, patch the variables in here until se get s5 formalized in the XML
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                  configURL,label.validation,institution='NOAA/GFDL',
-                 version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+                 version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
+                                                                                                   ds.method, ds.experiment), 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                  grid_region=grid, mask_region=ds.region,
                  time.trim.mask=fut.time.trim.mask, 
@@ -496,8 +498,13 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
 #regression testing scripts parsing stdout
 #message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
 message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
-corr.future <- cor(as.vector(ds$esd.final), as.vector(list.fut$clim.in), use='pairwise.complete.obs')
-message('printing corr.future')
-message(corr.future)
-print(sum(is.na(ds$esd.final)))
-print(sum(is.na(list.fut$clim.in)))
+# corr.future <- cor(as.vector(ds$esd.final), as.vector(list.fut$clim.in), use='pairwise.complete.obs')
+# message('printing corr.future')
+# message(corr.future)
+# cor.vector <- c("list.fut$clim.in", "list.hist$clim.in", "list.target$clim.in")
+# for (j in 1:length(cor.vector)){
+#   cor.var <- cor.vector[j]
+#   cor.out <- eval(parse(text=cor.var))
+#   out.cor <- cor(ds$esd.final, cor.out, use='pairwise.complete.obs')
+#   print(paste("ds$esd.final", ",", cor.var, "):", out.cor, sep=""))
+# }
