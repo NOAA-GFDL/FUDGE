@@ -328,8 +328,8 @@ if (args[1]=='na'){
 }
 
 ###More hasty modifications to test against previous results
-adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
-                                 "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA, "qc.inloop"=TRUE, "qc.outloop"=FALSE)
+# adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
+#                                  "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA, "qc.inloop"=TRUE, "qc.outloop"=FALSE)
 #This seems unnesseacary and on the list of things that need to get modified
 #mask.list <- adjust.list
 

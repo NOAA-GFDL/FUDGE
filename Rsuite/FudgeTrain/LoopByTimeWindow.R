@@ -71,9 +71,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
-  #source("../../FudgePreDS/ApplyTemporalMask.R")
-  #source("MaskMerge.R")
-  #source("CrossValidate.R")
+  
   if(mask.struct[[1]]!='na'){
     #If there are masks included:
     mask.data.by.time.window <- TRUE
@@ -94,11 +92,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }else{
     qc.mask <- NULL
   }
-  #   if(create.postproc){
-  #     postproc.out <- rep(NA, downscale.length)
-  #   }else{
-  #     postproc.out <- NULL
-  #   }
   ##Create checkvector to test collision of kfold validation masks
   checkvector <- rep(0, downscale.length)
   #And finally, in order to see internal activity, add the graph options
@@ -125,6 +118,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     }else{
       window.orig <- NA
     }
+    
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
@@ -136,95 +130,87 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }else{
           kfold.orig <- NA
         }
+        #Apply kfold mask to time-trimming mask, if applicable
+        if(length(mask.struct > 3)){
+          use.time.trim.mask <- TRUE
+          kfold.timemask <- ApplyTemporalMask(mask.struct[[4]]$masks[[window]], kfold.masks[[3]]$masks[[kmask]])
+        }else{
+          use.time.trim.mask <- FALSE
+        }
       }else{
         #TODO: Ask someone about how looping over a sinle element slows the code (OR DOES IT?)
         kfold.predict <- window.predict
         kfold.target <- window.target
         kfold.gen <- window.gen
         kfold.orig <- window.orig
+        if(length(mask.struct > 3)){
+          use.time.trim.mask <- TRUE
+          kfold.timemask <- mask.struct[[4]]$masks[[window]]
+        }else{
+          use.time.trim.mask <- FALSE
+        }
+        
       }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
-        if(length(mask.struct) <= 3){
-          #Adjust the values of the downscaled ouptut, if applicable
-          if(s3.adjust){
-            temp.out <- callS3Adjustment(s3.instructions=s3.list, 
-                                            hist.pred = kfold.predict, 
-                                            hist.targ = kfold.target, 
-                                            fut.pred = kfold.gen,  
-                                            s5.instructions=s5.list)
-            s5.instructions <- temp.out$s5.list
-            kfold.target <- temp.out$input$hist.targ
-            kfold.predict <- temp.out$input$hist.pred
-            kfold.gen <- temp.out$input$fut.pred
-            remove(temp.output)
+        #If no time-trimming mask is used
+        #        if(length(mask.struct) <= 3){
+        #Adjust the values of the downscaled ouptut, if applicable
+        if(s3.adjust){
+          temp.out <- callS3Adjustment(s3.instructions=s3.list, 
+                                       hist.pred = kfold.predict, 
+                                       hist.targ = kfold.target, 
+                                       fut.pred = kfold.gen,  
+                                       s5.instructions=s5.list)
+          s5.instructions <- temp.out$s5.list
+          kfold.target <- temp.out$input$hist.targ
+          kfold.predict <- temp.out$input$hist.pred
+          kfold.gen <- temp.out$input$fut.pred
+          remove(temp.output)
+        }
+        #perform downscaling on the series and merge into new vector
+        if(create.ds.out){
+          #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
+          temp.out <- CallDSMethod(ds.method = downscale.fxn,
+                                   train.predict = kfold.predict[!is.na(kfold.predict)], 
+                                   train.target = kfold.target[!is.na(kfold.target)], 
+                                   esd.gen = kfold.gen[!is.na(kfold.gen)], 
+                                   args=downscale.args, 
+                                   ds.var=ds.var)
+        }
+        #And adjust the downscaled output, if applicable
+        if(s5.adjust){
+          if(is.na(kfold.orig)){
+            #If there is ds data being passed in from outside, it gets checked
+            data <- temp.out
+          }else{
+            #otherwise, use the ds values from the run you have just completed
+            #data <- kfold.orig[!is.na(kfold.orig)]
+            data <- temp.out[!is.na(temp.out)]
           }
-          #perform downscaling on the series and merge into new vector
-          if(create.ds.out){
-            #TODO CEW: Should this looping structure be more nested? The assignment to downscale.vec might not be nessecary
-            #print(summary(kfold.predict))
-            #print(summary(kfold.target))
-            temp.out <- CallDSMethod(ds.method = downscale.fxn,
-                                     train.predict = kfold.predict[!is.na(kfold.predict)], 
-                                     train.target = kfold.target[!is.na(kfold.target)], 
-                                     esd.gen = kfold.gen[!is.na(kfold.gen)], 
-                                     args=downscale.args, 
-                                     ds.var=ds.var)
-            downscale.vec[!is.na(kfold.gen)] <- temp.out
-          }
-          #And adjust the downscaled output, if applicable
-          if(s5.adjust){
-            if(is.na(kfold.orig)){
-              #If there is ds data being passed in from outside, it gets checked
-              data <- temp.out
+          temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
+                                       #s5.method=s5.method,s5.args=s5.args,
+                                       data = data, 
+                                       hist.pred = kfold.predict[!is.na(kfold.predict)], 
+                                       hist.targ = kfold.target[!is.na(kfold.target)], 
+                                       fut.pred = kfold.gen[!is.na(kfold.gen)])
+          #create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
+          if(!is.null(temp.out$qc.mask)){
+            if(use.time.trim.mask){
+              qc.mask[!is.na(kfold.timemask)] <- temp.out$qc.mask[!is.na(kfold.timemask)]
             }else{
-              #otherwise, use the ds values from the run you have just completed
-              data <- kfold.orig[!is.na(kfold.orig)]
-            }
-            temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
-                                         #s5.method=s5.method,s5.args=s5.args,
-                                         data = data, 
-                                         hist.pred = kfold.predict[!is.na(kfold.predict)], 
-                                         hist.targ = kfold.target[!is.na(kfold.target)], 
-                                         fut.pred = kfold.gen[!is.na(kfold.gen)])
-            #create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
-            if(!is.null(temp.out$qc.mask)){
               qc.mask[!is.na(kfold.gen)] <- temp.out$qc.mask #A NULL assignment might cause problems here. Second if?
-            }else{
-              #Try not doing anything
             }
-            downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
-            #print("results after adjust section")
-            #print(summary(temp.out$ds.out), digits=6)
+          }else{
+            #Try not doing anything
           }
-          
-          #           if(create.postproc){
-          #             postproc.out[!is.na(kfold.gen)] <- CallPostProcMethod(data=kfold.gen[!is.na(kfold.gen)], 
-          #                                                                   mask=kfold.target[!is.na(kfold.target)], 
-          #                                                                   mask.data=kfold.predict[!is.na(kfold.predict)],
-          #                                                                   pp.method=postproc.method, args=postproc.args)
-          #             print(summary(postproc.out))
-          #             print(length(postproc.out))
-          #             print(length(!is.na(postproc.out)))
-          #           }
+        }
+        #If there is a time-trimming mask, use it here
+        #Assign downscaled output to vector
+        if(use.time.trim.mask){
+          downscale.vec[!is.na(kfold.timemask)] <- temp.out$ds.out[!is.na(kfold.timemask)]
         }else{
-          #If there is a 4th pruning mask (currently only supported by 1 scenario), apply that afterwards
-          #TODO: Test this bit, the masks are going to be significantly more complicated
-          time.trim.mask <- mask.struct[[4]]$masks[[window]]
-          temp.out <- window.gen
-          temp.out[!is.na(temp.out)] <- CallDSMethod(ds.method = downscale.fxn,
-                                                     train.predict = window.predict[!is.na(window.predict)], 
-                                                     train.target = window.target[!is.na(window.target)], 
-                                                     esd.gen = window.gen[!is.na(window.gen)], 
-                                                     args=downscale.args)
-          temp.out2<-ApplyTemporalMask(temp.out, time.trim.mask)
-          if(create.qc.mask){
-            qc.mask[!is.na(time.trim.mask)] <- QCDSValues(data = temp.out.2, qc.test=qc.test,
-                                                          hist.pred = window.predict[!is.na(window.predict)], 
-                                                          hist.targ = window.target[!is.na(window.target)], 
-                                                          fut.pred = window.gen[!is.na(window.gen)])
-          }
-          downscale.vec[!is.na(time.trim.mask)]<-temp.out2[!is.na(temp.out2)]
+          downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
         }
         if(graph){
           if(masklines){

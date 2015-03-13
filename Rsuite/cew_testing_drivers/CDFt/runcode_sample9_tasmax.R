@@ -26,7 +26,7 @@ rm(list=ls())
 	hist.model_1 <- 'MPI-ESM-LR' 
 	hist.freq_1 <- 'day' 
 	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING//GCM_DATA/CMIP5//MPI-ESM-LR/historical/day/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/' 
-	hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc' 
+	hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc' 
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- 20060101 
 	fut.file.end.year_1 <- 20991231 
@@ -37,8 +37,8 @@ rm(list=ls())
 	fut.model_1 <- 'MPI-ESM-LR' 
 	fut.freq_1 <- 'day' 
 	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING//GCM_DATA/CMIP5//MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
-	fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
-        fut.time.trim.mask <- 'na'
+	fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc'
+        fut.time.trim.mask <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 #------------- target -------------------------# 
 	target.file.start.year_1 <- 19610101 
 	target.file.end.year_1 <- 20051231 
@@ -49,15 +49,16 @@ rm(list=ls())
 	target.model_1 <- 'livneh'
 	target.freq_1 <- 'day' 
         target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING//OBS_DATA/GRIDDED_OBS//livneh/historical/day/atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD/'
-	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
+	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc'
+
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'CDFt' 
 	ds.experiment <- 'RRtxp1-CDFt-C34atTestL01K00' 
 	k.fold <- 0 
 	
 #-------------- output -----------------------#
-	output.dir <- '/work/cew//downscaled/MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/RRtxp1-CDFt-C34atTestL01K00/tasmax/RR/OneD/'
-	mask.output.dir <- '/work/cew//downscaled/MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/RRtxp1-CDFt-C34atTestL01K00/tasmax/RR/OneD//tasmax_qcmask/' 
+	output.dir <- '/home/cew/Code/testing/'
+	mask.output.dir <- '/home/cew/Code/testing/' 
 #-------------  custom -----------------------#
         args=list(dev=1,npas='default') 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
@@ -69,7 +70,7 @@ rm(list=ls())
 # ------ Set FUDGE environment ---------------
 	FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
 	#FUDGEROOT <- '/home/a1r/local/opt/fudge//candy-testing/fudge2014/'
-	FUDGEROOT <- '/home/cew/Code/fudge2014'
+	FUDGEROOT <- '/home/cew/Code/fudge2014/'
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 	#BRANCH <- 'candy-testing'
 	BRANCH <- 'anything-but-candy-testing'
