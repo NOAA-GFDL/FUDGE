@@ -177,6 +177,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    esd.gen = kfold.gen[!is.na(kfold.gen)], 
                                    args=downscale.args, 
                                    ds.var=ds.var)
+          #Assign downscaled output to vector
+          if(use.time.trim.mask){
+            downscale.vec[!is.na(kfold.timemask)] <- temp.out[!is.na(kfold.timemask)]
+          }else{
+            downscale.vec[!is.na(kfold.gen)] <- temp.out
+          }
         }
         #And adjust the downscaled output, if applicable
         if(s5.adjust){
@@ -204,14 +210,15 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           }else{
             #Try not doing anything
           }
+          #If there is a time-trimming mask, use it here
+          #Assign downscaled output to vector
+          if(use.time.trim.mask){
+            downscale.vec[!is.na(kfold.timemask)] <- temp.out$ds.out[!is.na(kfold.timemask)]
+          }else{
+            downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
+          }
         }
-        #If there is a time-trimming mask, use it here
-        #Assign downscaled output to vector
-        if(use.time.trim.mask){
-          downscale.vec[!is.na(kfold.timemask)] <- temp.out$ds.out[!is.na(kfold.timemask)]
-        }else{
-          downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
-        }
+
         if(graph){
           if(masklines){
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
