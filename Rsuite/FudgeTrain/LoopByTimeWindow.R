@@ -131,7 +131,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           kfold.orig <- NA
         }
         #Apply kfold mask to time-trimming mask, if applicable
-        if(length(mask.struct > 3)){
+        if(length(mask.struct) > 3){
           use.time.trim.mask <- TRUE
           kfold.timemask <- ApplyTemporalMask(mask.struct[[4]]$masks[[window]], kfold.masks[[3]]$masks[[kmask]])
         }else{
@@ -143,7 +143,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         kfold.target <- window.target
         kfold.gen <- window.gen
         kfold.orig <- window.orig
-        if(length(mask.struct > 3)){
+        if(length(mask.struct) > 3){
           use.time.trim.mask <- TRUE
           kfold.timemask <- mask.struct[[4]]$masks[[window]]
         }else{
