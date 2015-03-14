@@ -229,7 +229,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         out_dir = out_dir.strip()
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
-	sbase = sroot+"/scripts/"+ds_region+"/"+experiment+"/"
+	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
         print "qc_mask....... ",qc_mask
@@ -541,8 +541,8 @@ def main():
 
 ############### crte ppscript #################
         print(sbase+"/postProc/aux/")
-
-        os.makedirs(sbase+"/postProc/aux/")
+        if not os.path.exists(sbase+"/postProc/aux/"):
+        	os.makedirs(sbase+"/postProc/aux/")
         ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
 	try:
   		ppfile = open(ppbase, 'w')
