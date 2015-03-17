@@ -318,6 +318,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		outdir = out_dir
             #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
+	    print "Script directory is:",sbase  
 #new
 	    if (pp == False):	
                     	for lon in range(int(lons),int(lone)):
