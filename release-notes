@@ -1,11 +1,17 @@
 03/17/2015
 (a1r)
-
 1. fudgelist outputs script.base and also prints script directory to feed clobber. 
+(cew)
+1. utils/bin/cleanup_script.csh cleans up script directories based off of project_ID, 
+as determined by the script directory 
 
 03/14/2015
 (a1r)
 1. bugfix, makedirs and scripts directory to use project_ID (and not spat_mask_ID)
+
+03/13/2014
+(cew)
+1. bugfix for using a time trimming mask in the R code
 
 02/26/2015
 (a1r)

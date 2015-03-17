@@ -20,11 +20,18 @@ if ( `echo $HOSTNAME | grep "an"` == "" ) then
 endif
 
 set temp_file  = "$TMPDIR/fudgelist.tmp"
+set tmp_out = "$TMPDIR/fudgelist.out"
 
-set scriptdir=`( python "/$BASEDIR/bin/fudgeList.py" -i $xmlpath -o $temp_file -f ) | grep "sroot"` 
+python "/$BASEDIR/bin/fudgeList.py" -i $xmlpath -o $temp_file -f > $tmp_out
+
+#set scriptdir=`( python "/$BASEDIR/bin/fudgeList.py" -i $xmlpath -o $temp_file -f ) | grep sroot`
+set scriptdir=`grep "Script directory is" $tmp_out`
+echo $scriptdir
 set scriptcount=`echo "$scriptdir" | wc -m`
-set scriptcount=`expr $scriptcount - 8`
+set scriptcount=`expr $scriptcount - 21`
 set scriptdir=`echo $scriptdir | tail -c $scriptcount`
+
+set scriptdir=`dirname "$scriptdir"`
 echo $scriptdir
 
 set outdir=`grep 'output.path' $temp_file`
@@ -45,8 +52,9 @@ echo $exp_name
 #set regcount=`echo $project | wc -m`
 #set regcount=`expr $regcount - 12` #'project_ID = '
 #set project=`echo $project | tail -c $regcount`
-set project = `echo $exp_name | head -c 2`
-echo "the project ID is: $project"
+
+#set project = `echo $exp_name | head -c 2`
+#echo "the project ID is: $project"
 
 
 
@@ -55,9 +63,9 @@ if ( $opt == 'd') then
 		rm -r $outdir
 	else echo "$outdir could not be removed; does not exist. Has the experiment been run yet?"
 	endif
-	if (-e $scriptdir/scripts/$project/$exp_name) then
-		rm -r $scriptdir/scripts/$project/$exp_name
-	else echo "$scriptdir/scripts/$project/$exp_name could not be removed; does not exist"
+	if (-e $scriptdir/$exp_name) then
+		rm -r $scriptdir/$exp_name
+	else echo "$scriptdir/$exp_name could not be removed; does not exist"
 	endif
 else if ($opt == 'm') then
 	echo "Move option activated; move in progress"
@@ -67,7 +75,7 @@ else if ($opt == 'm') then
 	while( $is_written == 3)
 		set suffix="~$num_exp_existing"
 		set new_outdir="$outdir$suffix"
-		set new_scriptdir="$scriptdir/scripts/$project/$exp_name$suffix"
+		set new_scriptdir="$scriptdir/$exp_name$suffix"
 		if (-e $new_scriptdir | -e $new_outdir) then
 			echo "Error in move option: dir $new_outdir or dir $new_scriptdir already exists. Trying a new name" 
 			set num_exp_existing=`expr $num_exp_existing + 1`
@@ -83,9 +91,9 @@ else if ($opt == 'm') then
 				echo "No directory $outdir found; no move performed"
 				set outdir_written=0
 			endif
-			if (-e $scriptdir/scripts/$project/$exp_name) then
-				echo "Moving older ouput from $scriptdir/scripts/$project/$exp_name to $new_scriptdir"
-				mv $scriptdir/scripts/$project/$exp_name $new_scriptdir
+			if (-e $scriptdir/$exp_name) then
+				echo "Moving older ouput from $scriptdir/$exp_name to $new_scriptdir"
+				mv $scriptdir/$exp_name $new_scriptdir
 				set scriptdir_written=$status
 			else
 				echo "No directory $scriptdir found; no move performed"
