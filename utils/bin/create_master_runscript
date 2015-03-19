@@ -51,7 +51,7 @@ echo "#PBS -r y " >> ${masterloc}
 echo "#PBS -j oe " >> ${masterloc}
 echo "#PBS -N fudge_master " >> ${masterloc}
 echo "#PBS -E " >> ${masterloc}  
-echo "#PBS -o /work/$USER/fudge/stdout/fudge."'${MOAB_JOBNAME}.${MOAB_JOBID} '  >> ${masterloc}
+echo "#PBS -o $base/log/fudge."'${MOAB_JOBNAME}.${MOAB_JOBID} '  >> ${masterloc}
 
 echo "#PBS -q batch " >> ${masterloc}
 

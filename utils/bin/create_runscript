@@ -45,7 +45,7 @@ set ctr=1
 ##########
 set logdir=$sbasedir/log/
 mkdir -p $logdir 
-set joblog=/work/$USER/fudge/stdout/
+set joblog = $logdir # /work/$USER/fudge/stdout/
 mkdir -p $joblog
 
 foreach i (`seq $lon_start 1 $lon_end`)
