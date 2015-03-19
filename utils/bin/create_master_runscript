@@ -22,6 +22,13 @@ set ppn = $argv[9]
 #new msub option
 set msub = $argv[10]
 #new ends
+set dev = "off" #if dev option is off then tstamp unique does not kick in
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = ".$tstamp"
+endif
 if ( $lon_end < $lon_start ) then
  echo "Err:  Please check second argument: lon_end  should be greater than lon_start"
  exit
@@ -42,7 +49,7 @@ while ( $lon_start <= $lon_end )
 mkdir -p /work/$USER/fudge/stdout/	
 set sub_lon_end=`expr $sub_lon_end - 1` 
 #### script header
-set masterloc=$basedir/master_script_${sub_lon_start}_${sub_lon_end}.${tstamp}
+set masterloc=$basedir/master_script_${sub_lon_start}_${sub_lon_end}${tsuffix}
 echo "#\!/bin/tcsh " > ${masterloc}
 echo "#PBS -S /bin/tcsh " >> ${masterloc}
 #echo "#PBS -d /home/a1r " >> ${masterloc}
@@ -74,7 +81,7 @@ foreach i (`seq $sub_lon_start 1 $sub_lon_end`)
 ########
 
   if ( $i != $sub_lon_end ) then
-echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix"."$tstamp &" >> ${masterloc}
+echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix""$tsuffix" &" >> ${masterloc}
 set val=`expr $sub_lon_start + 1 \* $cnt16 \+ $cnt16 \- 1`##
 
 ########
@@ -84,7 +91,7 @@ set val=`expr $sub_lon_start + 1 \* $cnt16 \+ $cnt16 \- 1`##
        endif
 
   else
-echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix"."$tstamp &" >> ${masterloc}
+echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix""$tsuffix &" >> ${masterloc}
           echo "wait" >> ${masterloc}
   endif
   if ( $i != $sub_lon_end ) then
