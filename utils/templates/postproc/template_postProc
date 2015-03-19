@@ -5,7 +5,7 @@
 #PBS -j oe
 #PBS -N fudge_postProc
 #PBS -E
-#PBS -o /work/$USER/fudge/stdout/fudge_postProc_.m${MOAB_JOBNAME}.${MOAB_JOBID}
+#PBS -o <LOGDIR>/fudge_postProc_.m${MOAB_JOBNAME}.${MOAB_JOBID}
 #PBS -q batch
 
 	echo "Setting FUDGE environment.."
