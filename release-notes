@@ -1,3 +1,9 @@
+03/20/2015
+(a1r)
+
+1. remove timestamps from runscripts,master scripts,runcode and pp scripts as per esd team's request
+2. Moab standard out logs moved to experiment scripts log directory as per esd team's request.   
+
 03/17/2015
 (a1r)
 1. fudgelist outputs script.base and also prints script directory to feed clobber. 
