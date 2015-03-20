@@ -169,10 +169,8 @@ if (($region == 'US48') | ($region == 'PM')) then
 echo "skip.."#c set argpath = `echo $argpath $prepath/${prefix}.I94[1]_J${lats}-${late}.nc`
 endif
 echo "continue.."
-##source /home/a1r/ds/bin/cattool/auxfiles/loadit
-#source /home/a1r/GESDF/pp/auxfiles/loadit
-
 source ${auxfiledir}/loadit
+
 #echo "ncecat  $argpath $OFILE"
 ############if spat mask is na ############
 if ($grid == 'na') then

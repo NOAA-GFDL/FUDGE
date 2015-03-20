@@ -172,8 +172,8 @@ endif
 echo "  "
 #echo "==========================================================================="
 echo "source env"
-source ${auxfiledir}/loadit
-echo" source ${auxfiledir}/loadit"
+#uselesssource ${auxfiledir}/loadit
+#uselessecho " source ${auxfiledir}/loadit"
 
 # check for output file & if there, remove tmp file and correct offsets
 \ls -l ${prefix}.nc
