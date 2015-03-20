@@ -81,7 +81,7 @@ foreach i (`seq $sub_lon_start 1 $sub_lon_end`)
 ########
 
   if ( $i != $sub_lon_end ) then
-echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix""$tsuffix" &" >> ${masterloc}
+echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix"$tsuffix" &" >> ${masterloc}
 set val=`expr $sub_lon_start + 1 \* $cnt16 \+ $cnt16 \- 1`##
 
 ########
