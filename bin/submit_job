@@ -4,11 +4,16 @@ if ($#argv == 0) then
  echo "Please provide 4 arguments: master_script_dir lon_start lon_end timeSuffix. Eg: submit_job /home/a1r/gitlab/fudge//main/scripts/GFDL-ARRMv1-FutUS48-xval-60lo0/tasmax/master/60L0/ 748 941 2014-05-01.10:43:23.858305 "
  exit
 endif
-echo "Submitting jobs for downscaling lon slice " $argv[2] "to " $argv[3]" , with suffix "$argv[4]
+echo "Submitting jobs for downscaling lon slice " $argv[2] "to " $argv[3] 
 set basedir=$argv[1]
 set lon_start=$argv[2]
 set lon_end=$argv[3]
-set tstamp=$argv[4]
+if ($#argv == 4) then
+	set tstamp=$argv[4]
+	set tsuffix = ".${tstamp}"
+else
+	set tstamp=""
+	set tsuffix = ""
 set i=1
 set cnt16=1
 
@@ -25,7 +30,7 @@ while ( $lon_start <= $lon_end )
          set inc=`expr $inc + 1`
  end
  set sub_lon_end=`expr $sub_lon_end - 1`
- set masterloc=$basedir/master_script_${sub_lon_start}_${sub_lon_end}.${tstamp}
+ set masterloc=$basedir/master_script_${sub_lon_start}_${sub_lon_end}${tsuffix}
  echo $masterloc
  #msub_string from MJN's 
  if ($?NEMSemail)  then

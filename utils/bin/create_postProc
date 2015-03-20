@@ -7,16 +7,27 @@ endif
 #####################################################
 set postproc_cmd = $argv[1]
 set sbasedir = $argv[2]
+set logdir = $sbasedir/log
 set basedir = $argv[3]
 set tstamp = $argv[4]
 set branch = $argv[5]
-set codepath=$sbasedir/postProc/postProc_command_$tstamp
+############ dev
+set dev = "off"
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = "_$tstamp"
+endif
+#############dev
+set codepath=$sbasedir/postProc/postProc_command$tsuffix
 mkdir -p $sbasedir/postProc/
 
 set template = $basedir/utils/templates/postproc/template_postProc
  if (-e $postproc_cmd) then
   unalias cp
   cp -f $template $codepath
+  sed -i 's%<'LOGDIR'>%'$logdir% $codepath
   sed -i 's%<'POSTPROC_CMD'>%'$postproc_cmd% $codepath
   sed -i 's%<'BRANCH'>%'fudge/$branch% $codepath
   echo "postProc command script location: $codepath"

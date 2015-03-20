@@ -45,12 +45,23 @@ set ctr=1
 ##########
 set logdir=$sbasedir/log/
 mkdir -p $logdir 
-set joblog=/work/$USER/fudge/stdout/
+set joblog = $logdir # /work/$USER/fudge/stdout/
 mkdir -p $joblog
 
+############ dev
+set dev = "off"
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = ".$tstamp"
+endif
+
+
+#############dev
 foreach i (`seq $lon_start 1 $lon_end`)
  set counter=$i
- set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix"."$tstamp 
+ set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix""$tsuffix 
  echo "#\!/bin/tcsh " > $runpath
  echo "#PBS -S /bin/csh " >> $runpath 
  echo "#PBS -l nodes=1:ppn=1,walltime=6:00:00 "  >> $runpath 
@@ -122,7 +133,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
 #Add line to create mask directory
 echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
 #end
-echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix"."${tstamp} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix"."${tstamp} &"  >> $runpath
+echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &"  >> $runpath
  echo "wait " >> $runpath 
 # Add lines to gcp output from VFTMP to /arch 
 
