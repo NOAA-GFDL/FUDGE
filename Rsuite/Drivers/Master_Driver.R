@@ -28,10 +28,6 @@ options(error=error.handler.function, warn = 1, showErrorCalls=TRUE)
 ###after this point. Probably not a component of a --vanilla run. 
 ###But it unquestionably simplifies debugging.
 
-#message("Deliberately attempting to break code")
-#message(stillfakevar)
-
-
 #------- Add libraries -------------
 LoadLib(ds.method)
 #-------End Add libraries ---------
@@ -146,6 +142,9 @@ qc.maskopts <- qc.mask.check(post.ds.train, post.ds)
 pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
 pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 #Generate metadata references for the pre- and post-processing functions
+#Things that contain an ADJUSTMENT
+post_ds_adj <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+
 
 
 message("Checking post-processing/section5 adjustments")
@@ -327,15 +326,6 @@ if (args[1]=='na'){
   ds.args=args
 }
 
-###More hasty modifications to test against previous results
-# adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
-#                                  "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA, "qc.inloop"=TRUE, "qc.outloop"=FALSE)
-#This seems unnesseacary and on the list of things that need to get modified
-#mask.list <- adjust.list
-
-# loop.postproc <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
-# loop.preproc <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
-
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
@@ -347,16 +337,8 @@ if (args[1]=='na'){
 print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
-##TODO a1r: can be deduced from future train time dimension length or esdgen's ##
-#time.steps <- 34333 # No.of time steps in the downscaled output.
-#time.steps <- dim(ds$esd.final)[3]
-##
+
 ############## end call TrainDriver ######################################
-
-# ds.vector <- TrainDriver(i.start,loop.start,loop.end,target.masked.in,hist.masked.in,fut.masked.in,ds.method,k=0,time.steps)
-# esd.final <- ds.vector 
-#plot(fut.clim.in,esd.output,xlab="fut.esdGen.predictor -- Large-scale data", ylab="ds -- Downscaled data")
-
 # + + + end Training + + +
 
 
@@ -418,7 +400,7 @@ label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.yea
 if(Sys.getenv("USERNAME")=='cew'){
   git.needed=TRUE
 }else{
-  #Someone else is running it, modules are available and preumably git branch not needed
+  #Someone else is running it, modules are available and presumably git branch not needed
   git.needed=FALSE
 }
 
@@ -436,10 +418,8 @@ WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.
 #              post.ds.adjustments=c(post.ds.train, post.ds)
              is.pre.ds.adjust=(length(pre_ds) > 0),
              pre.ds.adjustments=pre_ds,
-             is.post.ds.adjust=(length(post_ds) > 0),
-             post.ds.adjustments=post_ds)
-
-#print(paste('Downscaled output file:',ds.out.filename,sep=''))
+             is.post.ds.adjust=(length(post_ds_adj) > 0),
+             post.ds.adjustments=post_ds_adj)
 message(paste('Downscaled output file:',ds.out.filename,sep=''))
 #}
 
@@ -472,6 +452,8 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
                               lname=paste('QC Mask')
     )
     #For now, patch the variables in here until se get s5 formalized in the XML
+#     message("printing the qc arguments:")
+#     message(paste(qc.maskopts$qc.args, sep=" "))
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                  configURL,label.validation,institution='NOAA/GFDL',
                  version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
@@ -488,8 +470,8 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
 #                  post.ds.adjustments=c(post.ds.train, post.ds)
                  is.pre.ds.adjust=(length(pre_ds) > 0),
                  pre.ds.adjustments=pre_ds,
-                 is.post.ds.adjust=(length(post_ds) > 0),
-                 post.ds.adjustments=post_ds)
+                 is.post.ds.adjust=(length(post_ds_adj) > 0),
+                 post.ds.adjustments=post_ds_adj)
     message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }
 #}
@@ -498,9 +480,7 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
 #regression testing scripts parsing stdout
 #message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
 message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
-# corr.future <- cor(as.vector(ds$esd.final), as.vector(list.fut$clim.in), use='pairwise.complete.obs')
-# message('printing corr.future')
-# message(corr.future)
+
 # cor.vector <- c("list.fut$clim.in", "list.hist$clim.in", "list.target$clim.in")
 # for (j in 1:length(cor.vector)){
 #   cor.var <- cor.vector[j]

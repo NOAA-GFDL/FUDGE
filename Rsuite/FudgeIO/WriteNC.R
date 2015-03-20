@@ -92,11 +92,13 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
                                      "time"=downscale.tseries) #There should probably be an error here, but not sure what it would be
         }
       }
+      print("printing var units")
+      print(attr(var.data[[var]], "units"))
       var.dat[[var]] <- ncvar_def(var, #var.data[[v]], #Don't forget to add the data in somewhere 
                                   units=attr(var.data[[var]], "units"), #Add check for adding units back in if not present
                                   #units="",
                                   dim=var.dimlist, 
-                                  missval=as.numeric(attr(var.data[[var]], "missval") ), #Add check for this as well. 
+                                  #missval=as.numeric(attr(var.data[[var]], "missval") ), #Add check for this as well. 
                                   longname = attr(var.data[[var]], "longname"), 
                                   prec = attr(var.data[[var]], "prec") #This oen gave me hives last time.
                                   )
@@ -112,7 +114,7 @@ WriteNC <-  function(filename,data.array,var.name,xlon,ylat,prec='double', missv
       message(paste("adding", loop.var, "and attributes"))
       ncvar_put(nc.obj, var.dat[[loop.var]], var.data[[loop.var]])
       all.att.list <- attributes(var.data[[loop.var]])
-      all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "missval", "longname", "prec", "dim", "dimids"))]
+      all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "longname", "prec", "dim", "dimids"))] #"missval", 
       if(length(all.att.list) > 0){
         for (at in 1:length(all.att.list)){
           ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])

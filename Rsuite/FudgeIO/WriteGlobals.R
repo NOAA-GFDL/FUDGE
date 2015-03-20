@@ -141,7 +141,7 @@ WriteGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(is.qcmask){
     #More section 5 stuff
-    info <- paste(info, "Arguments used in calculation of the QC mask: ", qc.args, "; ", sep="")
+    info <- paste(info, "Arguments used in calculation of the QC mask: ", paste(qc.args, collapse=","), "; ", sep="")
   }
   if(time.trim.mask!='na'){
     info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")

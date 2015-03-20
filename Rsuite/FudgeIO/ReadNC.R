@@ -121,9 +121,10 @@ get.space.vars <- function(nc.object, var){
       spat.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
       #Grab the bits used to build the vars later
       att.vector <- c(nc.object$var[[var.loop]]$units, nc.object$var[[var.loop]]$longname, 
-                      nc.object$var[[var.loop]]$missval, nc.object$var[[var.loop]]$prec)
-      att.vector[5] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",")
-      names(att.vector) <- c("units", "longname", "missval", "prec", "dimids")
+                      #nc.object$var[[var.loop]]$missval, 
+                      nc.object$var[[var.loop]]$prec)
+      att.vector[4] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",") #formerly 5
+      names(att.vector) <- c("units", "longname", "prec", "dimids") #"missval", 
       att.vector[att.vector=='int'] <- "integer"
       for (a in 1:length(att.vector)){
         attr(spat.vars[[var.loop]], which=names(att.vector)[[a]]) <- att.vector[[a]]
@@ -173,9 +174,10 @@ get.time.vars <- function(nc.object, var){
         time.vars[[var.loop]] <- ncvar_get(nc.object, var.loop, collapse_degen=FALSE)
         #Grab bits needed to construct vars later; store as attributes
         att.vector <- c(nc.object$var[[var.loop]]$units, nc.object$var[[var.loop]]$longname, 
-                        nc.object$var[[var.loop]]$missval, nc.object$var[[var.loop]]$prec)
-        att.vector[5] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",")
-        names(att.vector) <- c("units", "longname", "missval", "prec", "dimids")
+                        #nc.object$var[[var.loop]]$missval, 
+                        nc.object$var[[var.loop]]$prec)
+        att.vector[4] <- paste(names(nc.object$dim)[(nc.object$var[[var.loop]]$dimids)+1], collapse=",") #formerly 
+        names(att.vector) <- c("units", "longname", "prec", "dimids") #"missval", 
         att.vector[att.vector=='int'] <- "integer"
         for (a in 1:length(att.vector)){
           attr(time.vars[[var.loop]], which=names(att.vector)[[a]]) <- att.vector[[a]]
