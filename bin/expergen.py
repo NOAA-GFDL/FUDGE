@@ -3,6 +3,7 @@ import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
 import sys, subprocess
+import fudgeList
 from subprocess import PIPE 
 import optparse
 from optparse import OptionParser
@@ -93,11 +94,7 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
                  ind = 3
                 hi_model = hi[ind]
                 hi_exp = hi[ind+1]
-                if(hi[ind+2] != 'day'):
-                 ind = ind-1
-                 hi_freq = ''
-                else:
-                 hi_freq = hi[ind+2]
+                hi_freq = hi[ind+2]
                 hi_realm = hi[ind+3]
                 hi_mip = hi[ind+4]
                 hi_rip = hi[ind+5]
@@ -232,9 +229,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         out_dir = out_dir.strip()
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
-	sbase = sroot+"/scripts/"+ds_region+"/"+experiment+"/"
+	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
+        print "qc_mask....... ",qc_mask
 	adjust_out = checkTags(dictParams,'adjust_out')
 	#adjust_out = "na"
 	qc_varname = checkTags(dictParams,'qc_varname')
@@ -320,6 +318,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		outdir = out_dir
             #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
+	    print "Script directory is:",sbase  
 #new
 	    if (pp == False):	
                     	for lon in range(int(lons),int(lone)):
@@ -467,6 +466,7 @@ def main():
 			break 
 	    else:
 		   print "scriptdir "+sd+" does not exist. Looks like a clean slate "
+        #print  "hist_freq"+hist_freq
         script1Loc = basedir+"/utils/bin/create_runcode"
         make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
         make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
@@ -482,7 +482,7 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"' 
-	#cprint make_code_cmd
+	print make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
@@ -538,29 +538,65 @@ def main():
 	shutil.copy2(uinput, cdir)
         print "Config XML saved in ",cdir 
         print "RunScripts will be saved under:",sbase
-	ppbase = sbase+"/postProc_command"
-	try:
-	  ppfile = open(ppbase, 'w')
-	  pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
-	  ppfile.write(pp_cmnd)
-	  ppfile.close()
-	except:
-	  print "Unable to create postProc command file. You may want to check your settings."
-	print "postProc command will be saved under:",ppbase
 	print "----See readMe in fudge2014 directory for the next steps----"
 
 ############### crte ppscript #################
-	ppbase = sbase+"/postProc_command"
+	dev = "off" 
+        print(sbase+"/postProc/aux/")
+        if not os.path.exists(sbase+"/postProc/aux/"):
+        	os.makedirs(sbase+"/postProc/aux/")
+        if (dev == "off"):
+		tsuffix = ""
+        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"
+	else:
+		tsuffix = "_"+tstamp
+                ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
 	try:
   		ppfile = open(ppbase, 'w')
-  		pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v   "+target+","+target+"_qcmask\n"
+#check if qc_mask is relevant  
+		if(qc_mask != 'off'):
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
+	 	else:
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+"\n"
   		ppfile.write(pp_cmnd)
   		ppfile.close()
 	except:
   		print "Unable to create postProc command file. You may want to check your settings."
-	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)" 
-	print "\033[1;42m Please use this script to run post post-processing, postProc when downscaling jobs are complete \033[1;m",ppbase
-##################################################
+		print create_pp_cmd
+        if(os.path.exists(ppbase)):
+######################### write postProc_job to be used ############################
+                ppLoc = basedir+"/utils/bin/"+"create_postProc"
+                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" "+tstamp+" "+branch
+                print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+                p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+                output4, error4 = p4.communicate()
+                if(p4.returncode != 0):
+                        print "Step4:!!!! FAILED !!!!, please contact developer."
+                        print output4, error4
+                        sys.exit(-4)
+                print output4, error4
+                print "4- completed"
+                print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+                print "----------------------------------------"
+		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
+                try:  
+   			NEMSemail = os.environ["NEMSemail"]
+                        print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+tsuffix
+		except KeyError: 
+   			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
+			print "msub "+sbase+"postProc/postProc_command"+tsuffix
+	else:
+		print "postProc_command cannot be created. postProc_source does not exist"
+################ step 5 fudgeList invocation ##############################################
+        slogloc = sbase+"/"+"experiment_info.txt"
+        fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        out, err = f.communicate()
+        #print "fudgeList out", out
+        #if err is not None:
+        #       print "fudgeList err", err
+        print "Summary Log File: ", slogloc
+####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc

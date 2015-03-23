@@ -328,8 +328,8 @@ if (args[1]=='na'){
 }
 
 ###More hasty modifications to test against previous results
-adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
-                                 "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA, "qc.inloop"=TRUE, "qc.outloop"=FALSE)
+# adjust.list <- list("adjust.methods"='na', "adjust.args"=NA, "adjust.pre.qc"=NA, "adjust.pre.qc.args"=NA, 
+#                                  "qc.check"=FALSE, "qc.method"=NA,"qc.args"=NA, "qc.inloop"=TRUE, "qc.outloop"=FALSE)
 #This seems unnesseacary and on the list of things that need to get modified
 #mask.list <- adjust.list
 
@@ -424,7 +424,8 @@ if(Sys.getenv("USERNAME")=='cew'){
 
 WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
              configURL,label.validation,institution='NOAA/GFDL',
-             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
+                                                                                               ds.method, ds.experiment), 
              ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
              grid_region=grid, mask_region=ds.region,
              time.trim.mask=fut.time.trim.mask, 
@@ -473,7 +474,8 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
     #For now, patch the variables in here until se get s5 formalized in the XML
     WriteGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                  configURL,label.validation,institution='NOAA/GFDL',
-                 version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title="CDFt tests in 1^5", 
+                 version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
+                                                                                                   ds.method, ds.experiment), 
                  ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                  grid_region=grid, mask_region=ds.region,
                  time.trim.mask=fut.time.trim.mask, 
@@ -492,3 +494,21 @@ if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the
   }
 #}
 }
+#Do not change formatting of this: it is used as a flag by two components of the
+#regression testing scripts parsing stdout
+#message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
+message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
+# corr.future <- cor(as.vector(ds$esd.final), as.vector(list.fut$clim.in), use='pairwise.complete.obs')
+# message('printing corr.future')
+# message(corr.future)
+# cor.vector <- c("list.fut$clim.in", "list.hist$clim.in", "list.target$clim.in")
+# for (j in 1:length(cor.vector)){
+#   cor.var <- cor.vector[j]
+#   cor.out <- eval(parse(text=cor.var))
+#   if(length(cor.out) > length(ds$esd.final)){
+#     out.cor <- cor(as.vector(ds$esd.final), as.vector(cor.out)[1:length(ds$esd.final)], use='pairwise.complete.obs')
+#   }else{
+#   out.cor <- cor(as.vector(ds$esd.final)[1:length(cor.out)], as.vector(cor.out), use='pairwise.complete.obs')
+#   }
+#   print(paste("ds$esd.final", ",", cor.var, "):", out.cor, sep=""))
+# }

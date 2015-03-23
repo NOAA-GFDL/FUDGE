@@ -1,5 +1,5 @@
 # Aparna Radhakrishnan 08/04/2014
-ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=FALSE) {
+ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=FALSE, force_3_dimensions=FALSE) {
   #'Reads data from a variable of a netCDF file object
   #'Returns netCDF variable data and, if dim!= 'none', one or more dimensions of that
   #'netCDF object
@@ -10,7 +10,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   #'@param dcount: A vector of integers indicating the count of values to read along the variable (order is X-Y-Z-T).
   #'@param dim: Which dimensions to include in the netCDF object. Can be one of 'temporal', 
   #'which queries the dimension associated with the T axis, 'spatial', which queries the dimensions associated with the
-  #'X and Y axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
+  #'X, Y and Z axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
   #''temporal' returns all variables that reference the T axis underneath the $vars list of the output, and 
   #'
   #'@returns A list containing the following elements: 
@@ -35,6 +35,23 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   clim.in <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
     message('vars obtained')
   }
+    #Fudge currently deals badly with input vectors of more than three dimensions - and the first two
+    #have to be spatial. This will collapse any OTHER degenerate dimensions present.
+    #In the future, this will NOT apply to ensemble dimensions, but we are not there yet by any means.
+    if(length(dim(clim.in)) > 3 && force_3_dimensions){
+      message("Adjusting dimensions to fit the FUDGE framework")
+      #Last dim is always time, first two should always be X and Y
+      dim.adjust <- dim(clim.in)[2:length(dim(clim.in))-1]
+      if(sum(dim.adjust!=1)!=0){ 
+        #If there are any non-degenerate dimensions, throw an error
+        #NOTE: This is not meant to be used with ensemble dims - not yet, anyway
+        stop(paste("Error in ReadNC: The file", attr(nc.object, "filename"), "had a var that could not be adjusted to an x,y,t dimension system", 
+                   "due to one or more non-degenerate dimensions. Please examine the input file and try again."))
+      }else{
+        #Redimension as (x,y,t)
+        dim(clim.in) <- c(dim(clim.in[1:2]), dim(clim.in)[length(clim.in)])
+      }
+    }
   #### get standard name,long name, units if present ####
   attname = 'standard_name'
   cfname <- ncatt_get(nc.object, var.name, attname) 
@@ -46,17 +63,22 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   ###Test code for determining what happens for unitless vars
   #######################################################
   #Control getting the dimensions and other variables in the output file
+  dim.list <- list(dim=list(), vars=list())
   for(d in 1:length(dim)){
     temp.list <- switch(dim[d], 
                         "spatial"=get.space.vars(nc.object, var.name), 
                         "temporal"=get.time.vars(nc.object, var.name), 
+                        "ensemble" = get.ens.dim(nc.object, var.name),
                         #If other arg or "nothing", do nothing
                         list("dim"=list("none"), 'vars'=list("none"))
                         )
+    dim.list$dim <- c(dim.list$dim, temp.list$dim)
+    dim.list$vars <- c(dim.list$vars, temp.list$vars)
+    print(names(dim.list$dim))
   }
   #######################################################
   listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units, 
-                  "dim"=temp.list$dim, 'vars'=temp.list$vars)
+                  "dim"=dim.list$dim, 'vars'=dim.list$vars)
   
   ###Add attributes for later QC checking against each other
   attr(listout, "calendar") <- nc.object$dim$time$calendar
@@ -69,12 +91,14 @@ get.space.vars <- function(nc.object, var){
   #Obtains spatial vars, grid specs and all vars not the main var of interest
   #that depend upon those vars
   #Axes with spatial information
-  axes <- c("X", "Y")
+  message('getting spatial vars')
+  axes <- c("X", "Y", "Z")
   file.axes <- nc.get.dim.axes(nc.object, var)
   if(is.null(file.axes)){
     stop(paste("Error in ReadNC: File", nc.object$filename, "has no variable", var, "; please examine your inputs."))
   }else{
-    spat.axes <- file.axes[file.axes%in%axes]
+    print("Obtaining axis", )
+    spat.axes <- file.axes[file.axes%in%axes] #Here is where the extra Z dim check comes in
     spat.varnames <- names(file.axes[file.axes%in%axes])
   }
   #Obtain any dimensions that reference space
@@ -82,7 +106,9 @@ get.space.vars <- function(nc.object, var){
   for (sd in 1:length(spat.varnames)){
     ax <- spat.axes[[sd]]
     dim <- spat.varnames[[sd]]
-    spat.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)  
+    spat.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)
+    #Make sure that original file is being included, in order to support attribute cloning
+    attr(spat.dims[[dim]], "filename") <- attr(nc.object, "filename")
   }
   #Obtain any dimensions that are not time
   #Obtain any variables that do not reference time
@@ -130,7 +156,9 @@ get.time.vars <- function(nc.object, var){
   for (td in 1:length(time.varnames)){
     ax <- time.axes[[td]]
     dim <- time.varnames[[td]]
-    time.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)  
+    time.dims[[dim]] <- nc.get.dim.for.axis(nc.object, var, ax)
+    #Make sure that original file is being included, in order to support attribute cloning
+    attr(time.dims[[dim]], "filename") <- attr(nc.object, "filename")
   }
   #Obtain any dimensions that are not time
   #Obtain any variables that do not reference time
@@ -171,4 +199,18 @@ obtain.ncvar.dimnames <- function(nc.obj){
   #obtains one of the names of the dimensions of a netcdf 
   #variable
   return(nc.obj[['name']])
+}
+
+get.ens.dim <- function(nc.obj, var.name){
+  message('getting ensemble dimension, if present')
+  ens.dim.name <- "ensmem"
+  if(ens.dim.name%in%names(nc.obj$dim)){
+    print("ensmem present")
+    ensmem=nc.obj$dim$ensmem
+    attr(ensmem, "filename") <- attr(nc.obj, "filename")
+    return(list(dim=list(ensmem=ensmem), vars=list()))
+  }else{
+    print("no dim named ensmem present")
+    return(list(dim=list(), vars=list()))
+  }
 }

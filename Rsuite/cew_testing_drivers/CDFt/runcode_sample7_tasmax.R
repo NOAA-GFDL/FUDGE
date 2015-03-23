@@ -63,7 +63,6 @@ target.time.window <- 'na'
         #ds.method <- 'DeltaSD' 
 #ds.method <- 'EDQM'
 ds.method <- 'EDQMv2'
-#ds.method <- 'EDQMv3'
 	ds.experiment <- paste('PMtx1-', ds.method, '-A18hX01K00', sep="")
 	k.fold <- 0 
 #	pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',pr_threshold_out='us_trace',pr_conserve_out='on')

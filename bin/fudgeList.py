@@ -71,7 +71,10 @@ def fudgeList():
      basedire = basedir	
      esdMethod = method
      varname = target 
-     grid = spat_mask+"../"+region+".nc"
+     if(spat_mask == "na"):
+	grid = "na"
+     else:	
+     	grid = spat_mask+"../"+region+".nc"
      region = ds_region
      outrec = outdir.split('_')
      #amip = outrec[0] 
@@ -146,6 +149,7 @@ def fudgeList():
 							ascii = ascii+"hist.train.end.year_1:"+hist_train_end_time+"\n" 
                                                         ascii = ascii+"fut.train.start.year_1:"+fut_train_start_time+"\n"
                                                         ascii = ascii+"fut.train.end.year_1:"+fut_train_end_time+"\n"
+						        ascii = ascii+"script.base:"+os.path.normpath(sbase)
 
                                                 	logop.write(ascii)
                                                 	logop.close()

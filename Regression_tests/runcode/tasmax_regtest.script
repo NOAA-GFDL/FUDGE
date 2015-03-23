@@ -1,0 +1,43 @@
+#!/bin/tcsh 
+
+source $BASEDIR/utils/bin/init 
+set echo
+#Establish arguments
+set outdir = $1
+set runcode = $2
+set logfile = $3
+
+#Set up spatial masks
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks
+gcp --sync -cd /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks
+gcp --sync -cd /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks
+gcp --sync -cd /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/
+
+#Okay, these mkdirs and the corresponding GCPs are probably going to require hand editing at this point, 
+#but find/replace can do a lot of the lifting to help
+
+#Obs dataset
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD//
+#Historic predictor dataset
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD//
+#Future dataset
+mkdir -p $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp45//atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD//
+
+gcp --sync -cd /archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD//*I250_J31-170.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD//
+gcp -cd /archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical/day/atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD///*19610101-20051231.I250_J31-170.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///OBS_DATA/GRIDDED_OBS//livneh/historical//atmos/day/r0i0p0/v1p2/tasmax/SCCSC0p1/OneD///
+gcp -cd /archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical/day/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD///*19610101-20051231.I250_J31-170.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD///
+gcp -cd /archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD///*20060101-20991231.I250_J31-170.nc $TMPDIR/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp45//atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD///
+
+#This probably is not neccessary, but the next line probably is
+mkdir -p $TMPDIR/$outdir
+
+R --vanilla < $runcode >>& $logfile &
+wait 
+echo tail $logfile
+set dsout = `tail $logfile | grep -oP "Final Downscaled output file location:\K.*"`
+#Copy output to /archive, like a responsible person
+gcp -cd $TMPDIR/$dsout $dsout
+wait

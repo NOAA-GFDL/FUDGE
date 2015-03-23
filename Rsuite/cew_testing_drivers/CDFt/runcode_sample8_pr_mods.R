@@ -28,6 +28,7 @@ hist.freq_1 <- 'day'
 hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///NCPP2013/modified/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/pr/OneD/' 
 #hist.time.window <- 'na' 
 hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/PerfectModel/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
+
 #------------ future predictor(s) -------------# 
 fut.file.start.year_1 <- 2086 
 fut.file.end.year_1 <- 2095 
