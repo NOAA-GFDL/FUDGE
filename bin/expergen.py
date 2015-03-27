@@ -541,10 +541,16 @@ def main():
 	print "----See readMe in fudge2014 directory for the next steps----"
 
 ############### crte ppscript #################
+	dev = "off" 
         print(sbase+"/postProc/aux/")
         if not os.path.exists(sbase+"/postProc/aux/"):
         	os.makedirs(sbase+"/postProc/aux/")
-        ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
+        if (dev == "off"):
+		tsuffix = ""
+        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"
+	else:
+		tsuffix = "_"+tstamp
+                ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
 	try:
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
@@ -572,13 +578,13 @@ def main():
                 print "4- completed"
                 print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
                 print "----------------------------------------"
-		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+tstamp
+		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
                 try:  
    			NEMSemail = os.environ["NEMSemail"]
-                        print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command_"+tstamp
+                        print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+tsuffix
 		except KeyError: 
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-			print "msub "+sbase+"postProc/postProc_command_"+tstamp
+			print "msub "+sbase+"postProc/postProc_command"+tsuffix
 	else:
 		print "postProc_command cannot be created. postProc_source does not exist"
 ################ step 5 fudgeList invocation ##############################################

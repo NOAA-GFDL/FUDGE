@@ -132,7 +132,6 @@ set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.
 #better way to get masklist and options #todo clean up irrelevant options in this
 set masklist = $argv[55]
 echo $masklist
-echo "debug"
 if($masklist == na) then
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":'"na"')
 else
@@ -140,7 +139,15 @@ echo $masklist
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
 endif
 ########################### 
-
+############ dev
+set dev = "off"
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = ".$tstamp"
+endif
+#############dev
 set lon_end = $iend
 set lon_start = $istart
 if ( $lon_end < $lon_start ) then
@@ -157,7 +164,7 @@ set cnter = 1
 set template = $basedir/utils/templates/runcode/template_runcode.R 
 foreach i (`seq $lon_start 1 $lon_end`)
   #set TEMPLATE_LIST = ( $TEMPLATE_LIST "ISUFFIX":${i} )
-  set codepath=$codeprefix/code.$TARGET.$dexper.I$i"_"$jrange"."$tstamp
+  set codepath=$codeprefix/code.$TARGET.$dexper.I$i"_"$jrange""$tsuffix
   cp $template $codepath
   sed -i 's%<'ISUFFIX'>%'$i% $codepath
   foreach TEMPLATE ($TEMPLATE_LIST)
