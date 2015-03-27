@@ -16,15 +16,16 @@ set auxfiledir = $5 #new
 set dversion = $6 #new
 if ($dversion == "na") then
         set dversion = ""
-        echo "sdW Versioning info being removed...................."
+        #echo "sdW Versioning info being removed...................."
 endif
 set drs = $7
 set obs = $8 #being passed 
 set grid = $9
+set sgrid = $10#spatmaskname 
 #set drs = $8
 #set obs = "OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)" # use as arg TODO
 set simple = 0
-echo "debug ....."
+#echo "debug ....."
 #set exp_config_url = "http://gfdl.noaa.gov/esd_experiment_configs"
 if (($AARMVAR == "tasmax") || ($AARMVAR == "tasmin")) then
 set maskswitch = "on" ####saving mask fields 
@@ -351,7 +352,7 @@ ${TMPCMIPNAME}@units = ${AARMVAR}@units;
 
 EOF
 
-set echo
+unset echo
 # prepare new dimension variables
 ncap2 -hv -S refine.nco $IFILE refine.nc
 set exitcode = $?
@@ -360,7 +361,7 @@ if ($exitcode == 1) then
         echo "QUITTING.."
         exit 1 
 endif
-echo "done done"
+#echo "done done"
 ##############################################
 if (( ${AARMVAR} != "pr") & (( ${METHOD} != "GFDL-deltav1") & (${METHOD} != "GFDL-deltav2")) & (${METHOD} != "GFDL-quanmapv1")) then
  if($maskswitch == "on") then
@@ -396,7 +397,7 @@ endif #add endif here
 endif  
 endif
 ##############################################
-echo "done."
+#echo "done."
 ##########precip special case###############
 if( ${AARMVAR} == "pr" ) then
  echo "ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc"
@@ -408,7 +409,7 @@ ncrename -h -v ${TMPCMIPNAME},${AARMVAR} refine.nc
 endif
 # append new data dimensions into file
 ncks -h -A refine.nc $OFILE
-echo "done.."
+#echo "done.."
 ##########spl case #######################
 if (( ${AARMVAR} != "pr") & (( ${METHOD} != "GFDL-deltav1") & (${METHOD} != "GFDL-deltav2")) & (${METHOD} != "GFDL-quanmapv1")) then
  if($maskswitch == "on") then
@@ -417,7 +418,7 @@ if (( ${AARMVAR} != "pr") & (( ${METHOD} != "GFDL-deltav1") & (${METHOD} != "GFD
 rm -f refine2.nc refine2.nco
 endif
 endif
-echo "done.........."
+#echo "done.........."
 #########################################
 # writing globals
 set today = `date`
@@ -500,7 +501,7 @@ if ($maskswitch == "on") then
  ncatted -O -h -a _FillValue,$MASKNAME,o,f,1e+20 $OFILE
  ncrename -h -v ${MASKNAME},${MASKVAR} $OFILE
 endif
-echo "towards the tail of the processing.."
+#echo "towards the tail of the processing.."
 endif
 ##############################################
 #todo rm thisif ( ${AARMVAR} != "tasmax" ) then 
@@ -512,13 +513,13 @@ ncatted -O -h -a coordinates,$CMIPNAME,a,c,"height" $OFILE
 endif
 
 #add lat lon bounds info
-echo "grid bnds add-on..."
+#echo "grid bnds add-on..."
 ncks -A -h -v lat_bnds $IFILE $OFILE
 ncks -A -h -v lon_bnds $IFILE $OFILE
 ncks -A -h -v time_bnds $IFILE $OFILE
 
 #######################################################
-echo "done"
+#echo "done"
 ## fix time axes
 if($simple == 0) then
 if ( "${tunits}" == 'days since 2083-01-01 00:00:00') then
@@ -531,7 +532,10 @@ ncks -A -h -v time_bnds "${timeInp}" $OFILE
 endif
 #######################################################
 rm -f refine.nc refine.nco
-ncks -O -h -x -v lon1 $OFILE $OFILE 
+if ($sgrid != 'na') then
+ncks -q  -O -h -x -v lon1 $OFILE $OFILE
+endif
+########################################
 echo `date`
 unset echo
 

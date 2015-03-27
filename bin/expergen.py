@@ -18,8 +18,8 @@ list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
 rootdir = ''
-projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
-project = "35" #default TODO get from XML
+projectRoot = "" 
+project = "" 
 ppn = 2 #TODO get from XML custom?
 overwrite = False #default don't overwrite existing output or scripts
 preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
@@ -28,11 +28,11 @@ def checkTags(dictParams,key):
                	 	val = dictParams[key]
 		else:
 			if(key == 'oroot'):
-				#projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/RedRiver/"
-				print "use output root default value", projectRoot
-				val = projectRoot
+				print "output root tag is being deprecated from darkchocolate."
+				sys.exit("error")
+				
                         elif(key == 'sroot'):
-                                print "Script root default value is NOT available at this time. Please specify <script_root> in XML and try again " 
+                                print "Script root default value is being deprecated from darkchocolate. Please specify <script_root> in XML and try again " 
 				sys.exit("error")
 			elif(key == 'outdir'):
 				val = 'na'
@@ -221,7 +221,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    			print "file to be gcpied to vftmp: ",val
 				auxcustom1 = val
 			print "auxcustom1:",auxcustom1
-        projectRoot = checkTags(dictParams,'oroot')
+        #projectRoot = checkTags(dictParams,'oroot')
 	global rootdir 
         rootdir = checkTags(dictParams,'in_root') 
 	outdir = checkTags(dictParams,'outdir')
@@ -439,7 +439,7 @@ def main():
                         print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
                 	sys.exit(-6)
 		    if (overwrite == True):
-			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist>erase</ifpreexist> is turned on, the scripts and any existing OneD output will be overwritten.\033[1;m "
+			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
 			print "Now invoking cleanup utility..........."
 		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
 			if(preexist_glob == 'erase'):

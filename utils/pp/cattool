@@ -96,14 +96,14 @@ while ( $inc > 0 )
    end
 ## c is actually cstart 
 
-echo $endonce
+#cecho $endonce
 
 @ cend = $clast - $endonce 
 if($cend <= $clast) then
-	echo "all points covered, disregard ctail"
+#c	echo "all points covered, disregard ctail"
 	set ctail = "na"
 endif
-   echo $chead"[$sub1]:"$chead"[$sub2]",$ctail,$c":"$cend,$clast"[$clastsub1]"
+#c   echo $chead"[$sub1]:"$chead"[$sub2]",$ctail,$c":"$cend,$clast"[$clastsub1]"
  endif
   @ inc = $inc - 1 
 #######################################################
@@ -142,19 +142,19 @@ if ( $region == 'global' ) then
 else
 #   echo $chead"[$sub1]:"$chead"[$sub2]",$ctail,$c,$cend"[$cendsub1]"
 #18[1]:18[9],na,19,37[0]
-echo "start.."
+#cecho "start.."
 set argpath = "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
-echo "$argpath"
+#cecho "$argpath"
 echo "$prepath/I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
 endif
 
-echo "while starts.. "
+#cecho "while starts.. "
 while ( $c <= $cend)
 	#cecho "loop $c $argpath"
         set argpath = `echo $argpath $prepath/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
         @ c++
 end
-echo "end while"
+#cecho "end while"
 
 if ( $region == 'global' ) then
  set argpath = `echo $argpath $prepath/${prefix}.115[0-2].nc`
@@ -165,17 +165,16 @@ else
 #c echo $argpath
 
 endif 
-if (($region == 'US48') | ($region == 'PM')) then
-echo "skip.."#c set argpath = `echo $argpath $prepath/${prefix}.I94[1]_J${lats}-${late}.nc`
-endif
-echo "continue.."
+#cif (($region == 'US48') | ($region == 'PM')) then
+#cecho "skip.."#c set argpath = `echo $argpath $prepath/${prefix}.I94[1]_J${lats}-${late}.nc`
+#cendif
+#cecho "continue.."
 source ${auxfiledir}/loadit
 
 #echo "ncecat  $argpath $OFILE"
 ############if spat mask is na ############
 if ($grid == 'na') then
 set ctr = 0 
-echo "debg1"
 #cset tmpfile = "tmp_${OFILE}_$ctr.nc"
 set tmpfile = ""
 foreach argh ($argpath)
