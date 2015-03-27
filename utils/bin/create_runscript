@@ -12,8 +12,6 @@ set basedir=$argv[4]
 set varname=$argv[5]
 set cmipvar = $varname
 set method = $argv[6]
-set rundir=$basedir/scripts/$varname/$dexper/runscript 
-mkdir -p $rundir
 #### include varname in input dir path
 ## end of user input
 set counter=1
@@ -34,17 +32,36 @@ set F_FILE_START_YEAR=$argv[17]
 set F_FILE_END_YEAR=$argv[18]
 set SPAT_MASK_DIR=$argv[19]
 set SPAT_REGION=$argv[20]
+set AUX_CUSTOM=$argv[21]
+set TAR_TWIN=$argv[22]
+set HIS_TWIN=$argv[23]
+set FUT_TWIN=$argv[24]
+set sbasedir=$argv[25]  
+set rundir=$sbasedir/runscript
+mkdir -p $rundir
+
 ######################################
 set ctr=1
 ##########
-set logdir=$basedir/scripts/${varname}/${dexper}/log/
+set logdir=$sbasedir/log/
 mkdir -p $logdir 
-set joblog=/work/$USER/fudge/stdout/
+set joblog = $logdir # /work/$USER/fudge/stdout/
 mkdir -p $joblog
 
+############ dev
+set dev = "off"
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = ".$tstamp"
+endif
+
+
+#############dev
 foreach i (`seq $lon_start 1 $lon_end`)
  set counter=$i
- set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix"."$tstamp 
+ set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix""$tsuffix 
  echo "#\!/bin/tcsh " > $runpath
  echo "#PBS -S /bin/csh " >> $runpath 
  echo "#PBS -l nodes=1:ppn=1,walltime=6:00:00 "  >> $runpath 
@@ -58,9 +75,33 @@ foreach i (`seq $lon_start 1 $lon_end`)
  echo "mkdir -p "$logdir  >> $runpath
 
 ## Add lines to gcp input from /arch to VFTMP for processing
- if ($SPAT_MASK_DIR != 'NA/') then
+ if ($SPAT_MASK_DIR != 'na') then
          echo 'mkdir -p $TMPDIR'$SPAT_MASK_DIR  >> $runpath
  endif
+ 
+ if ($AUX_CUSTOM != 'na') then
+	 set auxdir = `dirname $AUX_CUSTOM`
+         echo 'mkdir -p $TMPDIR'$auxdir  >> $runpath
+         echo "gcp --sync -cd $AUX_CUSTOM "'$TMPDIR'$auxdir/  >> $runpath
+ endif
+ ## new performance ##
+ if ($TAR_TWIN != 'na') then
+         set tardir = `dirname $TAR_TWIN`
+         echo 'mkdir -p $TMPDIR'$tardir  >> $runpath
+         echo "gcp --sync -cd $TAR_TWIN "'$TMPDIR'$tardir/  >> $runpath
+ endif
+ if ($HIS_TWIN != 'na') then
+         set hisdir = `dirname $HIS_TWIN`
+         echo 'mkdir -p $TMPDIR'$hisdir  >> $runpath
+         echo "gcp --sync -cd $HIS_TWIN "'$TMPDIR'$hisdir/  >> $runpath
+ endif
+ if ($FUT_TWIN != 'na') then
+         set futdir = `dirname $FUT_TWIN`
+         echo 'mkdir -p $TMPDIR'$futdir  >> $runpath
+         echo "gcp --sync -cd $FUT_TWIN "'$TMPDIR'$futdir/  >> $runpath
+ endif
+ ## new ##
+
  if ($TARGET_DIR != 'NA/') then
 	 echo 'mkdir -p $TMPDIR'$TARGET_DIR  >> $runpath 
  endif
@@ -70,25 +111,35 @@ foreach i (`seq $lon_start 1 $lon_end`)
  if ($FUT_PRED_DIR != 'NA/') then
  echo 'mkdir -p $TMPDIR'$FUT_PRED_DIR  >> $runpath 
  endif
- if ($SPAT_MASK_DIR != 'NA/') then
-        echo "gcp -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+# if ($SPAT_MASK_DIR != 'NA/') then
+#        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+ if ($SPAT_MASK_DIR != 'na') then
+        echo "gcp --sync -cd $SPAT_MASK_DIR/*I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
- 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}0101-${T_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
+ 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
  endif
  if ($HIST_PRED_DIR != 'NA/') then
- 	echo "gcp -cd $HIST_PRED_DIR/*${H_FILE_START_YEAR}0101-${H_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR/  >> $runpath 
+ 	echo "gcp -cd $HIST_PRED_DIR/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR/  >> $runpath 
  endif
  if ($FUT_PRED_DIR != 'NA/') then
- 	echo "gcp -cd $FUT_PRED_DIR/*${F_FILE_START_YEAR}0101-${F_FILE_END_YEAR}1231.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR/  >> $runpath 
+ 	echo "gcp -cd $FUT_PRED_DIR/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR/  >> $runpath 
  endif
         echo "mkdir -p $OUTDIR" >> $runpath
+#Add line to create mask directory
+        echo "mkdir -p $OUTDIR/${cmipvar}_qcmask" >> $runpath
+#end
         echo "mkdir -p "'$TMPDIR'"$OUTDIR/  ">> $runpath
-echo "R --vanilla < $basedir/scripts/${cmipvar}/${dexper}/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix"."${tstamp} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix"."${tstamp} &"  >> $runpath
+#Add line to create mask directory
+echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
+#end
+echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &"  >> $runpath
  echo "wait " >> $runpath 
 # Add lines to gcp output from VFTMP to /arch 
 
  echo "gcp -cd "'$TMPDIR'"$OUTDIR/*.I$counter"_"$dsuffix.nc $OUTDIR/ " >> $runpath 
+#Add a line to copy the mask dir as well
+ echo "gcp -cd "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/*.I$counter"_"$dsuffix.nc $OUTDIR/${cmipvar}_qcmask/ " >> $runpath 
  echo $runpath
  chmod u+x  $runpath
 end

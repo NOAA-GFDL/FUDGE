@@ -86,6 +86,8 @@ set kfold = $argv[39]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "KFOLD":${kfold} )
 set outdir = $argv[40]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "OUTPUT.DIR":"'"${outdir}"'")
+set mask_outdir = $argv[40]"/"${TARGET}_qcmask/
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.OUTPUT.DIR":"'"${mask_outdir}"'")
 set tstamp = $argv[41]
 set esdgen = $argv[42]
 set basedir = $argv[43]
@@ -101,13 +103,51 @@ echo "debug"
 set ds_region = $argv[46]
 echo "debug 2"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "DS.REGION":"'"${ds_region}"'")
-foreach var ($PREDICTOR)
- if ( $var != 'pr' && $var != "tasmax" && $var != "tasmin" ) then
-  echo "WARNING This variable $var is not supported variable at this time. Please check back later. Thank you"
-  exit
- endif
-end
+set auxcustom = $argv[47]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.TIME.TRIM.MASK":"'"${auxcustom}"'")
+set qc_switch = $argv[48]
+#set TEMPLATE_LIST = ( $TEMPLATE_LIST "QC.SWITCH":"'"${qc_switch}"'")
+set qc_varname = $argv[49]
+#set TEMPLATE_LIST = ( $TEMPLATE_LIST "QC.VARNAME":"'"${qc_varname}"'")
+set qc_type = $argv[50] 
+#set TEMPLATE_LIST = ( $TEMPLATE_LIST "QC.METHOD":"'"${qc_type}"'")
+set adjust_out = $argv[51]
+#set TEMPLATE_LIST = ( $TEMPLATE_LIST "ADJUST.OUT":"'"${adjust_out}"'")
+set sbasedir = $argv[52]
+set pr_opts = $argv[53]
+###############################
+if($pr_opts == 'na') then
+ set TEMPLATE_LIST = ( $TEMPLATE_LIST "PR_OPTS":"" )
+else
+ set TEMPLATE_LIST = ( $TEMPLATE_LIST "PR_OPTS":"pr_opts=list("${pr_opts}")" )
+endif
+set branch = $argv[54]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "BRANCH":"'"${branch}"'")
 
+
+#########qclist################
+set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.mask='${qc_switch}'))"
+
+############################### 
+#better way to get masklist and options #todo clean up irrelevant options in this
+set masklist = $argv[55]
+echo $masklist
+if($masklist == na) then
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":'"na"')
+else
+echo $masklist
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":${masklist})
+endif
+########################### 
+############ dev
+set dev = "off"
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = ".$tstamp"
+endif
+#############dev
 set lon_end = $iend
 set lon_start = $istart
 if ( $lon_end < $lon_start ) then
@@ -115,7 +155,7 @@ if ( $lon_end < $lon_start ) then
  exit
 endif
 
-set codeprefix=$basedir/scripts/${TARGET}/${dexper}/runcode/
+set codeprefix=$sbasedir/runcode/
 mkdir -p $codeprefix
 set cnter = 1
 
@@ -124,7 +164,7 @@ set cnter = 1
 set template = $basedir/utils/templates/runcode/template_runcode.R 
 foreach i (`seq $lon_start 1 $lon_end`)
   #set TEMPLATE_LIST = ( $TEMPLATE_LIST "ISUFFIX":${i} )
-  set codepath=$codeprefix/code.$TARGET.$dexper.I$i"_"$jrange"."$tstamp
+  set codepath=$codeprefix/code.$TARGET.$dexper.I$i"_"$jrange""$tsuffix
   cp $template $codepath
   sed -i 's%<'ISUFFIX'>%'$i% $codepath
   foreach TEMPLATE ($TEMPLATE_LIST)

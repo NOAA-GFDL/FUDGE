@@ -38,6 +38,7 @@ rm(list=ls())
 	fut.freq_1 <- <F.FREQ> 
 	fut.indir_1 <- <F.INDIR>
 	fut.time.window <- <F.TIME.WINDOW>
+        fut.time.trim.mask <- <FUT.TIME.TRIM.MASK>
 #------------- target -------------------------# 
 	target.file.start.year_1 <- <T.FILE.START.YEAR> 
 	target.file.end.year_1 <- <T.FILE.END.YEAR> 
@@ -53,12 +54,15 @@ rm(list=ls())
         ds.method <- <METHOD> 
 	ds.experiment <- <DEXPER> 
 	k.fold <- <KFOLD> 
+	<PR_OPTS>
 #-------------- output -----------------------#
 	output.dir <- <OUTPUT.DIR>
+	mask.output.dir <- <MASK.OUTPUT.DIR> 
 #-------------  custom -----------------------#
         <PARAMS> 
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
-
+#-------------- pp ---------------------------#
+        mask.list <- <MASK.LIST>
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
@@ -66,6 +70,7 @@ rm(list=ls())
 #	FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
 	FUDGEROOT <- <FUDGEROOT>
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
+	BRANCH <- <BRANCH>
 ################ call main driver ###################################
 print(paste("START TIME:",Sys.time(),sep=''))
 
@@ -75,20 +80,43 @@ if (TMPDIR == ""){
   stop("ERROR: TMPDIR is not set. Please set it and try it") 
   }
 #########################################################################
+if(spat.mask.dir_1 != 'na'){
 if((grepl('^/archive',spat.mask.dir_1)) | (grepl('^/work',spat.mask.dir_1))){
 spat.mask.dir_1 <- paste(TMPDIR,spat.mask.dir_1,sep='')
-}
+}}
+if(hist.indir_1 != 'na'){
 if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
 hist.indir_1 <- paste(TMPDIR,hist.indir_1,sep='')
-}
+}}
+if(fut.indir_1 != 'na'){
 if((grepl('^/archive',fut.indir_1)) | (grepl('^/work',fut.indir_1))){
 fut.indir_1 <- paste(TMPDIR,fut.indir_1,sep='')
-}
+}}
+if(hist.indir_1 != 'na'){
 if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
 target.indir_1 <- paste(TMPDIR,target.indir_1,sep='')
+}}
+if(target.time.window != 'na'){
+if((grepl('^/archive',target.time.window)) | (grepl('^/work',target.time.window))){
+target.time.window <- paste(TMPDIR,target.time.window,sep='')
+}}
+if(hist.time.window != 'na'){
+if((grepl('^/archive',hist.time.window)) | (grepl('^/work',hist.time.window))){
+hist.time.window <- paste(TMPDIR,hist.time.window,sep='')
+}}
+if(fut.time.window != 'na'){
+if((grepl('^/archive',fut.time.window)) | (grepl('^/work',fut.time.window))){
+fut.time.window <- paste(TMPDIR,fut.time.window,sep='')
+}}
+if(fut.time.trim.mask != 'na'){
+if((grepl('^/archive',fut.time.trim.mask)) | (grepl('^/work',fut.time.trim.mask))){
+fut.time.trim.mask <- paste(TMPDIR,fut.time.trim.mask,sep='')
+}
 }
 output.dir <- paste(TMPDIR,output.dir,sep='')
+mask.output.dir <- paste(TMPDIR,mask.output.dir,sep='')
+
 #########################################################################
 #-------------------------------------------------#
-
-source(paste(FUDGEROOT,'Rsuite/Drivers/',ds.method,'/Driver_',ds.method,'.R',sep=''))
+#source(paste(FUDGEROOT,'Rsuite/Drivers/',ds.method,'/Driver_',ds.method,'.R',sep=''))
+source(paste(FUDGEROOT,'Rsuite/Drivers/','Master_Driver.R',sep=''))

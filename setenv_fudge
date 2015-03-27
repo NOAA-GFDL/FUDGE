@@ -1,7 +1,9 @@
 module load python/2.7.3
-setenv BASEDIR "/home/cew/fudge2014/" 
+setenv BASEDIR "/home/cew/Code/fudge2014/" 
 setenv PYTHONPATH ${BASEDIR}/utils/aux/
-
+alias expergen python $BASEDIR/bin/expergen.py
+alias postProc python $BASEDIR/bin/postProc
+ 
 setenv NEMSemail $USER@noaa.gov
 
 ## If you're running on esd, then customize the above $USER 

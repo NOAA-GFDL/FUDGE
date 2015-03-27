@@ -5,6 +5,7 @@ fut_id = []
 esdgen_id = []
 predictor_list = []
 target = ''
+target_ID = ''
 target_id = []
 class XMLHandler:
   def __init__(self):
@@ -26,6 +27,13 @@ class XMLHandler:
      		print "returns entire tree with tags and attribs:"    
      		for node in tree.iter():
         		print node.tag, node.attrib
+	# Get ifpreexist 
+        for preexist_node in tree.iter('ifpreexist'):
+		preexist = preexist_node.text 
+		preexist = preexist.lstrip()
+		preexist = preexist.rstrip()
+	        dictParams['preexist'] = preexist
+		#print "debug debug ....."+preexist+"test" 
 	# Scan through input tag
 	############# Get generic input attribs ##############################
 	for input_node in tree.iter('input'):
@@ -33,10 +41,22 @@ class XMLHandler:
                 dictParams['predictor_list'] = predictor_list 
     		target = input_node.attrib.get('target')
 		dictParams['target'] = target
-    		spat_mask = input_node.attrib.get('spat_mask')
-    		dictParams['spat_mask'] = spat_mask
-    		maskvar = input_node.attrib.get('maskvar')
-    		dictParams['maskvar'] = maskvar
+                target_ID = input_node.attrib.get('target_ID')
+                dictParams['target_ID'] = target_ID
+                if 'spat_mask' in input_node.attrib:
+    			spat_mask = input_node.attrib.get('spat_mask')
+    			dictParams['spat_mask'] = spat_mask
+                if 'maskvar' in input_node.attrib:
+    			maskvar = input_node.attrib.get('maskvar')
+    			dictParams['maskvar'] = maskvar
+                spat_mask_ID = input_node.attrib.get('spat_mask_ID')
+                dictParams['spat_mask_ID'] = spat_mask_ID 
+                in_root = input_node.attrib.get('in_root')
+                dictParams['in_root'] = in_root 
+		# Get dim info
+                for dim_node in input_node.findall('.//dim'):
+                        dim = dim_node.text
+                        dictParams['dim'] = dim 
 	# Get grid information
 	############## get grid info ######################################### 
 	for grid_node in tree.iter('grid'):
@@ -70,8 +90,9 @@ class XMLHandler:
 			dictParams['hist_train_start_time'] = hist_train_start_time	
                         hist_train_end_time = hist_node.attrib['train_end_time']
 			dictParams['hist_train_end_time'] = hist_train_end_time
-		        hist_time_window = hist_node.attrib['time_window']
-                        dictParams['hist_time_window'] = hist_time_window
+                        if 'time_window' in hist_node.attrib:
+		        	hist_time_window = hist_node.attrib['time_window']
+                        	dictParams['hist_time_window'] = hist_time_window
     			for histid_node in hist_node.findall('.//dataset'):
 #TODO id lists
         			hist_id.append(histid_node.text)
@@ -86,8 +107,9 @@ class XMLHandler:
                         dictParams['target_train_start_time'] = target_train_start_time
                         target_train_end_time = target_node.attrib['train_end_time']
                         dictParams['target_train_end_time'] = target_train_end_time
-                        target_time_window = target_node.attrib['time_window']
-                        dictParams['target_time_window'] = target_time_window
+                        if 'time_window' in target_node.attrib:
+                        	target_time_window = target_node.attrib['time_window']
+                        	dictParams['target_time_window'] = target_time_window
                         for targetid_node in target_node.findall('.//dataset'):
                                 target_id.append(targetid_node.text)
                                 dictParams['target_id'] = target_id
@@ -101,8 +123,12 @@ class XMLHandler:
                         dictParams['fut_train_start_time'] = fut_train_start_time
                         fut_train_end_time = fut_node.attrib['train_end_time']
                         dictParams['fut_train_end_time'] = fut_train_end_time
-                        fut_time_window = fut_node.attrib['time_window']
-                        dictParams['fut_time_window'] = fut_time_window
+                        if 'time_window' in fut_node.attrib:
+                        	fut_time_window = fut_node.attrib['time_window']
+                       	        dictParams['fut_time_window'] = fut_time_window
+			if 'time_trim_mask' in fut_node.attrib:
+                        	fut_time_trim_mask = fut_node.attrib['time_trim_mask']
+                        	dictParams['fut_time_trim_mask'] = fut_time_trim_mask
                 	for futid_node in fut_node.findall('.//dataset'):
                         	fut_id.append(futid_node.text)
                                 dictParams['fut_id'] = fut_id
@@ -115,6 +141,8 @@ class XMLHandler:
 	        dictParams['experiment'] = exper_node.text
             for proj_node in core_node.findall('.//project'):
                 dictParams['project'] = proj_node.text
+            for projID_node in core_node.findall('.//project_ID'):
+                dictParams['project_ID'] = projID_node.text
             for series_node in core_node.findall('.//exper_series'):
                 dictParams['series'] = series_node.text
 
@@ -128,9 +156,30 @@ class XMLHandler:
 	       for rootdir_node in output_node.findall('.//root'):
                   oroot = rootdir_node.text
                   dictParams['oroot'] = oroot 
+               for srootdir_node in output_node.findall('.//script_root'):
+                  sroot = srootdir_node.text
+                  dictParams['sroot'] = sroot
                for version_node in output_node.findall('.//version'):
                   dversion = version_node.text
                   dictParams['dversion'] = dversion 
+               for outdir_node in output_node.findall('.//out_dir'):
+                  out_dir = outdir_node.text
+                  dictParams['out_dir'] = out_dir
+	####### Get pr_opts #########################
+            for pr_node in tree.iter('pr_opts'):
+            	listParams_pr = ''
+            	pr_nparam=0 #total number of custom params
+            	for pr_params_node in pr_node:
+                	pr_nparam = pr_nparam + 1
+                	pr_params = pr_params_node.text
+                	if(pr_nparam > 1):
+                   		delimit = ","
+                	else:
+                   		delimit = ''
+                	listParams_pr = listParams_pr + delimit + ""+pr_params_node.tag+"="+pr_params+""
+                	dictParams['pr_opts']=listParams_pr
+
+        ####### end get pr_opts ###################### 
 	#### Get custom method params ##############
         for custom_node in tree.iter('custom'):
 	    listParams = ''	
@@ -140,17 +189,49 @@ class XMLHandler:
 		params = params_node.text	
 	#	dictParams[params_node.tag]=params
 		if(nparam > 1):
-	           delimit = ";"
+	           delimit = ","
 		else:
 		   delimit = ''	 
 	        #listParams = listParams + delimit + ""+params_node.tag+"='"+params+"'"
 		listParams = listParams + delimit + ""+params_node.tag+"="+params+""
 	        dictParams['params']=listParams
-	if(debug == 1):
-       		 for x,v in dictParams.iteritems():
-                         print x,v
-		
-	return dictParams
 
+        for pp_node in tree.iter('pp'):
+            qcparam=0 #total number of qc paramsargs 
+#req list(mask1=list(type='kdAdjust', adjust.out='on', qc.mask='off')) 
+	    qc_type = list('na')	
+	    listQCParams = "'na'"
+            for qc_node in pp_node.findall('.//qc'):
+	        qc_mask = qc_node.attrib.get('qc_mask')
+		dictParams['qc_mask'] = qc_mask
+                adjust_out = qc_node.attrib.get('adjust_out')
+                dictParams['adjust_out'] = adjust_out 
+		qc_varname = qc_node.attrib.get('name')
+		dictParams['qc_varname'] = qc_varname
+	        qc_type =  qc_node.attrib.get('type')
+		dictParams['qc_type'] = qc_type 
+		## following not tested pass options tag within each qc embedded in pp ##
+	   #     listQCParams = list('na')
+	   #     for qc_params in qc_node.findall('.//options'):
+		for options_node in qc_node:
+			qcparam = qcparam + 1	
+			qcparamstext = options_node.text
+			print qcparamstext,"debug debug ---------" 
+			if(qcparam > 1):
+			   delimit = ","
+			else:
+			   listQCParams = ''	
+			   delimit = ''
+                	listQCParams = listQCParams + delimit + ""+options_node.tag+"="+qcparamstext+""
+			print "listQCParams",listQCParams
+                	dictParams['qcparams'] = listQCParams	
+	    if(qc_type != list('na')):	
+	    	masklist = "list(mask1=list(type='"+qc_type+"',adjust.out='"+adjust_out+"',qc.mask='"+qc_mask+"',qc_options=list("+listQCParams+")))"
+		dictParams['masklists'] = masklist
+	    	print "DEBUG -------",masklist
+        if(debug == 1):
+                 for x,v in dictParams.iteritems():
+                         print x,v
+        return dictParams
 
 

@@ -1,0 +1,74 @@
+<downscale>
+    <input predictor_list = "tasmin" target = "tasmin" spat_mask = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/" maskvar = "red_river_0p1_masks">
+        <grid region = "SCCSC0p1">
+        <!-- lats, late are used to develope filenames -->
+            <lons>181</lons>
+            <lone>370</lone>
+            <!-- lons, lone used by DSTemplate to specify minifiles-->
+            <!-- can theoretically specify one minifile (useful for testing)-->
+	    <!-- file_j_range used by DSTemplate to  identify minfile j suffix-->
+	    <lats>31</lats>
+	    <late>170</late>	
+            <file_j_range>"J31-170"</file_j_range>
+        </grid>
+        <training>
+            <historical_predictor
+                file_start_time = "1961"
+                file_end_time = "2005"
+                train_start_time = "1961"
+                train_end_time = "2005"
+ 		time_window='/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
+                >
+                <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.historical.atmos.day.r1i1p1.v20111006</dataset><!--- we know that we want the tasmin, tasmin vars 
+                in the id directory as specified in <input predictor_list = ""> -->
+            </historical_predictor>
+            <historical_target
+                file_start_time = "1961"
+                file_end_time = "2005"
+                train_start_time = "1961"
+                train_end_time = "2005"
+		time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
+            >
+<!-- NCPP2013.modified.NOAA-GFDL.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.r1i1p2.v20110601 -->
+                <dataset>OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2</dataset>
+                <!-- and in this case, we want the target var specified in <input> -->
+            </historical_target>
+            <future_predictor
+                file_start_time = "2006"
+                file_end_time = "2099"
+                train_start_time = "2006"
+                train_end_time = "2099"
+                time_window =  '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
+            >
+               <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.rcp85.atmos.day.r1i1p1.v20111014</dataset> <!-- still interested in predictor_list vars -->
+            </future_predictor>
+        </training>
+        <esdgen>
+            <!--For CDFt, the future_predictor is specified instead of esdgen -->     
+        </esdgen>
+    </input>    
+    <core>
+    <!--THIs IS TOTALLY UNCHANGED EXCEPT FOR THE GRID SPECS-->
+    <!--Specify the ESD METHOD USED (currently only supports CDFt -->
+        <method name="CDFt"> </method>
+	<!-- TODO experiment will be option with experiment name construction utility. But A00X00B00 will still be user input--> 
+	<!-- experiment is now optional, because it's going to be constructed internally in expergen using Name_me.py -->
+	<!--<experiment>1pow5-txp1-GFDL-CDFtv1-A00X01K01</experiment> -->
+	<exper_series>A38L01</exper_series> 
+	<project>Red River</project>
+        <!-- basedir contains the git repository 'main' -->
+        <!-- basedir now optional in XML, being set as env variable-->
+   	<!-- <basedir name="/home/a1r/gitlab/fudge2014/"/> -->
+        <!--Specify the K-FOLD CROSS VALIDATION -->
+        <kfold>
+              0 <!-- "0" is required to run without cross-validation.-->
+        </kfold>
+    <!--specifies the OUTPUT DIRECTORY -->
+        <output>
+            <!--<root>/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/</root>-->
+<root>/work/cew/npasdefault/</root>
+        </output>
+    </core>
+    <custom>
+    </custom>
+</downscale>
