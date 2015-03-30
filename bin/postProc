@@ -34,7 +34,7 @@ def postProc():
      vname = ""
      for argu,valu in args.iteritems(): 
         if(argu == 'uinput'):
-			 print "test"
+			 #print "test"
                 	 uinput = valu  
                  	 print uinput
         if(argu == 'force'):
