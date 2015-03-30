@@ -178,7 +178,7 @@ set ctr = 0
 #cset tmpfile = "tmp_${OFILE}_$ctr.nc"
 set tmpfile = ""
 foreach argh ($argpath)
-ncpdq -A -a lon,lat,time $argh tmp_${OFILE}_$ctr.nc
+ncpdq -D 0 -A -a lon,lat,time $argh tmp_${OFILE}_$ctr.nc > & /dev/null 
 set tmpfile = `echo $tmpfile tmp_${OFILE}_$ctr.nc`
 @ ctr = $ctr + 1
 end
