@@ -553,9 +553,9 @@ def main():
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+"\n"
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+"\n"
   		ppfile.write(pp_cmnd)
   		ppfile.close()
 	except:
