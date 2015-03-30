@@ -432,7 +432,7 @@ def main():
 	    if(os.path.exists(sd)):
        		 if os.listdir(sd):
 		    if (overwrite == False):    
-			print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for yyou)\033[1;m',sd
+			print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
                         print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
                 	sys.exit(-6)
 		    if (overwrite == True):
@@ -536,6 +536,7 @@ def main():
         print "Config XML saved in ",cdir 
         print "RunScripts will be saved under:",sbase
 	print "----See readMe in fudge2014 directory for the next steps----"
+	print "Use submit_job to submit scripts"
 
 ############### crte ppscript #################
 	dev = "off" 
