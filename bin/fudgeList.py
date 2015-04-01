@@ -166,7 +166,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
                                         filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
 #                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"-"+end+".nc"
 
-					print "test test",filedire,filename	
+				#	print "test test",filedire,filename	
                                         if not os.path.exists(filedire+"/"+filename):                
                                            exists = False  
                                         else:
