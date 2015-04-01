@@ -1,3 +1,6 @@
+04/01/2015
+(a1r)
+1. fudgeList redundant MMDD fix
 03/30/2015
 (a1r)
 1. Reduced number of  echo statements, warnings in expergen, postProc where possible. 
