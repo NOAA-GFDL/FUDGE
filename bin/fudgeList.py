@@ -123,16 +123,16 @@ def fudgeList():
 							ascii = ascii+"FUDGE.version:"+fudgeversion+"\n"
 							ascii = ascii+"region:"+region+"\n"
 							delim="_"
-						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"0101-"+target_file_end_time+"1231"+".I*",file_j_range.replace('"','').strip()+".nc")	
+						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"-"+target_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")	
 							target_file = delim.join(target_parts)	
 							target_inpath_1=os.path.normpath(target_dir)+"/"+target_file
 							ascii = ascii+"target.inpath_1:"+target_inpath_1+"\n"
-                                                        hist_parts = (predictor,hist_freq,hist_model,hist_scenario,output_grid,hist_file_start_time+"0101-"+hist_file_end_time+"1231"+".I*",file_j_range.replace('"','').strip()+".nc")
+                                                        hist_parts = (predictor,hist_freq,hist_model,hist_scenario,output_grid,hist_file_start_time+"-"+hist_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
                                                         hist_file = delim.join(hist_parts)
 
 							hist_inpath_1=os.path.normpath(hist_pred_dir)+"/"+hist_file
 							ascii = ascii+"hist.inpath_1:"+hist_inpath_1+"\n"
-                                                        fut_parts = (predictor,fut_freq,fut_model,fut_scenario,output_grid,fut_file_start_time+"0101-"+fut_file_end_time+"1231"+".I*",file_j_range.replace('"','').strip()+".nc")
+                                                        fut_parts = (predictor,fut_freq,fut_model,fut_scenario,output_grid,fut_file_start_time+"-"+fut_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
                                                         fut_file = delim.join(fut_parts)
                                                         fut_inpath_1=os.path.normpath(fut_pred_dir)+"/"+fut_file
                                                         ascii = ascii+"fut.inpath_1:"+fut_inpath_1+"\n"
@@ -163,8 +163,8 @@ def fudgeList():
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
                                         filedire = indir+"/../../../"+region+"/"+ver+"/"
-                                        filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"0101"+"-"+end+"1231"+".nc"
-#                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
+                                        filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
+#                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"-"+end+".nc"
 
 					print "test test",filedire,filename	
                                         if not os.path.exists(filedire+"/"+filename):                
