@@ -34,7 +34,7 @@ def postProc():
      vname = ""
      for argu,valu in args.iteritems(): 
         if(argu == 'uinput'):
-			 print "test"
+			 #print "test"
                 	 uinput = valu  
                  	 print uinput
         if(argu == 'force'):
@@ -94,8 +94,6 @@ def postProc():
      for vname in listvname:
 	print vname,"check 1"
         vname = vname.strip(",")
-        print vname,"check xi21"
-
         vname = vname.strip()
 	print "Processing variable ",vname 
     	if(vname is not None):
@@ -123,7 +121,7 @@ def postProc():
                                         exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
              				if (exists == False):
 
-           					print "PP Output does not exist already",indir
+           					#print "PP Output does not exist already",indir
 						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid)
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
@@ -156,9 +154,10 @@ def postProc():
                 			sys.exit()
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
-                                        filedire = indir+"/../../../"+region+"/"+ver+"/"
+                                        filedire = indir+"/../" #../../"+region+"/"+ver+"/"
+				        print "In checkExists()......"
 				        if "mask" in var: #spl cases are not great
-	                                        filedire = indir+"/../../../../"+region+"/"+ver+"/"
+	                                        filedire = indir+"/../../" #../../"+region+"/"+ver+"/"
 						print "-----Looking for PP output in:", filedire		
                                         filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
 #                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
@@ -173,11 +172,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 					   else:
 						exists = True
 						print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
-					print filename
-					if(exists == False):
-					###final checker test for extraneous existing files ######
-				        	print "checker on TwoD " 
-				  #      	checker.checker(filedire,2)
+					#cprint filename
 				        return exists		
 
 def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid):

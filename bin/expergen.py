@@ -18,8 +18,8 @@ list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
 rootdir = ''
-projectRoot = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th" 
-project = "35" #default TODO get from XML
+projectRoot = "" 
+project = "" 
 ppn = 2 #TODO get from XML custom?
 overwrite = False #default don't overwrite existing output or scripts
 preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
@@ -28,11 +28,11 @@ def checkTags(dictParams,key):
                	 	val = dictParams[key]
 		else:
 			if(key == 'oroot'):
-				#projectRoot = "/work/a1r/PROJECTS/DOWNSCALING/RedRiver/"
-				print "use output root default value", projectRoot
-				val = projectRoot
+				print "output root tag is being deprecated from darkchocolate."
+				sys.exit("error")
+				
                         elif(key == 'sroot'):
-                                print "Script root default value is NOT available at this time. Please specify <script_root> in XML and try again " 
+                                print "Script root default value is being deprecated from darkchocolate. Please specify <script_root> in XML and try again " 
 				sys.exit("error")
 			elif(key == 'outdir'):
 				val = 'na'
@@ -124,7 +124,7 @@ def getDir(listDir,label):
 	i=0
 	dictDIR = {}
         for getdir in listDir:
-		print getdir
+		#cprint getdir
                 dir_lo = label+str(i)
                 dictDIR[dir_lo] = rootdir+"/"+getdir
                 i = i + 1
@@ -138,10 +138,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		try:
 			dversion = dictParams['dversion']
 	        except:
-			print "Using default version v20140108"
-			dversion='v20140108'
+			dversion='' #dversion deprecated
         print "----Downscaling XML template-", uinput
-        print "----Downscaled data version-", dversion
       #  print "----Force Override existing output Flag-", force
         ###################################
         print "Input from XML"
@@ -177,12 +175,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         dim = checkTags(dictParams,'dim')
         output_grid = checkTags(dictParams,'output_grid')
 	###CEW edit
-	print "About to call checkTags on region"
+	print "Initiate checkTags"
         region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
         spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
 	ds_region = spat_mask_ID
-	#print "spat_mask_ID:", spat_mask_ID
         file_j_range = checkTags(dictParams,'file_j_range')
         lats = checkTags(dictParams,'lats')
         late = checkTags(dictParams,'late')
@@ -221,7 +218,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    			print "file to be gcpied to vftmp: ",val
 				auxcustom1 = val
 			print "auxcustom1:",auxcustom1
-        projectRoot = checkTags(dictParams,'oroot')
+        #projectRoot = checkTags(dictParams,'oroot')
 	global rootdir 
         rootdir = checkTags(dictParams,'in_root') 
 	outdir = checkTags(dictParams,'outdir')
@@ -277,7 +274,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	#comment out RR a1r	dim = output_grid+"/"+dim1
 	   else:
            	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
-	print(dim1)
+	#print(dim1)
         ############ target get dir info ########################
 	dict_target,listt = getFacets(target_id,target,dim,'target_id',output_grid)
 	#print dict_target
@@ -435,11 +432,11 @@ def main():
 	    if(os.path.exists(sd)):
        		 if os.listdir(sd):
 		    if (overwrite == False):    
-			print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for yyou)\033[1;m',sd
+			print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
                         print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
                 	sys.exit(-6)
 		    if (overwrite == True):
-			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist>erase</ifpreexist> is turned on, the scripts and any existing OneD output will be overwritten.\033[1;m "
+			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
 			print "Now invoking cleanup utility..........."
 		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
 			if(preexist_glob == 'erase'):
@@ -482,7 +479,7 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
         make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"' 
-	print make_code_cmd
+	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
@@ -539,6 +536,7 @@ def main():
         print "Config XML saved in ",cdir 
         print "RunScripts will be saved under:",sbase
 	print "----See readMe in fudge2014 directory for the next steps----"
+	print "Use submit_job to submit scripts"
 
 ############### crte ppscript #################
 	dev = "off" 
@@ -555,14 +553,14 @@ def main():
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+","+target+"_qcmask\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+uinput+" -v "+target+"\n"
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+"\n"
   		ppfile.write(pp_cmnd)
   		ppfile.close()
 	except:
   		print "Unable to create postProc command file. You may want to check your settings."
-		print create_pp_cmd
+	#c	print create_pp_cmd
         if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
                 ppLoc = basedir+"/utils/bin/"+"create_postProc"
@@ -601,9 +599,9 @@ def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,en
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc
      
-    print "No outdir specified. Let's deduce the standardized output directory here.."        
+    print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."        
     if(projectRoot == 'na'):
-        print "Output root directory not specified. Default project root will be used. (Default project root is /archive/esd/)"
+        print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
     dexperonly = dexper.split("_")[0]	
     if(freq == ""):
 	freq = mip
