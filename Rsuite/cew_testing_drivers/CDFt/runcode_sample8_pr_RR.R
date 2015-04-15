@@ -26,10 +26,10 @@ loop.end <-  j.end - (j.start-1)
 #         loop.start <-  j.start - (j.start-1)
 #         loop.end <-  j.end - (j.start-1)
 #------------ historical predictor(s)----------# 
-hist.file.start.year_1 <- 1961 
-hist.file.end.year_1 <- 2005
-hist.train.start.year_1 <- 1961
-hist.train.end.year_1 <- 2005 
+hist.file.start.year_1 <- 19610101 
+hist.file.end.year_1 <- 20051231
+hist.train.start.year_1 <- 19610101
+hist.train.end.year_1 <- 20051231 
 hist.scenario_1 <- 'historical_r1i1p1'
 hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 hist.model_1 <- 'MPI-ESM-LR' 
@@ -39,10 +39,10 @@ hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/
 #hist.time.window <- 'na' 
 hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc' 
 #------------ future predictor(s) -------------# 
-fut.file.start.year_1 <- 2006 
-fut.file.end.year_1 <- 2099 
-fut.train.start.year_1 <- 2006 
-fut.train.end.year_1 <- 2099 
+fut.file.start.year_1 <- 20060101 
+fut.file.end.year_1 <- 20991231 
+fut.train.start.year_1 <- 20060101 
+fut.train.end.year_1 <- 20991231 
 fut.scenario_1 <- 'rcp85_r1i1p1'
 fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 fut.model_1 <- 'MPI-ESM-LR' 
@@ -52,10 +52,10 @@ fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/r
 fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 fut.time.trim.mask <- 'na'
 #------------- target -------------------------# 
-target.file.start.year_1 <- 1961 
-target.file.end.year_1 <- 2005 
-target.train.start.year_1 <- 1961 
-target.train.end.year_1 <- 2005 
+target.file.start.year_1 <- 19610101 
+target.file.end.year_1 <- 20051231 
+target.train.start.year_1 <- 19610101 
+target.train.end.year_1 <- 20051231 
 target.scenario_1 <- 'historical_r0i0p0'
 target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 target.model_1 <- 'livneh'
@@ -69,7 +69,7 @@ target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemas
 #ds.method <- 'EDQMv2'
 #ds.method <- 'EDQMv3'
 ds.method <- 'CDFt'
-	ds.experiment <- paste('PMpr1-', ds.method, '-A18hX01K00', sep="")
+	ds.experiment <- paste('RRpr1-', ds.method, '-A18hX01K00', sep="")
 	k.fold <- 0 
 pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
              pr_threshold_out='us_trace',pr_conserve_out='on', #'us_trace'
