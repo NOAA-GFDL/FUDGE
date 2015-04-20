@@ -389,7 +389,8 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           var.data=c(list.target$vars, list.fut$vars),
                           units=list.fut$units$value,
                           lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value 
+                          cfname=list.fut$cfname$value, 
+                          prec='double'
                           )
 
 #Write Global attributes to downscaled netcdf

@@ -2,8 +2,10 @@
 rm(list=ls())
 
 #--------------predictor and target variable names--------#
-	predictor.vars <- 'tasmax' 
-	target.var <- 'tasmax'
+ #	predictor.vars <- 'tasmax' 
+ #	target.var <- 'tasmax'
+predictor.vars <- 'pr'
+target.var <- 'pr'
 #--------------grid region, mask settings----------#
 grid <- 'SCCSC0p1' 
 spat.mask.dir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/' 
@@ -25,7 +27,7 @@ hist.scenario_1 <- 'historical_r1i1p1'
 hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 hist.model_1 <- 'MPI-ESM-LR' 
 hist.freq_1 <- 'day' 
-hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING//GCM_DATA/CMIP5//MPI-ESM-LR/historical/day/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/' 
+hist.indir_1 <- paste0('/archive/esd/PROJECTS/DOWNSCALING//GCM_DATA/CMIP5//MPI-ESM-LR/historical/day/atmos/day/r1i1p1/v20111006/', target.var,'/SCCSC0p1/OneD/') 
 #	hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc' 
 hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 #------------ future predictor(s) -------------# 
@@ -37,10 +39,10 @@ fut.scenario_1 <- 'rcp45_r1i1p1'
 fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 fut.model_1 <- 'MPI-ESM-LR' 
 fut.freq_1 <- 'day' 
-fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING//GCM_DATA/CMIP5//MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/tasmax/SCCSC0p1/OneD/'
+fut.indir_1 <- paste0('/archive/esd/PROJECTS/DOWNSCALING//GCM_DATA/CMIP5//MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/', target.var, '/SCCSC0p1/OneD/')
 #fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc'
 fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
-# fut.time.trim.mask <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
+ #fut.time.trim.mask <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 fut.time.trim.mask <- 'na'
 #-------------- predictor directory suffix -----------#
 pred.dir.suffix <- '/SCCSC0p1/OneD/' #use this predictor variable and this  suffix with fut.indir_1 and hist.indir_1
@@ -59,19 +61,23 @@ target.indir_1 <- paste0('/archive/esd/PROJECTS/DOWNSCALING//OBS_DATA/GRIDDED_OB
 target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc'
 
 #------------- method name k-fold specs-----------------------#
-        ds.method <- 'CDFt' 
-	ds.experiment <- 'RRtxp1-CDFt-C34atTest_monL01K00' 
+        ds.method <- 'EDQM' 
+	ds.experiment <- paste('RR2txp1', ds.method, 'C34atTest24L01K00', sep="-") 
 	k.fold <- 0 
 	
 #-------------- output -----------------------#
 	output.dir <- '/home/cew/Code/testing/'
 	mask.output.dir <- '/home/cew/Code/testing/' 
 #-------------  custom -----------------------#
-        args=list(dev=1,npas='default') 
+ #       args=list(dev=1,npas='default') 
+args=list('na')
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 #-------------- pp ---------------------------#
         #mask.list <- list(mask1=list(type='SBiasCorr',adjust.out='off',qc.mask='on',qc_options=list(botlim=-6.,toplim=6.)))
 mask.list <- list("na")
+pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
+             pr_threshold_out='us_trace',pr_conserve_out='on', #'us_trace'
+             apply_0_mask='off')
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
