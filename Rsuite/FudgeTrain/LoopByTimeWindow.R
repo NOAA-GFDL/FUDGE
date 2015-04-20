@@ -179,7 +179,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    ds.var=ds.var)
           #Assign downscaled output to vector
           if(use.time.trim.mask){
-            downscale.vec[!is.na(kfold.timemask)] <- temp.out[!is.na(kfold.timemask)]
+#             downscale.vec[!is.na(kfold.timemask)] <- temp.out[!is.na(kfold.timemask)]
+            temp.assign <- esd.gen[[1]]
+            temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
+            downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
           }else{
             downscale.vec[!is.na(kfold.gen)] <- temp.out
           }
