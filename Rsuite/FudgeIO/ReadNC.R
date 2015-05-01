@@ -51,7 +51,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
       if( force_3_dimensions){
         if(verbose) { message("Adjusting dimensions to fit the FUDGE framework") }
         #Last dim is always time, first two should always be X and Y
-        dim.adjust <- dim(clim.in)[2:length(dim(clim.in))-1]
+        dim.adjust <- dim(clim.in)[3:(length(dim(clim.in))-1)]
         if(sum(dim.adjust!=1)!=0){ 
           #If there are any non-degenerate dimensions, throw an error
           #NOTE: This is not meant to be used with ensemble dims - not yet, anyway
@@ -59,7 +59,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
                      "due to one or more non-degenerate dimensions. Please examine the input file and try again."))
         }else{
           #Redimension as (x,y,t)
-          dim(clim.in) <- c(dim(clim.in[1:2]), dim(clim.in)[length(clim.in)])
+          dim(clim.in) <- c(dim(clim.in)[1:2], dim(clim.in)[length(dim(clim.in))])
         }
       }
     }else if(add.ens.dim){

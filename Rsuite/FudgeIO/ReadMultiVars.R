@@ -26,9 +26,18 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     #Only run check if there are multiple vars
     for(d in 1:(length(dim.list)-1)){
       if(sum(dim.list[[d]]!=dim.list[[d+1]])!=0){
-        #If all dims are not equal, return an error
-        stop("Error in ReadMultiVars: dim.list of", d, "was", paste(dim.list[[d]], collapse=" "), 
-             "and dim.list of", d+1, "was", paste(dim.list[[d+1]], collapse=" "))
+        #If all dims are not equal, first check for degenerate dims
+        d1.select <- dim.list[[d]][c(1, 2, length(dim.list[[d]]))] #only *really* need to make sure that x, y, t are equal
+        d2.select <- dim.list[[d + 1]][c(1, 2, length(dim.list[[d + 1]]))]
+        if(sum(d1.select!=d2.select)==0){
+          message(paste("Warning in ReadMultiVars: dim.list", d, " obtained from var", var.list[[d]], "was", paste(dim.list[[d]], collapse=" "), 
+                        "and contained different degenrate dimensions than dim.list", 
+                        d+1, "obtained from var", var.list[[d+1]], ", which was", paste(dim.list[[d+1]], collapse=" ")))
+        }else{
+        stop(paste("Error in ReadMultiVars: dim.list", d, " obtained from var", var.list[[d]], "was", paste(dim.list[[d]], collapse=" "), 
+                   "and contained substantially different dimensions than dim.list", 
+                   d+1, "obtained from var", var.list[[d+1]], ", which was", paste(dim.list[[d+1]], collapse=" ")))
+        }
       }
     }
   }
@@ -55,11 +64,11 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     var=var.list[[v]]
     if(verbose){print(paste("Reading in var", var))}
     if(v==1){
-      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim) #No longer adding ensemble dimension
+      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=TRUE) #No longer adding ensemble dimension
       data.list[[v]] <- out.list$clim.in
       att_table[[var]] <- out.list$att_table[[var]]
     }else{
-      temp.list <- ReadNC(nc.list[[v]], var=var, dim='none')
+      temp.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_3_dimensions=TRUE)
       data.list[[v]] <- temp.list$clim.in
       att_table[[var]] <- temp.list$att_table[[var]]
     }

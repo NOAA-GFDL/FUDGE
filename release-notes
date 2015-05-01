@@ -1,3 +1,8 @@
+4-29-2015
+(cew)
+- bugfix for qc masks overwriting full downscaled runs, leading to failed postproc
+- bugfix for create_master_runscript's runscript names based off of predictor list rather than target
+
 04/28/2015
 (cew)
 1. Added support for a multivariate workflow in the R code

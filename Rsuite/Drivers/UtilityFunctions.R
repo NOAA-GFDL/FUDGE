@@ -62,6 +62,12 @@ convert.list.to.string <- function(this.vector){
   }
 }
 
+count.missvals <- function(data){
+  #Counts the number of missing values in a vector
+  #Helper function for indexing lapply
+  sum(is.na(data))
+}
+
 adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
   #' Fast and dirty modifications to make the pre- and post-processing 
   #' scheme that the XML currently supports match the R infrastucture

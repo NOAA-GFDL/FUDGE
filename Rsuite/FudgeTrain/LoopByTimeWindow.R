@@ -184,7 +184,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #                                                     !is.na(mask.struct[[3]]$masks[[window]])),       #(though that option can be turned off)
 #                                    att.table=att.table,
 #                                    args=downscale.args, 
-#                                    ds.var=ds.var)
+#                                    ds.var=ds.var, remove.missval.datasets=TRUE)
           temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                    train.predict = lapply(kfold.predict, remove.missvals), #remove missvals pointed to by mask
                                    train.target = kfold.target[!is.na(kfold.target)],                #any missvals not in mask

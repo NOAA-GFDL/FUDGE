@@ -6,4 +6,3 @@
 darkchocolate_PM_tasmin.xml regression_test_tasmin.nc xml
 ##Full regression test with time trimming masks for the Red River Region
 darkchocolate_RR_ttrim.xml regression_test_ttrim.nc xml
-

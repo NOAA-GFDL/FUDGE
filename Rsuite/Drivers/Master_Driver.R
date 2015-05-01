@@ -213,19 +213,21 @@ out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario
 
 hist.filename <- GetMiniFileName("VAR",hist.freq_1,hist.model_1,hist.scenario_1,grid,
                                  hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
+message("Reading in historical predictor data")
 list.hist <- ReadMultiVars(file.prefix=hist.indir_1, 
                            file.suffix=pred.dir.suffix, 
                            blank.filename=hist.filename, 
                            var.list=predictor.vars, 
                            add.ens.dim=TRUE,
                            verbose=TRUE)
-print("Applying spatial mask to coarse historic predictor dataset")
+message("Applying spatial mask to historic predictor dataset")
 if(!is.null(spat.mask)){
   list.hist$clim.in <- lapply(list.hist$clim.in, apply.any.mask, mask=spat.mask$masks[[1]], dim.apply='spatial')
 }
 
 fut.filename <- GetMiniFileName("VAR",fut.freq_1,fut.model_1,fut.scenario_1,grid,
                                  fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+message("Reading in future predictor data")
 list.fut <- ReadMultiVars(file.prefix=fut.indir_1, 
                            file.suffix=pred.dir.suffix, 
                            blank.filename=fut.filename, 
@@ -234,7 +236,7 @@ list.fut <- ReadMultiVars(file.prefix=fut.indir_1,
                            add.ens.dim=TRUE, 
                            verbose=TRUE)
 
-print("Applying spatial mask to coarse future predictor dataset")
+message("Applying spatial mask to future predictor dataset")
 if(!is.null(spat.mask)){
   list.fut$clim.in <- lapply(list.fut$clim.in, apply.any.mask, mask=spat.mask$masks[[1]], dim.apply='spatial')
 }
