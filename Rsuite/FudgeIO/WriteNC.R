@@ -4,7 +4,8 @@ WriteNC <-  function(filename,data.array,var.name,
                      prec='double', missval=1.e20,
                      units,lname=var.name,cfname=var.name, 
                      bounds=FALSE, var.data=NA, 
-                     writelist=FALSE, modulo=NA, 
+                     writelist=FALSE, modulo=NA,
+                     var.orig.file=NA,
                      verbose=FALSE) {
   #'Creates file filename (netCDF type) with the variable  var.name along with the 
   #'coordinate variables in the netCDF file, CF standard name, long names.
@@ -176,7 +177,15 @@ WriteNC <-  function(filename,data.array,var.name,
         }
       }
     }
-    if(verbose) { print("cloning attributes") }
+    #Need a check in here to only activate if not writing more than one var to file
+    #Also need to check about what to do about ensemble members
+    if(!is.na(var.orig.file)){
+#       message("Warning! This section results in metadata that does not match previous files")
+#       if(verbose) { print("cloning attributes from target variable") }
+#       nc.copy.atts(nc_open(var.orig.file), var.name[[1]], nc.obj, var.name[[1]], 
+#                    c("_FillValue", "FillValue", "_missval"))
+    }
+    if(verbose) { print("cloning attributes from dimensions") }
     dim.exclude <- c("bnds")    #List of dimensions not to copy atts from
     dim.index <- !(names(dim.list)%in%dim.exclude)
     dim.names <- dim.list[[dim.index]]
@@ -191,6 +200,7 @@ WriteNC <-  function(filename,data.array,var.name,
         if(verbose) { print("null dim; skipping to next") }
       }
     }
+    
     
     #Link axes to the dimensions
     ncatt_put(nc.obj,"time","axis",'T')

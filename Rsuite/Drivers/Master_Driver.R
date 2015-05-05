@@ -321,7 +321,9 @@ ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
                           prec='double',
                           units=list.target$att_table[[target.var]]$units,
                           lname=paste('Downscaled', list.target$att_table[[target.var]]$long_name), #list.fut$long_name$value
-                          cfname=list.target$att_table[[target.var]]$standard_name, verbose=TRUE 
+                          cfname=list.target$att_table[[target.var]]$standard_name, 
+                          #var.orig.file=attr(list.target, "filename"),
+                          verbose=TRUE 
                           )
 
 #Write Global attributes to downscaled netcdf
