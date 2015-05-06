@@ -122,7 +122,7 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
                    "future" = list("data" = as.numeric(future.wetdays)*adjust.future, "pr_mask" = future.wetdays))
   if(zero.to.na){
-    #All 0 values in the data should be NA values instead (needed to avoid calculations in )
+    #All 0 values in the data should be NA values instead (needed to avoid calculations in the downscaling loop)
     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
     out.list$adjust$data[out.list$adjust$pr_mask==0] <- NA
     out.list$future$data[out.list$future$pr_mask==0] <- NA

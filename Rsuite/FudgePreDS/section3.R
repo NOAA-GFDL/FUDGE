@@ -77,11 +77,14 @@ callPRPreproc <- function(test, input, postproc.output){
                                          lopt.drizzle=lopt.drizzle, 
                                          lopt.conserve=lopt.conserve, 
                             zero.to.na=apply.0.mask)
-  if(apply.0.mask){
-    fut.prmask <- temp.out$future$pr_mask
-    pr_mod <- postproc.output$propts
-    pr_mod$qc_args$fut.prmask <- fut.prmask
-    postproc.output$propts <- pr_mod
+  if(apply.0.mask){  
+#     fut.prmask <- temp.out$future$pr_mask
+#     pr_mod <- postproc.output$propts
+#     pr_mod$qc_args$fut.prmask <- fut.prmask
+#     postproc.output$propts <- pr_mod
+    temp.out$ref$data     <- (temp.out$ref$data    * temp.out$ref$pr_mask)
+    temp.out$adjust$data  <- (temp.out$adjust$data * temp.out$adjust$pr_mask)
+    temp.out$future$data  <- (temp.out$future$data * temp.out$future$pr_mask) 
   }
   return(list('input'=list('hist.targ' = temp.out$ref$data, 'hist.pred' = temp.out$adjust$data, 'fut.pred' = temp.out$future$data),
               's5.list'=postproc.output))
