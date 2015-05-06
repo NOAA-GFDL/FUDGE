@@ -9,7 +9,8 @@ source /usr/local/Modules/default/init/csh
 # xmlRootDir = where XMLgen directory resides
 #----------
 # set xmlRootDir = "${BASEDIR}"
-  set xmlRootDir = "/home/esd/MJN_sandbox/darkchocolate"
+#  set xmlRootDir = "/home/esd/MJN_sandbox/darkchocolate"
+   set xmlRootDir = "${BASEDIR}"
 
 # create unique workDir  (which is removed at end)
   set workDir=/nbhome/esd/work.XMLgen.$dateIN
