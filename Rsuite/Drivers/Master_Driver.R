@@ -356,7 +356,7 @@ message(paste('Downscaled output file:',ds.out.filename,sep=''))
 #}
 
 if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the beginning, as part of the QC functions
-  for (var in predictor.vars){
+  for (var in target.var){
     ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
     qc.var <- paste(var, 'qcmask', sep="_")
     if(Sys.info()['nodename']=="ldt-4078325"){ #'cew'

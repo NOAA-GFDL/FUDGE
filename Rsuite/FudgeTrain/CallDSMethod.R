@@ -194,7 +194,7 @@ callDeltaSD <- function(LH,CH,CF,args){
       stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
     }
     if(!is.null(args$keep.zeroes)){
-      keep.zeroes <- args$keep.zeroes
+      keep.zeroes <- ifelse(args$keep.zeroes=='on', TRUE, FALSE)
     }else{
       stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
     }
