@@ -1,24 +1,19 @@
+#'QCTimeMask.R
 QCTimeMask<-function(time.mask.obj, run=FALSE){
-  #Given a path to a filename, returns all masks
-  #within that file, along with the timeseries and the information needed to 
-  #generate it at a later date.
+  #'Given a path to a filename, returns all variables containing the word 'mask'
+  #'within that file, aling with the timeseries and the information needed to 
+  #'generate the timeseries at a later date
+  #'@param time.mask.object: 
+  #'@param run: Will this mask be used for adding data back into the downscaled time
+  #'series? If so, the masks cannot overlap. Defaults to FALSE (overlap allowed)
+  #'@return A time mask that will not cause errors in the FUDGE workflow
   ###Assumes that:
   #The data has a calendar attribute, which is one of '365', 'noleap', '360' or 'gregorian'
   #The data is in 'days since' form
   #The data has a dimension actually named 'time'
-  ####TODO: Get the read functions to add to the filename as an attribute when reading in files, 
-  ####which is probably going to require an edit to the OpenNC and readNC functions...
-
-#   library(ncdf4)
-#   library(PCICt)
+    
   message("Checking time windowing mask")
-  #   thisnc <- nc_open(mask.nc)
-  #   time.mask.obj <- ReadMaskNC(thisnc)
   time.length <- length(time.mask.obj$masks[[1]])
-#     save('time.mask.obj', file='/home/cew/Code/test.mask.object')
-#   if(time.length==0){
-#     time.length <- time.mask.obj$dim$time$len
-#   }
   ###Pre-allocaate vector and loop over the available masks
   print(time.length)
   checkvector <- rep(0, time.length)

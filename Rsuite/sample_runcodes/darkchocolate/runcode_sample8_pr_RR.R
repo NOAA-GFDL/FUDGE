@@ -85,8 +85,8 @@ args=list('npas'=0,'dev'=1)
 #args=list()
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
 #-------------- pp ---------------------------#
-#        mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
-mask.list <- list('na')
+        mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
+#mask.list <- list('na')
 ################### others ###################################
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'

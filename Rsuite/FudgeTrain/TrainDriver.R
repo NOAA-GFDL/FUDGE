@@ -3,8 +3,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                         create.ds.out=TRUE,
                         time.steps=NA, istart = NA,loop.start = NA,loop.end = NA, downscale.args=NULL, 
                         ds.orig=NULL, #Correcting a dimension error
-                        #                         s5.adjust=FALSE, s5.method='totally.fake', s5.args = NULL, 
-                        #                         create.qc.mask=FALSE, create.adjust.out=FALSE
                         s3.instructions=list(onemask=list('na')),
                         s5.instructions=list(onemask=list('na')), create.qc.mask=FALSE){
   #' Function to loop through spatially,temporally and call the Training guts.
@@ -12,17 +10,22 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      #' future predictor datasets to which spatial masks have been applied earlier
      #' in the main driver function
      #' @param mask.list: The list of time windowing masks and their corresponding
-     #' time series to be applied to the time windows; returned from (insert link)
-     #' TimeMaskQC.
+     #' time series to be applied to the time windows; returned from CreateTimeWindowList
      #' @param ds.method: name of the downscaling method to be applied to the data.
-     #' Can currently accept simple.lm, a simple linear model, or CDFt.
+     #' A list of downscaling methods currently accepted are located in the master 
+     #' @param downscale.args: Named list of arguments used in the downscaling function.
+     #' downscaling method sheet (documents/)
      #' @param k: The number of k-fold cross-validation steps to be performed. If k > 1, 
      #' kfold masks will be generated during TrainDriver.
+     #' --------------Adjustment steps --------------
+     #' @param s3.instructions: Instructions for performing pre-downscaling adjustment
+     #' @param s5.instructions: Instructions for performing post-downscaling adjustment
+     #' and/or creation of a QC mask
      #' ---Optional arguments for use in debugging---
      #' @param  loop.start: J loop start index
      #' @param loop.end: J loop end index
      #' @param time.steps: the # time steps; defaults to NA
-     #' @param istart: 
+     #' @param istart: I loop start index
      
      
      # Initialize ds.vector 
@@ -37,14 +40,9 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      if(create.qc.mask){
        qc.mask <-  array(NA,dim=c(dim(fut.masked.in)))
        s5.adjust <- TRUE
-     }else if(length(s5.instructions) > 0){ #s5.instructions[[1]]!='na' #!is.null(s5.instructions[[1]])
+     }else if(length(s5.instructions) > 0){
        qc.mask <- NULL
-       s5.adjust <- TRUE #It's binary: you either make adjustments, or create a qc mask. It never does nothing. #FALSE
-#        for (element in 1:length(s5.instructions)){
-#          if(s5.instructions[[element]]$adjust.out=='on'){ #Changed from not-'na' to 'on'
-#            s5.adjust <- TRUE
-#          }
-#        }
+       s5.adjust <- TRUE #It's binary: you either make adjustments, or create a qc mask. It never does nothing.
      }else{
        #If s5.instructions=='na'
        qc.mask <- NULL
@@ -98,11 +96,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
            if(create.qc.mask){
              qc.mask[i.index, j.index, ] <- loop.temp$qc.mask
            }
-           #            if(create.postproc.out){
-           #              print(length(loop.temp$postproc.out))
-           #              print(summary(loop.temp$postproc.out))
-           #              postproc.out[i.index, j.index, ] <- loop.temp$postproc.out
-           #            }
          }else{
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
            message(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))

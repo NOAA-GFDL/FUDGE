@@ -1,4 +1,4 @@
-This file is part of the NOAA-GFDL FUDGE project (Framework for ), referred to as NOAA-GFDL/FUDGE. The majority of this code was written by authors at the Geophysical Fluid Dynamics Laboratory (GFDL), who are providing the code under the GNU General Public License, as shown below.
+This file is part of the NOAA-GFDL FUDGE project (Framework for Unified Downscaling of GCMs Empirically), referred to as NOAA-GFDL/FUDGE. The majority of this code was written by authors at the Geophysical Fluid Dynamics Laboratory (GFDL), who are providing the code under the GNU General Public License, as shown below.
 
 The intent of this license is to ensure free and unrestricted access to FUDGE, and to pass on those rights to modified versions this software.
 GNU GENERAL PUBLIC LICENSE

@@ -4,11 +4,9 @@
 #' (most likely latitude and longitude)
 #' @return A 3-dimensional array of the same dimensions as the input data, with all x and y-coordinates where
 #' the mask contained a "NA" replaced with a "NA".
-#' @example insert example here
+#' @example
 #' @references \url{link to the FUDGE API documentation}
-#' TODO: Type up specifications for input files, because there are 
-#' some assumptions being made about what is and is not a mask
-ApplySpatialMask<-function(data, mask){   #, maskname="spatial_mask", dataLon, dataLat
+ApplySpatialMask<-function(data, mask){
   #Assume a 2-D mask and 3-D data
   if(!is.null(mask)){
     if(length(mask[1,])!=length(data[1,,1])||length(mask[,1])!=length(data[,1,1])){

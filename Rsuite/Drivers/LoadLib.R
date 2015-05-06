@@ -5,9 +5,7 @@ LoadLib <- function(ds.method){
   library(ncdf4)
   library(PCICt)
   library(udunits2)
-  #library(CDFt)
   library(ncdf4.helpers)
-  #library(abind)
   if(grepl('CDFt', ds.method)){
         print("Importing CDFt library")       
 	library(CDFt)

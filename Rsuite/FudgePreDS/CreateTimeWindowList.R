@@ -8,12 +8,13 @@
 #' @param method="generic": The method included, if it will change the checks that need to
 #' be performed on the intial data. CDFt, for example, currently has a check for 
 #' overlapping masks on all predictors
-#' @return A list containing (in this version) three elements (one for the hist.train,
-#' hist.targ and fut.train), each containing the timeseries associated with each mask 
-#' (used in cross-validation) and the named masks contained within the file. 
-#' @example insert example here
+#' @param time.prune.mask: A mask used to trim downscaled output into a single time series
+#' when the future predictor dataset uses masks that overlap (i.e. pm2weeks)
+#' @return A list containing three or four elements (one for the hist.train,
+#' hist.targ and fut.train, plus an element for the time trimming mask if included), 
+#' each containing a list of the named masks within that file
+#' @example
 #' @references \url{link to the FUDGE API documentation}
-#' TODO: set function to perform checks for more than one esdgen dataset
 #' TODO: Is there a good way to preallocate lists for speeed in this place?
 #' TODO: Develop better mask comparison when more than one mask is present
 
@@ -60,8 +61,6 @@ RemoveBounds<-function(names){
   return(names[names!="lon_bnds"&names!="lat_bnds"&names!="time_bnds"&
                  names!="i_offset"&names!="j_offset"&names!="height"])
 }
-
-
 
 # CheckJulian <- function(calendar, timeseries, origin){
 #   #Checks to see whether or not the Julian calendar
