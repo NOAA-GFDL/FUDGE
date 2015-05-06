@@ -1,0 +1,9 @@
+ID       Method_Name
+--       -------------
+CDFt     CDFt
+Delta    DeltaDS
+BiasC    simple.bias.correct
+SLM      simple.lm
+BCQM     BCQM
+EDQM     EDQM
+CFQM     CFQM

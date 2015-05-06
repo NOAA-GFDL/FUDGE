@@ -10,10 +10,10 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
   What is it?
   -----------
 
-  FUDGE is a tool for exploring the possible space of downscaling methods by 
-running experiments that vary over downscaling method, downscaling method parameters, 
-data used in the downscaling process, and pre- and post-downscaling adjustment
-of the data. 
+  FUDGE is a tool for exploring the possible space of statistical downscaling methods by 
+  running experiments that vary over downscaling method, downscaling method parameters, 
+  data used in the downscaling process, and pre- and post-downscaling adjustment
+  of the data. 
 
   The Latest Version
   ------------------
@@ -25,33 +25,28 @@ of the data.
   -------------
 
   The documentation included with this release is located in 
-  the documentation/ directory. There is supplematary documentation located
-  in a readme file within the Rsuite and 
+  the documentation/ directory. 
 
   Requirements
   ------------
 
   This code requires access to:
   - R 2.15 or higher
-  -- R packages ncdf4, ncdf4.helpers, CDFt, PCICt, udunits2, Runit? Do those tests get included? 
+  -- R packages ncdf4, ncdf4.helpers, CDFt, PCICt, udunits2
   - nco 4.0.3 or higher
   - netcdf 4.0.1 or higher
   - python 2.7.1
   -- python packages pprint,datetime,getopt, os, shutil, shlex, 
      sys, subprocess, optparse, argparse
-  --* GFDL-specific programs *--  
-  - gcp 2.3 or higher
+  - GFDL in-house transfer tools in HPC (gcp 2.3 or higher)
   - moab 7 or higher
-
-  Please see the file called INSTALL.  Platform specific notes can be
-  found in README.platforms.
 
   Licensing
   ---------
 
   Please see the file called license.md
 
-  Caveats and warnings
+  Warnings
   -----------------------------
 
   1. This code has been designed for work with the GDFL machines. We make no guarantee that it 
@@ -64,7 +59,9 @@ of the data.
   fast for unit regression tests to be useful, and switched to regression tests upon the downscaled
   output. However, those regression tests rely on the GFDL filesystem for input data, and the incusion
   of the end-products of downscaling files to check against would have dramatically increased the size 
-  of the repository.
+  of the repository. There is an explanation of the current regression testing procedure in the file 
+  documentation/regression_test_readme.md
+  
 
   Contacts
   --------

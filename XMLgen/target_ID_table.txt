@@ -1,0 +1,17 @@
+ID VariableName
+tx tasmax 
+tn tasmin 
+pr pr
+prc prc
+sw rsds
+psl psl
+t8 ta850
+sh huss
+syn syn
+syn synvar
+txan tasmaxAnom
+pran prAnom
+wsfc sfcWind
+sh8 hus850
+uas uas
+vas vas
