@@ -35,6 +35,7 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
   -- R packages ncdf4, ncdf4.helpers, CDFt, PCICt, udunits2
   - nco 4.0.3 or higher
   - netcdf 4.0.1 or higher
+  - nccmp 1.1 or higher
   - python 2.7.1
   -- python packages pprint,datetime,getopt, os, shutil, shlex, 
      sys, subprocess, optparse, argparse

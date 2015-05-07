@@ -24,12 +24,6 @@ import csv
 
 def main():
 	parser = OptionParser()
-	#parser.add_option("-r", "--runcode", action='store_true', dest='run_runcode',
-#	                  help="run only regression tests using runcode", default=False)
-	#parser.add_option("-x", "--xml", action='store_false', dest="run_xml",
-#	                  help="run only the regression tests using full XML", default=False)
-	#parser.add_option("-a", "--all", action='store_true', dest="run_all",
-#	                  help="run both runcode and XML regression tests", default=False)
 	parser.add_option("-i", "--input", dest="input",
                   help="input file of commands to be run", metavar="FILE")
 	parser.add_option("-s", "--store_results", action='store_true', dest='save_results', 

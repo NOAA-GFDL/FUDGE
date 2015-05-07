@@ -17,24 +17,7 @@ set newdir = $3
 set summfile = $4
 set logfile  = $5
 set mode = $6
-#do a nccmp on a var if that option presents itself
-#if ($argv > 6){
-#	set varstring = "-v $7"
-#}
-#set test_args = "$argv[7-$#argv]"
-#set test_args  = "${test_args}"
-#set test_meaning = ""
-#foreach i ( $test_args )
-#	echo $i
-#	set test_meaning = `echo "$test_meaning $i"`
-#end
-#echo $test_meaning
 
-##...how on EARTH am I geting syntax errors from a check for file existance. HOW?
-#echo "does the logfile exist? `-e $logfile`"
-#if (-e $logfile) then
-#do nothing
-#else
 	touch $logfile
 	touch $summfile
 #endif
@@ -124,6 +107,7 @@ else if ($mode == 'xml') then
 		ls $dsout_dir
 		set dsout = `ls $dsout_dir/*.nc`
 		echo $dsout
+		#Steal input directory structure, apply to new test
 		echo "nccmp -d $dsout $oldfile" >> $logfile
 		nccmp -d $dsout $oldfile
 		set ncc_status = $status
