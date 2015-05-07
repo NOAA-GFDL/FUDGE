@@ -3,7 +3,7 @@
   What is it?
   -----------
   The regression tests for FUDGE are based off of bitwise comparisons of downscaled NetCDF output, 
-  with limited metadata comparisons via the nccp utility. 
+  with limited metadata comparisons via the nccmp utility. 
 
    Usage
    -----

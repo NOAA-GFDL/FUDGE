@@ -29,9 +29,10 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
 
   Requirements
   ------------
+  This code has been running on Red Hat Enterprise Linux Server release 6.6 (Santiago)
 
   This code requires access to:
-  - R 2.15 or higher
+  - R 2.15 or higher (has been tested in 3.0, but not with the entire workflow)
   -- R packages ncdf4, ncdf4.helpers, CDFt, PCICt, udunits2
   - nco 4.0.3 or higher
   - netcdf 4.0.1 or higher
@@ -61,11 +62,11 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
   output. However, those regression tests rely on the GFDL filesystem for input data, and the incusion
   of the end-products of downscaling files to check against would have dramatically increased the size 
   of the repository. There is an explanation of the current regression testing procedure in the file 
-  documentation/regression_test_readme.md
+  Regression_tests/README_regression_tests.md
   
 
   Contacts
   --------
      o Principle Investigator: Keith Dixon, Keith.Dixon@NOAA.gov
-     o Aparna.Radakrishnan@noaa.gov
-     o Carolyn.Whitlock@noaa.gov
+     o Programmer: Aparna.Radakrishnan@noaa.gov
+     o Programmer: Carolyn.Whitlock@noaa.gov
