@@ -36,8 +36,8 @@ def main():
 	(options, args) = parser.parse_args()
 
 	#Assume that you are running this to test the version of FUDGE that is ready to use (i.e. with env variable $BASEDIR
-	#regdir = "/archive/esd/REGRESSION_TESTS/"
-	regdir = '/home/cew/Code/testing/' #Keep for testing and creating new regression tests
+	regdir = "/archive/esd/REGRESSION_TESTS/"
+	#regdir = '/home/cew/Code/testing/' #Keep for testing and creating new regression tests
 	#regdir = '/work/cew/testing/'
 	olddir = regdir + "/old_output/"
 
@@ -61,7 +61,7 @@ def main():
 	else:
 		print "Making tmp work output dir (for any XML tests)"
 		user = os.environ.get('USER')
-		newdir_xml  = "/work/" + user + "/fudge_regtets/" + datestring_dir + "/"
+		newdir_xml  = "/work/" + user + "/fudge_regtests/" + datestring_dir + "/"
 		os.makedirs(newdir_xml)
 		print "Establishing tmpdir as newdir"
 		newdir = newtmpdir	
@@ -145,7 +145,7 @@ def compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml, logfile, summfil
 	#Creates the args for calling a c-shell script that 
 	#the status of a nccmp and writes the results (and stdout)
 	#to file
-	oldfile = olddir + row[1]
+	testfile = row[1]
 	#summfile = newtmpdir + "/test_status.summary"
 	#logfile = newtmpdir + "/stdout.log"
 	#description = "'" + row[2] + "'"
@@ -159,7 +159,7 @@ def compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml, logfile, summfil
 		print "Error in compareRuncode: Invalid option for mode."
 	#location of script to be called:
 	c_shell_script = basedir + "Regression_tests/run_reg_tests.csh" #old
-	command_tup  = (c_shell_script, script, oldfile, newtmpdir, summfile, logfile, mode)
+	command_tup  = (c_shell_script, script, olddir, newtmpdir, summfile, logfile, mode, testfile)
 	commandstr = command_tup[0]
 	for i in range(1, len(command_tup)):
 		commandstr = commandstr + " " + command_tup[i]

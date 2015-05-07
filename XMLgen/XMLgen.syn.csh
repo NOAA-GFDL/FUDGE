@@ -155,8 +155,8 @@ source /usr/local/Modules/default/init/csh
              set checkProj = `grep -w $project $xmlGenDir/project_ID_table.txt`
                if ($status != 0) then 
                  set done = "true"
-                 echo $project >> $INtxt
-                 echo "project = $project , XMLgen.syn.csh" >> $INtxt.key
+#                 echo $project >> $INtxt
+#                 echo "project = $project , XMLgen.syn.csh" >> $INtxt.key
                  echo "$projectID $project" >> $xmlGenDir/project_ID_table.txt
                  echo "$projectID $project     has been added to $xmlGenDir/project_ID_table.txt"
                else 
@@ -310,8 +310,8 @@ source /usr/local/Modules/default/init/csh
        echo " "
        echo -n ">>  Please enter 2-3 character ID for $targVar & we will add it to the variable table. Or ctrl-c to end : "
        set targID=$<
-       echo $targID >> $INtxt
-       echo "targID = $targID , XMLgen.syn.csh" >> $INtxt.key
+#       echo $targID >> $INtxt
+#       echo "targID = $targID , XMLgen.syn.csh" >> $INtxt.key
        echo "$targID $targVar" >> $xmlGenDir/target_ID_table.txt
        echo "$targID $targVar     has been added to $xmlGenDir/target_ID_table.txt"
      else

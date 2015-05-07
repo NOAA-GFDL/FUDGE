@@ -18,14 +18,14 @@ source /usr/local/Modules/default/init/csh
 #----------
 
 # Check if running this as "esd". This affects who owns the root directories that ExperGen will use to write scripts/code/downscaled output.
-  set owner="$USER"
-  echo "    You are running as user $owner  "
-  echo " "
-  whoami|grep -i esd
-  if ($status != 0) then
-     echo "    Please run as user esd."
-     exit 1
-  endif
+#  set owner="$USER"
+#  echo "    You are running as user $owner  "
+#  echo " "
+#  whoami|grep -i esd
+#  if ($status != 0) then
+#     echo "    Please run as user esd."
+#     exit 1
+#  endif
 
 # set some basic variables that are used by this and child scripts
 

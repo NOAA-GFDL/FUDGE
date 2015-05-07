@@ -12,11 +12,12 @@
 #set runcode = /home/cew/Code/fudge2014/Rsuite/cew_testing_drivers/Regression_tests/300_original_regtest.R
 
 set runcode = $1
-set oldfile = $2
+set olddir = $2
 set newdir = $3
 set summfile = $4
 set logfile  = $5
 set mode = $6
+set testfile = $7
 
 	touch $logfile
 	touch $summfile
@@ -42,6 +43,8 @@ if ($mode == 'runcode') then
 	#set dsout = `tail $logfile -n 50 | grep -oP "Downscaled output file:\K.*"` #as opposed to version without /vftmp
 	sleep 10
 	set dsout = `tail $logfile -n 10 | grep -oP "Final Downscaled output file location:\K.*"`
+	#Old runcodes are located on the top leve; no dir structure
+	set oldfile = "$olddir/$testfile"
 	echo "nccmp -d $dsout $oldfile" >> $logfile
 	nccmp -d $dsout $oldfile
 	set ncc_status = $status
@@ -108,6 +111,9 @@ else if ($mode == 'xml') then
 		set dsout = `ls $dsout_dir/*.nc`
 		echo $dsout
 		#Steal input directory structure, apply to new test
+		set ds_dirstring = `echo $dsout | sed -n -e 's@^.*downscaled@@p'`
+		set ds_dirstring = `dirname $ds_dirstring`
+		set oldfile = "$olddir/downscaled/$ds_dirstring/$testfile"
 		echo "nccmp -d $dsout $oldfile" >> $logfile
 		nccmp -d $dsout $oldfile
 		set ncc_status = $status
