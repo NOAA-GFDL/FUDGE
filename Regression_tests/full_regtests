@@ -8,6 +8,6 @@ darkchocolate_PM_pr.xml regression_test_pr.nc xml
 ##Full regression test for precipitation with time masks and different options
 #darkchocolate_pr2_RR.xml regression_test_pr2.nc xml
 ##Full regression test for anomaly data
-darkchocolate_anom_RR.xml regression_test_anom.nc xml
+darkchocolate_anom_PM_test.xml regression_test_anom.nc xml
 ##Full regression test for synthetic data
 #darkchocolate_syn.xml regression_test_syn.nc xml
