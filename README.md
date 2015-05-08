@@ -68,5 +68,3 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
   Contacts
   --------
      o Principle Investigator: Keith Dixon, Keith.Dixon@NOAA.gov
-     o Programmer: Aparna.Radakrishnan@noaa.gov
-     o Programmer: Carolyn.Whitlock@noaa.gov
