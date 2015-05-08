@@ -42,6 +42,7 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
      sys, subprocess, optparse, argparse
   - GFDL in-house transfer tools in HPC (gcp 2.3 or higher)
   - moab 7 or higher
+  - access to a c-shell for scripting
 
   Licensing
   ---------
