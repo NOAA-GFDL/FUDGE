@@ -1,0 +1,4 @@
+#Lines with a '#' will be ignored by the script
+tasmax_DC_test1.R tasmax_CDFt_1.nc runcode
+tasmax_DC_test2.R tasmax_CDFt_2.nc runcode
+darkchocolate_PM_tasmin.xml regression_test_tasmin.nc xml

@@ -16,8 +16,10 @@
 #'case for synthetic data), will only accept 'zero' or a user-defined
 #'threshold.
 #'@param lopt.drizzle : The option for applying a drizzle adjustment. 
-#'Converts the parameter for trace precipitation in the adjusted data
-#'to the 
+#'Determines the threshold of preciptiation required for the same frequency 
+#'of days with > 0 precipitation in the historical GCM as are present in the
+#'historical observation dataset, and then applies that threshold to the historic
+#'predictor and future predictor data. 
 #'@param lopt.conserve: The option for preserving trace precipitation.
 #'If present, the total amount of precipitation is conserved in the input 
 #'datasets; missing trace precipitation is averaged over the days with
@@ -27,8 +29,6 @@
 #'with precipitation greater than the trace. Days are converted back to 0
 #'after downscaling based on the future predictor (CF, MF) mask during
 #'post-downscaling adjustment.
-#'
-#'TODO: Add *major* lat/lon coordiante agreement QC checks
 #'
 
 AdjustWetdays <- function(ref.data, ref.units=NULL, 
@@ -122,7 +122,7 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
                    "future" = list("data" = as.numeric(future.wetdays)*adjust.future, "pr_mask" = future.wetdays))
   if(zero.to.na){
-    #All 0 values in the data should be NA values instead (needed to avoid calculations in )
+    #All 0 values in the data should be NA values instead (needed to avoid calculations in the downscaling loop)
     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
     out.list$adjust$data[out.list$adjust$pr_mask==0] <- NA
     out.list$future$data[out.list$future$pr_mask==0] <- NA

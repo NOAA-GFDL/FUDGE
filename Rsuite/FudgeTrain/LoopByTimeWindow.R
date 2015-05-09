@@ -2,63 +2,41 @@
 #Written by Carolyn Whitlock, August 2014
 #'Calls temporal masking functions, given a set of time data
 #'and a mask for each function.
-#'Then, calls CrossValidate for each masked window
+#'Then, cross-validates the masked data (if applicable) 
 #'and merges the downscaled results it gets back
 #'into a single time series
 #'
 #'####Arguments related to downscaling data:
-#'@param train.predictor
-#'@param train.target
-#'@param esd.gen: a single file or a list of files pointing to the data to which masks should be applied. Currently, 
-#'only a single esd.gen vector is supported.
+#'@param train.predictor: A 1-D array of data that will be used as the historic predictor dataset for downscaling
+#'@param train.target: A 1-D array of data that will be used as the target dataset for downscaling. Should be of 
+#'the same dimensions as the future predictor dataset. 
+#'@param esd.gen: A 1-D array of data that will be used as the future predictor dataset for downscaling. 
 #'
-#'####Arguments related to the CrossValidate call:
+#'####Arguments related to the downscaling process:
 #'@param kfold: the k-fold cross-validation. Note that *ONLY* if k=0 will downscaling
-#'equations be called on the esd.gen dataset(s).
+#'equations be called on the esd.gen dataset(s). Currently, only k=0 is supported in the current version of FUDGE.
 #'@param downscale.fxn: A string referring to the downscaling function to be called.
 #'@param downscale.args: A list of the arguments to the downscaling function. 
 #'
 #'####Arguments related to the masking function:
-#'@param masklist: a list of pathnames pointing to the files which contain masks to apply. If none are provided, 
-#'defaults to running all datasets without temporal masks of any sort.
-#'Currently, the code assumes that all maskfiles will have the same number of masks within them
-#'to apply; this assumption needs to be talked about at some point.
+#'@param mask.struct: a list of masks returned by CreateTimeWindowList, used to mask out days for downscaling by time
+#'window. Will have either 3 or 4 masks depending upon whether or not the masks used in the future predictor series
+#'overlap each other.
 #'
-#'@return A single timeseries containing all downscaled data.
+#'###Arguments related to section 3 and section 5 adjustment
+#'@param s3.adjust, s3.instructions: Whether or not to adjust the data before downscaling, and the instructions for 
+#'adjustment before downscaling. Defaults to FALSE, and 'na' if no instructions are included. See the section 3 
+#'documentation for more details.
+#'@param s5.adjust, s5.instructions: Whether or not to adjust the data/create a QC mask after downscaling, and the 
+#'instructions for the post-downscaling adjustment. Defaults to FALSE, and 'na' if no instructions are included. See
+#'the section 5 documentation for more details.
+#'
+#'@param create.qc.mask: Whether a second dataset containing a qc mask is returned from the function. Defaults
+#'to FALSE.
+#'
+#'@return A single dataset containing as many time levels as the esd.gen dataset containing all downscaled data.
 #'####
-#' @examples
-#' sample_t_predict <- seq(1:365)
-#' sample_t_target <- sin(sample_t_predict*0.05)
-#' sample_esd_gen <- seq(1:365)
-#' mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
-#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
-#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
-#'                   d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-#' esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
-#' downscale.args=NULL,
-#' masklist = mask_list)
-#' lines(seq(1:365), d_data, col="cyan")
-#' d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-#'                                  esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake", 
-#'                                  downscale.args=NULL,
-#'                                  masklist = alt_mask_list)
-#' lines(seq(1:365), d2_data, col="magenta")
 #' @references \url{link to the FUDGE API documentation}
-#' TODO: Check on assumption that all maskfiles will have the same number of masks
-#' RESOLVED: They may not in later versions, but it's a valid 1^5 assumption.
-#' TODO: Do train.predictor and train.target need to be able to accept lists?
-#' RESOLVED: Yes they do, but not for 1^5.
-#' TODO: Check on how to determine which masks go with which data. Actually, check with MJ
-#' on how the time pruning might work.
-#' TODO: Figure out how the sourcing/wrappers are going to work, as well as the args input.
-#' TODO: Also, is this the place to start doing simple checks to avoid calling the fxn if all points
-#' are NA? Or do we do that twice: once for lat/lon, and then again for the time masking?
-#' MORE INFO NEEDED: At the moment, the checks take place in the CrossValidate function. Calls elsewhere
-#' migth make sense; it's something to discuss once the driver script is working.
-#' TODO: will it always be a valid assumption to assume that the downscaling fxn returns on value
-#' for every value passed into it?
-#' TODO: Currently will not accept lists as an argument for esd.gen and its cousisns, but that's solvable
-#' later. 
 
 LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct, 
                              create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
@@ -67,7 +45,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              #s5.adjust=FALSE, s5.method=s5.method, s5.args = s5.args,
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
-                             create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
+                             create.qc.mask=FALSE, create.adjust.out=FALSE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
@@ -122,6 +100,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
+        message("Warning: Kfold cross-validation not supported at this time")
         kfold.predict <- ApplyTemporalMask(window.predict, kfold.masks[[1]]$masks[[kmask]])
         kfold.target <- ApplyTemporalMask(window.target, kfold.masks[[2]]$masks[[kmask]])
         kfold.gen <- ApplyTemporalMask(window.gen, kfold.masks[[3]]$masks[[kmask]])
@@ -179,7 +158,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    ds.var=ds.var)
           #Assign downscaled output to vector
           if(use.time.trim.mask){
-            downscale.vec[!is.na(kfold.timemask)] <- temp.out[!is.na(kfold.timemask)]
+#             downscale.vec[!is.na(kfold.timemask)] <- temp.out[!is.na(kfold.timemask)]
+            temp.assign <- esd.gen[[1]]
+            temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
+            downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
           }else{
             downscale.vec[!is.na(kfold.gen)] <- temp.out
           }
@@ -203,7 +185,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
           if(!is.null(temp.out$qc.mask)){
             if(use.time.trim.mask){
-              qc.mask[!is.na(kfold.timemask)] <- temp.out$qc.mask[!is.na(kfold.timemask)]
+              temp.assign <- esd.gen[[1]]
+              temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
+              downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
             }else{
               qc.mask[!is.na(kfold.gen)] <- temp.out$qc.mask #A NULL assignment might cause problems here. Second if?
             }
@@ -213,7 +197,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #If there is a time-trimming mask, use it here
           #Assign downscaled output to vector
           if(use.time.trim.mask){
-            downscale.vec[!is.na(kfold.timemask)] <- temp.out$ds.out[!is.na(kfold.timemask)]
+            temp.assign <- esd.gen[[1]]
+            temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
+            downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
           }else{
             downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
           }
@@ -232,11 +218,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       }
     }
   }
-  #However, if cross-validation is being performed
-  #   } else { 
-  #     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
-  #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
-  #   }
   #Exit loop
   return(list('downscaled'=downscale.vec, 'qc.mask'=qc.mask)) #'postproc.out'=postproc.out))
 }

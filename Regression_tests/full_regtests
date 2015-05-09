@@ -1,0 +1,13 @@
+##Lines with a '#' will be ignored by the script
+##Full regression test for tasmin
+darkchocolate_PM_tasmin.xml regression_test_tasmin.nc xml
+##Full regression test with time trimming masks for the Red River Region
+darkchocolate_RR_ttrim.xml regression_test_ttrim.nc xml
+##Full regression test for precipitation and no time masks in PM
+darkchocolate_PM_pr.xml regression_test_pr.nc xml
+##Full regression test for precipitation with time masks and different options
+#darkchocolate_pr2_RR.xml regression_test_pr2.nc xml
+##Full regression test for anomaly data
+darkchocolate_anom_PM_test.xml regression_test_anom.nc xml
+##Full regression test for synthetic data
+#darkchocolate_syn.xml regression_test_syn.nc xml

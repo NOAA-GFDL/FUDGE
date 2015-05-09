@@ -4,10 +4,6 @@
 #'Functions may switch out of here as the code adapts
 #'Carolyn Whitlock, January 2015
 
-# post_ds = list(mask1=list(type='PR', qc.mask='off', adjust.out='off', loc='outloop', 
-#                            qc_args=list(thold='us_trace', freqadj='off')), 
-#                mask2=list(type='flag.neg',adjust.out='off',qc.mask='on', loc='inloop',
-#                            qc_options=list('na')))
 
 index.a.list <- function(list, index, val){
   #Returns the list if the member of the 

@@ -1,6 +1,16 @@
+05/07/2015
+(a1r)
+1. submit jobs from $HOME directory
+
+05/06/2015
+(cew)
+1. Cleanup/removal of no-longer-used code
+2. Explicit documentation directory
+
 04/01/2015
 (a1r)
 1. fudgeList redundant MMDD fix
+
 03/30/2015
 (a1r)
 1. Reduced number of  echo statements, warnings in expergen, postProc where possible. 

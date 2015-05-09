@@ -15,16 +15,11 @@ SetDSMethodInfo <- function(ds.method){
                 'CDFtv1' = setCDFt(),
                 'simple.bias.correct' = setSimple.Bias.Correct(),
                 'nothing' = setNothing(), 'Nothing' = setNothing(),     
-                'general.bias.correct' = setGeneral.Bias.Correct(),
          "BCQM" = setBiasCorrection(), 
          "EDQM" = setEquiDistant(), 
          "CFQM" = setChangeFactor(),
-         "BCQM_DF" = setBiasCorrection(), 
-         "EDQM_DF" = setEquiDistant(), 
-         "CFQM_DF" = setChangeFactor(),
          "QMAP" = setChangeFactor(),
          "DeltaSD" = setDeltaSD(),
-         "EDQMv2" = setEquiDistant(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
 }
@@ -66,19 +61,6 @@ setSimple.Bias.Correct <- function(){
   #In hindsight, I am not even sure that this applies here. 
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c("ds.method", "qc.method")
-}
-
-setGeneral.Bias.Correct <- function(){
-  #Sets global variables if the DS method used is CDFt
-  #Is it possible to use cross-validation with this method?
-  crossval.possible <<- TRUE #TODO: ASK JRL about this! It might be possible to combine two methods
-  #for which that is not possible.
-  # Does this method use some of the same data to train the 
-  # ESD equations/quantiles AND generate the downscaled data?
-  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
-  #In hindsight, I am not even sure that this applies here. 
-  # What are the arguments to the args() parameter that are accepted? 
-  names.of.args <<- c("ds.method", "qc.method", "compare.factor")
 }
 
 setNothing <- function(){

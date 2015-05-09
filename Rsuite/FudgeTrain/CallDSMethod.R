@@ -19,15 +19,8 @@
 #' @param ds.var: The target variable. Can be used to key off of some methods. 
 #' @examples 
 #' @references \url{link to the FUDGE API documentation} 
-#' TODO: Find a better name for general.bias.corrector
-#' TODO: Modify methods other than simple.lm for this kind of dataset manipulation. 
-#' TODO: add explicit rather than implicit multivariate support
-#' TODO: Find better way to initialize the output storage vectors
-#' TODO: Seriously, THERE HAS GOT TO BE A LESS COMPLEX WAY
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant'){
-  #  library(CDFt)
-  #print(paste("start time:", date()))
   out <- switch(ds.method, 
                 "simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
@@ -36,13 +29,9 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "BCQM" = callBCQMv2(train.target, train.predict, esd.gen, args), 
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args), 
-#                 "CFQM_DF" = callCFQMv2(train.target, train.predict, esd.gen, args),
-#                 "BCQM_DF" = callBCQMv2(train.target, train.predict, esd.gen, args),
-#                 "EDQM_DF" = callEDQMv2(train.target, train.predict, esd.gen, args),
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
                 "QMAP" = QMAP(train.target, train.predict, esd.gen, args),
                 ReturnDownscaleError(ds.method))
-  #print(paste("stop time:", date()))
   return(out)  
 }
 
@@ -62,61 +51,11 @@ callSimple.lm <- function(pred, targ, new, args){
                   "and intercept was", lm.slope, ": therefore no ESD values will be generated."))
   }
   trained.function<-function(x){
-    return( lm.intercept + unlist(x)*lm.slope)  # + unlist(x)*lm.slope2) #Messily edited multivariate fxn? I don't remember this.
+    return( lm.intercept + unlist(x)*lm.slope)
   }
   #insert save command for saving 
   #May be rendered obsolete if going to a model that uekeeps everything in memory and trains each time.
   return(trained.function(new))
-}
-
-callMulti.lm <- function(pred, targ, new, args, ds.lengths){
-  #Creates a simple linear model without a cross-validation step. 
-  #Mostly used to check that the procedure is working
-  #esdgen.lengths <- length(new[[seq(1:length(new))]][[1]])
-  
-  #Initialize output structure
-  print("inside ds fxn")
-  output <- list()
-  print("looping on new")
-  print(ds.lengths)
-  print(mode(ds.lengths))
-  for(el in 1:length(new)){
-    print(el)
-    print(ds.lengths[[el]])
-    new.list <- rep(NA, ds.lengths[[el]])
-    output[[names(new)[el]]] <- new.list
-    print("assignment")
-    print(length(output[[el]]))
-    print(paste("lenght of output:", length(output)))
-  }
-  
-  #First, get matrix of predictor values to use for prediction
-  pred.mat <- matrix(unlist(pred, use.names=FALSE), ncol=length(pred), byrow=FALSE)
-  print("dimensions of predictor matrix")
-  print(dim(pred.mat))
-  print(length(unlist(targ)))
-  lm.coef <- coef(lm(unlist(targ) ~ pred.mat))
-  
-  for (i in 1:length(new)){ #new is organized first by RIP, then component
-    new.name <- names(new)[i]
-    #initialize ouput vector
-    #out.vec <- rep(NA, length(new$rip[1]))
-    new.mat <- matrix(unlist(new[i], use.names=FALSE), ncol=length(pred), byrow=FALSE)
-    #Note that this assumes that the order of the points/vars
-    #is the same for the predictor as the esd.gen datasets
-    #Multiply over all the columns
-    no.intercept <- sweep(x=new.mat, MARGIN=2, lm.coef[2:length(lm.coef)], "*")
-    #Replace any NA values with 0 for the addition step
-    no.intercept[is.na(no.intercept)] <- 0
-    no.intercept <- apply(X=no.intercept, MARGIN=1, "sum")
-    outvec <- no.intercept + lm.coef[1]
-    print(mode(outvec))
-    print(summary(outvec))
-    output[new.name] <- list(outvec)
-    print(summary(output))
-  }
-  print(summary(output))
-  return(output)
 }
 
 callCDFt <- function (pred, targ, new, args){
@@ -148,7 +87,6 @@ callCDFt <- function (pred, targ, new, args){
     stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
   }
   if(is.null(args)){
-    #return(CDFt(targ, pred, new, npas=length(targ))$DS)
     temp <- CDFt(targ, pred, new, npas=length(targ))$DS
   }else{
     ##Note: if any of the input data parameters are named, CDFt will 
@@ -194,104 +132,6 @@ callGeneral.Bias.Corrector <- function(pred, targ, new, args){
   return(out.vals)
 }
 
-callBiasCorrection <- function(LH, CH, CF, args){
-  #'Performs a bias correction adjustment
-  # LH: Local Historical (a.k.a. observations)
-  # CH: Coarse Historical (a.k.a. GCM historical)
-  # CF: Coarse Future (a.k.a GCM future)
-  # args: A vector of arguments to the function.
-  size <- length(CF)
-  prob<-seq(from=1/size, by=1, to=size)/size
-  #check the order preservation status
-    in.sort <- order(CF)
-    CF.out <- CF[in.sort]
-  # QM Change Factor
-  SDF<-quantile(LH,ecdf(CH)(quantile(CF.out,prob)),names=FALSE)
-  #CEW: creation of historical values commented out for the moment
-  #SDH<-quantile(LH,ecdf(CH)(quantile(CH,prob)),names=FALSE)
-  #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-    SDF <- SDF[order(in.sort)]
-  return (SDF)
-}
-
-callEquiDistant <- function(LH, CH, CF, args){
-  #'Performs an equidistant correction adjustment
-  # first define vector with probabilities [0,1]
-  # LH: Local Historical (a.k.a. observations)
-  # CH: Coarse Historical (a.k.a. GCM historical)
-  # CF: Coarse Future (a.k.a GCM future)
-  #'Cites Li et. al. 2010
-  size <- length(CF)
-  prob<-seq(from=1/size, by=1, to=size)/size
-  
-  #check order preservation status
-    in.sort <- order(CF)
-    CF.out <- CF[in.sort]
-
-  #Create numerator and denominator of equation
-  #First scale with local historical and reorder
-  temporal<-quantile(LH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-  
-  #And then scale with climate historical
-  temporal2<-quantile(CH,(ecdf(CF)(quantile(CF,prob))),names=FALSE)
-  
-  # EQUIDISTANT CDF (Li et al. 2010)
-  SDF<-CF.out + temporal-temporal2
-  #CEW creation of downscaled historical values turned off for the moment
-  #SDH<-CH + temporal-temporal2
-  #SDoutput<-list("SDF"=SDF,"SDH"=SDH)
-
-    SDF <- SDF[order(in.sort)] 
-  return (SDF)
-}
-
-callChangeFactor <- function(LH, CH, CF, args){
-  #'The script uses the Quantile Mapping Change Factor
-  #'(Ho, 2012) CDF to downscale coarse res. climate variables
-  #'@param LH: Local Historical (a.k.a. observations)
-    #'@param CH: Coarse Historical (a.k.a. GCM historical)
-    #'@param CF: Coarse Future (a.k.a GCM future)
-    #'@param args: named list of arguments for the function
-    
-    #Edit 3-2-2014 to add opt to sort by any vector
-    if(!is.null(args$sort)){
-      #can be one of 'future' or 'historical'
-      sort.opt <- args$sort
-      if(sort.opt=='future'){
-        sort.opt <- 'CF'
-      }else if(sort.opt=='historical'){
-        sort.opt <- 'CH'
-      }else if(sort.opt=='target'){
-        sort.opt <- 'LH'
-      }else{
-        stop(paste("CFQM Downscaling Error: arg sort was", sort.opt, "not 'future' or 'historical"))
-      }
-    }else{
-      stop(paste("CFQM Downscaling Error: sort not found in args"))
-    }
-    
-    #Edited 1-9-15 to organize vectors by the CF vector
-    size <- length(CF)
-    if(sort.opt=='CF'){
-      sort.vec <- order(CF)
-    }else{
-      if (sort.opt=='CH'){
-        sort.vec <- order(rep(CH, length.out=length(CF)))
-      }else{
-        sort.vec <- order(rep(LH, length.out=length(CF)))
-      }
-      CF <- CF[sort.vec]
-    }
-    # first define vector with probabilities [0,1]
-    prob<-seq(from=1/size, by=1, to=size)/size
-    
-    # QM Change Factor
-    SDF<-quantile(CF,(ecdf(CH)(quantile(LH,prob))),names=FALSE)
-    SDF <- SDF[order(sort.vec)]
-    #print(cor(SDF, sort.vec))
-    return (SDF)
-}
-
 callDeltaSD <- function(LH,CH,CF,args){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
@@ -321,7 +161,7 @@ callDeltaSD <- function(LH,CH,CF,args){
       stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
     }
     if(!is.null(args$keep.zeroes)){
-      keep.zeroes <- args$keep.zeroes
+      keep.zeroes <- ifelse(args$keep.zeroes=='on', TRUE, FALSE)
     }else{
       stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
     }
@@ -333,7 +173,6 @@ callDeltaSD <- function(LH,CH,CF,args){
       #That...raises an interesting question: should the CH vector be truncated as well?
       #Technically, it doesn't need to be for the code to work...
       if(keep.zeroes){
-#        print('keeping zeroes')
         SDF <- LH[1:length(CF)]
           out.temp <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop, keep.zeroes)
           SDF[SDF!=0] <- out.temp
@@ -504,25 +343,13 @@ callCFQMv2<-function(LH,CH,CF,args){
     temp$sortVec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
     sort.opt <- 'sortVec'
   }
-#   save(list=c('temp'), file="/home/cew/Code/testing/test.save")
-#   stop('problem')
-#   sort.opt <- 'CF'
   #If the longest dim is used, sorting is straightforward
   temp.opt.sorted<-temp[order(temp[[sort.opt]]),] #sorts by sort.opt
-  #temp.opt.sorted <- temp
-  #i.e. all temp.LHsorted to temp.CFsorted
+  
   temp.opt.sorted$qLH<-quantile(temp.opt.sorted$LH,prob,na.rm =TRUE) #removed all 1:lengthCF
   temp.opt.sorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
   temp.opt.sorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Added parenthesis befpre ecdf
   temp<-temp.opt.sorted[order(temp.opt.sorted$index, na.last=TRUE),] #, na.last=FALSE #removed order #temp.opt.sorted$index
-#   temp.CHsorted2<-temp[order(temp$CH),]
-#   
-#   temp.CHsorted2$qLH<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
-#   temp.CHsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-#   temp.CHsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-#   
-#   temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),]
-#   print("Downscaled data ordered using the Coarse Historical dataset")
   
   SDF<-temp$qCFecdfCHqLH
   print(summary(SDF))
@@ -541,109 +368,6 @@ callCFQMv2<-function(LH,CH,CF,args){
   }
   return(SDF[!is.na(SDF)])
 }
-
-# callCFQMv2<-function(LH,CH,CF,args)
-# {
-#   
-#     if(!is.null(args$sort)){
-#       #can be one of 'future' or 'historical'
-#       sort.opt <- args$sort
-#       if(sort.opt=='future'){
-#         sort.opt <- 'CF'
-#       }else if(sort.opt=='historical'){
-#         sort.opt <- 'CH'
-#       }else if(sort.opt=='target'){
-#         sort.opt <- 'LH'
-#       }else{
-#         stop(paste("CFQM_DF Downscaling Error: arg sort was", sort.opt, "not 'future', 'historical', or 'target'"))
-#       }
-#     }else{
-#       stop(paste("CFQM_DF Downscaling Error: sort not found in args"))
-#     }
-#   lengthCF<-length(CF)
-#   lengthCH<-length(CH)
-#   lengthLH<-length(LH)
-#   
-#   if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-#   if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
-#   
-#   lengthCFna<-length(which(!is.na(CF))) # count number of obs without NA
-#   lengthCHna<-length(which(!is.na(CH)))
-#   
-#   if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
-#   
-#   # first define vector with probabilities [0,1]
-#   prob<-seq(0.001,0.999,length.out=lengthCF)
-#   
-#   # initialize data.frame
-#   temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
-#   SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim))
-#   
-#   #initialize output list
-#   outputlist<-list(CFQM=rep(NA,maxdim))
-#   
-#   
-#   SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF
-#   SDF$CH[1:lengthCH]<-temp$CH[1:lengthCH]<-CH
-#   SDF$LH[1:lengthLH]<-temp$LH[1:lengthLH]<-LH
-#   
-#   if (sort.opt=="CF"){
-#     # CHANGE FACTOR ORDERED BY COARSE FUTURE
-#     temp.CFsorted2<-temp[order(temp$CF),]
-#     
-#     temp.CFsorted2$qLH<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)
-#     temp.CFsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-#     temp.CFsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-#     
-#     temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),]
-#     print("Downscaled data ordered using the Coarse Future dataset")
-#     
-#   }
-#   
-#   if (sort.opt=="LH"){
-#     # CHANGE FACTOR ORDERED BY LOCAL HISTORICAL
-#     temp.LHsorted2<-temp[order(temp$LH),]
-#     
-#     temp.LHsorted2$qLH<-quantile(temp.LHsorted2$LH,prob,na.rm =TRUE)
-#     temp.LHsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-#     temp.LHsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-#     
-#     temp.CFQM2<-temp.LHsorted2[order(temp.LHsorted2$index),]
-#     print("Downscaled data ordered using the Local Historical dataset")
-#     
-#     
-#   }
-#   
-#   if (sort.opt=="CH"){
-#     # CHANGE FACTOR ORDERED BY COARSE HISTORICAL
-#     temp.CHsorted2<-temp[order(temp$CH),]
-#     
-#     temp.CHsorted2$qLH<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
-#     temp.CHsorted2$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-#     temp.CHsorted2$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-#     
-#     temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),]
-#     print("Downscaled data ordered using the Coarse Historical dataset")
-#     
-#   }
-#   
-#   ### Assign downscaled output to the SDF (Statistically Downscaled Future) list
-#   
-#   SDF$CFQM<-temp.CFQM2$qCFecdfCHqLH
-#   outputlist$CFQM[1:(maxdim-mindimNA)]<-SDF$CFQM[1:mindimNA]
-#   
-#   
-#   if (sort.opt=="CF"){
-#     print(sprintf("Correlation %s",cor(SDF$CFQM[1:mindim],SDF$CF[1:mindim])))}
-#   if (sort.opt=="LH"){
-#     print(sprintf("Correlation %s",cor(SDF$CFQM[1:mindim],SDF$LH[1:mindim])))}
-#   if (sort.opt=="CH"){
-#     print(sprintf("Correlation %s",cor(SDF$CFQM[1:mindim],SDF$CH[1:mindim])))}
-#   
-#   
-#   #return(SDF) or
-#   return(SDF$CFQM)
-# }
 
 callBCQMv2<-function(LH,CH,CF,args){
   #' Calls latest version of BCQM function

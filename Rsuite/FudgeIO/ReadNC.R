@@ -11,7 +11,11 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   #'@param dim: Which dimensions to include in the netCDF object. Can be one of 'temporal', 
   #'which queries the dimension associated with the T axis, 'spatial', which queries the dimensions associated with the
   #'X, Y and Z axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
-  #''temporal' returns all variables that reference the T axis underneath the $vars list of the output, and 
+  #''temporal' returns all variables that reference only the T axis underneath the $vars list of the output, and 'spatial' 
+  #'returns all variables that reference only one or more of the spatial axes under the $vars list.
+  #'@param force_3_dimensions: Whether to collapse degenerate non- x, y, t dimensions for more standardized
+  #'calculation. Defaults to FALSE.
+  #'@param verbose: Whether to print extended status messages. Defaults to FALSE.
   #'
   #'@returns A list containing the following elements: 
   #'  $clim.in: A 3-dimensional array of the values in the variable with the same dimensions

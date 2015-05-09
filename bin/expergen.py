@@ -579,10 +579,10 @@ def main():
 		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
                 try:  
    			NEMSemail = os.environ["NEMSemail"]
-                        print "msub -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+tsuffix
+                        print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+tsuffix
 		except KeyError: 
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-			print "msub "+sbase+"postProc/postProc_command"+tsuffix
+			print "msub -d $HOME "+sbase+"postProc/postProc_command"+tsuffix
 	else:
 		print "postProc_command cannot be created. postProc_source does not exist"
 ################ step 5 fudgeList invocation ##############################################

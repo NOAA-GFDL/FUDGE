@@ -1,0 +1,70 @@
+<downscale>
+    <ifpreexist>move</ifpreexist>
+    <input predictor_list = "tasmax" target = "tasmax" target_ID="tx" spat_mask = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/" maskvar = "red_river_0p1_masks" spat_mask_ID = "RR" in_root="/archive/esd/PROJECTS/DOWNSCALING">
+    <dim>OneD</dim> 
+        <grid region = "SCCSC0p1">
+            <lons>181</lons>
+            <lone>370</lone>
+        <lats>31</lats>
+        <late>170</late>    
+            <file_j_range>"J31-170"</file_j_range>
+        </grid>
+        <training>
+            <historical_predictor
+                file_start_time = "19610101"
+                file_end_time = "20051231"
+                train_start_time = "19610101"
+                train_end_time = "20051231"
+         time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc'
+                >
+                <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.historical.day.atmos.day.r1i1p1.v20111006</dataset>
+            </historical_predictor>
+            <historical_target
+file_start_time = "19610101"
+                file_end_time = "20051231"
+                train_start_time = "19610101"
+                train_end_time = "20051231"
+        time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc'
+            >
+                <dataset>OBS_DATA.GRIDDED_OBS.livneh.historical.day.atmos.day.r0i0p0.v1p2</dataset>
+            </historical_target>
+            <future_predictor
+                file_start_time = "20060101"
+                file_end_time = "20991231"
+                train_start_time = "20060101"
+                train_end_time = "20991231"
+                time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc'
+		time_trim_mask = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
+            >
+               <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.rcp45.day.atmos.day.r1i1p1.v20111006</dataset>
+            </future_predictor>
+        </training>
+        <esdgen> 
+        </esdgen>
+    </input>    
+<core>
+        <method name="CDFt"> </method>
+            <exper_series>C34atL01</exper_series>
+           <project>Red River</project>
+           <project_ID>RR</project_ID>
+           <kfold>
+              0 
+           </kfold>
+           <output>
+<!-- out_dir path is the downscaled minifile output directory, usually based on the future_predictor path. The postProc concatenated file will be placed one directory level up from that specified by out_dir.  
+In a move towards generalization - since in the future there may be multiple predictors - XMLgen will give the user the ability to specifying the output directory. But generally speaking, if the main future predictor is from a directory with the pattern “$dataSource/$epoch/$freq/$realm/$misc/$rip/$dataVersion” (taken from a <dataset> tag, but with “/” in place of “.”), then the <out_dir> is patterned: $outRoot/$project_ID/downscaled/$dataSource/$epoch/$freq/$realm/$misc/$rip/$dataVersion/$experimentName/$target/$spat_mask_ID/$dim/, where $outroot for non-test experiments will be /archive/esd/PROJECTS/DOWNSCALING, and $experimentName is built by XMLgen from $project_ID$target_ID${platform}-$method-${exper_series}$kfold -related string. -->
+                  <out_dir>/nbhome/cew/downscaled/MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/RRtxp1-CDFt-C34atL01K00/tasmax/RR/OneD/</out_dir>
+                  <script_root>/nbhome/cew/Code/testing/</script_root>
+        </output>
+</core>
+<custom>
+        <dev>1</dev>
+        <npas>'default'</npas>
+</custom>
+<pp>
+       <qc type='SBiasCorr' qc_mask='on' adjust_out='off'>
+               <botlim>-6.0</botlim>
+               <toplim>6.0</toplim>
+       </qc>
+</pp>
+</downscale>

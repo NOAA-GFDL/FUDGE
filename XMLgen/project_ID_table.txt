@@ -1,0 +1,10 @@
+ID Project_Name
+-- -------------
+RR Red_River (Use only for fudge/cinnamon)
+PM Perfect_Model
+SYN Synthetic_Data
+3T5 3^5
+TC Test_Case
+RR2 Red_River_2
+S1 Synthetic_test_1
+S2 Synthetic_test_2
