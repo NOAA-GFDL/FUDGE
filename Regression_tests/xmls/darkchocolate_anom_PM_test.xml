@@ -1,6 +1,6 @@
 <downscale>
 	<ifpreexist>move</ifpreexist>
-    <input predictor_list = "tasmaxAnom" target = "tasmaxAnom" target_ID="txan" spat_mask = "na" maskvar = "na" spat_mask_ID="US48" in_root="/archive/esd/PROJECTS/DOWNSCALING" >
+    <input predictor_list = "tasminAnom" target = "tasminAnom" target_ID="tnan" spat_mask = "na" maskvar = "na" spat_mask_ID="US48" in_root="/archive/esd/PROJECTS/DOWNSCALING" >
 	<dim>OneD</dim> 
         <grid region = "US48">
             <lons>748</lons>
@@ -17,7 +17,7 @@
                 train_end_time = "20081231"
  		time_window='na'
                 >
-                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.day.PManom1979-2008Sbx7.v20110601</dataset><!--- we know that we want the tasmax, tasmin vars 
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.PManom1979-2008Sbx7.r1i1p1.v20110601</dataset><!--- we know that we want the tasmax, tasmin vars 
                 in the id directory as specified in <input predictor_list = ""> -->
             </historical_predictor>
             <historical_target
@@ -28,7 +28,7 @@
 		time_window = 'na'
             >
 <!-- NCPP2013.modified.NOAA-GFDL.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.r1i1p2.v20110601 -->
-                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.day.PManom1979-2008Sbx7.v20110601</dataset>
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.PManom1979-2008Sbx7.r1i1p1.v20110601</dataset>
             </historical_target>
                 <!-- and in this case, we want the target var specified in <input> -->
             <future_predictor
@@ -38,7 +38,7 @@
                 train_end_time = "20951231"
                 time_window = 'na'
             >
-                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.PManom2086-2095Sbx7.v20110601</dataset>
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.PManom2086-2095Sbx7.r1i1p2.v20110601</dataset>
             </future_predictor>
         </training>
         <esdgen>
@@ -59,7 +59,7 @@
         </kfold>
     <!--specifies the OUTPUT DIRECTORY -->
         <output>
-            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/PManom2086-2095Sbx7/v20110601/PMtxanp1-BCQM-B38ca2L01K00/tasmaxAnom/US48/OneD/</out_dir>
+            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/PManom2086-2095Sbx7/v20110601/PMtnanp1-BCQM-B38ca2L01K00/tasminAnom/US48/OneD/</out_dir>
 	    <script_root>SCRIPT_DIR/regression_test_5/</script_root>
         </output>
     </core>

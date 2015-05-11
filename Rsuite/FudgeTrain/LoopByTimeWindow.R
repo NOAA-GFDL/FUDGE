@@ -159,7 +159,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #Assign downscaled output to vector
           if(use.time.trim.mask){
 #             downscale.vec[!is.na(kfold.timemask)] <- temp.out[!is.na(kfold.timemask)]
-            temp.assign <- esd.gen[[1]]
+            temp.assign <- esd.gen
             temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
             downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
           }else{
@@ -185,8 +185,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #create.qc.mask=create.qc.mask, create.adjust.out=create.adjust.out)
           if(!is.null(temp.out$qc.mask)){
             if(use.time.trim.mask){
-              temp.assign <- esd.gen[[1]]
-              temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
+              temp.assign <- esd.gen
+              temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out$qc.mask
               downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
             }else{
               qc.mask[!is.na(kfold.gen)] <- temp.out$qc.mask #A NULL assignment might cause problems here. Second if?
@@ -197,8 +197,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #If there is a time-trimming mask, use it here
           #Assign downscaled output to vector
           if(use.time.trim.mask){
-            temp.assign <- esd.gen[[1]]
-            temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out
+            temp.assign <- esd.gen
+            temp.assign[!is.na(mask.struct[[3]]$masks[[window]])] <- temp.out$ds.out
             downscale.vec[!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
           }else{
             downscale.vec[!is.na(kfold.gen)] <- temp.out$ds.out
