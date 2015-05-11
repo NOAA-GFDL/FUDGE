@@ -58,7 +58,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
-                "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args),
+                "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var),
                 ReturnDownscaleError(ds.method))
 #  if(remove.ds.missvals){
     #Same alternate missval removal structure as earlier
@@ -73,7 +73,7 @@ ReturnDownscaleError <- function(ds.method){
   stop(paste("Downscale Method Error: the method", ds.method, "is not supported for FUDGE at this time."))
 }
 
-callMulti.lm <- function(pred, targ, new, args=NA){
+callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax'){
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
   #'pred, and then uses the data in new to predict
@@ -82,10 +82,19 @@ callMulti.lm <- function(pred, targ, new, args=NA){
     test.list <- c('target'=list(targ), pred)
     test.prod <- data.frame(test.list)
   lm.model <- lm(data=test.prod)
-#     save(file="~/Code/test_multivar.R", list=c('lm.model'))
-#     print(paste("save.file:~/Code/test_multivar.R"))
-#     stop('examine lm.model')
-  return(predict.lm(lm.model, newdata=new))
+    save(file="~/Code/test_multivar.R", list=c('lm.model', 'new'))
+    print(paste("save.file:~/Code/test_out.R"))
+    stop('examine future predictors and think accordingly')
+    rips <- unique(gsub(".*_", "", names(new)))
+    out.list <- list()
+    for(rip in rips){
+      rip.select <- new[[grepl(rip, names(new))]]
+      names(rip.select) <- gsub(".*_", "", names(rip.select))
+      out.var <- paste(ds.var, rip, sep="_")
+      out.list[[out.var]] <- predict.lm(lm.model, newdata=rip.select)
+    }
+  #return(predict.lm(lm.model, newdata=new))
+    return(out.list)
 }
 
 
