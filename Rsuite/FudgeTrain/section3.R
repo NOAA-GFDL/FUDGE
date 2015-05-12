@@ -91,11 +91,9 @@ callPRPreproc <- function(test, input, postproc.output){
                             zero.to.na=apply.0.mask)
 #   save(file="~/Code/testing/pr_expresso.R", list=c('temp.out', 'test', 'input'))
 #   stop('examine results')
-    fut.prmask <- temp.out$future$pr_mask
+    
     ###TODO: Change specifications to get a better name for this.
     ###Indexing by method is going to be REALLY HANDY
-    pr_mod <- postproc.output$propts
-    pr_mod$qc_args$fut.prmask <- fut.prmask
   #Add back into the original structure
   input$hist.targ        <- temp.out$ref$data   #only a single target variable
   input$hist.pred[[var]] <- temp.out$adjust$data
@@ -110,9 +108,18 @@ callPRPreproc <- function(test, input, postproc.output){
       #in the predictor datasets will have the missinv values added back in
       input$hist.targ        <- (temp.out$ref$data   * temp.out$ref$pr_mask)
       input$hist.pred <- lapply(input$hist.pred, "*", temp.out$adjust$pr_mask)
-      input$fut.pred  <- lapply(input$fut.pred,  "*", temp.out$future$pr_mask)    
+      input$fut.pred  <- lapply(input$fut.pred,  "*", temp.out$future$pr_mask)
+      #Save future pr mask fo application in section 5;
+      #note that it is the presence of this mask that 
+      #leads to the adjustment being performed.
+      #Please also note that this is currently the ONLY THING
+      #that will change the adjustments being performed in section 5
+      #by the pr post-processing
+      fut.prmask <- temp.out$future$pr_mask
+      pr_mod <- postproc.output$propts
+      pr_mod$qc_args$fut.prmask <- fut.prmask
+      postproc.output$propts <- pr_mod
     }
-    postproc.output$propts <- pr_mod
   return(list('input'=input,
               's5.list'=postproc.output))
 }
