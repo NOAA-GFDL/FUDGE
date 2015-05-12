@@ -233,7 +233,8 @@ list.fut <- ReadMultiVars(file.prefix=fut.indir_1,
                            blank.filename=fut.filename, 
                            var.list=predictor.vars, 
                            dim=c('temporal'), 
-                           add.ens.dim=TRUE, 
+                           add.ens.dim=TRUE,
+                          check.for.ens = TRUE, ens.member = fut.scenario_1,
                            verbose=TRUE)
 
 message("Applying spatial mask to future predictor dataset")

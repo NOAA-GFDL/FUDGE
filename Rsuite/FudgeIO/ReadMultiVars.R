@@ -4,12 +4,28 @@
 #'and writes the files as a single object with variables and dims cloned from the 
 #'first file, and a $clim.in value
 #'that consists of the various components of the 
-ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, dim=NA, add.ens.dim=FALSE, verbose=FALSE){
+ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, dim=NA, 
+                          add.ens.dim=FALSE, 
+                          check.for.ens = FALSE, ens.member = "",
+                          verbose=FALSE){
   #First, determine what the dimensions of the input files will be. 
   #To do that, you first need to create the input .nc objects, and look
   #At their dimensions. 
   nc.list <- list()
   dim.list <- list()
+  if(check.for.ens){
+    #Check for the 'to' string that indicates an ensemble file; 
+    if(grepl("_r[0-9]to*", ens.member)){
+      ens.regex <- gregexpr("_r[0-9]to*", ens.member)
+      ens.string <- substr(ens.member, ens.regex[[1]] + 1, nchar(ens.member))
+      ens.start <- as.numeric(substr(ens.string, 2, 2))
+      ens.end <- as.numeric(substr(ens.string, 5, 5))
+      ens.vector <- paste("r", seq(ens.start:ens.end), substr(ens.sring, 6, nchar(ens.sring)))
+      #adjust the filename accordingly if present
+      blank.filename <- sub(".nc", "_ensmbl.nc", blank.filename)
+    }
+    
+  }
   for(var in var.list){
     file.name <- sub(pattern="VAR", replacement=var, x=blank.filename)
     file.path <- paste(file.prefix, var, file.suffix, sep="/")
@@ -55,9 +71,12 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
 #                     var.units="",                 #Units for each variable. Same caveat applies as above.
 #                     var.prec="",                  #Precision when writing to file. Maybe not a big deal, but keep losing it.
 #                     point="",                     #The part of the x,y coordinate scheme that can be deduced. Not implemented yet.
-#                     p.rep=""                      #Physics rip used. Not used yet, and might not get used at all.
+#                     p.rep="",                     #Physics rip used. Not used yet, and might not get used at all.
+#                     var = ""                      #The name of the variable used. Just the shortname, no additions used.    
 #   )
   data.list <- rep(list(data.array), length(var.list))
+  #Make new names if ensembel members are being used as well
+  if(check.for.ens)
   names(data.list) <- unlist(var.list)
     att_table <- list()
   for(v in 1:length(var.list)){
