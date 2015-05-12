@@ -100,8 +100,8 @@ end
 set lon_start=`expr $sub_lon_end + 1`
 #set lon_end=`expr $sub_lon_end`
 if($msub == 'True') then
-	echo "msub $masterloc"
-	msub $msub_string $masterloc
+	echo "msub -d $HOME $masterloc"
+	msub -d $HOME $msub_string $masterloc
 else
 #echo $msub
         echo "$masterloc"
