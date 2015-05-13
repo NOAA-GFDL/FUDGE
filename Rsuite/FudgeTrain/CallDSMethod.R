@@ -58,7 +58,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args), 
                 "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
-                "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var),
+                "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
 #  if(remove.ds.missvals){
     #Same alternate missval removal structure as earlier
@@ -73,24 +73,37 @@ ReturnDownscaleError <- function(ds.method){
   stop(paste("Downscale Method Error: the method", ds.method, "is not supported for FUDGE at this time."))
 }
 
-callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax'){
+callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = NULL){
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
   #'pred, and then uses the data in new to predict
   #'the future results. 
   #'Does not currently take any arguments
+  
+  #First, rename the predictor vars - if the ReadmultiVars
+  #code truly is general, there is a good chance that this
+  #is named by rip and var, not just var
+  names(pred) <- lapply(att_table$hist.pred, '[[', 'var')
+  #Now, create your data frame and make the linear model
     test.list <- c('target'=list(targ), pred)
     test.prod <- data.frame(test.list)
-  lm.model <- lm(data=test.prod)
-    save(file="~/Code/test_multivar.R", list=c('lm.model', 'new'))
-    print(paste("save.file:~/Code/test_out.R"))
-    stop('examine future predictors and think accordingly')
-    rips <- unique(gsub(".*_", "", names(new)))
+    lm.model <- lm(data=test.prod)
+#     save(file="~/Code/test_multivar.R", list=c('lm.model', 'new'))
+#     print(paste("save.file:~/Code/test_out.R"))
+#     stop('examine future predictors and think accordingly')
+    rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+    rips <- unique(rip.list)
     out.list <- list()
     for(rip in rips){
-      rip.select <- new[[grepl(rip, names(new))]]
-      names(rip.select) <- gsub(".*_", "", names(rip.select))
-      out.var <- paste(ds.var, rip, sep="_")
+      out.var <= paste(ds.var, rip, sep=".")
+      #Get true/false vector to index out the data that you want
+      rip.index <- (rip.list==rip)
+      rip.data <- new[rip.index]
+      #And to make sure that everything has the same names as
+      #earlier, rename the list in the selected dataset
+      names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
+      #names(rip.select) <- gsub(".*_", "", names(rip.select))
+      #out.var <- paste(ds.var, rip, sep="_")
       out.list[[out.var]] <- predict.lm(lm.model, newdata=rip.select)
     }
   #return(predict.lm(lm.model, newdata=new))

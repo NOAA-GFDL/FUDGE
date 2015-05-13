@@ -61,6 +61,7 @@ callPRPreproc <- function(test, input, postproc.output){
   #Note: you get truly SPECTACULAR fatal errors if one of the units values
   #passed to the function is null.
   ##Revising 4-14 for the 
+  #att_table in input$att.list, and is further organized by hist.pred, hist.targ and fut.pred
 
   pr.names <- (names(test$pp.args))
   #Obtain function args
@@ -75,29 +76,35 @@ callPRPreproc <- function(test, input, postproc.output){
   }
   if('apply_0_mask'%in%pr.names){
     apply.0.mask = (test$pp.args$apply_0_mask=='on')
+    pr_mod <- postproc.output$propts #Used later to add masks for later application
   }else{
     message("Assuming that an old XML is being used; default behavior in place")
     apply.0.mask=FALSE
   }
-  #Select the variables of interest, and put them through the
+  #Select the variables of interest, and put them through the pr pre_processing function
   var <- names(input$att.list$hist.targ)
+  #Insert looping by RIP in this section
+  rip.list <- lapply(att_table, '[[', 'rip')
+  rips <- unique(rip.list)
+  for (rip in rips){
   #at the end, instructions are unchanged
+    fut.pred.var <- paste0(var, ".", rip)
   temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
                             adjust.data=input$hist.pred[[var]],  adjust.units=input$att.list$hist.pred[[var]]$units, 
-                            adjust.future=input$fut.pred[[var]], adjust.future.units=input$att.list$fut.pred[[var]]$units,
+                            #Looping by rip makes future predictor more complicated, but not anything else (yet)
+                            adjust.future=input$fut.pred[[fut.pred.var]], 
+                            adjust.future.units=input$att.list$fut.pred[[fut.pred.var]]$units,
+                            #relatively constant parameters that don't require as much looping
                             opt.wetday=threshold, 
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 
                             zero.to.na=apply.0.mask)
-#   save(file="~/Code/testing/pr_expresso.R", list=c('temp.out', 'test', 'input'))
-#   stop('examine results')
-    
     ###TODO: Change specifications to get a better name for this.
     ###Indexing by method is going to be REALLY HANDY
   #Add back into the original structure
   input$hist.targ        <- temp.out$ref$data   #only a single target variable
   input$hist.pred[[var]] <- temp.out$adjust$data
-  input$fut.pred[[var]]  <- temp.out$future$data
+  input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
     if(apply.0.mask){
       #only apply the mask if it it will result in more missing values
       #technically, it's a time mask - but it can be 3-D
@@ -116,10 +123,12 @@ callPRPreproc <- function(test, input, postproc.output){
       #that will change the adjustments being performed in section 5
       #by the pr post-processing
       fut.prmask <- temp.out$future$pr_mask
-      pr_mod <- postproc.output$propts
-      pr_mod$qc_args$fut.prmask <- fut.prmask
+      pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
+    }
+    if(apply.0.mask){
       postproc.output$propts <- pr_mod
     }
+  }
   return(list('input'=input,
               's5.list'=postproc.output))
 }

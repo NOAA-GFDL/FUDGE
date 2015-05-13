@@ -2,7 +2,7 @@
 rm(list=ls())
 
 #--------------predictor and target variable names--------#
-	predictor.vars <- list('psl','zg500','tasmin') 
+	predictor.vars <- list('tasmax', 'tasmin') #'psl','zg500'
 	target.var <- 'tasmax'
 #--------------grid region, mask settings----------#
         grid <- 'US48' 
@@ -54,7 +54,7 @@ rm(list=ls())
 	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'multi.lm' 
-	ds.experiment <- 'PMtxp1-multi.lm-C01r11multi_testX01K00' 
+	ds.experiment <- 'PMtxp1-multi.lm-C01r11multi_ensX01K00' 
 	k.fold <- 0 
 	
 #-------------- output -----------------------#

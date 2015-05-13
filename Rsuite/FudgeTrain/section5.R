@@ -127,44 +127,55 @@ callPRPostproc <- function(test, input, adjusted.output){
   #Performs the adjustments needed for post-downscaling precipitation
   #on the downscaled ouput, including a threshold adjustment for drizzle
   #bias and conservation of the total precipitation per time range
-  
-  #Find arguments to pre-processing function
-  arg.names <- names(test$qc_args) #qc_args #pp_args
-  if('thold'%in%arg.names && 'conserve'%in%arg.names){
-    #Never adjusting to another frequency at this point in the process
-    lopt.drizzle=FALSE
-  }else{
-    stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
-  }
-  if('fut.prmask'%in%arg.names){
-    message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
-    adjusted.output$ds.out[test$qc_args$fut.prmask==0] <- 0
-    test$qc_args$fut.prmask <- 'calculated from the input pr data'
-  }else{
-    message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
-  }
-  
-  #Obtain mask of days that will be eliminated
-  out.mask <- MaskPRSeries(adjusted.output$ds.out, units=input$data.atts[[1]]$units, index=test$qc_args$thold)
-  #Apply the conserve option to the data
-  if(test$qc_args$conserve=='on'){
-    #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it      
-    for(i in 1:length(adjusted.output$ds.out[,1,1])){
-      for(j in 1:length(adjusted.output$ds.out[1,,1])){
-        esd.select <- adjusted.output$ds.out[i,j,]
-        mask.select <- out.mask[i,j,]
-        esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
-                                                           mask=mask.select[!is.na(mask.select)])
-        adjusted.output$ds.out[i,j,]<- esd.select
-        #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
-        #However, there are checks external to the function to get that, so it might not be as much of an issue.
+  #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
+  rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  #Loop by rip - remember, s3 and s5 get indexed by rip, ds out components get indexed by var.name
+  for (rip in rips){
+    #create sppropriate variable name
+    ds.var <- paste0(input$data.atts$fut.pred$hist.targ, ".", rip)
+    #Find arguments to pre-processing function
+    arg.names <- names(test$qc_args) #qc_args #pp_args
+    if('thold'%in%arg.names && 'conserve'%in%arg.names){
+      #Never adjusting to another frequency at this point in the process
+      lopt.drizzle=FALSE
+    }else{
+      stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
+    }
+    if(test$qc_args$apply_0_mask=='on'){
+      message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
+      temp.adjust <- adjusted.output$ds.out[[ds.var]]
+      temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
+      adjusted.output$ds.out[[ds.var]] <- temp.adjust
+      test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data'
+    }else{
+      message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
+    }
+    
+    #Obtain mask of days that will be eliminated
+    out.mask <- MaskPRSeries(adjusted.output$ds.out[[ds.var]], units=input$data.atts[[1]]$units, index=test$qc_args$thold)
+    #Apply the conserve option to the data
+    if(test$qc_args$conserve=='on'){
+      #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it
+      temp.adjust <- adjusted.output$ds.out[[ds.var]]
+      for(i in 1:length(adjusted.output$ds.out[,1,1])){
+        for(j in 1:length(adjusted.output$ds.out[1,,1])){
+          esd.select <- temp.adjust[i,j,]
+          mask.select <- out.mask[i,j,]
+          esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
+                                                             mask=mask.select[!is.na(mask.select)])
+          temp.adjust[i,j,]<- esd.select
+          #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
+          #However, there are checks external to the function to get that, so it might not be as much of an issue.
+        }
       }
     }
-  }
-  #Apply the mask
-  adjusted.output$ds.out <- as.numeric(adjusted.output$ds.out) * out.mask
-  if(test$qc.mask=='on'){
-    adjusted.output$qc.mask <- out.mask
+    adjusted.output$ds.out[[ds.var]] <- temp.adjust
+    #Apply the mask
+    adjusted.output$ds.out[[ds.var]] <- as.numeric(adjusted.output$ds.out[[ds.var]]) * out.mask
+    if(test$qc.mask=='on'){
+      adjusted.output$qc.mask[[ds.var]] <- out.mask
+    }
   }
   return(adjusted.output)          
 }

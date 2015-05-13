@@ -95,7 +95,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                            qc.mask='off', 
                            loc='outloop', 
                            qc_args=list(thold=pr_opts$pr_threshold_out,
-                                           conserve=pr_opts$pr_conserve_out))
+                                        conserve=pr_opts$pr_conserve_out, 
+                                        apply_0_mask=pr_opts$apply_0_mask))
   }
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds))  
 }
