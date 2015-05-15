@@ -2,7 +2,7 @@
 rm(list=ls())
 
 #--------------predictor and target variable names--------#
-	predictor.vars <- list('tasmax', 'tasmin') #'psl','zg500'
+	predictor.vars <- list('tasmax') #'psl','zg500' #, 'tasmin' Tasmin files have not yet been run
 	target.var <- 'tasmax'
 #--------------grid region, mask settings----------#
         grid <- 'US48' 
@@ -32,11 +32,11 @@ rm(list=ls())
 	fut.file.end.year_1 <- 20951231 
         fut.train.start.year_1 <- 20860101 
         fut.train.end.year_1 <- 20951231 
-	fut.scenario_1 <- 'sst2090_r1i1p1'
+	fut.scenario_1 <- 'sst2090_r1to3i1p1'
 	fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 	fut.model_1 <- 'GFDL-HIRAM-C360-COARSENED' 
 	fut.freq_1 <- 'day' 
-	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601'
+	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1to3i1p1/v20110601'
 	fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
         fut.time.trim.mask <- 'na'
 #-------------- predictor directory suffix -----------#
@@ -56,6 +56,14 @@ rm(list=ls())
         ds.method <- 'multi.lm' 
 	ds.experiment <- 'PMtxp1-multi.lm-C01r11multi_ensX01K00' 
 	k.fold <- 0 
+#------------------------------------------------------------#
+#Temporary ensemble file specs for working out internal data
+#structures
+fut.filename.suffix <- '_ensmbl' 
+fut.pred.rip.list <- list('r1i1p1', 'r2i1p1', 'r3i1p1')
+# output.dirs <- c('/home/cew/Code/testing/', 
+#                  '/home/cew/Code/testing/', 
+#                  '/home/cew/Code/testing/')
 	
 #-------------- output -----------------------#
 	output.dir <- '/home/cew/Code/testing/'

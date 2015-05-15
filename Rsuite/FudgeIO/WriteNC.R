@@ -152,7 +152,7 @@ WriteNC <-  function(filename,data.array,var.name,
     if(verbose) { message("placing nc vars") }
     if(!writelist){
       nc.obj <- nc_open(filename, write=TRUE)
-      ncvar_put(nc.obj, var.dat[[var.name]], data.array)
+      ncvar_put(nc.obj, var.dat[[var.name]], data.array, verbose=FALSE)
     }else{
       for (loop in 1:length(data.array)){
         #nc.obj <- nc_open(filename, write=TRUE)

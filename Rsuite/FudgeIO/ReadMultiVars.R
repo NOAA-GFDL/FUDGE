@@ -6,31 +6,49 @@
 #'that consists of the various components of the 
 ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, dim=NA, 
                           add.ens.dim=FALSE, 
-                          check.for.ens = FALSE, ens.member = "",
+                          #check.for.ens = FALSE, ens.member = "",
+                          rip.list = list('fake_rip'), rip.suffix = '', 
                           verbose=FALSE){
   #First, determine what the dimensions of the input files will be. 
   #To do that, you first need to create the input .nc objects, and look
   #At their dimensions. 
   nc.list <- list()
   dim.list <- list()
-  if(check.for.ens){
-    #Check for the 'to' string that indicates an ensemble file; 
-    if(grepl("_r[0-9]to*", ens.member)){
-      ens.regex <- gregexpr("_r[0-9]to*", ens.member)
-      ens.string <- substr(ens.member, ens.regex[[1]] + 1, nchar(ens.member))
-      ens.start <- as.numeric(substr(ens.string, 2, 2))
-      ens.end <- as.numeric(substr(ens.string, 5, 5))
-      ens.vector <- paste("r", seq(ens.start:ens.end), substr(ens.sring, 6, nchar(ens.sring)))
-      #adjust the filename accordingly if present
-      blank.filename <- sub(".nc", "_ensmbl.nc", blank.filename)
-    }
-    
+  if(length(rip.list) > 1){
+    multi.rip <- TRUE
+    rip.count <- length(rip.list)
+  }else{
+    multi.rip <- FALSE
+    rip.count <- 1
   }
+  #Always add rip.suffix; if not present, it's an empty string
+  temp.split <- unlist(strsplit(blank.filename, "\\."))
+  blank.filename <- paste(paste0(temp.split[1], rip.suffix), temp.split[2], temp.split[3], sep=".")
+  
+#   if(check.for.ens){
+#     #Check for the 'to' string that indicates an ensemble file; 
+#     if(grepl("_r[0-9]to*", ens.member)){
+#       ens.regex <- gregexpr("_r[0-9]to*", ens.member)
+#       ens.string <- substr(ens.member, ens.regex[[1]] + 1, nchar(ens.member))
+#       print(ens.string)
+#       ens.start <- as.numeric(substr(ens.string, 2, 2))
+#       ens.end <- as.numeric(substr(ens.string, 5, 5))
+#       rip.list <- paste0("r", seq(ens.start:ens.end), substr(ens.string, 6, nchar(ens.string)))
+#       #adjust the filename accordingly if present
+#       #blank.filename <- sub(".nc", "_ensmbl.nc", blank.filename)
+#       temp.split <- unlist(strsplit(blank.filename, "\\."))
+#       print(temp.split)
+#       blank.filename <- paste(paste0(temp.split[1], "_ensmbl"), temp.split[2], temp.split[3], sep=".")
+#     }
+    
+#  }
   for(var in var.list){
     file.name <- sub(pattern="VAR", replacement=var, x=blank.filename)
     file.path <- paste(file.prefix, var, file.suffix, sep="/")
     file.path <- paste(file.path, file.name, sep="/")
     if(verbose){print(file.path)}
+    #if(!check.for.ens){
+    #  #If not checking for ensemble members, only going through this once
     nc.list[[length(nc.list) + 1]] <- nc_open(file.path)
     dim.list[[length(dim.list) + 1]] <- obtain.nc.dim(nc.list[[length(nc.list)]], var=var, verbose=verbose)
   }
@@ -71,28 +89,101 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
 #                     var.units="",                 #Units for each variable. Same caveat applies as above.
 #                     var.prec="",                  #Precision when writing to file. Maybe not a big deal, but keep losing it.
 #                     point="",                     #The part of the x,y coordinate scheme that can be deduced. Not implemented yet.
-#                     p.rep="",                     #Physics rip used. Not used yet, and might not get used at all.
+#                     rip="",                     #Physics rip used. Not used yet, and might not get used at all.
 #                     var = ""                      #The name of the variable used. Just the shortname, no additions used.    
 #   )
-  data.list <- rep(list(data.array), length(var.list))
+
+  data.list <- list() #Need to turn on intialization of arrays again at some point
+    #rep(list(data.array), (length(var.list)*rip.count))
+  if(multi.rip){
+    #Initialize a temporary list for adding structures back into data.list gracefully
+    temp.list <- rep(list(data.array), (length(var.list)*rip.count))
+  }
   #Make new names if ensembel members are being used as well
-  if(check.for.ens)
-  names(data.list) <- unlist(var.list)
+ # var.names <- paste0(var.list, ".", rip.list)
+#   if(multi.ens){
+#     for(i in 1:rip.count){
+#      var.names[1+ (rip.count * (i-1): i*rip.count] <- paste0(var.list, ".", rip.list[i])
+#     }
+#   }else{
+#     var.names <- var.list
+#   }
+  #names(data.list) <- unlist(var.list)
     att_table <- list()
+  #This is a mess, and I'm not sure how to straighten it out.
   for(v in 1:length(var.list)){
     var=var.list[[v]]
+    #This code is probably not needed
+#     if(multi.rip){
+# 
+#     }else{
+#       rip.count <- 1
+#       var.names <- var
+#     }
     if(verbose){print(paste("Reading in var", var))}
     if(v==1){
-      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=TRUE) #No longer adding ensemble dimension
-      data.list[[v]] <- out.list$clim.in
-      att_table[[var]] <- out.list$att_table[[var]]
+      #First time through, you want to grab the dimensions; second time through, that is not neccessary
+      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=(!multi.rip)) #No longer adding ensemble dimension
+      #Contents at this point: 
+      # 4-dimensional dataset
+      # att table containing some, but not all, of the elements that you need
+      if(multi.rip){
+        var.names <- paste0(var, ".", rip.list)
+        names(temp.list) <- var.names
+        temp.att.table <- rep(list(out.list$att_table), rip.count)
+        names(temp.att.table) <- var.names
+        for(i in 1:rip.count){
+          data.list[[var.names[i]]] <- out.list$clim.in[,,i, ,drop=F]  #This assignment needs to preserve degenerate dims
+          #Assign and replace the dimensions to match x, y, t rather than x, y, ens
+          current.dim <- dim(data.list[[var.names[i]]])
+          dim(data.list[[var.names[i]]]) <- c(current.dim[1], current.dim[2], current.dim[length(current.dim)])
+          att_table[[var.names[i]]] <- out.list$att_table[[1]] #This assignment is problematic - needs to assign
+          #list contents, not the list itself
+          att_table[[var.names[i]]]$rip <- rip.list[[i]]
+        }
+#         #Finally, assign to the output data structures
+#         data.list[[var.names]] <- temp.list
+#         att_table[[var.names]] <- temp.att.table
+      }else{
+        data.list[[v]] <- out.list$clim.in
+        att_table[[var]] <- out.list$att_table[[var]]
+      }
+#       if(multi.rip){
+#       save(file="~/Code/testing/test_out.R", list=c('data.list', 'att_table'))
+#       stop('examine the output at this point')
+#       }
+#      }
+#       data.list[[v]] <- out.list$clim.in
+#       att_table[[var]] <- out.list$att_table[[var]]
     }else{
-      temp.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_3_dimensions=TRUE)
-      data.list[[v]] <- temp.list$clim.in
-      att_table[[var]] <- temp.list$att_table[[var]]
+      temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_3_dimensions=(!multi.rip))
+      if(multi.rip){
+        var.names <- paste0(var, ".", rip.list)
+        names(temp.list) <- var.names
+        temp.att.table <- rep(list(temp.out.list$att_table), rip.count)
+        names(temp.att.table) <- var.names
+        #Mass assignment does not work well. 
+        for(i in 1:rip.count){
+          data.list[[var.names[i]]] <- temp.out.list$clim.in[,,i,]
+          att_table[[var.names[i]]] <- temp.out.list$att_table
+          att_table[[var.names[i]]]$rip <- rip.list[[i]]
+          #temp.att.table[[i]]$rip <- rip.list[[i]]
+        }
+        #Finally, assign to the output data structures
+        #now covered by the earlier section
+        #data.list[[var.names]] <- temp.list
+        #att_table[[var.names]] <- temp.att.table
+      }else{
+        data.list[[v]] <- temp.out.list$clim.in
+        att_table[[var]] <- temp.out.list$att_table[[var]]
+      }
+#       data.list[[v]] <- temp.out.list$clim.in
+#       att_table[[var]] <- temp.out.list$att_table[[var]]
     }
+    #If you have multi ensembles included, be sure
+    #to add the var to the 
   }
-  #Assign and exist
+  #Assign and exit
   out.list$clim.in <- data.list
   out.list$att_table <- att_table
   return(out.list)

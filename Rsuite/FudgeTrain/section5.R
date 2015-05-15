@@ -133,7 +133,7 @@ callPRPostproc <- function(test, input, adjusted.output){
   #Loop by rip - remember, s3 and s5 get indexed by rip, ds out components get indexed by var.name
   for (rip in rips){
     #create sppropriate variable name
-    ds.var <- paste0(input$data.atts$fut.pred$hist.targ, ".", rip)
+    ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
     #Find arguments to pre-processing function
     arg.names <- names(test$qc_args) #qc_args #pp_args
     if('thold'%in%arg.names && 'conserve'%in%arg.names){

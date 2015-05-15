@@ -28,7 +28,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      
      # Initialize ds.vector 
      message("Entering downscaling driver function")
-     rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
+     rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
      rips <- unique(rip.list)
      ds.varnames <- paste0(ds.var, ".", rips)
      if(create.ds.out){
@@ -99,8 +99,8 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                                          s5.instructions=s5.instructions, s5.adjust=s5.adjust,
                                          create.qc.mask=create.qc.mask
            )
-           #save(file="~/Code/testing/test_out.R", save='loop.temp')
-           #stop("wanted to look more")
+#            save(file="~/Code/testing/test_out.R", save='loop.temp')
+#            stop("wanted to look more: output of TrainDriver tests")
            #Previously create.adjust.out here; not needed anymore
            if (create.ds.out){
              #If we are not in the "write only the qc data" case
@@ -125,6 +125,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
        }
      }
      ####### Loop(1) ends ###################################
-     return(list('esd.final' = ds.vector, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
+     return(list('esd.final' = ds.out, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
      ############## end of TrainDriver.R ############################
 }

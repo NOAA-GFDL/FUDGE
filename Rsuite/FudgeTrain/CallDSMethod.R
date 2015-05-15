@@ -95,7 +95,7 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
     rips <- unique(rip.list)
     out.list <- list()
     for(rip in rips){
-      out.var <= paste(ds.var, rip, sep=".")
+      out.var <- paste(ds.var, rip, sep=".")
       #Get true/false vector to index out the data that you want
       rip.index <- (rip.list==rip)
       rip.data <- new[rip.index]
@@ -104,7 +104,7 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
       names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
       #names(rip.select) <- gsub(".*_", "", names(rip.select))
       #out.var <- paste(ds.var, rip, sep="_")
-      out.list[[out.var]] <- predict.lm(lm.model, newdata=rip.select)
+      out.list[[out.var]] <- predict.lm(lm.model, newdata=rip.data)
     }
   #return(predict.lm(lm.model, newdata=new))
     return(out.list)

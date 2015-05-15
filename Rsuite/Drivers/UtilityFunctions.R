@@ -148,3 +148,10 @@ simpleCap <- function(x){
   paste(toupper(substring(s, 1,1)), substring(s, 2),
         sep="", collapse=" ")
 }
+
+#Helper function for assigining using time windowing masks in 
+#the downscaling by time window
+assign.by.index <- function(array1, array2, index){
+  array1[!is.na(index)] <- array2[!is.na(array2)]
+  return(array1)
+}
