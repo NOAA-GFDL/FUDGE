@@ -116,7 +116,7 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 message("Checking output directory")
 QCIO(output.dir)
 
-##Call the code that converts the directories for the 
+##Call the code that converts the instructions for section 3 and section 5
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
   message('Conversion of pre- and post- downscaling adjustment input')
   if(exists('pr_opts')){
@@ -127,6 +127,10 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
   pre_ds <- pp.out$pre_ds
   post_ds <- pp.out$post_ds
 }
+
+##Make sure that you have the experiment rip ready to apply to 
+##other code (i.e. the actual rip experiment is being run under)
+experiment.rip <- gsub("(.*_)", "", fut.scenario_1)
 
 #Initialize instructions for pre- and post-ds adjustment
 message("Checking pre- and post-downscaling adjustments")
@@ -314,6 +318,12 @@ if(length(post.ds) !=0){
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 # rip.list <- lapply(att_table, '[[', 'rip')
 # rips <- unique(rip.list)
+
+#Output file destinations should be saved and printed for later reference
+#But there can be some debate about how best to do that
+out.file.list <- rep(list(NA), length(fut.pred.rip.list))
+names(out.file.list) <- unlist(fut.pred.rip.list)
+
 for (rip in fut.pred.rip.list){
   #Replace NAs by missing
   ds.var <- paste0(target.var, ".", rip)
@@ -321,8 +331,9 @@ for (rip in fut.pred.rip.list){
   ds.temp[is.na(ds.temp)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
   
   out.file <- paste(output.dir,"/", out.filename,sep='')
+  out.loop.file <- sub(experiment.rip, rip, out.file)
   
-  ds.out.filename = WriteNC(out.file,ds.temp,
+  ds.out.filename = WriteNC(out.loop.file,ds.temp,
                             target.var,
                             dim.list=c(list.target$dim, list.fut$dim),
                             var.data=c(list.target$vars, list.fut$vars),
@@ -334,6 +345,7 @@ for (rip in fut.pred.rip.list){
                             #var.orig.file=attr(list.target, "filename"),
                             verbose=TRUE 
   )
+  out.file.list[[rip]] <- ds.out.filename
   
   #Write Global attributes to downscaled netcdf
   label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
@@ -347,7 +359,7 @@ for (rip in fut.pred.rip.list){
     git.needed=FALSE
   }
   print(list.fut$att_table$climatology)
-  WriteFUDGEGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
+  WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
                     title=paste(simpleCap(target.var), "downscaled from", 
@@ -360,7 +372,8 @@ for (rip in fut.pred.rip.list){
                     pre.ds.adjustments=pre_ds,
                     is.post.ds.adjust=(length(post_ds_adj) > 0),
                     post.ds.adjustments=post_ds_adj, 
-                    climatology=list.fut$att_table[[target.var]]$climatology)
+                    climatology=list.fut$att_table[[target.var]]$climatology, 
+                    fut.pred.rip = rip)
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   #}
   
@@ -369,6 +382,8 @@ for (rip in fut.pred.rip.list){
       ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
       qc.file <- paste(mask.output.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
+      qc.file <- sub(experiment.rip, rip, qc.file)
+      
       ###Check to make sure that it is possible to create the qc file; create dirs if not
       message("Attempting creation of QC file")
       message(qc.file)
@@ -398,7 +413,8 @@ for (rip in fut.pred.rip.list){
                         is.pre.ds.adjust=(length(pre_ds) > 0),
                         pre.ds.adjustments=pre_ds,
                         is.post.ds.adjust=(length(post_ds_adj) > 0),
-                        post.ds.adjustments=post_ds_adj)
+                        post.ds.adjustments=post_ds_adj, 
+                        fut.pred.rip = rip)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }
@@ -406,16 +422,5 @@ for (rip in fut.pred.rip.list){
 #Do not change formatting of this: it is used as a flag by two components of the
 #regression testing scripts parsing stdout
 #message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
-message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
-
-# cor.vector <- c("list.fut$clim.in", "list.hist$clim.in", "list.target$clim.in")
-# for (j in 1:length(cor.vector)){
-#   cor.var <- cor.vector[j]
-#   cor.out <- eval(parse(text=cor.var))
-#   if(length(cor.out) > length(ds$esd.final)){
-#     out.cor <- cor(as.vector(ds$esd.final), as.vector(cor.out)[1:length(ds$esd.final)], use='pairwise.complete.obs')
-#   }else{
-#   out.cor <- cor(as.vector(ds$esd.final)[1:length(cor.out)], as.vector(cor.out), use='pairwise.complete.obs')
-#   }
-#   print(paste("ds$esd.final", ",", cor.var, "):", out.cor, sep=""))
-# }
+#message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
+message(paste('File(s)', convert.list.to.string(out.file.list), "written to file."))

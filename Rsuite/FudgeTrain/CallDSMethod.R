@@ -102,8 +102,6 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
       #And to make sure that everything has the same names as
       #earlier, rename the list in the selected dataset
       names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
-      #names(rip.select) <- gsub(".*_", "", names(rip.select))
-      #out.var <- paste(ds.var, rip, sep="_")
       out.list[[out.var]] <- predict.lm(lm.model, newdata=rip.data)
     }
   #return(predict.lm(lm.model, newdata=new))

@@ -31,6 +31,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
      rips <- unique(rip.list)
      ds.varnames <- paste0(ds.var, ".", rips)
+     print(paste("downscaled variable names:", paste(ds.varnames, collapse=", ")))
      if(create.ds.out){
        #Should only be false if explicitly running with the intent of creating only
        #a QC mask - all other cases produce *some* ds.out

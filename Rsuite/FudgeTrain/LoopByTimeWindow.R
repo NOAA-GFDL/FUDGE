@@ -207,7 +207,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    args=downscale.args, 
                                    ds.var=ds.var)
           #Assign downscaled output to vector
-          print(paste('window:', window))
 #           if(window > 1){
 #             save(file="~/Code/testing/problematic_ens_assignment.R", list=c('temp.out', 'kfold.predict', 'downscale.list', 'mask.struct', 'kfold.gen'))
 #             stop('check your results')
@@ -225,12 +224,20 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out[!is.na(temp.out)] #Previously third time windowing mask
 #             }
 #          }
-          message('assinging downscaled values')
           #downscale.list <- mapply(FUN=assign.by.index, downscale.list, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
-          for(var.name in names(temp.out)){
-            downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
+          if(use.time.trim.mask){
+            #Temporary issiagnment is messy, but so far only way found to make sure that the indices match
+            for(var.name in names(temp.out)){
+              temp.assign <- kfold.gen[[1]]
+              temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]] #Previously 3rd time windowing mask
+              downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+              #downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
+            }
+          }else{
+            for(var.name in names(temp.out)){
+              downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
+            }
           }
-          message('finished assinging downscaled values')
         }
         #And adjust the downscaled output, if applicable
         if(s5.adjust){
@@ -254,31 +261,36 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               message('adding qc mask')
               #if (verbose) {message('adding qc mask')}
               if(use.time.trim.mask){
-                temp.assign <- kfold.gen[[1]]
-                temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[new.ds.var]]
-                qc.masklist[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+#                 temp.assign <- kfold.gen[[1]]
+#                 temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[new.ds.var]]
+#                 qc.masklist[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+                for(var.name in names(qc.masklist)){
+                  temp.assign <- kfold.gen[[1]]
+                  temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[var.name]]
+                  qc.masklist[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+                }
               }else{
                # qc.masklist[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[new.ds.var]] #A NULL assignment might cause problems here. Second if?
-                 message('assinging QC MASK values')
 #                 downscale.list <- mapply(FUN=assign.by.index, qc.masklist, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
                  for(var.name in names(qc.masklist)){
                    qc.masklist[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[var.name]][!is.na(temp.out$qc.masklist[[var.name]])]
                  }
-                 message('finished assinging QC MASK values')
               }
             }
             #If there is a time-trimming mask, use it here
-            #Assign all the time, whether adjusted or not
-            #Why was I asssigning it all the time? This should maybe not be taking this long.
+            #Assign all the time, whether adjusted or not in this step
+            #...actually, put this on the list of things to change. 
             if(use.time.trim.mask){
-              temp.assign <- rep(NA, downscale.length)
-              temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[new.ds.var]]
-              downscale.list[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+              for(var.name in names(temp.out$ds.out)){
+                temp.assign <- rep(NA, downscale.length)
+                temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+                downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+              }
             }else{
               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[!is.na(temp.out$ds.out[[new.ds.var]])]
-              message('assinging downscaled values from qc step')
-              downscale.list <- mapply(FUN=assign.by.index, downscale.list, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
-              message('finished assinging downscaled values from qc step')
+              for(var.name in names(qc.masklist)){
+                downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[[var.name]][!is.na(temp.out$ds.out[[var.name]])]
+              }
             }
           }
         }
@@ -302,7 +314,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
   #   }
   #Exit loop
-  message('returning to TrainDriver')
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
 

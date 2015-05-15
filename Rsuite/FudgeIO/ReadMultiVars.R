@@ -113,6 +113,8 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
   #This is a mess, and I'm not sure how to straighten it out.
   for(v in 1:length(var.list)){
     var=var.list[[v]]
+    var.names <- paste0(var, ".", rip.list)
+    print(paste('variable names:', paste(var.names, collapse=", ")))
     #This code is probably not needed
 #     if(multi.rip){
 # 
@@ -128,7 +130,7 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
       # 4-dimensional dataset
       # att table containing some, but not all, of the elements that you need
       if(multi.rip){
-        var.names <- paste0(var, ".", rip.list)
+        #var.names <- paste0(var, ".", rip.list)
         names(temp.list) <- var.names
         temp.att.table <- rep(list(out.list$att_table), rip.count)
         names(temp.att.table) <- var.names
@@ -145,8 +147,9 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
 #         data.list[[var.names]] <- temp.list
 #         att_table[[var.names]] <- temp.att.table
       }else{
-        data.list[[v]] <- out.list$clim.in
-        att_table[[var]] <- out.list$att_table[[var]]
+        data.list[[var.names]] <- out.list$clim.in
+        att_table[[var.names]] <- out.list$att_table[[var]]
+        att_table[[var.names]]$rip <- rip.list[[1]]
       }
 #       if(multi.rip){
 #       save(file="~/Code/testing/test_out.R", list=c('data.list', 'att_table'))
@@ -158,7 +161,7 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     }else{
       temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_3_dimensions=(!multi.rip))
       if(multi.rip){
-        var.names <- paste0(var, ".", rip.list)
+        #var.names <- paste0(var, ".", rip.list)
         names(temp.list) <- var.names
         temp.att.table <- rep(list(temp.out.list$att_table), rip.count)
         names(temp.att.table) <- var.names
@@ -174,8 +177,9 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
         #data.list[[var.names]] <- temp.list
         #att_table[[var.names]] <- temp.att.table
       }else{
-        data.list[[v]] <- temp.out.list$clim.in
-        att_table[[var]] <- temp.out.list$att_table[[var]]
+        data.list[[var.names]] <- temp.out.list$clim.in   ##v
+        att_table[[var.names]] <- temp.out.list$att_table[[var]] #var
+        att_table[[var.names]]$rip <- rip.list[[1]]
       }
 #       data.list[[v]] <- temp.out.list$clim.in
 #       att_table[[var]] <- temp.out.list$att_table[[var]]

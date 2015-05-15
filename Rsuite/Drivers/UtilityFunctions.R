@@ -49,7 +49,7 @@ convert.list.to.string <- function(this.vector){
       if(length(this.vector)==2){
         out <- paste(this.vector, collapse=" and ")
       }else{  
-        out <- paste(c(this.vector[1:length(this.vector)-1], paste("and", this.vector[length(this.vector)])), collapse=",")
+        out <- paste(c(this.vector[1:length(this.vector)-1], paste("and ", this.vector[length(this.vector)])), collapse=", ")
       }
       return(out)
     }else{

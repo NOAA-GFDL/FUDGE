@@ -26,19 +26,26 @@ rm(list=ls())
 	hist.model_1 <- 'GFDL-HIRAM-C360-COARSENED' 
 	hist.freq_1 <- 'day' 
 	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601' 
-	hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc' 
+#	hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc' 
+#hist.time.window <- 'na'
+hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19790101-20081231_olap.nc'
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- 20860101 
 	fut.file.end.year_1 <- 20951231 
         fut.train.start.year_1 <- 20860101 
         fut.train.end.year_1 <- 20951231 
 	fut.scenario_1 <- 'sst2090_r1to3i1p1'
+#fut.scenario_1 <- 'sst2090_r1i1p1'
 	fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 	fut.model_1 <- 'GFDL-HIRAM-C360-COARSENED' 
 	fut.freq_1 <- 'day' 
 	fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1to3i1p1/v20110601'
-	fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
-        fut.time.trim.mask <- 'na'
+#fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601'
+	#fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
+#fut.time.window <- 'na'
+#        fut.time.trim.mask <- 'na'
+ fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20860101-20951231_olap.nc'
+ fut.time.trim.mask <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
 #-------------- predictor directory suffix -----------#
         pred.dir.suffix <- '/US48/OneD/' #use this predictor variable and this  suffix with fut.indir_1 and hist.indir_1
 #------------- target -------------------------# 
@@ -50,17 +57,23 @@ rm(list=ls())
 	target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 	target.model_1 <- 'GFDL-HIRAM-C360'
 	target.freq_1 <- 'day' 
-        target.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360/amip/day/atmos/day/r1i1p1/v20110601/tasmax/US48/OneD'
-	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
+        target.indir_1 <- paste0('/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360/amip/day/atmos/day/r1i1p1/v20110601/', 
+                                 target.var, '/US48/OneD')
+#	target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19790101-20081231.nc'
+#target.time.window <- 'na'
+target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19790101-20081231_olap.nc'
 #------------- method name k-fold specs-----------------------#
         ds.method <- 'multi.lm' 
-	ds.experiment <- 'PMtxp1-multi.lm-C01r11multi_ensX01K00' 
+	ds.experiment <- paste0('PMtxp1-', ds.method, '-C01r11multi_ens4X01K00') 
 	k.fold <- 0 
 #------------------------------------------------------------#
 #Temporary ensemble file specs for working out internal data
 #structures
 fut.filename.suffix <- '_ensmbl' 
+#fut.filename.suffix <- '' 
 fut.pred.rip.list <- list('r1i1p1', 'r2i1p1', 'r3i1p1')
+#fut.pred.rip.list <- list('r1i1p1')
+
 # output.dirs <- c('/home/cew/Code/testing/', 
 #                  '/home/cew/Code/testing/', 
 #                  '/home/cew/Code/testing/')

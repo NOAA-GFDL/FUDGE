@@ -21,7 +21,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          pre.ds.adjustments=list('na'),
                          is.post.ds.adjust=FALSE,
                          post.ds.adjustments=list('na'), 
-                              climatology = NULL){
+                              climatology = NULL, 
+                              fut.pred.rip = NULL){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   #'#TODO CEW: What is the purpose of the comments attribute? 
@@ -72,6 +73,9 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(!is.na(predictor)){
     comment.info <- paste(comment.info, ', predictor(s) used: ', paste(predictor, collapse=", ") ,sep='')
+  }
+  if(!is.null(fut.pred.rip)){
+    comment.info <- paste(comment.info, ", future predictor rip used:", fut.pred.rip)
   }
   ##info attribute
   info <- ""
