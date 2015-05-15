@@ -24,31 +24,12 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
   #Always add rip.suffix; if not present, it's an empty string
   temp.split <- unlist(strsplit(blank.filename, "\\."))
   blank.filename <- paste(paste0(temp.split[1], rip.suffix), temp.split[2], temp.split[3], sep=".")
-  
-#   if(check.for.ens){
-#     #Check for the 'to' string that indicates an ensemble file; 
-#     if(grepl("_r[0-9]to*", ens.member)){
-#       ens.regex <- gregexpr("_r[0-9]to*", ens.member)
-#       ens.string <- substr(ens.member, ens.regex[[1]] + 1, nchar(ens.member))
-#       print(ens.string)
-#       ens.start <- as.numeric(substr(ens.string, 2, 2))
-#       ens.end <- as.numeric(substr(ens.string, 5, 5))
-#       rip.list <- paste0("r", seq(ens.start:ens.end), substr(ens.string, 6, nchar(ens.string)))
-#       #adjust the filename accordingly if present
-#       #blank.filename <- sub(".nc", "_ensmbl.nc", blank.filename)
-#       temp.split <- unlist(strsplit(blank.filename, "\\."))
-#       print(temp.split)
-#       blank.filename <- paste(paste0(temp.split[1], "_ensmbl"), temp.split[2], temp.split[3], sep=".")
-#     }
-    
-#  }
+
   for(var in var.list){
     file.name <- sub(pattern="VAR", replacement=var, x=blank.filename)
     file.path <- paste(file.prefix, var, file.suffix, sep="/")
     file.path <- paste(file.path, file.name, sep="/")
     if(verbose){print(file.path)}
-    #if(!check.for.ens){
-    #  #If not checking for ensemble members, only going through this once
     nc.list[[length(nc.list) + 1]] <- nc_open(file.path)
     dim.list[[length(dim.list) + 1]] <- obtain.nc.dim(nc.list[[length(nc.list)]], var=var, verbose=verbose)
   }
@@ -99,29 +80,12 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     #Initialize a temporary list for adding structures back into data.list gracefully
     temp.list <- rep(list(data.array), (length(var.list)*rip.count))
   }
-  #Make new names if ensembel members are being used as well
- # var.names <- paste0(var.list, ".", rip.list)
-#   if(multi.ens){
-#     for(i in 1:rip.count){
-#      var.names[1+ (rip.count * (i-1): i*rip.count] <- paste0(var.list, ".", rip.list[i])
-#     }
-#   }else{
-#     var.names <- var.list
-#   }
-  #names(data.list) <- unlist(var.list)
     att_table <- list()
   #This is a mess, and I'm not sure how to straighten it out.
   for(v in 1:length(var.list)){
     var=var.list[[v]]
     var.names <- paste0(var, ".", rip.list)
-    print(paste('variable names:', paste(var.names, collapse=", ")))
-    #This code is probably not needed
-#     if(multi.rip){
-# 
-#     }else{
-#       rip.count <- 1
-#       var.names <- var
-#     }
+    #print(paste('variable names:', paste(var.names, collapse=", ")))
     if(verbose){print(paste("Reading in var", var))}
     if(v==1){
       #First time through, you want to grab the dimensions; second time through, that is not neccessary
@@ -143,21 +107,11 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
           #list contents, not the list itself
           att_table[[var.names[i]]]$rip <- rip.list[[i]]
         }
-#         #Finally, assign to the output data structures
-#         data.list[[var.names]] <- temp.list
-#         att_table[[var.names]] <- temp.att.table
       }else{
         data.list[[var.names]] <- out.list$clim.in
         att_table[[var.names]] <- out.list$att_table[[var]]
         att_table[[var.names]]$rip <- rip.list[[1]]
       }
-#       if(multi.rip){
-#       save(file="~/Code/testing/test_out.R", list=c('data.list', 'att_table'))
-#       stop('examine the output at this point')
-#       }
-#      }
-#       data.list[[v]] <- out.list$clim.in
-#       att_table[[var]] <- out.list$att_table[[var]]
     }else{
       temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_3_dimensions=(!multi.rip))
       if(multi.rip){
@@ -170,19 +124,12 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
           data.list[[var.names[i]]] <- temp.out.list$clim.in[,,i,]
           att_table[[var.names[i]]] <- temp.out.list$att_table
           att_table[[var.names[i]]]$rip <- rip.list[[i]]
-          #temp.att.table[[i]]$rip <- rip.list[[i]]
         }
-        #Finally, assign to the output data structures
-        #now covered by the earlier section
-        #data.list[[var.names]] <- temp.list
-        #att_table[[var.names]] <- temp.att.table
       }else{
         data.list[[var.names]] <- temp.out.list$clim.in   ##v
         att_table[[var.names]] <- temp.out.list$att_table[[var]] #var
         att_table[[var.names]]$rip <- rip.list[[1]]
       }
-#       data.list[[v]] <- temp.out.list$clim.in
-#       att_table[[var]] <- temp.out.list$att_table[[var]]
     }
     #If you have multi ensembles included, be sure
     #to add the var to the 
