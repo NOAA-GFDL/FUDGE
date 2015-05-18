@@ -293,6 +293,8 @@ if (args[1]=='na'){
 #print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
+# save(file="~/Code/testing/test_out.R", list=c('ds'))
+# stop('examine your results')
 ############## end call TrainDriver ######################################
 # + + + end Training + + +
 

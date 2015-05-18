@@ -206,25 +206,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    att.table=att.table,
                                    args=downscale.args, 
                                    ds.var=ds.var)
+#           save(file="~/Code/testing/test_out.R", list=c('temp.out', 'use.time.trim.mask'))
+#           stop('examine output')
           #Assign downscaled output to vector
-#           if(window > 1){
-#             save(file="~/Code/testing/problematic_ens_assignment.R", list=c('temp.out', 'kfold.predict', 'downscale.list', 'mask.struct', 'kfold.gen'))
-#             stop('check your results')
-#           }
-          ####For testing purposes, turning off the time-trimming masks and moving on
-#          for(new.ds.var in names(temp.out)){
-            #Time trimming masks are temporarily turned off 
-#             if(use.time.trim.mask){
-#               #Temporary issiagnment is messy, but so far only way found to make sure that the indices match
-#               temp.assign <- kfold.gen[[1]]
-#               temp.assign[!is.na(temp.assign)] <- temp.out[[new.ds.var]] #Previously 3rd time windowing mask
-#               downscale.list[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
-#               #stop('examine result')
-#             }else{
-#               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out[!is.na(temp.out)] #Previously third time windowing mask
-#             }
-#          }
-          #downscale.list <- mapply(FUN=assign.by.index, downscale.list, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
           if(use.time.trim.mask){
             #Temporary issiagnment is messy, but so far only way found to make sure that the indices match
             for(var.name in names(temp.out)){
@@ -232,6 +216,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]] #Previously 3rd time windowing mask
               downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
               #downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
+#               print(var.name)
+#               print(summary(downscale.list[[var.name]]))
+#               stop('examine output')
             }
           }else{
             for(var.name in names(temp.out)){
@@ -293,8 +280,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                 downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[[var.name]][!is.na(temp.out$ds.out[[var.name]])]
               }
             }
-            print(var.name)
-            print(summary(downscale.list[[var.name]]))
           }
         }
 

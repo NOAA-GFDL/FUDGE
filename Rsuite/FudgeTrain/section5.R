@@ -102,12 +102,8 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     if(test$adjust.out=='on'){ #The 'off/na thing is distracting  ##Switched from !='na' to 'on'
       adjust.vec <- ifelse( (is.na(mask.vec)), yes=fut.targ, no=adjusted.output$ds.out[[ds.var]])
       out.list$ds.out[[ds.var]] <- adjust.vec
-    }else{
-      #You don't need to do anything - it is already done!
-      #out.list$ds.out<- data
     }
   }
-  print(summary(out.list$qc.mask))
     return(out.list)
 }
 

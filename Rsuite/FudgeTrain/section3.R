@@ -84,13 +84,18 @@ callPRPreproc <- function(test, input, postproc.output){
   #Select the variables of interest, and put them through the pr pre_processing function
   var <- names(input$att.list$hist.targ)
   #Insert looping by RIP in this section
-  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+  rip.list <- lapply(input$att.list$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
-  for (rip in rips){
+  for (rip in rip.list){
   #at the end, instructions are unchanged
     fut.pred.var <- paste0(var, ".", rip)
+    if(is.null(input$att.list$fut.pred[[fut.pred.var]]$units)){
+      stop(paste("Error in callPRPreproc: one of the required units attributes was null!"))
+    }
+#     save(file="~/Code/testing/test_out.R", list=c('input'))
+#     stop('examin input and adjust the error message')
   temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
-                            adjust.data=input$hist.pred[[var]],  adjust.units=input$att.list$hist.pred[[var]]$units, 
+                            adjust.data=input$hist.pred[[1]],  adjust.units=input$att.list$hist.pred[[1]]$units, #temporarily hard-coded; will work for next 3 mons.
                             #Looping by rip makes future predictor more complicated, but not anything else (yet)
                             adjust.future=input$fut.pred[[fut.pred.var]], 
                             adjust.future.units=input$att.list$fut.pred[[fut.pred.var]]$units,
@@ -103,7 +108,7 @@ callPRPreproc <- function(test, input, postproc.output){
     ###Indexing by method is going to be REALLY HANDY
   #Add back into the original structure
   input$hist.targ        <- temp.out$ref$data   #only a single target variable
-  input$hist.pred[[var]] <- temp.out$adjust$data
+  input$hist.pred[[1]] <- temp.out$adjust$data
   input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
     if(apply.0.mask){
       #only apply the mask if it it will result in more missing values

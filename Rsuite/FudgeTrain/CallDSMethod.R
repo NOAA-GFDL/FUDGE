@@ -121,6 +121,8 @@ callCDFt <- function (pred, targ, new, args){
   #' @citation Application to wind cumulative distribution functions", 
   #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
      
+  out.var.name <- names(new)
+  
   ###Obtain required arguments (and throw errors if not specified)
   if(!is.null(args$dev)){
     dev <- args$dev
@@ -161,7 +163,10 @@ callCDFt <- function (pred, targ, new, args){
     args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
     temp <- do.call("CDFt", args.list)$DS
   }
-  return(as.numeric(temp))
+  #return(as.numeric(temp))
+  out.list <- list()
+  out.list[[out.var.name]] <- as.numeric(temp)
+  return(out.list)
 }
 
 callSimple.bias.correct <- function(pred, targ, new, args){
@@ -171,9 +176,13 @@ callSimple.bias.correct <- function(pred, targ, new, args){
   #'historical period to the esd.gen dataset
   #'to generate downscaled data. 
   #'It takes no arguments. 
+  out.var.name <- names(new)
+  
   bias <- mean(unlist(pred)-targ)
   new.targ <- unlist(new)-bias
-  return(new.targ)
+  out.list <- list()
+  out.list[[out.var.name]] <- new.targ
+  return(out.list)
 }
 
 callDeltaSD <- function(LH,CH,CF,args){
@@ -197,7 +206,9 @@ callDeltaSD <- function(LH,CH,CF,args){
     ########################################
     #Note: preferred behavior is to truncate vectors
     #rather than randomly sampling iff too short.
-
+    
+    out.var.name <- names(CF)
+    
     #Unlist data from its input form
     CF <- unlist(CF)
     CH <- unlist(CH)
@@ -227,8 +238,8 @@ callDeltaSD <- function(LH,CH,CF,args){
       #Technically, it doesn't need to be for the code to work...
       if(keep.zeroes){
         SDF <- LH[1:length(CF)]
-          out.temp <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop, keep.zeroes)
-          SDF[SDF!=0] <- out.temp
+        out.temp <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop, keep.zeroes)
+        SDF[SDF!=0] <- out.temp
       }else{
         SDF <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop)
       }
@@ -246,24 +257,27 @@ callDeltaSD <- function(LH,CH,CF,args){
       while(write.len < out.len){
         #delta.downscale removes NAs in the output vector
         tempvec <- delta.downscale(LH, CH, CF[write.len:(write.len + in.len)], 
-                                                             deltatype, deltaop, keep.zeroes)
+                                   deltatype, deltaop, keep.zeroes)
         if(keep.zeroes){
           sd.write.indices <- (write.len-1) + comp.indices
           sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] #Remove any that might lead to a longer write index
           SDF[sd.write.indices] <- tempvec
         }else{
-           SDF[write.len:length(tempvec)] <- tempvec
+          SDF[write.len:length(tempvec)] <- tempvec
         }
         write.len <- write.len + in.len
       }
     }
-#     print("Number of NA values in DeltaSD")
+    #     print("Number of NA values in DeltaSD")
     num.na <- (sum(is.na(SDF)))
     if(num.na > 0){
       print(num.na)
       stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
     }
-    return(SDF)
+    #return(SDF)
+    out.list <- list()
+    out.list[[out.var.name]] <- SDF
+    return(out.list)
 }
 
 delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, keep.zeroes=FALSE){
@@ -306,6 +320,9 @@ callEDQMv2<-function(LH,CH,CF,args){
   #' Contains no other arguments in the args parameter.
   #'@citation Li et. al. 2010
   
+  #save output var name for later
+  out.var.name <- names(CF)
+  
   #Unlist data from its input form
   CF <- unlist(CF)
   CH <- unlist(CH)
@@ -345,7 +362,10 @@ callEDQMv2<-function(LH,CH,CF,args){
   temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
   temp<-temp.CFsorted[order(temp.CFsorted$index),]
   
-  return(temp$EquiDistant[!is.na(temp$EquiDistant)])
+  out.list <- list()
+  out.list[[out.var.name]] <- temp$EquiDistant[!is.na(temp$EquiDistant)]
+  return(out.list)
+  #return(temp$EquiDistant[!is.na(temp$EquiDistant)])
 }
 
 ###CG DS method
@@ -376,6 +396,9 @@ callCFQMv2<-function(LH,CH,CF,args){
   }else{
     stop(paste("CFQM_DF Downscaling Error: sort not found in args"))
   }
+  #Save output var name for later
+  out.var.name <- names(CF)
+  
   #Unlist data from its input form
   CF <- unlist(CF)
   CH <- unlist(CH)
@@ -433,7 +456,10 @@ callCFQMv2<-function(LH,CH,CF,args){
     }
     print(paste("temp.out", ",", cor.var, "):", out.cor, sep=""))
   }
-  return(SDF[!is.na(SDF)])
+  out.list <- list()
+  out.list[[out.var.name]] <- SDF[!is.na(SDF)]
+  #return(SDF[!is.na(SDF)])
+  return(out.list)
 }
 
 
@@ -445,6 +471,12 @@ callBCQMv2<-function(LH,CH,CF,args){
   #' @param CF: Coarse Future (a.k.a GCM future)
   #' Contains no other arguments in the args parameter.
   #' 
+  #' Note: Even though there is no training step on this method, and no
+  #' intention of implementing multivar downscaling for the QM methods, 
+  #' they need to be named to fit into the new indexing scheme. 
+  
+  #Save ouptut rip and var name for later
+  out.var.name <- names(CF)
      #Unlist data from its input form
      CF <- unlist(CF)
      CH <- unlist(CH)
@@ -472,5 +504,8 @@ callBCQMv2<-function(LH,CH,CF,args){
   temp<-temp.CFsorted[order(temp.CFsorted$index),]
   
   #SDF<-temp.final$qCFecdfCHqLH
-  return(temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)])
+  out.list <- list()
+  out.list[[out.var.name]] <- temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]
+  #return(list(out.var.name = temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]))
+  return(out.list)
 }
