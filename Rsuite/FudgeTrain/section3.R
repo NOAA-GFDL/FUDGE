@@ -84,7 +84,7 @@ callPRPreproc <- function(test, input, postproc.output){
   #Select the variables of interest, and put them through the pr pre_processing function
   var <- names(input$att.list$hist.targ)
   #Insert looping by RIP in this section
-  rip.list <- lapply(att_table, '[[', 'rip')
+  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
   for (rip in rips){
   #at the end, instructions are unchanged

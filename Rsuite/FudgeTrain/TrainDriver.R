@@ -106,7 +106,19 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
            if (create.ds.out){
              #If we are not in the "write only the qc data" case
              for(name in ds.varnames){
-               ds.out[[name]][i.index, j.index,] <- loop.temp$downscaled[[name]]
+               print(name)
+               print(summary(loop.temp$downscaled[[name]]))
+#                  save(file="~/Code/testing/test_out.R", save='loop.temp', 'ds.varnames', 'ds.out', 'ds.vector')
+#                  stop("wanted to look more: output of TrainDriver tests")
+#                print(paste(dim(ds.out[[name]]), collapse=" "))
+#                #Set dimensions of assigned data to make sure it still matches the dimensions here (x, y, t)
+#                dim(loop.temp$downscaled[[name]]) <- c(1, 1, length(loop.temp$downscaled[[name]]))
+#               print(dim(loop.temp$downscaled[[name]]))
+               ds.out[[name]][i.index, j.index, ] = loop.temp$downscaled[[name]]
+               #This is a hideous hack, but it's keeping the dim from getting set back to NULL after
+               #an assignment with a section 5 method. I don't know why; the assignment outside of
+               #section 5 looks identical to me.
+#                dim(ds.out[[name]]) <- c(targ.dim[1:2], dim(fut.masked.in[[1]])[3])
              }
            }
            if(create.qc.mask){

@@ -75,6 +75,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   #Outputs a mask where NA values show flagged data and 
   #1's show good data
   #'Assumes one predictor variable and one target variable
+  #'But multiple ensemble members are supported
   
   if(verbose){print("entering simple bias correction function")}
   if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
@@ -83,42 +84,55 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   }else{
     stop("Section 5 Adjustment Error: Arguments toplim and botlim are not present for the SBiasCorr function. Please check your XML.")
   }
-  #Unlist the predictors
+  ds.vars <- names(adjusted.output$ds.out)
+  #Unlist the historic predictors 
   hist.pred <- unlist(input$hist.pred)
-  fut.pred <- unlist(input$fut.pred)
-#       save(file="~/Code/test_multivar.R", list=c('test', 'input', 'adjusted.output', 'hist.pred', 'fut.pred'))
-#       print(paste("save.file:~/Code/test_multivar.R"))
-#       stop('examine input results')
+  out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
+  for (ds.var in ds.vars){
+    #There can be more than pne future predictor for the ensemble
+    fut.pred <- unlist(input$fut.pred[[ds.var]])
     #compute difference for all time values
     hist.bias <- mean(hist.pred-input$hist.targ)
     fut.targ <- fut.pred-hist.bias
-  mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out-fut.targ) & (adjusted.output$ds.out-fut.targ) < toplim), 
-                      yes=1, no=NA)
-  out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
-  if(test$qc.mask=='on'){
-    out.list$qc.mask <- mask.vec
+    mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out[[ds.var]]-fut.targ) & (adjusted.output$ds.out[[ds.var]]-fut.targ) < toplim), 
+                        yes=1, no=NA)
+    if(test$qc.mask=='on'){
+      out.list$qc.mask[[ds.var]] <- mask.vec
+    }
+    if(test$adjust.out=='on'){ #The 'off/na thing is distracting  ##Switched from !='na' to 'on'
+      adjust.vec <- ifelse( (is.na(mask.vec)), yes=fut.targ, no=adjusted.output$ds.out[[ds.var]])
+      out.list$ds.out[[ds.var]] <- adjust.vec
+    }else{
+      #You don't need to do anything - it is already done!
+      #out.list$ds.out<- data
+    }
   }
-  if(test$adjust.out=='on'){ #The 'off/na thing is distracting  ##Switched from !='na' to 'on'
-    adjust.vec <- ifelse( (is.na(mask.vec)), yes=fut.targ, no=adjusted.output$ds.out)
-    out.list$ds.out <- adjust.vec
-  }else{
-    #You don't need to do anything - it is already done!
-    #out.list$ds.out<- data
-  }
+  print(summary(out.list$qc.mask))
     return(out.list)
 }
 
 callFlagNegativeValues <- function(test, input, adjusted.output){
   #Flags negative values in the downscaled output with NA
   #with the expectation that they may get adjusted later. 
-  mask.vec <- ifelse( adjusted.output$ds.out > 0, yes=1, no=NA)
+  
+  #Set up ds vars to index by 
+#   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
+#   rips <- unique(rip.list)
+#   ds.vars <- paste0(input$data.atts$hist.targ$var, ".", rip.list)
+#   print(ds.vars)
+  #You don't actually need the RIPs; just the variable names for ds data
+  ds.vars <- names(adjusted.output$ds.out)
+  #Initialize output structure
   out.list <- adjusted.output
-  if(test$qc.mask=='on'){
-    out.list$qc.mask <- mask.vec
-  }
-  if(test$adjust.out=='on'){
-    adjust.vec <- ifelse( (is.na(mask.vec)), yes=0, no=adjusted.output$ds.out)
-    out.list$ds.out <- adjust.vec
+  for(ds.var in ds.vars){
+    mask.vec <- ifelse(adjusted.output$ds.out[[ds.var]] > 0, yes=1, no=NA)
+    if(test$qc.mask=='on'){
+      out.list$qc.mask[[ds.var]] <- mask.vec
+    }
+    if(test$adjust.out=='on'){
+      adjust.vec <- ifelse( (is.na(mask.vec)), yes=0, no=adjusted.output$ds.out[[ds.var]])
+      out.list$ds.out[[ds.var]] <- adjust.vec
+    }
   }
   return(out.list)
 }
@@ -130,7 +144,7 @@ callPRPostproc <- function(test, input, adjusted.output){
   #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
-  #Loop by rip - remember, s3 and s5 get indexed by rip, ds out components get indexed by var.name
+  #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
   for (rip in rips){
     #create sppropriate variable name
     ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)

@@ -333,7 +333,7 @@ for (rip in fut.pred.rip.list){
   out.file <- paste(output.dir,"/", out.filename,sep='')
   out.loop.file <- sub(experiment.rip, rip, out.file)
   
-  ds.out.filename = WriteNC(out.loop.file,ds.temp,
+  ds.out.filename = WriteNC(out.loop.file, ds.temp,
                             target.var,
                             dim.list=c(list.target$dim, list.fut$dim),
                             var.data=c(list.target$vars, list.fut$vars),
@@ -392,7 +392,7 @@ for (rip in fut.pred.rip.list){
         print("ERROR! Dir creation script not beahving as expected!")
       }
       message(paste('attempting to write to', qc.file))
-      qc.out.filename = WriteNC(qc.file,ds$qc.mask,qc.var,
+      qc.out.filename = WriteNC(qc.file,ds$qc.mask[[ds.var]],qc.var,
                                 dim.list=c(list.target$dim, list.fut$dim),
                                 var.data=c(list.target$vars, list.fut$vars),
                                 prec='float',
