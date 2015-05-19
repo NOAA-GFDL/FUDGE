@@ -106,10 +106,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
            if (create.ds.out){
              #If we are not in the "write only the qc data" case
              for(name in ds.varnames){
-               print(name)
-               print(summary(loop.temp$downscaled[[name]]))
-#                  save(file="~/Code/testing/test_out.R", save='loop.temp', 'ds.varnames', 'ds.out', 'ds.vector')
-#                  stop("wanted to look more: output of TrainDriver tests")
                ds.out[[name]][i.index, j.index, ] = loop.temp$downscaled[[name]]
              }
            }

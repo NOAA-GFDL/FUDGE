@@ -178,7 +178,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                        fut.pred = kfold.gen,
                                        att.list=att.table,
                                        s5.instructions=s5.list)
-          print(summary(temp.out))
           s5.instructions <- temp.out$s5.list
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
@@ -216,9 +215,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]] #Previously 3rd time windowing mask
               downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
               #downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
-#               print(var.name)
-#               print(summary(downscale.list[[var.name]]))
-#               stop('examine output')
             }
           }else{
             for(var.name in names(temp.out)){
