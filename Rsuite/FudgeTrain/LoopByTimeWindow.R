@@ -205,7 +205,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    att.table=att.table,
                                    args=downscale.args, 
                                    ds.var=ds.var)
-#           save(file="~/Code/testing/test_out.R", list=c('temp.out', 'use.time.trim.mask'))
+#           save(file="~/Code/testing/test_out.R", list=c('temp.out', 'use.time.trim.mask', 'downscale.list', 'kfold.gen'))
 #           stop('examine output')
           #Assign downscaled output to vector
           if(use.time.trim.mask){

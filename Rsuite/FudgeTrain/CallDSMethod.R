@@ -56,7 +56,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                 "BCQM" = callBCQMv2(train.target, train.predict, esd.gen, args), 
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args), 
-                "CFQM" = callCFQMv3(train.target, train.predict, esd.gen, args), 
+                "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
                 "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
@@ -537,14 +537,16 @@ callCFQMv3<-function(LH,CH,CF, args)
     message('sorting')
     temp.CFsorted2<-temp[order(temp$CF),]
     message('qantiles')
-    
-    temp.CFsorted2$qLH[1:lengthCF]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)
+    #save(file="~/Code/testing/test_out.R", list = c('temp.CFsorted2', 'prob', 'temp', 'lengthCF'))
+    #stop('examine the output')
+    temp.CFsorted2$qLH[1:lengthCF]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
     message('ecdf')
-    temp.CFsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+    temp.CFsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
     message('quantiles of ECDF')
-    temp.CFsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+    temp.CFsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
     save(file="~/Code/testing/test_out.R", list = c('temp.CFsorted2', 'prob', 'temp'))
-    temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),]
+    print(length(which(is.na(temp.CFsorted2))))
+    temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),] #By this point, it has successfully ordered the first lengthCF members of the output data
     print("Downscaled data ordered using the Coarse Future dataset")
     
   }
@@ -570,7 +572,7 @@ callCFQMv3<-function(LH,CH,CF, args)
     temp.CHsorted2$qLH[1:lengthCF]<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
     temp.CHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
     temp.CHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-    
+
     temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),]
     print("Downscaled data ordered using the Coarse Historical dataset")
     
@@ -582,6 +584,7 @@ callCFQMv3<-function(LH,CH,CF, args)
   
   #SDF$CFQM<-temp.CFQM2$qCFecdfCHqLH
   outputlist[[out.var.name]][1:lengthCF]<-temp.CFQM2$qCFecdfCHqLH[!is.na(temp.CFQM2$qCFecdfCHqLH)] #SDF$CFQM[1:lengthCF]
+#  outputlist[[out.var.name]][1:lengthCF]<-temp.CFQM2$qCFecdfCHqLH[1:lengthCF] #SDF$CFQM[1:lengthCF]
 #   save(file="~/Code/testing/test_out.R", list=c('outputlist', 'lengthCF', 'SDF'))
 #   stop('examine downscaled output')
   #outputlist[[out.var.name]]
