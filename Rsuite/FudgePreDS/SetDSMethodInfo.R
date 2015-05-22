@@ -29,12 +29,14 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
     stop(paste("Error in SetDSMethodInfo: method", ds.method, "does not support multiple predictor vars,", 
                "but vars", paste(predictor.vars, collapse=" "), "were provided!"))
   }
-  #At the moment, do not require a specific check for supporting univariate methods, since EVERYTHING should support that
+  #At the moment, do not require a specific check for supporting univariate 
+  #methods, since EVERYTHING should support that
 }
 
 ReturnDownscaleError <- function(ds.method){
   #Returns an error and stops the entire function if the DS method used is not supported.
-  stop(paste("Downscale Method Error: the method", ds.method, "is not supported for FUDGE at this time."))
+  stop(paste("Downscale Method Error: the method", ds.method, 
+             "is not supported for FUDGE at this time."))
 }
 
 setCDFt<- function(){
