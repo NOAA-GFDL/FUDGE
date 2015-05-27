@@ -426,3 +426,7 @@ for (rip in fut.pred.rip.list){
 #message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
 #message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
 message(paste('File(s)', convert.list.to.string(out.file.list), "written to file."))
+message(paste('Final Downscaled output file location:', convert.list.to.string(out.file.list),sep=""))
+message(paste('Target file location:', attr(list.target, 'filename')))
+message(paste('Future Predictor file(s):', attr(list.hist, 'filename')))
+message(paste('Historic Predictor files(s):', attr(list.fut, 'filename')))
