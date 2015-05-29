@@ -14,6 +14,8 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
   #At their dimensions. 
   nc.list <- list()
   dim.list <- list()
+  print(paste("rip.list:"))
+  print(rip.list)
   if(length(rip.list) > 1){
     multi.rip <- TRUE
     rip.count <- length(rip.list)

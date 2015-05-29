@@ -113,8 +113,8 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
 
 #Check for writable output directory 
 #TODO: remove this; only needed if testing R code separately
-message("Checking output directory")
-QCIO(output.dir)
+# message("Checking output directory")
+# QCIO(output.dir)
 
 ##Call the code that converts the instructions for section 3 and section 5
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
@@ -232,11 +232,12 @@ if(!is.null(spat.mask)){
 fut.filename <- GetMiniFileName("VAR",fut.freq_1,fut.model_1,fut.scenario_1,grid,
                                  fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 message("Reading in future predictor data")
+fut.pred.rip.list <- unlist(strsplit(RIP, split=","))
 list.fut <- ReadMultiVars(file.prefix=fut.indir_1, 
                            file.suffix=pred.dir.suffix, 
                            blank.filename=fut.filename, 
                            var.list=predictor.vars,
-                          rip.list = fut.pred.rip.list, rip.suffix = fut.filename.suffix, 
+                          rip.list = fut.pred.rip.list, rip.suffix = fut.pred.suffix, 
                            dim=c('temporal'), 
                            add.ens.dim=TRUE,
                           #check.for.ens = TRUE, ens.member = fut.scenario_1,
@@ -332,9 +333,11 @@ for (rip in fut.pred.rip.list){
   ds.temp <- ds$esd.final[[ds.var]]
   ds.temp[is.na(ds.temp)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
   
-  out.file <- paste(output.dir,"/", out.filename,sep='')
+  loop.out.dir <- output.dir
+  loop.out.dir <- sub("$(RIP)", rip, loop.out.dir, fixed=TRUE)
+  out.file <- paste(loop.out.dir,"/", out.filename,sep='')
   out.loop.file <- sub(experiment.rip, rip, out.file)
-  
+  message(paste("Writing to file", out.loop.file))
   ds.out.filename = WriteNC(out.loop.file, ds.temp,
                             target.var,
                             dim.list=c(list.target$dim, list.fut$dim),
@@ -383,7 +386,10 @@ for (rip in fut.pred.rip.list){
     for (var in target.var){
       ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
-      qc.file <- paste(mask.output.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
+      #Sunstitute to get mask output directory
+      mask.loop.out.dir <- mask.output.dir
+      mask.loop.out.dir <- sub("$(RIP)", rip, mask.loop.out.dir, fixed=TRUE)
+      qc.file <- paste(mask.loop.out.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
       qc.file <- sub(experiment.rip, rip, qc.file)
       
       ###Check to make sure that it is possible to create the qc file; create dirs if not
