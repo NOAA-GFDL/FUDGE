@@ -1,3 +1,8 @@
+5-29-2015
+(cew)
+- Multi-ensemble changes working with modified expergen runcode
+- Modifications to metadata to support recoding future predictor rip 
+ 
 4-29-2015
 (cew)
 - bugfix for qc masks overwriting full downscaled runs, leading to failed postproc
