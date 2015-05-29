@@ -63,10 +63,24 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "JEND":${jend} )
 set hist_file_start_year = $argv[10]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FILE.START.YEAR":${hist_file_start_year} )
 set hist_file_end_year = $argv[11]
+if ($hist_file_end_year:q =~ *_*) then
+set hist_pred_suffix =  `echo "$hist_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.PRED.SUFFIX":"'_"${hist_pred_suffix}"'")
+set hist_file_end_year = `echo "$hist_file_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.PRED.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FILE.END.YEAR":${hist_file_end_year} )
 set hist_train_start_year = $argv[12]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.START.YEAR":${hist_train_start_year} )
 set hist_train_end_year = $argv[13]
+if ($hist_train_end_year:q =~ *_*) then 
+set hist_train_suffix =  `echo "$hist_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.TRAIN.SUFFIX":"'_"${hist_train_suffix}"'")
+set hist_train_end_year = `echo "$hist_train_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.TRAIN.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.END.YEAR":${hist_train_end_year} )
 set hist_scenario = $argv[14]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.SCENARIO":"'"${hist_scenario}"'" )
@@ -81,6 +95,13 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TIME.WINDOW":"'"${hist_time_window}"'" )
 set fut_file_start_year = $argv[19]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FILE.START.YEAR":${fut_file_start_year})
 set fut_file_end_year = $argv[20]
+if ($fut_file_end_year:q =~ *_*) then
+set fut_pred_suffix =  `echo "$fut_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.PRED.SUFFIX":"'_"${fut_pred_suffix}"'")
+set fut_file_end_year = `echo "$fut_file_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.PRED.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FILE.END.YEAR":${fut_file_end_year} )
 set fut_train_start_year = $argv[21]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.START.YEAR":${fut_train_start_year} )
@@ -120,10 +141,60 @@ set dexper = $argv[38]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "DEXPER":"'"${dexper}"'")
 set kfold = $argv[39]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "KFOLD":${kfold} )
-set outdir = $argv[40]
-set TEMPLATE_LIST = ( $TEMPLATE_LIST "OUTPUT.DIR":"'"${outdir}"'")
-set mask_outdir = $argv[40]"/"${TARGET}_qcmask/
-set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.OUTPUT.DIR":"'"${mask_outdir}"'")
+set outdir = "$argv[40]"
+echo $outdir
+#######
+set outlist = ()
+set octr=1
+set cmdout =  `echo "$outdir" | cut -d'#' -f$octr `
+set prop =  `echo "$outdir" | cut -d'#' -f2 `
+set rep =  `echo "$outdir" | cut -d'#' -f3 `
+#### let's extract property variable name only
+set prop_name =  `echo "$prop" | cut -d'$' -f2 | cut -d'(' -f2 | cut -d')' -f1`
+set property = `echo "$prop_name='$rep'"`
+if($prop != 'na') then 
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PROPERTY":"${property}")
+endif
+set outdir = $cmdout
+###### for use in create run script ########
+set arr = `echo $rep | cut -d ","  --output-delimiter=' ' -f 1-`
+set outdirtmp = ()
+set mask_outdirtmp = ()
+foreach element ($arr)
+ set search = ${prop} 
+ set outdir2 = `echo $cmdout| sed "s/$search/$element/g" `
+ echo $outdir2
+ if ($outdirtmp == '') then
+ set outdirtmp = ( "list('"${outdir2}"'")
+ set mask_outdirtmp =( "list('"${outdir2}"/"${TARGET}_qcmask/"'")
+ else
+ set outdirtmp = ( $outdirtmp",'"${outdir2}"'")
+ set mask_outdirtmp =( $outdirtmp",'"${outdir2}"/"${TARGET}_qcmask/"'")
+ endif
+end
+set outdir = $outdirtmp")"
+echo "debug 2" 
+set mask_outdir = $mask_outdirtmp")" 
+###############################################
+#if($olist_present != "") then
+# set ocount=1
+# while($ocmd != '')
+#   set ocmd = `echo ${ocmd} | tr -s " " `
+#   set outlist = ( $outlist "'"${ocmd}"'" )
+#   if ($pctr > 1) then
+#      set predlist1 = ( $predlist1",'"${cmd}"'")
+#   else
+#      set predlist1 = ( $predlist1"'"${cmd}"'")
+#   endif
+#   @ pctr = $pctr + 1
+#   set cmd = "`echo ${PREDICTOR} | cut -d',' -f$pctr `"
+# end
+
+
+
+#######
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "OUTPUT.DIR":${outdir})
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.OUTPUT.DIR":${mask_outdir})
 set tstamp = $argv[41]
 set esdgen = $argv[42]
 set basedir = $argv[43]
@@ -190,7 +261,7 @@ endif
 set lon_end = $iend
 set lon_start = $istart
 #CEW edit 4-10
-echo "this is the if statment causing the problem, I think"
+#echo "this is the if statment causing the problem, I think"
 echo $lon_end
 echo $lon_start
 if( $lon_end < $lon_start ) then
@@ -214,14 +285,16 @@ foreach i (`seq $lon_start 1 $lon_end`)
   foreach TEMPLATE ($TEMPLATE_LIST)
    set find =  `echo "$TEMPLATE" | cut -d':' -f1` 
    set replace = `echo "$TEMPLATE" | cut -d':' -f2` 
-   echo $find $replace
+   echo $replace 
+   echo "find replace $find $replace "
    if($find == 'PARAMS') then
 	   sed -i 's%<'$find'>%'$replace% $codepath
    else	
     sed -i 's%<'$find'>%'$replace% $codepath
-
    endif
  end
   echo "R starter Code location: $codepath"
 # @ i = $i + 1
 end
+
+
