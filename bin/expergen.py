@@ -562,11 +562,11 @@ def main():
 	#CEW hasty edits to support single variable case
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
         create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
-	#print create_runscript_cmd
         print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
 	#CEW edit to diagnose older behavior
 	print create_runscript_cmd
-        p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        #p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+ 	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         print "Step 2: Individual runscript  creation.. in progress"
         output1, errors1 = p1.communicate()
 	#cprint output1,errors1
@@ -575,7 +575,7 @@ def main():
          print "Step2:!!!! FAILED !!!!, please contact developer."
          print output1, errors1
          sys.exit(0)
-        #print output1, errors1
+        print output1, errors1
         ###################################### 3 ################################################################
         script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate

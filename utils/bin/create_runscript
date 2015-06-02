@@ -29,8 +29,8 @@ set arr = "`echo $rep | cut -d ","  --output-delimiter=' ' -f 1-`"
 set outdirtmp = ()
 set outdir = $OUTDIR
  foreach element ($arr)
- set search = $prop #'$('$prop')'
- echo $search
+ set search = $prop
+ echo "debug ....."
  if($rep != "na") then 
   	set outdir2 = `echo $cmdout| sed "s/$search/$element/g" `
  else
