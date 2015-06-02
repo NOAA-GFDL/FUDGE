@@ -389,6 +389,7 @@ for (rip in fut.pred.rip.list){
       #Sunstitute to get mask output directory
       mask.loop.out.dir <- mask.output.dir
       mask.loop.out.dir <- sub("$(RIP)", rip, mask.loop.out.dir, fixed=TRUE)
+      mask.loop.out.dir <- paste0(mask.loop.out.dir, "/", qc.var, "/")
       qc.file <- paste(mask.loop.out.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
       qc.file <- sub(experiment.rip, rip, qc.file)
       

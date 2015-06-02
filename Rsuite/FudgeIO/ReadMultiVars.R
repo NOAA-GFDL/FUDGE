@@ -99,6 +99,11 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
         #var.names <- paste0(var, ".", rip.list)
         names(temp.list) <- var.names
         temp.att.table <- rep(list(out.list$att_table), rip.count)
+        if(rip.count != dim(out.list$clim.in)[3]){
+          stop(paste("Error in ReadMultiVars:", rip.count, 'rips were given, but', 
+                     'ens dimension of', attr(nc.list[[v]], 'filename'), 'was', 
+                     dim(out.list$clim.in)[3], "!"))
+        }
         names(temp.att.table) <- var.names
         for(i in 1:rip.count){
           data.list[[var.names[i]]] <- out.list$clim.in[,,i, ,drop=F]  #This assignment needs to preserve degenerate dims
