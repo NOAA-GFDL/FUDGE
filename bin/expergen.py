@@ -17,6 +17,7 @@ dictDS_lo = {}
 list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
+dictProperty = {}
 rootdir = ''
 projectRoot = "" 
 project = "" 
@@ -33,7 +34,7 @@ def checkTags(dictParams,key):
 				sys.exit("error")
 				
                         elif(key == 'sroot'):
-                                print "Script root default value is being deprecated from darkchocolate. Please specify <script_root> in XML and try again " 
+                                print "Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again " 
 				sys.exit("error")
 			elif(key == 'outdir'):
 				val = 'na'
@@ -67,11 +68,48 @@ def checkTags(dictParams,key):
                                 val = 'na'
                         elif(key == 'maskvar'):
                                 val = 'na'
+                        elif(key == 'future_predictor_suffix'):
+                                val = ''
+                        elif(key == 'historical_predictor_suffix'):
+                                val = ''
+                        elif(key == 'target_suffix'):
+                                val = ''
+                        elif(key == 'property'):
+                                val = {} 
 		        else:		
 				print "Error: Missing value for ",key
 				sys.exit(1)  
 		return val 
-
+def parse_outdir(out_dir,property):
+	print "Parsing out_dir to check if it references property tags"
+	list_subs = []
+	listout=[]
+	outdirsplit = out_dir.split('/')
+	replace = ""
+	for outdirs in outdirsplit:
+		if '$(' in outdirs:
+		   print "outdirs as defined expects a property tag.."
+        	   for pname,pval in property.iteritems():
+			pname = '$('+pname+')' 
+		        if pname == outdirs:
+		          print "we may have located the property tag"
+			  replace = pval
+		 #         new_out_dir = out_dir.replace('$(RIP)',replace)
+			  break;
+        if(replace != ""):
+	 if (out_dir  != ""):
+	     list_new_out_dir = replace.split(",")	
+	     for lnew in list_new_out_dir: 
+	        listout.append(out_dir.replace(pname,lnew))
+	#print "test",pname,new_out_dir,listout
+	if(replace == ""):
+		replace = "na" 
+	        print '\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m'
+ 	if not bool(property):	
+	 list_subs = out_dir+"#na#na"
+	else:
+         list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
+	return list_subs,listout	
 def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
         ctr = 0
 	dictDS = {}
@@ -202,6 +240,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
         pr_opts = checkTags(dictParams,'pr_opts')
+	#### get file name suffix #####	
+	hist_suffix = checkTags(dictParams,'historical_predictor_suffix')
+        target_suffix = checkTags(dictParams,'target_suffix')
+        fut_suffix = checkTags(dictParams,'future_predictor_suffix')
+	##### end filename suffix ######
 	if(target != 'pr'):
 		if(pr_opts != 'na'):
 			print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
@@ -225,6 +268,15 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	outdir = checkTags(dictParams,'outdir')
 	out_dir = checkTags(dictParams,'out_dir')
         out_dir = out_dir.strip()
+            
+        property = checkTags(dictParams,'property')
+#c	if not bool(property):
+#c	    out_dir = out_dir+"#na#na" 
+#c	    listoutdir = out_dir
+#c	else:
+#c	   print "or not"
+        out_dir,listoutdir =  parse_outdir(out_dir,property)
+	print "new out_dir", out_dir		
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
 	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
@@ -354,7 +406,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
             fut_model = dict_fut['model']
             fut_freq = dict_fut['freq'] #CEW edit mip to freq
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
+	    ### add those suffix in 
 
+	    hist_file_end_time = hist_file_end_time+hist_suffix
+	    fut_file_end_time = fut_file_end_time+fut_suffix
+	    target_file_end_time = target_file_end_time+target_suffix
 	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix
 ############end of listVars###################### 
 def main():
@@ -476,7 +532,7 @@ def main():
 	make_code_cmd = make_code_cmd+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(hist_train_start_time)+" "+str(hist_train_end_time)+" "+str(hist_scenario)+" "+str(hist_model)+" "+hist_freq+" "+str(hist_pred_dir)+" "+str(hist_time_window)
         make_code_cmd = make_code_cmd+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(fut_train_start_time)+" "+str(fut_train_end_time)+" "+str(fut_scenario)+" "+str(fut_model)+" "+fut_freq+" "+str(fut_pred_dir)+" "+str(fut_time_window)
         make_code_cmd = make_code_cmd+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(target_train_start_time)+" "+str(target_train_end_time)+" "+str(target_scenario)+" "+str(target_model)+" "+target_freq+" "+str(target_dir)+" "+str(target_time_window)
-        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" "+str(outdir)+" "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
+        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" '"+str(outdir)+"' "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
 
         print "Step 1: R code starters generation ..in progress"
         #p = subprocess.Popen('tcsh -c "'+make_code_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -505,7 +561,7 @@ def main():
 	#target_time_window,hist_time_window,fut_time_window
 	#CEW hasty edits to support single variable case
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
-        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" "+outdir+" "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
+        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
 	#print create_runscript_cmd
         print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
 	#CEW edit to diagnose older behavior
@@ -519,9 +575,7 @@ def main():
          print "Step2:!!!! FAILED !!!!, please contact developer."
          print output1, errors1
          sys.exit(0)
-        print output1, errors1
-        #c print errors1
-        
+        #print output1, errors1
         ###################################### 3 ################################################################
         script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate

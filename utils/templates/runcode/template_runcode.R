@@ -21,12 +21,14 @@ rm(list=ls())
 	hist.file.end.year_1 <- <H.FILE.END.YEAR>
         hist.train.start.year_1 <- <H.TRAIN.START.YEAR>
 	hist.train.end.year_1 <- <H.TRAIN.END.YEAR> 
+        hist.train.suffix <- <HIST.TRAIN.SUFFIX>
 	hist.scenario_1 <- <H.SCENARIO>
 	hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 	hist.model_1 <- <H.MODEL> 
 	hist.freq_1 <- <H.FREQ> 
 	hist.indir_1 <- <H.INDIR> 
 	hist.time.window <- <H.TIME.WINDOW> 
+        hist.pred.suffix <- <HIST.PRED.SUFFIX>
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- <F.FILE.START.YEAR> 
 	fut.file.end.year_1 <- <F.FILE.END.YEAR> 
@@ -39,6 +41,8 @@ rm(list=ls())
 	fut.indir_1 <- <F.INDIR>
 	fut.time.window <- <F.TIME.WINDOW>
         fut.time.trim.mask <- <FUT.TIME.TRIM.MASK>
+        fut.pred.suffix <- <FUT.PRED.SUFFIX>
+
 #-------------- predictor directory suffix -----------#
         pred.dir.suffix <- <PRED.DIR.SUFFIX> #use this predictor variable and this  suffix with fut.indir_1 and hist.indir_1
 #------------- target -------------------------# 
@@ -58,6 +62,7 @@ rm(list=ls())
 	k.fold <- <KFOLD> 
 	<PR_OPTS>
 #-------------- output -----------------------#
+        <PROPERTY>	
 	output.dir <- <OUTPUT.DIR>
 	mask.output.dir <- <MASK.OUTPUT.DIR> 
 #-------------  custom -----------------------#
