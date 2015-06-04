@@ -41,6 +41,8 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'flag.neg' = return(callFlagNegativeValues(test, input, adjusted.output)),
                               'PR' = return(callPRPostproc(test, input, adjusted.output)),
                               'Nothing' = return(callNoMethod(test, input, adjusted.output)),
+                              'add.one' = return(callAddOne(test, input, adjusted.output)), 
+                              'add.five' = return(callAddFive(test, input, adjusted.output)), 
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
@@ -188,6 +190,48 @@ callPRPostproc <- function(test, input, adjusted.output){
     }
   }
   return(adjusted.output)          
+}
+
+callAddOne <- function(test, input, adjusted.output){
+  #'Test method for playing with the mechanincs of calling
+  #'multiple adjustment steps on the downscaled output
+  #'  rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
+  for (rip in rips){
+    #create sppropriate variable name
+    ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
+    #Find arguments to pre-processing function
+    #There are no arguments to be applied
+    if(test$adjust.out=='on'){
+    adjusted.output$ds.out[[ds.var]] <- (adjusted.output$ds.out[[ds.var]] + 1)
+    }
+    if(test$qc.mask=='on'){
+      adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
+    }
+  }
+  return(adjusted.output) 
+}
+
+callAddFive <- function(test, input, adjusted.output){
+  #'Test method for playing with the mechanincs of calling
+  #'multiple adjustment steps on the downscaled output
+  #'  rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
+  for (rip in rips){
+    #create sppropriate variable name
+    ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
+    #Find arguments to pre-processing function
+    #There are no arguments to be applied
+    if(test$adjust.out=='on'){
+      adjusted.output$ds.out[[ds.var]] <- (adjusted.output$ds.out[[ds.var]] + 5)
+    }
+    if(test$qc.mask=='on'){
+      adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
+    }
+  }
+  return(adjusted.output) 
 }
 
 

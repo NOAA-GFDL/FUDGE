@@ -109,7 +109,9 @@ LoadLib(ds.method)
 message("Setting downscaling method information")
 SetDSMethodInfo(ds.method, predictor.vars)
 message("Checking downscaling arguments")
-QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
+QCDSArguments(k=k.fold, ds.method = ds.method, args=args, 
+              is.multivar=(length(predictor.vars) > 1), 
+              is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 #Check for writable output directory 
 #TODO: remove this; only needed if testing R code separately
@@ -131,6 +133,7 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
 ##Make sure that you have the experiment rip ready to apply to 
 ##other code (i.e. the actual rip experiment is being run under)
 experiment.rip <- gsub("(.*_)", "", fut.scenario_1)
+fut.pred.rip.list <- unlist(strsplit(RIP, split=","))
 
 #Initialize instructions for pre- and post-ds adjustment
 message("Checking pre- and post-downscaling adjustments")
@@ -142,6 +145,13 @@ pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 #Generate metadata references for the pre- and post-processing functions
 #Things that contain an ADJUSTMENT
 post_ds_adj <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+
+#Then, check that the s3 and s5 adjustments you are performing make sense in 
+#this context
+QCAdjustArguments(pre_ds, post_ds, 
+                 is.multivar=(length(predictor.vars) > 1), 
+                 is.multi.ens=(length(fut.pred.rip.list) > 1), 
+                 target.in.predictors = (target.var%in%predictor.vars))
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only for the masks, but as an immediate check upon the dimensions
@@ -232,7 +242,6 @@ if(!is.null(spat.mask)){
 fut.filename <- GetMiniFileName("VAR",fut.freq_1,fut.model_1,fut.scenario_1,grid,
                                  fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 message("Reading in future predictor data")
-fut.pred.rip.list <- unlist(strsplit(RIP, split=","))
 list.fut <- ReadMultiVars(file.prefix=fut.indir_1, 
                            file.suffix=pred.dir.suffix, 
                            blank.filename=fut.filename, 
@@ -311,6 +320,7 @@ if(length(post.ds) !=0){
                                     hist.targ = list.target$clim.in, 
                                     fut.pred  = list.fut$clim.in, 
                                     data.atts = list.target$att_table)
+  print(summary(temp.postproc))
   ds$esd.final <- temp.postproc$ds.out
   if(qc.maskopts$qc.outloop){
     ds$qc.mask <- temp.postproc$qc.mask
@@ -363,7 +373,8 @@ for (rip in fut.pred.rip.list){
     #Someone else is running it, modules are available and presumably git branch not needed
     git.needed=FALSE
   }
-  print(list.fut$att_table$climatology)
+  print("post-downscaling adjustments:")
+  print(post_ds)
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
@@ -375,8 +386,8 @@ for (rip in fut.pred.rip.list){
                     tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                     is.pre.ds.adjust=(length(pre_ds) > 0),
                     pre.ds.adjustments=pre_ds,
-                    is.post.ds.adjust=(length(post_ds_adj) > 0),
-                    post.ds.adjustments=post_ds_adj, 
+                    is.post.ds.adjust=(length(post_ds) > 0),
+                    post.ds.adjustments=post_ds, 
                     climatology=list.fut$att_table[[target.var]]$climatology, 
                     fut.pred.rip = rip)
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
@@ -421,7 +432,7 @@ for (rip in fut.pred.rip.list){
                         qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
                         is.pre.ds.adjust=(length(pre_ds) > 0),
                         pre.ds.adjustments=pre_ds,
-                        is.post.ds.adjust=(length(post_ds_adj) > 0),
+                        is.post.ds.adjust=(length(post_ds) > 0),
                         post.ds.adjustments=post_ds_adj, 
                         fut.pred.rip = rip)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))

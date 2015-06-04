@@ -11,3 +11,36 @@ QCDSArguments <- function(k, ds.method,...){
                "does not support cross-validaton. Check documentation for more details."))
   }
 }
+
+QCAdjustArguments <- function(pre_ds, post_ds, 
+                              is.multivar, is.multi.ens, 
+                              target.in.predictors){
+  multivar.possible  <- c('PR', 'flag.neg')
+  multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg')
+  target.req.in.pred <- c('PR', 'SBiasCorr')
+  #Obtain all adjustments that will be performed
+  pre.ds.list <- lapply(pre_ds, '[[', 'type')
+  post.ds.list <- lapply(post_ds, '[[', 'type')
+  list.all <- c(pre.ds.list, post.ds.list)
+  #Check each of them against the adjustments that will be performed
+  for(adj in list.all){
+    if(is.multivar){
+      if(!adj%in%multivar.possible){
+        stop(paste("Error in QCAdjustArguments: method",adj,"does not support", 
+                   "multiple variables!"))
+      }
+    }
+    if(is.multi.ens){
+      if(!adj%in%multi_ens.possible){
+        stop(paste("Error in QCAdjustArguments: method",adj,"does not support",
+                   "multiple ensemble members!"))
+      }
+    }
+    if(!target.in.predictors){
+      if(adj%in%target.req.in.pred){
+        stop(paste("Error in QCAdjustArguments: method",adj,"does not support",
+                   "target vars that are not present in the predictors!"))
+      }
+    }
+  }
+}
