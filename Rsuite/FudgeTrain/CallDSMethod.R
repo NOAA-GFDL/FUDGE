@@ -50,14 +50,16 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
 #   out.reference <- esd.gen[[1]]     #Save the locations of missing values in the output vector
 #   esd.gen = lapply(esd.gen, remove.missvals)
   
+  print(ds.method)
+  
   out <- switch(ds.method, 
                 #"simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
-                'CDFt' = callCDFt(train.predict, train.target, esd.gen, args),
+                'CDFt' = callCDFt(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
-                "BCQM" = callBCQMv2(train.target, train.predict, esd.gen, args), 
-                "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args), 
-                "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args), 
-                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args), #, ds.var)
+                "BCQM" = callBCQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
+                "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
+                "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
+                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var, att.table),
                 "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
 #  if(remove.ds.missvals){
@@ -109,7 +111,7 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
 }
 
 
-callCDFt <- function (pred, targ, new, args){
+callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
   #' Calls the CDFt function (Vrac et. al 2009) on a single variable
   #' predictor and target, returning the downscaled (DS) output.
   #' Takes as an argument
@@ -118,55 +120,58 @@ callCDFt <- function (pred, targ, new, args){
   #' future or historical datasets, depending upon which has fewer observations.
   #' dev : The number of deviations used when calculating. 
   #' @citation P.-A. Michelangeli, M. Vrac, H. Loukos. "Probabilistic downscaling approaches: 
-  #' @citation Application to wind cumulative distribution functions", 
-  #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
+     #' @citation Application to wind cumulative distribution functions", 
+     #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
      
-  out.var.name <- names(new)
-  
-  ###Obtain required arguments (and throw errors if not specified)
-  if(!is.null(args$dev)){
-    dev <- args$dev
-  }else{
-    stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
-  }
-  
-  #Check for multiple vars; throw errors
-  #Unlist the predictors
-  pred <- unlist(pred)
-  new <- unlist(new)
-  
-  if(!is.null(args$npas)){
-    npas <- args$npas
-    if(npas=='default' || npas==0){
-      npas=ifelse(length(targ) > length(new), length(new), length(targ))
-    }else if(npas=='training_target'){
-      #Note: this option is needed to duplicate 'default'
-      #for results prior to 10-20-14
-      npas=length(targ)
-    }else if(npas=='future_predictor'){
-      npas=length(new)
-    }
-    if(npas <= dev){
-      stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was", 
-                 npas, "and dev was", dev))
-    }
-  }else{
-    stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
-  }
-  if(is.null(args)){
-    #return(CDFt(targ, pred, new, npas=length(targ))$DS)
-    temp <- CDFt(targ, pred, new, npas=length(targ))$DS
-  }else{
-    ##Note: if any of the input data parameters are named, CDFt will 
-    ## fail to run with an 'unused arguments' error, without any decent
-    ## explanation as to why. This way works.
-    args.list <- c(list(targ, pred, new), list(npas=npas, dev=dev))
-    temp <- do.call("CDFt", args.list)$DS
-  }
-  #return(as.numeric(temp))
-  out.list <- list()
-  out.list[[out.var.name]] <- as.numeric(temp)
-  return(out.list)
+     ###Obtain required arguments (and throw errors if not specified)
+     if(!is.null(args$dev)){
+       dev <- args$dev
+     }else{
+       stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
+     }
+     
+     out.list <- list()
+     pred <- unlist(pred)  #No need to reference the historic predictor names
+     rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+     for(rip in rip.list){
+       #Select the future predictor vars that you are interested in
+       out.var.name <- paste0(ds.var, ".", rip)
+       #Unlist the ensemble members
+       rip.index <- (rip.list==rip)
+       new.data <- new[rip.index]
+       new.data <- unlist(new.data)
+       
+       if(!is.null(args$npas)){
+         npas <- args$npas
+         if(npas=='default' || npas==0){
+           npas=ifelse(length(targ) > length(new.data), length(new.data), length(targ))
+         }else if(npas=='training_target'){
+           #Note: this option is needed to duplicate 'default'
+           #for results prior to 10-20-14
+           npas=length(targ)
+         }else if(npas=='future_predictor'){
+           npas=length(new.data)
+         }
+         if(npas <= dev){
+           stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was", 
+                      npas, "and dev was", dev))
+         }
+       }else{
+         stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
+       }
+       if(is.null(args)){
+         temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
+       }else{
+         ##Note: if any of the input data parameters are named, CDFt will 
+         ## fail to run with an 'unused arguments' error, without any decent
+         ## explanation as to why. This way works.
+         args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
+         temp <- do.call("CDFt", args.list)$DS
+       }
+       #return(as.numeric(temp))
+       out.list[[out.var.name]] <- as.numeric(temp)
+     }
+     return(out.list)
 }
 
 callSimple.bias.correct <- function(pred, targ, new, args){
@@ -185,7 +190,7 @@ callSimple.bias.correct <- function(pred, targ, new, args){
   return(out.list)
 }
 
-callDeltaSD <- function(LH,CH,CF,args){
+callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #'over a single variable
@@ -210,9 +215,7 @@ callDeltaSD <- function(LH,CH,CF,args){
     out.var.name <- names(CF)
     
     #Unlist data from its input form
-    CF <- unlist(CF)
     CH <- unlist(CH)
-    
     # Obtain options
     if(!is.null(args$deltatype)){
       deltatype <- args$deltatype
@@ -229,54 +232,63 @@ callDeltaSD <- function(LH,CH,CF,args){
     }else{
       stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
     }
-    #Decide how many iterations of the delta method to perform
-    #based on the relative lengths of the historical
-    #and future data (future should be >= historical) #Switch 1-28 from <  
-    if(length(LH) >= length(CF)){
-      #If the future and historical periods are unequal, truncate the vectors
-      #That...raises an interesting question: should the CH vector be truncated as well?
-      #Technically, it doesn't need to be for the code to work...
-      if(keep.zeroes){
-        SDF <- LH[1:length(CF)]
-        out.temp <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop, keep.zeroes)
-        SDF[SDF!=0] <- out.temp
-      }else{
-        SDF <- delta.downscale(LH[1:length(CF)], CH, CF, deltatype, deltaop)
-      }
-    }else{
-      #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
-      #where n=length(CF)/length(LH)
-      write.len <- 1
-      out.len <- length(CF)
-      in.len <- length(LH)
-      SDF <- rep(NA, out.len)
-      #vector comparisons take a long time relative to other things
-      if(keep.zeroes){
-        comp.indices <- which(LH!=0)
-      }
-      while(write.len < out.len){
-        #delta.downscale removes NAs in the output vector
-        tempvec <- delta.downscale(LH, CH, CF[write.len:(write.len + in.len)], 
-                                   deltatype, deltaop, keep.zeroes)
-        if(keep.zeroes){
-          sd.write.indices <- (write.len-1) + comp.indices
-          sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] #Remove any that might lead to a longer write index
-          SDF[sd.write.indices] <- tempvec
-        }else{
-          SDF[write.len:length(tempvec)] <- tempvec
-        }
-        write.len <- write.len + in.len
-      }
-    }
-    #     print("Number of NA values in DeltaSD")
-    num.na <- (sum(is.na(SDF)))
-    if(num.na > 0){
-      print(num.na)
-      stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
-    }
-    #return(SDF)
+    #Prepare to loop by RIP
     out.list <- list()
-    out.list[[out.var.name]] <- SDF
+    rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+    for(rip in rip.list){
+      #Select the future predictor vars that you are interested in
+      out.var.name <- paste0(ds.var, ".", rip)
+      #Unlist the ensemble members
+      rip.index <- (rip.list==rip)
+      CF.data <- CF[rip.index]
+      CF.data <- unlist(CF.data)
+      #Decide how many iterations of the delta method to perform
+      #based on the relative lengths of the historical
+      #and future data (future should be >= historical) #Switch 1-28 from <  
+      if(length(LH) >= length(CF.data)){
+        #If the future and historical periods are unequal, truncate the vectors
+        #That...raises an interesting question: should the CH vector be truncated as well?
+        #Technically, it doesn't need to be for the code to work...
+        if(keep.zeroes){
+          SDF <- LH[1:length(CF.data)]
+          out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, keep.zeroes)
+          SDF[SDF!=0] <- out.temp
+        }else{
+          SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
+        }
+      }else{
+        #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
+        #where n=length(CF.data)/length(LH)
+        write.len <- 1
+        out.len <- length(CF.data)
+        in.len <- length(LH)
+        SDF <- rep(NA, out.len)
+        #vector comparisons take a long time relative to other things
+        if(keep.zeroes){
+          comp.indices <- which(LH!=0)
+        }
+        while(write.len < out.len){
+          #delta.downscale removes NAs in the output vector
+          tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
+                                     deltatype, deltaop, keep.zeroes)
+          if(keep.zeroes){
+            sd.write.indices <- (write.len-1) + comp.indices
+            #Remove any that might lead to a longer write index
+            sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
+            SDF[sd.write.indices] <- tempvec
+          }else{
+            SDF[write.len:length(tempvec)] <- tempvec
+          }
+          write.len <- write.len + in.len
+        }
+      }
+      num.na <- (sum(is.na(SDF)))
+      if(num.na > 0){
+        print(num.na)
+        stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
+      }
+      out.list[[out.var.name]] <- SDF
+    }
     return(out.list)
 }
 
@@ -311,61 +323,67 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
 }
 
 
-callEDQMv2<-function(LH,CH,CF,args){ 
+callEDQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){ 
   #'Performs an equidistant correction adjustment on a single variable
   #'over the historical period, in order to generate downscaled data.
-  #' @param LH: Local Historical (a.k.a. observations)
-  #' @param CH: Coarse Historical (a.k.a. GCM historical)
-  #' @param CF: Coarse Future (a.k.a GCM future)
-  #' Contains no other arguments in the args parameter.
-  #'@citation Li et. al. 2010
-  
-  #save output var name for later
-  out.var.name <- names(CF)
-  
-  #Unlist data from its input form
-  CF <- unlist(CF)
-  CH <- unlist(CH)
-  
-  lengthCF<-length(CF)
-  lengthCH<-length(CH)
-  lengthLH<-length(LH)
-  
-  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-  
-  # first define vector with probabilities [0,1]
-  prob<-seq(0.001,0.999,length.out=lengthCF)
-  
-  # initialize data.frame
-  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                   qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
-                   EquiDistant=rep(NA,maxdim))
-  
-  SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
-                  LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),
-                  EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
-  temp$CF[1:lengthCF]<-CF
-  temp$CH[1:lengthCH]<-CH
-  temp$LH[1:lengthLH]<-LH
-  
-  temp.CFsorted<-temp[order(temp$CF),]
-  #Combine needed to deal with cases where CH longer than CF
-  if (lengthCH-lengthCF > 0){
-    temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (lengthCH-lengthCF)))
-  }else{
-    temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
-  }
-  
-  temp.CFsorted$qLHecdfCFqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp.CFsorted$qCHecdfCFqCF[1:lengthCF]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-  # EQUIDISTANT CDF (Li et al. 2010)
-  temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
-  temp<-temp.CFsorted[order(temp.CFsorted$index),]
-  
-  out.list <- list()
-  out.list[[out.var.name]] <- temp$EquiDistant[!is.na(temp$EquiDistant)]
-  return(out.list)
-  #return(temp$EquiDistant[!is.na(temp$EquiDistant)])
+  #'@param LH: Local Historical (a.k.a. observations)
+    #'@param CH: Coarse Historical (a.k.a. GCM historical)
+    #'@param CF: Coarse Future (a.k.a GCM future)
+    #'Contains no other arguments in the args parameter.
+    #'@citation Li et. al. 2010
+    
+    #Unlist data from its input form
+    CH <- unlist(CH)
+    lengthCH<-length(CH)
+    lengthLH<-length(LH)
+    
+    #prepare to loop by rip over the dataset
+    out.list <- list()
+    rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+    for(rip in rip.list){
+      #Select the future predictor vars that you are interested in
+      out.var.name <- paste0(ds.var, ".", rip)
+      #Unlist the ensemble members
+      rip.index <- (rip.list==rip)
+      CF.data <- CF[rip.index]
+      CF.data <- unlist(CF.data)
+      
+      lengthCF<-length(CF.data)
+      
+      if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+      
+      # first define vector with probabilities [0,1]
+      prob<-seq(0.001,0.999,length.out=lengthCF)
+      
+      # initialize data.frame
+      temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                       qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
+                       EquiDistant=rep(NA,maxdim))
+      
+      SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
+                      LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),
+                      EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
+      temp$CF[1:lengthCF]<-CF.data
+      temp$CH[1:lengthCH]<-CH
+      temp$LH[1:lengthLH]<-LH
+      
+      temp.CFsorted<-temp[order(temp$CF),]
+      #Combine needed to deal with cases where CH longer than CF
+      if (lengthCH-lengthCF > 0){
+        temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (lengthCH-lengthCF)))
+      }else{
+        temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
+      }
+      
+      temp.CFsorted$qLHecdfCFqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+      temp.CFsorted$qCHecdfCFqCF[1:lengthCF]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+      # EQUIDISTANT CDF (Li et al. 2010)
+      temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
+      temp<-temp.CFsorted[order(temp.CFsorted$index),]
+      out.list[[out.var.name]] <- temp$EquiDistant[!is.na(temp$EquiDistant)]
+    }
+    return(out.list)
+    #return(temp$EquiDistant[!is.na(temp$EquiDistant)])
 }
 
 ###CG DS method
@@ -602,7 +620,7 @@ callCFQMv3<-function(LH,CH,CF, args)
 }
 
 
-callBCQMv2<-function(LH,CH,CF,args){
+callBCQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
   #'Performs an bias-correction quantile mapping on a single variable
   #'over the historical period, in order to generate downscaled data.
   #' @param LH: Local Historical (a.k.a. observations)
@@ -613,16 +631,23 @@ callBCQMv2<-function(LH,CH,CF,args){
   #' Note: Even though there is no training step on this method, and no
   #' intention of implementing multivar downscaling for the QM methods, 
   #' they need to be named to fit into the new indexing scheme. 
-  
-  #Save ouptut rip and var name for later
-  out.var.name <- names(CF)
-     #Unlist data from its input form
-     CF <- unlist(CF)
-     CH <- unlist(CH)
 
-  lengthCF<-length(CF)
+     #Unlist data from its input form
+     CH <- unlist(CH)
+     
   lengthCH<-length(CH)
   lengthLH<-length(LH)
+     #prepare to loop by rip over the dataset
+     out.list <- list()
+     rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+     for(rip in rip.list){
+       #Select the future predictor vars that you are interested in
+       out.var.name <- paste0(ds.var, ".", rip)
+       #Unlist the ensemble members
+       rip.index <- (rip.list==rip)
+       CF.data <- CF[rip.index]
+       CF.data <- unlist(CF.data)
+       lengthCF<-length(CF.data)
 
   if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
   
@@ -642,9 +667,7 @@ callBCQMv2<-function(LH,CH,CF,args){
   temp.CFsorted$qLHecdfCHqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
   temp<-temp.CFsorted[order(temp.CFsorted$index),]
   
-  #SDF<-temp.final$qCFecdfCHqLH
-  out.list <- list()
   out.list[[out.var.name]] <- temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]
-  #return(list(out.var.name = temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]))
+     }
   return(out.list)
 }
