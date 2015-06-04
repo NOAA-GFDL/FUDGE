@@ -90,9 +90,6 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
     test.list <- c('target'=list(targ), pred)
     test.prod <- data.frame(test.list)
     lm.model <- lm(data=test.prod)
-#     save(file="~/Code/test_multivar.R", list=c('lm.model', 'new'))
-#     print(paste("save.file:~/Code/test_out.R"))
-#     stop('examine future predictors and think accordingly')
     rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
     rips <- unique(rip.list)
     out.list <- list()
@@ -191,105 +188,105 @@ callSimple.bias.correct <- function(pred, targ, new, args){
 }
 
 callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
-  #'@author carlos.gaitan@noaa.gov
-    #'@description The script uses the Delta Method to downscale coarse res. climate variables  
-    #'over a single variable
-    #'@param LH: Local Historical (a.k.a. observations)
-    #'@param CH: Coarse Historical (a.k.a. GCM historical)
-    #'@param CF: Coarse Future (a.k.a GCM future)
-    #'@param args: A list containing three arguments: 
-    #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
-    #'  what single value will be used for the difference between the CH and CF
-    #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
-    #'  the mthod for calculating the delta
-    #'  @param keep.zeroes, a value of TRUE or FALSE that controls whether to use all days for
-    #'  calculating the delta (TRUE), or use only those days for which the delta was greater
-    #'  than zero (FALSE)
-    #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
-    #' a delta that is applied to the LH (observational) data
-    #'@return SDF: Downscaled Future (Local)
-    ########################################
-    #Note: preferred behavior is to truncate vectors
-    #rather than randomly sampling iff too short.
-    
-    out.var.name <- names(CF)
-    
-    #Unlist data from its input form
-    CH <- unlist(CH)
-    # Obtain options
-    if(!is.null(args$deltatype)){
-      deltatype <- args$deltatype
-    }else{
-      stop(paste("DeltaSD Downscaling Error: deltatype not found in args"))
-    }
-    if(!is.null(args$deltaop)){
-      deltaop <- args$deltaop
-    }else{
-      stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
-    }
-    if(!is.null(args$keep.zeroes)){
-      keep.zeroes <- ifelse(args$keep.zeroes=='on', TRUE, FALSE)
-    }else{
-      stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
-    }
-    #Prepare to loop by RIP
-    out.list <- list()
-    rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-    for(rip in rip.list){
-      #Select the future predictor vars that you are interested in
-      out.var.name <- paste0(ds.var, ".", rip)
-      #Unlist the ensemble members
-      rip.index <- (rip.list==rip)
-      CF.data <- CF[rip.index]
-      CF.data <- unlist(CF.data)
-      #Decide how many iterations of the delta method to perform
-      #based on the relative lengths of the historical
-      #and future data (future should be >= historical) #Switch 1-28 from <  
-      if(length(LH) >= length(CF.data)){
-        #If the future and historical periods are unequal, truncate the vectors
-        #That...raises an interesting question: should the CH vector be truncated as well?
-        #Technically, it doesn't need to be for the code to work...
-        if(keep.zeroes){
-          SDF <- LH[1:length(CF.data)]
-          out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, keep.zeroes)
-          SDF[SDF!=0] <- out.temp
-        }else{
-          SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
-        }
+#'@author carlos.gaitan@noaa.gov
+  #'@description The script uses the Delta Method to downscale coarse res. climate variables  
+  #over a single variable
+  #'@param LH: Local Historical (a.k.a. observations)
+  #'@param CH: Coarse Historical (a.k.a. GCM historical)
+  #'@param CF: Coarse Future (a.k.a GCM future)
+  #'@param args: A list containing three arguments: 
+  #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
+  #'  what single value will be used for the difference between the CH and CF
+  #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
+  #'  the mthod for calculating the delta
+  #'  @param keep.zeroes, a value of TRUE or FALSE that controls whether to use all days for
+  #'  calculating the delta (TRUE), or use only those days for which the delta was greater
+  #'  than zero (FALSE)
+  #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
+  #' a delta that is applied to the LH (observational) data
+  #'@return SDF: Downscaled Future (Local)
+  ########################################
+  #Note: preferred behavior is to truncate vectors
+  #rather than randomly sampling iff too short.
+  
+  out.var.name <- names(CF)
+  
+  #Unlist data from its input form
+  CH <- unlist(CH)
+  # Obtain options
+  if(!is.null(args$deltatype)){
+    deltatype <- args$deltatype
+  }else{
+    stop(paste("DeltaSD Downscaling Error: deltatype not found in args"))
+  }
+  if(!is.null(args$deltaop)){
+    deltaop <- args$deltaop
+  }else{
+    stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
+  }
+  if(!is.null(args$keep.zeroes)){
+    keep.zeroes <- ifelse(args$keep.zeroes=='on', TRUE, FALSE)
+  }else{
+    stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
+  }
+  #Prepare to loop by RIP
+  out.list <- list()
+  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+  for(rip in rip.list){
+    #Select the future predictor vars that you are interested in
+    out.var.name <- paste0(ds.var, ".", rip)
+    #Unlist the ensemble members
+    rip.index <- (rip.list==rip)
+    CF.data <- CF[rip.index]
+    CF.data <- unlist(CF.data)
+    #Decide how many iterations of the delta method to perform
+    #based on the relative lengths of the historical
+    #and future data (future should be >= historical) #Switch 1-28 from <  
+    if(length(LH) >= length(CF.data)){
+      #If the future and historical periods are unequal, truncate the vectors
+      #That...raises an interesting question: should the CH vector be truncated as well?
+      #Technically, it doesn't need to be for the code to work...
+      if(keep.zeroes){
+        SDF <- LH[1:length(CF.data)]
+        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, keep.zeroes)
+        SDF[SDF!=0] <- out.temp
       }else{
-        #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
-        #where n=length(CF.data)/length(LH)
-        write.len <- 1
-        out.len <- length(CF.data)
-        in.len <- length(LH)
-        SDF <- rep(NA, out.len)
-        #vector comparisons take a long time relative to other things
+        SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
+      }
+    }else{
+      #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
+      #where n=length(CF.data)/length(LH)
+      write.len <- 1
+      out.len <- length(CF.data)
+      in.len <- length(LH)
+      SDF <- rep(NA, out.len)
+      #vector comparisons take a long time relative to other things
+      if(keep.zeroes){
+        comp.indices <- which(LH!=0)
+      }
+      while(write.len < out.len){
+        #delta.downscale removes NAs in the output vector
+        tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
+                                   deltatype, deltaop, keep.zeroes)
         if(keep.zeroes){
-          comp.indices <- which(LH!=0)
+          sd.write.indices <- (write.len-1) + comp.indices
+          #Remove any that might lead to a longer write index
+          sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
+          SDF[sd.write.indices] <- tempvec
+        }else{
+          SDF[write.len:length(tempvec)] <- tempvec
         }
-        while(write.len < out.len){
-          #delta.downscale removes NAs in the output vector
-          tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
-                                     deltatype, deltaop, keep.zeroes)
-          if(keep.zeroes){
-            sd.write.indices <- (write.len-1) + comp.indices
-            #Remove any that might lead to a longer write index
-            sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
-            SDF[sd.write.indices] <- tempvec
-          }else{
-            SDF[write.len:length(tempvec)] <- tempvec
-          }
-          write.len <- write.len + in.len
-        }
+        write.len <- write.len + in.len
       }
-      num.na <- (sum(is.na(SDF)))
-      if(num.na > 0){
-        print(num.na)
-        stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
-      }
-      out.list[[out.var.name]] <- SDF
     }
-    return(out.list)
+    num.na <- (sum(is.na(SDF)))
+    if(num.na > 0){
+      print(num.na)
+      stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
+    }
+    out.list[[out.var.name]] <- SDF
+  }
+  return(out.list)
 }
 
 delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, keep.zeroes=FALSE){
