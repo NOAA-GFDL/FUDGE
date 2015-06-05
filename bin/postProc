@@ -22,6 +22,8 @@ def postProc():
 	 userinput = "none"	
      #parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
      parser.add_argument("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
+    # parser.add_argument("-d", "--dir", dest="dir",help="for multi ensembles specifically, pass which ensemble member OneD dir to postprocess. By default processes all ensemble members", metavar="FILE")
+     parser.add_argument("-e", "--ensarg", dest="ens",help="for multi ensembles specifically, pass which ensemble member to postprocess. By default processes all ensemble members", metavar="FILE")
      #parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
@@ -32,6 +34,9 @@ def postProc():
         print "Looking for XML location taken from command line option.."
         print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
      vname = ""
+     global ensarg	
+     ensarg = "undefined"	
+     print "Test test",ensarg	
      for argu,valu in args.iteritems(): 
         if(argu == 'uinput'):
 			 #print "test"
@@ -45,6 +50,10 @@ def postProc():
 		        lvname = lvname1.split(',')
 			print lvname1 
 			print "Variable(s) to be post-processed: ",lvname
+	if(argu == 'ens'):
+	     global ensarg
+	     ensarg = valu
+	     print "Process ensemble member",ensarg
      if uinput is None:	
         uinput = userinput
 	
@@ -84,16 +93,44 @@ def postProc():
      #ver = dversion
      ver = "na" 	
      actualver = ""
+     property = {}
+     listout = []		
      #a1r, comment out above because as per new directory strucytre, there is no dversion. 	
      predModel = fut_model 	
-     indir = outdir #Our mini op from dscaling is the input to PP  
-     ## if vname  contains the word mask, then yes let's set the indir differently  ##
+     listfacet = outdir.split('#')
+     print "check",listfacet
+     if (listfacet[1] == "na"): 
+     		indir = outdir #Our mini op from dscaling is the input to PP  
+     else:
+	   if(ensarg != "undefined"):
+	      property[listfacet[1]] = ensarg 
+	      print "here?",property
+	   else:
+              property[listfacet[1]] = listfacet[2]
+ 	      print "or here?"	 
+	   out_dir = listfacet[0] 
+	   if '$(' in out_dir:
+                   for pname,pval in property.iteritems():
+                          replace = pval
+                          break; 
+                   list_new_out_dir = replace.split(",")
+                   for lnew in list_new_out_dir:
+	              print "tesst",lnew	
+                      listout.append(out_dir.replace(pname,lnew))
+     print "test",listout,"stop"
+## if vname  contains the word mask, then yes let's set the indir differently  ##
      listvname = []	
      if(lvname is not None):
      	listvname = lvname #.split(',')  
      else:
-	listvname.append(varname)	
-     for vname in listvname:
+	listvname.append(varname)
+####if multiple outdirs then loop through each..please use -d or its going to take forever.Use expergen to format the commands for you. You dont have to remember the outdir dirs
+
+#/work/a1r/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/$(RIP)/v20110601/PMtxp1-multi.lm-C01r11ens_test1X01K00/tasmax/US48/OneD/#$(RIP)#r1i1p1,r2i1p1,r3i1p1'
+
+     for indir in listout:
+      outdir = indir
+      for vname in listvname:
 	print vname,"check 1"
         vname = vname.strip(",")
         vname = vname.strip()
@@ -124,7 +161,7 @@ def postProc():
              				if (exists == False):
 
            					#print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid)
+						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg)
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
 						slogloc = sbase+"/"+"experiment_info.txt"
@@ -177,14 +214,18 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 					#cprint filename
 				        return exists		
 
-def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid):
+def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg):
         script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
 	print script1Loc 
 #check if output already exists
 #options basedir indir method var epoch rip region ver
 #TODO rem redundant region to cattool
-
-        fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
+	if (ensarg == "undefined"):
+        	fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
+        else:
+	        futexpername = exper_rip.split('_')[0]
+	        ensarg = futexpername+"_"+ensarg
+		fileprefix = var+"_"+freq+"_"+dexper+"_"+ensarg+"_"+region+"_"+start+"-"+end 	
 	cmd =  script1Loc+" "+basedire+" "+indir+" "+method+" "+var+" "+dexper+" "+exper_rip+" "+region+" "+ver+" "+str(lons)+" "+str(lone)+" "+str(lats)+" "+str(late)+" "+str(grid)+" "+fileprefix+" "+obsid+" "+output_grid
         print "PP ..in progress", cmd 
        	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)

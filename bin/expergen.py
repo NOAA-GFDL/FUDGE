@@ -18,6 +18,7 @@ list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
 dictProperty = {}
+copyprop = {}
 rootdir = ''
 projectRoot = "" 
 project = "" 
@@ -25,6 +26,7 @@ ppn = 2 #TODO get from XML custom?
 overwrite = False #default don't overwrite existing output or scripts
 preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
 idirsuffix = ""
+global mutli 
 def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
@@ -276,7 +278,17 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #c	else:
 #c	   print "or not"
         out_dir,listoutdir =  parse_outdir(out_dir,property)
-	print "new out_dir", out_dir		
+	print "new out_dir", out_dir	
+	global copyprop	
+	copyprop = property
+	if (len(listoutdir) > 1):
+	   print "Multi-output ON"
+	   global multi
+	   multi = "on" 
+	else:
+	   print "single output on"
+	   global multi
+	   multi = "off" 
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
 	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
@@ -608,52 +620,66 @@ def main():
 	print "Use submit_job to submit scripts"
 
 ############### crte ppscript #################
+        print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+	print " ========================="
 	dev = "off" 
-        print(sbase+"/postProc/aux/")
+	print "multi output (Writing to multiple output directories) ....",multi
+        #print(sbase+"/postProc/aux/")
+	if (multi == "on"):
+	 suffix = ['suff1','suff2','suff3']
+	else:
+	 suffix = ['']	
         if not os.path.exists(sbase+"/postProc/aux/"):
         	os.makedirs(sbase+"/postProc/aux/")
-        if (dev == "off"):
+	suffctr = 1
+	listrips = []
+        for pname,pval in copyprop.iteritems():
+	   listrips = pval.split(',')
+	for mout in listrips: 
+          if (dev == "off"):
 		tsuffix = ""
-        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"
-	else:
+        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
+	  else:
 		tsuffix = "_"+tstamp
                 ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
-	try:
+	  try:
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+" -e "+mout
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+"\n"
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+" -e "+mout 
   		ppfile.write(pp_cmnd)
   		ppfile.close()
-	except:
+	  except:
   		print "Unable to create postProc command file. You may want to check your settings."
 	#c	print create_pp_cmd
-        if(os.path.exists(ppbase)):
+          if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
                 ppLoc = basedir+"/utils/bin/"+"create_postProc"
-                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" "+tstamp+" "+branch
-                print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch
                 p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
                 output4, error4 = p4.communicate()
                 if(p4.returncode != 0):
                         print "Step4:!!!! FAILED !!!!, please contact developer."
                         print output4, error4
                         sys.exit(-4)
-                print output4, error4
-                print "4- completed"
-                print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+                #uncomment print output4, error4
+                #print "4-"+str(suffctr)+" completed"
                 print "----------------------------------------"
-		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
+		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
                 try:  
    			NEMSemail = os.environ["NEMSemail"]
-                        print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+tsuffix
+                        print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
 		except KeyError: 
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-			print "msub -d $HOME "+sbase+"postProc/postProc_command"+tsuffix
-	else:
+			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
+	  else:
 		print "postProc_command cannot be created. postProc_source does not exist"
+	  suffctr = suffctr + 1
+	print "----------------------------------------"
+        print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+
 ################ step 5 fudgeList invocation ##############################################
         slogloc = sbase+"/"+"experiment_info.txt"
         fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
