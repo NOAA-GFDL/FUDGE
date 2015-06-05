@@ -49,9 +49,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
 #   train.target = train.target[!is.na(train.target)]    
 #   out.reference <- esd.gen[[1]]     #Save the locations of missing values in the output vector
 #   esd.gen = lapply(esd.gen, remove.missvals)
-  
-  print(ds.method)
-  
   out <- switch(ds.method, 
                 #"simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
                 'CDFt' = callCDFt(train.predict, train.target, esd.gen, args, ds.var, att.table),
@@ -631,9 +628,9 @@ callBCQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
 
      #Unlist data from its input form
      CH <- unlist(CH)
+     lengthCH<-length(CH)
+     lengthLH<-length(LH)
      
-  lengthCH<-length(CH)
-  lengthLH<-length(LH)
      #prepare to loop by rip over the dataset
      out.list <- list()
      rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
@@ -646,25 +643,25 @@ callBCQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
        CF.data <- unlist(CF.data)
        lengthCF<-length(CF.data)
 
-  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-  
-  # first define vector with probabilities [0,1]
-  prob<-seq(0.001,0.999,length.out=lengthCF)
-  
-  # initialize data.frame
-  temp<-data.frame(index=c(seq(1,lengthCF), rep(NA,maxdim-lengthCF)),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                   qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
-  temp$CF[1:lengthCF]<-CF
-  temp$CH[1:lengthCH]<-CH
-  temp$LH[1:lengthLH]<-LH
-  
-  temp.CFsorted<-temp[order(temp$CF),]
-  temp.CFsorted$qCF[1:lengthCF]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
-  temp.CFsorted$ecdfCHqCF[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
-  temp.CFsorted$qLHecdfCHqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-  temp<-temp.CFsorted[order(temp.CFsorted$index),]
-  
-  out.list[[out.var.name]] <- temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]
+       if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+       
+       # first define vector with probabilities [0,1]
+       prob<-seq(0.001,0.999,length.out=lengthCF)
+       
+       # initialize data.frame
+       temp<-data.frame(index=c(seq(1,lengthCF), rep(NA,maxdim-lengthCF)),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                        qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
+       temp$CF[1:lengthCF]<-CF.data
+       temp$CH[1:lengthCH]<-CH
+       temp$LH[1:lengthLH]<-LH
+       
+       temp.CFsorted<-temp[order(temp$CF),]
+       temp.CFsorted$qCF[1:lengthCF]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+       temp.CFsorted$ecdfCHqCF[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+       temp.CFsorted$qLHecdfCHqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+       temp<-temp.CFsorted[order(temp.CFsorted$index),]
+       
+       out.list[[out.var.name]] <- temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]
      }
   return(out.list)
 }

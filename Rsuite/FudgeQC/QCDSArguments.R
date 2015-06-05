@@ -16,8 +16,8 @@ QCAdjustArguments <- function(pre_ds, post_ds,
                               is.multivar, is.multi.ens, 
                               target.in.predictors){
   multivar.possible  <- c('PR', 'flag.neg')
-  multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg')
-  target.req.in.pred <- c('PR', 'SBiasCorr')
+  multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg', 'bcsd.correct')
+  target.req.in.pred <- c('PR', 'SBiasCorr', 'bcsd.correct')
   #Obtain all adjustments that will be performed
   pre.ds.list <- lapply(pre_ds, '[[', 'type')
   post.ds.list <- lapply(post_ds, '[[', 'type')

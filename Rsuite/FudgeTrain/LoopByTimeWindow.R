@@ -66,7 +66,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              ds.orig=NULL, ds.var='tasmax',
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
-                             create.qc.mask=create.qc.mask)
+                             create.qc.mask=create.qc.mask,
+                             verbose=FALSE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
@@ -224,7 +225,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
         #And adjust the downscaled output, if applicable
         if(s5.adjust){
-          message('calling section 5 adjustment')
+          if(verbose){message('calling section 5 adjustment')}
           if(is.na(kfold.orig)){
             #If there is ds data being passed in from outside, it gets checked
             data <- temp.out
@@ -235,11 +236,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
                                        #s5.method=s5.method,s5.args=s5.args,
                                        data = data, 
-                                       data.atts=att.table$hist.targ,
+                                       data.atts= att.table,
                                        hist.pred = lapply(kfold.predict, remove.missvals), 
                                        hist.targ = kfold.target[!is.na(kfold.target)], 
                                        fut.pred = lapply(kfold.gen, remove.missvals))
-          for (new.ds.var in names(temp.out)){
+          #for (new.ds.var in names(temp.out)){
             if(create.qc.mask){
               #if (verbose) {message('adding qc mask')}
               if(use.time.trim.mask){
@@ -257,7 +258,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                # qc.masklist[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[new.ds.var]] #A NULL assignment might cause problems here. Second if?
 #                 downscale.list <- mapply(FUN=assign.by.index, qc.masklist, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
                  for(var.name in names(qc.masklist)){
-                   qc.masklist[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$qc.mask[[var.name]][!is.na(temp.out$qc.mask[[var.name]])]
+                   #Don't do the !is.na() check on the qc masks - qc masks are SUPPOSED to have more missing values
+                   qc.masklist[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$qc.mask[[var.name]]
                  }
               }
             }
@@ -272,12 +274,15 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               }
             }else{
               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[!is.na(temp.out$ds.out[[new.ds.var]])]
-              for(var.name in names(qc.masklist)){
+              for(var.name in names(temp.out$ds.out)){
+                #print('adding back into timeseries')
+                #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
                 downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[[var.name]][!is.na(temp.out$ds.out[[var.name]])]
+                #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
               }
             }
           }
-        }
+       # }
 
         if(graph){
           if(masklines){

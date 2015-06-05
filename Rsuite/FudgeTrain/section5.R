@@ -28,7 +28,6 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                    hist.targ = NA, 
                    fut.pred = NA, 
                    create.qc.mask=FALSE, create.adjust.out=FALSE){
-  
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
@@ -43,6 +42,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'Nothing' = return(callNoMethod(test, input, adjusted.output)),
                               'add.one' = return(callAddOne(test, input, adjusted.output)), 
                               'add.five' = return(callAddFive(test, input, adjusted.output)), 
+                              'bcsd.correct' = return(callBCSDCorrect(test, input, adjusted.output)),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
@@ -234,6 +234,44 @@ callAddFive <- function(test, input, adjusted.output){
   return(adjusted.output) 
 }
 
+callBCSDCorrect <- function(test, input, adjusted.output){
+  #'Calls a BCSD-style adjustment on quantile-mapped code
+  #'based off of the limits to the adjustment of the 
+  #'MH and MF datasets
+  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
+  targ.var <- names(input$data.atts$hist.targ)
+  for(rip in rips){
+    ds.var <- paste0(targ.var, ".", rip)
+    fut.pred <- ds.var
+    hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
+                                         "[[", 'var')==targ.var]
+    ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]], 
+                               obs.hist = input$hist.targ, 
+                               model.fut = input$fut.pred[[fut.pred]], 
+                               obs.fut = adjusted.output$ds.out[[ds.var]])
+    if(test$qc.mask=='on'){
+      adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==adjusted.output$ds.out[[ds.var]], 
+                                                  NA, 1)
+    }
+    if(test$adjust.out=='on'){
+      adjusted.output$ds.out[[ds.var]] <- ds.correct
+    }
+  }
+  return(adjusted.output)
+}
+
+bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut){
+  #derived from BCSD code provided by Catherine Hejo
+  #Correct for maximum range of the distribution
+  largex.tmax <- which(model.fut > max(model.hist))    #List of indices for which dist is stretched
+  max.delta.tmax <- max(model.hist) - max(obs.hist)    #Delta calculated as diff of max(hist) - max(obs)
+  obs.fut[largex.tmax] <- model.fut[largex.tmax] - max.delta.tmax
+  ###Correct for minimum range of the distribution
+  smallx.tmax <- which(model.fut < min(model.hist))    #List of indices for which dist is stretched
+  min.delta.tmax <- min(model.hist) - min(obs.hist)    #Delta calculated as diff of min(hist) - min(obs)
+  obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
+  return(obs.fut)
+}
 
 round.negative <- function(num){
   #assumes no 0 values are passed 

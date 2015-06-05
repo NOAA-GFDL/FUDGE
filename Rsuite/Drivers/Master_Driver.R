@@ -373,8 +373,6 @@ for (rip in fut.pred.rip.list){
     #Someone else is running it, modules are available and presumably git branch not needed
     git.needed=FALSE
   }
-  print("post-downscaling adjustments:")
-  print(post_ds)
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
@@ -449,5 +447,5 @@ for (rip in fut.pred.rip.list){
 message(paste('File(s)', convert.list.to.string(out.file.list), "written to file."))
 message(paste('Final Downscaled output file location:', convert.list.to.string(out.file.list),sep=""))
 message(paste('Target file location:', attr(list.target, 'filename')))
-message(paste('Future Predictor file(s):', attr(list.hist, 'filename')))
-message(paste('Historic Predictor files(s):', attr(list.fut, 'filename')))
+message(paste('Future Predictor file(s):', attr(list.fut, 'filename')))
+message(paste('Historic Predictor files(s):', attr(list.hist, 'filename')))
