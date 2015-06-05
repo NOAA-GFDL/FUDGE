@@ -86,9 +86,11 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   }else{
     stop("Section 5 Adjustment Error: Arguments toplim and botlim are not present for the SBiasCorr function. Please check your XML.")
   }
+  target.var <- unlist(lapply(input$data.atts$hist.targ, "[[", 'var'))
   ds.vars <- names(adjusted.output$ds.out)
   #Unlist the historic predictors 
-  hist.pred <- unlist(input$hist.pred)
+  hist.select <- c(lapply(input$data.atts$hist.pred, "[[", 'var')==target.var)
+  hist.pred <- unlist(input$hist.pred[hist.select])
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
   for (ds.var in ds.vars){
     #There can be more than pne future predictor for the ensemble
@@ -96,7 +98,8 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     #compute difference for all time values
     hist.bias <- mean(hist.pred-input$hist.targ)
     fut.targ <- fut.pred-hist.bias
-    mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out[[ds.var]]-fut.targ) & (adjusted.output$ds.out[[ds.var]]-fut.targ) < toplim), 
+    mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out[[ds.var]]-fut.targ) & 
+                           (adjusted.output$ds.out[[ds.var]]-fut.targ) < toplim), 
                         yes=1, no=NA)
     if(test$qc.mask=='on'){
       out.list$qc.mask[[ds.var]] <- mask.vec
@@ -196,7 +199,7 @@ callAddOne <- function(test, input, adjusted.output){
   #'Test method for playing with the mechanincs of calling
   #'multiple adjustment steps on the downscaled output
   #'  rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
-  rips <- unique(rip.list)
+  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
   for (rip in rips){
     #create sppropriate variable name
@@ -217,7 +220,7 @@ callAddFive <- function(test, input, adjusted.output){
   #'Test method for playing with the mechanincs of calling
   #'multiple adjustment steps on the downscaled output
   #'  rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
-  rips <- unique(rip.list)
+  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
   for (rip in rips){
     #create sppropriate variable name

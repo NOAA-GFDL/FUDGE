@@ -55,7 +55,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
                 "BCQM" = callBCQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
-                "CFQM" = callCFQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
+                "CFQM" = callCFQMv3(train.target, train.predict, esd.gen, args, ds.var, att.table), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var, att.table),
                 "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
@@ -486,10 +486,8 @@ callCFQMv2<-function(LH,CH,CF,args){
   return(out.list)
 }
 
-callCFQMv3<-function(LH,CH,CF, args)
+callCFQMv3<-function(LH,CH,CF, args, ds.var='variable', att_table=NULL)
 {
-  message('entering CFQMv3')
-  # Obtain options
   if(!is.null(args$sort)){
     #can be one of 'future' or 'historical'
     sort.opt <- args$sort
@@ -505,101 +503,67 @@ callCFQMv3<-function(LH,CH,CF, args)
   }else{
     stop(paste("CFQMv3 Downscaling Error: sort not found in args"))
   }
-  #Save output var name for later
-  out.var.name <- names(CF)
-  
   #Unlist data from its input form
-  CF <- unlist(CF)
   CH <- unlist(CH)
-  
-  lengthCF<-length(CF)
   lengthCH<-length(CH)
   lengthLH<-length(LH)
   
-  if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-  if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
-  
-  lengthCFna<-length(which(!is.na(CF))) # count number of obs without NA
-  lengthCHna<-length(which(!is.na(CH)))
-  
-  if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
-  
-  # first define vector with probabilities [0,1]
-  prob<-seq(0.001,0.999,length.out=lengthCF)
-  
-  # initialize data.frame
-  message('initialize data frame')
-  temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
-  SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim))
-  
-  #initialize output list
-  message('initialize output list')
-  outputlist<-list(rep(NA,lengthCF)) #previously maxdim
-  names(outputlist) <- out.var.name
-  
-  
-  SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF
-  SDF$CH[1:lengthCH]<-temp$CH[1:lengthCH]<-CH
-  SDF$LH[1:lengthLH]<-temp$LH[1:lengthLH]<-LH
-  
-  message(ORDERING)
-  
-  if (ORDERING=="CF"){
-    # CHANGE FACTOR ORDERED BY COARSE FUTURE
-    message('sorting')
-    temp.CFsorted2<-temp[order(temp$CF),]
-    message('qantiles')
-    #save(file="~/Code/testing/test_out.R", list = c('temp.CFsorted2', 'prob', 'temp', 'lengthCF'))
-    #stop('examine the output')
-    temp.CFsorted2$qLH[1:lengthCF]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
-    message('ecdf')
-    temp.CFsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
-    message('quantiles of ECDF')
-    temp.CFsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
-    save(file="~/Code/testing/test_out.R", list = c('temp.CFsorted2', 'prob', 'temp'))
-    print(length(which(is.na(temp.CFsorted2))))
-    temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),] #By this point, it has successfully ordered the first lengthCF members of the output data
-    print("Downscaled data ordered using the Coarse Future dataset")
+  #prepare to loop by rip over the dataset
+  out.list <- list()
+  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+  for(rip in rip.list){
+    #Select the future predictor vars that you are interested in
+    out.var.name <- paste0(ds.var, ".", rip)
+    #Unlist the ensemble members
+    rip.index <- (rip.list==rip)
+    CF.data <- CF[rip.index]
+    CF.data <- unlist(CF.data)
+    lengthCF<-length(CF.data)
     
+    if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+    if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
+    
+    lengthCFna<-length(which(!is.na(CF.data))) # count number of obs without NA
+    lengthCHna<-length(which(!is.na(CH)))
+    
+    if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
+    
+    # first define vector with probabilities [0,1]
+    prob<-seq(0.001,0.999,length.out=lengthCF)
+    
+    # initialize data.frame
+    temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+    SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim))
+    
+    SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF.data
+    SDF$CH[1:lengthCH]<-temp$CH[1:lengthCH]<-CH
+    SDF$LH[1:lengthLH]<-temp$LH[1:lengthLH]<-LH
+    if (ORDERING=="CF"){
+      # CHANGE FACTOR ORDERED BY COARSE FUTURE
+      temp.CFsorted2<-temp[order(temp$CF),]
+      temp.CFsorted2$qLH[1:lengthCF]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
+      temp.CFsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
+      temp.CFsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
+      temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),] #By this point, it has successfully ordered the first lengthCF members of the output data
+    }
+    if (ORDERING=="LH"){
+      # CHANGE FACTOR ORDERED BY LOCAL HISTORICAL
+      temp.LHsorted2<-temp[order(temp$LH),] 
+      temp.LHsorted2$qLH[1:lengthCF]<-quantile(temp.LHsorted2$LH,prob,na.rm =TRUE)
+      temp.LHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+      temp.LHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+      temp.CFQM2<-temp.LHsorted2[order(temp.LHsorted2$index),]
+    }
+    if (ORDERING=="CH"){
+      # CHANGE FACTOR ORDERED BY COARSE HISTORICAL
+      temp.CHsorted2<-temp[order(temp$CH),] 
+      temp.CHsorted2$qLH[1:lengthCF]<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
+      temp.CHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+      temp.CHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+      temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),]
+    }
+    out.list[[out.var.name]][1:lengthCF]<-temp.CFQM2$qCFecdfCHqLH[!is.na(temp.CFQM2$qCFecdfCHqLH)]
   }
-  
-  if (ORDERING=="LH"){
-    # CHANGE FACTOR ORDERED BY LOCAL HISTORICAL
-    temp.LHsorted2<-temp[order(temp$LH),]
-    
-    temp.LHsorted2$qLH[1:lengthCF]<-quantile(temp.LHsorted2$LH,prob,na.rm =TRUE)
-    temp.LHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-    temp.LHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-    
-    temp.CFQM2<-temp.LHsorted2[order(temp.LHsorted2$index),]
-    print("Downscaled data ordered using the Local Historical dataset")
-    
-    
-  }
-  
-  if (ORDERING=="CH"){
-    # CHANGE FACTOR ORDERED BY COARSE HISTORICAL
-    temp.CHsorted2<-temp[order(temp$CH),]
-    
-    temp.CHsorted2$qLH[1:lengthCF]<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
-    temp.CHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-    temp.CHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
-
-    temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),]
-    print("Downscaled data ordered using the Coarse Historical dataset")
-    
-  }
-  
-  ### Assign downscaled output to the SDF (Statistically Downscaled Future) list
-#   save(file="~/Code/testing/test_out.R", list=c('outputlist', 'SDF', 'lengthCF', 'lengthCH', 'lengthLH'))
-#   stop('examine output')
-  
-  #SDF$CFQM<-temp.CFQM2$qCFecdfCHqLH
-  outputlist[[out.var.name]][1:lengthCF]<-temp.CFQM2$qCFecdfCHqLH[!is.na(temp.CFQM2$qCFecdfCHqLH)] #SDF$CFQM[1:lengthCF]
-#  outputlist[[out.var.name]][1:lengthCF]<-temp.CFQM2$qCFecdfCHqLH[1:lengthCF] #SDF$CFQM[1:lengthCF]
-#   save(file="~/Code/testing/test_out.R", list=c('outputlist', 'lengthCF', 'SDF'))
-#   stop('examine downscaled output')
-  #outputlist[[out.var.name]]
   
 #   if (ORDERING=="CF"){
 #     print(sprintf("Correlation %s",cor(SDF$CFQM[1:mindim],SDF$CF[1:mindim])))}
@@ -607,10 +571,7 @@ callCFQMv3<-function(LH,CH,CF, args)
 #     print(sprintf("Correlation %s",cor(SDF$CFQM[1:mindim],SDF$LH[1:mindim])))}
 #   if (ORDERING=="CH"){
 #     print(sprintf("Correlation %s",cor(SDF$CFQM[1:mindim],SDF$CH[1:mindim])))}
-  
-  
-  #return(SDF) or
-  return(outputlist)
+  return(out.list)
 }
 
 
