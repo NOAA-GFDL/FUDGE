@@ -287,6 +287,9 @@ if (args[1]=='na'){
 }else{
   ds.args=args
 }
+all.att.table <- list('hist.pred'=list.hist$att_table, 
+                      'hist.targ'=list.target$att_table, 
+                      'fut.pred'=list.fut$att_table)
 ##DS does not currently include the attribute table; frankly, should include it. 
 ##This si sprobably the next to-do item on the list
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
@@ -319,7 +322,7 @@ if(length(post.ds) !=0){
                                     hist.pred = list.hist$clim.in, 
                                     hist.targ = list.target$clim.in, 
                                     fut.pred  = list.fut$clim.in, 
-                                    data.atts = list.target$att_table)
+                                    data.atts = all.att.table)
   print(summary(temp.postproc))
   ds$esd.final <- temp.postproc$ds.out
   if(qc.maskopts$qc.outloop){

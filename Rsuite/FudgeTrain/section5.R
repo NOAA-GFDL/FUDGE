@@ -144,12 +144,18 @@ callPRPostproc <- function(test, input, adjusted.output){
   #bias and conservation of the total precipitation per time range
   #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
+  print(input$data.atts)
   rips <- unique(rip.list)
+  print(rip.list)
+  #stop ('examine structure of att table and query accordingly')
   #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
   for (rip in rips){
     #create sppropriate variable name
-    ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
+    target.var <- names(input$data.atts$hist.targ)
+    ds.var <- paste0(target.var, ".", rip) #There shou
     #Find arguments to pre-processing function
+    print(test)
+    print(test$qc_args)
     arg.names <- names(test$qc_args) #qc_args #pp_args
     if('thold'%in%arg.names && 'conserve'%in%arg.names){
       #Never adjusting to another frequency at this point in the process
@@ -168,13 +174,16 @@ callPRPostproc <- function(test, input, adjusted.output){
     }
     
     #Obtain mask of days that will be eliminated
-    out.mask <- MaskPRSeries(adjusted.output$ds.out[[ds.var]], units=input$data.atts[[1]]$units, index=test$qc_args$thold)
+    out.mask <- MaskPRSeries(adjusted.output$ds.out[[ds.var]], units=input$data.atts$hist.targ[[target.var]]$units, index=test$qc_args$thold)
     #Apply the conserve option to the data
+    print(summary(as.vector(adjusted.output$ds.out[[ds.var]][!is.na(adjusted.output$ds.out[[ds.var]])])))
     if(test$qc_args$conserve=='on'){
       #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
-      for(i in 1:length(adjusted.output$ds.out[,1,1])){
-        for(j in 1:length(adjusted.output$ds.out[1,,1])){
+      ds.dim <- dim(temp.adjust)
+      print(ds.dim)
+      for(i in 1:ds.dim[1]){
+        for(j in 1:ds.dim[2]){
           esd.select <- temp.adjust[i,j,]
           mask.select <- out.mask[i,j,]
           esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
@@ -186,6 +195,7 @@ callPRPostproc <- function(test, input, adjusted.output){
       }
     }
     adjusted.output$ds.out[[ds.var]] <- temp.adjust
+    print(summary(as.vector(adjusted.output$ds.out[[ds.var]][!is.na(adjusted.output$ds.out[[ds.var]])])))
     #Apply the mask
     adjusted.output$ds.out[[ds.var]] <- as.numeric(adjusted.output$ds.out[[ds.var]]) * out.mask
     if(test$qc.mask=='on'){
