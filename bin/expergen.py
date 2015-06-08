@@ -88,9 +88,11 @@ def parse_outdir(out_dir,property):
 	listout=[]
 	outdirsplit = out_dir.split('/')
 	replace = ""
+	expect_property = 0 
 	for outdirs in outdirsplit:
 		if '$(' in outdirs:
 		   print "outdirs as defined expects a property tag.."
+	           expect_prop = 1
         	   for pname,pval in property.iteritems():
 			pname = '$('+pname+')' 
 		        if pname == outdirs:
@@ -104,9 +106,11 @@ def parse_outdir(out_dir,property):
 	     for lnew in list_new_out_dir: 
 	        listout.append(out_dir.replace(pname,lnew))
 	#print "test",pname,new_out_dir,listout
-	if(replace == ""):
+	if(replace == "") & (expect_property == 1):
 		replace = "na" 
-	        print '\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m'
+	        print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
+        if (replace == "") & (expect_property == 0):
+		replace ="na" 
  	if not bool(property):	
 	 list_subs = out_dir+"#na#na"
 	else:
@@ -627,12 +631,14 @@ def main():
         #print(sbase+"/postProc/aux/")
 	if (multi == "on"):
 	 suffix = ['suff1','suff2','suff3']
+         listrips = []
 	else:
 	 suffix = ['']	
+         listrips = ['na']
+
         if not os.path.exists(sbase+"/postProc/aux/"):
         	os.makedirs(sbase+"/postProc/aux/")
 	suffctr = 1
-	listrips = []
         for pname,pval in copyprop.iteritems():
 	   listrips = pval.split(',')
 	for mout in listrips: 
@@ -645,11 +651,18 @@ def main():
 	  try:
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
+	        if(mout != 'na'):
+		   moutsuff = " -e "+mout.strip()
+		else:
+		   moutsuff = " "	
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+" -e "+mout
+			print "check 1"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+" -e "+mout 
+		        print "check 2"
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+moutsuff 
   		ppfile.write(pp_cmnd)
+		print "wrote to ",ppfile
   		ppfile.close()
 	  except:
   		print "Unable to create postProc command file. You may want to check your settings."

@@ -100,7 +100,8 @@ def postProc():
      listfacet = outdir.split('#')
      print "check",listfacet
      if (listfacet[1] == "na"): 
-     		indir = outdir #Our mini op from dscaling is the input to PP  
+     		indir = outdir #Our mini op from dscaling is the input to PP 
+		listout.append(listfacet[0]) 
      else:
 	   if(ensarg != "undefined"):
 	      property[listfacet[1]] = ensarg 
@@ -117,7 +118,6 @@ def postProc():
                    for lnew in list_new_out_dir:
 	              print "tesst",lnew	
                       listout.append(out_dir.replace(pname,lnew))
-     print "test",listout,"stop"
 ## if vname  contains the word mask, then yes let's set the indir differently  ##
      listvname = []	
      if(lvname is not None):
@@ -220,7 +220,8 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 #check if output already exists
 #options basedir indir method var epoch rip region ver
 #TODO rem redundant region to cattool
-	if (ensarg == "undefined"):
+	print "test", ensarg
+	if (ensarg == "undefined") | (ensarg == None):
         	fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
         else:
 	        futexpername = exper_rip.split('_')[0]
