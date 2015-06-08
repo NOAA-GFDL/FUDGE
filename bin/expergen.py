@@ -559,8 +559,7 @@ def main():
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"'+" "+str(idirsuffix) 
 	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-	#CEW echo edit to diagnose
-	print make_code_cmd
+	#cprint make_code_cmd
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
         if(p.returncode != 0):
@@ -579,8 +578,7 @@ def main():
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
         create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
         print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
-	#CEW edit to diagnose older behavior
-	print create_runscript_cmd
+	#cprint create_runscript_cmd
         #p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
  	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         print "Step 2: Individual runscript  creation.. in progress"
@@ -598,7 +596,7 @@ def main():
         create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
         print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
 	#CEW edit to diagnose older behavior
-	print create_master_cmd
+	#cprint create_master_cmd
         p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         #cprint create_master_cmd
         print "Create master script .. in progress"
@@ -627,6 +625,7 @@ def main():
         print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
 	print " ========================="
 	dev = "off" 
+        msubwrapper = []
 	print "multi output (Writing to multiple output directories) ....",multi
         #print(sbase+"/postProc/aux/")
 	if (multi == "on"):
@@ -656,10 +655,8 @@ def main():
 		else:
 		   moutsuff = " "	
 		if(qc_mask != 'off'):
-			print "check 1"
   			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-		        print "check 2"
                         pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+moutsuff 
   		ppfile.write(pp_cmnd)
 		print "wrote to ",ppfile
@@ -683,6 +680,7 @@ def main():
 		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
                 try:  
    			NEMSemail = os.environ["NEMSemail"]
+		        msubwrapper.append("msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
                         print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
 		except KeyError: 
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
@@ -691,8 +689,19 @@ def main():
 		print "postProc_command cannot be created. postProc_source does not exist"
 	  suffctr = suffctr + 1
 	print "----------------------------------------"
+        try:
+                msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
+		os.chmod(msubwrap.name, 0744)
+	        content = "#!/bin/tcsh"
+	        for msubitem in msubwrapper:
+		    content = content + "\n" + msubitem
+		content = content + "\n"
+	        msubwrap.write(content)
+		msubwrap.close()	
+	except:
+		print "Unable to create msubwrapper script for you at this time"
+	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", msubwrap.name 
         print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
-
 ################ step 5 fudgeList invocation ##############################################
         slogloc = sbase+"/"+"experiment_info.txt"
         fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
