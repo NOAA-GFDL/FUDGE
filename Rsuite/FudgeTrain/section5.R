@@ -263,9 +263,12 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   return(adjusted.output)
 }
 
-bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut){
+bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, opt='mean'){
   #derived from BCSD code provided by Catherine Hejo
   #Correct for maximum range of the distribution
+#   model.hist.mean <- runmean(as.vector(model.hist), k=30, endrule="mean")
+#   obs.hist.mean <- runmean(as.vector(obs.hist), k=30, endrule="mean")
+#   print('runmean calculated')
   largex.tmax <- which(model.fut > max(model.hist))    #List of indices for which dist is stretched
   max.delta.tmax <- max(model.hist) - max(obs.hist)    #Delta calculated as diff of max(hist) - max(obs)
   obs.fut[largex.tmax] <- model.fut[largex.tmax] - max.delta.tmax
