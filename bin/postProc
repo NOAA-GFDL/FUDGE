@@ -105,12 +105,10 @@ def postProc():
      else:
 	   if(ensarg != "undefined"):
 	      property[listfacet[1]] = ensarg 
-	      print "here?",property
 	   else:
               property[listfacet[1]] = listfacet[2]
- 	      print "or here?"	 
-	   out_dir = listfacet[0] 
-	   if '$(' in out_dir:
+	   unres_outdir = listfacet[0] 
+	   if '$(' in unres_outdir:
                    for pname,pval in property.iteritems():
                           replace = pval
                           break; 
