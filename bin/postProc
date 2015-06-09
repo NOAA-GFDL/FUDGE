@@ -107,8 +107,8 @@ def postProc():
 	      property[listfacet[1]] = ensarg 
 	   else:
               property[listfacet[1]] = listfacet[2]
-	   unres_outdir = listfacet[0] 
-	   if '$(' in unres_outdir:
+	   out_dir = listfacet[0] 
+	   if '$(' in out_dir:
                    for pname,pval in property.iteritems():
                           replace = pval
                           break; 
