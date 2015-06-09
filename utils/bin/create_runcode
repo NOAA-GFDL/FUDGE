@@ -153,6 +153,8 @@ set prop_name =  `echo "$prop" | cut -d'$' -f2 | cut -d'(' -f2 | cut -d')' -f1`
 set property = `echo "$prop_name='$rep'"`
 if($prop != 'na') then 
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "PROPERTY":"${property}")
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PROPERTY":"")
 endif
 set outdir = $cmdout
 set mask_outdir = $cmdout 
