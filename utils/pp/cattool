@@ -134,44 +134,21 @@ endif
 ########################
 
 ###############################
-if ( $region == 'global' ) then
-## global spl
- set argpath = "$prepath/${prefix}.[1-9].nc"
-#else if ( $region == 'US48' ) then
-# set argpath = "$prepath/${prefix}.I74[8-9]_J${lats}-${late}.nc" 
-else
-#   echo $chead"[$sub1]:"$chead"[$sub2]",$ctail,$c,$cend"[$cendsub1]"
-#18[1]:18[9],na,19,37[0]
-#cecho "start.."
 set argpath = "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
-#cecho "$argpath"
-echo "$prepath/I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
-endif
-
-#cecho "while starts.. "
 while ( $c <= $cend)
-	#cecho "loop $c $argpath"
-        set argpath = `echo $argpath $prepath/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
-        @ c++
+       set argpath = `echo $argpath ${prepath}/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
+       @ c++
 end
-#cecho "end while"
-
 if ( $region == 'global' ) then
  set argpath = `echo $argpath $prepath/${prefix}.115[0-2].nc`
-#celse if ( $region == 'US48' ) then
-#c set argpath = `echo $argpath $prepath/${prefix}.I94[0-1]_J${lats}-${late}.nc`
 else
  set argpath = `echo $argpath $prepath/${prefix}.I${clast}[0-${clastsub1}]_J${lats}-${late}.nc`
 #c echo $argpath
 
 endif 
-#cif (($region == 'US48') | ($region == 'PM')) then
-#cecho "skip.."#c set argpath = `echo $argpath $prepath/${prefix}.I94[1]_J${lats}-${late}.nc`
-#cendif
-#cecho "continue.."
 source ${auxfiledir}/loadit
 
-#echo "ncecat  $argpath $OFILE"
+#cecho "ncecat  $argpath $OFILE"
 ############if spat mask is na ############
 if ($grid == 'na') then
 set ctr = 0 
