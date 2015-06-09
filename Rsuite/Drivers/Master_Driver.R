@@ -133,7 +133,14 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
 ##Make sure that you have the experiment rip ready to apply to 
 ##other code (i.e. the actual rip experiment is being run under)
 experiment.rip <- gsub("(.*_)", "", fut.scenario_1)
-fut.pred.rip.list <- unlist(strsplit(RIP, split=","))
+##Extra code added for compatibility with the darkchocolte-style
+##runcodes that expergen is capable of producing
+if(exists('RIP')){
+  fut.pred.rip.list <- unlist(strsplit(RIP, split=","))
+}else{
+  message('Creating darkchocolate-compatible RIP list')
+  fut.pred.rip.list <- unlist(strsplit(fut.scenario_1, "_"))[2]
+}
 
 #Initialize instructions for pre- and post-ds adjustment
 message("Checking pre- and post-downscaling adjustments")
