@@ -104,7 +104,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     if(test$qc.mask=='on'){
       out.list$qc.mask[[ds.var]] <- mask.vec
     }
-    if(test$adjust.out=='on'){ #The 'off/na thing is distracting  ##Switched from !='na' to 'on'
+    if(test$adjust.out=='on'){
       adjust.vec <- ifelse( (is.na(mask.vec)), yes=fut.targ, no=adjusted.output$ds.out[[ds.var]])
       out.list$ds.out[[ds.var]] <- adjust.vec
     }
@@ -144,65 +144,61 @@ callPRPostproc <- function(test, input, adjusted.output){
   #bias and conservation of the total precipitation per time range
   #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
-  print(input$data.atts)
   rips <- unique(rip.list)
-  print(rip.list)
-  #stop ('examine structure of att table and query accordingly')
+  if(length(rips) == 0){
+    stop(paste("Error in callPRPostproc: list of rips is of length 0!"))
+  }
+  arg.names <- names(test$qc_args)
+  #This code is not getting used anywhere else, and I can't remmber why it was supposed to be important
+  if(!('thold'%in%arg.names) || !('conserve'%in%arg.names)){
+    stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
+  }
   #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
   for (rip in rips){
     #create sppropriate variable name
     target.var <- names(input$data.atts$hist.targ)
-    ds.var <- paste0(target.var, ".", rip) #There shou
-    #Find arguments to pre-processing function
-    print(test)
-    print(test$qc_args)
-    arg.names <- names(test$qc_args) #qc_args #pp_args
-    if('thold'%in%arg.names && 'conserve'%in%arg.names){
-      #Never adjusting to another frequency at this point in the process
-      lopt.drizzle=FALSE
-    }else{
-      stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
-    }
+    ds.var <- paste0(target.var, ".", rip)
+    #Apply the 0 mask, if needed
     if(test$qc_args$apply_0_mask=='on'){
       message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
       temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
       adjusted.output$ds.out[[ds.var]] <- temp.adjust
-      test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data'
+      test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here.
     }else{
       message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
     }
-    
-    #Obtain mask of days that will be eliminated
-    out.mask <- MaskPRSeries(adjusted.output$ds.out[[ds.var]], units=input$data.atts$hist.targ[[target.var]]$units, index=test$qc_args$thold)
-    #Apply the conserve option to the data
-    print(summary(as.vector(adjusted.output$ds.out[[ds.var]][!is.na(adjusted.output$ds.out[[ds.var]])])))
-    if(test$qc_args$conserve=='on'){
-      #There has got to be a way to do this with 'apply' and its friends, but I'm not sure that it;s worth it
-      temp.adjust <- adjusted.output$ds.out[[ds.var]]
-      ds.dim <- dim(temp.adjust)
-      print(ds.dim)
-      for(i in 1:ds.dim[1]){
-        for(j in 1:ds.dim[2]){
-          esd.select <- temp.adjust[i,j,]
-          mask.select <- out.mask[i,j,]
-          esd.select[!is.na(esd.select)]<- conserve.prseries(data=esd.select[!is.na(esd.select)], 
-                                                             mask=mask.select[!is.na(mask.select)])
-          temp.adjust[i,j,]<- esd.select
-          #Note: This section will produce negative pr if conserve is set to TRUE and the threshold is ZERO. 
-          #However, there are checks external to the function to get that, so it might not be as much of an issue.
-        }
-      }
-    }
-    adjusted.output$ds.out[[ds.var]] <- temp.adjust
-    print(summary(as.vector(adjusted.output$ds.out[[ds.var]][!is.na(adjusted.output$ds.out[[ds.var]])])))
-    #Apply the mask
-    adjusted.output$ds.out[[ds.var]] <- as.numeric(adjusted.output$ds.out[[ds.var]]) * out.mask
+    adjusted.pr <- pr.postproc(pr.data  = adjusted.output$ds.out[[ds.var]], 
+                               pr.units = input$data.atts$hist.targ[[target.var]]$units, 
+                               pr.index = test$qc_args$thold, 
+                               pr.conserve = (test$qc_args$conserve=='on'))
+    adjusted.output$ds.out[[ds.var]] <- adjusted.pr$ds.out
     if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- out.mask
+      adjusted.output$qc.mask[[ds.var]] <- adjusted.output$qc.mask
     }
+    return(adjusted.output)
   }
   return(adjusted.output)          
+}
+
+pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
+  #Internal helper function for reading the pr post-processing function
+  #clearly and concisely
+  out.mask <- MaskPRSeries(pr.data, pr.units, pr.index)
+  if(pr.conserve){
+    pr.dim <- dim(pr.data)
+    for(i in 1:pr.dim[1]){
+      for(j in 1:pr.dim[2]){
+        data.vec <- pr.data[i,j,]
+        mask.vec <- out.mask[i,j,]
+        data.vec[!is.na(data.vec)] <- conserve.prseries(data=data.vec[!is.na(data.vec)], 
+                                                        mask=mask.vec[!is.na(mask.vec)])
+        pr.data[i,j,] <- data.vec
+      }
+    }
+  }
+  pr.data <- as.numeric(pr.data)*out.mask
+  return(list(ds.out=pr.data, adjusted.output=out.mask))
 }
 
 callAddOne <- function(test, input, adjusted.output){
@@ -274,7 +270,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
 }
 
 bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, opt='mean'){
-  #derived from BCSD code provided by Catherine Hejo
+  #derived from BCSD code provided by Catherine Hayhoe
   #Correct for maximum range of the distribution
 #   model.hist.mean <- runmean(as.vector(model.hist), k=30, endrule="mean")
 #   obs.hist.mean <- runmean(as.vector(obs.hist), k=30, endrule="mean")

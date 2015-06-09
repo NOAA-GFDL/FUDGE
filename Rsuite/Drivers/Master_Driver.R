@@ -323,7 +323,6 @@ if(length(post.ds) !=0){
                                     hist.targ = list.target$clim.in, 
                                     fut.pred  = list.fut$clim.in, 
                                     data.atts = all.att.table)
-  print(summary(temp.postproc))
   ds$esd.final <- temp.postproc$ds.out
   if(qc.maskopts$qc.outloop){
     ds$qc.mask <- temp.postproc$qc.mask
