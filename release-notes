@@ -1,4 +1,7 @@
 06-9-2015
+(cew)
+- clobber script update for multi-ensemble case
+
 (a1r)
 -ensemble support in postProc suite of tools
 -- ability to postprocess with a -e (ensemble) option
