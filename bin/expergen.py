@@ -677,7 +677,7 @@ def main():
                 #uncomment print output4, error4
                 #print "4-"+str(suffctr)+" completed"
                 print "----------------------------------------"
-		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
+		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
                 try:  
    			NEMSemail = os.environ["NEMSemail"]
 		        msubwrapper.append("msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
