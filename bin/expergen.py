@@ -684,6 +684,8 @@ def main():
                         print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
 		except KeyError: 
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
+                        msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
+
 			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
 	  else:
 		print "postProc_command cannot be created. postProc_source does not exist"
