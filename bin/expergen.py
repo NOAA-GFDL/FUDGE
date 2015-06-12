@@ -657,7 +657,7 @@ def main():
 		if(qc_mask != 'off'):
   			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+moutsuff 
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
   		ppfile.write(pp_cmnd)
 		print "wrote to ",ppfile
   		ppfile.close()
