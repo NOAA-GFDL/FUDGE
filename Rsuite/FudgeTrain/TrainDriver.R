@@ -86,7 +86,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
               sum(!is.na(fut.masked.in[[1]][i.index,j.index,]))!=0){ #For predictors, use first entry as a proxy for NAs across the board
            message(paste("Begin processing point with i = ", i.index, "and j =", j.index))
            #First, determine the indices of interest for the two predictor datasets
-           save(file="~/Code/testing/test_out.R", list=c('hist.masked.in', 'target.masked.in', 'fut.masked.in'))
            loop.temp <- LoopByTimeWindow(train.predictor = lapply(hist.masked.in, '[', i.index, j.index,),#hist.masked.in[i.index, j.index,], 
                                          train.target = target.masked.in[i.index, j.index,], 
                                          esd.gen = lapply(fut.masked.in, '[', i.index, j.index,), 
