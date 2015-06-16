@@ -382,6 +382,7 @@ for (rip in fut.pred.rip.list){
     #Someone else is running it, modules are available and presumably git branch not needed
     git.needed=FALSE
   }
+  message('writing global attributes')
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),

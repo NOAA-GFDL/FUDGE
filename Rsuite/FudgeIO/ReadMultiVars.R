@@ -14,8 +14,6 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
   #At their dimensions. 
   nc.list <- list()
   dim.list <- list()
-  print(paste("rip.list:"))
-  print(rip.list)
   if(length(rip.list) > 1){
     multi.rip <- TRUE
     rip.count <- length(rip.list)
@@ -91,7 +89,9 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     if(verbose){print(paste("Reading in var", var))}
     if(v==1){
       #First time through, you want to grab the dimensions; second time through, that is not neccessary
-      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=(!multi.rip)) #No longer adding ensemble dimension
+      force_dim_len = (3 + multi.rip)
+      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_dim = force_dim_len) #previously dim='none'. Whywas this a good idea?
+      #out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=(!multi.rip)) #No longer adding ensemble dimension
       #Contents at this point: 
       # 4-dimensional dataset
       # att table containing some, but not all, of the elements that you need
@@ -120,7 +120,10 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
         att_table[[var.names]]$rip <- rip.list[[1]]
       }
     }else{
-      temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_3_dimensions=(!multi.rip))
+      print('starting on var that is not the first')
+      force_dim_len = (3 + multi.rip)
+      temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_dim = force_dim_len)
+                              #force_3_dimensions=(!multi.rip))
       if(multi.rip){
         #var.names <- paste0(var, ".", rip.list)
         names(temp.list) <- var.names
@@ -128,8 +131,12 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
         names(temp.att.table) <- var.names
         #Mass assignment does not work well. 
         for(i in 1:rip.count){
-          data.list[[var.names[i]]] <- temp.out.list$clim.in[,,i,]
-          att_table[[var.names[i]]] <- temp.out.list$att_table
+          #TODO: come up with a less ideous way of doing this assignment
+          data.list[[var.names[i]]] <- temp.out.list$clim.in[,,i, , drop=F]
+          #Make sure that the xy dimensions are kept, but any other degen dims dropped
+          data.dim <- dim(temp.out.list$clim.in[,,i, , drop=F])[-3]
+          dim(data.list[[var.names[i]]]) <- data.dim
+          att_table[[var.names[i]]] <- temp.out.list$att_table[[1]]
           att_table[[var.names[i]]]$rip <- rip.list[[i]]
         }
       }else{

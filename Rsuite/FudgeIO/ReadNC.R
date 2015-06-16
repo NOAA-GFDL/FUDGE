@@ -1,5 +1,5 @@
 # Aparna Radhakrishnan 08/04/2014
-ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=FALSE, add.ens.dim=FALSE, force_3_dimensions=FALSE) {
+ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=FALSE, add.ens.dim=FALSE, force_dim=0) {
   #'Reads data from a variable of a netCDF file object
   #'Returns netCDF variable data and, if dim!= 'none', one or more dimensions of that
   #'netCDF object
@@ -48,18 +48,27 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
     #have to be spatial. This will collapse any OTHER degenerate dimensions present.
     #In the future, this will NOT apply to ensemble dimensions, but we are not there yet by any means.
     if(length(dim(clim.in)) > 3){
-      if( force_3_dimensions){
+      if(force_dim > 0){
         if(verbose) { message("Adjusting dimensions to fit the FUDGE framework") }
+        #Should be collapsing degen dims to either 3 (most often) or 4
         #Last dim is always time, first two should always be X and Y
+        #And in the event of height data for ensembles, height dim is 
+        #located 
         dim.adjust <- dim(clim.in)[3:(length(dim(clim.in))-1)]
-        if(sum(dim.adjust!=1)!=0){ 
+        non.degen.dims <- (force_dim - 3) #O if 3-dim; 1 allowed for ens
+        if(sum(dim.adjust!=1)!=non.degen.dims){ 
           #If there are any non-degenerate dimensions, throw an error
           #NOTE: This is not meant to be used with ensemble dims - not yet, anyway
-          stop(paste("Error in ReadNC: The file", attr(nc.object, "filename"), "had a var that could not be adjusted to an x,y,t dimension system", 
+          stop(paste("Error in ReadNC: The file", attr(nc.object, "filename"), 
+                     "had a var that could not be adjusted to an x,y,t or x,y,ens,t dimension system", 
                      "due to one or more non-degenerate dimensions. Please examine the input file and try again."))
         }else{
           #Redimension as (x,y,t)
-          dim(clim.in) <- c(dim(clim.in)[1:2], dim(clim.in)[length(dim(clim.in))])
+          new.dim <- c(dim(clim.in)[1:2], dim.adjust[dim.adjust!=1], dim(clim.in)[length(dim(clim.in))])
+          print(dim(clim.in))
+          print(new.dim)
+          #dim(clim.in) <- c(dim(clim.in)[1:2], dim(clim.in)[length(dim(clim.in))])
+          dim(clim.in) <- new.dim
         }
       }
     }else if(add.ens.dim){
