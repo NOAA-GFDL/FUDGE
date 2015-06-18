@@ -1,0 +1,165 @@
+#!/bin/bash
+#
+# Sample script calling a set of unit tests to run
+# against FUDGE code before it is pushed to a remote repo
+# Note: this code runs on all branches
+# Carolyn Whitlock, November 2014
+
+#source /etc/profile.d/modules.csh #on GFDL system, source explicitly runs shells as batch at the moment. It is strange.
+source /usr/share/Modules/init/sh
+module load nco
+module load nccmp
+module load R
+#source /home/esd/local/.cshrc_esd
+#module load fudge/cinnamon
+
+#set -x
+#echo $TMPDIR
+#tmpstatus=$?
+#if [[ $tmpstatus != 0 ]]; then
+#	echo "Creating temporary directory in /work; it will be deleted after running the test"
+#	set starttime = `date '+%X'`
+#	set start_sed  = `echo $starttime | sed "s@:@.@g"`
+#	set TMPDIR = /work/$USER/$start_sed/
+#	mkdir -p $TMPDIR
+#	mkdir $TMPDIR/Regression_tests
+#	echo "Temporary Directory: $TMPDIR"
+#else
+#	mkdir -p $TMPDIR/Regression_tests
+#fi	
+
+echo "Running full suite of FUDGE regression tests. Be warned: this can take a while (time TBD once this is running)"
+
+echo "Test case 0: the classic regression test (~1 min.)"
+#Note to self: At some point, see how the code reacts to replacing the runcode with an XML and a call to expergen
+#Will probably add time - but if it's a single file, it might not be much
+echo "The temporary directory is: $TMPDIR"
+
+tasmax_runcode=$BASEDIR/Regression_tests/300_original_regtest.R
+cp $BASEDIR/Regression_tests/300_original_regtest.R $TMPDIR/Regression_tests/300_original_regtest.R
+tasmax_runcode=$TMPDIR/Regression_tests/300_original_regtest.R
+sed -i "s@<TMPDIR>@$TMPDIR@g" $tasmax_runcode
+#tasmax_out=/home/cew/Code/testing/reg_tests//tasmax_day_s5-opts-RRtxp1-CDFt-A38af-mL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
+tasmax_out=/home/cew/Code/testing//tasmax_day_s5-opts-RRtxp1-CDFt-A38af-mL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
+#tasmax_out=$TMPDIR/tasmax_day_s5-opts-RRtxp1-CDFt-A38af-mL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
+tasmax_comp=/work/cew/testing/300-301-old/v20140108/tasmax_day_RRtxp1-CDFt-A38-oldL01K00_rcp85_r1i1p1_RR_20060101-20991231.I300_J31-170.nc
+
+#set output = `/home/cew/Code/fudge2014/Rsuite/cew_testing_drivers/Regression_tests/run_reg_tests.csh $tasmax_runcode $tasmax_out $tasmax_comp`
+$BASEDIR/Regression_tests/run_reg_tests $tasmax_runcode $tasmax_out $tasmax_comp
+teststatus=$?
+echo "status of test: $teststatus"
+if [[ $teststatus != 0 ]]; then
+	echo "Error in Test Case 0: Please check the code and re-run the test"
+	exit 1
+else
+	echo "Test 0 passed. Good for you."
+fi
+
+echo "Test case 1: Tasmax, CDFt"
+
+#Note to self: At some point, see how the code reacts to replacing the runcode with an XML and a call to expergen
+#Will probably add time - but if it's a single file, it might not be much
+
+tasmax_runcode=$BASEDIR/Regression_tests/275_current_regtest.R
+tasmax_out=/home/cew/Code/testing/reg_tests/tasmax_day_reg-test-1_rcp85_r1i1p1_RR_20060101-20991231.I275_J31-170.nc
+tasmax_comp=/work/cew/testing/regression_tests/tasmax_day_reg-test-1_rcp85_r1i1p1_RR_20060101-20991231.I275_J31-170.nc
+
+#set output = `/home/cew/Code/fudge2014/Rsuite/cew_testing_drivers/Regression_tests/run_reg_tests.csh $tasmax_runcode $tasmax_out $tasmax_comp`
+$BASEDIR/Regression_tests/run_reg_tests $tasmax_runcode $tasmax_out $tasmax_comp
+teststatus=$?
+echo "status of test: $teststatus"
+if [[ $teststatus != 0 ]]; then
+	echo "Error in Test Case 1: Please check the code and re-run the test"
+	exit 1
+else
+	echo "Test 1 passed. Good for you."
+fi
+
+echo "Final regression test case: entire workflow"
+
+#tcsh -c "$BASEDIR/Regression_tests/fudge_workflow_test.csh"
+tcsh -e -c "/home/cew/Code/fudge2014/Regression_tests/fudge_workflow_test.csh"
+
+laststatus=$?
+if [[ $laststatus != 0 ]]; then
+	echo "Error in last test case: Please check the code and re-run the test suite."
+	echo "Removing temporary directory; press ctrl + c to stop"
+	rm -rf $TMPDIR
+	exit 1
+else
+	echo "All tests passed."
+	echo "Removing temporary directory; press ctrl + c to stop"
+	rm -rf $TMPDIR
+fi
+
+#Test case 2: Tasmin, BCQM 
+#tasmin_runcode=/home/cew/Code/fudge2014/Rsuite/cew_testing_drivers/Regression_tests/281_tasmin_regtest.R
+#tasmin_out=/home/cew/Code/testing/reg_tests/tasmin_day_RRtnp1-BCQM-A22aqL01K00_rcp26_r2i1p1_RR_20060101-20991231.I281_J31-170.nc
+#tasmin_comp=/work/cew/testing/regression_tests/tasmin_day_RRtnp1-BCQM-A22aqL01K00_rcp26_r2i1p1_RR_20060101-20991231.I281_J31-170.nc
+#qc_out=/home/cew/Code/testing/reg_tests/tasmin_qcmask_day_RRtnp1-BCQM-A22aqL01K00_rcp26_r2i1p1_RR_20060101-20991231.I281_J31-170.nc
+#qc_comp=/work/cew/testing/regression_tests/tasmin_qcmask_day_RRtnp1-BCQM-A22aqL01K00_rcp26_r2i1p1_RR_20060101-20991231.I281_J31-170.nc
+
+#/home/cew/Code/fudge2014/Rsuite/cew_testing_drivers/Regression_tests/run_reg_tests $tasmin_runcode $tasmin_out $tasmin_comp
+#teststatus=$?
+#echo "status of test: $teststatus"
+#if [[ $teststatus != 0 ]]; then
+#	echo "Error in Test Case 2 tasmin: Please check the code and re-run the test"
+#	exit 1
+#else
+#	echo "Test 2 tasmin passed. Good for you."
+#fi
+
+#/home/cew/Code/fudge2014/Rsuite/cew_testing_drivers/Regression_tests/run_reg_tests $tasmin_runcode $qc_out $qc_comp
+#teststatus=$s?
+#echo "status of test: $teststatus"
+#if [[ $teststatus != 0 ]]; then
+#	echo "Error in Test Case 2 qc: Please check the code and re-run the test"
+#	exit 1
+#else
+#	echo "Test 2 qc passed. Good for you."
+#fi
+
+#Test case 3: Pr, SBiasCorr? (are we using that one? ask Carlos)
+
+
+
+#if git rev-parse --verify HEAD >/dev/null 2>&1
+#then
+#	against=HEAD
+#else
+	# Initial commit: diff against an empty tree object
+#	against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+#fi
+
+# If you want to allow non-ASCII filenames set this variable to true.
+#allownonascii=$(git config --bool hooks.allownonascii)
+
+# Redirect output to stderr.
+#exec 1>&2
+
+# Cross platform projects tend to avoid non-ASCII filenames; prevent
+# them from being added to the repository. We exploit the fact that the
+# printable range starts at the space character and ends with tilde.
+#if [ "$allownonascii" != "true" ] &&
+	# Note that the use of brackets around a tr range is ok here, (it's
+	# even required, for portability to Solaris 10's /usr/bin/tr), since
+	# the square bracket bytes happen to fall in the designated range.
+#	test $(git diff --cached --name-only --diff-filter=A -z $against |
+#	  LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+#then
+#	cat <<\EOF
+#Error: Attempt to add a non-ASCII file name.
+
+#This can cause problems if you want to work with people on other platforms.
+
+#To be portable it is advisable to rename the file.
+
+#If you know what you are doing you can disable this check using:
+
+#  git config hooks.allownonascii true
+#EOF
+#	exit 1
+#fi
+
+# If there are whitespace errors, print the offending file names and fail.
+#exec git diff-index --check --cached $against --

@@ -1,0 +1,71 @@
+<downscale>
+    <!-- Created using XMLgen; /home/esd/MJN_sandbox/darkchocolate/XMLgen/XMLgen.non-syn.csh; 02.17.2015 -->
+    <!-- xmlGenDir = /home/esd/MJN_sandbox/darkchocolate/XMLgen -->
+    <ifpreexist>move</ifpreexist>
+    <input predictor_list = "pr" target = "pr" target_ID = "pr" spat_mask = "na" maskvar = "na" spat_mask_ID = "RR" in_root = "/archive/esd/PROJECTS/DOWNSCALING">
+        <dim>OneD</dim>
+        <grid region = "SCCSC0p1">
+            <lons>181</lons>
+            <lone>370</lone>
+	    <lats>31</lats>
+	    <late>170</late>	
+            <file_j_range>"J31-170"</file_j_range>
+        </grid>
+        <training>
+            <historical_predictor
+                file_start_time = "19610101"
+                file_end_time = "20051231"
+                train_start_time = "19610101"
+                train_end_time = "20051231"
+ 		time_window = 'na'
+            >
+                <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.historical.day.atmos.day.r1i1p1.v20111006</dataset>
+            </historical_predictor>
+            <historical_target
+                file_start_time = "19610101"
+                file_end_time = "20051231"
+                train_start_time = "19610101"
+                train_end_time = "20051231"
+		time_window = 'na'
+             >
+                <dataset>OBS_DATA.GRIDDED_OBS.livneh.historical.day.atmos.day.r0i0p0.v1p2</dataset>
+            </historical_target>
+            <future_predictor
+                file_start_time = "20060101"
+                file_end_time = "20991231"
+                train_start_time = "20060101"
+                train_end_time = "20991231"
+                time_window = 'na'
+            >
+                <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.rcp26.day.atmos.day.r1i1p1.v20111014</dataset>
+            </future_predictor>
+        </training>
+        <esdgen>
+        </esdgen>
+    </input>    
+    <core>
+        <method name="EDQM"> </method>
+	<exper_series>A32a-e2L01</exper_series> 
+	<project>Red River</project>
+	<project_ID>RR</project_ID>
+        <kfold>0</kfold>
+        <output>
+            <out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRprp1-EDQM-A32a-e2L01K00/pr/RR/OneD/</out_dir>
+            <script_root>SCRIPT_DIR/regression_test_8/</script_root>
+        </output>
+        <pr_opts>
+           <pr_threshold_in>'global_trace'</pr_threshold_in>
+           <pr_freqadj_in>'off'</pr_freqadj_in>
+           <pr_conserve_in>'on'</pr_conserve_in>
+           <pr_threshold_out>'global_trace'</pr_threshold_out>
+           <pr_conserve_out>'on'</pr_conserve_out>
+           <apply_0_mask>'off'</apply_0_mask>
+        </pr_opts>
+    </core>
+    <custom>
+    </custom>
+    <pp>
+       <qc type='flag.neg' qc_mask='on' adjust_out='off'>
+         </qc>
+    </pp>
+</downscale>

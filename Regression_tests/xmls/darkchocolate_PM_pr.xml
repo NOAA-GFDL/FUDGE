@@ -17,7 +17,7 @@
                 file_end_time = "20081231"
                 train_start_time = "19790101"
                 train_end_time = "20081231"
- 		time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19790101-20081231_olap.nc'
+ 		time_window = 'na'
             >
                 <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.day.r2i1p1.v20110601</dataset>
             </historical_predictor>
@@ -26,7 +26,7 @@
                 file_end_time = "20081231"
                 train_start_time = "19790101"
                 train_end_time = "20081231"
-		time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19790101-20081231_olap.nc'
+		time_window = 'na'
              >
                 <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.day.r2i1p1.v20110601</dataset>
             </historical_target>
@@ -35,8 +35,7 @@
                 file_end_time = "20951231"
                 train_start_time = "20860101"
                 train_end_time = "20951231"
-                time_window = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20860101-20951231_olap.nc'
-                time_trim_mask = '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20860101-20951231.nc'
+                time_window = 'na'
             >
                 <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.r1i1p1.v20110601</dataset>
             </future_predictor>
@@ -45,18 +44,18 @@
         </esdgen>
     </input>    
     <core>
-        <method name="BCQM"> </method>
-	<exper_series>A2e5prtestX01</exper_series> 
+        <method name="EDQM"> </method>
+	<exper_series>A2c1X01</exper_series> 
 	<project>Perfect Model</project>
 	<project_ID>PM</project_ID>
         <kfold>0</kfold>
         <output>
-            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMprp1-CDFt-A2e5prtestX01K00/pr/US48/OneD/</out_dir>
-            <script_root>OUTPUT_DIR/regression_test_3</script_root>
+            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMprp1-EDQM-A2c1prX01K00/pr/US48/OneD/</out_dir>
+            <script_root>SCRIPT_DIR/regression_test_4/</script_root>
         </output>
         <pr_opts>
            <pr_threshold_in>'us_trace'</pr_threshold_in>
-           <pr_freqadj_in>'off'</pr_freqadj_in>
+           <pr_freqadj_in>'on'</pr_freqadj_in>
            <pr_conserve_in>'on'</pr_conserve_in>
            <pr_threshold_out>'us_trace'</pr_threshold_out>
            <pr_conserve_out>'on'</pr_conserve_out>

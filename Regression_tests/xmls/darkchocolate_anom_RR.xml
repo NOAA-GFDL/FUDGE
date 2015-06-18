@@ -1,0 +1,79 @@
+<downscale>
+	<ifpreexist>move</ifpreexist>
+    <input predictor_list = "tasmaxAnom" target = "tasmaxAnom" target_ID="txan" spat_mask = "/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/geomasks/red_river_0p1/OneD/" maskvar = "red_river_0p1_masks" spat_mask_ID="RR" in_root="/archive/esd/PROJECTS/DOWNSCALING" >
+	<dim>OneD</dim> 
+        <grid region = "SCCSC0p1">
+        <!-- lats, late are used to develope filenames -->
+            <lons>181</lons>
+            <lone>370</lone>
+            <!-- lons, lone used by DSTemplate to specify minifiles-->
+            <!-- can theoretically specify one minifile (useful for testing)-->
+	    <!-- file_j_range used by DSTemplate to  identify minfile j suffix-->
+	    <lats>31</lats>
+	    <late>170</late>	
+            <file_j_range>"J31-170"</file_j_range>
+        </grid>
+        <training>
+            <historical_predictor
+                file_start_time = "19610101"
+                file_end_time = "20051231"
+                train_start_time = "19610101"
+                train_end_time = "20051231"
+ 		time_window='na'
+                >
+                <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.historical.atmos.day.r1i1p1.v20111006</dataset><!--- we know that we want the tasmax, tasmin vars 
+                in the id directory as specified in <input predictor_list = ""> -->
+            </historical_predictor>
+            <historical_target
+                file_start_time = "19610101"
+                file_end_time = "20051231"
+                train_start_time = "19610101"
+                train_end_time = "20051231"
+		time_window = 'na'
+            >
+<!-- NCPP2013.modified.NOAA-GFDL.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.r1i1p2.v20110601 -->
+                <dataset>OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2</dataset>
+                <!-- and in this case, we want the target var specified in <input> -->
+            </historical_target>
+            <future_predictor
+                file_start_time = "20060101"
+                file_end_time = "20991231"
+                train_start_time = "20060101"
+                train_end_time = "20991231"
+                time_window =  'na'
+		time_trim_mask = 'na'
+            >
+               <dataset>GCM_DATA.CMIP5.MPI-ESM-LR.rcp85.atmos.day.r1i1p1.v20111014</dataset> <!-- still interested in predictor_list vars -->
+            </future_predictor>
+        </training>
+        <esdgen>
+            <!--For CDFt and other quantile methods, the future_predictor is specified instead of esdgen -->     
+        </esdgen>
+    </input>    
+    <core>
+    <!--Specify the ESD METHOD USED -->
+        <method name="BCQM"> </method>
+	<!-- TODO experiment will be option with experiment name construction utility. But A00X00B00 will still be user input--> 
+	<!-- experiment is now optional, because it's going to be constructed internally in expergen using Name_me.py -->
+	<!--<experiment>1pow5-txp1-GFDL-CDFtv1-A00X01K01</experiment> -->
+	<exper_series>B38ca2L01</exper_series> 
+	<project>Red River</project>
+   	<project_ID>RR2</project_ID>
+        <kfold>
+              0 <!-- "0" is required to run without cross-validation.-->
+        </kfold>
+    <!--specifies the OUTPUT DIRECTORY -->
+        <output>
+		<out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RR2txanp1-BCQM-B38ca2L01K00/tasmaxAnom/RR/OneD/</out_dir>
+		<script_root>SCRIPT_DIR/regression_test_5/</script_root>
+        </output>
+    </core>
+    <custom>
+    </custom>
+    <pp>
+         <qc type='SBiasCorr' qc_mask='on' adjust_out='on'>
+            <botlim>-3.</botlim>
+            <toplim>3.</toplim>
+         </qc>
+    </pp>
+</downscale>
