@@ -4,6 +4,8 @@
 #At present, takes a path to an XML as an argument
 #And is assumed to run on the analysis nodes
 
+set echo
+
 #set outdir = $1
 #set scriptdir = $2
 # parentdir, project, experiment_name
@@ -88,11 +90,13 @@ else if ($opt == 'm') then
 	set is_written = 3
 	while( $is_written == 3)
 		set suffix="~$num_exp_existing"
-		set new_scriptdir="$scriptdir/$exp_name$suffix"
+		set new_scriptdir="$scriptdir/$exp_name$suffix/"
 		set outdir_exists = 0
 		foreach outdir ($outdirs)
 			echo $outdir
+			#ls $outdir$suffix
 			if (-e "$outdir$suffix") then
+			#if ($status != 0) then
 				echo 'inside if loop'
 				set outdir_exists=`expr $outdir_exists + 1`
 			endif
@@ -106,6 +110,7 @@ else if ($opt == 'm') then
 			foreach outdir ($outdirs)
 				if (-e $outdir) then
 					echo "Moving older output from $outdir to $outdir$suffix"
+					mv $outdir $outdir$suffix
 					set outdir_written=`expr $outdir_written + $status`
 				else
 					echo "No directory $outdir found; no move performed"
