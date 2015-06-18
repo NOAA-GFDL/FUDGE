@@ -1,4 +1,8 @@
 #!/usr/local/x64/python/2.7.3/bin/python
+
+"""fudgeList.py: Prints out a summary log experiment_info file for the corresponding experiment XML."""
+__author__ = "A.Radhakrishnan"
+
 import expergen 
 import os,sys,subprocess
 from subprocess import PIPE
@@ -141,7 +145,7 @@ def fudgeList():
 
 #####dict test
 					                  histdict = {} 
-        						  histdict["hist_inpath_"+str(n_plist)]=os.path.normpath(hist_pred_dir+"/"+plist)+idirsuffix+hist_file
+        						  histdict["hist.inpath_"+str(n_plist)]=os.path.normpath(hist_pred_dir+"/"+plist)+idirsuffix+hist_file
 						          for hkey,hval in histdict.iteritems():
 							    ascii = ascii+str(hkey)+":"+hval+"\n"	
 
@@ -150,7 +154,7 @@ def fudgeList():
                                                           fut_file = delim.join(fut_parts)
 
                                                           futdict = {}
-                                                          futdict["fut_inpath_"+str(n_plist)]=os.path.normpath(fut_pred_dir+"/"+plist)+idirsuffix+fut_file
+                                                          futdict["fut.inpath_"+str(n_plist)]=os.path.normpath(fut_pred_dir+"/"+plist)+idirsuffix+fut_file
                                                           for fkey,fval in futdict.iteritems():
                                                             ascii = ascii+str(fkey)+":"+fval+"\n"
 
