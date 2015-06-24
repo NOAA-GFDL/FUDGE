@@ -4,8 +4,6 @@
 #At present, takes a path to an XML as an argument
 #And is assumed to run on the analysis nodes
 
-set echo
-
 #set outdir = $1
 #set scriptdir = $2
 # parentdir, project, experiment_name

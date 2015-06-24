@@ -114,7 +114,8 @@ WriteNC <-  function(filename,data.array,var.name,
     }
        
     #1-5 alternate structure
-    bnds <- ncdim_def(name="bnds", longname = 'bnds' , units='', vals=seq(1:2), create_dimvar=TRUE) #'bounds', FALSE
+    bnds <- ncdim_def("bnds", "", c(1,2))
+    #bnds <- ncdim_def(name="bnds", longname = 'bnds' , units='', vals=seq(1:2), create_dimvar=TRUE) #'bounds', FALSE
     
     for (v in 1:length(var.data)){
       var <- names(var.data)[v]

@@ -158,7 +158,8 @@ def compareRuncode(row, olddir, newtmpdir, basedir, newdir_xml, logfile, summfil
 	else:
 		print "Error in compareRuncode: Invalid option for mode."
 	#location of script to be called:
-	c_shell_script = basedir + "Regression_tests/run_reg_tests.csh" #old
+	#c_shell_script = basedir + "Regression_tests/run_reg_tests.csh" #old
+	c_shell_script = basedir + "Regression_tests/run_reg_tests_draft.csh" #old
 	command_tup  = (c_shell_script, script, olddir, newtmpdir, summfile, logfile, mode, testfile)
 	commandstr = command_tup[0]
 	for i in range(1, len(command_tup)):
