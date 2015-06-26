@@ -394,8 +394,8 @@ for (rip in fut.pred.rip.list){
                     tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                     is.pre.ds.adjust=(length(pre_ds) > 0),
                     pre.ds.adjustments=pre_ds,
-                    is.post.ds.adjust=(length(post_ds) > 0),
-                    post.ds.adjustments=post_ds, 
+                    is.post.ds.adjust=(length(post_ds_adj) > 0),
+                    post.ds.adjustments=post_ds_adj, 
                     climatology=list.fut$att_table[[target.var]]$climatology, 
                     fut.pred.rip = rip)
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
@@ -443,7 +443,7 @@ for (rip in fut.pred.rip.list){
                         qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
                         is.pre.ds.adjust=(length(pre_ds) > 0),
                         pre.ds.adjustments=pre_ds,
-                        is.post.ds.adjust=(length(post_ds) > 0),
+                        is.post.ds.adjust=(length(post_ds_adj) > 0),
                         post.ds.adjustments=post_ds_adj, 
                         fut.pred.rip = rip)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))

@@ -2,7 +2,7 @@
 #Runs regression tests for FUDGE and writes stdout to an output logfile
 #and test results to a summary file
 
-#set echo
+set echo
 #module load nco
 #module load nccmp
 
@@ -113,13 +113,15 @@ else if ($mode == 'xml') then
 	#Obtain the postproc command that will be sourced
 	set scriptdir = `grep -oP 'Script directory is: \K.*' $tmp_stdout`
 	#set pp_cmnd  = `tail -n 20 $logfile | grep -oP 'postProc command script location: \K.*'`
-	set pp_cmnd = $scriptdir/postProc/msubwrapper
+	#set pp_cmnd = "$scriptdir/postProc/msubwrapper"
+	set pp_cmnd = "$scriptdir/postProc/postProc_command_1"
 	echo $pp_cmnd
+	source $pp_cmnd
 	echo "Waiting 1 min; see if done"
 	sleep 60
 	set isdone = 1
 	set attempts = 0
-	while ( ${attempts} < 10 )
+	while ( ${attempts} < 15 )
 		echo "output dir 1: $outdirs[1]"
 		set num_files = `ls $outdirs[1] | wc -l`
 		echo "num_files: $num_files"
@@ -153,7 +155,7 @@ else if ($mode == 'xml') then
 			#		set attempts = 20 
 				endif
 			#else case for postproc cpmmand
-			else if( postproc_step == 1 ) then
+			else if( $postproc_step == 1 ) then
 				set attempts = 20
 				set isdone = 0
 			endif	
@@ -182,10 +184,10 @@ else if ($mode == 'xml') then
 		set ncc_status = $status
 		echo "Status of the nccmp: $ncc_status" >> $logfile 
 	else
-		set dsout = "`dirname $full_out`/*.nc"
+		set dsout = "`dirname $dsout`/*.nc"
 		echo $dsout
-		echo "Time out error: After 10 minutes, script has not completed. Please check out dir for more information"
-		echo "Time out error: After 10 minutes, script has not completed. Please check out dir for more information" >> $logfile
+		echo "Time out error: After 15 minutes, script has not completed. Please check out dir for more information"
+		echo "Time out error: After 15 minutes, script has not completed. Please check out dir for more information" >> $logfile
 		set ncc_status = 100 
 	endif
 endif
