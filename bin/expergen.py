@@ -251,10 +251,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         target_suffix = checkTags(dictParams,'target_suffix')
         fut_suffix = checkTags(dictParams,'future_predictor_suffix')
 	##### end filename suffix ######
-	if(target != 'pr'):
-		if(pr_opts != 'na'):
-			print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
-			sys.exit()	 
+	# removing the following precipitation check. Checks in XMLGen should be good enough. And this condition may not apply any more. Espresso release
+	# if(target != 'pr'):
+	#	if(pr_opts != 'na'):
+	#		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
+	#		sys.exit()	 
 	print "pr_opts:---------------- ",pr_opts 
         #### pr_opts #########
 	auxcustom1 = "na"  #$auxcustom1 now not used
