@@ -1,0 +1,47 @@
+<downscale>
+<!--  Created using XMLgen; XMLgen.syn.csh; 02.17.2015  -->
+<!--
+ xmlGenDir = /home/esd/MJN_sandbox/darkchocolate/XMLgen 
+-->
+	<ifpreexist>erase</ifpreexist>
+	<input predictor_list="syn" target="syn" target_ID="syn" spat_mask="na" maskvar="na" spat_mask_ID="grid0" in_root="/archive/esd/PROJECTS/DOWNSCALING">
+		<dim>ZeroD</dim>
+	<grid region="grid0">
+		<lons>1</lons>
+		<lone>1</lone>
+		<lats>1</lats>
+		<late>1</late>
+		<file_j_range>"J1"</file_j_range>
+	</grid>
+		<training>
+		<historical_predictor file_start_time="1" file_end_time="10000" train_start_time="1" train_end_time="10000" time_window="na">
+		<dataset>SYN_DATA.FudgeTest.Synthetic-GCM.historical.index.std2p5.rand100.r0i0p2.v20150217</dataset>
+		</historical_predictor>
+		<historical_target file_start_time="1" file_end_time="10000" train_start_time="1" train_end_time="10000" time_window="na">
+			<dataset>SYN_DATA.FudgeTest.Synthetic-Local.historical.index.std2p5.rand100.r0i0p2.v20150217</dataset>
+		</historical_target>
+		<future_predictor file_start_time="1" file_end_time="10000" train_start_time="1" train_end_time="10000" time_window="na">
+			<dataset>SYN_DATA.FudgeTest.Synthetic-GCM.future.index.std2p5.rand100.r0i0p2.v20150217</dataset>
+		</future_predictor>
+		</training>
+<esdgen></esdgen>
+	</input>
+<core>
+	<method name="CDFt"></method>
+	<exper_series>Z01Test</exper_series>
+	<project>Test Case</project>
+	<project_ID>TC</project_ID>
+	<kfold>0</kfold>
+	<output>
+		<!-- <out_dir>/archive/esd/PROJECTS/DOWNSCALING/TC/downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD/</out_dir>
+		<script_root>/home/esd/PROJECTS/DOWNSCALING</script_root> -->
+	<out_dir>OUTPUT_DIR/downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD/</out_dir>
+                  <script_root>SCRIPT_DIR/regression_test_5</script_root>
+	</output>
+</core>
+<custom>
+	<dev>1</dev>
+	<npas>0</npas>
+</custom>
+<pp></pp>
+</downscale>

@@ -57,7 +57,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
                 "CFQM" = callCFQMv3(train.target, train.predict, esd.gen, args, ds.var, att.table), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var, att.table),
-                "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
+                "lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
 #  if(remove.ds.missvals){
     #Same alternate missval removal structure as earlier

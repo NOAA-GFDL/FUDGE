@@ -1,7 +1,14 @@
+07-2-2015
+(cew)
+- multi.lm method changed to lm method in R code for the XML
+- correction in R WriteGlobals metadata for default standard names
+
 06-24-2015
+(cew)
 - R code writes bnds of minifiles as double rather than int
 
 06-16-2015
+(cew)
 - R code update for compatibility with multivar, multi-enseble case
 
 06-9-2015

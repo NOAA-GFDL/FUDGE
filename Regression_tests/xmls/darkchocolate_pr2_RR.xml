@@ -44,13 +44,13 @@
         </esdgen>
     </input>    
     <core>
-        <method name="EDQM"> </method>
+        <method name="CFQM"> </method>
 	<exper_series>A32a-e2L01</exper_series> 
 	<project>Red River</project>
 	<project_ID>RR</project_ID>
         <kfold>0</kfold>
         <output>
-            <out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRprp1-EDQM-A32a-e2L01K00/pr/RR/OneD/</out_dir>
+            <out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRprp1-CFQM-A32a-e2L01K00/pr/RR/OneD/</out_dir>
             <script_root>SCRIPT_DIR/regression_test_8/</script_root>
         </output>
         <pr_opts>

@@ -221,7 +221,7 @@ message("Reading in target data")
 target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                    target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
 print(target.filename)
-list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial") #no longer adding ens dim
+list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial", force_dim=3) #no longer adding ens dim
 message("Applying spatial mask to target data")
 #list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
 if(!is.null(spat.mask)){
@@ -264,6 +264,8 @@ message("Applying spatial mask to future predictor dataset")
 if(!is.null(spat.mask)){
   list.fut$clim.in <- lapply(list.fut$clim.in, apply.any.mask, mask=spat.mask$masks[[1]], dim.apply='spatial')
 }
+print(paste("dimensions of the future predictor data:"))
+print(dim(list.fut$clim.in))
 
 message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
@@ -299,6 +301,8 @@ all.att.table <- list('hist.pred'=list.hist$att_table,
                       'fut.pred'=list.fut$att_table)
 ##DS does not currently include the attribute table; frankly, should include it. 
 ##This si sprobably the next to-do item on the list
+print(paste("dimensions of the future predictor data:"))
+print(dim(list.fut$clim.in))
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
