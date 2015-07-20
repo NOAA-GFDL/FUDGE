@@ -35,8 +35,8 @@
 	<output>
 		<!-- <out_dir>/archive/esd/PROJECTS/DOWNSCALING/TC/downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD/</out_dir>
 		<script_root>/home/esd/PROJECTS/DOWNSCALING</script_root> -->
-	<out_dir>OUTPUT_DIR/downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD/</out_dir>
-                  <script_root>SCRIPT_DIR/regression_test_5</script_root>
+	<out_dir>/work/cew/downscaled/Synthetic-GCM/future/index/std2p5/rand100/r0i0p2/v20150217/TCsynp1-CDFt-Z01TestK00/syn/grid0/ZeroD/</out_dir>
+                  <script_root>/nbhome/cew/scripts/</script_root> <!-- SCRIPT_DIR/regression_test_5 -->
 	</output>
 </core>
 <custom>

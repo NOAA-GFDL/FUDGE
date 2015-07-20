@@ -50,8 +50,8 @@
 	<project_ID>PM</project_ID>
         <kfold>0</kfold>
         <output>
-            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMtxp1-CDFt-A2e4txtestX01K00/tasmax/US48/OneD/</out_dir>
-            <script_root>OUTPUT_DIR/regression_test_2</script_root>
+            <out_dir>/work/cew/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMtxp1-CDFt-A2e4txtestX01K00/tasmax/US48/OneD/</out_dir>
+            <script_root>/nbhome/cew/scripts/</script_root><!--OUTPUT_DIR/regression_test_2-->
         </output>
     </core>
     <custom>

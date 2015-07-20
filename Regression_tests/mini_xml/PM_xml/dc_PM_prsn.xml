@@ -1,6 +1,6 @@
 <downscale>
     <ifpreexist>erase</ifpreexist>
-    <input predictor_list = "prc" target = "prc" target_ID = "prc" spat_mask = "na" maskvar = "na" spat_mask_ID = "US48" in_root = "/archive/esd/PROJECTS/DOWNSCALING">
+    <input predictor_list = "prsn" target = "prsn" target_ID = "prsn" spat_mask = "na" maskvar = "na" spat_mask_ID = "US48" in_root = "/archive/esd/PROJECTS/DOWNSCALING">
         <dim>OneD</dim>
         <grid region = "US48">
             <lons>925</lons>
@@ -17,7 +17,7 @@
                 train_end_time = "20081231"
  		time_window = 'na'
             >
-                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.day.r3i1p1.v20110601</dataset>
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.day.r1i1p1.v20110601</dataset>
             </historical_predictor>
             <historical_target
                 file_start_time = "19790101"
@@ -26,7 +26,7 @@
                 train_end_time = "20081231"
 		time_window = 'na'
              >
-                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.day.r3i1p1.v20110601</dataset>
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.day.r1i1p1.v20110601</dataset>
             </historical_target>
             <future_predictor
                 file_start_time = "20860101"
@@ -42,14 +42,14 @@
         </esdgen>
     </input>    
     <core>
-        <method name="multi.lm"> </method>
+        <method name="lm"> </method>
 	<exper_series>A2e3X01</exper_series> 
 	<project>Perfect Model</project>
 	<project_ID>PM</project_ID>
         <kfold>0</kfold>
         <output>
            <!-- <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p2/v20110601/PMprsnp1-CFQM-A2e3X01K00/prsn/US48/OneD/</out_dir> -->
-           <out_dir>/work/cew/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p2/v20110601/PMprsnp1-CFQM-A2e3X01K00/prsn/US48/OneD/</out_dir>
+           <out_dir>/work/cew/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p2/v20110601/PMprsnp1-lm-A2e3X01K00/prsn/US48/OneD/</out_dir>
             <!--<script_root>SCRIPT_DIR/PM-e06/</script_root> -->
             <script_root>/nbhome/cew/scripts/</script_root>
         </output>

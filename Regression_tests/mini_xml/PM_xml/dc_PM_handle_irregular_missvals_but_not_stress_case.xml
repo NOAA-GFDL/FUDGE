@@ -50,8 +50,8 @@
 	<project_ID>PM</project_ID>
         <kfold>0</kfold>
         <output>
-            <out_dir>OUTPUT_DIR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMta850p1-BCQM-A2e4X01K00/ta850/US48/OneD/</out_dir>
-            <script_root>SCRIPT_DIR/PM-e04/</script_root>
+            <out_dir>/work/cew/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMta850p1-BCQM-A2e4X01K00/ta850/US48/OneD/</out_dir>
+            <script_root>/nbhome/cew/scripts/</script_root>
         </output>
     </core>
     <custom>

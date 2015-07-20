@@ -64,8 +64,8 @@
         </kfold>
     <!--specifies the OUTPUT DIRECTORY -->
         <output>
-		<out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RR2txanp1-BCQM-B38ca2L01K00/tasmaxAnom/RR/OneD/</out_dir>
-		<script_root>SCRIPT_DIR/regression_test_5/</script_root>
+		<out_dir>/work/cew/downscaled/MPI-ESM-LR/rcp85/day/atmos/day/r1i1p1/v20111014/RR2txanp1-BCQM-B38ca2L01K00/tasmaxAnom/RR/OneD/</out_dir>
+		<script_root>/nbhome/cew/scripts/</script_root><!--SCRIPT_DIR/regression_test_5/-->
         </output>
     </core>
     <custom>

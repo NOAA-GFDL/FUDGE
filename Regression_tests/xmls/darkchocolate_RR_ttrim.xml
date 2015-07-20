@@ -58,8 +58,8 @@ file_start_time = "19610101"
 <!-- out_dir path is the downscaled minifile output directory, usually based on the future_predictor path. The postProc concatenated file will be placed one directory level up from that specified by out_dir.  
 In a move towards generalization - since in the future there may be multiple predictors - XMLgen will give the user the ability to specifying the output directory. But generally speaking, if the main future predictor is from a directory with the pattern “$dataSource/$epoch/$freq/$realm/$misc/$rip/$dataVersion” (taken from a <dataset> tag, but with “/” in place of “.”), then the <out_dir> is patterned: $outRoot/$project_ID/downscaled/$dataSource/$epoch/$freq/$realm/$misc/$rip/$dataVersion/$experimentName/$target/$spat_mask_ID/$dim/, where $outroot for non-test experiments will be /archive/esd/PROJECTS/DOWNSCALING, and $experimentName is built by XMLgen from $project_ID$target_ID${platform}-$method-${exper_series}$kfold -related string. -->
 <!-- /work/cew/downscaled/MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/RRtxp1-CDFt-C34atTest2L01K00/tasmax/RR/OneD/ -->
-<out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/RRtxp1-CDFt-C34at-test1L01K00/tasmax/RR/OneD/</out_dir>
-                  <script_root>OUTPUT_DIR/regression_test_RR1/</script_root>
+<out_dir>/work/cew/downscaled/MPI-ESM-LR/rcp45/day/atmos/day/r1i1p1/v20111006/RRtxp1-CDFt-C34at-test1L01K00/tasmax/RR/OneD/</out_dir>
+                  <script_root>/nbhome/cew/scripts/</script_root> <!-- OUTPUT_DIR/regression_test_RR1/ -->
         </output>
 </core>
 <custom>

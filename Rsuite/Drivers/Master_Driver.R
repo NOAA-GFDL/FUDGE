@@ -205,14 +205,22 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
   }
 }else{ #Once esd.gen implemented, should be most common use case
   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-  if(target.time.window!='na'){
-  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                                     esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
-  names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
+  if(fut.time.trim.mask=='na'){
+    if(target.time.window!='na'){
+      tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                         esd.gen.mask = fut.time.window, k=kfold, method=ds.method)
+      names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+    }else{
+      #Otherwise, if there were no masks included at all
+      message("no time windows included; moving on to next step")
+      tmask.list <- list("na")
+    }
   }else{
-    #Otherwise, if there were no masks included at all
-    message("no time windows included; moving on to next step")
-    tmask.list <- list("na")
+    print(paste("time trimming mask", fut.time.trim.mask))
+    tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
+                                       time.prune.mask = fut.time.trim.mask)
+    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
   }
 }
 

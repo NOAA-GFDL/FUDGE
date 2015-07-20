@@ -1,0 +1,251 @@
+================================================================================== 
+Operation started at:15-07-16:17:17:13
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_monmask.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_monmask.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:14 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 1 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e19L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e19L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e19L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e19L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e19L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e19L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e19L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e19L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e19L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          0          
+
+End status: 130
+Sub-operation completed at: 15-07-16:17:36:01
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_original.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_original.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:17 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 1 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-CDFt-A2e20L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-CDFt-A2e20L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-CDFt-A2e20L01K00_rcp26_r1i1p1_US48_20060101-20991231.I300_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-CDFt-A2e20L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-CDFt-A2e20L01K00_rcp26_r1i1p1_US48_20060101-20991231.I300_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-CDFt-A2e20L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-CDFt-A2e20L01K00_rcp26_r1i1p1_US48_20060101-20991231.I300_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-CDFt-A2e20L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-CDFt-A2e20L01K00_rcp26_r1i1p1_US48_20060101-20991231.I300_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          0          
+
+End status: 130
+Sub-operation completed at: 15-07-16:17:36:10
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pm2weeks.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pm2weeks.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:24 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 1 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          1          
+No such file or directory
+No such file or directory
+DIFFER : VALUES OF GLOBAL ATTRIBUTE : info : Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8544543/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc <> Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8551193/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc
+DIFFER : VALUES OF GLOBAL ATTRIBUTE : info : Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8544543/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc <> Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8551595/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc
+
+End status: 130
+Sub-operation completed at: 15-07-16:17:36:19
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pmds_trainmon.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pmds_trainmon.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:27 and ran for 0.0 hours 0.0 min 17 seconds total.
+At 15-07-16:17:31:49 there are 1 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e18L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e18L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e18L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e18L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e18L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e18L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e18L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e18L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e18L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          1          
+No such file or directory
+DIFFER : VALUES OF GLOBAL ATTRIBUTE : info : Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8544543/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc <> Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8551193/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc
+DIFFER : VALUES OF GLOBAL ATTRIBUTE : info : Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8544543/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc <> Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8551595/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc
+DIFFER : VALUES OF GLOBAL ATTRIBUTE : info : Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8551180/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc <> Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8551596/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc
+
+End status: 130
+Sub-operation completed at: 15-07-16:17:36:28
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_monmask_lm.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_monmask_lm.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:44 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 1 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e29L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e29L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e29L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e29L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e29L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e29L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e29L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e29L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e29L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          0          
+
+End status: 130
+Sub-operation completed at: 15-07-16:17:36:39
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pmpred_targmon_lm.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pmpred_targmon_lm.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:47 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 1 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          0          
+
+End status: 130
+Sub-operation completed at: 15-07-16:17:36:50
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pmds_trainmon_lm.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pmds_trainmon_lm.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:19 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 0 loops 
+Status = 2
+At 15-07-16:17:33:49 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 1 loops 
+Status = 3
+At 15-07-16:17:36:10 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 2 loops 
+Status = 4
+At 15-07-16:17:38:50 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 3 loops 
+Status = 5
+At 15-07-16:17:40:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 4 loops 
+Status = 6
+At 15-07-16:17:42:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 5 loops 
+Status = 7
+At 15-07-16:17:44:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 6 loops 
+Status = 8
+At 15-07-16:17:46:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+minifiles written after 7 loops 
+Status = 9
+At 15-07-16:17:48:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+Status = 109
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 17.0 min 1 seconds total.
+End status: 109
+Sub-operation completed at: 15-07-16:17:48:51
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pm2weeks_lm.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_16_17_17_13/dc_RR_tx_pm2weeks_lm.xml --msub 
+Status = 1
+Function started at 15-07-16:17:25:22 and ran for 0.0 hours 0.0 min 2 seconds total.
+At 15-07-16:17:31:49 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 0 loops 
+Status = 2
+At 15-07-16:17:33:49 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 1 loops 
+Status = 3
+At 15-07-16:17:36:10 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 2 loops 
+Status = 4
+At 15-07-16:17:38:50 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 3 loops 
+Status = 5
+At 15-07-16:17:40:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 4 loops 
+Status = 6
+At 15-07-16:17:42:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 5 loops 
+Status = 7
+At 15-07-16:17:44:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 6 loops 
+Status = 8
+At 15-07-16:17:46:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+minifiles written after 7 loops 
+Status = 9
+At 15-07-16:17:48:51 there are 0 minifiles in /work/cew/downscaled/15_07_16_17_17_13//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e26L01K00/tasmax/RR/OneD/
+Status = 109
+Function started at 15-07-16:17:31:49 and ran for 0.0 hours 17.0 min 1 seconds total.
+End status: 109
+Sub-operation completed at: 15-07-16:17:48:51
+================================================================================== 
+Operation started at:15-07-17:10:33:32
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_17_10_33_32/dc_RR_tx_pmds_trainmon_lm.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_17_10_33_32/dc_RR_tx_pmds_trainmon_lm.xml --msub 
+Status = 1
+Function started at 15-07-17:10:36:33 and ran for 0.0 hours 0.0 min 5 seconds total.
+At 15-07-17:10:42:47 there are 1 minifiles in /work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-17:10:42:47 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e28L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e28L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+Error: File not found. Cannot continue.
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e28L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e28L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e28L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 255        255             255        255        
+No such file or directory
+No such file or directory
+No such file or directory
+No such file or directory
+
+End status: 130
+Sub-operation completed at: 15-07-17:10:46:53
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_17_10_33_32/dc_RR_tx_pm2weeks.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_17_10_33_32/dc_RR_tx_pm2weeks.xml --msub 
+Status = 1
+Function started at 15-07-17:10:36:38 and ran for 0.0 hours 0.0 min 3 seconds total.
+At 15-07-17:10:42:47 there are 1 minifiles in /work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-17:10:42:47 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-EDQM-A2e16L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-EDQM-A2e16L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          1          
+No such file or directory
+No such file or directory
+No such file or directory
+DIFFER : VALUES OF GLOBAL ATTRIBUTE : info : Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8544543/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc <> Path to time mask files:  train.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, train.targ:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_19610101-20051231_olap.nc, fut.pred:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_pm2weeks_20060101-20991231_olap.nc, time.trim.mask:/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc, ;Time trimming mask used:/vftmp/Carolyn.Whitlock/pbs8555993/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc
+
+End status: 130
+Sub-operation completed at: 15-07-17:10:47:03
+---------------------------------------------------------------------------------- 
+Summary of xml /work/cew/downscaled/15_07_17_10_33_32/dc_RR_tx_pmpred_targmon_lm.xml: 
+python /home/cew/Code//fudge2014//bin/expergen.py -i /work/cew/downscaled/15_07_17_10_33_32/dc_RR_tx_pmpred_targmon_lm.xml --msub 
+Status = 1
+Function started at 15-07-17:10:36:42 and ran for 0.0 hours 0.0 min 5 seconds total.
+At 15-07-17:10:42:47 there are 1 minifiles in /work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD/
+Status = 10
+minifiles written after 0 loops 
+Function started at 15-07-17:10:42:47 and ran for 0.0 hours 0.0 min 0 seconds total.
+tcsh /home/cew/Code/nccmp_script.csh /work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc /archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//archive/esd/REGRESSION_TESTS/old_output//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+/vftmp/Carolyn.Whitlock/pid13606//work/cew/downscaled/15_07_17_10_33_32//work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRtxp1-lm-A2e27L01K00/tasmax/RR/OneD//tasmax_day_RR2txp1-lm-A2e27L01K00_rcp26_r1i1p1_US48_20060101-20991231.I280_J31-170.nc
+
+ DATA       DATA +/ e-11    METADATA   GLOBALS   
+ 0          0               0          0          
+
+End status: 130
+Sub-operation completed at: 15-07-17:10:47:14

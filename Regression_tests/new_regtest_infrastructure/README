@@ -1,0 +1,12 @@
+New regtest readme
+
+General structure of the new regression test infrastructure is a call of this 
+nature: 
+
+python /home/cew/Code/fudge2014/Regression_tests/new_regtest_infrastructure/run_fudge_regression_tests.py -i /home/cew/Code/testing/test_script.txt --regtest
+
+Where /home/cew/Code/testing/test_script.txt is an input file containing the absolute path to one XML per line. 
+
+There are several arguments that should be set by the script, but are currently hard-coded into the body of the wrapper, for testing purposes. Work on that later.
+
+A

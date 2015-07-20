@@ -15,10 +15,6 @@ QCTimeMask<-function(time.mask.obj, run=FALSE){
   #   thisnc <- nc_open(mask.nc)
   #   time.mask.obj <- ReadMaskNC(thisnc)
   time.length <- length(time.mask.obj$masks[[1]])
-#     save('time.mask.obj', file='/home/cew/Code/test.mask.object')
-#   if(time.length==0){
-#     time.length <- time.mask.obj$dim$time$len
-#   }
   ###Pre-allocaate vector and loop over the available masks
   print(time.length)
   checkvector <- rep(0, time.length)

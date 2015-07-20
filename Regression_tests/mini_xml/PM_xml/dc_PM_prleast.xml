@@ -1,0 +1,69 @@
+<downscale>
+    <ifpreexist>erase</ifpreexist>
+    <input predictor_list = "pr" target = "pr" target_ID = "pr" spat_mask = "na" maskvar = "na" spat_mask_ID = "US48" in_root = "/archive/esd/PROJECTS/DOWNSCALING">
+        <dim>OneD</dim>
+        <grid region = "US48">
+            <lons>925</lons>
+            <lone>925</lone>
+	    <lats>454</lats>
+	    <late>567</late>	
+            <file_j_range>"J454-567"</file_j_range>
+        </grid>
+        <training>
+            <historical_predictor
+                file_start_time = "19790101"
+                file_end_time = "20081231"
+                train_start_time = "19790101"
+                train_end_time = "20081231"
+ 		time_window = 'na'
+            >
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.amip.day.atmos.day.r1i1p1.v20110601</dataset>
+            </historical_predictor>
+            <historical_target
+                file_start_time = "19790101"
+                file_end_time = "20081231"
+                train_start_time = "19790101"
+                train_end_time = "20081231"
+		time_window = 'na'
+             >
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360.amip.day.atmos.day.r1i1p1.v20110601</dataset>
+            </historical_target>
+            <future_predictor
+                file_start_time = "20860101"
+                file_end_time = "20951231"
+                train_start_time = "20860101"
+                train_end_time = "20951231"
+                time_window = 'na'
+            >
+                <dataset>GCM_DATA.NCPP.GFDL-HIRAM-C360-COARSENED.sst2090.day.atmos.day.r1i1p1.v20110601</dataset>
+            </future_predictor>
+        </training>
+        <esdgen>
+        </esdgen>
+    </input>    
+    <core>
+        <method name="CDFt"> </method> <!-- previously multi.lm -->
+	<exper_series>A2e13X01</exper_series> 
+	<project>Perfect Model</project>
+	<project_ID>PM</project_ID>
+        <kfold>0</kfold>
+        <output>
+            <out_dir>/work/cew/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMprp1-CDFt-A2e13X01K00/pr/US48/OneD/</out_dir>
+            <script_root>/nbhome/cew/scripts/</script_root>
+        </output>
+        <pr_opts>
+           <pr_threshold_in>'zero'</pr_threshold_in>
+           <pr_freqadj_in>'off'</pr_freqadj_in>
+           <pr_conserve_in>'off'</pr_conserve_in>
+           <pr_threshold_out>'zero'</pr_threshold_out>
+           <pr_conserve_out>'off'</pr_conserve_out>
+           <apply_0_mask>'off'</apply_0_mask>
+        </pr_opts>
+    </core>
+    <custom>
+    	<dev>2</dev>
+    	<npas>300</npas>
+    </custom>
+    <pp>
+    </pp>
+</downscale>

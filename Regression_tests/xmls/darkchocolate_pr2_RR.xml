@@ -50,8 +50,8 @@
 	<project_ID>RR</project_ID>
         <kfold>0</kfold>
         <output>
-            <out_dir>OUTPUT_DIR/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRprp1-CFQM-A32a-e2L01K00/pr/RR/OneD/</out_dir>
-            <script_root>SCRIPT_DIR/regression_test_8/</script_root>
+            <out_dir>/work/cew/downscaled/MPI-ESM-LR/rcp26/day/atmos/day/r1i1p1/v20111014/RRprp1-CFQM-A32a-e2L01K00/pr/RR/OneD/</out_dir>
+            <script_root>/nbhome/cew/scripts/</script_root> <!--SCRIPT_DIR/regression_test_8/-->
         </output>
         <pr_opts>
            <pr_threshold_in>'global_trace'</pr_threshold_in>
@@ -63,6 +63,7 @@
         </pr_opts>
     </core>
     <custom>
+    	<sort>'future'</sort>
     </custom>
     <pp>
        <qc type='flag.neg' qc_mask='on' adjust_out='off'>
