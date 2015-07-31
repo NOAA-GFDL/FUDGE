@@ -191,8 +191,20 @@ echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix
 foreach OUTDIR ($outdir)
  echo "gcp -cd "'$TMPDIR'"$OUTDIR/*.I$counter"_"$dsuffix.nc $OUTDIR/ " >> $runpath 
 #Add a line to copy the mask dir as well
+#
+echo "set ostat =  "'$?'"" >> $runpath
+set ostat =  $?
+echo " if ( "'$ostat'" == 0 ) then "  >> $runpath
+echo " echo 'success, create ok file "'$ostat'" ' "  >> $runpath
+echo " touch $OUTDIR/mini.success" >> $runpath
+echo "else "  >> $runpath
+echo "echo failure, "'$ostat'" " >> $runpath
+echo " touch $OUTDIR/mini.fail" >> $runpath
+echo "endif " >> $runpath
+#
  echo "gcp -cd "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/*.I$counter"_"$dsuffix.nc $OUTDIR/${cmipvar}_qcmask/ " >> $runpath 
 end
+
  echo $runpath
  chmod u+x  $runpath
 end
