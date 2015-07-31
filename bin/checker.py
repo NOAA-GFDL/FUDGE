@@ -16,7 +16,18 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0):
        listfile = []	 
        listbad = []
        append_ok = False
-       for ROOT,DIR,FILES in os.walk(path):
+       othercheck = False	
+       if (os.path.exists(path+"/mini.success")):
+	  print "\033[1;42m mini.success found, other steps in checker to follow.\033[1;m"
+	  othercheck = True
+       elif (os.path.exists(path+"/mini.fail")):
+	  print "\033[1;31m mini.fail found, postProc cannot be executed. \033[1;m" 
+          return -13
+       else:
+	  print "Waiting for status file to be genertated"
+          return 14
+       if (othercheck == True):		
+         for ROOT,DIR,FILES in os.walk(path):
        		for file in FILES:
       			 if file.endswith('.nc'):
 		            if (varname != ""):
@@ -31,14 +42,15 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0):
 				   print "\033[1;31m ERROR Found file for zero byte. Breaking loop. \033[1;m"
 				   return -12		 
 			 else:
-				listbad.append(file) 
+				if (file.endswith('.success') == False) & (file.endswith('.fail') == False):
+					listbad.append(file) 
        		break	
        actual_cnt = len(listfile) 	
        v_print(1,"Total number of .nc files in "+path+varname+"* is:"+(str)(len(listfile)))
        if (cnt > 0):
 	 if (cnt != actual_cnt):
-	        v_print(1,"Actual Count: "+actual_cnt)
-		v_print(1,"Expected Count: "+cnt)
+	        v_print(1,"Actual Count: "+(str)(actual_cnt))
+		v_print(1,"Expected Count: "+(str)(cnt))
 		if(sev == "error"):
                 	print "\033[1;31m Error code -11: The expected number of files is not present. Please verify!\033[1;m"
 		        #sys.exit(-11)
