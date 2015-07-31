@@ -695,7 +695,7 @@ def main():
         try:
                 msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
 		os.chmod(msubwrap.name, 0744)
-	        content = "#!/bin/tcsh"
+	        content = "#!/bin/tcsh -f"
 	        for msubitem in msubwrapper:
 		    content = content + "\n" + msubitem
 		content = content + "\n"
