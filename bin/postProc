@@ -148,7 +148,12 @@ def postProc():
 	##### lets run the checker on OneD first ###############
 	tnum = int(lone) - int(lons) + 1 
 	print "checker on OneD"
-       	checker.checker(indir,tnum,varname=vname)
+       	retcode = checker.checker(indir,tnum,varname=vname)
+        if (retcode == - 13 ):
+		print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
+	 	#email user
+		sys.exit(-13) 
+ 
         ################################################
 	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"

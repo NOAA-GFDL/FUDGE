@@ -135,6 +135,8 @@ if ($cattool_Exit == 1) then
  echo "rm -rf $workdir " 
  rm -rf $workdir
  echo "cattool command that failed:\n"
+    touch $indir/postProc.fail
+    echo "postProc status file created $indir/postProc.fail" 
  echo "$tooldir/cattool $indir $prefix $fprefix.nc region=$region"
  exit 1
 endif
@@ -161,6 +163,8 @@ if ($sdWriter_Ex == 1) then
  rm -rf $workdir
  echo "###########ERROR##############\n"
  echo "sdWriter command that failed:\n"
+    touch $indir/postProc.fail
+    echo "postProc status file created $indir/postProc.fail"
  echo "$tooldir/sdWriter cattool.$prefix.nc $exp $var $method $auxfiledir $oldver $prefix.nc $targetid region=$region"
 
  exit 1
@@ -187,9 +191,14 @@ echo "source env"
      #echo "gcp $outfile $root/$outfile"
      echo "Output file produced. See $root/"
      \ls -l $root/$outfile
+#### create status file here 
+     touch $indir/postProc.success
+     echo "postProc status file created $indir/postProc.success"	
    else
      echo " "
      echo "Expected output file was not created in $root/$outfile. Please check the output from cattool or sdWriter."
+    touch $indir/postProc.fail
+    echo "postProc status file created $indir/postProc.fail"
      echo " "
      exit 1
    endif
