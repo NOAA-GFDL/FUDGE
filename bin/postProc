@@ -316,6 +316,17 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
         global cnt
 	cnt = cnt + 1
         print "1- completed\n"
+## success email 
+        msg['Subject'] = "fudge notification- postProc/success"
+        text = "Your postProc run has succeeded."
+        text = text + "\n\nExperiment XML for reference-\n"+uinput
+        text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
+        msg.attach( MIMEText(text))
+        if (uemail != "na"):
+                        smtp = smtplib.SMTP("localhost")
+                        smtp.sendmail(send_from, send_to, msg.as_string())
+                        smtp.close()
+## 
 	return p.returncode
 if __name__ == '__main__':
     postProc()
