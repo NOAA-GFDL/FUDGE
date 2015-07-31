@@ -38,7 +38,6 @@ def fudgeList():
 
      parser.add_option("-o", "--outlog", dest="sumlogloc",help="pass location of summary log file", metavar="FILE")
      parser.add_option("-v", "--fversion",action="store_true",default=False,help="Print FUDGE CODE VERSION. Default is set to FALSE/no-printing")
-
      (options, args) = parser.parse_args()
      #if userinput == "none":
        # print "Looking for XML location taken from command line option.."
