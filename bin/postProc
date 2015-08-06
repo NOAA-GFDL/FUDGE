@@ -1,4 +1,7 @@
 #!/usr/bin/python
+"""postProc: FUDGE post-processing utility."""
+__author__ = "A.Radhakrishnan"
+
 import expergen 
 import os,sys,subprocess,shutil
 from subprocess import PIPE
@@ -6,6 +9,14 @@ import argparse
 import shlex
 import fudgeList
 import checker
+import smtplib
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email.Utils import COMMASPACE, formatdate
+from email import Encoders
+
+
 cnt = 0
 def postProc():
      #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
@@ -148,7 +159,36 @@ def postProc():
 	##### lets run the checker on OneD first ###############
 	tnum = int(lone) - int(lons) + 1 
 	print "checker on OneD"
-       	checker.checker(indir,tnum,varname=vname)
+       	retcode = checker.checker(indir,tnum,varname=vname)
+        # email header
+        send_from = "aparna.radhakrishnan@noaa.gov"
+        send_to = "aparna.radhakrishnan@noaa.gov"
+        msg = MIMEMultipart()
+        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        try:
+                uemail  = os.environ["NEMSemail"]
+                msg['To'] = uemail
+        except KeyError:
+                print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
+                uemail = "na"
+        msg['Date'] = formatdate(localtime=True)
+        #e o header
+        if (retcode == - 13 ):
+		print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
+	 	#email user
+                msg['Subject'] = "fudge notification- postProc/failed"
+                text = "Insufficient number of minfiles exist. "
+	        text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
+		text = text + "\n\npostProc cannot be run at this time."
+		text = text + "\n\nExperiment XML for reference-\n"+uinput
+                text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+                msg.attach( MIMEText(text))
+                if (uemail != "na"):
+                	smtp = smtplib.SMTP("localhost")
+                	smtp.sendmail(send_from, send_to, msg.as_string())
+                	smtp.close()
+			sys.exit(-13) 
+ 
         ################################################
 	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
      #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
@@ -159,7 +199,7 @@ def postProc():
              				if (exists == False):
 
            					#print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg)
+						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput)
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
 						slogloc = sbase+"/"+"experiment_info.txt"
@@ -212,13 +252,13 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 					#cprint filename
 				        return exists		
 
-def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg):
+def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg,uinput):
         script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
 	print script1Loc 
 #check if output already exists
 #options basedir indir method var epoch rip region ver
 #TODO rem redundant region to cattool
-	print "test", ensarg
+#	print "test", ensarg
 	if (ensarg == "undefined") | (ensarg == None):
         	fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
         else:
@@ -232,16 +272,64 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	error,output = p.communicate()
 	print p.returncode ,output, error
         word = "ERROR"
+        # email header
+        send_from = "aparna.radhakrishnan@noaa.gov"
+        send_to = "aparna.radhakrishnan@noaa.gov"
+        msg = MIMEMultipart()
+        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        try:
+                uemail  = os.environ["NEMSemail"]
+                msg['To'] = uemail
+        except KeyError:
+                print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
+                uemail = "na"
+        msg['Date'] = formatdate(localtime=True)
+        #e o header
         if (p.returncode != 0):
-         print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
-         sys.exit(0)
+         	print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
+##
+                msg['Subject'] = "fudge notification- postProc/failed"
+                text = "An error occured in postProc suite of tools,call_ppFudge "
+                text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+                text = text + "\n\npostProc cannot be run at this time."
+                text = text + "\n\nExperiment XML for reference-\n"+uinput
+                text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+                msg.attach( MIMEText(text))
+                if (uemail != "na"):
+                        smtp = smtplib.SMTP("localhost")
+                        smtp.sendmail(send_from, send_to, msg.as_string())
+                        smtp.close()
+##
+         	sys.exit(0)
 	if word in error:
-         print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
-         sys.exit(0)
+         	print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
+                msg['Subject'] = "fudge notification- postProc/failed"
+                text = "An error occured in postProc suite of tools,call_ppFudge "
+                text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+                text = text + "\n\npostProc cannot be run at this time."
+                text = text + "\n\nExperiment XML for reference-\n"+uinput
+                text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+                msg.attach( MIMEText(text))
+                if (uemail != "na"):
+                        smtp = smtplib.SMTP("localhost")
+                        smtp.sendmail(send_from, send_to, msg.as_string())
+                        smtp.close()
+         	sys.exit(0)
          ############################################################################################
         global cnt
 	cnt = cnt + 1
         print "1- completed\n"
+## success email 
+        msg['Subject'] = "fudge notification- postProc/success"
+        text = "Your postProc run has succeeded."
+        text = text + "\n\nExperiment XML for reference-\n"+uinput
+        text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
+        msg.attach( MIMEText(text))
+        if (uemail != "na"):
+                        smtp = smtplib.SMTP("localhost")
+                        smtp.sendmail(send_from, send_to, msg.as_string())
+                        smtp.close()
+## 
 	return p.returncode
 if __name__ == '__main__':
     postProc()

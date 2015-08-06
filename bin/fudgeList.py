@@ -38,7 +38,6 @@ def fudgeList():
 
      parser.add_option("-o", "--outlog", dest="sumlogloc",help="pass location of summary log file", metavar="FILE")
      parser.add_option("-v", "--fversion",action="store_true",default=False,help="Print FUDGE CODE VERSION. Default is set to FALSE/no-printing")
-
      (options, args) = parser.parse_args()
      #if userinput == "none":
        # print "Looking for XML location taken from command line option.."
@@ -72,6 +71,7 @@ def fudgeList():
      print "==============================runtime log from parser==================================================="
      output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklist,idirsuffix = expergen.listVars(uinput,basedir=basedir,pp=True) 
      print "=================================================================================="		
+     #print "QC_MASK ",qc_switch	
      #print "lons",lons,"lone",lone	
      basedire = basedir	
      esdMethod = method
@@ -133,6 +133,8 @@ def fudgeList():
 							ascii = ascii+"region:"+region+"\n"
 					                ascii = ascii+"minifile.I.start:"+lons+"\n"
                                                         ascii = ascii+"minifile.I.end:"+lone+"\n" 	
+						        ascii = ascii+"qc.mask:"+qc_switch+"\n" 
+                                                        ascii = ascii+"target:"+target+"\n"
 							delim="_"
 						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"-"+target_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")	
 							target_file = delim.join(target_parts)	

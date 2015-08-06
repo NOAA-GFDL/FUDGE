@@ -1,4 +1,7 @@
 #!/usr/local/python/2.7.1/bin/python
+"""expergen.py: Experiment scripts generator driver for FUDGE."""
+__author__ = "A.Radhakrishnan"
+
 import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
@@ -695,7 +698,7 @@ def main():
         try:
                 msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
 		os.chmod(msubwrap.name, 0744)
-	        content = "#!/bin/tcsh"
+	        content = "#!/bin/tcsh -f"
 	        for msubitem in msubwrapper:
 		    content = content + "\n" + msubitem
 		content = content + "\n"
