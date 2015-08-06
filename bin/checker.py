@@ -24,7 +24,7 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0):
 	  print "\033[1;31m mini.fail found, postProc cannot be executed. \033[1;m" 
           return -13
        else:
-	  print "Waiting for status file to be genertated"
+	  print "Waiting for status file to be generated",path
           return 14
        if (othercheck == True):		
          for ROOT,DIR,FILES in os.walk(path):

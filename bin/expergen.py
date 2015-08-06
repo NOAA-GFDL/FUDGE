@@ -1,4 +1,7 @@
 #!/usr/local/python/2.7.1/bin/python
+"""expergen.py: Experiment scripts generator driver for FUDGE."""
+__author__ = "A.Radhakrishnan"
+
 import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil

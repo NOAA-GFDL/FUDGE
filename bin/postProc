@@ -1,4 +1,7 @@
 #!/usr/bin/python
+"""postProc: FUDGE post-processing utility."""
+__author__ = "A.Radhakrishnan"
+
 import expergen 
 import os,sys,subprocess,shutil
 from subprocess import PIPE

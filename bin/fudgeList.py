@@ -134,6 +134,7 @@ def fudgeList():
 					                ascii = ascii+"minifile.I.start:"+lons+"\n"
                                                         ascii = ascii+"minifile.I.end:"+lone+"\n" 	
 						        ascii = ascii+"qc.mask:"+qc_switch+"\n" 
+                                                        ascii = ascii+"target:"+target+"\n"
 							delim="_"
 						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"-"+target_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")	
 							target_file = delim.join(target_parts)	
