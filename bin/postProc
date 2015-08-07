@@ -161,16 +161,21 @@ def postProc():
 	print "checker on OneD"
        	retcode = checker.checker(indir,tnum,varname=vname)
         # email header
-        send_from = "aparna.radhakrishnan@noaa.gov"
-        send_to = "aparna.radhakrishnan@noaa.gov"
+        fromEmail1 = os.environ["USER"]
+        if ( fromEmail1 == "esd" ): # ie you run from the role account
+                fromEmail = "oar.gfdl.esd@noaa.gov"
+        else:
+                fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
+        send_from = "aparna.radhakrishnan@noaa.gov" # fromEmail
         msg = MIMEMultipart()
-        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        msg['From'] = send_from #todo change to esd
         try:
                 uemail  = os.environ["NEMSemail"]
                 msg['To'] = uemail
         except KeyError:
                 print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
                 uemail = "na"
+        send_to = uemail 
         msg['Date'] = formatdate(localtime=True)
         #e o header
         if (retcode == - 13 ):
@@ -273,16 +278,21 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	print p.returncode ,output, error
         word = "ERROR"
         # email header
-        send_from = "aparna.radhakrishnan@noaa.gov"
-        send_to = "aparna.radhakrishnan@noaa.gov"
         msg = MIMEMultipart()
-        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+	fromEmail1 = os.environ["USER"] 
+        if ( fromEmail1 == "esd" ): # ie you run from the role account
+		fromEmail = "oar.gfdl.esd@noaa.gov"  
+	else:
+		fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
+        send_from = "aparna.radhakrishnan@noaa.gov" #fromEmail 
+        msg['From'] = send_from 
         try:
                 uemail  = os.environ["NEMSemail"]
                 msg['To'] = uemail
         except KeyError:
                 print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
                 uemail = "na"
+	send_to = uemail
         msg['Date'] = formatdate(localtime=True)
         #e o header
         if (p.returncode != 0):
