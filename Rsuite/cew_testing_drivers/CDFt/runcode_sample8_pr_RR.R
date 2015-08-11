@@ -26,36 +26,36 @@ loop.end <-  j.end - (j.start-1)
 #         loop.start <-  j.start - (j.start-1)
 #         loop.end <-  j.end - (j.start-1)
 #------------ historical predictor(s)----------# 
-hist.file.start.year_1 <- 1961 
-hist.file.end.year_1 <- 2005
-hist.train.start.year_1 <- 1961
-hist.train.end.year_1 <- 2005 
+hist.file.start.year_1 <- 19610101 
+hist.file.end.year_1 <- 20051231
+hist.train.start.year_1 <- 19610101
+hist.train.end.year_1 <- 20051231 
 hist.scenario_1 <- 'historical_r1i1p1'
 hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 hist.model_1 <- 'MPI-ESM-LR' 
 hist.freq_1 <- 'day' 
 #	hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/pr/SCCSC0p1/OneD/'
-hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/pr/SCCSC0p1/OneD/'
+hist.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/historical//atmos/day/r1i1p1/v20111006/'
 #hist.time.window <- 'na' 
 hist.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_19610101-20051231.nc' 
 #------------ future predictor(s) -------------# 
-fut.file.start.year_1 <- 2006 
-fut.file.end.year_1 <- 2099 
-fut.train.start.year_1 <- 2006 
-fut.train.end.year_1 <- 2099 
+fut.file.start.year_1 <- 20060101 
+fut.file.end.year_1 <- 20991231 
+fut.train.start.year_1 <- 20060101 
+fut.train.end.year_1 <- 20991231 
 fut.scenario_1 <- 'rcp85_r1i1p1'
 fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 fut.model_1 <- 'MPI-ESM-LR' 
 fut.freq_1 <- 'day' 
-fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp85//atmos/day/r1i1p1/v20111014/pr/SCCSC0p1/OneD/'
+fut.indir_1 <- '/archive/esd/PROJECTS/DOWNSCALING///GCM_DATA/CMIP5//MPI-ESM-LR/rcp85//atmos/day/r1i1p1/v20111014/'
 #fut.time.window <- 'na'
 fut.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemasks/maskdays_bymonth_20060101-20991231.nc'
 fut.time.trim.mask <- 'na'
 #------------- target -------------------------# 
-target.file.start.year_1 <- 1961 
-target.file.end.year_1 <- 2005 
-target.train.start.year_1 <- 1961 
-target.train.end.year_1 <- 2005 
+target.file.start.year_1 <- 19610101 
+target.file.end.year_1 <- 20051231 
+target.train.start.year_1 <- 19610101 
+target.train.end.year_1 <- 20051231 
 target.scenario_1 <- 'historical_r0i0p0'
 target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 target.model_1 <- 'livneh'
@@ -68,7 +68,8 @@ target.time.window <- '/archive/esd/PROJECTS/DOWNSCALING/3ToThe5th/masks/timemas
 #ds.method <- 'EDQM'
 #ds.method <- 'EDQMv2'
 #ds.method <- 'EDQMv3'
-ds.method <- 'CDFt'
+#ds.method <- 'CDFt'
+ds.method <- 'CFQM'
 	ds.experiment <- paste('PMpr1-', ds.method, '-A18hX01K00', sep="")
 	k.fold <- 0 
 pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
@@ -80,10 +81,18 @@ pr_opts=list(pr_threshold_in='us_trace',pr_freqadj_in='off',pr_conserve_in='on',
 	mask.output.dir <- '/home/cew/Code/testing/' 
 #-------------  custom -----------------------#
         #args=list(deltaop='add',deltatype='median') 
-args=list('npas'=0,'dev'=1)
+#args=list('npas'=0,'dev'=1)
+args=list(sort='historical')
 #args=list('na')
 #args=list()
  #Number of "cuts" for which quantiles will be empirically estimated (Default is 100 in CDFt package).
+#-------------- predictor directory suffix -----------#
+pred.dir.suffix <- '/SCCSC0p1/OneD/' #use this predictor variable and this  suffix with fut.indir_1 and hist.indir_1
+#--------- Test changes for multiple ensemble members --------#
+#fut.filename.suffix <- '_ensmbl' 
+fut.filename.suffix <- '' 
+#fut.pred.rip.list <- list('r1i1p1', 'r2i1p1', 'r3i1p1')
+fut.pred.rip.list <- list('r1i1p1')
 #-------------- pp ---------------------------#
 #        mask.list <- list(mask1=list(type='flag.neg',adjust.out='off',qc.mask='on',qc_options=list('na')))
 mask.list <- list('na')

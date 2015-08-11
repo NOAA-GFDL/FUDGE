@@ -70,12 +70,14 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
       print(paste("dim after adjust:", paste(dim(clim.in), collapse=" ")))
     }
   #### get standard name,long name, units if present ####
-    att_list <- list('units'=ncatt_get(nc.object, var.name, 'units')$value, 
-                      'standard_name'=ncatt_get(nc.object, var.name, 'standard_name')$value,
-                      'long_name'=ncatt_get(nc.object, var.name, 'long_name')$value,
-                      'prec'=nc.object$var[[var.name]]$prec, 
+    att_list <- list('var' = var.name, 
+                     'rip' = "", #Leave a blank space; I think this is one of the things that gets filled in later
+                     'units'=ncatt_get(nc.object, var.name, 'units')$value, 
+                     'standard_name'=ncatt_get(nc.object, var.name, 'standard_name')$value,
+                     'long_name'=ncatt_get(nc.object, var.name, 'long_name')$value,
+                     'prec'=nc.object$var[[var.name]]$prec, 
                      'climatology' = ncatt_get(nc.object, 0, 'climatology')$value
-                      )
+    )
     #Correct prec after the fact
     if(is.null(att_list$prec)){
       att_list$prec <- 'float'

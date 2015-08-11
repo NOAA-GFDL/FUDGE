@@ -28,17 +28,28 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      
      # Initialize ds.vector 
      message("Entering downscaling driver function")
+     rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
+     rips <- unique(rip.list)
+     ds.varnames <- paste0(ds.var, ".", rips)
+     print(paste("downscaled variable names:", paste(ds.varnames, collapse=", ")))
      if(create.ds.out){
        #Should only be false if explicitly running with the intent of creating only
        #a QC mask - all other cases produce *some* ds.out
        targ.dim <- dim(target.masked.in)
        ds.vector =  array(NA,dim=c(targ.dim[1:2], dim(fut.masked.in[[1]])[3]))    #x,y,t (no ens)
        if(verbose){print(paste("dimensions of downscaling output vector:", paste(dim(ds.vector), collapse=" ")))}
+       ds.out <- list()
+       for (name in ds.varnames){
+         ds.out[[name]] <- ds.vector
+       }
      }else{
        ds.out <- NULL
      }
      if(create.qc.mask){
-       qc.mask <-  ds.vector
+       qc.mask <-  list()
+       for(name in ds.varnames){
+         qc.mask[[name]] <- ds.vector
+       }
        s5.adjust <- TRUE
      }else if(length(s5.instructions) > 0){ #s5.instructions[[1]]!='na' #!is.null(s5.instructions[[1]])
        qc.mask <- NULL
@@ -89,21 +100,20 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                                          s5.instructions=s5.instructions, s5.adjust=s5.adjust,
                                          create.qc.mask=create.qc.mask
            )
-           #save(file="~/Code/testing/test_out.R", save='loop.temp')
-           #stop("wanted to look more")
+#            save(file="~/Code/testing/test_out.R", save='loop.temp')
+#            stop("wanted to look more: output of TrainDriver tests")
            #Previously create.adjust.out here; not needed anymore
            if (create.ds.out){
              #If we are not in the "write only the qc data" case
-             ds.vector[i.index, j.index,] <- loop.temp$downscaled
+             for(name in ds.varnames){
+               ds.out[[name]][i.index, j.index, ] = loop.temp$downscaled[[name]]
+             }
            }
            if(create.qc.mask){
-             qc.mask[i.index, j.index, ] <- loop.temp$qc.mask
+             for(name in ds.varnames){
+               qc.mask[[name]][i.index, j.index, ] <- loop.temp$qc.mask[[name]]
+             }
            }
-           #            if(create.postproc.out){
-           #              print(length(loop.temp$postproc.out))
-           #              print(summary(loop.temp$postproc.out))
-           #              postproc.out[i.index, j.index, ] <- loop.temp$postproc.out
-           #            }
          }else{
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
            message(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
@@ -111,6 +121,6 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
        }
      }
      ####### Loop(1) ends ###################################
-     return(list('esd.final' = ds.vector, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
+     return(list('esd.final' = ds.out, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
      ############## end of TrainDriver.R ############################
 }

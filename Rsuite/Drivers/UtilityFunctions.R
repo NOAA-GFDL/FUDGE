@@ -49,7 +49,7 @@ convert.list.to.string <- function(this.vector){
       if(length(this.vector)==2){
         out <- paste(this.vector, collapse=" and ")
       }else{  
-        out <- paste(c(this.vector[1:length(this.vector)-1], paste("and", this.vector[length(this.vector)])), collapse=",")
+        out <- paste(c(this.vector[1:length(this.vector)-1], paste("and ", this.vector[length(this.vector)])), collapse=", ")
       }
       return(out)
     }else{
@@ -95,7 +95,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                            qc.mask='off', 
                            loc='outloop', 
                            qc_args=list(thold=pr_opts$pr_threshold_out,
-                                           conserve=pr_opts$pr_conserve_out))
+                                        conserve=pr_opts$pr_conserve_out, 
+                                        apply_0_mask=pr_opts$apply_0_mask))
   }
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds))  
 }
@@ -146,4 +147,11 @@ simpleCap <- function(x){
   s <- strsplit(x, " ")[[1]]
   paste(toupper(substring(s, 1,1)), substring(s, 2),
         sep="", collapse=" ")
+}
+
+#Helper function for assigining using time windowing masks in 
+#the downscaling by time window
+assign.by.index <- function(array1, array2, index){
+  array1[!is.na(index)] <- array2[!is.na(array2)]
+  return(array1)
 }

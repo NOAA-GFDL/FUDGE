@@ -1,3 +1,22 @@
+06-9-2015
+(cew)
+- clobber script update for multi-ensemble case
+
+(a1r)
+-ensemble support in postProc suite of tools
+-- ability to postprocess with a -e (ensemble) option
+-- expergen to provide commands/sourcing scripts or msub scripts to submit
+each PP job. In addition, it also provides a msubwrapper script to submit all ensemble member related PP jobs for a specific experiment at once.  
+
+06-2-2015
+(a1r)
+- ensemble support in expergen.
+
+5-29-2015
+(cew)
+- Multi-ensemble changes working with modified expergen runcode
+- Modifications to metadata to support recoding future predictor rip 
+
 4-29-2015
 (cew)
 - bugfix for qc masks overwriting full downscaled runs, leading to failed postproc

@@ -9,18 +9,18 @@ set postproc_cmd = $argv[1]
 set sbasedir = $argv[2]
 set logdir = $sbasedir/log
 set basedir = $argv[3]
-set tstamp = $argv[4]
+set suffctr = $argv[4]
 set branch = $argv[5]
 ############ dev
 set dev = "off"
-if($dev == "off") then
- set tstamp = ""
- set tsuffix = "$tstamp"
-else
-set tsuffix = "_$tstamp"
-endif
+#if($dev == "off") then
+# set tstamp = ""
+# set tsuffix = "$tstamp"
+#else
+#set tsuffix = "_$tstamp"
+#endif
 #############dev
-set codepath=$sbasedir/postProc/postProc_command$tsuffix
+set codepath=$sbasedir/postProc/postProc_command$suffctr
 mkdir -p $sbasedir/postProc/
 
 set template = $basedir/utils/templates/postproc/template_postProc

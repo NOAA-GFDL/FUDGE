@@ -17,6 +17,8 @@ dictDS_lo = {}
 list  = []
 dictDIR_hi = {}
 dictDIR_lo = {}
+dictProperty = {}
+copyprop = {}
 rootdir = ''
 projectRoot = "" 
 project = "" 
@@ -24,6 +26,7 @@ ppn = 2 #TODO get from XML custom?
 overwrite = False #default don't overwrite existing output or scripts
 preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
 idirsuffix = ""
+global mutli 
 def checkTags(dictParams,key):
 	        if(dictParams.has_key(key)):
                	 	val = dictParams[key]
@@ -33,7 +36,7 @@ def checkTags(dictParams,key):
 				sys.exit("error")
 				
                         elif(key == 'sroot'):
-                                print "Script root default value is being deprecated from darkchocolate. Please specify <script_root> in XML and try again " 
+                                print "Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again " 
 				sys.exit("error")
 			elif(key == 'outdir'):
 				val = 'na'
@@ -67,11 +70,52 @@ def checkTags(dictParams,key):
                                 val = 'na'
                         elif(key == 'maskvar'):
                                 val = 'na'
+                        elif(key == 'future_predictor_suffix'):
+                                val = ''
+                        elif(key == 'historical_predictor_suffix'):
+                                val = ''
+                        elif(key == 'target_suffix'):
+                                val = ''
+                        elif(key == 'property'):
+                                val = {} 
 		        else:		
 				print "Error: Missing value for ",key
 				sys.exit(1)  
 		return val 
-
+def parse_outdir(out_dir,property):
+	print "Parsing out_dir to check if it references property tags"
+	list_subs = []
+	listout=[]
+	outdirsplit = out_dir.split('/')
+	replace = ""
+	expect_property = 0 
+	for outdirs in outdirsplit:
+		if '$(' in outdirs:
+		   print "outdirs as defined expects a property tag.."
+	           expect_prop = 1
+        	   for pname,pval in property.iteritems():
+			pname = '$('+pname+')' 
+		        if pname == outdirs:
+		          print "we may have located the property tag"
+			  replace = pval
+		 #         new_out_dir = out_dir.replace('$(RIP)',replace)
+			  break;
+        if(replace != ""):
+	 if (out_dir  != ""):
+	     list_new_out_dir = replace.split(",")	
+	     for lnew in list_new_out_dir: 
+	        listout.append(out_dir.replace(pname,lnew))
+	#print "test",pname,new_out_dir,listout
+	if(replace == "") & (expect_property == 1):
+		replace = "na" 
+	        print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
+        if (replace == "") & (expect_property == 0):
+		replace ="na" 
+ 	if not bool(property):	
+	 list_subs = out_dir+"#na#na"
+	else:
+         list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
+	return list_subs,listout	
 def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
         ctr = 0
 	dictDS = {}
@@ -202,6 +246,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
         pr_opts = checkTags(dictParams,'pr_opts')
+	#### get file name suffix #####	
+	hist_suffix = checkTags(dictParams,'historical_predictor_suffix')
+        target_suffix = checkTags(dictParams,'target_suffix')
+        fut_suffix = checkTags(dictParams,'future_predictor_suffix')
+	##### end filename suffix ######
 	if(target != 'pr'):
 		if(pr_opts != 'na'):
 			print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
@@ -225,6 +274,25 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	outdir = checkTags(dictParams,'outdir')
 	out_dir = checkTags(dictParams,'out_dir')
         out_dir = out_dir.strip()
+            
+        property = checkTags(dictParams,'property')
+#c	if not bool(property):
+#c	    out_dir = out_dir+"#na#na" 
+#c	    listoutdir = out_dir
+#c	else:
+#c	   print "or not"
+        out_dir,listoutdir =  parse_outdir(out_dir,property)
+	print "new out_dir", out_dir	
+	global copyprop	
+	copyprop = property
+	if (len(listoutdir) > 1):
+	   print "Multi-output ON"
+	   global multi
+	   multi = "on" 
+	else:
+	   print "single output on"
+	   global multi
+	   multi = "off" 
 	##script -and- log prefix section ##
         sroot = checkTags(dictParams,'sroot')
 	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
@@ -354,7 +422,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
             fut_model = dict_fut['model']
             fut_freq = dict_fut['freq'] #CEW edit mip to freq
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
+	    ### add those suffix in 
 
+	    hist_file_end_time = hist_file_end_time+hist_suffix
+	    fut_file_end_time = fut_file_end_time+fut_suffix
+	    target_file_end_time = target_file_end_time+target_suffix
 	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix
 ############end of listVars###################### 
 def main():
@@ -476,7 +548,7 @@ def main():
 	make_code_cmd = make_code_cmd+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(hist_train_start_time)+" "+str(hist_train_end_time)+" "+str(hist_scenario)+" "+str(hist_model)+" "+hist_freq+" "+str(hist_pred_dir)+" "+str(hist_time_window)
         make_code_cmd = make_code_cmd+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(fut_train_start_time)+" "+str(fut_train_end_time)+" "+str(fut_scenario)+" "+str(fut_model)+" "+fut_freq+" "+str(fut_pred_dir)+" "+str(fut_time_window)
         make_code_cmd = make_code_cmd+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(target_train_start_time)+" "+str(target_train_end_time)+" "+str(target_scenario)+" "+str(target_model)+" "+target_freq+" "+str(target_dir)+" "+str(target_time_window)
-        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" "+str(outdir)+" "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
+        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" '"+str(outdir)+"' "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
 
         print "Step 1: R code starters generation ..in progress"
         #p = subprocess.Popen('tcsh -c "'+make_code_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -487,8 +559,7 @@ def main():
         make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"'+" "+str(idirsuffix) 
 	#cprint make_code_cmd
         #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-	#CEW echo edit to diagnose
-	print make_code_cmd
+	#cprint make_code_cmd
         p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output, errors = p.communicate() 
         if(p.returncode != 0):
@@ -505,12 +576,11 @@ def main():
 	#target_time_window,hist_time_window,fut_time_window
 	#CEW hasty edits to support single variable case
         script2Loc = basedir+"/utils/bin/"+"create_runscript"
-        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" "+outdir+" "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
-	#print create_runscript_cmd
+        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
         print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
-	#CEW edit to diagnose older behavior
-	print create_runscript_cmd
-        p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	#cprint create_runscript_cmd
+        #p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+ 	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         print "Step 2: Individual runscript  creation.. in progress"
         output1, errors1 = p1.communicate()
 	#cprint output1,errors1
@@ -520,15 +590,13 @@ def main():
          print output1, errors1
          sys.exit(0)
         print output1, errors1
-        #c print errors1
-        
         ###################################### 3 ################################################################
         script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate
         create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
         print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
 	#CEW edit to diagnose older behavior
-	print create_master_cmd
+	#cprint create_master_cmd
         p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         #cprint create_master_cmd
         print "Create master script .. in progress"
@@ -554,52 +622,88 @@ def main():
 	print "Use submit_job to submit scripts"
 
 ############### crte ppscript #################
+        print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+	print " ========================="
 	dev = "off" 
-        print(sbase+"/postProc/aux/")
+        msubwrapper = []
+	print "multi output (Writing to multiple output directories) ....",multi
+        #print(sbase+"/postProc/aux/")
+	if (multi == "on"):
+	 suffix = ['suff1','suff2','suff3']
+         listrips = []
+	else:
+	 suffix = ['']	
+         listrips = ['na']
+
         if not os.path.exists(sbase+"/postProc/aux/"):
         	os.makedirs(sbase+"/postProc/aux/")
-        if (dev == "off"):
+	suffctr = 1
+        for pname,pval in copyprop.iteritems():
+	   listrips = pval.split(',')
+	for mout in listrips: 
+          if (dev == "off"):
 		tsuffix = ""
-        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"
-	else:
+        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
+	  else:
 		tsuffix = "_"+tstamp
                 ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
-	try:
+	  try:
   		ppfile = open(ppbase, 'w')
 #check if qc_mask is relevant  
+	        if(mout != 'na'):
+		   moutsuff = " -e "+mout.strip()
+		else:
+		   moutsuff = " "	
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+"\n"
+                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+moutsuff 
   		ppfile.write(pp_cmnd)
+		print "wrote to ",ppfile
   		ppfile.close()
-	except:
+	  except:
   		print "Unable to create postProc command file. You may want to check your settings."
 	#c	print create_pp_cmd
-        if(os.path.exists(ppbase)):
+          if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
                 ppLoc = basedir+"/utils/bin/"+"create_postProc"
-                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" "+tstamp+" "+branch
-                print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch
                 p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
                 output4, error4 = p4.communicate()
                 if(p4.returncode != 0):
                         print "Step4:!!!! FAILED !!!!, please contact developer."
                         print output4, error4
                         sys.exit(-4)
-                print output4, error4
-                print "4- completed"
-                print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+                #uncomment print output4, error4
+                #print "4-"+str(suffctr)+" completed"
                 print "----------------------------------------"
-		print "\033[1;42mPlease use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command"+tsuffix
+		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
                 try:  
    			NEMSemail = os.environ["NEMSemail"]
-                        print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+tsuffix
+		        msubwrapper.append("msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
+                        print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
 		except KeyError: 
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-			print "msub -d $HOME "+sbase+"postProc/postProc_command"+tsuffix
-	else:
+                        msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
+
+			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
+	  else:
 		print "postProc_command cannot be created. postProc_source does not exist"
+	  suffctr = suffctr + 1
+	print "----------------------------------------"
+        try:
+                msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
+		os.chmod(msubwrap.name, 0744)
+	        content = "#!/bin/tcsh"
+	        for msubitem in msubwrapper:
+		    content = content + "\n" + msubitem
+		content = content + "\n"
+	        msubwrap.write(content)
+		msubwrap.close()	
+	except:
+		print "Unable to create msubwrapper script for you at this time"
+	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", msubwrap.name 
+        print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 fudgeList invocation ##############################################
         slogloc = sbase+"/"+"experiment_info.txt"
         fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc

@@ -157,7 +157,30 @@ def fudgeList():
 
                                                           #cfut_inpath_1=os.path.normpath(fut_pred_dir)+"/"+plist+"/"+idirsuffix+"/"+fut_file
                                                           #cascii = ascii+"fut.inpath_1:"+fut_inpath_1+"\n"
-						        output_path = os.path.normpath(outdir)	
+						        listout = []
+							property = {} 
+     						        listfacet = outdir.split('#')
+     							if (listfacet[1] == "na"):
+                					      listout.append(listfacet[0])
+							else:
+#### start property resolution 
+						           property[listfacet[1]] = listfacet[2]
+						           unres_outdir = listfacet[0]
+
+						           if '$(' in unres_outdir:
+        					              for pname,pval in property.iteritems():
+				                                 replace = pval
+                          					 break;
+                   				              list_new_out_dir = replace.split(",")
+                   					      for lnew in list_new_out_dir:
+                                                                listout.append(unres_outdir.replace(pname,lnew))
+#### end property resolution
+						        output_path = ""
+				                        for outdir in listout: 
+							   if(output_path != ""):
+						           	output_path = output_path +"\n"+ os.path.normpath(outdir)
+							   else:
+                                                                output_path = output_path + os.path.normpath(outdir) 	
 							ascii = ascii+"output.path:"+output_path+"\n"
 							spat_mask_path_1 = os.path.normpath(grid)
                                                         ascii = ascii+"spat.mask.path_1:"+spat_mask_path_1+"\n"
