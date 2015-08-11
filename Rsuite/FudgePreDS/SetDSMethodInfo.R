@@ -21,6 +21,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          "EDQM" = setEquiDistant(), 
          "CFQM" = setChangeFactor(),
          'multi.lm' = setMultiLM(),
+         'DeltaSD' = setDeltaSD(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
