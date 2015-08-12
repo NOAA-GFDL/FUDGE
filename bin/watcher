@@ -73,8 +73,7 @@ def parserWatcher():
 	#			sev = 0	
          #               	verbopt = 0 
 		if(opts == 'sleeptime'):
-                         if(sleeptime is not None):
-		        	sleeptime = (float)(vals)
+		        	sleeptime = (float)(vals)*60
 	        if(opts == 'nloops'):
 			nloops = vals
 		if(opts == 'mail'):
@@ -82,7 +81,7 @@ def parserWatcher():
      if (timeout is None):
 	 timeout = 0.0	
      if (sleeptime is None):
-	 sleeptime = 5.0
+	 sleeptime = 300.0
      if (nloops is None):
          nloops = 72	
      def _v_print(sev,verbmsg):
@@ -130,6 +129,7 @@ def asciiParser(uinput):
 	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask
 
 def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
+	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
 	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask = asciiParser(uinput)
 	v_print(2, "INFO: parsed from input file -"+ minifile_i_start+"\n"+minifile_i_end+"\n"+output_path+"\n"+script_base) #debug 
 	exp_cnt = int(minifile_i_end) - int(minifile_i_start) + 1 
@@ -148,6 +148,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 	     retcode = 1
 	     #TODO include retcode2 somehow in the following
              while ((retcode != 0) & (retcode != -13)): # | (len(list_output)!=0)) ) &( (retcode != -13))):
+		v_print(1,"INFO: loop --"+(str)(nloop_start+1)) 
 		v_print(3,"return after a loop"+(str)(retcode))
 		v_print(2,"length of output.path"+(str)(len(list_output)))
 	        v_print(2,"nloops"+"<="+(str)(nloop_start)) 
@@ -187,7 +188,8 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		          retcode = retcode3 
                 ctr = ctr+1
 		time.sleep(sleeptime)
-	     nloop_start = nloop_start + 1  
+		nloop_start = nloop_start + 1
+	     #cnloop_start = nloop_start + 1  
 	
         if (retcode == 0) | (len(list_output)==0):
 	 v_print(1,"Running "+script_base+"/postProc/msubwrapper" +" for PP job submission")
