@@ -1,3 +1,10 @@
+08-13-2015
+(a1r)
+
+-fudgeList to include target,mask presence info
+-Watcher suite out for WG testing
+-expergen also outputs watcher commands
+
 07-24-2015
 (a1r)
 -fudgeList to include minifile.I.start and
