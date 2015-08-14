@@ -73,7 +73,8 @@ def parserWatcher():
 	#			sev = 0	
          #               	verbopt = 0 
 		if(opts == 'sleeptime'):
-		        	sleeptime = (float)(vals)*60
+				if (vals is not None):
+		        		sleeptime = (float)(vals) * 60
 	        if(opts == 'nloops'):
 			nloops = vals
 		if(opts == 'mail'):
