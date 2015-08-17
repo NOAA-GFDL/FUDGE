@@ -1,6 +1,10 @@
+8-17-2015
+(cew)
+- bugfix for DeltaSD with remove.zeroes in the 'add' branch of the code
+- ESD git repo updated with multi-future-predictor ensemble code
+
 08-13-2015
 (a1r)
-
 -fudgeList to include target,mask presence info
 -Watcher suite out for WG testing
 -expergen also outputs watcher commands
