@@ -296,7 +296,7 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
     delta.targ.temp <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
     delta.hist <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
-    if(length(delta.fut)==0 || length(delta.targ)==0 || length(delta.hist)==0){
+    if(length(delta.fut)==0 || length(delta.targ.temp)==0 || length(delta.hist)==0){
       message(paste("Warning in delta.downscale: One or more input datasets are of length 0 after", 
                     "removing zeroes. Returning target values without delta."))
       delta.targ <- delta.targ[1:delta.fut.orig.len]
