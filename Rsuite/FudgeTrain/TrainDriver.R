@@ -99,7 +99,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                                          s3.instructions=s3.instructions, s3.adjust=s3.adjust,
                                          s5.instructions=s5.instructions, s5.adjust=s5.adjust,
                                          create.qc.mask=create.qc.mask,
-                                         verbose=TRUE
+                                         verbose=verbose
            )
 #            save(file="~/Code/testing/test_out.R", save='loop.temp')
 #            stop("wanted to look more: output of TrainDriver tests")
