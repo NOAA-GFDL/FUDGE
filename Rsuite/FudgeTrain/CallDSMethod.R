@@ -57,7 +57,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                 "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
                 "CFQM" = callCFQMv3(train.target, train.predict, esd.gen, args, ds.var, att.table), 
                 "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var, att.table),
-                "multi.lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
+                "lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
 #  if(remove.ds.missvals){
     #Same alternate missval removal structure as earlier
@@ -88,7 +88,7 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
     test.prod <- data.frame(test.list)
     lm.model <- lm(data=test.prod)
     rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-    rips <- unique(rip.list)
+    rips <- unique(rip.list)  
     out.list <- list()
     for(rip in rips){
       out.var <- paste(ds.var, rip, sep=".")
@@ -292,9 +292,18 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   
   #Make sure that there are no NA values in the current vector
   if(keep.zeroes){
+    delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
-    delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+    delta.targ.temp <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
     delta.hist <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+    if(length(delta.fut)==0 || length(delta.targ.temp)==0 || length(delta.hist)==0){
+      message(paste("Warning in delta.downscale: One or more input datasets are of length 0 after", 
+                    "removing zeroes. Returning target values without delta."))
+      delta.targ <- delta.targ[1:delta.fut.orig.len]
+      return(delta.targ[delta.targ!=0])
+    }else{
+      delta.targ <- delta.targ.temp
+    }
   }
   if(deltaop=='add'){
     #Downscale by difference delta
@@ -624,5 +633,17 @@ callBCQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
        
        out.list[[out.var.name]] <- temp$qLHecdfCHqCF[!is.na(temp$qLHecdfCHqCF)]
      }
+  return(out.list)
+}
+
+callNoDSMethod <- function(pred, targ, new, args, ds.var, att.table){
+  out.list <- list()
+  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  for (rip in rips){
+    out.var <- paste0(ds.var, rip)
+    rip.index <- (rip.list==rips)
+    out.list[[out.var]] <- new[[rip.index]][[1]]
+  }
   return(out.list)
 }

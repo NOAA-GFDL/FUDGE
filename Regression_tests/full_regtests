@@ -1,8 +1,0 @@
-##Lines with a '#' will be ignored by the script
-#tasmax_DC_test1.R tasmax_CDFt_1.nc runcode
-##alternate setting for the CDFt method
-#tasmax_DC_test2.R tasmax_CDFt_2.nc runcode
-##Full regression test for tasmin
-darkchocolate_PM_tasmin.xml regression_test_tasmin.nc xml
-##Full regression test with time trimming masks for the Red River Region
-darkchocolate_RR_ttrim.xml regression_test_ttrim.nc xml

@@ -20,8 +20,8 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          "BCQM" = setBiasCorrection(), 
          "EDQM" = setEquiDistant(), 
          "CFQM" = setChangeFactor(),
-         'multi.lm' = setMultiLM(),
-         'DeltaSD' = setDeltaSD(),
+         'lm' = setMultiLM(),
+         "DeltaSD" = setDeltaSD(),
                 ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
@@ -68,7 +68,7 @@ setSimple.Bias.Correct <- function(){
 }
 
 setGeneral.Bias.Correct <- function(){
-  #Sets global variables if the DS method used is CDFt
+  #Sets global variables if the DS method used is the general bias correction method
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE #TODO: ASK JRL about this! It might be possible to combine two methods
   #for which that is not possible.
@@ -83,7 +83,7 @@ setGeneral.Bias.Correct <- function(){
 }
 
 setNothing <- function(){
-  #Sets global variables if the DS method used is CDFt
+  #Sets global variables if the DS method used is a fake method for testing purposes
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE
   # Does this method use some of the same data to train the 
@@ -96,7 +96,7 @@ setNothing <- function(){
 }
 
 setBiasCorrection <- function(){
-  #Sets global variables if the DS method used is CDFt
+  #Sets global variables if the DS method used is BCQM
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- FALSE
   # Does this method use some of the same data to train the 
@@ -122,7 +122,7 @@ setEquiDistant <- function(){
 }
 
 setChangeFactor <- function(){
-  #Sets global variables if the DS method used is CDFt
+  #Sets global variables if the DS method used is CFQM
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- FALSE
   # Does this method use some of the same data to train the 
@@ -148,12 +148,12 @@ setDeltaSD<- function(){
 }
 
 setMultiLM <- function(){
-  #Sets global variables if the DS method used is DeltaSD
+  #Sets global variables if the DS method used is lm
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
-  train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+  train.and.use.same <<- FALSE
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c()
   #Is it possible to use multiple predictors with this method?

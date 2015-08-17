@@ -205,14 +205,22 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
   }
 }else{ #Once esd.gen implemented, should be most common use case
   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-  if(target.time.window!='na'){
-  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                                     esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
-  names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
+  if(fut.time.trim.mask=='na'){
+    if(target.time.window!='na'){
+      tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                         esd.gen.mask = fut.time.window, k=kfold, method=ds.method)
+      names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+    }else{
+      #Otherwise, if there were no masks included at all
+      message("no time windows included; moving on to next step")
+      tmask.list <- list("na")
+    }
   }else{
-    #Otherwise, if there were no masks included at all
-    message("no time windows included; moving on to next step")
-    tmask.list <- list("na")
+    print(paste("time trimming mask", fut.time.trim.mask))
+    tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
+                                       time.prune.mask = fut.time.trim.mask)
+    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
   }
 }
 
@@ -221,7 +229,7 @@ message("Reading in target data")
 target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                    target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
 print(target.filename)
-list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial") #no longer adding ens dim
+list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial", force_dim=3) #no longer adding ens dim
 message("Applying spatial mask to target data")
 #list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
 if(!is.null(spat.mask)){
@@ -264,6 +272,8 @@ message("Applying spatial mask to future predictor dataset")
 if(!is.null(spat.mask)){
   list.fut$clim.in <- lapply(list.fut$clim.in, apply.any.mask, mask=spat.mask$masks[[1]], dim.apply='spatial')
 }
+print(paste("dimensions of the future predictor data:"))
+print(dim(list.fut$clim.in))
 
 message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
@@ -299,6 +309,8 @@ all.att.table <- list('hist.pred'=list.hist$att_table,
                       'fut.pred'=list.fut$att_table)
 ##DS does not currently include the attribute table; frankly, should include it. 
 ##This si sprobably the next to-do item on the list
+print(paste("dimensions of the future predictor data:"))
+print(dim(list.fut$clim.in))
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
@@ -382,6 +394,7 @@ for (rip in fut.pred.rip.list){
     #Someone else is running it, modules are available and presumably git branch not needed
     git.needed=FALSE
   }
+  message('writing global attributes')
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
@@ -393,8 +406,8 @@ for (rip in fut.pred.rip.list){
                     tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                     is.pre.ds.adjust=(length(pre_ds) > 0),
                     pre.ds.adjustments=pre_ds,
-                    is.post.ds.adjust=(length(post_ds) > 0),
-                    post.ds.adjustments=post_ds, 
+                    is.post.ds.adjust=(length(post_ds_adj) > 0),
+                    post.ds.adjustments=post_ds_adj, 
                     climatology=list.fut$att_table[[target.var]]$climatology, 
                     fut.pred.rip = rip)
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
@@ -442,7 +455,7 @@ for (rip in fut.pred.rip.list){
                         qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
                         is.pre.ds.adjust=(length(pre_ds) > 0),
                         pre.ds.adjustments=pre_ds,
-                        is.post.ds.adjust=(length(post_ds) > 0),
+                        is.post.ds.adjust=(length(post_ds_adj) > 0),
                         post.ds.adjustments=post_ds_adj, 
                         fut.pred.rip = rip)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))

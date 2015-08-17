@@ -1,10 +1,31 @@
+8-17-2015
+(cew)
+- bugfix for DeltaSD with remove.zeroes in the 'add' branch of the code
+- ESD git repo updated with multi-future-predictor ensemble code
+
+07-24-2015
+(a1r)
+-fudgeList to include minifile.I.start and
+minifile.I.end  
+07-2-2015
+(cew)
+- multi.lm method changed to lm method in R code for the XML
+- correction in R WriteGlobals metadata for default standard names
+
+06-24-2015
+(cew)
+- R code writes bnds of minifiles as double rather than int
+
+06-16-2015
+(cew)
+- R code update for compatibility with multivar, multi-enseble case
+
 06-9-2015
 (cew)
 - clobber script update for multi-ensemble case
 
 (a1r)
 -ensemble support in postProc suite of tools
--- ability to postprocess with a -e (ensemble) option
 -- expergen to provide commands/sourcing scripts or msub scripts to submit
 each PP job. In addition, it also provides a msubwrapper script to submit all ensemble member related PP jobs for a specific experiment at once.  
 

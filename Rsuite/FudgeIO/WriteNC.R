@@ -114,7 +114,8 @@ WriteNC <-  function(filename,data.array,var.name,
     }
        
     #1-5 alternate structure
-    bnds <- ncdim_def(name="bnds", longname = 'bnds' , units='', vals=seq(1:2), create_dimvar=TRUE) #'bounds', FALSE
+    bnds <- ncdim_def("bnds", "", c(1,2))
+    #bnds <- ncdim_def(name="bnds", longname = 'bnds' , units='', vals=seq(1:2), create_dimvar=TRUE) #'bounds', FALSE
     
     for (v in 1:length(var.data)){
       var <- names(var.data)[v]
@@ -188,10 +189,14 @@ WriteNC <-  function(filename,data.array,var.name,
     if(verbose) { print("cloning attributes from dimensions") }
     dim.exclude <- c("bnds")    #List of dimensions not to copy atts from
     dim.index <- !(names(dim.list)%in%dim.exclude)
-    dim.names <- dim.list[[dim.index]]
-    for (i in 1:length(dim.names)){
-      dim.name <- dim.names[i]
-      orig.file <- attr(dim.list[[dim.name]], "filename")
+    #dim.names <- dim.list[dim.index]
+    dim.select <- dim.list[dim.index]
+    #print(dim.names)
+    for (i in 1:length(dim.select)){ #dim.names
+      #dim.name <- dim.names[i]
+      #orig.file <- attr(dim.list[dim.name], "filename")
+      orig.file <- attr(dim.select[[i]], "filename")
+      dim.name <- names(dim.select[i])
       if(!is.null(orig.file)){
         #dim.name <- names(dim.list)[i] #commented this out; prev.indexed by i
         #This may not work if you name the arguments present. Check on that?
