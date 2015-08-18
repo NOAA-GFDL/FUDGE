@@ -75,7 +75,6 @@ def parserWatcher():
 		if(opts == 'sleeptime'):
 				if (vals is not None):
 					if ((int)(vals) > 0):
-						print "TEst"
 		        			sleeptime = (float)(vals) * 60
 					else:
 						print "Please set a positive number for sleeptime-", sleeptime
@@ -205,6 +204,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		  else:
 		          retcode = retcode3 
                 ctr = ctr+1
+		v_print(1,"Sleep between loops to initiate "+(str)(sleeptime))
 		time.sleep(sleeptime)
 		nloop_start = nloop_start + 1
 	     #cnloop_start = nloop_start + 1  
@@ -236,11 +236,14 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 	    text = text + "\nPP scripts for reference-\n"+ wscript
 	    notifyUser(mailid,subject,text)
 def notifyUser(mailid,subject,text):
+	uinfo = os.environ.get('USER')
+	hostnam = "princeton.rdhpcs.noaa.gov"
         # email header
-        send_from = "aparna.radhakrishnan@noaa.gov"
+        send_from = uinfo+"@"+hostnam 
         send_to = mailid
+	text = text + "\n \nDO NOT REPLY TO THIS AUTOMATED EMAIL" 
         msg = MIMEMultipart()
-        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        msg['From'] = send_from # 
         msg['To'] = mailid
         msg['Date'] = formatdate(localtime=True) 
         msg['Subject'] = subject
