@@ -105,6 +105,15 @@ def parserWatcher():
 def asciiParser(uinput):
 	op = False #not yet spotted output_path
 	spatmask = False
+	#default to check NA #
+	minifile_i_start = "undefined"
+	minifile_i_end = "undefined"
+	output_path = "undefined"
+	spatmask = "undefined"
+	script_base = "undefined"
+	target = "undefined"
+	qc_mask = "undefined"
+				
 	f = open(uinput, 'r')
 	for line in f:
 	    line = line.strip()
@@ -127,6 +136,9 @@ def asciiParser(uinput):
 	    if(line.startswith('qc.mask')):
 	        qc_mask = line	
 	f.close()
+	if ((minifile_i_start == "undefined") | (minifile_i_end == "undefined") | (output_path == "undefined") | (spatmask == "undefined") | (script_base == "undefined") | (target == "undefined") | (qc_mask == "undefined")):
+		print("\033[1;31m One of the fields from your input file is missing. Please check if minifile.I.start,minifile.I.end,output.path,spat.mask.path_1,script.base,target,q.mask are all available in your input file. Program quitting now..\033[1;m")
+		sys.exit(-18)
 	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask
 
 def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
