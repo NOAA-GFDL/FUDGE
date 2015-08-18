@@ -232,10 +232,10 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 	    notifyUser(mailid,subject,text)
 def notifyUser(mailid,subject,text):
         # email header
-        send_from = me # "aparna.radhakrishnan@noaa.gov"
+        send_from = "aparna.radhakrishnan@noaa.gov"
         send_to = mailid
         msg = MIMEMultipart()
-        msg['From'] = me #'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
         msg['To'] = mailid
         msg['Date'] = formatdate(localtime=True) 
         msg['Subject'] = subject
