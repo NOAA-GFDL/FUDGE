@@ -74,7 +74,12 @@ def parserWatcher():
          #               	verbopt = 0 
 		if(opts == 'sleeptime'):
 				if (vals is not None):
-		        		sleeptime = (float)(vals) * 60
+					if ((int)(vals) > 0):
+						print "TEst"
+		        			sleeptime = (float)(vals) * 60
+					else:
+						print "Please set a positive number for sleeptime-", sleeptime
+					        sys.exit(-1)		
 	        if(opts == 'nloops'):
 			nloops = vals
 		if(opts == 'mail'):
