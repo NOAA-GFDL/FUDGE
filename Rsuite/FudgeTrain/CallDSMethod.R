@@ -221,10 +221,10 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
   }else{
     stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
   }
-  if(!is.null(args$keep.zeroes)){
-    keep.zeroes <- ifelse(args$keep.zeroes=='on', TRUE, FALSE)
+  if(!is.null(args$ignore0.Delta)){
+    ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
   }else{
-    stop(paste("DeltaSD Downscaling Error: keep.zeroes not found in args"))
+    stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
   }
   #Prepare to loop by RIP
   out.list <- list()
@@ -245,7 +245,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       #Technically, it doesn't need to be for the code to work...
       if(keep.zeroes){
         SDF <- LH[1:length(CF.data)]
-        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, keep.zeroes)
+        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta)
         SDF[SDF!=0] <- out.temp
       }else{
         SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
@@ -258,14 +258,14 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       in.len <- length(LH)
       SDF <- rep(NA, out.len)
       #vector comparisons take a long time relative to other things
-      if(keep.zeroes){
+      if(ignore0.Delta){
         comp.indices <- which(LH!=0)
       }
       while(write.len < out.len){
         #delta.downscale removes NAs in the output vector
         tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
-                                   deltatype, deltaop, keep.zeroes)
-        if(keep.zeroes){
+                                   deltatype, deltaop, ignore0.Delta)
+        if(ignore0.Delta){
           sd.write.indices <- (write.len-1) + comp.indices
           #Remove any that might lead to a longer write index
           sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
@@ -286,19 +286,19 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
   return(out.list)
 }
 
-delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, keep.zeroes=FALSE){
+delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, ignore0.Delta=FALSE){
   #Calculates a delta after removing NAs and applies it to a target vector.
   #Helper method for callDeltaSD, but might be used elsewhere.
   
   #Make sure that there are no NA values in the current vector
-  if(keep.zeroes){
+  if(ignore0.Delta){
     delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
     delta.targ.temp <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
     delta.hist <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
     if(length(delta.fut)==0 || length(delta.targ.temp)==0 || length(delta.hist)==0){
       message(paste("Warning in delta.downscale: One or more input datasets are of length 0 after", 
-                    "removing zeroes. Returning target values without delta."))
+                    "removing zeroes. Returning target data values without delta adjustment applied."))
       delta.targ <- delta.targ[1:delta.fut.orig.len]
       return(delta.targ[delta.targ!=0])
     }else{
@@ -314,8 +314,9 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
     delta<-do.call(deltatype, list(delta.fut))/do.call(deltatype, list(delta.hist))
     #Loud warning message for divide-by-0 case
     if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
-      message(paste("Warning in delta.downscale: Calculated delta is either NaN or Inf and will produce",
-                    "non-numeric results. Returning values without delta."))
+      message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
+                    "is either NaN or Inf and cannot be processed normally.",
+                    "Returning target data values without delta adjustment applied."))
       return(delta.targ)
     }
     out <- delta.targ*delta #CHANGED FROM delta.fut
