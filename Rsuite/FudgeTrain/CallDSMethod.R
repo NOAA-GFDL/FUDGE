@@ -196,9 +196,9 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
   #'  what single value will be used for the difference between the CH and CF
   #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
   #'  the mthod for calculating the delta
-  #'  @param keep.zeroes, a value of TRUE or FALSE that controls whether to use all days for
-  #'  calculating the delta (TRUE), or use only those days for which the delta was greater
-  #'  than zero (FALSE)
+  #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
+  #'  calculating the delta ('off'), or use only those days for which the delta was greater
+  #'  than zero ('on')
   #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
   #' a delta that is applied to the LH (observational) data
   #'@return SDF: Downscaled Future (Local)
@@ -243,7 +243,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       #If the future and historical periods are unequal, truncate the vectors
       #That...raises an interesting question: should the CH vector be truncated as well?
       #Technically, it doesn't need to be for the code to work...
-      if(keep.zeroes){
+      if(ignore0.Delta){
         SDF <- LH[1:length(CF.data)]
         out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta)
         SDF[SDF!=0] <- out.temp
