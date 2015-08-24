@@ -74,8 +74,8 @@ callPRPreproc <- function(test, input, postproc.output){
                ir_freqadj_in, or pr_conserve_in not present in arguments to precipitation
                pre-processing function."))
   }
-  if('apply_0_mask'%in%pr.names){
-    apply.0.mask = (test$pp.args$apply_0_mask=='on')
+  if('ignore0'%in%pr.names){
+    apply.0.mask = (test$pp.args$ignore0=='on')
     pr_mod <- postproc.output$propts #Used later to add masks for later application
   }else{
     message("Assuming that an old XML is being used; default behavior in place")

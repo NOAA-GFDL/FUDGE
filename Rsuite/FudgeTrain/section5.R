@@ -159,7 +159,7 @@ callPRPostproc <- function(test, input, adjusted.output){
     target.var <- names(input$data.atts$hist.targ)
     ds.var <- paste0(target.var, ".", rip)
     #Apply the 0 mask, if needed
-    if(test$qc_args$apply_0_mask=='on'){
+    if(test$qc_args$ignore0=='on'){
       message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
       temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
