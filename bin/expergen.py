@@ -1,4 +1,7 @@
 #!/usr/local/python/2.7.1/bin/python
+"""expergen.py: Experiment scripts generator driver for FUDGE."""
+__author__ = "A.Radhakrishnan"
+
 import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
@@ -695,7 +698,7 @@ def main():
         try:
                 msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
 		os.chmod(msubwrap.name, 0744)
-	        content = "#!/bin/tcsh"
+	        content = "#!/bin/tcsh -f"
 	        for msubitem in msubwrapper:
 		    content = content + "\n" + msubitem
 		content = content + "\n"
@@ -714,6 +717,9 @@ def main():
         #if err is not None:
         #       print "fudgeList err", err
         print "Summary Log File: ", slogloc
+	print "-----------"
+	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   " 
+	print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
 ####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:

@@ -1,9 +1,18 @@
-8-21-15
---seeing who authored this mod 
+8-24-15
+(cew)
+- option change for DeltaSD from 'keep.zeroes' to 'ignore0.Delta'
+- option change from 'apply_0_mask' to 'ignore0'
+
 8-17-2015
 (cew)
 - bugfix for DeltaSD with remove.zeroes in the 'add' branch of the code
 - ESD git repo updated with multi-future-predictor ensemble code
+
+08-13-2015
+(a1r)
+-fudgeList to include target,mask presence info
+-Watcher suite out for WG testing
+-expergen also outputs watcher commands
 
 07-24-2015
 (a1r)
