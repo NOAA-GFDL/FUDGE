@@ -146,8 +146,13 @@ def asciiParser(uinput):
 	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask
 
 def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
+	postProc_call = True
 	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
 	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask = asciiParser(uinput)
+
+	#if < 2 minifile length, postProc should not be called. 
+	if (((int)(minifile_i_end) - (int)(minifile_i_start)) == 0):
+		postProc_call = False
 	v_print(2, "INFO: parsed from input file -"+ minifile_i_start+"\n"+minifile_i_end+"\n"+output_path+"\n"+script_base) #debug 
 	exp_cnt = int(minifile_i_end) - int(minifile_i_start) + 1 
 	v_print(2,"INFO: Expected count "+ (str)(exp_cnt))
@@ -208,7 +213,14 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		time.sleep(sleeptime)
 		nloop_start = nloop_start + 1
 	     #cnloop_start = nloop_start + 1  
-	
+############# check if postProc_call is False	
+        if(postProc_call == False):
+                        subject = "fudge notification- watcher/update"
+                        text = "Your watcher has run to completion. But, postProc cannot be submitted at this time. The number of minifiles as specified in the XML may be too low (=1) to run postProc on it \n\nExperiment_info.txt for reference-\n"+uinput
+                        text = text + "\n Please contact Aparna and Carolyn for assistance"
+                        notifyUser(mailid,subject,text)
+                        sys.exit("Quitting watcher, number of minifiles not enough to proceed with postProc")
+
         if (retcode == 0) | (len(list_output)==0):
 	 v_print(1,"Running "+script_base+"/postProc/msubwrapper" +" for PP job submission")
 	 script_base = script_base.split(':')[1]
