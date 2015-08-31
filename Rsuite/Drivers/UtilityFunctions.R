@@ -74,16 +74,6 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
   #' for the more general version yet to be implemented
   pre_ds=list()
   post_ds=list()
-  if(mask.list[1]!='na'){
-    for(i in 1:length(mask.list)){
-      post_ds[[i]] <- list(type=mask.list[[i]]$type,
-                           adjust.out=mask.list[[i]]$adjust.out,
-                           qc.mask=mask.list[[i]]$qc.mask,
-                           loc='inloop',
-                           qc_args=mask.list[[i]]$qc_options)
-      ##DISCUSS RENAMING THESE
-    }
-  }
   if(pr_opts[[1]]!='na'){
     if('apply_0_mask' %in% names(pr_opts)){
       message(paste("Warning in adapt.pp.input: use of apply_0_mask as an opt name is deprecated!", 
@@ -104,6 +94,21 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                                         conserve=pr_opts$pr_conserve_out, 
                                         ignore0=pr_opts$ignore0))
                                         #apply_0_mask=pr_opts$apply_0_mask))
+  }
+  if(mask.list[1]!='na'){
+    for(i in 1:length(mask.list)){
+      post_ds[[i]] <- list(type=mask.list[[i]]$type,
+                           adjust.out=mask.list[[i]]$adjust.out,
+                           qc.mask=mask.list[[i]]$qc.mask,
+                           loc='inloop',
+                           qc_args=mask.list[[i]]$qc_options)
+      ##DISCUSS RENAMING THESE
+    }
+  }
+  #Adding bugfix for flagging negative values that may be introduced
+  #by the pr s5 options
+  if('flag.neg' %in% names(post_ds)){
+    post_ds$flag.negative$loc <- 'outloop'
   }
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds))  
 }

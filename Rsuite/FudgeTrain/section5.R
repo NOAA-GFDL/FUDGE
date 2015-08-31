@@ -126,7 +126,7 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   #Initialize output structure
   out.list <- adjusted.output
   for(ds.var in ds.vars){
-    mask.vec <- ifelse(adjusted.output$ds.out[[ds.var]] > 0, yes=1, no=NA)
+    mask.vec <- ifelse(adjusted.output$ds.out[[ds.var]] >= 0, yes=1, no=NA)
     if(test$qc.mask=='on'){
       out.list$qc.mask[[ds.var]] <- mask.vec
     }
@@ -260,7 +260,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
                                obs.fut = adjusted.output$ds.out[[ds.var]])
     if(test$qc.mask=='on'){
       adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==adjusted.output$ds.out[[ds.var]], 
-                                                  NA, 1)
+                                                  1, NA)
     }
     if(test$adjust.out=='on'){
       adjusted.output$ds.out[[ds.var]] <- ds.correct

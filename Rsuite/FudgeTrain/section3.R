@@ -48,7 +48,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #that go into it. 
     adjusted.list <- switch(test$type,
                               'PR' = return(callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list)),
-                              stop(paste('Adjustment Method Error: method', test$s5.method, 
+                              stop(paste('Adjustment Method Error: method', test$s3.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
   return(adjusted.list)
