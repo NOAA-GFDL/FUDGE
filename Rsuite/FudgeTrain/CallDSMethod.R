@@ -246,7 +246,8 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       if(ignore0.Delta){
         SDF <- LH[1:length(CF.data)]
         out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta)
-        SDF[SDF!=0] <- out.temp
+        #SDF[SDF!=0] <- out.temp
+        SDF <- out.temp
       }else{
         SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
       }
@@ -295,15 +296,30 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
     delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
     delta.targ.temp <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
-    delta.hist <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
-    if(length(delta.fut)==0 || length(delta.targ.temp)==0 || length(delta.hist)==0){
-      message(paste("Warning in delta.downscale: One or more input datasets are of length 0 after", 
-                    "removing zeroes. Returning target data values without delta adjustment applied."))
-      delta.targ <- delta.targ[1:delta.fut.orig.len]
-      return(delta.targ[delta.targ!=0])
-    }else{
-      delta.targ <- delta.targ.temp
+    delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+    if(length(delta.hist)==0){
+      if(deltaop=='ratio'){
+        #Return the OH data
+        message(paste("Insufficent historical predictor (MH) data when used with the ratio deltatype;", 
+                      "returning target values without the delta"))
+        return(delta.targ)
+        #When the options are enabled properly, flag this and return a qc mask
+      }else{
+        message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
+        delta.hist <- 0
+      }
     }
+    if(length(delta.fut)==0){
+      #No need to check for all missing values on this; the effect is the same in either case
+      message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
+      delta.fut <- 0
+    }
+#     if(length(delta.fut)==0 || length(delta.targ.temp)==0 || length(delta.hist)==0){
+#       delta.targ <- delta.targ[1:delta.fut.orig.len]
+#       return(delta.targ[delta.targ!=0])
+#     }else{
+#       delta.targ <- delta.targ.temp
+#     }
   }
   if(deltaop=='add'){
     #Downscale by difference delta
@@ -317,6 +333,7 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
       message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
                     "is either NaN or Inf and cannot be processed normally.",
                     "Returning target data values without delta adjustment applied."))
+      #Add a value flagging operation at this point
       return(delta.targ)
     }
     out <- delta.targ*delta #CHANGED FROM delta.fut

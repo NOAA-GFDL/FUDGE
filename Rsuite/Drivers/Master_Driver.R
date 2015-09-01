@@ -151,7 +151,10 @@ pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
 pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 #Generate metadata references for the pre- and post-processing functions
 #Things that contain an ADJUSTMENT
-post_ds_adj <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+post_ds_adj_tmp <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
+post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
+post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 
 #Then, check that the s3 and s5 adjustments you are performing make sense in 
 #this context
