@@ -153,7 +153,11 @@ setMultiLM <- function(){
   crossval.possible <<- TRUE
   # Does this method use some of the same data to train the 
   # ESD equations/quantiles AND generate the downscaled data?
+<<<<<<< Updated upstream
   train.and.use.same <<- FALSE
+=======
+  train.and.use.same <<- FALSE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
+>>>>>>> Stashed changes
   # What are the arguments to the args() parameter that are accepted? 
   names.of.args <<- c()
   #Is it possible to use multiple predictors with this method?
