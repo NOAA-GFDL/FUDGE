@@ -31,7 +31,6 @@ callS5Adjustment<-function(s5.instructions=list('na'),
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
-  print(length(s5.instructions))
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
     adjusted.output <- switch(test$type, 
@@ -43,7 +42,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'Nothing' = callNoMethod(test, input, adjusted.output),
                               'add.one' = callAddOne(test, input, adjusted.output), 
                               'add.five' = callAddFive(test, input, adjusted.output), 
-                              'bcsd.correct' = callBCSDCorrect(test, input, adjusted.output),
+                              'BCQM.tail.adj' = callBCSDCorrect(test, input, adjusted.output),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
@@ -123,7 +122,6 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
 #   ds.vars <- paste0(input$data.atts$hist.targ$var, ".", rip.list)
 #   print(ds.vars)
   #You don't actually need the RIPs; just the variable names for ds data
-  print("Calling FlagNegativeValues")
   ds.vars <- names(adjusted.output$ds.out)
   #Initialize output structure
   out.list <- adjusted.output
@@ -145,7 +143,6 @@ callPRPostproc <- function(test, input, adjusted.output){
   #on the downscaled ouput, including a threshold adjustment for drizzle
   #bias and conservation of the total precipitation per time range
   #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
-  print("Calling PR postproc")
   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
   if(length(rips) == 0){
