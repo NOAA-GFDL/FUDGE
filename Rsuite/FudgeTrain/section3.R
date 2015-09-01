@@ -47,7 +47,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
     adjusted.list <- switch(test$type,
-                              'PR' = return(callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list)),
+                              'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list),
                               stop(paste('Adjustment Method Error: method', test$s3.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }

@@ -34,18 +34,16 @@ callS5Adjustment<-function(s5.instructions=list('na'),
   print(length(s5.instructions))
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-    print(paste("element:", element))
-    print(test)
     adjusted.output <- switch(test$type, 
-                              'sdev' = return(callSdev(test, input, adjusted.output)),
-                              'sdev2' = return(callSdev2(test,  input, adjusted.output)),
-                              'SBiasCorr' = return(callSBCorr(test,  input, adjusted.output)),
-                              'flag.neg' = return(callFlagNegativeValues(test, input, adjusted.output)),
-                              'PR' = return(callPRPostproc(test, input, adjusted.output)),
-                              'Nothing' = return(callNoMethod(test, input, adjusted.output)),
-                              'add.one' = return(callAddOne(test, input, adjusted.output)), 
-                              'add.five' = return(callAddFive(test, input, adjusted.output)), 
-                              'bcsd.correct' = return(callBCSDCorrect(test, input, adjusted.output)),
+                              'sdev' = callSdev(test, input, adjusted.output),
+                              'sdev2' = callSdev2(test,  input, adjusted.output),
+                              'SBiasCorr' = callSBCorr(test,  input, adjusted.output),
+                              'flag.neg' = callFlagNegativeValues(test, input, adjusted.output),
+                              'PR' = callPRPostproc(test, input, adjusted.output),
+                              'Nothing' = callNoMethod(test, input, adjusted.output),
+                              'add.one' = callAddOne(test, input, adjusted.output), 
+                              'add.five' = callAddFive(test, input, adjusted.output), 
+                              'bcsd.correct' = callBCSDCorrect(test, input, adjusted.output),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
