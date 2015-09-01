@@ -1,3 +1,9 @@
+9-1-15
+(cew)
+- DeltaSD method updates for low pr and 0 value cases
+- bcsd.correct method name change to BCQM.tail.adj
+- flag.neg interpretation changed to run after final pr adjustment
+
 8-24-15
 (cew)
 - option change for DeltaSD from 'keep.zeroes' to 'ignore0.Delta'
