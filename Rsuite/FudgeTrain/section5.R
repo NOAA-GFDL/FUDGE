@@ -43,6 +43,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'add.one' = callAddOne(test, input, adjusted.output), 
                               'add.five' = callAddFive(test, input, adjusted.output), 
                               'BCQM.tail.adj' = callBCSDCorrect(test, input, adjusted.output),
+                              'backtransform' = callPRBacktransfrom(test, input, adjusted.output),
                               stop(paste('Adjustment Method Error: method', test$s5.method, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
@@ -111,6 +112,9 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   }
     return(out.list)
 }
+
+
+
 
 callFlagNegativeValues <- function(test, input, adjusted.output){
   #Flags negative values in the downscaled output with NA
@@ -283,6 +287,20 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, opt='mean'){
   min.delta.tmax <- min(model.hist) - min(obs.hist)    #Delta calculated as diff of min(hist) - min(obs)
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
   return(obs.fut)
+}
+
+callPRBacktransfrom <- function(test, input, adjusted.output){
+  #calls the backtransform for the downscaled data
+  #Note: this adjusts data only; there is never going to be
+  #a qc mask provided from this data (at least for now)
+  ds.vars <- names(adjusted.output$ds.out)
+  out.list <- adjusted.output
+  for(ds.var in ds.vars){
+    out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                         args=list(c(out.list$ds.out[[ds.var]], 
+                                                     test$qc_args$arg)))
+  }
+  return(out.list)
 }
 
 round.negative <- function(num){

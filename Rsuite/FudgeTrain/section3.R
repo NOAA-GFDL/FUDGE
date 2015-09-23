@@ -47,9 +47,10 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
     adjusted.list <- switch(test$type,
-                              'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list),
-                              stop(paste('Adjustment Method Error: method', test$s3.method, 
-                                         "is not supported for callS5Adjustment. Please check your input.")))
+                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list),
+                            'transfrom' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list),
+                            stop(paste('Adjustment Method Error: method', test$s3.method, 
+                                       "is not supported for callS5Adjustment. Please check your input.")))
   }
   return(adjusted.list)
 }
@@ -132,6 +133,50 @@ callPRPreproc <- function(test, input, postproc.output){
     }
     if(apply.0.mask){
       postproc.output$propts <- pr_mod
+    }
+  }
+  return(list('input'=input,
+              's5.list'=postproc.output))
+}
+
+callPRTransform <- function(test, input, postproc.output){
+  #Transforms non-gaussian data present in the OH, MH and MF
+  #data into a more gaussian form
+  
+  #Insert check for presence of transfrom in here at a later point
+  tform <- test$pp.args$transform
+  ds.var <- names(input$att.list$hist.targ)
+  
+  t.fxn <- function(tform,
+                    'log base e' = list('log', NULL, 'exp', NULL), 
+                    'log base 10' = list('log10', NULL, 'exp10', NULL), 
+                    'square root' = list('^', (1/3), '^', (3)), 
+                    'cube root' = list('^', (1/2), '^', (2)), 
+                    stop(paste("Error in callPRTransform: transform", tform, 
+                               "was not one of the allowed options!")))
+    #Insert saving of t.fxn in the section 5 list in this bit
+    #note that the adjustment gets added to the TOP of the stack
+    backtform <- list(type='backtransfrom',
+                      adjust.out='on',
+                      qc.mask='off',
+                      loc='present', #shouldn't need to be set; 
+                      #should be added to the current s5 list and executed
+                      #accordingly; check to see whether this needs new entries
+                      #in the metadata
+                      qc_args=list(fxn=t.fxn[[3]], 
+                                   arg=t.fxn[[4]]))
+  postproc.output <- c(list(backtform), postproc.output)
+  
+  #...you know, for more readable metadata, it might be with it to do cubrt and 
+  #sqrt functions. Since the names wind up in the metadata.
+  for(i in 1:3){
+    #Calculate the regex in here
+    data.names <- names(input[[i]])
+    data.index <- data.names[grep(ds.var, data.names)]
+    if(length(data.index) > 0){
+      for (index in data.index){
+        input[[i]][index] <- do.call(t.fxn[[1]], list(c(input[[i]][index], t.fxn[[2]])))
+      }
     }
   }
   return(list('input'=input,

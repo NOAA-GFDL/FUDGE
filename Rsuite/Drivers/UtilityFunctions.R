@@ -68,6 +68,24 @@ count.missvals <- function(data){
   sum(is.na(data))
 }
 
+count.present.vals <- function(data){
+  #Counts number of values not-missing in array
+  return(sum(!is.na(data)))
+}
+
+count.vals <- function(data, val){
+  return(sum(data==val, na.rm=TRUE))
+}
+
+kount.vals <- function(data){
+  #Returns a vector of the number of missing values, the number of
+  #zero values, and the count of everything not zero or missing
+  d.len <- length(data)
+  miss.vals <- count.missvals(data)
+  zero.vals <- count.vals(data,0)
+  return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals, zero.vals))))
+}
+
 adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
   #' Fast and dirty modifications to make the pre- and post-processing 
   #' scheme that the XML currently supports match the R infrastucture
