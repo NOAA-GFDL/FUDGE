@@ -296,13 +296,15 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   ds.vars <- names(adjusted.output$ds.out)
   out.list <- adjusted.output
   for(ds.var in ds.vars){
-    if(!is.null(test$qc_args$arg)){
-    out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                         args=list(out.list$ds.out[[ds.var]], 
-                                                     test$qc_args$arg))
-    }else{
-      out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                           args=list(out.list$ds.out[[ds.var]]))
+    if(sum(sapply(test$qc_args$vars,'grepl',ds.vars))==1){
+      if(!is.null(test$qc_args$arg)){
+        out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                             args=list(out.list$ds.out[[ds.var]], 
+                                                       test$qc_args$arg))
+      }else{
+        out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                             args=list(out.list$ds.out[[ds.var]]))
+      }
     }
   }
   return(out.list)
