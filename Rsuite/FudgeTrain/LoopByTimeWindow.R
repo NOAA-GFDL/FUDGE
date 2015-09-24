@@ -67,7 +67,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask,
-                             verbose=TRUE)
+                             verbose=TRUE, test=FALSE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
@@ -173,6 +173,13 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         #Adjust the values of the downscaled ouptut, if applicable
         if(s3.adjust){
+          if(test){
+            #Add the save in here
+            save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
+          }
+          print(lapply(kfold.predict, 'kount.vals'))
+          print(kount.vals(kfold.target))
+          print(lapply(kfold.gen, 'kount.vals'))
           temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
                                        hist.pred = kfold.predict,
                                        hist.targ = kfold.target,
@@ -180,10 +187,18 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                        att.list=att.table,
                                        s5.instructions=s5.instructions)
           s5.instructions <- temp.out$s5.list
+          (print(summary(kfold.target - temp.out$input$hist.targ)))
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
           kfold.gen <- temp.out$input$fut.pred
           remove(temp.out)
+          print(lapply(kfold.predict, 'kount.vals'))
+          print(kount.vals(kfold.target))
+          print(lapply(kfold.gen, 'kount.vals'))
+          if(test){
+            #Add the save in here
+            save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
+          }
         }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
@@ -194,9 +209,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    att.table=att.table,
                                    args=downscale.args, 
                                    ds.var=ds.var)
-#           save(file="~/Code/testing/test_out.R", list=c('temp.out', 'use.time.trim.mask', 'downscale.list', 'kfold.gen'))
-#           stop('examine output')
-          #Assign downscaled output to vector
           if(use.time.trim.mask){
             #Temporary issiagnment is messy, but so far only way found to make sure that the indices match
             for(var.name in names(temp.out)){
@@ -223,6 +235,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #otherwise, use the ds values from the run you have just completed
             data <- temp.out[!is.na(temp.out)]
           }
+          if(test){
+            #Add the save in here
+            save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
+          }
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
                                        #s5.method=s5.method,s5.args=s5.args,
                                        data = data, 
@@ -230,6 +246,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                        hist.pred = lapply(kfold.predict, remove.missvals), 
                                        hist.targ = kfold.target[!is.na(kfold.target)], 
                                        fut.pred = lapply(kfold.gen, remove.missvals))
+          if(test){
+            #Add the save in here
+            save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
+          }
           #for (new.ds.var in names(temp.out)){
             if(create.qc.mask){
               #if (verbose) {message('adding qc mask')}

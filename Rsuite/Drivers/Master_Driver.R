@@ -282,6 +282,9 @@ print(dim(list.fut$clim.in))
 message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
   message('Applying S3 Adjustment')
+  print(lapply(list.hist$clim.in, 'kount.vals'))
+  print(kount.vals(list.target$clim.in))
+  print(lapply(list.fut$clim.in, 'kount.vals'))
   temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                   hist.pred = list.hist$clim.in,
                                   hist.targ = list.target$clim.in,
@@ -296,6 +299,10 @@ if(length(pre.ds) !=0){
   list.hist$clim.in <- temp.output$input$hist.pred
   list.fut$clim.in <- temp.output$input$fut.pred
   remove(temp.output)
+  print(lapply(list.hist$clim.in, 'kount.vals'))
+  print(kount.vals(list.target$clim.in))
+  print(lapply(list.fut$clim.in, 'kount.vals'))
+  stop('examine results')
 }
 
 message("FUDGE training begins...")

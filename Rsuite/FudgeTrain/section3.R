@@ -196,8 +196,6 @@ callPRTransform <- function(test, input, postproc.output){
       }
     }
   }
-  print(summary(input))
-  stop('examine within this function')
   return(list('input'=input,
               's5.list'=postproc.output))
 }
