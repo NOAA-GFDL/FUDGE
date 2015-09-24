@@ -112,7 +112,11 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                     list(list(type='transform', vars=unlist(strsplit(pr_opts$vars, ",")), 
                               apply='by.var', loc='inloop', 
                          pp.args=list(transform=pr_opts$transform, 
-                                      arg=pr_opts$arg))))
+                                      arg=pr_opts$arg, 
+                                      vars=unlist(strsplit(sub(" ", "", 
+                                                               pr_opts$vars),
+                                                           ","))
+                                      ))))
       }
       print(lapply(pre_ds, 'summary'))
 #       print(summary(pre_ds))
