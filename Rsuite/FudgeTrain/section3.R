@@ -146,6 +146,7 @@ callPRTransform <- function(test, input, postproc.output){
   #Insert check for presence of transfrom in here at a later point
   tform <- test$pp.args$transform
   ds.var <- names(input$att.list$hist.targ)
+  transform.vars <- test$pp.args$vars
   
   #Do a basic check for the presence of the variables you want to check  
   t.fxn <- switch(tform,
@@ -164,22 +165,34 @@ callPRTransform <- function(test, input, postproc.output){
                       #accordingly; check to see whether this needs new entries
                       #in the metadata
                       qc_args=list(fxn=t.fxn[[3]], 
-                                   arg=t.fxn[[4]]))
+                                   arg=t.fxn[[4]], 
+                                   vars=""))
   postproc.output <- c(list(backtform), postproc.output)
   
   #...you know, for more readable metadata, it might be with it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
+  transform.vars 
   for(i in 1:3){
     #Calculate the regex in here
-    data.names <- names(input[[i]])
-    data.index <- data.names[grep(ds.var, data.names)]
-    if(length(data.index) > 0){
-      for (index in data.index){
-       # save(file='/home/cew/Code/testing/test_out.R', list=c('index', 't.fxn', 'input', 'i'))
+    if(i!=2){
+      data.names <- names(input[[i]])
+      data.index <- unlist(lapply(transform.vars, 'grep', data.names, fixed=TRUE))
+      if(length(data.index) > 0){
+        for (index in data.index){
+          # save(file='/home/cew/Code/testing/test_out.R', list=c('index', 't.fxn', 'input', 'i'))
+          if(!is.null(t.fxn[[2]])){
+            input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]], t.fxn[[2]]))
+          }else{
+            input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]]))
+          }
+        }
+      }
+    }else{
+      if(ds.var%in%transform.vars){
         if(!is.null(t.fxn[[2]])){
-          input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]], t.fxn[[2]]))
+          input[[2]] <- do.call(t.fxn[[1]], list(input[[2]], t.fxn[[2]]))
         }else{
-          input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]]))
+          input[[2]] <- do.call(t.fxn[[1]], list(input[[2]]))
         }
       }
     }
