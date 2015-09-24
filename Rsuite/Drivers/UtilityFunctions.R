@@ -83,7 +83,7 @@ kount.vals <- function(data){
   d.len <- length(data)
   miss.vals <- count.missvals(data)
   zero.vals <- count.vals(data,0)
-  return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals, zero.vals))))
+  return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals+zero.vals))))
 }
 
 adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
@@ -102,8 +102,25 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                           pp.args=list(thold=pr_opts$pr_threshold_in,
                                        freqadj=pr_opts$pr_freqadj_in,
                                        conserve=pr_opts$pr_conserve_in, 
-                                       ignore0=pr_opts$ignore0))
+                                       ignore0=pr_opts$ignore0)
+    )
+                          ###Change added 9-23 to test the ppr opts)
                                        #apply_0_mask=pr_opts$apply_0_mask))
+    if('transform' %in% names(pr_opts)){
+      if(pr_opts$transform!='none'){
+        pre_ds <- c(pre_ds, 
+                    list(list(type='transform', vars=unlist(strsplit(pr_opts$vars, ",")), 
+                              apply='by.var', loc='inloop', 
+                         pp.args=list(transform=pr_opts$transform, 
+                                      arg=pr_opts$arg))))
+      }
+      print(lapply(pre_ds, 'summary'))
+#       print(summary(pre_ds))
+#       stop('examine summary')
+    }else{
+      message(paste("Warning in adapt.pp.input: no transfrom option was present in the", 
+                    "XML, and no transform will be added to the pr data."))
+    }
     post_ds$propts <- list(type='PR', 
                            adjust.out='on', 
                            qc.mask='off', 

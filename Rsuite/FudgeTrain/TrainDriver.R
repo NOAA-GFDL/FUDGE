@@ -59,13 +59,14 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
        qc.mask <- NULL
        s5.adjust <- FALSE
      }
-     
-     if(length(s3.instructions!=0)){ #!is.null(s3.instructions[[1]])
+     print('assessing s3 instructions')
+     if(length(s3.instructions)!=0){ #!is.null(s3.instructions[[1]])
        #All pre-processing can do is adjust values; that will always happen
        s3.adjust <- TRUE
      }else{
        s3.adjust <- FALSE
-     }   
+     } 
+     print(paste('s3.adjust:', s3.adjust))
      
      if(k>1){
        #Create Kfold cross-validation mask

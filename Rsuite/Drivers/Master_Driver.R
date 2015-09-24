@@ -324,7 +324,8 @@ print(dim(list.fut$clim.in))
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
                     s3.instructions=pre.ds.train,
                     s5.instructions=post.ds.train, 
-                    create.qc.mask=(qc.maskopts$qc.inloop))
+                    create.qc.mask=(qc.maskopts$qc.inloop), 
+                    verbose=TRUE)
 #print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))

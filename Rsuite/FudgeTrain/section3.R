@@ -48,9 +48,9 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #that go into it. 
     adjusted.list <- switch(test$type,
                             'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list),
-                            'transfrom' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list),
-                            stop(paste('Adjustment Method Error: method', test$s3.method, 
-                                       "is not supported for callS5Adjustment. Please check your input.")))
+                            'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list),
+                            stop(paste('Adjustment Method Error: method', test$type, 
+                                       "is not supported for callS3Adjustment. Please check your input.")))
   }
   return(adjusted.list)
 }
@@ -72,7 +72,7 @@ callPRPreproc <- function(test, input, postproc.output){
     lopt.conserve = ( test$pp.args$conserve =='on')
   }else{
     stop(paste("Precipitation Pre-Processing Argument Error: one or more of pr_threshold_in, 
-               ir_freqadj_in, or pr_conserve_in not present in arguments to precipitation
+               pr_freqadj_in, or pr_conserve_in not present in arguments to precipitation
                pre-processing function."))
   }
   if('ignore0'%in%pr.names){
@@ -94,7 +94,7 @@ callPRPreproc <- function(test, input, postproc.output){
       stop(paste("Error in callPRPreproc: one of the required units attributes was null!"))
     }
 #     save(file="~/Code/testing/test_out.R", list=c('input'))
-#     stop('examin input and adjust the error message')
+#     stop('examine input and adjust the error message')
   temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
                             adjust.data=input$hist.pred[[1]],  adjust.units=input$att.list$hist.pred[[1]]$units, #temporarily hard-coded; will work for next 3 mons.
                             #Looping by rip makes future predictor more complicated, but not anything else (yet)
@@ -109,7 +109,7 @@ callPRPreproc <- function(test, input, postproc.output){
     ###Indexing by method is going to be REALLY HANDY
   #Add back into the original structure
   input$hist.targ        <- temp.out$ref$data   #only a single target variable
-  input$hist.pred[[1]] <- temp.out$adjust$data
+  input$hist.pred[[1]]   <- temp.out$adjust$data
   input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
     if(apply.0.mask){
       #only apply the mask if it it will result in more missing values
@@ -147,16 +147,16 @@ callPRTransform <- function(test, input, postproc.output){
   tform <- test$pp.args$transform
   ds.var <- names(input$att.list$hist.targ)
   
-  t.fxn <- function(tform,
+  #Do a basic check for the presence of the variables you want to check  
+  t.fxn <- switch(tform,
                     'log base e' = list('log', NULL, 'exp', NULL), 
                     'log base 10' = list('log10', NULL, 'exp10', NULL), 
-                    'square root' = list('^', (1/3), '^', (3)), 
-                    'cube root' = list('^', (1/2), '^', (2)), 
+                    'power' = list('^', test$pp.args$arg, '^', (1/test$pp.args$arg)), 
                     stop(paste("Error in callPRTransform: transform", tform, 
                                "was not one of the allowed options!")))
     #Insert saving of t.fxn in the section 5 list in this bit
     #note that the adjustment gets added to the TOP of the stack
-    backtform <- list(type='backtransfrom',
+    backtform <- list(type='backtransform',
                       adjust.out='on',
                       qc.mask='off',
                       loc='present', #shouldn't need to be set; 
@@ -175,7 +175,12 @@ callPRTransform <- function(test, input, postproc.output){
     data.index <- data.names[grep(ds.var, data.names)]
     if(length(data.index) > 0){
       for (index in data.index){
-        input[[i]][index] <- do.call(t.fxn[[1]], list(c(input[[i]][index], t.fxn[[2]])))
+       # save(file='/home/cew/Code/testing/test_out.R', list=c('index', 't.fxn', 'input', 'i'))
+        if(!is.null(t.fxn[[2]])){
+          input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]], t.fxn[[2]]))
+        }else{
+          input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]]))
+        }
       }
     }
   }

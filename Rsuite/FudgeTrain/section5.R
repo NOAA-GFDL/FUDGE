@@ -44,7 +44,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                               'add.five' = callAddFive(test, input, adjusted.output), 
                               'BCQM.tail.adj' = callBCSDCorrect(test, input, adjusted.output),
                               'backtransform' = callPRBacktransfrom(test, input, adjusted.output),
-                              stop(paste('Adjustment Method Error: method', test$s5.method, 
+                              stop(paste('Adjustment Method Error: method', test$type, 
                                          "is not supported for callS5Adjustment. Please check your input.")))
   }
   return(adjusted.output)
@@ -296,9 +296,14 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   ds.vars <- names(adjusted.output$ds.out)
   out.list <- adjusted.output
   for(ds.var in ds.vars){
+    if(!is.null(test$qc_args$arg)){
     out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                         args=list(c(out.list$ds.out[[ds.var]], 
-                                                     test$qc_args$arg)))
+                                         args=list(out.list$ds.out[[ds.var]], 
+                                                     test$qc_args$arg))
+    }else{
+      out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                           args=list(out.list$ds.out[[ds.var]]))
+    }
   }
   return(out.list)
 }

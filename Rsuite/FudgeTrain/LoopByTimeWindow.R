@@ -67,7 +67,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask,
-                             verbose=FALSE)
+                             verbose=TRUE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
@@ -173,32 +173,20 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         #Adjust the values of the downscaled ouptut, if applicable
         if(s3.adjust){
-          temp.out <- callS3Adjustment(s3.instructions=s3.list, 
+          temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
                                        hist.pred = kfold.predict,
                                        hist.targ = kfold.target,
                                        fut.pred = kfold.gen,
                                        att.list=att.table,
-                                       s5.instructions=s5.list)
+                                       s5.instructions=s5.instructions)
           s5.instructions <- temp.out$s5.list
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
           kfold.gen <- temp.out$input$fut.pred
-          remove(temp.output)
+          remove(temp.out)
         }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
-          #TODO CEW: Should this looping structure be more nested? The assignment to downscale.list might not be nessecary
-#           temp.out <- CallDSMethod(ds.method = downscale.fxn,
-#                                    train.predict = lapply(kfold.predict, "[", 
-#                                                           !is.na(mask.struct[[1]]$masks[[window]])), #remove missvals pointed to by mask
-#                                    train.target = kfold.target[!is.na(kfold.target)],                #any missvals not in mask
-#                                    esd.gen = lapply(kfold.gen, "[",                                 #will be removed by CallDSMethod
-#                                                     !is.na(mask.struct[[3]]$masks[[window]])),       #(though that option can be turned off)
-#                                    att.table=att.table,
-#                                    args=downscale.args, 
-#                                    ds.var=ds.var, remove.missval.datasets=TRUE)
-#           save(file="~/Code/testing/test_out.R", list=c('kfold.predict', 'kfold.target', 'mask.struct', 'kfold.gen'))
-#           stop('check results')
           temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                    train.predict = lapply(kfold.predict, remove.missvals), #remove missvals pointed to by mask
                                    train.target = kfold.target[!is.na(kfold.target)],                #any missvals not in mask
@@ -224,7 +212,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           }
         }
         #And adjust the downscaled output, if applicable
-        if(s5.adjust){
+        #if(s5.adjust){
+        #Note: above check no longer works, since s3 opts may create new s5 opts on the fly
+        if(length(s5.instructions) > 0){
           if(verbose){message('calling section 5 adjustment')}
           if(is.na(kfold.orig)){
             #If there is ds data being passed in from outside, it gets checked
