@@ -171,7 +171,6 @@ callPRTransform <- function(test, input, postproc.output){
   
   #...you know, for more readable metadata, it might be with it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
-  transform.vars 
   for(i in 1:3){
     #Calculate the regex in here
     if(i!=2){
@@ -197,6 +196,8 @@ callPRTransform <- function(test, input, postproc.output){
       }
     }
   }
+  print(summary(input))
+  stop('examine within this function')
   return(list('input'=input,
               's5.list'=postproc.output))
 }

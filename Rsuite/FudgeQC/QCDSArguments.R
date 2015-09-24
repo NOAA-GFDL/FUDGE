@@ -44,8 +44,13 @@ QCAdjustArguments <- function(pre_ds, post_ds,
       }
     }
     if(adj=='transform'){
-      t.list <- lapply(pre_ds, 'index.a.list', 'type', 'transform')
-      if(sum(sapply(t.list$vars, '%in%', c(predictor.vars, target.var)))!=length(t.list$vars)){
+      t.list <- compact(lapply(pre_ds, 'index.a.list', 'type', 'transform'))[[1]]
+      print(t.list)
+      print('pp.args bit:')
+      print(t.list$pp.args)
+      print('vars component:')
+      print(t.list$pp.args$vars)
+      if(sum(sapply(t.list$pp.args$vars, '%in%', c(predictor.vars, target.var)))!=length(t.list$pp.args$vars)){
         stop(paste("Error in QCAdjustArguments: one of the vars", 
                    paste(t.list$vars, collapse=","), "was not present in the",
                    "predictor or target vars!"))
