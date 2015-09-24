@@ -161,7 +161,8 @@ post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 QCAdjustArguments(pre_ds, post_ds, 
                  is.multivar=(length(predictor.vars) > 1), 
                  is.multi.ens=(length(fut.pred.rip.list) > 1), 
-                 target.in.predictors = (target.var%in%predictor.vars))
+                 target.in.predictors = (target.var%in%predictor.vars), 
+                 predictor.vars, target.var)
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only for the masks, but as an immediate check upon the dimensions

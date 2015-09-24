@@ -14,7 +14,8 @@ QCDSArguments <- function(k, ds.method,...){
 
 QCAdjustArguments <- function(pre_ds, post_ds, 
                               is.multivar, is.multi.ens, 
-                              target.in.predictors){
+                              target.in.predictors, 
+                              predictor.vars, target.vars){
   multivar.possible  <- c('PR', 'flag.neg', 'transform')
   multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg', 'BCQM.tail.adj', 'transform')
   target.req.in.pred <- c('PR', 'SBiasCorr', 'bcsd.correct')
@@ -40,6 +41,14 @@ QCAdjustArguments <- function(pre_ds, post_ds,
       if(adj%in%target.req.in.pred){
         stop(paste("Error in QCAdjustArguments: method",adj,"does not support",
                    "target vars that are not present in the predictors!"))
+      }
+    }
+    if(adj=='transform'){
+      t.list <- lapply(pre_ds, 'index.a.list', 'type', 'transform')
+      if(sum(sapply(t.list$vars, '%in%', c(predictor.vars, target.var)))!=length(t.list$vars)){
+        stop(paste("Error in QCAdjustArguments: one of the vars", 
+                   paste(t.list$vars, collapse=","), "was not present in the",
+                   "predictor or target vars!"))
       }
     }
   }
