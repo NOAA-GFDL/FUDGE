@@ -172,6 +172,7 @@ def postProc():
         except KeyError:
                 print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
                 uemail = "na"
+		send_to = None
         #e o header
         if (retcode == - 13 ):
 		print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
@@ -280,6 +281,7 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
         except KeyError:
                 print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
                 uemail = "na"
+		send_to = None
         if (p.returncode != 0):
          	print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
 ##
