@@ -6,7 +6,7 @@ import os,sys,subprocess
 from subprocess import PIPE
 import optparse
 from optparse import OptionParser
-import shlex
+import shlex,pipes
 import checker
 import time
 import smtplib
@@ -178,9 +178,10 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
             		subject = "fudge notification- watcher/failure"
             		text = "Your watcher has timed out. postProc cannot be submitted at this time. \n\nExperiment_info.txt for reference-\n"+uinput
 			text = text + "\n Please contact Aparna and Carolyn for assistance"
-		        v_print(1, "--Return code"+(str)(retcode))	
+		        v_print(1, "INFO:debug code"+(str)(retcode))	
 			notifyUser(mailid,subject,text)
-		        sys.exit("Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start))
+		        print "Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start)
+			sys.exit(1)
 		v_print(1, "checker to run on the file ") 
 		retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt)
 	        if (qc_mask_bool == 'on'):
@@ -219,9 +220,10 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
                         subject = "fudge notification- watcher/update"
                         text = "Your watcher has run to completion. But, postProc cannot be submitted at this time. The number of minifiles as specified in the XML may be too low (=1) to run postProc on it \n\nExperiment_info.txt for reference-\n"+uinput
                         text = text + "\n Please contact Aparna and Carolyn for assistance"
- 			v_print(1, "--Return code"+(str)(retcode))    
+ 			v_print(1, "INFO:debug code"+(str)(retcode))    
                         notifyUser(mailid,subject,text)
-                        sys.exit("Quitting watcher, number of minifiles not enough to proceed with postProc")
+                        print "Quitting watcher, number of minifiles not enough to proceed with postProc"
+            	        sys.exit(1)
 
         if (retcode == 0) | (len(list_output)==0):
 	 v_print(1,"Running "+script_base+"/postProc/msubwrapper" +" for PP job submission")
@@ -242,16 +244,19 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
             subject = "fudge notification- watcher/failed"
             text = "One or more batch jobs may have failed for this run. postProc cannot be run at this time. Experiment_info.txt for reference: "+uinput
 	    text = text + "\n--Please contact Aparna and Carolyn for help with the runs."
-            v_print(1, "--Return code "+(str)(retcode))
+            v_print(1, "INFO:debug code "+(str)(retcode))
             notifyUser(mailid,subject,text)
+	    sys.exit(1)
 	else:
 	    print "jobs submitted"
             subject = "fudge notification- watcher/success"
             text = "Your postProc jobs have been submitted.\n\nExperiment_info.txt for reference-\n"+uinput
 	    text = text + "\n\njob IDs for reference-\n"+ jobids
 	    text = text + "\nPP scripts for reference-\n"+ wscript
-            v_print(1, "--Return code"+(str)(retcode)) 
+            v_print(1, "INFO:debug code"+(str)(retcode)) 
 	    notifyUser(mailid,subject,text)
+            sys.exit(0)
+	    #print("export WATCHERSTATUS=%s" % (pipes.quote(str(retcode))))
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')
 	hostnam = "princeton.rdhpcs.noaa.gov"
