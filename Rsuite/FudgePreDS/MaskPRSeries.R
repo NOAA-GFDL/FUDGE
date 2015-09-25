@@ -44,8 +44,12 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   
   #Initialize the adjusted reference vectors
   if(verbose){print('Initializing reference vectors')}
+  ###hastily commented out 9-24 to examine the data in more detail
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
   future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
+  
+#   adjust.wetdays <- adjust.data > wetday.convert
+#   future.wetdays <- adjust.future > wetday.convert
   
   ##Loop over all lat/lon points available in the input datasets
   if(verbose){print(paste('Looping over data of dimensions', paste(dim(ref.data), collapse=" ")))}
@@ -113,6 +117,14 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
       adjust.wetdays[i,j,][!is.na(adjust.wetdays[i,j,])] <- loop.adj.wetdays 
       adjust.future[i,j,][!is.na(adjust.future[i,j,])] <- loop.fut
       future.wetdays[i,j,][!is.na(future.wetdays[i,j,])] <- loop.fut.wetdays
+      
+      ####print statuments to check on the data
+#       print(kount.vals(loop.adj))
+#       print(kount.vals(loop.wetdays))
+#       print(kount.vals(loop.adj))
+#       print(kount.vals(loop.adj.wetdays))      
+#       print(kount.vals(loop.fut))
+#       print(kount.vals(loop.fut.wetdays))
     }
   }
   #Return both data and the mask of adjustments made to that data

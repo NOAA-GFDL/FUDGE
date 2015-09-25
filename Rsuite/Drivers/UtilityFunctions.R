@@ -73,17 +73,22 @@ count.present.vals <- function(data){
   return(sum(!is.na(data)))
 }
 
-count.vals <- function(data, val){
-  return(sum(data==val, na.rm=TRUE))
+count.vals <- function(data, val, op="=="){
+  return(sum(do.call(op, list(data, val)), na.rm=TRUE))
 }
 
-kount.vals <- function(data){
+kount.vals <- function(data, thold=NA){
   #Returns a vector of the number of missing values, the number of
   #zero values, and the count of everything not zero or missing
   d.len <- length(data)
   miss.vals <- count.missvals(data)
   zero.vals <- count.vals(data,0)
-  return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals+zero.vals))))
+  if(is.na(thold)){
+    thold.vals=NULL
+  }else{
+    thold.vals=count.vals(data, thold, op=">")
+  }
+  return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals+zero.vals)), thold=thold.vals))
 }
 
 adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
