@@ -87,3 +87,48 @@ apply.any.mask <- function(data, mask, dim.apply=NA, na.rm=FALSE, verbose=FALSE)
   }
   return(result)
 }
+
+trim.time.mask <- function(data, mask, verbose=FALSE){ #switched 'mask' and 'data' in arg
+  #Trims an array or a vector by the last dimension when provided with a 1-D 
+  #mask vector of the same length as teh last dim
+  #array is assumed to be in x,y,t order, with additional dims between
+  #y and t
+  if(is.null(dim(mask))){
+    mask.dim <- length(mask)
+  }else{
+    mask.dim <- dim(mask)
+    if(length(mask.dim) > 1){
+      stop(paste('error in trim.time.mask: time mask should be one-dimensional'))
+    }
+  }
+  if(verbose){(print(paste("dimensions of mask:", paste(mask.dim, collapse=" "))))}
+  
+  data.dim <- dim(data) #Assume that this will be in x,y,var,t order
+  if(is.null(data.dim)){
+    data.dim <- length(data)
+  }
+  
+  if(verbose){(print(paste("dimensions of data:", paste(data.dim, collapse=" "))))}
+  if(verbose){print('summary of data'); print(summary(as.vector(data)))}
+  
+  length.time <- data.dim[length(data.dim)]
+  if(length.time!=mask.dim){
+    stop(paste("Error in trim.time.mask over temporal points: mask had dimensions of",paste(mask.dim, collapse=" "), 
+               "and data had dimensions of", paste(data.dim, collapse=" ")))
+  }else{
+    if(length(data.dim) > 1){
+      #There is more than one dimension present
+      #         print( c(length(data.dim), 1:(length(data.dim)-1)))
+      data.perm <- aperm(data, c(length(data.dim), 1:(length(data.dim)-1)))#t,x,y order
+      result <- data.perm[!is.na(rep(mask, length.out=length(data.perm)))] #t,x,y order(yay vector recycling)
+      result <- aperm(result, c(2:(length(data.dim)), 1))
+      ##Let's see...removing missing values might get complicated
+    }else{
+      #Assume that the only dimension is time
+      result <- data[!is.na(mask)]
+    }
+    if(verbose){print('summary of data'); print(summary(as.vector(result)))}
+    
+  }
+  return(result)
+}

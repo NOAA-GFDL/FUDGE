@@ -51,6 +51,8 @@ setCDFt<- function(){
   names.of.args <<- c("npas", "dev")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setSimple.Bias.Correct <- function(){
@@ -65,6 +67,8 @@ setSimple.Bias.Correct <- function(){
   names.of.args <<- c("ds.method", "qc.method")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setGeneral.Bias.Correct <- function(){
@@ -80,6 +84,8 @@ setGeneral.Bias.Correct <- function(){
   names.of.args <<- c("ds.method", "qc.method", "compare.factor")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setNothing <- function(){
@@ -93,6 +99,8 @@ setNothing <- function(){
   names.of.args <<- c("")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setBiasCorrection <- function(){
@@ -106,6 +114,8 @@ setBiasCorrection <- function(){
   names.of.args <<- c("size", "flip")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setEquiDistant <- function(){
@@ -119,6 +129,8 @@ setEquiDistant <- function(){
   names.of.args <<- c("size")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setChangeFactor <- function(){
@@ -132,6 +144,8 @@ setChangeFactor <- function(){
   names.of.args <<- c("size")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setDeltaSD<- function(){
@@ -145,6 +159,8 @@ setDeltaSD<- function(){
   names.of.args <<- c("OPT")
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'distributional'
 }
 
 setMultiLM <- function(){
@@ -158,4 +174,6 @@ setMultiLM <- function(){
   names.of.args <<- c()
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- TRUE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'synchronous'
 }

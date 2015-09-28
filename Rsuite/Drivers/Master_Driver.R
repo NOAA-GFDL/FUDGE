@@ -299,10 +299,6 @@ if(length(pre.ds) !=0){
   list.hist$clim.in <- temp.output$input$hist.pred
   list.fut$clim.in <- temp.output$input$fut.pred
   remove(temp.output)
-  print(lapply(list.hist$clim.in, 'kount.vals', thold=2.939815e-06))
-  print(kount.vals(list.target$clim.in, thold=2.939815e-06))
-  print(lapply(list.fut$clim.in, 'kount.vals', thold=2.939815e-06))
-  stop('examine results')
 }
 
 message("FUDGE training begins...")
@@ -339,6 +335,8 @@ message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
 # save(file="~/Code/testing/test_out.R", list=c('ds'))
 # stop('examine your results')
+print('summary of downscaled data:')
+print(lapply(ds$esd.final, 'summary'))
 ############## end call TrainDriver ######################################
 # + + + end Training + + +
 

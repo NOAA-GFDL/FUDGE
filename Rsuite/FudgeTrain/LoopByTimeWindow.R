@@ -123,9 +123,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
-      window.target  <- apply.any.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]], dim.apply='temporal')
-      window.predict <- lapply(train.predictor, apply.any.mask, mask=mask.struct[[1]]$masks[[window]], dim.apply='temporal')
-      window.gen     <- lapply(esd.gen        , apply.any.mask, mask=mask.struct[[3]]$masks[[window]], dim.apply='temporal')
+      window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
+      window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
+      window.gen     <- lapply(esd.gen        , trim.time.mask, mask=mask.struct[[3]]$masks[[window]])
     }else{
       window.predict <- train.predictor
       window.target  <- train.target
@@ -141,9 +141,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
-        kfold.predict <- apply.any.mask(data=window.predict, mask=mask.struct[[1]]$masks[[kmask]], dim.apply='temporal')
-        kfold.target  <- apply.any.mask(data=window.target,  mask=mask.struct[[2]]$masks[[kmask]], dim.apply='temporal')
-        kfold.gen     <- apply.any.mask(data=window.gen,     mask=mask.struct[[3]]$masks[[kmask]], dim.apply='temporal')
+        kfold.predict <- trim.time.mask(data=window.predict, mask=mask.struct[[1]]$masks[[kmask]])
+        kfold.target  <- trim.time.mask(data=window.target,  mask=mask.struct[[2]]$masks[[kmask]])
+        kfold.gen     <- trim.time.mask(data=window.gen,     mask=mask.struct[[3]]$masks[[kmask]])
         if(!is.null(ds.orig)){
           kfold.orig <- ApplyTemporalMask(window.orig, kfold.masks[[3]]$masks[[kmask]])
         }else{
@@ -166,6 +166,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           kfold.timemask <- mask.struct[[4]]$masks[[window]]
         }else{
           use.time.trim.mask <- FALSE
+          kfold.timemask <- mask.struct[[3]]$masks[[window]]
         }
         
       }
@@ -177,9 +178,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
           }
-          print(lapply(kfold.predict, 'kount.vals'))
-          print(kount.vals(kfold.target))
-          print(lapply(kfold.gen, 'kount.vals'))
           temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
                                        hist.pred = kfold.predict,
                                        hist.targ = kfold.target,
@@ -203,25 +201,22 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
           temp.out <- CallDSMethod(ds.method = downscale.fxn,
-                                   train.predict = lapply(kfold.predict, remove.missvals), #remove missvals pointed to by mask
-                                   train.target = kfold.target[!is.na(kfold.target)],                #any missvals not in mask
-                                   esd.gen = lapply(kfold.gen, remove.missvals),       #(though that option can be turned off)
+                                   train.predict = kfold.predict,
+                                    train.target = kfold.target,
+                                         esd.gen = kfold.gen,
                                    att.table=att.table,
                                    args=downscale.args, 
+                                   missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                    ds.var=ds.var)
-          if(use.time.trim.mask){
-            #Temporary issiagnment is messy, but so far only way found to make sure that the indices match
-            for(var.name in names(temp.out)){
-              temp.assign <- kfold.gen[[1]]
-              temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]] #Previously 3rd time windowing mask
-              downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
-              #downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
-            }
-          }else{
-            for(var.name in names(temp.out)){
-              downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out[[var.name]][!is.na(temp.out[[var.name]])]
-            }
-          }
+          print(names(temp.out))
+         # stop('examine result - is the dim correct?')
+          for(var.name in names(temp.out)){
+            #intersection of time windowing mask and MF dataset
+            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
+                                                        add.back.in(temp.out[[var.name]], 
+                                                                    kfold.timemask)),
+                                                  na.rm=TRUE)
+          } #If this works, consider adding it to all of the other assignments in this section
         }
         #And adjust the downscaled output, if applicable
         #if(s5.adjust){
@@ -253,46 +248,63 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #for (new.ds.var in names(temp.out)){
             if(create.qc.mask){
               #if (verbose) {message('adding qc mask')}
-              if(use.time.trim.mask){
-#                 temp.assign <- kfold.gen[[1]]
-#                 temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[new.ds.var]]
-#                 qc.masklist[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
-                for(var.name in names(qc.masklist)){
-                  temp.assign <- kfold.gen[[1]]
-#                   save(file="~/Code/testing/test_out.R", list=c('temp.assign', 'temp.out', 'qc.masklist', 'kfold.gen', 'kfold.timemask', 'downscale.list'))
-#                   stop('examine output from time-trimming mask')
-                  temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
-                  qc.masklist[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
-                }
-              }else{
-               # qc.masklist[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[new.ds.var]] #A NULL assignment might cause problems here. Second if?
-#                 downscale.list <- mapply(FUN=assign.by.index, qc.masklist, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
-                 for(var.name in names(qc.masklist)){
-                   #Don't do the !is.na() check on the qc masks - qc masks are SUPPOSED to have more missing values
-                   qc.masklist[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$qc.mask[[var.name]]
-                 }
+              for(var.name in names(qc.masklist)){
+                #intersection of time windowing mask and MF dataset
+                qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
+                                                            add.back.in(temp.out$qc.mask[[var.name]], 
+                                                                        kfold.timemask) 
+                                                         ),na.rm=TRUE)
               }
             }
-            #If there is a time-trimming mask, use it here
-            #Assign all the time, whether adjusted or not in this step
-            #...actually, put this on the list of things to change. 
-            if(use.time.trim.mask){
-              for(var.name in names(temp.out$ds.out)){
-                temp.assign <- kfold.gen[[1]] #previously all NA vector
-                temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-                downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
-              }
-            }else{
-              #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[!is.na(temp.out$ds.out[[new.ds.var]])]
-              for(var.name in names(temp.out$ds.out)){
-                #print('adding back into timeseries')
-                #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
-                downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[[var.name]][!is.na(temp.out$ds.out[[var.name]])]
-                #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
-              }
-            }
+          for(var.name in names(temp.out$ds.out)){
+            #intersection of time windowing mask and MF dataset
+            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
+                                                     add.back.in(temp.out$ds.out[[var.name]], 
+                                                                 kfold.timemask)), 
+                                                  ,na.rm=TRUE)
           }
-       # }
+          
+              
+#               if(use.time.trim.mask){
+# #                 temp.assign <- kfold.gen[[1]]
+# #                 temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[new.ds.var]]
+# #                 qc.masklist[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+#                 for(var.name in names(qc.masklist)){
+#                   temp.assign <- kfold.gen[[1]]
+# #                   save(file="~/Code/testing/test_out.R", list=c('temp.assign', 'temp.out', 'qc.masklist', 'kfold.gen', 'kfold.timemask', 'downscale.list'))
+# #                   stop('examine output from time-trimming mask')
+#                   temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+#                   qc.masklist[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+#                 }
+#               }else{
+#                # qc.masklist[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[new.ds.var]] #A NULL assignment might cause problems here. Second if?
+# #                 downscale.list <- mapply(FUN=assign.by.index, qc.masklist, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
+#                  for(var.name in names(qc.masklist)){
+#                    #Don't do the !is.na() check on the qc masks - qc masks are SUPPOSED to have more missing values
+#                    qc.masklist[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$qc.mask[[var.name]]
+#                  }
+#               }
+#             }
+#             #If there is a time-trimming mask, use it here
+#             #Assign all the time, whether adjusted or not in this step
+#             #...actually, put this on the list of things to change. 
+#             if(use.time.trim.mask){
+#               for(var.name in names(temp.out$ds.out)){
+#                 temp.assign <- kfold.gen[[1]] #previously all NA vector
+#                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+#                 downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+#               }
+#             }else{
+#               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[!is.na(temp.out$ds.out[[new.ds.var]])]
+#               for(var.name in names(temp.out$ds.out)){
+#                 #print('adding back into timeseries')
+#                 #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
+#                 downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[[var.name]][!is.na(temp.out$ds.out[[var.name]])]
+#                 #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
+#               }
+#             }
+#           }
+         }
 
         if(graph){
           if(masklines){

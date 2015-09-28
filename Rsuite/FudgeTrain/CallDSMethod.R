@@ -26,45 +26,25 @@
 #' TODO: Seriously, THERE HAS GOT TO BE A LESS COMPLEX WAY
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant', 
-                         att.table=NA, remove.missval.datasets = FALSE){
-  #  library(CDFt)
+                         att.table=NA, missval.handling='distributional'){
   
-#   if(remove.missval.datasets){
-#     #In a multivariate workflow, removes datasets with excess missing values from the predictors
-#     hist.missval.count <- lapply(train.predict, count.missvals)
-#     print(hist.missval.count)
-#     min.hist.missval <- min(unlist(hist.missval.count))
-#     missval.index <- hist.missval.count <= min.hist.missval
-#     if(sum(missval.index)!=length(train.predict)){
-#       message('indexing by appropriate missing values')
-#       hist.keep <- names(train.predict)[missval.index]
-#       #Keep only datasets for which there are no excess missing values
-#       train.predict <- train.predict[hist.keep]
-#       esd.gen <- esd.gen[hist.keep]
-#     }
-#     #Now, do the same thing for the 
-#   }
-  #Finally, remove all missing values before going into downscaling
-#   train.predict = lapply(train.predict, remove.missvals)
-#   train.target = train.target[!is.na(train.target)]    
-#   out.reference <- esd.gen[[1]]     #Save the locations of missing values in the output vector
-#   esd.gen = lapply(esd.gen, remove.missvals)
+  #This should be pre-initialized
+  ds.input <- assess.missvals( train.target, train.predict, esd.gen, type=missval.handling)
+  
   out <- switch(ds.method, 
-                #"simple.lm" = callSimple.lm(train.predict, train.target, esd.gen),
-                'CDFt' = callCDFt(train.predict, train.target, esd.gen, args, ds.var, att.table),
-                'simple.bias.correct' = callSimple.bias.correct(train.predict, train.target, esd.gen, args),
-                "BCQM" = callBCQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
-                "EDQM" = callEDQMv2(train.target, train.predict, esd.gen, args, ds.var, att.table), 
-                "CFQM" = callCFQMv3(train.target, train.predict, esd.gen, args, ds.var, att.table), 
-                "DeltaSD" = callDeltaSD(train.target, train.predict, esd.gen, args, ds.var, att.table),
-                "lm"=callMulti.lm(train.predict, train.target, esd.gen, args, ds.var, att.table),
+                #"simple.lm" = callSimple.lm(ds.input$MH, train.target, ds.input$MF),
+                'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
+                "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
+                "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
+                "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
+                "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table),
+                "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                 ReturnDownscaleError(ds.method))
-#  if(remove.ds.missvals){
-    #Same alternate missval removal structure as earlier
-#     out.reference[!is.na(out.reference)] <- out
-#     out <- out.reference
-#  }
-  return(out)  
+    
+  out.tmp <- list(mapply('add.back.in', out, esd.gen))
+  names(out.tmp) <- names(out)
+  return(out.tmp)  
 }
 
 ReturnDownscaleError <- function(ds.method){
