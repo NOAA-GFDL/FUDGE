@@ -351,7 +351,8 @@ callEDQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       
       lengthCF<-length(CF.data)
       
-      if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+      #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+      maxdim=max(c(lengthCH, lengthCF, lengthLH))
       
       # first define vector with probabilities [0,1]
       prob<-seq(0.001,0.999,length.out=lengthCF)
@@ -370,8 +371,8 @@ callEDQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       
       temp.CFsorted<-temp[order(temp$CF),]
       #Combine needed to deal with cases where CH longer than CF
-      if (lengthCH-lengthCF > 0){
-        temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (lengthCH-lengthCF)))
+      if (maxdim-lengthCF > 0){
+        temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (maxdim-lengthCF)))
       }else{
         temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
       }
@@ -527,13 +528,16 @@ callCFQMv3<-function(LH,CH,CF, args, ds.var='variable', att_table=NULL)
     CF.data <- unlist(CF.data)
     lengthCF<-length(CF.data)
     
-    if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-    if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
+    #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+    #if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
+    maxdim=max(c(lengthCH, lengthCF, lengthLH))
+    mindim=min(c(lengthCH, lengthCF, lengthLH))
     
     lengthCFna<-length(which(!is.na(CF.data))) # count number of obs without NA
     lengthCHna<-length(which(!is.na(CH)))
     
-    if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
+    #if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
+    mindim=min(c(sum(!is.na(CF.data)), sum(!is.na(CH)), sum(!is.na(LH))))
     
     # first define vector with probabilities [0,1]
     prob<-seq(0.001,0.999,length.out=lengthCF)
@@ -611,7 +615,8 @@ callBCQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
        CF.data <- unlist(CF.data)
        lengthCF<-length(CF.data)
 
-       if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+      # if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+       maxdim=max(c(lengthCH, lengthCF, lengthLH))
        
        # first define vector with probabilities [0,1]
        prob<-seq(0.001,0.999,length.out=lengthCF)
@@ -621,7 +626,7 @@ callBCQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){
                         qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
        temp$CF[1:lengthCF]<-CF.data
        temp$CH[1:lengthCH]<-CH
-       temp$LH[1:lengthLH]<-LH
+       temp$LH[1:lengthLH]<-LH #THIS is the line that's throwing things off
        
        temp.CFsorted<-temp[order(temp$CF),]
        temp.CFsorted$qCF[1:lengthCF]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)

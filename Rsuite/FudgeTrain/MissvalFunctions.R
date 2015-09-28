@@ -18,9 +18,9 @@ assess.missvals <- function(OH, MH, MF,
 remove.all.missvals <- function(OH, MH, MF){
   #suitable for use in the QM methods; 
   #was used by all methods for the 
-  return(MH=lapply(MH, 'remove.missvals'),  
+  return(list(MH=lapply(MH, 'remove.missvals'),  
          OH=remove.missvals(OH), 
-         MF=lapply(MF, 'remove.missvals'))
+         MF=lapply(MF, 'remove.missvals')))
 }
 
 remove.synch.missvals <- function(OH, MH, MF){
