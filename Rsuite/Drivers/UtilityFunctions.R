@@ -124,8 +124,6 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                                       ))))
       }
       print(lapply(pre_ds, 'summary'))
-#       print(summary(pre_ds))
-#       stop('examine summary')
     }else{
       message(paste("Warning in adapt.pp.input: no transfrom option was present in the", 
                     "XML, and no transform will be added to the pr data."))

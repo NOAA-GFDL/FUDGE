@@ -5,15 +5,36 @@
 assess.missvals <- function(OH, MH, MF, 
                             #OH.mask=NA, MH.mask=NA, MF.mask=NA, 
                             #time.mask=NA, 
-                            type='distributional'){
+                            type='distributional',
+                            ds.method="", ds.args="", 
+                            retry=FALSE, threshold=1){
   #'Determines how to go about removing missing values before downscaling
-  print(type)
-  switch(type, 
-         'distributional' = remove.all.missvals(OH, MH, MF), 
-         'synchronous' = remove.synch.missvals(OH, MH, MF), 
-         stop(paste("Error in assess.misvals: provided type", type, 
-                    "was not one of the available options!")))
+  if(!retry){
+  ds.list <- switch(type, 
+                     'distributional' = remove.all.missvals(OH, MH, MF), 
+                     'synchronous' = remove.synch.missvals(OH, MH, MF), 
+                    'delta' = remove.delta.missvals(OH, MH, MF, ds.args, threshold),
+                     stop(paste("Error in assess.misvals: provided type", type, 
+                                "was not one of the available options!")))
+  #Threshold call is general for all functions
+  if(is.null(ds.list$status)){
+    #determine if there are at least that many values present
+    MH.kount <- unlist(lapply(ds.list$MH, length))
+    OH.kount <- length(ds.list$OH)
+    MF.kount <- unlist(lapply(ds.list$MF, length))
+    ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+  }
+  }else{
+    #Special retry functions for some methods triggered more often than others
+    ds.list <- switch(ds.method, 
+                      '', 
+                      stop(paste("Error in asses.missvals: there is no recovery", 
+                                 'function for the downscaling method', ds.method)))
+  }
+  return(ds.list)
 }
+
+
 
 remove.all.missvals <- function(OH, MH, MF){
   #suitable for use in the QM methods; 
@@ -26,18 +47,21 @@ remove.all.missvals <- function(OH, MH, MF){
 remove.synch.missvals <- function(OH, MH, MF){
                                   #OH.mask, MH.mask){
   synch.mask <- lapply(MH, 'add.missval.vectors', OH)
-#   print(summary(synch.mask))
-#   print(summary(synch.mask[[1]]))
-#   save(file='/home/cew/Code/testing/test_out.R', list=c('OH', 'MH', 'MF', 'synch.mask'))
-#   stop('examine the output')
   MH.new <- lapply(MH, 'apply.any.mask', synch.mask[[1]], 'temporal')
   OH.new <- apply.any.mask(OH, synch.mask[[1]], 'temporal')
-#   print(length(MH.new[[1]]))
-#   print(length(OH.new))
-#   stop('examine output')
   return(list(MH = lapply(MH.new, 'remove.missvals'), 
               OH= remove.missvals(OH.new), 
               MF=lapply(MF, 'remove.missvals')))
+}
+
+remove.delta.missvals <- function(OH, MH, MF, args, threshold){
+  #'Very similar to distributive, but with a few 
+  #'extra checks for missing thresholds in some places
+  OH.new <- remove.missvals(OH.new)
+  MH.new <- lapply(MH, 'remove.missvals')
+  MF.new <- lapply(MF, 'remove.missvals')
+  if(args$ignore0.delta=='on'){
+  }
 }
 
 remove.mask.missvals <- function(data, mask){

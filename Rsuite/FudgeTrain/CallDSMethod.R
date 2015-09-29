@@ -26,24 +26,36 @@
 #' TODO: Seriously, THERE HAS GOT TO BE A LESS COMPLEX WAY
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant', 
-                         att.table=NA, missval.handling='distributional'){
+                         att.table=NA, missval.handling='distributional', min.present=1){
   
-  #This should be pre-initialized
-  ds.input <- assess.missvals( train.target, train.predict, esd.gen, type=missval.handling)
-  
-  out <- switch(ds.method, 
-                #"simple.lm" = callSimple.lm(ds.input$MH, train.target, ds.input$MF),
-                'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
-                'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
-                "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table),
-                "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
-                ReturnDownscaleError(ds.method))
-    
-  out.tmp <- list(mapply('add.back.in', out, esd.gen))
-  names(out.tmp) <- names(out)
+  #This should be pre-initialized, even if it's likely to be small
+  ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
+                               ds.method, args, min.present)
+  if(ds.input$status==0){
+    out <- switch(ds.method, 
+                  #"simple.lm" = callSimple.lm(ds.input$MH, train.target, ds.input$MF),
+                  'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                  'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
+                  "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
+                  "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
+                  "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
+                  "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table),
+                  "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                  ReturnDownscaleError(ds.method))
+    out.tmp <- list(mapply('add.back.in', out, esd.gen))
+    names(out.tmp) <- names(out)
+  }else{
+    #The qcmask return code goes in here, eventually
+     message(('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
+              'when using a present val threshold of', min.present))
+#      save(file='/home/cew/Code/testing/test_out.R', list=c('esd.gen'))
+     if(length(esd.gen)==1){
+       out.tmp <- list(rep(NA, length(esd.gen[[1]]))) #It should be possible to generalize this, but it isn't working
+     }else{
+       out.tmp <- mapply('rep', NA, lapply(esd.gen, length))
+     }
+     names(out.tmp) <- esd.gen
+  }  
   return(out.tmp)  
 }
 
