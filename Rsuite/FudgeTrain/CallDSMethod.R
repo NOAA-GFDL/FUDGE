@@ -472,8 +472,6 @@ callCFQMv2<-function(LH,CH,CF,args){
      print(lengthCF)
      SDF<-temp$qCFecdfCHqLH[1:lengthCF] #This is the version that is getting tested as of 5-18
   #save(file="~/Code/testing/test_out.R", list=c('SDF'))
-  print(summary(SDF))
-  print(length(SDF))
 #  print(length(SDF[!is.na(SDF)]))
 #  cor.vector <- c("temp$CH", "temp$LH", "temp$CF")
 #   for (j in 1:length(cor.vector)){
