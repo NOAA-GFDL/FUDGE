@@ -107,7 +107,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                           pp.args=list(thold=pr_opts$pr_threshold_in,
                                        freqadj=pr_opts$pr_freqadj_in,
                                        conserve=pr_opts$pr_conserve_in, 
-                                       ignore0=pr_opts$ignore0)
+                                       ignore0=ifelse(pr_opts$ignore0=='off', 
+                                                      'off', 'on'))
     )
                           ###Change added 9-23 to test the ppr opts)
                                        #apply_0_mask=pr_opts$apply_0_mask))
@@ -134,7 +135,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                            loc='outloop', 
                            qc_args=list(thold=pr_opts$pr_threshold_out,
                                         conserve=pr_opts$pr_conserve_out, 
-                                        ignore0=pr_opts$ignore0))
+                                        ignore0=ifelse(pr_opts$ignore0=='off', 
+                                                       'off', 'on')))
                                         #apply_0_mask=pr_opts$apply_0_mask))
   }
   if(mask.list[1]!='na'){
@@ -207,8 +209,15 @@ override.f.defaults <- function(ds.args=NA,
   if(!is.na(ds.args)){
     if(!is.null(ds.args$minsamplesize)){
       out.list$threshold <- 30
+      #remove minsamplesize from args
+      if(length(ds.args)==1){
+        out.list$args <- list('na')
+      }else{
+        out.list$args <- ds.args[names(ds.args)!='minsamplesize']
+      }
     }else{
       out.list$threshold <- 1
+      out.list$args <- ds.args
     }
   }
   if(!is.na(pr_opts)){

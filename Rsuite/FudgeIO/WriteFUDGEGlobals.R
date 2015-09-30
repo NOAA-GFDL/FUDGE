@@ -22,7 +22,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          is.post.ds.adjust=FALSE,
                          post.ds.adjustments=list('na'), 
                               climatology = NULL, 
-                              fut.pred.rip = NULL){
+                              fut.pred.rip = NULL, 
+                              missval.handling='na', minval.present=1){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   #'#TODO CEW: What is the purpose of the comments attribute? 
@@ -135,8 +136,15 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste(info, "Arguments used in calculation of the QC mask: ", paste(qc.args, collapse=","), "; ", sep="")
   }
   if(time.trim.mask!='na'){
-    info <- paste(info, "Time trimming mask used:", time.trim.mask, sep="")
+    info <- paste(info, "Time trimming mask used:", time.trim.mask, ";", sep="")
   }
+  #Missing value handling and recording added 9-30
+  if(missval.handling!='na'){
+    missval.string <- paste("Missing values in downscaling handled using the", missval.handling, "method", 
+                            "with a minimum present value of", minval.present)
+    info <- paste0(info, " ", missval.string, ";")
+  }
+  
   if(include.git.branch){
     popdir <- getwd()
     setwd(FUDGEROOT)

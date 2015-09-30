@@ -159,11 +159,12 @@ post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 
 #Adapt some of the parameters being set by the f-to-g bridge code 
 if(exists('pr_opts')){
-  f.list <- override.f.defaults(ds.args)
+  f.list <- override.f.defaults(args)
 }else{
-  f.list <- override.f.defaults(ds.args, pr_opts)
+  f.list <- override.f.defaults(args, pr_opts)
 }
 min.present <- f.list$threshold
+args <- f.list$args
 
 #Then, check that the s3 and s5 adjustments you are performing make sense in 
 #this context
@@ -336,7 +337,7 @@ print(dim(list.fut$clim.in))
                     s5.instructions=post.ds.train, 
                     create.qc.mask=(qc.maskopts$qc.inloop), 
                     min.present=min.present,
-                    verbose=TRUE)
+                    verbose=FALSE)
 #print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -426,7 +427,8 @@ for (rip in fut.pred.rip.list){
                     is.post.ds.adjust=(length(post_ds_adj) > 0),
                     post.ds.adjustments=post_ds_adj, 
                     climatology=list.fut$att_table[[target.var]]$climatology, 
-                    fut.pred.rip = rip)
+                    fut.pred.rip = rip, 
+                    missval.handling=missval.handling, minval.present=min.present)
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   #}
   
@@ -474,7 +476,8 @@ for (rip in fut.pred.rip.list){
                         pre.ds.adjustments=pre_ds,
                         is.post.ds.adjust=(length(post_ds_adj) > 0),
                         post.ds.adjustments=post_ds_adj, 
-                        fut.pred.rip = rip)
+                        fut.pred.rip = rip, 
+                        missval.handling=missval.handling, minval.present=min.present)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }
