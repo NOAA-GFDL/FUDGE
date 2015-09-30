@@ -67,6 +67,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
                              create.qc.mask=create.qc.mask,
+                             min.present=1,
                              verbose=TRUE, test=FALSE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
@@ -185,14 +186,14 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                        att.list=att.table,
                                        s5.instructions=s5.instructions)
           s5.instructions <- temp.out$s5.list
-          (print(summary(kfold.target - temp.out$input$hist.targ)))
+#           (print(summary(kfold.target - temp.out$input$hist.targ)))
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
           kfold.gen <- temp.out$input$fut.pred
           remove(temp.out)
-          print(lapply(kfold.predict, 'kount.vals'))
-          print(kount.vals(kfold.target))
-          print(lapply(kfold.gen, 'kount.vals'))
+#           print(lapply(kfold.predict, 'kount.vals'))
+#           print(kount.vals(kfold.target))
+#           print(lapply(kfold.gen, 'kount.vals'))
           if(test){
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
@@ -207,8 +208,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    att.table=att.table,
                                    args=downscale.args, 
                                    missval.handling=missval.handling, #Global set by SetDSMethodInfo()
-                                   ds.var=ds.var)
-          print(names(temp.out))
+                                   ds.var=ds.var, 
+                                   min.present=min.present)
          # stop('examine result - is the dim correct?')
           for(var.name in names(temp.out)){
             #intersection of time windowing mask and MF dataset

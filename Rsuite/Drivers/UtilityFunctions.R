@@ -197,6 +197,28 @@ interpolate.points <- function(invec, len.outvec, interp.mode='linear'){
   return(outvec)
 }
 
+override.f.defaults <- function(ds.args=NA, 
+                                        pr_opts=NA){
+  #Temporary F to G-bridging code to set some of the parameters
+  #needed for the targeted F development
+  #Includes the minsamplesize and the overriding of missing value 
+  #handling at the XML level
+  out.list <- list()
+  if(!is.na(ds.args)){
+    if(!is.null(ds.args$minsamplesize)){
+      out.list$threshold <- 30
+    }else{
+      out.list$threshold <- 1
+    }
+  }
+  if(!is.na(pr_opts)){
+    if(propts$ignore0!='off' || propts$ignore0!='on'){
+      missval.handling <<- propts$ignore0
+    }
+  }
+  return(out.list)
+}
+
 #TODO: replace once R.utils installed
 simpleCap <- function(x){
   #Capitalizes the first letter of the word

@@ -156,6 +156,15 @@ post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
 post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
 post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 
+
+#Adapt some of the parameters being set by the f-to-g bridge code 
+if(exists('pr_opts')){
+  f.list <- override.f.defaults(ds.args)
+}else{
+  f.list <- override.f.defaults(ds.args, pr_opts)
+}
+min.present <- f.list$threshold
+
 #Then, check that the s3 and s5 adjustments you are performing make sense in 
 #this context
 QCAdjustArguments(pre_ds, post_ds, 
@@ -282,9 +291,6 @@ print(dim(list.fut$clim.in))
 message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
   message('Applying S3 Adjustment')
-  print(lapply(list.hist$clim.in, 'kount.vals', thold=2.939815e-06))
-  print(kount.vals(list.target$clim.in, thold=2.939815e-06))
-  print(lapply(list.fut$clim.in, 'kount.vals', thold=2.939815e-06))
   temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                   hist.pred = list.hist$clim.in,
                                   hist.targ = list.target$clim.in,
@@ -329,6 +335,7 @@ print(dim(list.fut$clim.in))
                     s3.instructions=pre.ds.train,
                     s5.instructions=post.ds.train, 
                     create.qc.mask=(qc.maskopts$qc.inloop), 
+                    min.present=min.present,
                     verbose=TRUE)
 #print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")

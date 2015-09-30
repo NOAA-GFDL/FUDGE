@@ -5,6 +5,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                         ds.orig=NULL, #Correcting a dimension error
                         s3.instructions=list(onemask=list('na')),
                         s5.instructions=list(onemask=list('na')), 
+                        min.present=1,
                         create.qc.mask=FALSE, verbose=FALSE){
   #' Function to loop through spatially,temporally and call the training and downscaling functions.
   #' @param target.masked.in, hist.masked.in, fut.masked.in: The historic target/predictor and 
@@ -100,6 +101,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
                                          s3.instructions=s3.instructions, s3.adjust=s3.adjust,
                                          s5.instructions=s5.instructions, s5.adjust=s5.adjust,
                                          create.qc.mask=create.qc.mask,
+                                         min.present=min.present,
                                          verbose=verbose, test=FALSE#(j.index==40)
            )
 #            save(file="~/Code/testing/test_out.R", save='loop.temp')

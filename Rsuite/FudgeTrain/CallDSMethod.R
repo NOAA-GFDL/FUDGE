@@ -46,7 +46,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
     names(out.tmp) <- names(out)
   }else{
     #The qcmask return code goes in here, eventually
-     message(('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
+     message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
               'when using a present val threshold of', min.present))
 #      save(file='/home/cew/Code/testing/test_out.R', list=c('esd.gen'))
      if(length(esd.gen)==1){

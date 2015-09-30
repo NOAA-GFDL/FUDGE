@@ -9,7 +9,7 @@ assess.missvals <- function(OH, MH, MF,
                             ds.method="", ds.args="", 
                             retry=FALSE, threshold=1){
   #'Determines how to go about removing missing values before downscaling
-  if(!retry){
+  #if(!retry){
   ds.list <- switch(type, 
                      'distributional' = remove.all.missvals(OH, MH, MF), 
                      'synchronous' = remove.synch.missvals(OH, MH, MF), 
@@ -24,13 +24,13 @@ assess.missvals <- function(OH, MH, MF,
     MF.kount <- unlist(lapply(ds.list$MF, length))
     ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
   }
-  }else{
-    #Special retry functions for some methods triggered more often than others
-    ds.list <- switch(ds.method, 
-                      '', 
-                      stop(paste("Error in asses.missvals: there is no recovery", 
-                                 'function for the downscaling method', ds.method)))
-  }
+#   }else{
+#     #Special retry functions for some methods triggered more often than others
+#     ds.list <- switch(ds.method, 
+#                       'delta.retry' = 2, 
+#                       stop(paste("Error in asses.missvals: there is no recovery", 
+#                                  'function for the downscaling method', ds.method)))
+#   }
   return(ds.list)
 }
 
@@ -77,10 +77,6 @@ restore.missvals <- function(MF, time.mask,
   #restores missing values to their proper place within a vector, 
   #based on the intersection of a time mask and a MF dataset
   #(since we are trying to restore an OF dataset)
-  print('lenght MF:')
-  print(length(MF))
-  print('lenght tmask:')
-  print(length(time.mask))
   index.vector <- add.missval.vectors(MF, time.mask)
   out.vector <- index.vector
   out.vector[!is.na(out.vector)] <- ds
