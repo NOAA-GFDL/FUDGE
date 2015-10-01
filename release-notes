@@ -1,3 +1,27 @@
+10-1-15
+(cew)
+- preliminary version of lm.step working for the forward selection case
+- preliminary recovery functions added for failure to pass the missing
+value thresholds
+
+9-30-15
+(cew)
+- global metadata record of missing value thresold added to metadata
+- global record of missing value handling added
+- XML input added in ds method options for missing value threshold, XML
+value for missing value handling added in ignore0
+
+9-28-15
+(cew)
+- Edits to all methods but CDFt and Delta to deal with uneven missing values
+- ignore0 option working for all methods but CDFt and Delta; returns missing values
+if insufficent data for downscaling
+
+9-24-15
+(cew)
+- transform options implemented at XML level in the pr_opts section for the 
+power transforms
+
 9-1-15
 (cew)
 - DeltaSD method updates for low pr and 0 value cases
