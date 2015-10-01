@@ -27,7 +27,15 @@
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant', 
                          att.table=NA, missval.handling='distributional', min.present=1){
-  
+#   save(file='/home/cew/Code/testing/sample_callds_input.R', list=c('train.predict', 'train.target', 'esd.gen', 'att.table'))
+#   stop('comment the line above this')
+  rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  esd.index <- list()
+  for(rip in rips){
+    #esd.index[[rip]] <- colSums(lapply(esd.gen[rip.list==rip], 'rbind')) #There MUST be a better way to do this
+    esd.index[[rip]] <- esd.gen[rip.list==rip][[1]]
+  }
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
                                ds.method, args, min.present)
@@ -41,21 +49,22 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                   "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
                   "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table),
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                  "lm.step" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
-    out.tmp <- list(mapply('add.back.in', out, esd.gen))
-    names(out.tmp) <- names(out)
+    out.tmp <- list(mapply('add.back.in', out, esd.index)) #TODO: this needs a BIG check to make sure 
+    names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
   }else{
     #The qcmask return code goes in here, eventually
      message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
               'when using a present val threshold of', min.present))
 #      save(file='/home/cew/Code/testing/test_out.R', list=c('esd.gen'))
-     if(length(esd.gen)==1){
-       out.tmp <- list(rep(NA, length(esd.gen[[1]]))) #It should be possible to generalize this, but it isn't working
+     if(length(esd.index)==1){
+       out.tmp <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
      }else{
-       out.tmp <- mapply('rep', NA, lapply(esd.gen, length))
+       out.tmp <- mapply('rep', NA, lapply(esd.index, length))
      }
-     names(out.tmp) <- esd.gen
-  }  
+     names(out.tmp) <- paste0(ds.var, ".", rips)
+  }
   return(out.tmp)  
 }
 
@@ -94,6 +103,74 @@ callMulti.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = 
     }
   #return(predict.lm(lm.model, newdata=new))
     return(out.list)
+}
+
+callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = NULL){
+  #'Calls R's lm() function using targ as a function
+  #'of linear variability of one or more variables in 
+  #'pred, optimizes the model with step, and then uses 
+  #'the data in new to predict the future results
+  #'Does not currently take any arguments
+  
+  #save(file='/home/cew/Code/testing/test_out.R', list=c('pred', 'targ', 'new'))
+  #Temporary code for accepting an XML override of some of the parameters
+  if(!is.null(args$k)){
+    k.val <- args$k
+  }else{
+    k.val <- 2
+  }
+  if(!is.null(args$direction)){
+    direc <- args$direction
+    save(file="/home/cew/Code/testing/test_out.R", list=c('pred', 'targ', 'new', 'att_table'))
+  }else{
+    direc='forward'
+  }
+  
+  names(pred) <- lapply(att_table$hist.pred, '[[', 'var')
+  #Now, create your data frame and make the linear model
+  test.list <- c('target'=list(targ), pred)
+  test.prod <- data.frame(test.list)
+  #lm.model <- lm(data=test.prod)
+  #lm.model <- do.call('lm',args=list(formula=target~1,data=test.prod))
+  #print(summary(lm.model))
+ # print('entering step')
+  #print(paste0(names(pred), collapse="+"))
+  #print(paste0('target~',paste0(names(pred), collapse="+")))
+  lm.train.model <- step(lm(target~1, data=test.prod), #~., #.^2, 
+                         #scope=NULL,
+                         scope=list(upper=paste0('target~',paste0(names(pred), collapse="+"),sep=""),#terms(target ~ .,  data=test.prod), 
+                           #upper=target~pr+prc+tasmax+tasmin+psl,
+                                    lower=paste0('target~.')),#terms(target ~ 1, data=test.prod)), #lower=terms(lm.model, ~1),
+                         scale=0, direction=direc, 
+                         trace=0, #100
+                         keep=NULL, steps=1000, k=k.val)
+  #print('exiting step')
+  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)  
+  out.list <- list()
+  for(rip in rips){
+    out.var <- paste(ds.var, rip, sep=".")
+    print(out.var)
+    #Get true/false vector to index out the data that you want
+    rip.index <- (rip.list==rip)
+    rip.data <- new[rip.index]
+    #And to make sure that everything has the same names as
+    #earlier, rename the list in the selected dataset
+    names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
+   # save(file='/home/cew/Code/testing/test_predout.R', list=c('rip.data', 'rip.index', 'lm.train.model'))
+    #stop('examine result')
+    ##Temporary code to solve the scoping issue
+    tmp.out <- predict(lm.train.model, newdata=rip.data)
+    if(length(tmp.out)==0){
+      message(paste("Warning in callStep.lm: step eliminated all variables,", 
+                    "resulting in output of length 0! Flagging with NAs for now."))
+      out.list[[out.var]] <- rep(NA, length(rip.data[[1]]))
+     }else{
+       #stop('examine above result')
+       out.list[[out.var]] <- tmp.out
+    }
+  }
+  return(out.list)
 }
 
 

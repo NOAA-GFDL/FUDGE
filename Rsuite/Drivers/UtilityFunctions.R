@@ -200,7 +200,7 @@ interpolate.points <- function(invec, len.outvec, interp.mode='linear'){
 }
 
 override.f.defaults <- function(ds.args=NA, 
-                                        pr_opts=NA){
+                                pr_opts=NA){
   #Temporary F to G-bridging code to set some of the parameters
   #needed for the targeted F development
   #Includes the minsamplesize and the overriding of missing value 
@@ -208,7 +208,7 @@ override.f.defaults <- function(ds.args=NA,
   out.list <- list()
   if(!is.na(ds.args)){
     if(!is.null(ds.args$minsamplesize)){
-      out.list$threshold <- 30
+      out.list$threshold <- ds.args$minsamplesize
       #remove minsamplesize from args
       if(length(ds.args)==1){
         out.list$args <- list('na')
@@ -221,8 +221,9 @@ override.f.defaults <- function(ds.args=NA,
     }
   }
   if(!is.na(pr_opts)){
-    if(propts$ignore0!='off' || propts$ignore0!='on'){
-      missval.handling <<- propts$ignore0
+    print(pr_opts)
+    if(!(pr_opts$ignore0=='off' || pr_opts$ignore0=='on')){
+      missval.handling <<- pr_opts$ignore0
     }
   }
   return(out.list)

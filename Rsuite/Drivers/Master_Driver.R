@@ -158,7 +158,7 @@ post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 
 
 #Adapt some of the parameters being set by the f-to-g bridge code 
-if(exists('pr_opts')){
+if(!exists('pr_opts')){
   f.list <- override.f.defaults(args)
 }else{
   f.list <- override.f.defaults(args, pr_opts)

@@ -213,10 +213,13 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
          # stop('examine result - is the dim correct?')
           for(var.name in names(temp.out)){
             #intersection of time windowing mask and MF dataset
+            #print(var.name)
+            #save('file'='/home/cew/Code/testing/test_out.R', list=c('downscale.list', 'temp.out', 'kfold.timemask'))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                         add.back.in(temp.out[[var.name]], 
                                                                     kfold.timemask)),
                                                   na.rm=TRUE)
+            #print(summary(downscale.list[[var.name]]))
           } #If this works, consider adding it to all of the other assignments in this section
         }
         #And adjust the downscaled output, if applicable

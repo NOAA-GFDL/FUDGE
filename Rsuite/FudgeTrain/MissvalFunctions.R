@@ -7,34 +7,41 @@ assess.missvals <- function(OH, MH, MF,
                             #time.mask=NA, 
                             type='distributional',
                             ds.method="", ds.args="", 
-                            retry=FALSE, threshold=1){
+                            threshold=1, retry=FALSE, 
+                            qcmask=FALSE){
   #'Determines how to go about removing missing values before downscaling
   #if(!retry){
   ds.list <- switch(type, 
-                     'distributional' = remove.all.missvals(OH, MH, MF), 
-                     'synchronous' = remove.synch.missvals(OH, MH, MF), 
+                    'distributional' = remove.all.missvals(OH, MH, MF), 
+                    'synchronous' = remove.synch.missvals(OH, MH, MF), 
                     'delta' = remove.delta.missvals(OH, MH, MF, ds.args, threshold),
-                     stop(paste("Error in assess.misvals: provided type", type, 
-                                "was not one of the available options!")))
-  #Threshold call is general for all functions
+                    stop(paste("Error in assess.misvals: provided type", type, 
+                               "was not one of the available options!")))
+  #Threshold call is general for all functions, except those that deal with 
+  #it themselves
   if(is.null(ds.list$status)){
     #determine if there are at least that many values present
     MH.kount <- unlist(lapply(ds.list$MH, length))
     OH.kount <- length(ds.list$OH)
     MF.kount <- unlist(lapply(ds.list$MF, length))
-    ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+    if(threshold >= 1){ #sample size threshold
+      ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+    }else{ #percentage threshold
+      MH.korig <- unlist(lapply(MH, length))
+      OH.korig <- length(OH)
+      MF.korig <- unlist(lapply(MF, length))
+      ds.list$status <- sum(mapply("/", c(MH.kount, OH.kount, MF.kount), 
+                                   c(MH.korig, OH.korig, MF.korig))>= threshold)
+    }
   }
-#   }else{
-#     #Special retry functions for some methods triggered more often than others
-#     ds.list <- switch(ds.method, 
-#                       'delta.retry' = 2, 
-#                       stop(paste("Error in asses.missvals: there is no recovery", 
-#                                  'function for the downscaling method', ds.method)))
-#   }
+  #Statuses over 100 are from the missing value removal functions and just need
+  #a qcmask, if that applies; statuses less than that need a retry
+  if(ds.list$status < 100){
+    ds.list <- switch(ds.method, 
+                      recover.ignore0(OH,MH,MF))
+  }
   return(ds.list)
 }
-
-
 
 remove.all.missvals <- function(OH, MH, MF){
   #suitable for use in the QM methods; 
@@ -88,11 +95,31 @@ restore.missvals <- function(MF, time.mask,
   }
 }
 
+recover.ignore0 <- function(OH,MH,MF){
+  #F-specific code to cover the case of adding the ignore0
+  #zeros back into the data, when there would be insufficent
+  #data to downscale otherwise.
+  #This works as an F-specific hack because nothing else should
+  #be capable of introducing missing values; for G, this needs
+  #to be extended to the qcmasks, which get returned alongside
+  #the data
+  return(list(MH=lapply(MH, 'replace.missval', 0),  
+              OH=replace.missval(OH, 0), 
+              MF=lapply(MF, 'replace.missval', 0)))
+}
+
+replace.missval <- function(x, val){
+  #Helper function for recover.ignore0 
+  #replacing all missing values in a vector
+  replace(x, is.na(x), val)
+}
+
 add.back.in <- function(data, ref){
   #adds data back into a reference vector
 #   print(summary(data))
 #   print(summary(ref))
 #   print(sum(!is.na(ref)))
+#   print(length(data))
   ref[!is.na(ref)] <- data
   return(ref)
 }

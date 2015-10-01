@@ -72,7 +72,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(!is.na(label.training)){
     comment.info <- paste(comment.info,' having done training using the ',label.training, ' time series',sep='')
   }
-  if(!is.na(predictor)){
+  if(!is.na(predictor[1])){
     comment.info <- paste(comment.info, ', predictor(s) used: ', paste(predictor, collapse=", ") ,sep='')
   }
   if(!is.null(fut.pred.rip)){
