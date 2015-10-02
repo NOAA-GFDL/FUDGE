@@ -8,7 +8,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',verbose=
   #'@param var.name: The name of the variable within the NetCDf file
   #'@param dstart: A vector of indices indicating where to start reading the passed values (begin- ning at 1).
   #'@param dcount: A vector of integers indicating the count of values to read along the variable (order is X-Y-Z-T).
-  #'@param dim: Which dimensions to include in the netCDF object. Can be one of 'temporal', 
+  #'@param dim: Which dimensions to include in the netCDF object. Can be one or more of 'temporal', 
   #'which queries the dimension associated with the T axis, 'spatial', which queries the dimensions associated with the
   #'X, Y and Z axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
   #''temporal' returns all variables that reference the T axis underneath the $vars list of the output, and 

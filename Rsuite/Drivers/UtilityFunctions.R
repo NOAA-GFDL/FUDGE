@@ -206,7 +206,7 @@ override.f.defaults <- function(ds.args=NA,
   #Includes the minsamplesize and the overriding of missing value 
   #handling at the XML level
   out.list <- list()
-  if(!is.na(ds.args)){
+  if(!is.na(ds.args[1])){
     if(!is.null(ds.args$minsamplesize)){
       out.list$threshold <- ds.args$minsamplesize
       #remove minsamplesize from args
@@ -220,7 +220,7 @@ override.f.defaults <- function(ds.args=NA,
       out.list$args <- ds.args
     }
   }
-  if(!is.na(pr_opts)){
+  if(!is.na(pr_opts[1])){
     print(pr_opts)
     if(!(pr_opts$ignore0=='off' || pr_opts$ignore0=='on')){
       missval.handling <<- pr_opts$ignore0

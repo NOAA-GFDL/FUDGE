@@ -119,12 +119,13 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
   }else{
     k.val <- 2
   }
-  if(!is.null(args$direction)){
-    direc <- args$direction
-    save(file="/home/cew/Code/testing/test_out.R", list=c('pred', 'targ', 'new', 'att_table'))
-  }else{
-    direc='forward'
-  }
+#   if(!is.null(args$direction)){
+#     direc <- args$direction
+#    # save(file="/home/cew/Code/testing/test_out.R", list=c('pred', 'targ', 'new', 'att_table'))
+#   }else{
+#     direc='forward'
+#   }
+  direc='forward'
   
   names(pred) <- lapply(att_table$hist.pred, '[[', 'var')
   #Now, create your data frame and make the linear model
@@ -136,14 +137,14 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
  # print('entering step')
   #print(paste0(names(pred), collapse="+"))
   #print(paste0('target~',paste0(names(pred), collapse="+")))
-  lm.train.model <- step(lm(target~1, data=test.prod), #~., #.^2, 
+  lm.train.model <- step(lm(target~1,data=test.prod), #~., #.^2, 
                          #scope=NULL,
                          scope=list(upper=paste0('target~',paste0(names(pred), collapse="+"),sep=""),#terms(target ~ .,  data=test.prod), 
                            #upper=target~pr+prc+tasmax+tasmin+psl,
-                                    lower=paste0('target~.')),#terms(target ~ 1, data=test.prod)), #lower=terms(lm.model, ~1),
+                                    lower=paste0('target~1')),#terms(target ~ 1, data=test.prod)), #lower=terms(lm.model, ~1),
                          scale=0, direction=direc, 
-                         trace=0, #100
-                         keep=NULL, steps=1000, k=k.val)
+                         trace=100, #0
+                         keep=NULL, steps=(length(names(pred))-1), k=k.val)
   #print('exiting step')
   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)  
@@ -162,9 +163,10 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
     ##Temporary code to solve the scoping issue
     tmp.out <- predict(lm.train.model, newdata=rip.data)
     if(length(tmp.out)==0){
-      message(paste("Warning in callStep.lm: step eliminated all variables,", 
-                    "resulting in output of length 0! Flagging with NAs for now."))
-      out.list[[out.var]] <- rep(NA, length(rip.data[[1]]))
+      warning(paste("Warning in callStep.lm: step eliminated all variables,", 
+                    "resulting in output of length 0! Returning the MF data for now"))
+      #out.list[[out.var]] <- rep(NA, length(rip.data[[1]]))
+      out.list[[out.var]] <- rip.data[[ds.var]]
      }else{
        #stop('examine above result')
        out.list[[out.var]] <- tmp.out
