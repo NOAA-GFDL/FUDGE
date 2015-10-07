@@ -264,8 +264,20 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       }
       while(write.len < out.len){
         #delta.downscale removes NAs in the output vector
-        tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
-                                   deltatype, deltaop, ignore0.Delta)
+        if((write.len + in.len) <= length(CF.data)){
+          tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
+                                     deltatype, deltaop, ignore0.Delta)
+        }else{
+          len.diff <- length(CF.data) - write.len
+          in.len <- len.diff
+          tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
+                                     CF.data[write.len:length(CF.data)], 
+                                     deltatype, deltaop, ignore0.Delta)
+        }
+        print("CF summary:")
+        print(summary(CF.data[write.len:(write.len + in.len)]))
+        print(length(tempvec))
+        print(summary(tempvec))
         if(ignore0.Delta){
           sd.write.indices <- (write.len-1) + comp.indices
           #Remove any that might lead to a longer write index
