@@ -11,8 +11,7 @@
 	echo "Setting FUDGE environment.."
 	# If a1r/cew is testing from a non-esd module, change the following for testing only
   
-	#module use -a /home/esd/local/modulefiles/
-	module use -a /home/cew/Code/modulefiles
+	module use -a /home/esd/local/modulefiles/
 	module load <BRANCH> 
 	##################
 source <POSTPROC_CMD>
