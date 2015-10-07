@@ -222,7 +222,9 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
     stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
   }
   if(!is.null(args$ignore0.Delta)){
+    print(args)
     ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
+    print(ignore0.Delta)
   }else{
     stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
   }
@@ -247,7 +249,9 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
         SDF <- LH[1:length(CF.data)]
         out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta)
         #SDF[SDF!=0] <- out.temp
-        SDF <- out.temp
+        SDF[1:length(CF.data)] <- 0
+        comp.indices <- which(LH[1:length(CF.data)]!=0)
+        SDF[comp.indices] <- out.temp
       }else{
         SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
       }
@@ -268,23 +272,20 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
           tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
                                      deltatype, deltaop, ignore0.Delta)
         }else{
-          len.diff <- length(CF.data) - write.len
+          len.diff <- length(CF.data) - write.len + 1
           in.len <- len.diff
           tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
-                                     CF.data[write.len:length(CF.data)], 
+                                     CF.data[seq(from=write.len, to=length(CF.data))], 
                                      deltatype, deltaop, ignore0.Delta)
         }
-        print("CF summary:")
-        print(summary(CF.data[write.len:(write.len + in.len)]))
-        print(length(tempvec))
-        print(summary(tempvec))
         if(ignore0.Delta){
+          SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- 0 #Set all vals to 0 first
           sd.write.indices <- (write.len-1) + comp.indices
           #Remove any that might lead to a longer write index
           sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
           SDF[sd.write.indices] <- tempvec
         }else{
-          SDF[write.len:length(tempvec)] <- tempvec
+          SDF[seq(from=write.len, to=(write.len + length(tempvec) - 1))] <- tempvec
         }
         write.len <- write.len + in.len
       }
@@ -307,7 +308,7 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   if(ignore0.Delta){
     delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
-    delta.targ.temp <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+    delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
     if(length(delta.hist)==0){
       if(deltaop=='ratio'){
