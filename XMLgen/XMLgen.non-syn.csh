@@ -220,7 +220,7 @@
      echo " "
      cat $xmlGenDir/project_ID_table.txt
      echo " "
-     echo ">>  Enter a 2-3 character project ID, new or existing, for the Project "
+     echo ">>  Enter a short project ID, new or existing, for the Project."
      echo ">>  (e.g. PM for Perfect Model) "
      set projectID = $<
      echo "$projectID" >> $INtxt
@@ -1000,6 +1000,12 @@ cat >> XMLfile<< EOF
 </downscale>
 EOF
 
+  echo " "
+  echo " "
+  echo " "
+  echo ">>>  Finalizing XMLfile "
+  echo " "
+  echo " "
 
   set xmlDir=$scriptDir/scripts/$projectID/XML
     if (! -e $xmlDir) mkdir -p $xmlDir
@@ -1011,41 +1017,40 @@ EOF
   \mv XMLfile $xmlDir/$expName.xml
   \mv $INtxt $xmltxtDir/$expName.input.txt
   \mv $INtxt.key $xmltxtDir/$expName.input.txt.key
-  echo " >>>  ......................................................................................."
-  echo " >>>  ......................................................................................."
-  echo " >>>  ......................................................................................."
-  echo " >>>  "
-  echo " >>>  Your XMLfile =  $xmlDir/$expName.xml " 
+  echo ">>>  "
+  echo ">>>  ......................................................................................."
+  echo ">>>  ......................................................................................."
+  echo ">>>  "
+  echo ">>>  "
+  echo ">>>  Your XMLfile =  $xmlDir/$expName.xml " 
+  echo ">>>  "
+  echo ">>>  "
   chmod -xw $xmlDir/$expName.xml 
-  echo " >>>  "
-  echo " >>>  Keyboard inputs you entered are in $xmltxtDir/$expName.input.txt "
-  echo " >>>  "
-  echo " >>>  Inputs are also in $xmltxtDir/$expName.input.txt.key, with input variable names and the scripts where assigned."
-  echo " >>>  "
-  echo " >>>  ......................................................................................."
-  echo " >>>  ......................................................................................."
-  echo " >>>  ......................................................................................."
+  echo ">>>  Keyboard inputs you entered:  $xmltxtDir/$expName.input.txt "
+  echo ">>>  Keyboard inputs with additional info:  $xmltxtDir/$expName.input.txt.key "
+  echo ">>>  "
+  echo ">>>  ......................................................................................."
+  echo ">>>  ......................................................................................."
+  echo ">>>  "
+  echo ">>>  "
   $xmlGenDir/XMLchecker.py $xmlDir/$expName.xml
   set logfile = `\ls $expName.*log`
   \mv $expName.*log $xmltxtDir
   echo " "
-  echo " *****                     PLEASE CHECK XMLchecker output file :                        ***** "
-  echo " *****                                                                                  ***** "
-  echo "        $xmltxtDir/$logfile "
-  echo " *****                                                                                  ***** "
-  echo " *****         It will indicate if there are any problems with your inputs.             ***** "
-  echo " *****                                                                                  ***** "
-  echo " *****     (This could easily happen if you edited an *input.txt file and used          ***** "
-  echo " *****             that as input to XMLgen.csh to create a new XML,                     ***** "
-  echo " *****                  e.g.  XMLgen.csh < myfile.input.txt                             ***** "
-  echo " *****         which is NOT recommended unless you know what you are doing.)            ***** "
+  echo " ***** PLEASE CHECK XMLchecker output: $xmltxtDir/$logfile "
+  echo " ***** "
+  echo " ***** It will indicate if there are any problems with your inputs."
+  echo " ***** (This could easily happen if you edited an *input.txt file and used "
+  echo " *****  that as input to XMLgen.csh to create a new XML, e.g.  XMLgen.csh < myfile.input.txt "
+  echo " *****  which is NOT recommended unless you know what you are doing.)"
   echo " "
-  echo " >>>  ......................................................................................."
-  echo " >>>  ......................................................................................."
-  echo " >>>  ......................................................................................."
+  echo " "
 
   cd $cDir
   
   echo "Removing work directory $workDir"
+  echo " "
+  echo "Done."
+  echo " "
   sleep 4
   \rm -rf $workDir

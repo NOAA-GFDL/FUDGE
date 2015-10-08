@@ -74,7 +74,7 @@ source $QueryVals
 set dataSet = "$kval"
 echo "$dataSet" >> $INtxt
 echo "dataSet = $dataSet, find_dataset_based_on_var.csh" >> $INtxt.key
-set excludedData = "$dataSet"
+#set excludedData = "$dataSet"
 
 sleep 5
 
