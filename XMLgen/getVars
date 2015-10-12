@@ -1,0 +1,6 @@
+  set varvals = ($varList)
+  set dinfo = "Available Variables"
+  source $QueryVals
+  set pickVar = "$kval"
+  echo "$pickVar" >> $INtxt
+  echo "pickVar = $pickVar, XMLgen.non-syn.csh" >> $INtxt.key
