@@ -68,8 +68,8 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold){
   OH.new <- remove.missvals(OH.new)
   MH.new <- lapply(MH, 'remove.missvals')
   MF.new <- lapply(MF, 'remove.missvals')
-  if(sum(lapply(OH.new, 'length')==0)!=0){
-    #If any of the OH datasets are all missing
+  if(sum(lapply(MH.new, 'length')==0)!=0){
+    #If any of the MH datasets are all missing
     if(args$deltaop=='ratio'){
       #You can't have all missing or all 0 when calculating a delta here
       message(paste("Warning in remove.delta.missvals: one or more OH datasets", 
@@ -77,13 +77,13 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold){
       status=120 #Error code picked up by the Delta method later
     }else{
       #All OH args that were of length 0 now have a single 0 for their values
+      MH.new[lapply(MH.new, 'length')==0] <- 0
     }
     status=110
   }
   stop('this method is not done; go back and fix it')
-  #if()
-  if(sum(MF)){
-    
+  if(sum(lapply(MF.new, 'length')==0)!=0){
+    MF.new[lapply(MF.new, 'length')==0] <- 0
   }
 }
 

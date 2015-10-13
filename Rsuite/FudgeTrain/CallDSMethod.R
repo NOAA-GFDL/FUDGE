@@ -51,7 +51,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   "lm.step" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
-    out.tmp <- list(mapply('add.back.in', out, esd.index)) #TODO: this needs a BIG check to make sure 
+    out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
     names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
   }else{
     #The qcmask return code goes in here, eventually

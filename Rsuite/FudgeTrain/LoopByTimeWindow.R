@@ -92,7 +92,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   rips <- unique(rip.list)
   downscale.varlist <- paste0(att.table$hist.targ[[1]]$var, ".", rips) #Should only ever have single value in hist.targ
   if(create.ds.out){
-    downscale.vec  <- rep(NA, downscale.length)
+    downscale.vec  <- rep(0, downscale.length)
     downscale.list <- list()
     for(name in downscale.varlist){
       downscale.list[[name]] <- downscale.vec
@@ -153,7 +153,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         #Apply kfold mask to time-trimming mask, if applicable
         if(length(mask.struct) > 3){
           use.time.trim.mask <- TRUE
-          kfold.timemask <- apply.any.mask(data=mask.struct[[4]]$masks[[window]], mask=kfold.masks[[3]]$masks[[kmask]], dim.apply='temporal')
+          ttrim.mask <- apply.any.mask(data=mask.struct[[4]]$masks[[window]], mask=kfold.masks[[3]]$masks[[kmask]], dim='temporal')
+          ds.ttrim.mask <- trim.time.mask(data=mask.struct[[3]]$masks[[window]], mask=mask.struct[[4]]$masks[[window]])
         }else{
           use.time.trim.mask <- FALSE
         }
@@ -164,10 +165,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         kfold.orig <- window.orig
         if(length(mask.struct) > 3){
           use.time.trim.mask <- TRUE
-          kfold.timemask <- mask.struct[[4]]$masks[[window]]
+          ttrim.mask <- mask.struct[[4]]$masks[[window]]
+          ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
         }else{
           use.time.trim.mask <- FALSE
-          kfold.timemask <- mask.struct[[3]]$masks[[window]]
+          ttrim.mask <- mask.struct[[3]]$masks[[window]]
         }
         
       }
@@ -214,10 +216,16 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           for(var.name in names(temp.out)){
             #intersection of time windowing mask and MF dataset
             #print(var.name)
-            #save('file'='/home/cew/Code/testing/test_out.R', list=c('downscale.list', 'temp.out', 'kfold.timemask'))
+#            save('file'='/home/cew/Code/testing/test_out.R', list=c('downscale.list', 'temp.out', 'ttrim.mask', 'ds.ttrim.mask'))
+            if(use.time.trim.mask){
+              temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
+            }
+#             print(mode(downscale.list[[var.name]]))
+#             print(mode(add.back.in(temp.out[[var.name]], 
+#                                       ttrim.mask)))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-                                                        add.back.in(temp.out[[var.name]], 
-                                                                    kfold.timemask)),
+                                                        as.numeric(add.back.in(temp.out[[var.name]], 
+                                                                    ttrim.mask))),
                                                   na.rm=TRUE)
             #print(summary(downscale.list[[var.name]]))
           } #If this works, consider adding it to all of the other assignments in this section
@@ -256,15 +264,15 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                 #intersection of time windowing mask and MF dataset
                 qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
                                                             add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                        kfold.timemask) 
+                                                                        ttrim.mask) 
                                                          ),na.rm=TRUE)
               }
             }
           for(var.name in names(temp.out$ds.out)){
             #intersection of time windowing mask and MF dataset
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-                                                     add.back.in(temp.out$ds.out[[var.name]], 
-                                                                 kfold.timemask)), 
+                                                     as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
+                                                                 ttrim.mask))), 
                                                   ,na.rm=TRUE)
           }
           
@@ -272,13 +280,13 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #               if(use.time.trim.mask){
 # #                 temp.assign <- kfold.gen[[1]]
 # #                 temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[new.ds.var]]
-# #                 qc.masklist[[new.ds.var]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+# #                 qc.masklist[[new.ds.var]][!is.na(ttrim.mask)] <- temp.assign[!is.na(ttrim.mask)]
 #                 for(var.name in names(qc.masklist)){
 #                   temp.assign <- kfold.gen[[1]]
-# #                   save(file="~/Code/testing/test_out.R", list=c('temp.assign', 'temp.out', 'qc.masklist', 'kfold.gen', 'kfold.timemask', 'downscale.list'))
+# #                   save(file="~/Code/testing/test_out.R", list=c('temp.assign', 'temp.out', 'qc.masklist', 'kfold.gen', 'ttrim.mask', 'downscale.list'))
 # #                   stop('examine output from time-trimming mask')
 #                   temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
-#                   qc.masklist[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+#                   qc.masklist[[var.name]][!is.na(ttrim.mask)] <- temp.assign[!is.na(ttrim.mask)]
 #                 }
 #               }else{
 #                # qc.masklist[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[new.ds.var]] #A NULL assignment might cause problems here. Second if?
@@ -296,7 +304,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #               for(var.name in names(temp.out$ds.out)){
 #                 temp.assign <- kfold.gen[[1]] #previously all NA vector
 #                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-#                 downscale.list[[var.name]][!is.na(kfold.timemask)] <- temp.assign[!is.na(kfold.timemask)]
+#                 downscale.list[[var.name]][!is.na(ttrim.mask)] <- temp.assign[!is.na(ttrim.mask)]
 #               }
 #             }else{
 #               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[!is.na(temp.out$ds.out[[new.ds.var]])]
