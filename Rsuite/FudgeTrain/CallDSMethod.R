@@ -38,7 +38,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
                                ds.method, args, min.present)
-  if(ds.input$status > 0){
+  if(ds.input$status > 0 && 'MF'%in%train.names){
     #If the number of missing values has been altered by the fxn, get a new addition index
     for(rip in rips){
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]

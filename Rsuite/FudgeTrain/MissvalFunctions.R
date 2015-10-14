@@ -38,8 +38,11 @@ assess.missvals <- function(OH, MH, MF,
   #a qcmask, if that applies; statuses less than that need a retry
   if(ds.list$status < 100 && ds.list$status > 0){
     print('Recovery option enabled; adding precip zeroes back into data.')
-    ds.list <- switch(ds.method, 
+    ds.tmp <- switch(ds.method, 
                       recover.ignore0(OH,MH,MF))
+    for(name in (names(ds.tmp))){
+      ds.list[[name]] <- ds.tmp[[name]]
+    }
     ds.list$status <- 10 #used recover.ignore0 to fix the input data
   }
   return(ds.list)
@@ -127,9 +130,21 @@ recover.ignore0 <- function(OH,MH,MF){
   #be capable of introducing missing values; for G, this needs
   #to be extended to the qcmasks, which get returned alongside
   #the data
-  return(list(MH=lapply(MH, 'replace.missval', 0),  
-              OH=replace.missval(OH, 0), 
-              MF=lapply(MF, 'replace.missval', 0)))
+  #######
+  #Please note: as of 10-14, this includes a call to a messily-set
+  #global variable. This is going to need to be changed in G.
+  out.list <- list()
+  for(el in train.names){
+    if(el=='MH' || el=='MF'){
+      out.list[[el]] <- lapply(eval(parse(text=el)), 'replace.missval', 0)
+    }else{
+      out.list[[el]] <- replace.missval(OH, 0)
+    }
+  }
+#   return(list(MH=lapply(MH, 'replace.missval', 0),  
+#               OH=replace.missval(OH, 0), 
+#               MF=lapply(MF, 'replace.missval', 0)))
+  return(out.list)
 }
 
 replace.missval <- function(x, val){
