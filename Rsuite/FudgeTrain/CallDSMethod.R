@@ -39,7 +39,12 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
                                ds.method, args, min.present)
-  if(ds.input$status==0){
+  if(ds.input$status > 0){
+    for(rip in rips){
+      esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
+    }
+  }
+  if(ds.input$status < 200){ #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
                   #"simple.lm" = callSimple.lm(ds.input$MH, train.target, ds.input$MF),
                   'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
@@ -131,21 +136,12 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
   #Now, create your data frame and make the linear model
   test.list <- c('target'=list(targ), pred)
   test.prod <- data.frame(test.list)
-  #lm.model <- lm(data=test.prod)
-  #lm.model <- do.call('lm',args=list(formula=target~1,data=test.prod))
-  #print(summary(lm.model))
- # print('entering step')
-  #print(paste0(names(pred), collapse="+"))
-  #print(paste0('target~',paste0(names(pred), collapse="+")))
-  lm.train.model <- step(lm(target~1,data=test.prod), #~., #.^2, 
-                         #scope=NULL,
-                         scope=list(upper=paste0('target~',paste0(names(pred), collapse="+"),sep=""),#terms(target ~ .,  data=test.prod), 
-                           #upper=target~pr+prc+tasmax+tasmin+psl,
-                                    lower=paste0('target~1')),#terms(target ~ 1, data=test.prod)), #lower=terms(lm.model, ~1),
+  lm.train.model <- step(lm(target~1,data=test.prod), #.^2, 
+                         scope=list(upper=paste0('target~',paste0(names(pred), collapse="+"),sep=""),
+                                    lower=paste0('target~1')),
                          scale=0, direction=direc, 
-                         trace=100, #0
+                         trace=0,
                          keep=NULL, steps=(length(names(pred))-1), k=k.val)
-  #print('exiting step')
   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)  
   out.list <- list()
@@ -158,17 +154,12 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
     #And to make sure that everything has the same names as
     #earlier, rename the list in the selected dataset
     names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
-   # save(file='/home/cew/Code/testing/test_predout.R', list=c('rip.data', 'rip.index', 'lm.train.model'))
-    #stop('examine result')
-    ##Temporary code to solve the scoping issue
     tmp.out <- predict(lm.train.model, newdata=rip.data)
     if(length(tmp.out)==0){
       warning(paste("Warning in callStep.lm: step eliminated all variables,", 
                     "resulting in output of length 0! Returning the MF data for now"))
-      #out.list[[out.var]] <- rep(NA, length(rip.data[[1]]))
       out.list[[out.var]] <- rip.data[[ds.var]]
      }else{
-       #stop('examine above result')
        out.list[[out.var]] <- tmp.out
     }
   }
@@ -255,7 +246,7 @@ callSimple.bias.correct <- function(pred, targ, new, args){
   return(out.list)
 }
 
-callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
+callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
 #'@author carlos.gaitan@noaa.gov
   #'@description The script uses the Delta Method to downscale coarse res. climate variables  
   #over a single variable
@@ -317,7 +308,6 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL){
       if(ignore0.Delta){
         SDF <- LH[1:length(CF.data)]
         out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta)
-        #SDF[SDF!=0] <- out.temp
         SDF <- out.temp
       }else{
         SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
