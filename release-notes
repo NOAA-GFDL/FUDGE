@@ -1,3 +1,17 @@
+10-12-15
+(cew)
+- Merging ESD role account Espresso XMLGen into the main development branch, for archiving
+- Updating README documentation
+- Updating other documentation
+
+10-8-15
+(mjn)
+- Adding Espresso XMLGen to ESD repo
+
+10-7-15
+(cew)
+- Bugfix for more CF samples than LH samples in the ignore0.Delta case
+
 10-1-15
 (cew)
 - preliminary version of lm.step working for the forward selection case

@@ -54,6 +54,8 @@ setCDFt<- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  #What are the names of the datasets used in training?
+  train.names <<- c('OH', 'MH', 'MF')
 }
 
 setSimple.Bias.Correct <- function(){
@@ -70,6 +72,7 @@ setSimple.Bias.Correct <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('OH', 'MH', 'MF')
 }
 
 setGeneral.Bias.Correct <- function(){
@@ -87,6 +90,7 @@ setGeneral.Bias.Correct <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('OH', 'MH', 'MF')
 }
 
 setNothing <- function(){
@@ -102,6 +106,7 @@ setNothing <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('OH', 'MH', 'MF')
 }
 
 setBiasCorrection <- function(){
@@ -117,6 +122,7 @@ setBiasCorrection <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('OH', 'MH')
 }
 
 setEquiDistant <- function(){
@@ -132,6 +138,7 @@ setEquiDistant <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('OH', 'MH', 'MF')
 }
 
 setChangeFactor <- function(){
@@ -147,6 +154,7 @@ setChangeFactor <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('OH', 'MH')
 }
 
 setDeltaSD<- function(){
@@ -162,6 +170,7 @@ setDeltaSD<- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
+  train.names <<- c('MH', 'MF')
 }
 
 setMultiLM <- function(){
@@ -177,4 +186,5 @@ setMultiLM <- function(){
   supports.multivariate <<- TRUE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'synchronous'
+  train.names <<- c('OH', 'MH')
 }

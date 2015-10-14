@@ -36,7 +36,7 @@ assess.missvals <- function(OH, MH, MF,
   }
   #Statuses over 100 are from the missing value removal functions and just need
   #a qcmask, if that applies; statuses less than that need a retry
-  if(ds.list$status < 100 && ds.list$status != 0){
+  if(ds.list$status < 100 && ds.list$status > 0){
     print('Recovery option enabled; adding precip zeroes back into data.')
     ds.list <- switch(ds.method, 
                       recover.ignore0(OH,MH,MF))
@@ -70,6 +70,11 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
   OH.new <- remove.missvals(OH.new)
   MH.new <- lapply(MH, 'remove.missvals')
   MF.new <- lapply(MF, 'remove.missvals')
+  if(sum(lapply(MF.new, 'length')==0)!=0){
+    MF.new[lapply(MF.new, 'length')==0] <- 0
+    message(paste("Warning in remove.delta.missvals: one or more MF  datasets", 
+                  "were all 0 or all missing! Zeroes will be added in place of missing pr."))
+  }
   if(sum(lapply(MH.new, 'length')==0)!=0){
     #If any of the MH datasets are all missing
     if(args$deltaop=='ratio'){
@@ -78,7 +83,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
                     "were all 0 or all missing when the ratio option was used!", 
                     "OH data will be returned from the delta method instead."))
       status=120 #Error code picked up by the Delta method later; used to return the 
-      #OH data
+      
     }else{
       #All OH args that were of length 0 now have a single 0 for their values
       MH.new[lapply(MH.new, 'length')==0] <- 0
@@ -87,12 +92,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
     }
     status=110
   }
-  stop('this method is not done; go back and fix it')
-  if(sum(lapply(MF.new, 'length')==0)!=0){
-    MF.new[lapply(MF.new, 'length')==0] <- 0
-    message(paste("Warning in remove.delta.missvals: one or more MF  datasets", 
-                  "were all 0 or all missing! Zeroes will be added in place of missing pr."))
-  }
+  return(list(MH=MH.new, OH=OH.new, MF=MF.new))
 }
 
 remove.mask.missvals <- function(data, mask){

@@ -1,0 +1,155 @@
+#=======================================================
+# csh snippet to parse a string in form "rMtoNiIpJ"
+#=======================================================
+set echo
+#set rip="r1to3i1p2"
+set rip="r1-3i1p2"
+set IPsuffix  = `echo $rip | awk -F"i" '{print $2}'`
+if ($rip =~ *to*) then
+# set ensBeg  = `echo $rip | awk -F"r" '{print $2}' |awk -F"t" '{print $1}'`
+  set ensBegEnd  = `echo $rip | awk -F"i" '{print $1}' |awk -F"r" '{print $2}' | sed -e 's/to/ /g'`
+  set ensBeg  = $ensBegEnd[1]
+  set ensEnd  = $ensBegEnd[1]
+  echo "Ensemble RIP has 'to' in it"
+  echo "Beg = $ensBeg, End = $ensEnd"
+
+  set n=$ensBeg
+  set members = ($n)
+  while ($n <= $ensEnd)
+    @ n++
+    set members = ($members $n)
+  end
+endif
+if ($rip =~ *-*) then
+ echo "Ensemble RIP has '-' in it"
+ set members  = (`echo $rip | awk -F"i" '{print $1}' |awk -F"r" '{print $2}' | sed -e 's/-/ /g'`)
+ set nens = $#members
+ echo "$nens Ensemble members = $members"
+endif
+set IPsuffix = "i$suffix"
+set ripList = "r$members[1]$IPsuffix"
+foreach mem ($members[2-])
+ set ripList = "$ripList,r$mem$IPsuffix" 
+end
+echo ripList = $ripList
+exit 1
+
+=================================
+# DONE
+=================================
+
+#=======================================================
+# csh snippet to parse a string in form "rMtoNiIpJ"
+#=======================================================
+#
+# example rip = "r1to3i1p2"
+set rip = "r1to3i1p2"
+
+# extract the ensemble portion of the RIP - the "r?to?" part - everything but the last 4 characters
+# example = "r1to3"
+set Rens=`echo $rip|awk '{ print substr(  $0, 1, length($0) - 4 ) }'`
+if ($Rens =~ *to* ) then
+  set ensBeg=`echo $Rens|awk '{ print substr(  $0, 2, 1) }'`
+  set ensEnd=`echo $Rens|awk '{ print substr(  $0, 5, 1) }'`
+else
+  set ensBeg=`echo $Rens|awk '{ print substr(  $0, 2, 1) }'`
+  set ensEnd=$ensBeg
+endif
+
+# extract the last 4 characters - the "i1p2" in this example
+set IPsuffix=`echo $rip|awk '{ print substr(  $0, length($0) - 3, length($0) ) }'`
+
+=================================
+# DONE
+=================================
+=================================
+#
+set rip = "r1to3i1p2"
+
+echo $rip | awk '{ print substr( $0, 0, 4 ) }'
+echo $rip | awk '{ print substr( $0, length($0) - 3, length($0) ) }'
+set checkTo = `echo $rip | awk '{ print substr( $0, 3, 2 ) }'`
+if ($checkTo == "to") then
+  set checkTo = `echo $rip | awk '{ print substr( $0, 3, 2 ) }'`
+  set checkTo = `echo $rip | awk '{ print substr( $0, 3, 2 ) }'`
+
+from http://www.unix.com/shell-programming-and-scripting/14735-parsing-string-shell-script.html
+
+
+  substr( s, i, n )
+
+  Where:
+
+  s is the string you want to perform the substr operation on
+  i is the first character that you want to extract
+  n is the last character you want to match
+
+  So if you said substr( "hello", 2, 4 ) it would match the second, third and fourth character and return "ell".
+
+  Let me explain the code I gave
+
+
+  Code:
+
+  $ echo "welcome" | awk '{ print substr( $0, 0, 4 ) }'
+
+
+  In the above example, the first argument to substr is $0 (which in this case is the text piped to it - "$0" is the entire record). The second argument is 0 (I could also have used 1) because I want to match from the start of the string. I want to grab the first four characters, so the third argument is 4.
+
+
+  Code:
+
+  $ echo "welcome" | awk '{ print substr( $0, length($0) - 3, length($0) ) }'
+
+
+  The above code also makes use length(string) command to return the number of characters in the string.
+  So here, I'm saying "return the substring from the first character (which is the length of the string minus 3), up until the very end of the string".
+
+  To clarify this:
+
+  Code:
+
+  $ echo "welcome" | awk '{ print (length($0) - 3), length($0) }'
+  4 7
+
+
+  So in our substr, we grab from character 4 to character 7 inclusive, which are chars 4,5,6,7 - the last 4 chars. 
+  
+  
+  
+  OR
+
+
+  I also missed a very simple solution too - you can use head and tail with the -c option
+
+  e.g. (on Linux)
+  echo "welcome" | head -c 4
+  echo "welcome" | tail -c 5
+
+  On HP-UX, you must use head -c -n 4
+
+  There's more than one way to do it with *nix!
+  =========================================================================
+  
+  It's worth mentioning that expr has a substr function too... (BASH?)
+
+        $ input="welcome"
+        $ expr substr $input 1 4
+        welc
+        $ expr substr $input $((${#input}-3)) 4
+        come
+
+
+===========================================
+
+# from Carolyn, gtalk 5/19/2015
+
+  #Perl Pattern for obtaining the 1 of 'r1tor3i1p1'
+  pattern='.(?=to)'
+  #Perl Pattern for obtaining the 3 of 'r1to3i1p1'
+  pattern='(?<=to).'
+
+
+Use with "grep -P", she said. How??? 
+http://perldoc.perl.org/perlretut.html#Looking-ahead-and-looking-behind
+

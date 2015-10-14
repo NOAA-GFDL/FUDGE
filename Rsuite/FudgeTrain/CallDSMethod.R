@@ -33,26 +33,25 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   rips <- unique(rip.list)
   esd.index <- list()
   for(rip in rips){
-    #esd.index[[rip]] <- colSums(lapply(esd.gen[rip.list==rip], 'rbind')) #There MUST be a better way to do this
     esd.index[[rip]] <- esd.gen[rip.list==rip][[1]]
   }
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
                                ds.method, args, min.present)
   if(ds.input$status > 0){
+    #If the number of missing values has been altered by the fxn, get a new addition index
     for(rip in rips){
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
     }
   }
   if(ds.input$status < 200){ #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
-                  #"simple.lm" = callSimple.lm(ds.input$MH, train.target, ds.input$MF),
                   'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
                   "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
                   "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
                   "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                  "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table),
+                  "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table, ds.input$status),
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   "lm.step" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
@@ -62,7 +61,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
     #The qcmask return code goes in here, eventually
      message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
               'when using a present val threshold of', min.present))
-#      save(file='/home/cew/Code/testing/test_out.R', list=c('esd.gen'))
      if(length(esd.index)==1){
        out.tmp <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
      }else{
@@ -284,7 +282,9 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
     stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
   }
   if(!is.null(args$ignore0.Delta)){
+    print(args)
     ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
+    print(ignore0.Delta)
   }else{
     stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
   }
@@ -307,14 +307,17 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
       #Technically, it doesn't need to be for the code to work...
       if(ignore0.Delta){
         SDF <- LH[1:length(CF.data)]
-        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta)
-        SDF <- out.temp
+        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, status=status)
+        SDF[1:length(CF.data)] <- 0
+        comp.indices <- which(LH[1:length(CF.data)]!=0)
+        SDF[comp.indices] <- out.temp
       }else{
-        SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop)
+        SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, status=status)
       }
     }else{
       #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
       #where n=length(CF.data)/length(LH)
+      #Note: this is the RR data case
       write.len <- 1
       out.len <- length(CF.data)
       in.len <- length(LH)
@@ -325,15 +328,24 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
       }
       while(write.len < out.len){
         #delta.downscale removes NAs in the output vector
-        tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
-                                   deltatype, deltaop, ignore0.Delta)
+        if((write.len + in.len) <= length(CF.data)){
+          tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
+                                     deltatype, deltaop, status=status)
+        }else{
+          len.diff <- length(CF.data) - write.len + 1
+          in.len <- len.diff
+          tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
+                                     CF.data[seq(from=write.len, to=length(CF.data))], 
+                                     deltatype, deltaop, status=status)
+        }
         if(ignore0.Delta){
+          SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- 0 #Set all vals to 0 first
           sd.write.indices <- (write.len-1) + comp.indices
           #Remove any that might lead to a longer write index
           sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
           SDF[sd.write.indices] <- tempvec
         }else{
-          SDF[write.len:length(tempvec)] <- tempvec
+          SDF[seq(from=write.len, to=(write.len + length(tempvec) - 1))] <- tempvec
         }
         write.len <- write.len + in.len
       }
@@ -348,40 +360,39 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
   return(out.list)
 }
 
-delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, ignore0.Delta=FALSE){
+delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, 
+                            ignore0.Delta=FALSE, status=0){
   #Calculates a delta after removing NAs and applies it to a target vector.
   #Helper method for callDeltaSD, but might be used elsewhere.
   
   #Make sure that there are no NA values in the current vector
-  if(ignore0.Delta){
-    delta.fut.orig.len <- length(delta.fut)
-    delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
-    delta.targ.temp <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
-    delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
-    if(length(delta.hist)==0){
-      if(deltaop=='ratio'){
-        #Return the OH data
-        message(paste("Insufficent historical predictor (MH) data when used with the ratio deltatype;", 
-                      "returning target values without the delta"))
-        return(delta.targ)
-        #When the options are enabled properly, flag this and return a qc mask
-      }else{
-        message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
-        delta.hist <- 0
-      }
-    }
-    if(length(delta.fut)==0){
-      #No need to check for all missing values on this; the effect is the same in either case
-      message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
-      delta.fut <- 0
-    }
-#     if(length(delta.fut)==0 || length(delta.targ.temp)==0 || length(delta.hist)==0){
-#       delta.targ <- delta.targ[1:delta.fut.orig.len]
-#       return(delta.targ[delta.targ!=0])
-#     }else{
-#       delta.targ <- delta.targ.temp
-#     }
+  if(status > 0){
+    if(status==120) #Check remove.delta.missvals for this value
+      return(delta.targ[1:length(delta.fut)])
   }
+#   if(ignore0.Delta){
+#     delta.fut.orig.len <- length(delta.fut)
+#     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
+#     delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+#     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+#     if(length(delta.hist)==0){
+#       if(deltaop=='ratio'){
+#         #Return the OH data
+#         message(paste("Insufficent historical predictor (MH) data when used with the ratio deltatype;", 
+#                       "returning target values without the delta"))
+#         return(delta.targ)
+#         #When the options are enabled properly, flag this and return a qc mask
+#       }else{
+#         message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
+#         delta.hist <- 0
+#       }
+#     }
+#     if(length(delta.fut)==0){
+#       #No need to check for all missing values on this; the effect is the same in either case
+#       message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
+#       delta.fut <- 0
+#     }
+#   }
   if(deltaop=='add'){
     #Downscale by difference delta
     delta<-do.call(deltatype, list(delta.fut))-do.call(deltatype, list(delta.hist))
