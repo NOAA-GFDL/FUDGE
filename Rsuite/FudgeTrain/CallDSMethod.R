@@ -44,7 +44,8 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
     }
   }
-  if(ds.input$status < 200){ #Use 200 to refer to fatal errors; everything else should be recoverable
+  print(sum(lapply(ds.input$MF, length)==0)!=0)
+  if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
                   'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
@@ -60,7 +61,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   }else{
     #The qcmask return code goes in here, eventually
      message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
-              'when using a present val threshold of', min.present))
+              'when using a present val threshold for esd.gen of', 1)) #This code is now used ONLY for ds methods
      if(length(esd.index)==1){
        out.tmp <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
      }else{

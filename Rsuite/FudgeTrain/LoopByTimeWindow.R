@@ -193,9 +193,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           kfold.predict <- temp.out$input$hist.pred
           kfold.gen <- temp.out$input$fut.pred
           remove(temp.out)
-#           print(lapply(kfold.predict, 'kount.vals'))
-#           print(kount.vals(kfold.target))
-#           print(lapply(kfold.gen, 'kount.vals'))
           if(test){
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
@@ -212,17 +209,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                    ds.var=ds.var, 
                                    min.present=min.present)
-         # stop('examine result - is the dim correct?')
           for(var.name in names(temp.out)){
             #intersection of time windowing mask and MF dataset
-            #print(var.name)
-#            save('file'='/home/cew/Code/testing/test_out.R', list=c('downscale.list', 'temp.out', 'ttrim.mask', 'ds.ttrim.mask'))
             if(use.time.trim.mask){
               temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
             }
-#             print(mode(downscale.list[[var.name]]))
-#             print(mode(add.back.in(temp.out[[var.name]], 
-#                                       ttrim.mask)))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                         as.numeric(add.back.in(temp.out[[var.name]], 
                                                                     ttrim.mask))),
