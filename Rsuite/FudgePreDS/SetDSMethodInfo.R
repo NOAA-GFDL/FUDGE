@@ -169,7 +169,7 @@ setDeltaSD<- function(){
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
-  missval.handling <<- 'distributional'
+  missval.handling <<- 'delta'
   train.names <<- c('MH', 'MF')
 }
 

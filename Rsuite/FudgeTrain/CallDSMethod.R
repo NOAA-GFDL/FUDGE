@@ -373,32 +373,33 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   
   #Make sure that there are no NA values in the current vector
   if(status > 0){
+    print(status)
     if(status==120) #Check remove.delta.missvals for this value
       return(delta.targ[1:length(delta.fut)])
   }
-#   if(ignore0.Delta){
-#     delta.fut.orig.len <- length(delta.fut)
-#     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
-#     delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
-#     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
-#     if(length(delta.hist)==0){
-#       if(deltaop=='ratio'){
-#         #Return the OH data
-#         message(paste("Insufficent historical predictor (MH) data when used with the ratio deltatype;", 
-#                       "returning target values without the delta"))
-#         return(delta.targ)
-#         #When the options are enabled properly, flag this and return a qc mask
-#       }else{
-#         message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
-#         delta.hist <- 0
-#       }
-#     }
-#     if(length(delta.fut)==0){
-#       #No need to check for all missing values on this; the effect is the same in either case
-#       message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
-#       delta.fut <- 0
-#     }
-#   }
+  if(ignore0.Delta){
+    delta.fut.orig.len <- length(delta.fut)
+    delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
+    delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+    delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+    if(length(delta.hist)==0){
+      if(deltaop=='ratio'){
+        #Return the OH data
+        message(paste("Insufficent historical predictor (MH) data when used with the ratio deltatype;", 
+                      "returning target values without the delta"))
+        return(delta.targ)
+        #When the options are enabled properly, flag this and return a qc mask
+      }else{
+        message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
+        delta.hist <- 0
+      }
+    }
+    if(length(delta.fut)==0){
+      #No need to check for all missing values on this; the effect is the same in either case
+      message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
+      delta.fut <- 0
+    }
+  }
   if(deltaop=='add'){
     #Downscale by difference delta
     delta<-do.call(deltatype, list(delta.fut))-do.call(deltatype, list(delta.hist))
