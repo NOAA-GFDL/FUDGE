@@ -99,8 +99,9 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     #compute difference for all time values
     hist.bias <- mean(hist.pred-input$hist.targ)
     fut.targ <- fut.pred-hist.bias
-    mask.vec <- ifelse( (botlim <= (adjusted.output$ds.out[[ds.var]]-fut.targ) & 
-                           (adjusted.output$ds.out[[ds.var]]-fut.targ) < toplim), 
+    tmp.diff <- as.numeric(adjusted.output$ds.out[[ds.var]]) - fut.targ
+    mask.vec <- ifelse( (botlim <= (tmp.diff) & 
+                           (tmp.diff) < toplim), 
                         yes=1, no=NA)
     if(test$qc.mask=='on'){
       out.list$qc.mask[[ds.var]] <- mask.vec
