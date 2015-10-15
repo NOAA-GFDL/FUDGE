@@ -158,6 +158,8 @@ add.back.in <- function(data, ref){
 #   print(summary(data))
 #   print(summary(ref))
 #   print(sum(!is.na(ref)))
+#   print(sum(!is.na(data)))
+#   print(length(ref))
 #   print(length(data))
   ref[!is.na(ref)] <- data
   return(ref)

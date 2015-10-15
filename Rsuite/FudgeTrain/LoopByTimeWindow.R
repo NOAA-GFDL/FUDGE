@@ -72,7 +72,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
-  
   if(mask.struct[[1]]!='na'){
     #If there are masks included:
     mask.data.by.time.window <- TRUE
@@ -163,15 +162,19 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         kfold.target <- window.target
         kfold.gen <- window.gen
         kfold.orig <- window.orig
-        if(length(mask.struct) > 3){
-          use.time.trim.mask <- TRUE
-          ttrim.mask <- mask.struct[[4]]$masks[[window]]
-          ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+        if(mask.data.by.time.window){
+          if(length(mask.struct) > 3){
+            use.time.trim.mask <- TRUE
+            ttrim.mask <- mask.struct[[4]]$masks[[window]]
+            ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+          }else{
+            use.time.trim.mask <- FALSE
+            ttrim.mask <- mask.struct[[3]]$masks[[window]]
+          }
         }else{
           use.time.trim.mask <- FALSE
-          ttrim.mask <- mask.struct[[3]]$masks[[window]]
+          ttrim.mask <- rep(1, length(kfold.gen[[1]]))
         }
-        
       }
       #If there is enough data available in the window to perform downscaling
       if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
@@ -214,6 +217,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             if(use.time.trim.mask){
               temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
             }
+            #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'ttrim.mask'))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                         as.numeric(add.back.in(temp.out[[var.name]], 
                                                                     ttrim.mask))),
