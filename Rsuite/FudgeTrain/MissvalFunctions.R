@@ -45,6 +45,15 @@ assess.missvals <- function(OH, MH, MF,
     }
     ds.list$status <- 10 #used recover.ignore0 to fix the input data
   }
+  if(qcmask){
+    #...you know, I am sort of glad that I don't have to worry about the multi-rip implications
+    #of this bit just yet.
+    ds.list$qcmask <- rep(list(rep(ifelse(ds.list$status==0, 
+                                          1, NA), length(MF[[1]]))),3)
+    #print(lapply(ds.list$qcmask, 'summary'))
+  }else{
+    ds.list$qcmask <- NA
+  }
   return(ds.list)
 }
 

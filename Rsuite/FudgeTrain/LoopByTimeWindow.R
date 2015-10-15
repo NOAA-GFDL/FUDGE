@@ -66,6 +66,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              ds.orig=NULL, ds.var='tasmax',
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
+                             train_qcmask=FALSE,
                              create.qc.mask=create.qc.mask,
                              min.present=1,
                              verbose=TRUE, test=FALSE)
@@ -100,7 +101,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     downscale.list <- NULL
   }
   if(create.qc.mask){
-    qc.mask <- rep(NA, downscale.length)
+    qc.mask <- rep(NA, downscale.length) #Check this bit - shouldn't cause errors, but might later
     qc.masklist <- list()
     for(name in downscale.varlist){
       qc.masklist[[name]] <- qc.mask
@@ -211,8 +212,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    args=downscale.args, 
                                    missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                    ds.var=ds.var, 
-                                   min.present=min.present)
-          for(var.name in names(temp.out)){
+                                   min.present=min.present, train_qcmask)
+          tout.names <- names(temp.out[!names(temp.out)%in%c('qc.mask')])
+          for(var.name in tout.names){
             #intersection of time windowing mask and MF dataset
             if(use.time.trim.mask){
               temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
@@ -222,7 +224,19 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                                         as.numeric(add.back.in(temp.out[[var.name]], 
                                                                     ttrim.mask))),
                                                   na.rm=TRUE)
-            #print(summary(downscale.list[[var.name]]))
+            if(train_qcmask){
+              #Oh dear, the time-trimming masks are going to be a mss in here, aren't they...
+              #print(summary(temp.out$qc.mask[[var.name]]))
+              save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'var.name', 'ds.ttrim.mask'))
+              
+              if(use.time.trim.mask){
+                temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
+              }
+              qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
+                                                       add.back.in(temp.out$qc.mask[[var.name]], 
+                                                                   ttrim.mask)),
+                                                 na.rm=TRUE) #Start from all good and decrease
+            }
           } #If this works, consider adding it to all of the other assignments in this section
         }
         #And adjust the downscaled output, if applicable
@@ -260,7 +274,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                 qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
                                                             add.back.in(temp.out$qc.mask[[var.name]], 
                                                                         ttrim.mask) 
-                                                         ),na.rm=TRUE)
+                                                         ),na.rm=FALSE)
               }
             }
           for(var.name in names(temp.out$ds.out)){
@@ -270,49 +284,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                                                  ttrim.mask))), 
                                                   ,na.rm=TRUE)
           }
-          
-              
-#               if(use.time.trim.mask){
-# #                 temp.assign <- kfold.gen[[1]]
-# #                 temp.assign[!is.na(temp.assign)] <- temp.out$qc.masklist[[new.ds.var]]
-# #                 qc.masklist[[new.ds.var]][!is.na(ttrim.mask)] <- temp.assign[!is.na(ttrim.mask)]
-#                 for(var.name in names(qc.masklist)){
-#                   temp.assign <- kfold.gen[[1]]
-# #                   save(file="~/Code/testing/test_out.R", list=c('temp.assign', 'temp.out', 'qc.masklist', 'kfold.gen', 'ttrim.mask', 'downscale.list'))
-# #                   stop('examine output from time-trimming mask')
-#                   temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
-#                   qc.masklist[[var.name]][!is.na(ttrim.mask)] <- temp.assign[!is.na(ttrim.mask)]
-#                 }
-#               }else{
-#                # qc.masklist[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$qc.masklist[[new.ds.var]] #A NULL assignment might cause problems here. Second if?
-# #                 downscale.list <- mapply(FUN=assign.by.index, qc.masklist, temp.out, MoreArgs=list(index = kfold.gen[[1]]))
-#                  for(var.name in names(qc.masklist)){
-#                    #Don't do the !is.na() check on the qc masks - qc masks are SUPPOSED to have more missing values
-#                    qc.masklist[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$qc.mask[[var.name]]
-#                  }
-#               }
-#             }
-#             #If there is a time-trimming mask, use it here
-#             #Assign all the time, whether adjusted or not in this step
-#             #...actually, put this on the list of things to change. 
-#             if(use.time.trim.mask){
-#               for(var.name in names(temp.out$ds.out)){
-#                 temp.assign <- kfold.gen[[1]] #previously all NA vector
-#                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-#                 downscale.list[[var.name]][!is.na(ttrim.mask)] <- temp.assign[!is.na(ttrim.mask)]
-#               }
-#             }else{
-#               #downscale.list[[new.ds.var]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[!is.na(temp.out$ds.out[[new.ds.var]])]
-#               for(var.name in names(temp.out$ds.out)){
-#                 #print('adding back into timeseries')
-#                 #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
-#                 downscale.list[[var.name]][!is.na(kfold.gen[[1]])] <- temp.out$ds.out[[var.name]][!is.na(temp.out$ds.out[[var.name]])]
-#                 #print(summary(downscale.list[[var.name]][!is.na(kfold.gen[[1]])]))
-#               }
-#             }
-#           }
          }
-
         if(graph){
           if(masklines){
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
@@ -325,18 +297,20 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
       }
     }
-  }
-  #However, if cross-validation is being performed
-  #   } else { 
-  #     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
-  #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
-  #   }
-  #Exit loop
-  
+  }  
   #Make sure that dimensions are correct before leaving function
   if(!is.null(downscale.list)){
     lapply(downscale.list, 'assign.dim', c(1, 1, length(downscale.list[[1]])))
   }
+  #Make sure that the qcmask consists of ones and NAs, not ones and zeroes
+  if(train_qcmask){
+    for(n in names(qc.masklist)){
+      qc.masklist[[n]][qc.masklist[[n]]==0] <- NA
+    }
+  }
+  #...also? This has the potential to cause issues when we start working with datasets that 
+  #happen to have missing values fo their own - and therefore might use 
+  print(lapply(qc.masklist, 'summary'))
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
 

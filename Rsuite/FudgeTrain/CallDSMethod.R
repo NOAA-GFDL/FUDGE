@@ -26,7 +26,7 @@
 #' TODO: Seriously, THERE HAS GOT TO BE A LESS COMPLEX WAY
 
 CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=NULL, ds.var='irrelevant', 
-                         att.table=NA, missval.handling='distributional', min.present=1){
+                         att.table=NA, missval.handling='distributional', min.present=1, train_qc_mask=FALSE){
 #   save(file='/home/cew/Code/testing/sample_callds_input.R', list=c('train.predict', 'train.target', 'esd.gen', 'att.table'))
 #   stop('comment the line above this')
   rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
@@ -37,15 +37,16 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   }
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
-                               ds.method, args, min.present)
+                               ds.method, args, min.present, qcmask=train_qc_mask)
   if(ds.input$status > 0 && 'MF'%in%train.names){
     #If the number of missing values has been altered by the fxn, get a new addition index
     for(rip in rips){
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
     }
   }
-  print(sum(lapply(ds.input$MF, length)==0)!=0)
-  if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ #Use 200 to refer to fatal errors; everything else should be recoverable
+  #print(sum(lapply(ds.input$MF, length)==0)!=0)
+  if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
+    #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
                   'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
@@ -68,6 +69,10 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
        out.tmp <- mapply('rep', NA, lapply(esd.index, length))
      }
      names(out.tmp) <- paste0(ds.var, ".", rips)
+  }
+  if(train_qc_mask){
+    out.tmp$qc.mask <- ds.input$qcmask
+    names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
   }
   return(out.tmp)  
 }
@@ -561,7 +566,7 @@ callCFQMv2<-function(LH,CH,CF,args){
   temp[1:lengthCF]<-temp.opt.sorted[order(temp.opt.sorted$index, na.last=TRUE),] #, na.last=FALSE #removed order #temp.opt.sorted$index
   
   #SDF<-temp$qCFecdfCHqLH #This is the version that got tested for regression against cinnamon, and that we passed out
-     print(summary(temp.opt.sorted))
+     #print(summary(temp.opt.sorted))
      print(lengthCF)
      SDF<-temp$qCFecdfCHqLH[1:lengthCF] #This is the version that is getting tested as of 5-18
   #save(file="~/Code/testing/test_out.R", list=c('SDF'))

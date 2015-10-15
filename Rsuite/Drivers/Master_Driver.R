@@ -128,6 +128,7 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
   }
   pre_ds <- pp.out$pre_ds
   post_ds <- pp.out$post_ds
+  train_qcmask <- pp.out$train_qcmask
 }
 
 ##Make sure that you have the experiment rip ready to apply to 
@@ -146,7 +147,7 @@ if(exists('RIP')){
 message("Checking pre- and post-downscaling adjustments")
 post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
 post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
-qc.maskopts <- qc.mask.check(post.ds.train, post.ds)
+qc.maskopts <- qc.mask.check(post.ds.train, post.ds, train_qcmask)
 pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
 pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 #Generate metadata references for the pre- and post-processing functions
@@ -335,7 +336,8 @@ print(dim(list.fut$clim.in))
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
                     s3.instructions=pre.ds.train,
                     s5.instructions=post.ds.train, 
-                    create.qc.mask=(qc.maskopts$qc.inloop), 
+                    train_qcmask=train_qcmask,
+                    create.qc.mask=sum(c(qc.maskopts$qc.inloop,train_qcmask)), 
                     min.present=min.present,
                     verbose=FALSE)
 #print(summary(ds$esd.final[!is.na(ds$esd.final)]))
@@ -432,7 +434,8 @@ for (rip in fut.pred.rip.list){
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   #}
   
-  if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the beginning, as part of the QC functions
+  if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){ 
+    ##Created waaay back at the beginning, as part of the QC functions
     for (var in target.var){
       ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
