@@ -227,7 +227,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             if(train_qcmask){
               #Oh dear, the time-trimming masks are going to be a mss in here, aren't they...
               #print(summary(temp.out$qc.mask[[var.name]]))
-              save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'var.name', 'ds.ttrim.mask'))
+              #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'var.name', 'ds.ttrim.mask'))
               
               if(use.time.trim.mask){
                 temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
@@ -310,7 +310,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   #...also? This has the potential to cause issues when we start working with datasets that 
   #happen to have missing values fo their own - and therefore might use 
-  print(lapply(qc.masklist, 'summary'))
+  #print(lapply(qc.masklist, 'summary'))
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
 

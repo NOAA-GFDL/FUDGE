@@ -93,10 +93,12 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
     #If any of the MH datasets are all missing
     if(args$deltaop=='ratio'){
       #You can't have all missing or all 0 when calculating a delta here
+      MH.new <- lapply(MH, 'replace.missval', 0)
       message(paste("Warning in remove.delta.missvals: one or more MH datasets", 
                     "were all 0 or all missing when the ratio option was used!", 
                     "OH data will be returned from the delta method instead."))
       status=120 #Error code picked up by the Delta method later; used to return the 
+      #OH dataset preferentially
     }else{
       #All OH args that were of length 0 now have a single 0 for their values
       #MH.new[lapply(MH.new, 'length')==0] <- 0
@@ -107,8 +109,8 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
     status=110
   }
   print(paste('final delta status:', status))
-  return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
   #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
+  return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
 }
 
 remove.mask.missvals <- function(data, mask){
@@ -168,12 +170,6 @@ replace.missval <- function(x, val){
 
 add.back.in <- function(data, ref){
   #adds data back into a reference vector
-  print(summary(data))
-  print(summary(ref))
-  print(sum(!is.na(ref)))
-  print(sum(!is.na(data)))
-  print(length(ref))
-  print(length(data))
   ref[!is.na(ref)] <- data
   return(ref)
 }

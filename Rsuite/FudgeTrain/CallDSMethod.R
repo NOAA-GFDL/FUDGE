@@ -38,15 +38,12 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
                                ds.method, args, min.present, qcmask=train_qc_mask)
-  if(ds.input$status > 0 && 'MF'%in%train.names){
+  if((ds.input$status > 0 && 'MF'%in%train.names) || ds.input$status==130){
     #If the number of missing values has been altered by the fxn, get a new addition index
     for(rip in rips){
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
     }
   }
-  print('relevant status check')
-  print(lapply(ds.input$MF, 'summary'))
-  print(sum(lapply(ds.input$MF, length)==0)!=0)
   if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
     #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
@@ -55,10 +52,12 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                   "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
                   "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
                   "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                  "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table, ds.input$status),
+                  "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table, ds.input$status), #esd.gen,
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   "lm.step" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
+#     print(summary(out))
+#     print(summary(esd.index))
     out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
     names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
   }else{
@@ -220,6 +219,15 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }else{
          stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
        }
+       print(sum(targ!=0))
+       print(sum(pred!=0))
+       print(sum(new.data!=0))
+       print(summary(targ))
+       print(summary(pred))
+       print(summary(new.data))
+       print(npas)
+       print(dev)
+#       print((new.data[new.data!=0]))
        if(is.null(args)){
          temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
        }else{
@@ -251,132 +259,135 @@ callSimple.bias.correct <- function(pred, targ, new, args){
   return(out.list)
 }
 
-callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
-#'@author carlos.gaitan@noaa.gov
-  #'@description The script uses the Delta Method to downscale coarse res. climate variables  
-  #over a single variable
-  #'@param LH: Local Historical (a.k.a. observations)
-  #'@param CH: Coarse Historical (a.k.a. GCM historical)
-  #'@param CF: Coarse Future (a.k.a GCM future)
-  #'@param args: A list containing three arguments: 
-  #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
-  #'  what single value will be used for the difference between the CH and CF
-  #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
-  #'  the mthod for calculating the delta
-  #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
-  #'  calculating the delta ('off'), or use only those days for which the delta was greater
-  #'  than zero ('on')
-  #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
-  #' a delta that is applied to the LH (observational) data
-  #'@return SDF: Downscaled Future (Local)
-  ########################################
-  #Note: preferred behavior is to truncate vectors
-  #rather than randomly sampling iff too short.
-  
-  out.var.name <- names(CF)
-  
-  #Unlist data from its input form
-  CH <- unlist(CH)
-  # Obtain options
-  if(!is.null(args$deltatype)){
-    deltatype <- args$deltatype
-  }else{
-    stop(paste("DeltaSD Downscaling Error: deltatype not found in args"))
-  }
-  if(!is.null(args$deltaop)){
-    deltaop <- args$deltaop
-  }else{
-    stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
-  }
-  if(!is.null(args$ignore0.Delta)){
-    ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
-  }else{
-    stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
-  }
-  #Prepare to loop by RIP
-  out.list <- list()
-  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-  for(rip in rip.list){
-    #Select the future predictor vars that you are interested in
-    out.var.name <- paste0(ds.var, ".", rip)
-    #Unlist the ensemble members
-    rip.index <- (rip.list==rip)
-    CF.data <- CF[rip.index]
-    CF.data <- unlist(CF.data)
-    #Decide how many iterations of the delta method to perform
-    #based on the relative lengths of the historical
-    #and future data (future should be >= historical) #Switch 1-28 from <  
-    if(length(LH) >= length(CF.data)){
-      #If the future and historical periods are unequal, truncate the vectors
-      #That...raises an interesting question: should the CH vector be truncated as well?
-      #Technically, it doesn't need to be for the code to work...
-      if(ignore0.Delta){
-        SDF <- LH[1:length(CF.data)]
-        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
-        SDF[1:length(CF.data)] <- 0
-        comp.indices <- which(LH[1:length(CF.data)]!=0)
-        SDF[comp.indices] <- out.temp
-      }else{
-        SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
-      }
+callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=status){
+  #'@author carlos.gaitan@noaa.gov
+    #'@description The script uses the Delta Method to downscale coarse res. climate variables  
+    #over a single variable
+    #'@param LH: Local Historical (a.k.a. observations)
+    #'@param CH: Coarse Historical (a.k.a. GCM historical)
+    #'@param CF: Coarse Future (a.k.a GCM future)
+    #'@param args: A list containing three arguments: 
+    #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
+    #'  what single value will be used for the difference between the CH and CF
+    #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
+    #'  the mthod for calculating the delta
+    #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
+    #'  calculating the delta ('off'), or use only those days for which the delta was greater
+    #'  than zero ('on')
+    #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
+    #' a delta that is applied to the LH (observational) data
+    #'@return SDF: Downscaled Future (Local)
+    ########################################
+    #Note: preferred behavior is to truncate vectors
+    #rather than randomly sampling iff too short.
+    
+    out.var.name <- names(CF)
+    
+    #Unlist data from its input form
+    CH <- unlist(CH)
+    # Obtain options
+    if(!is.null(args$deltatype)){
+      deltatype <- args$deltatype
     }else{
-      #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
-      #where n=length(CF.data)/length(LH)
-      #Note: this is the RR data case
-      write.len <- 1
-      out.len <- length(CF.data)
-      in.len <- length(LH)
-      SDF <- rep(NA, out.len)
-      #vector comparisons take a long time relative to other things
-      if(ignore0.Delta){
-        comp.indices <- which(LH!=0)
-      }
-      while(write.len < out.len){
-        #delta.downscale removes NAs in the output vector
-        if((write.len + in.len) <= length(CF.data)){
-          tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
-                                     deltatype, deltaop, status=status)
-        }else{
-          len.diff <- length(CF.data) - write.len + 1
-          in.len <- len.diff
-          tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
-                                     CF.data[seq(from=write.len, to=length(CF.data))], 
-                                     deltatype, deltaop, status=status)
-        }
+      stop(paste("DeltaSD Downscaling Error: deltatype not found in args"))
+    }
+    if(!is.null(args$deltaop)){
+      deltaop <- args$deltaop
+    }else{
+      stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
+    }
+    if(!is.null(args$ignore0.Delta)){
+      ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
+    }else{
+      stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
+    }
+    #Prepare to loop by RIP
+    out.list <- list()
+    rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+    for(rip in rip.list){
+      #Select the future predictor vars that you are interested in
+      out.var.name <- paste0(ds.var, ".", rip)
+      #Unlist the ensemble members
+      rip.index <- (rip.list==rip)
+      CF.data <- CF[rip.index]
+      CF.data <- unlist(CF.data)
+      #Decide how many iterations of the delta method to perform
+      #based on the relative lengths of the historical
+      #and future data (future should be >= historical) #Switch 1-28 from <  
+#       print('looking at data lengths:')
+#       print(length(LH))
+#       print(length(CF.data))
+#       print(length(CF.data[!is.na(CF.data)]))
+      if(length(LH) >= length(CF.data)){
+        #If the future and historical periods are unequal, truncate the vectors
+        #That...raises an interesting question: should the CH vector be truncated as well?
+        #Technically, it doesn't need to be for the code to work...
         if(ignore0.Delta){
-          SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- NA #Set all vals to 0 first (set to NA on 10-15)
-          sd.write.indices <- (write.len-1) + comp.indices
-          #Remove any that might lead to a longer write index
-          sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
-          SDF[sd.write.indices] <- tempvec
+          SDF <- LH[1:length(CF.data)]
+          out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
+          #SDF[SDF!=0] <- out.temp
+          SDF[1:length(CF.data)] <- 0
+          comp.indices <- which(LH[1:length(CF.data)]!=0)
+          SDF[comp.indices] <- out.temp
+          #print(paste("comp.indices:", paste(comp.indices, collapse=",")))
         }else{
-          SDF[seq(from=write.len, to=(write.len + length(tempvec) - 1))] <- tempvec
+          SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop,status=status)
         }
-        write.len <- write.len + in.len
+      }else{
+        #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
+        #where n=length(CF.data)/length(LH)
+        write.len <- 1
+        out.len <- length(CF.data)
+        in.len <- length(LH)
+        SDF <- rep(NA, out.len)
+        #vector comparisons take a long time relative to other things
+        if(ignore0.Delta){
+          comp.indices <- which(LH!=0)
+        }
+        while(write.len <= out.len){
+          #delta.downscale removes NAs in the output vector
+          if((write.len + in.len) <= length(CF.data)){
+            tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
+                                       deltatype, deltaop, ignore0.Delta,status=status)
+          }else{
+            len.diff <- length(CF.data) - write.len + 1
+            in.len <- len.diff
+            tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
+                                       CF.data[seq(from=write.len, to=length(CF.data))], 
+                                       deltatype, deltaop, ignore0.Delta,status=status)
+          }
+          if(ignore0.Delta){
+            SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- 0 #Set all vals to 0 first
+            sd.write.indices <- (write.len-1) + comp.indices
+            #Remove any that might lead to a longer write index
+            sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
+            SDF[sd.write.indices] <- tempvec
+          }else{
+            SDF[seq(from=write.len, to=(write.len + length(tempvec)-1))] <- tempvec
+          }
+          write.len <- write.len + in.len
+        }
       }
+      num.na <- (sum(is.na(SDF)))
+      if(num.na > 0){
+        print(num.na)
+        stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
+      }
+      out.list[[out.var.name]] <- SDF
     }
-    num.na <- (sum(is.na(SDF)))
-    print(length(SDF))
-    print(sum(is.na(CF)))
-    if(num.na > 0){
-      print(num.na)
-      stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
-    }
-    out.list[[out.var.name]] <- SDF
-  }
-  return(out.list)
+    return(out.list)
 }
 
 delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, 
                             ignore0.Delta=FALSE, status=0){
   #Calculates a delta after removing NAs and applies it to a target vector.
   #Helper method for callDeltaSD, but might be used elsewhere.
-  
+    if(status > 0){
+      if(status==120){ #Check remove.delta.missvals for this value
+        return(delta.targ[1:length(delta.fut)])
+      }
+    }  
   #Make sure that there are no NA values in the current vector
-  if(status > 0){
-    if(status==120) #Check remove.delta.missvals for this value
-      return(delta.targ[1:length(delta.fut)])
-  }
   if(ignore0.Delta){
     delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
@@ -390,13 +401,13 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
         return(delta.targ)
         #When the options are enabled properly, flag this and return a qc mask
       }else{
-        message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
+        #message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
         delta.hist <- 0
       }
     }
     if(length(delta.fut)==0){
       #No need to check for all missing values on this; the effect is the same in either case
-      message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
+      #message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
       delta.fut <- 0
     }
   }
@@ -413,9 +424,7 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
                     "is either NaN or Inf and cannot be processed normally.",
                     "Returning target data values without delta adjustment applied."))
       #Add a value flagging operation at this point
-#       print(summary(as.vector(delta.fut)))
-#       print(summary(as.vector(delta.targ)))
-      return(delta.targ[!is.na(delta.fut)])
+      return(delta.targ)
     }
     out <- delta.targ*delta #CHANGED FROM delta.fut
   }else{
@@ -423,6 +432,179 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   }
   return(out)
 }
+
+# callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
+# #'@author carlos.gaitan@noaa.gov
+#   #'@description The script uses the Delta Method to downscale coarse res. climate variables  
+#   #over a single variable
+#   #'@param LH: Local Historical (a.k.a. observations)
+#   #'@param CH: Coarse Historical (a.k.a. GCM historical)
+#   #'@param CF: Coarse Future (a.k.a GCM future)
+#   #'@param args: A list containing three arguments: 
+#   #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
+#   #'  what single value will be used for the difference between the CH and CF
+#   #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
+#   #'  the mthod for calculating the delta
+#   #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
+#   #'  calculating the delta ('off'), or use only those days for which the delta was greater
+#   #'  than zero ('on')
+#   #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
+#   #' a delta that is applied to the LH (observational) data
+#   #'@return SDF: Downscaled Future (Local)
+#   ########################################
+#   #Note: preferred behavior is to truncate vectors
+#   #rather than randomly sampling iff too short.
+#   
+#   out.var.name <- names(CF)
+#   
+#   #Unlist data from its input form
+#   CH <- unlist(CH)
+#   # Obtain options
+#   if(!is.null(args$deltatype)){
+#     deltatype <- args$deltatype
+#   }else{
+#     stop(paste("DeltaSD Downscaling Error: deltatype not found in args"))
+#   }
+#   if(!is.null(args$deltaop)){
+#     deltaop <- args$deltaop
+#   }else{
+#     stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
+#   }
+#   if(!is.null(args$ignore0.Delta)){
+#     ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
+#   }else{
+#     stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
+#   }
+#   #Prepare to loop by RIP
+#   out.list <- list()
+#   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+#   for(rip in rip.list){
+#     #Select the future predictor vars that you are interested in
+#     out.var.name <- paste0(ds.var, ".", rip)
+#     #Unlist the ensemble members
+#     rip.index <- (rip.list==rip)
+#     CF.data <- CF[rip.index]
+#     CF.data <- unlist(CF.data)
+#     #Decide how many iterations of the delta method to perform
+#     #based on the relative lengths of the historical
+#     #and future data (future should be >= historical) #Switch 1-28 from <  
+#     if(length(LH) >= length(CF.data)){
+#       #If the future and historical periods are unequal, truncate the vectors
+#       #That...raises an interesting question: should the CH vector be truncated as well?
+#       #Technically, it doesn't need to be for the code to work...
+#       if(ignore0.Delta){
+#         SDF <- LH[1:length(CF.data)]
+#         out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
+#         SDF[1:length(CF.data)] <- 0
+#         comp.indices <- which(LH[1:length(CF.data)]!=0)
+#         SDF[comp.indices] <- out.temp
+#       }else{
+#         SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
+#       }
+#     }else{
+#       #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
+#       #where n=length(CF.data)/length(LH)
+#       #Note: this is the RR data case
+#       write.len <- 1
+#       out.len <- length(CF.data)
+#       in.len <- length(LH)
+#       SDF <- rep(NA, out.len)
+#       #vector comparisons take a long time relative to other things
+#       if(ignore0.Delta){
+#         comp.indices <- which(LH!=0)
+#       }
+#       while(write.len < out.len){
+#         #delta.downscale removes NAs in the output vector
+#         if((write.len + in.len) <= length(CF.data)){
+#           tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
+#                                      deltatype, deltaop, status=status)
+#         }else{
+#           len.diff <- length(CF.data) - write.len + 1
+#           in.len <- len.diff
+#           tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
+#                                      CF.data[seq(from=write.len, to=length(CF.data))], 
+#                                      deltatype, deltaop, status=status)
+#         }
+#         if(ignore0.Delta){
+#           SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- NA #Set all vals to 0 first (set to NA on 10-15)
+#           sd.write.indices <- (write.len-1) + comp.indices
+#           #Remove any that might lead to a longer write index
+#           sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
+#           SDF[sd.write.indices] <- tempvec
+#         }else{
+#           SDF[seq(from=write.len, to=(write.len + length(tempvec) - 1))] <- tempvec
+#         }
+#         write.len <- write.len + in.len
+#       }
+#     }
+#     num.na <- (sum(is.na(SDF)))
+#     print(length(SDF))
+#     print(sum(is.na(CF)))
+#     if(num.na > 0){
+#       print(num.na)
+#       stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
+#     }
+#     out.list[[out.var.name]] <- SDF
+#   }
+#   return(out.list)
+# }
+# 
+# delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, 
+#                             ignore0.Delta=FALSE, status=0){
+#   #Calculates a delta after removing NAs and applies it to a target vector.
+#   #Helper method for callDeltaSD, but might be used elsewhere.
+#   
+#   #Make sure that there are no NA values in the current vector
+#   if(status > 0){
+#     if(status==120) #Check remove.delta.missvals for this value
+#       return(delta.targ[1:length(delta.fut)])
+#   }
+#   if(ignore0.Delta){
+#     delta.fut.orig.len <- length(delta.fut)
+#     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
+#     delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+#     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+#     if(length(delta.hist)==0){
+#       if(deltaop=='ratio'){
+#         #Return the OH data
+#         message(paste("Insufficent historical predictor (MH) data when used with the ratio deltatype;", 
+#                       "returning target values without the delta"))
+#         return(delta.targ)
+#         #When the options are enabled properly, flag this and return a qc mask
+#       }else{
+#         message("Adding ignore0.Delta correction for MH data: zero returned as MH value for delta calculation")
+#         delta.hist <- 0
+#       }
+#     }
+#     if(length(delta.fut)==0){
+#       #No need to check for all missing values on this; the effect is the same in either case
+#       message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
+#       delta.fut <- 0
+#     }
+#   }
+#   if(deltaop=='add'){
+#     #Downscale by difference delta
+#     delta<-do.call(deltatype, list(delta.fut))-do.call(deltatype, list(delta.hist))
+#     out <- delta.targ + delta #CHANGED FROM delta.fut
+#   }else if(deltaop=='ratio'){
+#     #Downscale by percentage delta (never negative, but occasionally NaN)
+#     delta<-do.call(deltatype, list(delta.fut))/do.call(deltatype, list(delta.hist))
+#     #Loud warning message for divide-by-0 case
+#     if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
+#       message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
+#                     "is either NaN or Inf and cannot be processed normally.",
+#                     "Returning target data values without delta adjustment applied."))
+#       #Add a value flagging operation at this point
+# #       print(summary(as.vector(delta.fut)))
+# #       print(summary(as.vector(delta.targ)))
+#       return(delta.targ[!is.na(delta.fut)])
+#     }
+#     out <- delta.targ*delta #CHANGED FROM delta.fut
+#   }else{
+#     stop(paste("delta.downscale Downscaling Error: deltaop", deltaop, "is not one of 'ratio' or 'add'"))
+#   }
+#   return(out)
+# }
 
 
 callEDQMv2<-function(LH,CH,CF,args,ds.var='null', att_table=NULL){ 
