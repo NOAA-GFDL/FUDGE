@@ -84,6 +84,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
   status = 0
   if(sum(lapply(MF.new, 'length')==0)!=0){
     #MF.new[lapply(MF.new, 'length')==0] <- 0
+    MF.new <- lapply(MF, 'replace.missval', 0)
     message(paste("Warning in remove.delta.missvals: one or more MF  datasets", 
                   "were all 0 or all missing! Zeroes will be added in place of missing pr."))
     status=130
@@ -99,6 +100,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
     }else{
       #All OH args that were of length 0 now have a single 0 for their values
       #MH.new[lapply(MH.new, 'length')==0] <- 0
+      MH.new <- lapply(MH, 'replace.missval', 0)
       message(paste("Warning in remove.delta.missvals: one or more MH datasets", 
                     "were all 0 or all missing! Zeroes will be added in place of missing pr."))
     }
@@ -106,6 +108,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
   }
   print(paste('final delta status:', status))
   return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
+  #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
 }
 
 remove.mask.missvals <- function(data, mask){
@@ -165,12 +168,12 @@ replace.missval <- function(x, val){
 
 add.back.in <- function(data, ref){
   #adds data back into a reference vector
-#   print(summary(data))
-#   print(summary(ref))
-#   print(sum(!is.na(ref)))
-#   print(sum(!is.na(data)))
-#   print(length(ref))
-#   print(length(data))
+  print(summary(data))
+  print(summary(ref))
+  print(sum(!is.na(ref)))
+  print(sum(!is.na(data)))
+  print(length(ref))
+  print(length(data))
   ref[!is.na(ref)] <- data
   return(ref)
 }

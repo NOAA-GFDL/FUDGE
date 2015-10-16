@@ -44,7 +44,9 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
     }
   }
-  #print(sum(lapply(ds.input$MF, length)==0)!=0)
+  print('relevant status check')
+  print(lapply(ds.input$MF, 'summary'))
+  print(sum(lapply(ds.input$MF, length)==0)!=0)
   if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
     #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
@@ -151,7 +153,6 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
   out.list <- list()
   for(rip in rips){
     out.var <- paste(ds.var, rip, sep=".")
-    print(out.var)
     #Get true/false vector to index out the data that you want
     rip.index <- (rip.list==rip)
     rip.data <- new[rip.index]
@@ -288,9 +289,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
     stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
   }
   if(!is.null(args$ignore0.Delta)){
-    print(args)
     ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
-    print(ignore0.Delta)
   }else{
     stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
   }
@@ -313,12 +312,12 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
       #Technically, it doesn't need to be for the code to work...
       if(ignore0.Delta){
         SDF <- LH[1:length(CF.data)]
-        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, status=status)
+        out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
         SDF[1:length(CF.data)] <- 0
         comp.indices <- which(LH[1:length(CF.data)]!=0)
         SDF[comp.indices] <- out.temp
       }else{
-        SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, status=status)
+        SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
       }
     }else{
       #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
@@ -345,7 +344,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
                                      deltatype, deltaop, status=status)
         }
         if(ignore0.Delta){
-          SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- 0 #Set all vals to 0 first
+          SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- NA #Set all vals to 0 first (set to NA on 10-15)
           sd.write.indices <- (write.len-1) + comp.indices
           #Remove any that might lead to a longer write index
           sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
@@ -357,6 +356,8 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL,status=0){
       }
     }
     num.na <- (sum(is.na(SDF)))
+    print(length(SDF))
+    print(sum(is.na(CF)))
     if(num.na > 0){
       print(num.na)
       stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
@@ -373,7 +374,6 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   
   #Make sure that there are no NA values in the current vector
   if(status > 0){
-    print(status)
     if(status==120) #Check remove.delta.missvals for this value
       return(delta.targ[1:length(delta.fut)])
   }
@@ -413,7 +413,9 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
                     "is either NaN or Inf and cannot be processed normally.",
                     "Returning target data values without delta adjustment applied."))
       #Add a value flagging operation at this point
-      return(delta.targ)
+#       print(summary(as.vector(delta.fut)))
+#       print(summary(as.vector(delta.targ)))
+      return(delta.targ[!is.na(delta.fut)])
     }
     out <- delta.targ*delta #CHANGED FROM delta.fut
   }else{
