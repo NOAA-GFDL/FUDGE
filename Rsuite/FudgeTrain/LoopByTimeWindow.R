@@ -67,7 +67,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
                              train_qcmask=FALSE,
-                             create.qc.mask=create.qc.mask,
+                             create.qc.mask=FALSE,
                              min.present=1,
                              verbose=TRUE, test=FALSE)
 {
@@ -121,6 +121,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
+    print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
@@ -204,6 +205,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
+#           stop(paste('what is missval.handling at this point?'))
+#           print(missval.handling)
           temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                    train.predict = kfold.predict,
                                     train.target = kfold.target,
@@ -267,7 +270,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
           }
           #for (new.ds.var in names(temp.out)){
-            if(create.qc.mask){
+          print('this should not be false in this place')
+          print(train_qcmask)
+          print(create.qc.mask)
+            if(create.qc.mask && !(train_qcmask)){
               #if (verbose) {message('adding qc mask')}
               for(var.name in names(qc.masklist)){
                 #intersection of time windowing mask and MF dataset

@@ -15,6 +15,7 @@ assess.missvals <- function(OH, MH, MF,
                     'distributional' = remove.all.missvals(OH, MH, MF), 
                     'synchronous' = remove.synch.missvals(OH, MH, MF), 
                     'delta' = remove.delta.missvals(OH, MH, MF, ds.args, threshold),
+                    'cdft' = remove.cdft.missvals(OH, MH, MF, ds.args, threshold),
                     stop(paste("Error in assess.misvals: provided type", type, 
                                "was not one of the available options!")))
   #Threshold call is general for all functions, except those that deal with 
@@ -53,6 +54,10 @@ assess.missvals <- function(OH, MH, MF,
   }else{
     ds.list$qcmask <- NA
   }
+  #previously sd on all, but that's not a reliable predictor
+#   print(mean(ds.list$OH))
+#   print(lapply(ds.list$MH, 'mean'))
+#   print(lapply(ds.list$MF, 'mean'))
   return(ds.list)
 }
 
@@ -113,6 +118,46 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
   return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
 }
 
+remove.cdft.missvals<- function(OH, MH, MF, ds.args, thold=1){
+  #'removes missing values from data
+  #'and performs checks related to the CDFt method 
+  out.list <- list(MH=lapply(MH, 'remove.missvals'),  
+                   OH=remove.missvals(OH), 
+                   MF=lapply(MF, 'remove.missvals'))  
+  MH.kount <- unlist(lapply(out.list$MH, length))
+  OH.kount <- length(out.list$OH)
+  MF.kount <- unlist(lapply(out.list$MF, length))
+  out.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=thold))
+  #Do the checks for the threshold, add values back in
+  if(out.list$status > 0){
+    message(paste("Adding CDFt-recovery option for pr"))
+    #For now, assume that the only thing that can cause this is the pr opts
+    ds.tmp <- recover.ignore0(OH,MH,MF)
+    for(name in (names(ds.tmp))){
+      out.list[[name]] <- ds.tmp[[name]]
+    }
+    out.list$status <- 110
+  }
+  #And now do the final check, making sure there are at least 3 
+  #unique values in each dataset
+  unique.vec <- c(unlist(c(lapply(lapply(out.list$MH, 'unique'), 'length'), 
+                  length(unique(out.list$OH)), 
+                  lapply(lapply(out.list$MF, 'unique'), 'length'), use.names=FALSE)))
+#   print(unique.vec)
+#   stop('examine this thing')
+  print(unique.vec)
+  print(lapply(out.list$MH, 'summary'))
+  print(summary(out.list$OH))
+  print(lapply(out.list$MF, 'summary'))
+  #save(file="/home/cew/Code/testing/CDFt_fail_point.R", list=c('out.list'))
+  if(sum(unique.vec <= 5)!=0){
+    message(paste("Warning in remove.cdft.missvals: one or more of the datasets", 
+                   "passed in had fewer than five unique values at this point!"))
+    out.list$status <- 230 #This is probably going to trigger a fail condition
+  }
+  return(out.list)
+}
+
 remove.mask.missvals <- function(data, mask){
   #under this scheme, you keep track of the places 
   #where the mask was added, and 
@@ -170,6 +215,11 @@ replace.missval <- function(x, val){
 
 add.back.in <- function(data, ref){
   #adds data back into a reference vector
+#   print('in add.back.in')
+#   print(length(ref))
+#   print(length(data))
+#   print(sum(is.na(ref)))
+#   print(sum(is.na(data)))
   ref[!is.na(ref)] <- data
   return(ref)
 }

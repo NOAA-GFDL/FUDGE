@@ -219,15 +219,16 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }else{
          stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
        }
-       print(sum(targ!=0))
-       print(sum(pred!=0))
-       print(sum(new.data!=0))
-       print(summary(targ))
-       print(summary(pred))
-       print(summary(new.data))
-       print(npas)
-       print(dev)
-#       print((new.data[new.data!=0]))
+#        print(sum(targ!=0))
+#        print(sum(pred!=0))
+#        print(sum(new.data!=0))
+#        print(summary(targ))
+#        print(summary(pred))
+#        print(summary(new.data))
+#        print(npas)
+#        print(dev)
+#      print((new.data[new.data!=0]))
+       save(file="/home/cew/Code/testing/CDFt_fail_point_ii.R", list=c('targ', 'pred', 'new.data', 'npas', 'dev'))
        if(is.null(args)){
          temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
        }else{
