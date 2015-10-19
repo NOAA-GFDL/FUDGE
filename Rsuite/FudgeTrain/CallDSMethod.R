@@ -228,7 +228,7 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
 #        print(npas)
 #        print(dev)
 #      print((new.data[new.data!=0]))
-       save(file="/home/cew/Code/testing/CDFt_fail_point_ii.R", list=c('targ', 'pred', 'new.data', 'npas', 'dev'))
+       #save(file="/home/cew/Code/testing/CDFt_fail_point_ii.R", list=c('targ', 'pred', 'new.data', 'npas', 'dev'))
        if(is.null(args)){
          temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
        }else{
@@ -236,7 +236,10 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
          ## fail to run with an 'unused arguments' error, without any decent
          ## explanation as to why. This way works.
          args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
-         temp <- do.call("CDFt", args.list)$DS
+         temp <-tryCatch(do.call("CDFt", args.list)$DS, 
+                         #error=function(e){return(rep(NA, length(new.data)))},
+                         error=function(e){message("Error caught from CDFt; retrying with higher dev");
+                                           do.call("CDFt", c(list(targ, pred, new.data), list(npas=npas, dev=dev+1)))$DS},silent=FALSE)
        }
        #return(as.numeric(temp))
        out.list[[out.var.name]] <- as.numeric(temp)

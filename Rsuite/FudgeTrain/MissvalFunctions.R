@@ -145,10 +145,10 @@ remove.cdft.missvals<- function(OH, MH, MF, ds.args, thold=1){
                   lapply(lapply(out.list$MF, 'unique'), 'length'), use.names=FALSE)))
 #   print(unique.vec)
 #   stop('examine this thing')
-  print(unique.vec)
-  print(lapply(out.list$MH, 'summary'))
-  print(summary(out.list$OH))
-  print(lapply(out.list$MF, 'summary'))
+   print(unique.vec)
+#   print(lapply(out.list$MH, 'summary'))
+#   print(summary(out.list$OH))
+#   print(lapply(out.list$MF, 'summary'))
   #save(file="/home/cew/Code/testing/CDFt_fail_point.R", list=c('out.list'))
   if(sum(unique.vec <= 5)!=0){
     message(paste("Warning in remove.cdft.missvals: one or more of the datasets", 
