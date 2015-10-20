@@ -1,7 +1,12 @@
+
 10-19-15
 (cew)
 - Merging branch with ignore0/missing value handling for all methods
 into the main F development branch
+
+10-20-14
+(cew)
+- changing name of lm.step method to lmstep
 
 10-12-15
 (cew)

@@ -54,7 +54,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                   "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
                   "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table, ds.input$status), #esd.gen,
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
-                  "lm.step" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                  "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
 #     print(summary(out[[1]]))
  #    print(summary(esd.index[[1]]))
