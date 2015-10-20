@@ -38,7 +38,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   #This should be pre-initialized, even if it's likely to be small
   ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
                                ds.method, args, min.present, qcmask=train_qc_mask)
-  if((ds.input$status > 0 && 'MF'%in%train.names) || ds.input$status==130){
+  if(((ds.input$status > 0 && 'MF'%in%train.names) || ds.input$status==130) && ds.input$status !=120){
     #If the number of missing values has been altered by the fxn, get a new addition index
     for(rip in rips){
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
@@ -56,9 +56,13 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   "lm.step" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
-#     print(summary(out))
-#     print(summary(esd.index))
+#     print(summary(out[[1]]))
+ #    print(summary(esd.index[[1]]))
+ #   if(length(out[[1]] > 1)){
     out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
+#     }else{
+#       out.tmp[[1]] <- 
+#     }
     names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
   }else{
     #The qcmask return code goes in here, eventually
@@ -219,16 +223,6 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }else{
          stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
        }
-#        print(sum(targ!=0))
-#        print(sum(pred!=0))
-#        print(sum(new.data!=0))
-#        print(summary(targ))
-#        print(summary(pred))
-#        print(summary(new.data))
-#        print(npas)
-#        print(dev)
-#      print((new.data[new.data!=0]))
-       #save(file="/home/cew/Code/testing/CDFt_fail_point_ii.R", list=c('targ', 'pred', 'new.data', 'npas', 'dev'))
        if(is.null(args)){
          temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
        }else{
@@ -238,7 +232,7 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
          args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
          temp <-tryCatch(do.call("CDFt", args.list)$DS, 
                          #error=function(e){return(rep(NA, length(new.data)))},
-                         error=function(e){message("Error caught from CDFt; retrying with higher dev");
+                         error=function(e){message("Error caught from CDFt; retrying with dev=dev+1");
                                            do.call("CDFt", c(list(targ, pred, new.data), list(npas=npas, dev=dev+1)))$DS},silent=FALSE)
        }
        #return(as.numeric(temp))
@@ -355,6 +349,10 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
                                        deltatype, deltaop, ignore0.Delta,status=status)
           }else{
             len.diff <- length(CF.data) - write.len + 1
+            #This needs an elese case for the case where there is *more* LH data
+            #than CF data at a given point.
+            #save(file="/home/cew/Code/testing/test_out.R", list=c('LH', 'CH', 'CF.data', 'write.len', 
+            #                                                      'deltatype', 'deltaop', 'ignore0.Delta', 'status'))
             in.len <- len.diff
             tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
                                        CF.data[seq(from=write.len, to=length(CF.data))], 
@@ -367,14 +365,23 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
             sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
             SDF[sd.write.indices] <- tempvec
           }else{
-            SDF[seq(from=write.len, to=(write.len + length(tempvec)-1))] <- tempvec
+            SDF[seq(from=write.len, to=(write.len +length(tempvec)-1))] <- tempvec # length(tempvec)
           }
           write.len <- write.len + in.len
         }
       }
+#       print(paste('min index written:', min(which(!is.na(SDF)))))
+#       print(paste('max index written:', max(which(!is.na(SDF)))))
       num.na <- (sum(is.na(SDF)))
       if(num.na > 0){
         print(num.na)
+#         print(sum(is.na(CF.data)))
+#         print(sum(is.na(LH)))
+#         print(sum(is.na(CH)))
+#         print(length(CF.data))
+#         print(length(LH))
+#         print(length(CH))
+#         print(length(SDF))
         stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
       }
       out.list[[out.var.name]] <- SDF
@@ -388,6 +395,7 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   #Helper method for callDeltaSD, but might be used elsewhere.
     if(status > 0){
       if(status==120){ #Check remove.delta.missvals for this value
+        message('returning OH data without delta')
         return(delta.targ[1:length(delta.fut)])
       }
     }  
@@ -397,6 +405,12 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
     delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+  }else{
+    delta.fut.orig.len <- length(delta.fut)
+    delta.fut <- delta.fut[!is.na(delta.fut)]
+    delta.targ <- delta.targ[!is.na(delta.targ)]
+    delta.hist.temp <- delta.hist[!is.na(delta.hist)]
+  }
     if(length(delta.hist)==0){
       if(deltaop=='ratio'){
         #Return the OH data
@@ -414,14 +428,16 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
       #message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
       delta.fut <- 0
     }
-  }
+  #The na.rms are important in this step - it's possible, if there are more LH than CH samples in the case
+    #where the future time period is longer than the historical time period, for missing values to get passed
+    #into the CH dataset. 
   if(deltaop=='add'){
     #Downscale by difference delta
-    delta<-do.call(deltatype, list(delta.fut))-do.call(deltatype, list(delta.hist))
+    delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
     out <- delta.targ + delta #CHANGED FROM delta.fut
   }else if(deltaop=='ratio'){
     #Downscale by percentage delta (never negative, but occasionally NaN)
-    delta<-do.call(deltatype, list(delta.fut))/do.call(deltatype, list(delta.hist))
+    delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
     #Loud warning message for divide-by-0 case
     if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
       message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 

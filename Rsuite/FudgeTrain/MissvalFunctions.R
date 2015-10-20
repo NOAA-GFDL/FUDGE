@@ -110,9 +110,13 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
       MH.new <- lapply(MH, 'replace.missval', 0)
       message(paste("Warning in remove.delta.missvals: one or more MH datasets", 
                     "were all 0 or all missing! Zeroes will be added in place of missing pr."))
+      status=110
     }
-    status=110
   }
+#   print('delta summaries:')
+#   print(lapply(MH.new, 'summary'))
+#   print(summary(OH.new))
+#   print(lapply(MF.new, 'summary'))
   print(paste('final delta status:', status))
   #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
   return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
