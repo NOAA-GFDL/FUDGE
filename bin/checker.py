@@ -18,13 +18,13 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0):
        listfile = []	 
        listbad = []
        append_ok = False
-       othercheck = False	
-       if (os.path.exists(path+"/.mini.success")):
+       othercheck = False
+       if (os.path.exists(path+"/.mini.fail")):
+          print "\033[1;31m .mini.fail found, postProc cannot be executed. \033[1;m"
+          return -13	
+       elif (os.path.exists(path+"/.mini.success")):
 	  print "\033[1;42m .mini.success found, other steps in checker to follow.\033[1;m"
 	  othercheck = True
-       elif (os.path.exists(path+"/.mini.fail")):
-	  print "\033[1;31m .mini.fail found, postProc cannot be executed. \033[1;m" 
-          return -13
        else:
 	  v_print(1,verbose,"INFO:Waiting for status file to be generated"+path)
           return 14
