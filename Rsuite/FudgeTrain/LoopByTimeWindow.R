@@ -101,7 +101,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     downscale.list <- NULL
   }
   if(create.qc.mask){
-    qc.mask <- rep(NA, downscale.length) #Check this bit - shouldn't cause errors, but might later
+    qc.mask <- rep(0, downscale.length) #Check this bit - shouldn't cause errors, but might later
     qc.masklist <- list()
     for(name in downscale.varlist){
       qc.masklist[[name]] <- qc.mask
@@ -109,8 +109,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }else{
     qc.masklist <- NULL
   }
-  ##Create checkvector to test collision of kfold validation masks
-  checkvector <- rep(0, downscale.length)
   #And finally, in order to see internal activity, add the graph options
   if(graph){
     #     mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks) #Try ivory next time you run it
@@ -179,7 +177,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
       }
       #If there is enough data available in the window to perform downscaling
-      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
+#      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         #Adjust the values of the downscaled ouptut, if applicable
         if(s3.adjust){
           if(test){
@@ -226,7 +224,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                         as.numeric(add.back.in(temp.out[[var.name]], 
                                                                     ttrim.mask))),
-                                                  na.rm=TRUE)
+                                                  na.rm=FALSE)
             if(train_qcmask){
               #Oh dear, the time-trimming masks are going to be a mss in here, aren't they...
               #print(summary(temp.out$qc.mask[[var.name]]))
@@ -238,7 +236,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
                                                        add.back.in(temp.out$qc.mask[[var.name]], 
                                                                    ttrim.mask)),
-                                                 na.rm=TRUE) #Start from all good and decrease
+                                                 na.rm=FALSE) #Start from all good and decrease
             }
           } #If this works, consider adding it to all of the other assignments in this section
         }
@@ -288,7 +286,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                      as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
                                                                  ttrim.mask))), 
-                                                  ,na.rm=TRUE)
+                                                  na.rm=TRUE)
           }
          }
         if(graph){
@@ -299,9 +297,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                  pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
         }
         #Otherwise, you don't need to do anything because that loop should be full of NAs
-      }else{
-        print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
-      }
+#       }else{
+#         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
+#       }
     }
   }  
   #Make sure that dimensions are correct before leaving function
