@@ -165,8 +165,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         if(mask.data.by.time.window){
           if(length(mask.struct) > 3){
             use.time.trim.mask <- TRUE
-            ttrim.mask <- mask.struct[[4]]$masks[[window]]
-            ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+            ttrim.mask <- mask.struct[[3]]$masks[[window]]
+            #ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+            #ds.ttrim.mask <- apply.any.mask(ttrim.mask, mask.struct[[3]]$masks[[window]], dim='temporal')
+            ds.ttrim.mask <- mask.struct[[4]]$masks[[window]]
           }else{
             use.time.trim.mask <- FALSE
             ttrim.mask <- mask.struct[[3]]$masks[[window]]
@@ -215,35 +217,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    ds.var=ds.var, 
                                    min.present=min.present)
           for(var.name in names(temp.out)){
-            #intersection of time windowing mask and MF dataset
-            #             if(use.time.trim.mask){
-            #               temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
-            #             }
-            #             #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'ttrim.mask'))
-            #             downscale.list[[var.name]] <- as.numeric(colSums(rbind(downscale.list[[var.name]], 
-            #                                                         as.numeric(add.back.in(temp.out[[var.name]], 
-            #                                                                     ttrim.mask))),
-            #                                                   na.rm=TRUE))
-            #             #print(summary(downscale.list[[var.name]]))
-            #           } #If this works, consider adding it to all of the other assignments in this section
-            #for(var.name in names(temp.out$ds.out)){
-            #intersection of time windowing mask and MF dataset
-            #             print('summary of output:')
-            #             print(summary(temp.out$ds.out[[var.name]]))
-            #             print(length(temp.out$ds.out[[var.name]]))
-            #             print(sum(is.na(ttrim.mask)))
-            #             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-            #                                                      as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
-            #                                                                  ttrim.mask))), 
-            #                                                   ,na.rm=TRUE)
-            #             print('summary of total:')
-            #             print(summary(downscale.list[[var.name]]))
             if(use.time.trim.mask){
-              for(var.name in names(qc.masklist)){
-                temp.assign <- ttrim.mask
-                temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
-                downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.assign)#[!is.na(ttrim.mask)]
-              }
+              temp.assign <- ttrim.mask
+              temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
+              downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
             }
@@ -299,12 +276,14 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #                                                   ,na.rm=TRUE)
             #             print('summary of total:')
             #             print(summary(downscale.list[[var.name]]))
-            print('just before other tricky assign')
             if(use.time.trim.mask){
               for(var.name in names(qc.masklist)){
+#                 temp.assign <- ttrim.mask
+#                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+#                 downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.assign)#[!is.na(ttrim.mask)]
                 temp.assign <- ttrim.mask
                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-                downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.assign)#[!is.na(ttrim.mask)]
+                downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
               }
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$ds.out[[var.name]])#[!is.na(ttrim.mask)]
@@ -324,10 +303,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       }
     }
   }
-   #print(summary(kfold.target))
-  # print(lapply(downscale.list, summary))
+  #print(summary(kfold.target))
+  #print(lapply(downscale.list, summary))
   #print(summary(downscale.list$pr.r1i1p1))
-  # stop('examine results')
   #However, if cross-validation is being performed
   #   } else { 
   #     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))

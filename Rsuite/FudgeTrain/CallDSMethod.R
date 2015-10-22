@@ -44,7 +44,8 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
     }
   }
-  print(sum(lapply(ds.input$MF, length)==0)!=0)
+#   if(verbose){print(paste('Number of datasets for which there is not sufficent data to downscale:', 
+#               (sum(lapply(ds.input$MF, length)==0))))}
   if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ #Use 200 to refer to fatal errors; everything else should be recoverable
     out <- switch(ds.method, 
                   'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
