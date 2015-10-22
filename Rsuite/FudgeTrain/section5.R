@@ -297,10 +297,12 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   ds.vars <- names(adjusted.output$ds.out)
   out.list <- adjusted.output
   for(ds.var in ds.vars){
-    if(sum(sapply(test$qc_args$vars,'grepl',ds.vars))==1){
+    if(sum(sapply(test$qc_args$vars,'grepl',ds.var))==1){ #ds.vars? I changed from ds.vars to ds.var 10-22
       if(!is.null(test$qc_args$arg)){
+        #print(summary(out.list$ds.out[[ds.var]]))
+        #save(file='/home/cew/Code/testing/test_out.R', list=c('test', 'out.list', 'ds.var'))
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                             args=list(out.list$ds.out[[ds.var]], 
+                                             args=list(as.numeric(out.list$ds.out[[ds.var]]), 
                                                        test$qc_args$arg))
       }else{
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
