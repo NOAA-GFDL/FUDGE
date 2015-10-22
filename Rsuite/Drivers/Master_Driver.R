@@ -368,6 +368,8 @@ if(length(post.ds) !=0){
   }
   remove(temp.postproc)
 }
+print('summary of downscaled data after adjustment:')
+print(lapply(ds$esd.final, 'summary'))
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 # rip.list <- lapply(att_table, '[[', 'rip')

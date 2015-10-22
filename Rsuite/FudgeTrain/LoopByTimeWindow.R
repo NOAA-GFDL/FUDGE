@@ -92,7 +92,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   rips <- unique(rip.list)
   downscale.varlist <- paste0(att.table$hist.targ[[1]]$var, ".", rips) #Should only ever have single value in hist.targ
   if(create.ds.out){
-    downscale.vec  <- rep(0, downscale.length)
+    downscale.vec  <- rep(NA, downscale.length)
     downscale.list <- list()
     for(name in downscale.varlist){
       downscale.list[[name]] <- downscale.vec
@@ -167,8 +167,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         if(mask.data.by.time.window){
           if(length(mask.struct) > 3){
             use.time.trim.mask <- TRUE
-            ttrim.mask <- mask.struct[[4]]$masks[[window]]
-            ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+            ttrim.mask <- mask.struct[[3]]$masks[[window]]
+            #ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+            #ds.ttrim.mask <- apply.any.mask(ttrim.mask, mask.struct[[3]]$masks[[window]], dim='temporal')
+            ds.ttrim.mask <- mask.struct[[4]]$masks[[window]]
           }else{
             use.time.trim.mask <- FALSE
             ttrim.mask <- mask.struct[[3]]$masks[[window]]
@@ -192,7 +194,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                        fut.pred = kfold.gen,
                                        att.list=att.table,
                                        s5.instructions=s5.instructions)
-          s5.instructions <- temp.out$s5.list
+          s5.instructions.window <- temp.out$s5.list
 #           (print(summary(kfold.target - temp.out$input$hist.targ)))
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
@@ -202,6 +204,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
           }
+        }else{
+          s5.instructions.window <- s5.instructions
         }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
@@ -218,9 +222,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    min.present=min.present, train_qcmask)
           tout.names <- names(temp.out[!names(temp.out)%in%c('qc.mask')])
           for(var.name in tout.names){
-            #intersection of time windowing mask and MF dataset
             if(use.time.trim.mask){
-              temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
+              temp.assign <- ttrim.mask
+              temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
+              downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+            }else{
+              downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
             }
             #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'ttrim.mask'))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
@@ -245,7 +252,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         #And adjust the downscaled output, if applicable
         #if(s5.adjust){
         #Note: above check no longer works, since s3 opts may create new s5 opts on the fly
-        if(length(s5.instructions) > 0){
+        if(length(s5.instructions.window) > 0){
           if(verbose){message('calling section 5 adjustment')}
           if(is.na(kfold.orig)){
             #If there is ds data being passed in from outside, it gets checked
@@ -258,7 +265,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
           }
-          temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
+          temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
                                        data = data, 
                                        data.atts= att.table,
@@ -284,13 +291,17 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               }
             }
           for(var.name in names(temp.out$ds.out)){
-            #intersection of time windowing mask and MF dataset
-            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-                                                     as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
-                                                                 ttrim.mask))), 
-                                                  ,na.rm=TRUE)
+            if(use.time.trim.mask){
+              for(var.name in names(qc.masklist)){
+                temp.assign <- ttrim.mask
+                temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+                downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              }
+            }else{
+              downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$ds.out[[var.name]])#[!is.na(ttrim.mask)]
+            }
           }
-         }
+        }
         if(graph){
           if(masklines){
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
@@ -303,7 +314,16 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
       }
     }
-  }  
+  }
+  #print(summary(kfold.target))
+  #print(lapply(downscale.list, summary))
+  #print(summary(downscale.list$pr.r1i1p1))
+  #However, if cross-validation is being performed
+  #   } else { 
+  #     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
+  #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
+  #   }
+  #Exit loop
   #Make sure that dimensions are correct before leaving function
   if(!is.null(downscale.list)){
     lapply(downscale.list, 'assign.dim', c(1, 1, length(downscale.list[[1]])))
