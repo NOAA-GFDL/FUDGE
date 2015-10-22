@@ -226,26 +226,18 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               temp.assign <- ttrim.mask
               temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
               downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              if(train_qcmask){
+                temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+                #temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
+                temp.out$qc.mask[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]
+              }
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
-            }
-            #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'ttrim.mask'))
-            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-                                                        as.numeric(add.back.in(temp.out[[var.name]], 
-                                                                    ttrim.mask))),
-                                                  na.rm=TRUE)
-            if(train_qcmask){
-              #Oh dear, the time-trimming masks are going to be a mss in here, aren't they...
-              #print(summary(temp.out$qc.mask[[var.name]]))
-              #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'var.name', 'ds.ttrim.mask'))
-              
-              if(use.time.trim.mask){
-                temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
+              if(train_qcmask){
+                print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
+                temp.out$qc.mask[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
+                print(summary(temp.out$qc.mask[[var.name]]))
               }
-              qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
-                                                       add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                   ttrim.mask)),
-                                                 na.rm=TRUE) #Start from all good and decrease
             }
           } #If this works, consider adding it to all of the other assignments in this section
         }
@@ -267,7 +259,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           }
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
-                                       data = data, 
+                                       data = data[names(data)!='qc.mask'], 
                                        data.atts= att.table,
                                        hist.pred = lapply(kfold.predict, remove.missvals), 
                                        hist.targ = kfold.target[!is.na(kfold.target)], 
@@ -277,26 +269,24 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
           }
           #for (new.ds.var in names(temp.out)){
-          print('this should not be false in this place')
-          print(train_qcmask)
-          print(create.qc.mask)
-            if(create.qc.mask && !(train_qcmask)){
-              #if (verbose) {message('adding qc mask')}
-              for(var.name in names(qc.masklist)){
-                #intersection of time windowing mask and MF dataset
-                qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
-                                                            add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                        ttrim.mask) 
-                                                         ),na.rm=FALSE)
+          if(create.qc.mask && !(train_qcmask)){
+            #if (verbose) {message('adding qc mask')}
+            for(var.name in names(qc.masklist)){
+              #intersection of time windowing mask and MF dataset
+              if(use.time.trim.mask){
+                temp.assign <- ttrim.mask
+                temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+                qc.masklist[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              }else{
+                qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])#[!is.na(ttrim.mask)]
               }
             }
+          }
           for(var.name in names(temp.out$ds.out)){
             if(use.time.trim.mask){
-              for(var.name in names(qc.masklist)){
                 temp.assign <- ttrim.mask
                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
                 downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
-              }
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$ds.out[[var.name]])#[!is.na(ttrim.mask)]
             }
@@ -315,6 +305,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       }
     }
   }
+  stop('examine the output')
   #print(summary(kfold.target))
   #print(lapply(downscale.list, summary))
   #print(summary(downscale.list$pr.r1i1p1))
