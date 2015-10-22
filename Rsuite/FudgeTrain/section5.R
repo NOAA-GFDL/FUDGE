@@ -294,20 +294,30 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #calls the backtransform for the downscaled data
   #Note: this adjusts data only; there is never going to be
   #a qc mask provided from this data (at least for now)
+  save(file='/home/cew/Code/testing/test_out.R', list=c('test', 'input', 'adjusted.output'))
   ds.vars <- names(adjusted.output$ds.out)
   out.list <- adjusted.output
+  print('printingthe qc_args function')
+  print(test$qc_args$fxn)
+  print(test$qc_args$arg)
+  print(ds.vars)
   for(ds.var in ds.vars){
-    if(sum(sapply(test$qc_args$vars,'grepl',ds.vars))==1){
+    if(sum(sapply(test$qc_args$vars,'grepl',ds.var))==1){ #If there is a variable present
       if(!is.null(test$qc_args$arg)){
+        print(summary(out.list$ds.out[[ds.var]]))
+        tmp.out <- out.list$ds.out[[ds.var]]
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
                                              args=list(out.list$ds.out[[ds.var]], 
                                                        test$qc_args$arg))
+        print(summary(out.list$ds.out[[ds.var]]))
+        #print(tmp.out/out.list$ds.out[[ds.var]])
       }else{
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
                                              args=list(out.list$ds.out[[ds.var]]))
       }
     }
   }
+  stop('examine this call in more detail')
   return(out.list)
 }
 

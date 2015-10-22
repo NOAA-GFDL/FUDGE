@@ -69,7 +69,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              train_qcmask=FALSE,
                              create.qc.mask=FALSE,
                              min.present=1,
-                             verbose=TRUE, test=FALSE)
+                             verbose=TRUE, test=TRUE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
@@ -92,7 +92,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   rips <- unique(rip.list)
   downscale.varlist <- paste0(att.table$hist.targ[[1]]$var, ".", rips) #Should only ever have single value in hist.targ
   if(create.ds.out){
-    downscale.vec  <- rep(0, downscale.length)
+    downscale.vec  <- rep(NA, downscale.length)
     downscale.list <- list()
     for(name in downscale.varlist){
       downscale.list[[name]] <- downscale.vec
@@ -101,7 +101,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     downscale.list <- NULL
   }
   if(create.qc.mask){
-    qc.mask <- rep(0, downscale.length) #Check this bit - shouldn't cause errors, but might later
+    qc.mask <- rep(NA, downscale.length) #Check this bit - shouldn't cause errors, but might later
     qc.masklist <- list()
     for(name in downscale.varlist){
       qc.masklist[[name]] <- qc.mask
@@ -184,22 +184,29 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
           }
+          print(paste('length of s3 instructions:'), length(s3.instructions))
           temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
                                        hist.pred = kfold.predict,
                                        hist.targ = kfold.target,
                                        fut.pred = kfold.gen,
                                        att.list=att.table,
                                        s5.instructions=s5.instructions)
-          s5.instructions <- temp.out$s5.list
+          s5.instructions.window<- temp.out$s5.list
+          print(paste('length of s5 instructions:'))
+          print(length(s5.instructions.window))
 #           (print(summary(kfold.target - temp.out$input$hist.targ)))
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
           kfold.gen <- temp.out$input$fut.pred
           remove(temp.out)
-          if(test){
-            #Add the save in here
-            save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
-          }
+ #         save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('s5.instructions','kfold.target',  'kfold.predict', 'kfold.gen'))
+#          stop('examine your output')
+#           if(test){
+#             #Add the save in here
+#             save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('s5.instructions','kfold.target',  'kfold.predict', 'kfold.gen'))
+#           }
+        }else{
+          s5.instructions.window <- s5.instructions
         }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
@@ -221,29 +228,41 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
             }
             #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'ttrim.mask'))
+            na.intersect <- ifelse(colSums(rbind(is.na(downscale.list[[var.name]]), 
+                                                 is.na(as.numeric(add.back.in(temp.out[[var.name]], 
+                                                                        ttrim.mask)))))==2, NA, 0)
+            print('number of missing values in all ds data:')
+            print(sum(is.na(downscale.list[[var.name]])))
+            print('number of missing values in the ds output:')
+            print(sum(is.na(as.numeric(add.back.in(temp.out[[var.name]], 
+                                                   ttrim.mask)))))
+            print('number of missing values in the intersect:')
+            print(sum(is.na(na.intersect)))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                         as.numeric(add.back.in(temp.out[[var.name]], 
                                                                     ttrim.mask))),
-                                                  na.rm=FALSE)
+                                                  na.rm=TRUE)
+            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], na.intersect))
             if(train_qcmask){
-              #Oh dear, the time-trimming masks are going to be a mss in here, aren't they...
-              #print(summary(temp.out$qc.mask[[var.name]]))
               #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'var.name', 'ds.ttrim.mask'))
-              
               if(use.time.trim.mask){
                 temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
               }
+              na.intersect <- ifelse(colSums(rbind(is.na(qc.masklist[[var.name]]), 
+                                                   as.numeric(add.back.in(temp.out$qc.mask[[var.name]], 
+                                                                          ttrim.mask))))==2, NA, 0)
               qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
                                                        add.back.in(temp.out$qc.mask[[var.name]], 
                                                                    ttrim.mask)),
-                                                 na.rm=FALSE) #Start from all good and decrease
+                                                 na.rm=TRUE) #Start from all good and decrease
+              qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], na.intersect))
             }
           } #If this works, consider adding it to all of the other assignments in this section
         }
         #And adjust the downscaled output, if applicable
         #if(s5.adjust){
         #Note: above check no longer works, since s3 opts may create new s5 opts on the fly
-        if(length(s5.instructions) > 0){
+        if(length(s5.instructions.window) > 0){
           if(verbose){message('calling section 5 adjustment')}
           if(is.na(kfold.orig)){
             #If there is ds data being passed in from outside, it gets checked
@@ -256,9 +275,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
           }
-          temp.out <- callS5Adjustment(s5.instructions=s5.instructions,
+#           print(paste("Length of section 5 adjustments:", length(s5.instructions.window)))
+#           print(summary(s5.instructions.window[[1]]))
+          print(lapply(downscale.list, 'summary'))
+          temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
-                                       data = data, 
+                                       data = data, #[names(data)!='qc.mask'], 
                                        data.atts= att.table,
                                        hist.pred = lapply(kfold.predict, remove.missvals), 
                                        hist.targ = kfold.target[!is.na(kfold.target)], 
@@ -267,10 +289,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
           }
-          #for (new.ds.var in names(temp.out)){
-          print('this should not be false in this place')
-          print(train_qcmask)
-          print(create.qc.mask)
             if(create.qc.mask && !(train_qcmask)){
               #if (verbose) {message('adding qc mask')}
               for(var.name in names(qc.masklist)){
@@ -278,15 +296,31 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                 qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
                                                             add.back.in(temp.out$qc.mask[[var.name]], 
                                                                         ttrim.mask) 
-                                                         ),na.rm=FALSE)
+                                                         ),na.rm=TRUE)
               }
             }
-          for(var.name in names(temp.out$ds.out)){
+          #print(summary(temp.out$ds.out))
+          for(var.name in tout.names){
             #intersection of time windowing mask and MF dataset
+            #print(var.name)
+            na.intersect <- ifelse(colSums(rbind(is.na(downscale.list[[var.name]]), 
+                                                 is.na(as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
+                                                                        ttrim.mask)))))==2, NA, 0)
+#             print('number of missing values in the ds data:')
+#             print(sum(is.na(is.na(downscale.list[[var.name]]))))
+#             print('number of missing values in the s5 output:')
+#             print(sum(is.na(as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
+#                                                 ttrim.mask)))))
+#             print('number of missing values in the intersect:')
+#             print(sum(is.na(na.intersect)))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                      as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
                                                                  ttrim.mask))), 
                                                   na.rm=TRUE)
+            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], na.intersect))
+            print(summary(downscale.list[[var.name]]))
+            #The intersect code is currently commented out in this section
+            #since it seems to be intriducing extra missing values.
           }
          }
         if(graph){
@@ -301,7 +335,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
 #       }
     }
-  }  
+  }
+  stop('examine total number of missing values from loop to loop')
   #Make sure that dimensions are correct before leaving function
   if(!is.null(downscale.list)){
     lapply(downscale.list, 'assign.dim', c(1, 1, length(downscale.list[[1]])))
