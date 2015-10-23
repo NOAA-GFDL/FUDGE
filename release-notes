@@ -1,3 +1,8 @@
+10-23-15
+(cew)
+- bugfix for backtransforms operating more than once on ds out
+- bugfix for backtransforms operating only on ds data, which interfered with 
+subsequent calculations that used the input datasets (BCQM.tail.adj)
 
 10-19-15
 (cew)
