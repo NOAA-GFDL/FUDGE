@@ -288,6 +288,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       }
     }
   }
+  #stop('examine output')
   #print(summary(kfold.target))
   #print(lapply(downscale.list, summary))
   #print(summary(downscale.list$pr.r1i1p1))
