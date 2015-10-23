@@ -140,10 +140,18 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                                                        'off', 'on')))
                                         #apply_0_mask=pr_opts$apply_0_mask))
   }
+  flag.negvar <- FALSE
+  qc.maskvar <- FALSE
   if(mask.list[1]!='na'){
     i.index <- length(post_ds)
     for(i in 1:length(mask.list)){
       if(mask.list[[i]]$type!='qc.train'){
+        if(mask.list[[1]]$type=='flag.neg'){
+          flag.negvar <- TRUE
+        }
+        if(mask.list[[i]]$qc.mask=='on'){
+          qc.maskvar <- TRUE
+        }
         post_ds[[i+i.index]] <- list(type=mask.list[[i]]$type,
                                      adjust.out=mask.list[[i]]$adjust.out,
                                      qc.mask=mask.list[[i]]$qc.mask,
@@ -153,10 +161,29 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
         ##DISCUSS RENAMING THESE
       }else{
         train_qcmask=TRUE
+        qc.maskvar <- TRUE
       }
     }
   }
+  if('flag_neg'%in%names(pr_opts)){
+    if(flag.negvar){
+      stop(paste("Error in adapt.pp.input: flag.neg was specified in s5 while the", 
+                 " flag_neg tag was used in the pr_opts section"))
+    }
+    flag.negopt <- list(type='flag.neg', 
+                        adjust.out='on', 
+                        qc.mask=!qc.maskvar,
+                        loc='outloop',
+                        qc_args=list('na'))
+    #Check for prior qc option that returns a qc mask
+    post_ds <- c(post_ds, list(flag.negopt))
+  }else{
+    stop('check on why this is failing')
+  }
+  print('post_ds')
+  print(lapply(post_ds, 'summary'))
   print(post_ds)
+  stop('examine post_ds structure')
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds,'train_qcmask'=train_qcmask))  
 }
 
