@@ -264,7 +264,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
                                model.fut = input$fut.pred[[fut.pred]], 
                                obs.fut = adjusted.output$ds.out[[ds.var]])
     if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==adjusted.output$ds.out[[ds.var]], 
+      adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]), 
                                                   1, NA)
     }
     if(test$adjust.out=='on'){

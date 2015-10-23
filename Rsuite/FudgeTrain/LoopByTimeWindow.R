@@ -253,38 +253,23 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
           }
-          #for (new.ds.var in names(temp.out)){
-            if(create.qc.mask){
-              #if (verbose) {message('adding qc mask')}
-              for(var.name in names(qc.masklist)){
-                #intersection of time windowing mask and MF dataset
-                qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
-                                                            add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                        ttrim.mask) 
-                                                         ),na.rm=TRUE)
+          if(create.qc.mask){
+            for(var.name in names(qc.masklist)){
+              #intersection of time windowing mask and MF dataset
+              if(use.time.trim.mask){
+                temp.assign <- ttrim.mask
+                temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+                qc.masklist[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              }else{
+                qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])#[!is.na(ttrim.mask)]
               }
             }
-          for(var.name in names(temp.out$ds.out)){
-            #intersection of time windowing mask and MF dataset
-            #             print('summary of output:')
-            #             print(summary(temp.out$ds.out[[var.name]]))
-            #             print(length(temp.out$ds.out[[var.name]]))
-            #             print(sum(is.na(ttrim.mask)))
-            #             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-            #                                                      as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
-            #                                                                  ttrim.mask))), 
-            #                                                   ,na.rm=TRUE)
-            #             print('summary of total:')
-            #             print(summary(downscale.list[[var.name]]))
+          }
+          for(var.name in names(downscale.list)){
             if(use.time.trim.mask){
-              for(var.name in names(qc.masklist)){
-#                 temp.assign <- ttrim.mask
-#                 temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-#                 downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.assign)#[!is.na(ttrim.mask)]
-                temp.assign <- ttrim.mask
-                temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-                downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
-              }
+              temp.assign <- ttrim.mask
+              temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+              downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$ds.out[[var.name]])#[!is.na(ttrim.mask)]
             }
