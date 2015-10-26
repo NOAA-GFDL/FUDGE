@@ -56,24 +56,19 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                   "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                   ReturnDownscaleError(ds.method))
-#     print(summary(out[[1]]))
- #    print(summary(esd.index[[1]]))
- #   if(length(out[[1]] > 1)){
     out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
-#     }else{
-#       out.tmp[[1]] <- 
-#     }
     names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
     if(ds.method%in%c('CDFt')){
       for(i in 1:length(out)){
         if(!is.null(attr(out[[i]], 'status'))){
         #if(attr(el, 'status')!=0){
-#          print(summary(ds.input$qcmask))
+          #print(summary(ds.input$qcmask))
           ds.input$qcmask[[i]] <- rep(NA, length(ds.input$qcmask[[1]])) #this is where this particular 
-#           print(summary(ds.input$qcmask))
-#           stop('examine this assignment')
+           #print(summary(ds.input$qcmask))
+           #stop('examine this assignment')
         }
       }
+      names(ds.input$qcmask) <- names(out)
     }
   }else{
     #The qcmask return code goes in here, eventually
@@ -90,6 +85,10 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
     out.tmp$qc.mask <- ds.input$qcmask
     names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
   }
+  #print('ds out summary:')
+  #print(lapply(out.tmp, 'summary'))
+  #print('qc mask summary:')
+  #print(lapply(out.tmp$qc.mask, 'summary'))
   return(out.tmp)  
 }
 
@@ -246,7 +245,7 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
                          #error=function(e){return(rep(NA, length(new.data)))},
                          error=function(e){message("Error caught from CDFt; retrying with dev=dev+1");
                                            retry <<- TRUE;
-                                           do.call("CDFt", c(list(targ, pred, new.data), 
+                                           temp <<- do.call("CDFt", c(list(targ, pred, new.data), 
                                                              list(npas=npas, dev=dev+1)))$DS},
                          silent=FALSE)
        }

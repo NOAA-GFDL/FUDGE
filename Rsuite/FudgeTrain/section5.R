@@ -27,27 +27,47 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                    hist.pred = NA, 
                    hist.targ = NA, 
                    fut.pred = NA, 
-                   create.qc.mask=FALSE, create.adjust.out=FALSE){
+                   create.qc.mask=FALSE, create.adjust.out=FALSE, 
+                           verbose=FALSE){
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
+  out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-    adjusted.output <- switch(test$type, 
-                              'sdev' = callSdev(test, input, adjusted.output),
-                              'sdev2' = callSdev2(test,  input, adjusted.output),
-                              'SBiasCorr' = callSBCorr(test,  input, adjusted.output),
-                              'flag.neg' = callFlagNegativeValues(test, input, adjusted.output),
-                              'PR' = callPRPostproc(test, input, adjusted.output),
-                              'Nothing' = callNoMethod(test, input, adjusted.output),
-                              'add.one' = callAddOne(test, input, adjusted.output), 
-                              'add.five' = callAddFive(test, input, adjusted.output), 
-                              'BCQM.tail.adj' = callBCSDCorrect(test, input, adjusted.output),
-                              'backtransform' = callPRBacktransfrom(test, input, adjusted.output),
-                              stop(paste('Adjustment Method Error: method', test$type, 
-                                         "is not supported for callS5Adjustment. Please check your input.")))
+    if(verbose){
+      print(paste("on test", test[[1]]))
+      print("MH:")
+      print(lapply(out$input$hist.pred, 'summary'))
+      print("OH:")
+      print(summary(out$input$hist.targ))
+      print("MF:")
+      print(lapply(out$input$fut.pred, 'summary'))
+    }
+    out <- switch(test$type, 
+                  'sdev' = callSdev(test, out$input, out$adjusted.output),
+                  'sdev2' = callSdev2(test,  out$input, out$adjusted.output),
+                  'SBiasCorr' = callSBCorr(test,  out$input, out$adjusted.output),
+                  'flag.neg' = callFlagNegativeValues(test, out$input, out$adjusted.output),
+                  'PR' = callPRPostproc(test, out$input, out$adjusted.output),
+                  'Nothing' = callNoMethod(test, out$input, out$adjusted.output),
+                  'add.one' = callAddOne(test, out$input, out$adjusted.output), 
+                  'add.five' = callAddFive(test, out$input, out$adjusted.output), 
+                  'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
+                  'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
+                  stop(paste('Adjustment Method Error: method', test$type, 
+                             "is not supported for callS5Adjustment. Please check your input.")))
+    if(verbose){
+      print('test complete')
+      print("MH:")
+      print(lapply(out$input$hist.pred, 'summary'))
+      print("OH:")
+      print(summary(out$input$hist.targ))
+      print("MF:")
+      print(lapply(out$input$fut.pred, 'summary'))
+    }
   }
-  return(adjusted.output)
+  return(out$adjusted.output)
 }
 
 callSdev <- function(test, input, adjusted.output){
@@ -71,7 +91,7 @@ callSdev <- function(test, input, adjusted.output){
                           no=adjusted.output$ds.out)
     out.list$ds.out <- adjust.vec
   }
-  return(out.list)
+  return(list('input' = input, 'adjusted.output' = out.list))
 }
 
 callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
@@ -111,7 +131,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
       out.list$ds.out[[ds.var]] <- adjust.vec
     }
   }
-    return(out.list)
+    return(list('input' = input, 'adjusted.output' = out.list))
 }
 
 
@@ -140,7 +160,7 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
       out.list$ds.out[[ds.var]] <- adjust.vec
     }
   }
-  return(out.list)
+  return(list('input' = input, 'adjusted.output' = out.list))
 }
 
 callPRPostproc <- function(test, input, adjusted.output){
@@ -181,9 +201,9 @@ callPRPostproc <- function(test, input, adjusted.output){
     if(test$qc.mask=='on'){
       adjusted.output$qc.mask[[ds.var]] <- adjusted.output$qc.mask
     }
-    return(adjusted.output)
+    return(list('input' = input, 'adjusted.output' = adjusted.output))
   }
-  return(adjusted.output)          
+  return(list('input' = input, 'adjusted.output' = adjusted.output))          
 }
 
 pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
@@ -224,7 +244,7 @@ callAddOne <- function(test, input, adjusted.output){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
     }
   }
-  return(adjusted.output) 
+  return(list('input' = input, 'adjusted.output' = adjusted.output)) 
 }
 
 callAddFive <- function(test, input, adjusted.output){
@@ -245,7 +265,7 @@ callAddFive <- function(test, input, adjusted.output){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
     }
   }
-  return(adjusted.output) 
+  return(list('input' = input, 'adjusted.output' = adjusted.output)) 
 }
 
 callBCSDCorrect <- function(test, input, adjusted.output){
@@ -264,14 +284,18 @@ callBCSDCorrect <- function(test, input, adjusted.output){
                                model.fut = input$fut.pred[[fut.pred]], 
                                obs.fut = adjusted.output$ds.out[[ds.var]])
     if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==adjusted.output$ds.out[[ds.var]], 
+      adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]), 
                                                   1, NA)
     }
     if(test$adjust.out=='on'){
-      adjusted.output$ds.out[[ds.var]] <- ds.correct
+      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct)
     }
   }
-  return(adjusted.output)
+#   print(lapply(input$hist.pred, 'summary'))
+#   print(summary(input$hist.targ))
+#   print(lapply(input$fut.pred, 'summary'))
+#   print(lapply(adjusted.output$ds.out, 'summary'))
+  return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
 bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, opt='mean'){
@@ -294,31 +318,51 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #calls the backtransform for the downscaled data
   #Note: this adjusts data only; there is never going to be
   #a qc mask provided from this data (at least for now)
-  save(file='/home/cew/Code/testing/test_out.R', list=c('test', 'input', 'adjusted.output'))
-  ds.vars <- names(adjusted.output$ds.out)
+  #ds.vars <- names(adjusted.output$ds.out)
+  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
+  targ.var <- names(input$data.atts$hist.targ)
   out.list <- adjusted.output
-  print('printingthe qc_args function')
-  print(test$qc_args$fxn)
-  print(test$qc_args$arg)
-  print(ds.vars)
-  for(ds.var in ds.vars){
-    if(sum(sapply(test$qc_args$vars,'grepl',ds.var))==1){ #If there is a variable present
+  for(rip in rips){
+    ds.var <- paste0(targ.var, ".", rip)
+    if(sum(sapply(test$qc_args$vars,'grepl',ds.var))==1){ #ds.vars? I changed from ds.vars to ds.var 10-22
       if(!is.null(test$qc_args$arg)){
-        print(summary(out.list$ds.out[[ds.var]]))
-        tmp.out <- out.list$ds.out[[ds.var]]
+        #print(summary(out.list$ds.out[[ds.var]]))
+        #save(file='/home/cew/Code/testing/test_out.R', list=c('test', 'out.list', 'ds.var'))
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                             args=list(out.list$ds.out[[ds.var]], 
+                                             args=list(as.numeric(out.list$ds.out[[ds.var]]), 
                                                        test$qc_args$arg))
-        print(summary(out.list$ds.out[[ds.var]]))
-        #print(tmp.out/out.list$ds.out[[ds.var]])
+        input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                            args=list(as.numeric(input$fut.pred[[ds.var]]), 
+                                                      test$qc_args$arg))
       }else{
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
                                              args=list(out.list$ds.out[[ds.var]]))
+        input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                            args=list(input$fut.pred[[ds.var]]))
       }
     }
   }
-  stop('examine this call in more detail')
-  return(out.list)
+  hist.pred.var <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
+                                                 "[[", 'var')==targ.var]
+  if(!is.null(test$qc_args$arg)){
+    #Get whichever input rip corresponds to the hist pred
+    #Adjust the target
+    input$hist.pred[[hist.pred.var]] <- do.call(test$qc_args$fxn, 
+                                                args=list(as.numeric(input$hist.pred[[hist.pred.var]]), 
+                                                          test$qc_args$arg))
+    input$hist.targ <- do.call(test$qc_args$fxn, 
+                               args=list(as.numeric(input$hist.targ), 
+                                         test$qc_args$arg))
+  }else{
+    input$hist.pred[[hist.pred.var]] <- do.call(test$qc_args$fxn, 
+                                               args=list(as.numeric(input$hist.pred[[hist.pred.var]])))
+    input$hist.targ <- do.call(test$qc_args$fxn, 
+                               args=list(input$hist.targ))
+  }
+#   print(lapply(input$hist.pred, 'summary'))
+#   print(summary(input$hist.targ))
+#   print(lapply(input$fut.pred, 'summary'))
+  return(list('input' = input, 'adjusted.output' = out.list))
 }
 
 round.negative <- function(num){

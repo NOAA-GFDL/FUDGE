@@ -119,7 +119,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
-    print(paste('on window', window, 'of', num.masks))
+    #print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
@@ -165,8 +165,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         if(mask.data.by.time.window){
           if(length(mask.struct) > 3){
             use.time.trim.mask <- TRUE
-            ttrim.mask <- mask.struct[[4]]$masks[[window]]
-            ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+            ttrim.mask <- mask.struct[[3]]$masks[[window]]
+            #ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
+            #ds.ttrim.mask <- apply.any.mask(ttrim.mask, mask.struct[[3]]$masks[[window]], dim='temporal')
+            ds.ttrim.mask <- mask.struct[[4]]$masks[[window]]
           }else{
             use.time.trim.mask <- FALSE
             ttrim.mask <- mask.struct[[3]]$masks[[window]]
@@ -191,20 +193,16 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                        fut.pred = kfold.gen,
                                        att.list=att.table,
                                        s5.instructions=s5.instructions)
-          s5.instructions.window<- temp.out$s5.list
-          print(paste('length of s5 instructions:'))
-          print(length(s5.instructions.window))
+          s5.instructions.window <- temp.out$s5.list
 #           (print(summary(kfold.target - temp.out$input$hist.targ)))
           kfold.target <- temp.out$input$hist.targ
           kfold.predict <- temp.out$input$hist.pred
           kfold.gen <- temp.out$input$fut.pred
           remove(temp.out)
- #         save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('s5.instructions','kfold.target',  'kfold.predict', 'kfold.gen'))
-#          stop('examine your output')
-#           if(test){
-#             #Add the save in here
-#             save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('s5.instructions','kfold.target',  'kfold.predict', 'kfold.gen'))
-#           }
+          if(test){
+            #Add the save in here
+            save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
+          }
         }else{
           s5.instructions.window <- s5.instructions
         }
@@ -223,39 +221,22 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    min.present=min.present, train_qcmask)
           tout.names <- names(temp.out[!names(temp.out)%in%c('qc.mask')])
           for(var.name in tout.names){
-            #intersection of time windowing mask and MF dataset
             if(use.time.trim.mask){
-              temp.out[[var.name]] <- trim.time.mask(temp.out[[var.name]],mask=ds.ttrim.mask)
-            }
-            #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'ttrim.mask'))
-            na.intersect <- ifelse(colSums(rbind(is.na(downscale.list[[var.name]]), 
-                                                 is.na(as.numeric(add.back.in(temp.out[[var.name]], 
-                                                                        ttrim.mask)))))==2, NA, 0)
-#             print('number of missing values in all ds data:')
-#             print(sum(is.na(downscale.list[[var.name]])))
-#             print('number of missing values in the ds output:')
-#             print(sum(is.na(as.numeric(add.back.in(temp.out[[var.name]], 
-#                                                    ttrim.mask)))))
-#             print('number of missing values in the intersect:')
-#             print(sum(is.na(na.intersect)))
-            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-                                                        as.numeric(add.back.in(temp.out[[var.name]], 
-                                                                    ttrim.mask))),
-                                                  na.rm=TRUE)
-            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], na.intersect))
-            if(train_qcmask){
-              #save(file='/home/cew/Code/testing/test_out.R', list=c('temp.out', 'var.name', 'ds.ttrim.mask'))
-              if(use.time.trim.mask){
-                temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
+              temp.assign <- ttrim.mask
+              temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
+              downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              if(train_qcmask){
+                temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+                #temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
+                temp.out$qc.mask[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]
               }
-              na.intersect <- ifelse(colSums(rbind(is.na(qc.masklist[[var.name]]), 
-                                                   as.numeric(add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                          ttrim.mask))))==2, NA, 0)
-              qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
-                                                       add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                   ttrim.mask)),
-                                                 na.rm=TRUE) #Start from all good and decrease
-              qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], na.intersect))
+            }else{
+              downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
+              if(train_qcmask){
+                #print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
+                qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
+                #print(summary(qc.masklist[[var.name]]))
+              }
             }
           } #If this works, consider adding it to all of the other assignments in this section
         }
@@ -275,12 +256,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
           }
-#           print(paste("Length of section 5 adjustments:", length(s5.instructions.window)))
-#           print(summary(s5.instructions.window[[1]]))
-          print(lapply(downscale.list, 'summary'))
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
-                                       data = data, #[names(data)!='qc.mask'], 
+                                       data = data[names(data)!='qc.mask'], 
                                        data.atts= att.table,
                                        hist.pred = lapply(kfold.predict, remove.missvals), 
                                        hist.targ = kfold.target[!is.na(kfold.target)], 
@@ -289,40 +267,30 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
           }
-            if(create.qc.mask && !(train_qcmask)){
-              #if (verbose) {message('adding qc mask')}
-              for(var.name in names(qc.masklist)){
-                #intersection of time windowing mask and MF dataset
-                qc.masklist[[var.name]] <- colSums(rbind(qc.masklist[[var.name]], 
-                                                            add.back.in(temp.out$qc.mask[[var.name]], 
-                                                                        ttrim.mask) 
-                                                         ),na.rm=TRUE)
+          #for (new.ds.var in names(temp.out)){
+          if(create.qc.mask && !(train_qcmask)){
+            #if (verbose) {message('adding qc mask')}
+            for(var.name in names(qc.masklist)){
+              #intersection of time windowing mask and MF dataset
+              if(use.time.trim.mask){
+                temp.assign <- ttrim.mask
+                temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+                qc.masklist[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              }else{
+                qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])#[!is.na(ttrim.mask)]
               }
             }
-          #print(summary(temp.out$ds.out))
-          for(var.name in tout.names){
-            #intersection of time windowing mask and MF dataset
-            #print(var.name)
-            na.intersect <- ifelse(colSums(rbind(is.na(downscale.list[[var.name]]), 
-                                                 is.na(as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
-                                                                        ttrim.mask)))))==2, NA, 0)
-#             print('number of missing values in the ds data:')
-#             print(sum(is.na(is.na(downscale.list[[var.name]]))))
-#             print('number of missing values in the s5 output:')
-#             print(sum(is.na(as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
-#                                                 ttrim.mask)))))
-#             print('number of missing values in the intersect:')
-#             print(sum(is.na(na.intersect)))
-            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
-                                                     as.numeric(add.back.in(temp.out$ds.out[[var.name]], 
-                                                                 ttrim.mask))), 
-                                                  na.rm=TRUE)
-            downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], na.intersect))
-            print(summary(downscale.list[[var.name]]))
-            #The intersect code is currently commented out in this section
-            #since it seems to be intriducing extra missing values.
           }
-         }
+          for(var.name in names(temp.out$ds.out)){
+            if(use.time.trim.mask){
+                temp.assign <- ttrim.mask
+                temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+                downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+            }else{
+              downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$ds.out[[var.name]])#[!is.na(ttrim.mask)]
+            }
+          }
+        }
         if(graph){
           if(masklines){
             abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
@@ -336,7 +304,16 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #       }
     }
   }
-  #stop('examine total number of missing values from loop to loop')
+  #stop('examine output')
+  #print(summary(kfold.target))
+  #print(lapply(downscale.list, summary))
+  #print(summary(downscale.list$pr.r1i1p1))
+  #However, if cross-validation is being performed
+  #   } else { 
+  #     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
+  #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
+  #   }
+  #Exit loop
   #Make sure that dimensions are correct before leaving function
   if(!is.null(downscale.list)){
     lapply(downscale.list, 'assign.dim', c(1, 1, length(downscale.list[[1]])))

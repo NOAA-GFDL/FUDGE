@@ -50,7 +50,7 @@ assess.missvals <- function(OH, MH, MF,
     #...you know, I am sort of glad that I don't have to worry about the multi-rip implications
     #of this bit just yet.
     ds.list$qcmask <- rep(list(rep(ifelse(ds.list$status==0, 
-                                          1, NA), length(MF[[1]]))),3)
+                                          1, NA), length(MF[[1]]))),length(MF)) # of ripts used
   }else{
     ds.list$qcmask <- NA
   }
@@ -144,21 +144,21 @@ remove.cdft.missvals<- function(OH, MH, MF, ds.args, thold=1){
   }
   #And now do the final check, making sure there are at least 3 
   #unique values in each dataset
-  unique.vec <- c(unlist(c(lapply(lapply(out.list$MH, 'unique'), 'length'), 
-                  length(unique(out.list$OH)), 
-                  lapply(lapply(out.list$MF, 'unique'), 'length'), use.names=FALSE)))
-#   print(unique.vec)
-#   stop('examine this thing')
-   print(unique.vec)
-#   print(lapply(out.list$MH, 'summary'))
-#   print(summary(out.list$OH))
-#   print(lapply(out.list$MF, 'summary'))
-  #save(file="/home/cew/Code/testing/CDFt_fail_point.R", list=c('out.list'))
-  if(sum(unique.vec <= 5)!=0){
-    message(paste("Warning in remove.cdft.missvals: one or more of the datasets", 
-                   "passed in had fewer than five unique values at this point!"))
-    out.list$status <- 230 #This is probably going to trigger a fail condition
-  }
+#   unique.vec <- c(unlist(c(lapply(lapply(out.list$MH, 'unique'), 'length'), 
+#                   length(unique(out.list$OH)), 
+#                   lapply(lapply(out.list$MF, 'unique'), 'length'), use.names=FALSE)))
+# #   print(unique.vec)
+# #   stop('examine this thing')
+#    print(unique.vec)
+# #   print(lapply(out.list$MH, 'summary'))
+# #   print(summary(out.list$OH))
+# #   print(lapply(out.list$MF, 'summary'))
+#   #save(file="/home/cew/Code/testing/CDFt_fail_point.R", list=c('out.list'))
+#   if(sum(unique.vec <= 5)!=0){
+#     message(paste("Warning in remove.cdft.missvals: one or more of the datasets", 
+#                    "passed in had fewer than five unique values at this point!"))
+#     out.list$status <- 230 #This is probably going to trigger a fail condition
+#   }
   return(out.list)
 }
 
