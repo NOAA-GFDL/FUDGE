@@ -233,9 +233,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
               if(train_qcmask){
-                #print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
+                print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
                 qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
-                #print(summary(qc.masklist[[var.name]]))
+                print(summary(qc.masklist[[var.name]]))
               }
             }
           } #If this works, consider adding it to all of the other assignments in this section
@@ -304,7 +304,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #       }
     }
   }
-  #stop('examine output')
+  stop('examine output')
   #print(summary(kfold.target))
   #print(lapply(downscale.list, summary))
   #print(summary(downscale.list$pr.r1i1p1))

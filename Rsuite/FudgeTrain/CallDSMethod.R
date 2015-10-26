@@ -251,6 +251,7 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }
        out.list[[out.var.name]] <- as.numeric(temp)
        if(retry){
+         save(file='/home/cew/Code/testing/test_out.R', list=c('targ', 'pred', 'new.data'))
          attr(out.list[[out.var.name]], 'status') <- 1
        }
      }
