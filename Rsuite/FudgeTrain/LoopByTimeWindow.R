@@ -231,13 +231,13 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             na.intersect <- ifelse(colSums(rbind(is.na(downscale.list[[var.name]]), 
                                                  is.na(as.numeric(add.back.in(temp.out[[var.name]], 
                                                                         ttrim.mask)))))==2, NA, 0)
-            print('number of missing values in all ds data:')
-            print(sum(is.na(downscale.list[[var.name]])))
-            print('number of missing values in the ds output:')
-            print(sum(is.na(as.numeric(add.back.in(temp.out[[var.name]], 
-                                                   ttrim.mask)))))
-            print('number of missing values in the intersect:')
-            print(sum(is.na(na.intersect)))
+#             print('number of missing values in all ds data:')
+#             print(sum(is.na(downscale.list[[var.name]])))
+#             print('number of missing values in the ds output:')
+#             print(sum(is.na(as.numeric(add.back.in(temp.out[[var.name]], 
+#                                                    ttrim.mask)))))
+#             print('number of missing values in the intersect:')
+#             print(sum(is.na(na.intersect)))
             downscale.list[[var.name]] <- colSums(rbind(downscale.list[[var.name]], 
                                                         as.numeric(add.back.in(temp.out[[var.name]], 
                                                                     ttrim.mask))),
@@ -336,7 +336,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #       }
     }
   }
-  stop('examine total number of missing values from loop to loop')
+  #stop('examine total number of missing values from loop to loop')
   #Make sure that dimensions are correct before leaving function
   if(!is.null(downscale.list)){
     lapply(downscale.list, 'assign.dim', c(1, 1, length(downscale.list[[1]])))

@@ -64,6 +64,17 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
 #       out.tmp[[1]] <- 
 #     }
     names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
+    if(ds.method%in%c('CDFt')){
+      for(i in 1:length(out)){
+        if(!is.null(attr(out[[i]], 'status'))){
+        #if(attr(el, 'status')!=0){
+#          print(summary(ds.input$qcmask))
+          ds.input$qcmask[[i]] <- rep(NA, length(ds.input$qcmask[[1]])) #this is where this particular 
+#           print(summary(ds.input$qcmask))
+#           stop('examine this assignment')
+        }
+      }
+    }
   }else{
     #The qcmask return code goes in here, eventually
      message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
@@ -230,13 +241,19 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
          ## fail to run with an 'unused arguments' error, without any decent
          ## explanation as to why. This way works.
          args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
+         retry <- FALSE
          temp <-tryCatch(do.call("CDFt", args.list)$DS, 
                          #error=function(e){return(rep(NA, length(new.data)))},
                          error=function(e){message("Error caught from CDFt; retrying with dev=dev+1");
-                                           do.call("CDFt", c(list(targ, pred, new.data), list(npas=npas, dev=dev+1)))$DS},silent=FALSE)
+                                           retry <<- TRUE;
+                                           do.call("CDFt", c(list(targ, pred, new.data), 
+                                                             list(npas=npas, dev=dev+1)))$DS},
+                         silent=FALSE)
        }
-       #return(as.numeric(temp))
        out.list[[out.var.name]] <- as.numeric(temp)
+       if(retry){
+         attr(out.list[[out.var.name]], 'status') <- 1
+       }
      }
      return(out.list)
 }
