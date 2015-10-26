@@ -125,7 +125,7 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                                                            ","))
                                       ))))
       }
-      print(lapply(pre_ds, 'summary'))
+      #print(lapply(pre_ds, 'summary'))
     }else{
       message(paste("Warning in adapt.pp.input: no transfrom option was present in the", 
                     "XML, and no transform will be added to the pr data."))
@@ -170,20 +170,23 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
       stop(paste("Error in adapt.pp.input: flag.neg was specified in s5 while the", 
                  " flag_neg tag was used in the pr_opts section"))
     }
-    flag.negopt <- list(type='flag.neg', 
-                        adjust.out='on', 
-                        qc.mask=!qc.maskvar,
-                        loc='outloop',
-                        qc_args=list('na'))
-    #Check for prior qc option that returns a qc mask
-    post_ds <- c(post_ds, list(flag.negopt))
-  }else{
-    stop('check on why this is failing')
+    if(pr_opts$flag_neg=='on'){
+      flag.negopt <- list(type='flag.neg', 
+                          adjust.out='on', 
+                          qc.mask=(ifelse(!qc.maskvar, 
+                                          'on', 'off')),
+                          loc='outloop',
+                          qc_args=list('na'))
+      #Check for prior qc option that returns a qc mask
+      post_ds <- c(post_ds, list(flag.negopt))
+    }#else{
+    #stop('check on why this is failing')
+    #}
+    #print('post_ds')
+    #print(lapply(post_ds, 'summary'))
+    #print(post_ds)
+    #stop('examine post_ds structure')
   }
-  print('post_ds')
-  print(lapply(post_ds, 'summary'))
-  print(post_ds)
-  stop('examine post_ds structure')
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds,'train_qcmask'=train_qcmask))  
 }
 

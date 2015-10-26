@@ -234,9 +234,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
               if(train_qcmask){
-                print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
+                #print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
                 temp.out$qc.mask[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
-                print(summary(temp.out$qc.mask[[var.name]]))
+                #print(summary(temp.out$qc.mask[[var.name]]))
               }
             }
           } #If this works, consider adding it to all of the other assignments in this section
