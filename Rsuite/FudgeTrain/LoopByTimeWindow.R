@@ -119,7 +119,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
-    #print(paste('on window', window, 'of', num.masks))
+    print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
@@ -141,9 +141,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
-        kfold.predict <- trim.time.mask(data=window.predict, mask=mask.struct[[1]]$masks[[kmask]])
+        #kfold.predict <- trim.time.mask(data=window.predict, mask=mask.struct[[1]]$masks[[kmask]])
         kfold.target  <- trim.time.mask(data=window.target,  mask=mask.struct[[2]]$masks[[kmask]])
-        kfold.gen     <- trim.time.mask(data=window.gen,     mask=mask.struct[[3]]$masks[[kmask]])
+        #kfold.gen     <- trim.time.mask(data=window.gen,     mask=mask.struct[[3]]$masks[[kmask]])
+        kfold.predict <- lapply(window.target, 'trim.time.mask',  mask=mask.struct[[1]]$masks[[kmask]])
+        kfold.gen     <- lapply(window.gen, 'trim.time.mask',  mask=mask.struct[[1]]$masks[[kmask]])
         if(!is.null(ds.orig)){
           kfold.orig <- ApplyTemporalMask(window.orig, kfold.masks[[3]]$masks[[kmask]])
         }else{
@@ -231,18 +233,16 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                 temp.out$qc.mask[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]
               }
             }else{
+              #stop('error in assigning to giant messy mask at this point')
+              #print(summary(temp.out[[var.name]]))
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
               if(train_qcmask){
-                print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
                 qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
-                print(summary(qc.masklist[[var.name]]))
               }
             }
-          } #If this works, consider adding it to all of the other assignments in this section
-        }
+          }#end for var in tout.names
+        }#end if create.ds.out
         #And adjust the downscaled output, if applicable
-        #if(s5.adjust){
-        #Note: above check no longer works, since s3 opts may create new s5 opts on the fly
         if(length(s5.instructions.window) > 0){
           if(verbose){message('calling section 5 adjustment')}
           if(is.na(kfold.orig)){
@@ -304,7 +304,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
 #       }
     }
   }
-  stop('examine output')
+  #stop('examine output')
   #print(summary(kfold.target))
   #print(lapply(downscale.list, summary))
   #print(summary(downscale.list$pr.r1i1p1))
@@ -327,6 +327,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #...also? This has the potential to cause issues when we start working with datasets that 
   #happen to have missing values fo their own - and therefore might use 
   #print(lapply(qc.masklist, 'summary'))
+#    tmp.list <- list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)
+#   print(summary(tmp.list))
+#    print(lapply(tmp.list$downscaled, 'summary', digits=5))
+#   print(lapply(tmp.list$downscaled, 'unique'))
+  #stop('examine the output')
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
 
