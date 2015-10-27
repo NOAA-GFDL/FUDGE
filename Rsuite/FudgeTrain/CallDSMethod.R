@@ -68,18 +68,26 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       if(length(esd.index)==1){
         out.tmp <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
       }else{
-        out.tmp <- mapply('rep', NA, lapply(esd.index, length))
+        out.tmp <- apply(mapply('rep', NA, sapply(esd.index, length), simplify=TRUE), 2, as.list)
       }
       names(out.tmp) <- paste0(ds.var, ".", rips)
+#       print('ds out summary:')
+#       print(summary(out.tmp))
+#       print(names(out.tmp))
+#       stop('examien output')
     }
     if(train_qc_mask){
       out.tmp$qc.mask <- ds.input$qcmask
       names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
     }
-    #print('ds out summary:')
+#     print('ds out summary:')
+#     print(summary(out.tmp))
+#     print(names(out.tmp))
     #print(lapply(out.tmp, 'summary'))
     #print('qc mask summary:')
+    #print(summary(out.tmp$qc.mask))
     #print(lapply(out.tmp$qc.mask, 'summary'))
+    #stop('examine the output')
     return(out.tmp)  
   }else{
 #     save(file="/home/cew/Code/testing/test_out.R", list=c('att.table', 'esd.gen'))

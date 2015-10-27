@@ -220,7 +220,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                    ds.var=ds.var, 
                                    min.present=min.present, train_qcmask)
-          tout.names <- names(temp.out[!names(temp.out)%in%c('qc.mask')])
+#           print(!names(temp.out)%in%c('qc.mask'))
+#           print(names(temp.out))
+#           print(names(temp.out)[!names(temp.out)%in%c('qc.mask')])
+          tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
+          #tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
+          #print(tout.names)
           for(var.name in tout.names){
             if(use.time.trim.mask){
               temp.assign <- ttrim.mask

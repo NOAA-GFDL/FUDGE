@@ -346,7 +346,9 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 # save(file="~/Code/testing/test_out.R", list=c('ds'))
 # stop('examine your results')
 print('summary of downscaled data:')
-print(lapply(ds$esd.final, 'summary'))
+#print(lapply(ds$esd.final, 'summary'))
+ds.tmp.out <- lapply(ds$esd.final, 'remove.missvals')
+print(lapply(ds.tmp.out, 'summary'))
 ############## end call TrainDriver ######################################
 # + + + end Training + + +
 
@@ -370,6 +372,7 @@ if(length(post.ds) !=0){
 }
 print('summary of downscaled data after adjustment:')
 print(lapply(ds$esd.final, 'summary'))
+
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 # rip.list <- lapply(att_table, '[[', 'rip')

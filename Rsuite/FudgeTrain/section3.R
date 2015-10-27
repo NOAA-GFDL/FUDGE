@@ -53,6 +53,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                             stop(paste('Adjustment Method Error: method', test$type, 
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }
+  #stop('examine this output')
   return(adjusted.list)
 }
 
@@ -64,7 +65,7 @@ callPRPreproc <- function(test, input, postproc.output){
   #passed to the function is null.
   ##Revising 4-14 for the 
   #att_table in input$att.list, and is further organized by hist.pred, hist.targ and fut.pred
-
+  
   pr.names <- (names(test$pp.args))
   #Obtain function args
   if('thold'%in%pr.names && 'freqadj'%in%pr.names && 'conserve'%in%pr.names){
@@ -89,46 +90,41 @@ callPRPreproc <- function(test, input, postproc.output){
   rip.list <- lapply(input$att.list$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
   for (rip in rip.list){
-  #at the end, instructions are unchanged
+    #at the end, instructions are unchanged
     fut.pred.var <- paste0(var, ".", rip)
     if(is.null(input$att.list$fut.pred[[fut.pred.var]]$units)){
       stop(paste("Error in callPRPreproc: one of the required units attributes was null!"))
     }
-#     save(file="~/Code/testing/test_out.R", list=c('input'))
-#     stop('examine input and adjust the error message')
-  temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
-                            adjust.data=input$hist.pred[[1]],  adjust.units=input$att.list$hist.pred[[1]]$units, #temporarily hard-coded; will work for next 3 mons.
-                            #Looping by rip makes future predictor more complicated, but not anything else (yet)
-                            adjust.future=input$fut.pred[[fut.pred.var]], 
-                            adjust.future.units=input$att.list$fut.pred[[fut.pred.var]]$units,
-                            #relatively constant parameters that don't require as much looping
-                            opt.wetday=threshold, 
-                            lopt.drizzle=lopt.drizzle, 
-                            lopt.conserve=lopt.conserve, 
-                            zero.to.na=apply.0.mask)
-    ###TODO: Change specifications to get a better name for this.
-    ###Indexing by method is going to be REALLY HANDY
-  #Add back into the original structure
-  input$hist.targ        <- temp.out$ref$data   #only a single target variable
-  input$hist.pred[[1]]   <- temp.out$adjust$data
-  input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
+    #     save(file="~/Code/testing/test_out.R", list=c('input'))
+    #     stop('examine input and adjust the error message')
+    temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
+                              adjust.data=input$hist.pred[[1]],  adjust.units=input$att.list$hist.pred[[1]]$units, #temporarily hard-coded; will work for next 3 mons.
+                              #Looping by rip makes future predictor more complicated, but not anything else (yet)
+                              adjust.future=input$fut.pred[[fut.pred.var]], 
+                              adjust.future.units=input$att.list$fut.pred[[fut.pred.var]]$units,
+                              opt.wetday=threshold, 
+                              lopt.drizzle=lopt.drizzle, 
+                              lopt.conserve=lopt.conserve, 
+                              zero.to.na=apply.0.mask)
+    #Add back into the original structure
+    if(rip==rip.list[length(rip.list)]){
+      #Added 10-27: only adjust in place if on the last rip being used! adds extra wet days to subsequent data
+      print('in rip list, making needed changes')
+      input$hist.targ        <- temp.out$ref$data   #only a single target variable
+      input$hist.pred[[1]]   <- temp.out$adjust$data
+      if(apply.0.mask){
+        input$hist.targ        <- (temp.out$ref$data   * temp.out$ref$pr_mask)
+        input$hist.pred <- lapply(input$hist.pred, "*", temp.out$adjust$pr_mask)
+      }
+    }
+    input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
     if(apply.0.mask){
-      #only apply the mask if it it will result in more missing values
-      #technically, it's a time mask - but it can be 3-D
-      #...wait a minute - what were the dimensions of this mask again?
-      #Answer: should be exactly the same as the dimensions of the input data.
-      #Looks like a job for apply.any.mask indeed.
       #This should make sure that when extra missing values are added, all datasets
-      #in the predictor datasets will have the missinv values added back in
-      input$hist.targ        <- (temp.out$ref$data   * temp.out$ref$pr_mask)
-      input$hist.pred <- lapply(input$hist.pred, "*", temp.out$adjust$pr_mask)
-      input$fut.pred  <- lapply(input$fut.pred,  "*", temp.out$future$pr_mask)
+      #in the predictor datasets will have the missing values added back in
+      input$fut.pred [[fut.pred.var]] <- input$fut.pred[[fut.pred.var]] * temp.out$future$pr_mask
       #Save future pr mask fo application in section 5;
       #note that it is the presence of this mask that 
       #leads to the adjustment being performed.
-      #Please also note that this is currently the ONLY THING
-      #that will change the adjustments being performed in section 5
-      #by the pr post-processing
       fut.prmask <- temp.out$future$pr_mask
       pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
     }
@@ -136,6 +132,9 @@ callPRPreproc <- function(test, input, postproc.output){
       postproc.output$propts <- pr_mod
     }
   }
+  # print(lapply(input$hist.pred, 'summary'))
+  # print(summary(input$hist.targ))
+  # print(lapply(input$fut.pred, 'summary'))
   return(list('input'=input,
               's5.list'=postproc.output))
 }
