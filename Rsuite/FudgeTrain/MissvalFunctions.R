@@ -25,21 +25,26 @@ assess.missvals <- function(OH, MH, MF,
     MH.kount <- unlist(lapply(ds.list$MH, length))
     OH.kount <- length(ds.list$OH)
     MF.kount <- unlist(lapply(ds.list$MF, length))
+    train.index <- colSums(sapply(c('MH', 'OH', 'MF'), 'grepl', train.names))
     if(threshold >= 1){ #sample size threshold
-      ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+      #ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+      #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+      #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold)[c('MH', 'OH', 'MF')%in%train.names])
+      ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold)[train.index])
     }else{ #percentage threshold
       MH.korig <- unlist(lapply(MH, length))
       OH.korig <- length(OH)
       MF.korig <- unlist(lapply(MF, length))
-      ds.list$status <- sum(mapply("/", c(MH.kount, OH.kount, MF.kount), 
-                                   c(MH.korig, OH.korig, MF.korig))>= threshold)
+      #This hasn't gotten tested yet - test it in the next round
+      ds.list$status <- sum(mapply("/", c(MH.kount, OH.kount, MF.kount)[train.index], 
+                                   c(MH.korig, OH.korig, MF.korig)[train.index])>= threshold)
     }
   }
   #Statuses over 100 are from the missing value removal functions and just need
   #a qcmask, if that applies; statuses less than that need a retry
   #for(rip in rips){
     if(ds.list$status < 100 && ds.list$status > 0){
-      print('Recovery option enabled; adding precip zeroes back into data.')
+      message('Recovery option enabled; adding precip zeroes back into the training data.')
 #       print(summary(OH))
 #       print(lapply(MH, 'summary'))
 #       print(lapply(MF, 'summary'))

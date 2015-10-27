@@ -188,7 +188,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
           }
-          print(paste('length of s3 instructions:'), length(s3.instructions))
           temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
                                        hist.pred = kfold.predict,
                                        hist.targ = kfold.target,

@@ -40,7 +40,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
   adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 
                                    'att.list'=att.list), 
                         s5.list=s5.instructions)
-  print(paste("lenght of section 3 instructions:", length(s3.instructions)))
+  #print(paste("lenght of section 3 instructions:", length(s3.instructions)))
   for(element in 1:length(s3.instructions)){
     test <- s3.instructions[[element]]
     #Note that BOTH ELEMENTS get returned for the adjusted output. 
