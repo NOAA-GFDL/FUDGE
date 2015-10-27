@@ -11,10 +11,6 @@ assess.missvals <- function(OH, MH, MF,
                             att.table="", qcmask=FALSE){
 #   rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
 #   rips <- unique(rip.list)
-  print('iniital data values for this rip:')
-  print(summary(OH))
-  print(lapply(MH, 'summary'))
-  print(lapply(MF, 'summary'))
   ds.list <- switch(type, 
                     'distributional' = remove.all.missvals(OH, MH, MF), 
                     'synchronous' = remove.synch.missvals(OH, MH, MF), 

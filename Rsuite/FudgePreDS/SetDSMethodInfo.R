@@ -123,7 +123,8 @@ setBiasCorrection <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
-  train.names <<- c('OH', 'MH')
+  #train.names <<- c('OH', 'MH')
+  train.names <<- c('MH', 'MF')
 }
 
 setEquiDistant <- function(){
