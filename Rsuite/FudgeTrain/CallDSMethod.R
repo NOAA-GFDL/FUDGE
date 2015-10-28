@@ -149,7 +149,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
                       'when using a present val threshold for esd.gen of', 1)) #This code is now used ONLY for ds methods
 #        if(length(esd.index)==1){
-          out.tmp[[out.var]] <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
+          out.tmp[[out.var]] <- rep(NA, length(esd.index[[1]])) #It should be possible to generalize this, but it isn't working
 #         }else{
 #           out.tmp <- list(rep(lapply(esd.index, length))
 #         }
@@ -159,12 +159,11 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         out.tmp$qc.mask[[out.var]] <- ds.input$qcmask[[1]]
       }
     }
-#     if(train_qc_mask){
-#       names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
-#     }
-    print(summary(out.tmp))
-    stop('examine output')
-    print(summary(out.tmp))
+#     print(summary(out.tmp))
+#     print(lapply(out.tmp, 'typeof'))
+#     print(summary(out.tmp$qc.mask))
+#     stop('examine output')
+#     print(summary(out.tmp))
     return(out.tmp)
   }
 }
