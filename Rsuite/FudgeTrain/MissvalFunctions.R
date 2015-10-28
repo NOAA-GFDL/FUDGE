@@ -109,6 +109,9 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
   #'extra checks for missing thresholds in some places
   OH.new <- remove.missvals(OH)
   MH.new <- lapply(MH, 'remove.missvals')
+  #Temproray MH data, b/c zeroes make a difference
+  MH.tmp <- lapply(MH, function(x){replace(x, x==0, NA)})
+  MH.tmp <- lapply(MH.tmp, 'remove.missvals')
   MF.new <- lapply(MF, 'remove.missvals')
   status = 0
   if(sum(lapply(MF.new, 'length')==0)!=0){
@@ -118,7 +121,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
                   "were all 0 or all missing! Zeroes will be added in place of missing pr."))
     status=130
   }
-  if(sum(lapply(MH.new, 'length')==0)!=0){
+  if(sum(lapply(MH.tmp, 'length')==0)!=0){
     #If any of the MH datasets are all missing
     if(args$deltaop=='ratio'){
       #You can't have all missing or all 0 when calculating a delta here
@@ -141,7 +144,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
 #   print(lapply(MH.new, 'summary'))
 #   print(summary(OH.new))
 #   print(lapply(MF.new, 'summary'))
-  print(paste('final delta status:', status))
+   print(paste('final delta status:', status))
   #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
   return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
 }

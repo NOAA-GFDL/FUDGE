@@ -115,7 +115,10 @@ callPRPreproc <- function(test, input, postproc.output){
         input$hist.targ        <- (temp.out$ref$data   * temp.out$ref$pr_mask)
         input$hist.pred <- lapply(input$hist.pred, "*", temp.out$adjust$pr_mask)
       }
-    }
+    }    
+#     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
+#     out.list$adjust$data[out.list$adjust$pr_mask==0] <- NA
+#     out.list$future$data[out.list$future$pr_mask==0] <- NA
     input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
     if(apply.0.mask){
       #This should make sure that when extra missing values are added, all datasets
@@ -125,6 +128,8 @@ callPRPreproc <- function(test, input, postproc.output){
       #note that it is the presence of this mask that 
       #leads to the adjustment being performed.
       fut.prmask <- temp.out$future$pr_mask
+#       print(summary(temp.out$future$pr_mask))
+#       stop('examine this output')
       pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
     }
     if(apply.0.mask){
