@@ -84,7 +84,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      
      for(i.index in 1:targ.dim[1]){  #Most of the time, this will be 1
        for(j.index in 1:targ.dim[2]){ #
-       #for(j.index in 42:targ.dim[2]){
+       #for(j.index in 1:7){
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[[1]][i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[[1]][i.index,j.index,]))!=0){ #For predictors, use first entry as a proxy for NAs across the board
@@ -127,6 +127,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
          }
        }
      }
+     #stop('examine output')
      ####### Loop(1) ends ###################################
      return(list('esd.final' = ds.out, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
      ############## end of TrainDriver.R ############################
