@@ -109,7 +109,6 @@ callPRPreproc <- function(test, input, postproc.output){
     #Add back into the original structure
     if(rip==rip.list[length(rip.list)]){
       #Added 10-27: only adjust in place if on the last rip being used! adds extra wet days to subsequent data
-      print('in rip list, making needed changes')
       input$hist.targ        <- temp.out$ref$data   #only a single target variable
       input$hist.pred[[1]]   <- temp.out$adjust$data
       if(apply.0.mask){

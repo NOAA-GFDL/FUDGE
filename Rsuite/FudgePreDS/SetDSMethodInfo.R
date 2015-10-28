@@ -123,8 +123,8 @@ setBiasCorrection <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
-  #train.names <<- c('OH', 'MH')
-  train.names <<- c('MH', 'MF')
+  train.names <<- c('OH', 'MH')
+  #train.names <<- c('MH', 'MF')
 }
 
 setEquiDistant <- function(){
@@ -156,7 +156,8 @@ setChangeFactor <- function(){
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
-  train.names <<- c('OH', 'MH')
+  #train.names <<- c('OH', 'MH')
+  train.names <<- c('MH', 'MF')
 }
 
 setDeltaSD<- function(){
@@ -167,7 +168,7 @@ setDeltaSD<- function(){
   # ESD equations/quantiles AND generate the downscaled data?
   train.and.use.same <<- TRUE #Temporarily set to TRUE for testing purposes; supposed to be FALSE
   # What are the arguments to the args() parameter that are accepted? 
-  names.of.args <<- c("OPT")
+  names.of.args <<- c("deltatype", "delataop", 'ignore0.Delta')
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?

@@ -149,11 +149,11 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
                       'when using a present val threshold for esd.gen of', 1)) #This code is now used ONLY for ds methods
 #        if(length(esd.index)==1){
-          out.tmp <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
+          out.tmp[[out.var]] <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
 #         }else{
 #           out.tmp <- list(rep(lapply(esd.index, length))
 #         }
-        names(out.tmp) <- paste0(ds.var, ".", rip)
+      #  names(out.tmp) <- paste0(ds.var, ".", rip)
       }
       if(train_qc_mask){
         out.tmp$qc.mask[[out.var]] <- ds.input$qcmask[[1]]
@@ -162,8 +162,9 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
 #     if(train_qc_mask){
 #       names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
 #     }
-#     stop('examine output')
-#     print(summary(out.tmp))
+    print(summary(out.tmp))
+    stop('examine output')
+    print(summary(out.tmp))
     return(out.tmp)
   }
 }
@@ -315,19 +316,38 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
          ##Note: if any of the input data parameters are named, CDFt will 
          ## fail to run with an 'unused arguments' error, without any decent
          ## explanation as to why. This way works.
-         args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
+         #args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
          retry <- FALSE
-         temp <-tryCatch(do.call("CDFt", args.list)$DS, 
+         temp <-tryCatch({#dev.1 <- dev 
+                         do.call("CDFt", c(list(targ, pred, new.data), 
+                                           list(npas=npas, dev=dev)))$DS}, 
                          #error=function(e){return(rep(NA, length(new.data)))},
-                         error=function(e){message("Error caught from CDFt; retrying with dev=dev+1");
-                                           retry <<- TRUE;
-                                           temp <<- do.call("CDFt", c(list(targ, pred, new.data), 
-                                                             list(npas=npas, dev=dev+1)))$DS},
+                         error=function(e){
+                           retry <<- TRUE;
+                           loop.try <- FALSE
+                           i=1;
+                           while(dev <= 20 && loop.try==FALSE){
+                              message(paste0("Error caught from CDFt with dev=",
+                                             dev," and npas=",npas,
+                                             "; retrying with dev=dev+",1))
+                              loop.try <- TRUE
+                              dev=dev+1
+                              i=i+1
+                              loop.try <- tryCatch(do.call("CDFt", 
+                                                      c(list(targ, pred, new.data), 
+                                                        list(npas=npas, dev=(dev))))$DS, 
+                                              error=function(e){return(FALSE)}
+                              )
+                           }
+                           return(do.call("CDFt", 
+                                          c(list(targ, pred, new.data), 
+                                            list(npas=npas, dev=(dev))))$DS)
+                           }, 
                          silent=FALSE)
        }
        out.list[[out.var.name]] <- as.numeric(temp)
        if(retry){
-         save(file='/home/cew/Code/testing/test_out.R', list=c('targ', 'pred', 'new.data'))
+         #save(file='/home/cew/Code/testing/test_out.R', list=c('targ', 'pred', 'new.data'))
          attr(out.list[[out.var.name]], 'status') <- 1
        }
      }
