@@ -13,7 +13,7 @@ assess.missvals <- function(OH, MH, MF,
 #   rips <- unique(rip.list)
   ds.list <- switch(type, 
                     'distributional' = remove.all.missvals(OH, MH, MF), 
-                    'synchronous' = remove.synch.missvals(OH, MH, MF), 
+                    'synchronous' = remove.synch.missvals(OH, MH, MF, att.table), 
                     'delta' = remove.delta.missvals(OH, MH, MF, ds.args, threshold),
                     'cdft' = remove.cdft.missvals(OH, MH, MF, ds.args, threshold),
                     stop(paste("Error in assess.misvals: provided type", type, 
@@ -75,20 +75,31 @@ assess.missvals <- function(OH, MH, MF,
 
 remove.all.missvals <- function(OH, MH, MF){
   #suitable for use in the QM methods; 
-  #was used by all methods for the 
+  #was used by all methods for every version until espresso
   return(list(MH=lapply(MH, 'remove.missvals'),  
          OH=remove.missvals(OH), 
          MF=lapply(MF, 'remove.missvals')))
 }
 
-remove.synch.missvals <- function(OH, MH, MF){
+remove.synch.missvals <- function(OH, MH, MF, att.table){
                                   #OH.mask, MH.mask){
+  #'removes missing values from the MH and OH datasets
+  #'in a time-synchronous manner, and removes missing values
+  #'from the 
   synch.mask <- lapply(MH, 'add.missval.vectors', OH)
   MH.new <- lapply(MH, 'apply.any.mask', synch.mask[[1]], 'temporal')
   OH.new <- apply.any.mask(OH, synch.mask[[1]], 'temporal')
+  rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  MF.new <- MF
+  for(rip in rips){
+    rip.index <- rip.list==rip
+    MF.synch.mask <- lapply(MF[rip.index], 'add.missval.vectors')
+    MF.new[rip.index] <- lapply(MF[rip.index], 'apply.any.mask', MF.synch.mask[[1]], 'temporal')
+  }
   return(list(MH = lapply(MH.new, 'remove.missvals'), 
               OH= remove.missvals(OH.new), 
-              MF=lapply(MF, 'remove.missvals')))
+              MF=lapply(MF.new, 'remove.missvals')))
 }
 
 remove.delta.missvals <- function(OH, MH, MF, args, threshold, 
