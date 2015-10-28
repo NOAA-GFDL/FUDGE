@@ -347,8 +347,8 @@ message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to r
 # stop('examine your results')
 print('summary of downscaled data:')
 #print(lapply(ds$esd.final, 'summary'))
-ds.tmp.out <- lapply(ds$esd.final, 'remove.missvals')
-print(lapply(ds.tmp.out, 'summary'))
+ ds.tmp.out <- lapply(ds$esd.final, 'remove.missvals')
+ print(lapply(ds.tmp.out, 'summary'))
 ############## end call TrainDriver ######################################
 # + + + end Training + + +
 

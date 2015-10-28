@@ -189,7 +189,8 @@ callPRPostproc <- function(test, input, adjusted.output){
       message(paste('Applying wetday mask for rip', rip,
                     '. Output will have at least as many days without precip as the CF datset.'))
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
-      temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
+      #temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
+      temp.adjust[is.na(test$qc_args$fut.prmask[[rip]])] <- 0
       adjusted.output$ds.out[[ds.var]] <- temp.adjust
       test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here.
     }else{
