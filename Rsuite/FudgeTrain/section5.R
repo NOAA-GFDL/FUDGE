@@ -169,7 +169,7 @@ callPRPostproc <- function(test, input, adjusted.output){
   #bias and conservation of the total precipitation per time range
   #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
-  rips <- unique(rip.list)
+  rips <- unique(unlist(rip.list, use.names=FALSE))
   if(length(rips) == 0){
     stop(paste("Error in callPRPostproc: list of rips is of length 0!"))
   }
@@ -179,15 +179,18 @@ callPRPostproc <- function(test, input, adjusted.output){
     stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
   }
   #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
-  for (rip in rips){
+  for (r in 1:length(rips)){
+    rip = rips[r]
     #create sppropriate variable name
     target.var <- names(input$data.atts$hist.targ)
     ds.var <- paste0(target.var, ".", rip)
     #Apply the 0 mask, if needed
     if(test$qc_args$ignore0=='on'){
-      message('Applying wetday mask. Output will have at least as many days without precip as the CF datset.')
+      message(paste('Applying wetday mask for rip', rip,
+                    '. Output will have at least as many days without precip as the CF datset.'))
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
-      temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
+      #temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
+      temp.adjust[is.na(test$qc_args$fut.prmask[[rip]])] <- 0
       adjusted.output$ds.out[[ds.var]] <- temp.adjust
       test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here.
     }else{
@@ -201,7 +204,7 @@ callPRPostproc <- function(test, input, adjusted.output){
     if(test$qc.mask=='on'){
       adjusted.output$qc.mask[[ds.var]] <- adjusted.output$qc.mask
     }
-    return(list('input' = input, 'adjusted.output' = adjusted.output))
+    #return(list('input' = input, 'adjusted.output' = adjusted.output))
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))          
 }
@@ -322,15 +325,19 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   targ.var <- names(input$data.atts$hist.targ)
   out.list <- adjusted.output
+  #print(rips)
   for(rip in rips){
+    #print(rip)
     ds.var <- paste0(targ.var, ".", rip)
     if(sum(sapply(test$qc_args$vars,'grepl',ds.var))==1){ #ds.vars? I changed from ds.vars to ds.var 10-22
       if(!is.null(test$qc_args$arg)){
         #print(summary(out.list$ds.out[[ds.var]]))
         #save(file='/home/cew/Code/testing/test_out.R', list=c('test', 'out.list', 'ds.var'))
+        #print(sumamry(out.list$ds.out[[ds.var]]))
         out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
                                              args=list(as.numeric(out.list$ds.out[[ds.var]]), 
                                                        test$qc_args$arg))
+        #print(sumamry(out.list$ds.out[[ds.var]]))
         input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$fut.pred[[ds.var]]), 
                                                       test$qc_args$arg))

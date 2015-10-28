@@ -1,3 +1,11 @@
+10-27-15
+(cew)
+- the recover.ignore0 function only applies to those datastets identified in the downscaling method's train.names list, and only insufficent data in the training period can set the status to greater than 1 for the distributional and synchronous missing value removal methods.
+
+10-26-15
+(cew)
+- New pr opt for adding flag.neg adjustment in conjunction with the BCQM.tail.adj method
+
 10-23-15
 (cew)
 - bugfix for backtransforms operating more than once on ds out

@@ -26,7 +26,8 @@ QCAdjustmentList <- function(mask.list){
   qc.args = ""
   for (element in 1:length(mask.list)){
     #message(mask.list[[element]])
-    qc.check <- qc.check + as.numeric(mask.list[[element]]$qc.mask=='on')
+    qc.check <- qc.check + as.numeric(mask.list[[element]]$qc.mask=='on' || 
+                                        mask.list[[element]]$qc.mask=='on')
     if(qc.check==1){
       #Check for QC options
       qc.method <- mask.list[[element]]$type

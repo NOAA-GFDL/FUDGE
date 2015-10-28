@@ -8,12 +8,12 @@ assess.missvals <- function(OH, MH, MF,
                             type='distributional',
                             ds.method="", ds.args="", 
                             threshold=1, retry=FALSE, 
-                            qcmask=FALSE){
-  #'Determines how to go about removing missing values before downscaling
-  #if(!retry){
+                            att.table="", qcmask=FALSE){
+#   rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
+#   rips <- unique(rip.list)
   ds.list <- switch(type, 
                     'distributional' = remove.all.missvals(OH, MH, MF), 
-                    'synchronous' = remove.synch.missvals(OH, MH, MF), 
+                    'synchronous' = remove.synch.missvals(OH, MH, MF, att.table), 
                     'delta' = remove.delta.missvals(OH, MH, MF, ds.args, threshold),
                     'cdft' = remove.cdft.missvals(OH, MH, MF, ds.args, threshold),
                     stop(paste("Error in assess.misvals: provided type", type, 
@@ -25,61 +25,85 @@ assess.missvals <- function(OH, MH, MF,
     MH.kount <- unlist(lapply(ds.list$MH, length))
     OH.kount <- length(ds.list$OH)
     MF.kount <- unlist(lapply(ds.list$MF, length))
+    train.index <- colSums(sapply(c('MH', 'OH', 'MF'), 'grepl', train.names))
     if(threshold >= 1){ #sample size threshold
-      ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+      #ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+      #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
+      #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold)[c('MH', 'OH', 'MF')%in%train.names])
+      ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold)[train.index])
     }else{ #percentage threshold
       MH.korig <- unlist(lapply(MH, length))
       OH.korig <- length(OH)
       MF.korig <- unlist(lapply(MF, length))
-      ds.list$status <- sum(mapply("/", c(MH.kount, OH.kount, MF.kount), 
-                                   c(MH.korig, OH.korig, MF.korig))>= threshold)
+      #This hasn't gotten tested yet - test it in the next round
+      ds.list$status <- sum(mapply("/", c(MH.kount, OH.kount, MF.kount)[train.index], 
+                                   c(MH.korig, OH.korig, MF.korig)[train.index])>= threshold)
     }
   }
   #Statuses over 100 are from the missing value removal functions and just need
   #a qcmask, if that applies; statuses less than that need a retry
-  if(ds.list$status < 100 && ds.list$status > 0){
-    print('Recovery option enabled; adding precip zeroes back into data.')
-    ds.tmp <- switch(ds.method, 
-                      recover.ignore0(OH,MH,MF))
-    for(name in (names(ds.tmp))){
-      ds.list[[name]] <- ds.tmp[[name]]
+  #for(rip in rips){
+    if(ds.list$status < 100 && ds.list$status > 0){
+      message('Recovery option enabled; adding precip zeroes back into the training data.')
+#       print(summary(OH))
+#       print(lapply(MH, 'summary'))
+#       print(lapply(MF, 'summary'))
+      ds.tmp <- switch(ds.method, 
+                       recover.ignore0(OH,MH,MF))
+      for(name in (names(ds.tmp))){
+#        print(summary(ds.list[[name]]))
+        ds.list[[name]] <- ds.tmp[[name]]
+#        print(summary(ds.tmp[[name]]))
+      }
+      ds.list$status <- 10 #used recover.ignore0 to fix the input data
     }
-    ds.list$status <- 10 #used recover.ignore0 to fix the input data
-  }
+  #}
   if(qcmask){
     #...you know, I am sort of glad that I don't have to worry about the multi-rip implications
     #of this bit just yet.
     ds.list$qcmask <- rep(list(rep(ifelse(ds.list$status==0, 
-                                          1, NA), length(MF[[1]]))),3)
+                                          1, NA), length(MF[[1]]))),length(MF)) # of rips used
   }else{
     ds.list$qcmask <- NA
   }
   #previously sd on all, but that's not a reliable predictor
-#   print(mean(ds.list$OH))
-#   print(lapply(ds.list$MH, 'mean'))
-#   print(lapply(ds.list$MF, 'mean'))
+#   print(summary(ds.list$OH))
+#   print(lapply(ds.list$MH, 'summary'))
+#   print(lapply(ds.list$MF, 'summary'))
   return(ds.list)
 }
 
 remove.all.missvals <- function(OH, MH, MF){
   #suitable for use in the QM methods; 
-  #was used by all methods for the 
+  #was used by all methods for every version until espresso
   return(list(MH=lapply(MH, 'remove.missvals'),  
          OH=remove.missvals(OH), 
          MF=lapply(MF, 'remove.missvals')))
 }
 
-remove.synch.missvals <- function(OH, MH, MF){
+remove.synch.missvals <- function(OH, MH, MF, att.table){
                                   #OH.mask, MH.mask){
+  #'removes missing values from the MH and OH datasets
+  #'in a time-synchronous manner, and removes missing values
+  #'from the 
   synch.mask <- lapply(MH, 'add.missval.vectors', OH)
   MH.new <- lapply(MH, 'apply.any.mask', synch.mask[[1]], 'temporal')
   OH.new <- apply.any.mask(OH, synch.mask[[1]], 'temporal')
+  rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  MF.new <- MF
+  for(rip in rips){
+    rip.index <- rip.list==rip
+    MF.synch.mask <- lapply(MF[rip.index], 'add.missval.vectors')
+    MF.new[rip.index] <- lapply(MF[rip.index], 'apply.any.mask', MF.synch.mask[[1]], 'temporal')
+  }
   return(list(MH = lapply(MH.new, 'remove.missvals'), 
               OH= remove.missvals(OH.new), 
-              MF=lapply(MF, 'remove.missvals')))
+              MF=lapply(MF.new, 'remove.missvals')))
 }
 
 remove.delta.missvals <- function(OH, MH, MF, args, threshold, 
+                                  att.table,
                                   return.qc.mask=FALSE){
   #'Very similar to distributive, but with a few 
   #'extra checks for missing thresholds in some places
@@ -142,23 +166,6 @@ remove.cdft.missvals<- function(OH, MH, MF, ds.args, thold=1){
     }
     out.list$status <- 110
   }
-  #And now do the final check, making sure there are at least 3 
-  #unique values in each dataset
-  unique.vec <- c(unlist(c(lapply(lapply(out.list$MH, 'unique'), 'length'), 
-                  length(unique(out.list$OH)), 
-                  lapply(lapply(out.list$MF, 'unique'), 'length'), use.names=FALSE)))
-#   print(unique.vec)
-#   stop('examine this thing')
-   print(unique.vec)
-#   print(lapply(out.list$MH, 'summary'))
-#   print(summary(out.list$OH))
-#   print(lapply(out.list$MF, 'summary'))
-  #save(file="/home/cew/Code/testing/CDFt_fail_point.R", list=c('out.list'))
-  if(sum(unique.vec <= 5)!=0){
-    message(paste("Warning in remove.cdft.missvals: one or more of the datasets", 
-                   "passed in had fewer than five unique values at this point!"))
-    out.list$status <- 230 #This is probably going to trigger a fail condition
-  }
   return(out.list)
 }
 
@@ -219,6 +226,9 @@ replace.missval <- function(x, val){
 
 add.back.in <- function(data, ref){
   #adds data back into a reference vector
+  if(mode(data)=='list'){
+    data <- unlist(data, use.names=FALSE)
+  }
 #   print('in add.back.in')
 #   print(length(ref))
 #   print(length(data))

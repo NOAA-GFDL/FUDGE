@@ -69,7 +69,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                              train_qcmask=FALSE,
                              create.qc.mask=FALSE,
                              min.present=1,
-                             verbose=TRUE, test=FALSE)
+                             verbose=TRUE, test=TRUE)
 {
   #May be advisable to hold fewer masks in memory. Can move some of the looping code to compensate.
   #At the present time, it might make more sense to call the more complicted fxns from elsewhere.
@@ -109,8 +109,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }else{
     qc.masklist <- NULL
   }
-  ##Create checkvector to test collision of kfold validation masks
-  checkvector <- rep(0, downscale.length)
   #And finally, in order to see internal activity, add the graph options
   if(graph){
     #     mask.cols = colorRampPalette(c("red", "gray90", "blue"))(num.masks) #Try ivory next time you run it
@@ -143,9 +141,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
-        kfold.predict <- trim.time.mask(data=window.predict, mask=mask.struct[[1]]$masks[[kmask]])
+        #kfold.predict <- trim.time.mask(data=window.predict, mask=mask.struct[[1]]$masks[[kmask]])
         kfold.target  <- trim.time.mask(data=window.target,  mask=mask.struct[[2]]$masks[[kmask]])
-        kfold.gen     <- trim.time.mask(data=window.gen,     mask=mask.struct[[3]]$masks[[kmask]])
+        #kfold.gen     <- trim.time.mask(data=window.gen,     mask=mask.struct[[3]]$masks[[kmask]])
+        kfold.predict <- lapply(window.target, 'trim.time.mask',  mask=mask.struct[[1]]$masks[[kmask]])
+        kfold.gen     <- lapply(window.gen, 'trim.time.mask',  mask=mask.struct[[1]]$masks[[kmask]])
         if(!is.null(ds.orig)){
           kfold.orig <- ApplyTemporalMask(window.orig, kfold.masks[[3]]$masks[[kmask]])
         }else{
@@ -181,7 +181,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
       }
       #If there is enough data available in the window to perform downscaling
-      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
+#      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
         #Adjust the values of the downscaled ouptut, if applicable
         if(s3.adjust){
           if(test){
@@ -220,7 +220,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                    ds.var=ds.var, 
                                    min.present=min.present, train_qcmask)
-          tout.names <- names(temp.out[!names(temp.out)%in%c('qc.mask')])
+#           print(!names(temp.out)%in%c('qc.mask'))
+#           print(names(temp.out))
+#           print(names(temp.out)[!names(temp.out)%in%c('qc.mask')])
+          tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
+          #tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
+          #print(tout.names)
           for(var.name in tout.names){
             if(use.time.trim.mask){
               temp.assign <- ttrim.mask
@@ -232,18 +237,15 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                 temp.out$qc.mask[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]
               }
             }else{
+              #stop('error in assigning to giant messy mask at this point')
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
               if(train_qcmask){
-                #print(summary(as.numeric(temp.out$qc.mask[[var.name]])))
-                temp.out$qc.mask[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
-                #print(summary(temp.out$qc.mask[[var.name]]))
+                qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
               }
             }
-          } #If this works, consider adding it to all of the other assignments in this section
-        }
+          }#end for var in tout.names
+        }#end if create.ds.out
         #And adjust the downscaled output, if applicable
-        #if(s5.adjust){
-        #Note: above check no longer works, since s3 opts may create new s5 opts on the fly
         if(length(s5.instructions.window) > 0){
           if(verbose){message('calling section 5 adjustment')}
           if(is.na(kfold.orig)){
@@ -300,9 +302,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                  pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
         }
         #Otherwise, you don't need to do anything because that loop should be full of NAs
-      }else{
-        print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
-      }
+#       }else{
+#         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
+#       }
     }
   }
   #stop('examine output')
@@ -328,6 +330,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #...also? This has the potential to cause issues when we start working with datasets that 
   #happen to have missing values fo their own - and therefore might use 
   #print(lapply(qc.masklist, 'summary'))
+#    tmp.list <- list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)
+#   print(summary(tmp.list))
+#    print(lapply(tmp.list$downscaled, 'summary', digits=5))
+#   print(lapply(tmp.list$downscaled, 'unique'))
+  #stop('examine the output')
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
 
