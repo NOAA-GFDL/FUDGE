@@ -39,7 +39,7 @@ def postProc():
      parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
      parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
-     parser.add_option("-m", "--mail",action="store_true", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
+     parser.add_argument("-m", "--mail",action="store_true", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
      args = vars(parser.parse_args())
 
      if userinput == "none":
