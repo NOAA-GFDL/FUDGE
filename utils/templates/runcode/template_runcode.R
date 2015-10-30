@@ -21,8 +21,8 @@ rm(list=ls())
 	hist.file.end.year_1 <- <H.FILE.END.YEAR>
         hist.train.start.year_1 <- <H.TRAIN.START.YEAR>
 	hist.train.end.year_1 <- <H.TRAIN.END.YEAR> 
-        hist.train.suffix <- <HIST.TRAIN.SUFFIX>
 	hist.scenario_1 <- <H.SCENARIO>
+        hist.pred.rips <- <H.PRED.RIPS>
 	hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 	hist.model_1 <- <H.MODEL> 
 	hist.freq_1 <- <H.FREQ> 
@@ -35,6 +35,7 @@ rm(list=ls())
         fut.train.start.year_1 <- <F.TRAIN.START.YEAR> 
         fut.train.end.year_1 <- <F.TRAIN.END.YEAR> 
 	fut.scenario_1 <- <F.SCENARIO>
+ 	fut.pred.rips <- <F.PRED.RIPS>
 	fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 	fut.model_1 <- <F.MODEL> 
 	fut.freq_1 <- <F.FREQ> 
@@ -51,11 +52,14 @@ rm(list=ls())
         target.train.start.year_1 <- <T.TRAIN.START.YEAR> 
         target.train.end.year_1 <- <T.TRAIN.END.YEAR> 
 	target.scenario_1 <- <T.SCENARIO>
+	target.rips <- <T.RIPS>
 	target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 	target.model_1 <- <T.MODEL>
 	target.freq_1 <- <T.FREQ> 
         target.indir_1 <- <T.INDIR>
 	target.time.window <- <T.TIME.WINDOW>
+	target.suffix <- <T.SUFFIX> 
+
 #------------- method name k-fold specs-----------------------#
         ds.method <- <METHOD> 
 	ds.experiment <- <DEXPER> 
