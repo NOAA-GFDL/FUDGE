@@ -459,7 +459,14 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
             sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
             SDF[sd.write.indices] <- tempvec
           }else{
-            SDF[seq(from=write.len, to=(write.len +length(tempvec)-1))] <- tempvec # length(tempvec)
+            if(length(tempvec) > 0){
+              SDF[seq(from=write.len, to=(write.len +length(tempvec)-1))] <- tempvec # length(tempvec)
+            }else{
+              print(summary(LH))
+              print(summary(CH))
+              print(summary(CF.data[write.len:(write.len + in.len)]))
+              stop(paste("Error in DeltaSD: you whould not have reached this point!"))
+            }
           }
           write.len <- write.len + in.len
         }

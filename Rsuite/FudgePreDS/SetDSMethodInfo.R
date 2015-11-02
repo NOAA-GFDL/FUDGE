@@ -57,6 +57,8 @@ setCDFt<- function(){
   #missval.handling <<- 'distributional'
   #What are the names of the datasets used in training?
   train.names <<- c('OH', 'MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('MF')
 }
 
 setSimple.Bias.Correct <- function(){
@@ -74,6 +76,8 @@ setSimple.Bias.Correct <- function(){
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
   train.names <<- c('OH', 'MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('OH', 'MH', 'MF')
 }
 
 setGeneral.Bias.Correct <- function(){
@@ -92,6 +96,8 @@ setGeneral.Bias.Correct <- function(){
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
   train.names <<- c('OH', 'MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('OH', 'MH', 'MF')
 }
 
 setNothing <- function(){
@@ -108,6 +114,8 @@ setNothing <- function(){
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
   train.names <<- c('OH', 'MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('OH', 'MH', 'MF')
 }
 
 setBiasCorrection <- function(){
@@ -125,6 +133,8 @@ setBiasCorrection <- function(){
   missval.handling <<- 'distributional'
   train.names <<- c('OH', 'MH')
   #train.names <<- c('MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('MF')
 }
 
 setEquiDistant <- function(){
@@ -141,6 +151,8 @@ setEquiDistant <- function(){
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'distributional'
   train.names <<- c('OH', 'MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('MF')
 }
 
 setChangeFactor <- function(){
@@ -158,6 +170,8 @@ setChangeFactor <- function(){
   missval.handling <<- 'distributional'
   #train.names <<- c('OH', 'MH')
   train.names <<- c('MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('OH')
 }
 
 setDeltaSD<- function(){
@@ -174,6 +188,8 @@ setDeltaSD<- function(){
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'delta'
   train.names <<- c('MH', 'MF')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('OH')
 }
 
 setMultiLM <- function(){
@@ -190,4 +206,6 @@ setMultiLM <- function(){
   #How are missing values handled when going into the downscaling code?
   missval.handling <<- 'synchronous'
   train.names <<- c('OH', 'MH')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('MF')
 }

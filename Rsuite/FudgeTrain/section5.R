@@ -22,12 +22,12 @@
 #'an unflagged value, and every NA represents a value flagged as suspicious. Is NULL if no qc mask 
 #'is generated from section 5. 
 callS5Adjustment<-function(s5.instructions=list('na'),
-                   data = NA, #downscaled data - from this run or another
+                           data = NA, #downscaled data - from this run or another
                            data.atts = NA,
-                   hist.pred = NA, 
-                   hist.targ = NA, 
-                   fut.pred = NA, 
-                   create.qc.mask=FALSE, create.adjust.out=FALSE, 
+                           hist.pred = NA, 
+                           hist.targ = NA, 
+                           fut.pred = NA, 
+                           create.qc.mask=FALSE, create.adjust.out=FALSE, 
                            verbose=FALSE){
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
@@ -190,9 +190,39 @@ callPRPostproc <- function(test, input, adjusted.output){
                     '. Output will have at least as many days without precip as the CF datset.'))
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
       #temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
-      temp.adjust[is.na(test$qc_args$fut.prmask[[rip]])] <- 0
-      adjusted.output$ds.out[[ds.var]] <- temp.adjust
-      test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here.
+      #If you downscaled on the future dataset, the adjustment is straightforward
+      if(sum(grepl('MF', ds.names)) > 0){
+        temp.adjust[is.na(test$qc_args$fut.prmask[[rip]])] <- 0
+        adjusted.output$ds.out[[ds.var]] <- temp.adjust
+        test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here
+      }else{
+        print("Downscaling took place on the OH dataset; adjusting OH pr mask to fit")
+        targ.mask <- array(NA, dim=c(dim(temp.adjust)))
+        targ.timelen <- dim(test$qc_args$targ.prmask)[3]
+        fut.timelen <- dim(temp.adjust)[3]
+        print(summary(test$qc_args$targ.prmask))
+        print(dim(test$qc_args$targ.prmask))
+        print(paste('targ.timelen:', targ.timelen))
+        print(paste('fut.timelen:', fut.timelen))
+        for(t in seq(from=1, to=fut.timelen, by=targ.timelen)){
+          if((t + targ.timelen - 1) > fut.timelen){
+            t.stop <- fut.timelen
+            t.ref <- fut.timelen #(t + targ.timelen - 1)%%fut.timelen
+          }else{
+            t.stop <- t + targ.timelen - 1
+            t.ref <- targ.timelen
+          }
+          print(t)
+          print(t.stop)
+          print(t.ref)
+          targ.mask[,,c(seq(from=t, to=t.stop))] <- test$qc_args$targ.prmask[,,c(from=1, to=t.ref)]
+        }
+        print(summary(targ.mask))
+        temp.adjust[is.na(targ.mask)] <- 0
+        adjusted.output$ds.out[[ds.var]] <- temp.adjust
+        #adjusted.output$ds.out[[ds.var]][is.na(adjusted.output$ds.out[[ds.var]])] <- 0
+        #test$qc_args$targ.prmask <- 'calculated from the input pr data' #I have no memory of why this was included here
+      }
     }else{
       message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
     }

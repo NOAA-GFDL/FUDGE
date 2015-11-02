@@ -127,10 +127,15 @@ callPRPreproc <- function(test, input, postproc.output){
       #Save future pr mask fo application in section 5;
       #note that it is the presence of this mask that 
       #leads to the adjustment being performed.
-      fut.prmask <- temp.out$future$pr_mask
-#       print(summary(temp.out$future$pr_mask))
-#       stop('examine this output')
-      pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
+      if(sum(grepl('MF', ds.names)) > 0){
+        fut.prmask <- temp.out$future$pr_mask
+        pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
+      }else{
+        #Assume that you are downsciang on the OH dataset instead; store accordingly
+        print('adding target pr mask')
+        targ.prmask <- temp.out$ref$pr_mask
+        pr_mod$qc_args$targ.prmask <- targ.prmask
+      }
     }
     if(apply.0.mask){
       postproc.output$propts <- pr_mod
