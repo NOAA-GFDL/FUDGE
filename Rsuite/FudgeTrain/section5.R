@@ -215,10 +215,27 @@ callPRPostproc <- function(test, input, adjusted.output){
           print(t)
           print(t.stop)
           print(t.ref)
-          targ.mask[,,c(seq(from=t, to=t.stop))] <- test$qc_args$targ.prmask[,,c(from=1, to=t.ref)]
+          print(sum(is.na(targ.mask[,,c(seq(from=t, to=t.stop))])))
+          print(sum(is.na(test$qc_args$targ.prmask[,,c(seq(from=1, to=t.ref))])))
+          targ.mask[,,c(seq(from=t, to=t.stop))] <- test$qc_args$targ.prmask[,,c(seq(from=1, to=t.ref, by=1))]
         }
-        print(summary(targ.mask))
-        temp.adjust[is.na(targ.mask)] <- 0
+#         print('summary of target mask:')
+#         print(summary(targ.mask))
+#         print('entire prmask output:')
+#         image(test$qc_args$targ.prmask[1,,], x=seq(1:114), y=seq(1:10958), main='entire target mask output')
+#         image(targ.mask[1,,c(seq(1:3652))], x=seq(1:114), y=seq(1:3652), main='target mask output')
+#         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='pre-adjust ds output')
+#         print('summary of ds before adjustment:')
+#         print(summary(as.vector(temp.adjust)))
+#         print(dim(targ.mask))
+#         print(dim(temp.adjust))
+#         temp.adjust[is.na(targ.mask)] <- 0
+#         print('summary of ds after adjustment:')
+#         print(summary(as.vector(temp.adjust)))
+#         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='post-adjust ds output')
+#         print(length(temp.adjust))
+#         adjusted.output$ds.out[[ds.var]] <- temp.adjust
+        temp.adjust[is.na(temp.adjust)] <- 0
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
         #adjusted.output$ds.out[[ds.var]][is.na(adjusted.output$ds.out[[ds.var]])] <- 0
         #test$qc_args$targ.prmask <- 'calculated from the input pr data' #I have no memory of why this was included here

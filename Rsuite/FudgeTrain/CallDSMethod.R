@@ -32,10 +32,16 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
   esd.index <- list()
-  for(rip in rips){
-    #Insert check for least number of present vals in here; store var name for later b/c 
-    #that check still has potential to be very useful
-    esd.index[[rip]] <- esd.gen[rip.list==rip][[1]]
+  if('MF'%in%ds.names){
+    for(rip in rips){
+      #Insert check for least number of present vals in here; store var name for later b/c 
+      #that check still has potential to be very useful
+      esd.index[[rip]] <- esd.gen[rip.list==rip][[1]]
+    }
+  }else if('OH' %in% ds.names){
+    for(rip in rips){
+      esd.index[[rip]] <- rep(train.target, length.out=length(esd.gen[rip.list==rip][[1]]))
+    }
   }
   if(missval.handling=='synchronous'){
     #This should be pre-initialized, even if it's likely to be small
@@ -50,12 +56,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
     if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
       #Use 200 to refer to fatal errors; everything else should be recoverable
       out <- switch(ds.method, 
-                    'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
-                    'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
-                    "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                    "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                    "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table), 
-                    "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, att.table, ds.input$status), #esd.gen,
                     "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                     "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                     ReturnDownscaleError(ds.method))
@@ -80,14 +80,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       out.tmp$qc.mask <- ds.input$qcmask
       names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
     }
-#     print('ds out summary:')
-#     print(summary(out.tmp))
-#     print(names(out.tmp))
-    #print(lapply(out.tmp, 'summary'))
-    #print('qc mask summary:')
-    #print(summary(out.tmp$qc.mask))
-    #print(lapply(out.tmp$qc.mask, 'summary'))
-    #stop('examine the output')
     return(out.tmp)  
   }else{
     #For all other cases:
@@ -102,9 +94,14 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                          'fut.pred' = att.table$fut.pred[esd.gen.rip.index])
       ds.input <- assess.missvals(train.target, train.predict, esd.gen.rip, type=missval.handling, 
                                   ds.method, args, min.present, att.table = rip.att.table, qcmask=train_qc_mask)
-      if(((ds.input$status > 0 && 'MF'%in%train.names) || ds.input$status==130) && ds.input$status !=120){
-        #If the number of missing values has been altered by the fxn, get a new addition index
+      if((ds.input$status > 0 && 'MF'%in%train.names)){
+        if((ds.input$status==130)){
+          #If you are working with the DeltaSD downscaling method
+          esd.index[[rip]] <- rep(ds.input$OH, length.out=length(esd.index[[rip]]))
+        }else{
+          #If the number of missing values has been altered by the fxn, get a new addition index
           esd.index[[rip]] <- ds.input$MF[[1]]
+        }
       }
       if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
         #Use 200 to refer to fatal errors; everything else should be recoverable
@@ -545,7 +542,7 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
       attr(out, 'status') <- 1
       return(out)
     }
-    out <- delta.targ*delta #CHANGED FROM delta.fut
+    out <- delta.targ*delta 
   }else{
     stop(paste("delta.downscale Downscaling Error: deltaop", deltaop, "is not one of 'ratio' or 'add'"))
   }

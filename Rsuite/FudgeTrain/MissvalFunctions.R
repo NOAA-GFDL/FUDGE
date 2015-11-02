@@ -146,7 +146,8 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
 #   print(lapply(MF.new, 'summary'))
    print(paste('final delta status:', status))
   #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
-  return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
+  #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
+  return(list(MH=MH, OH=OH, MF=MF, status=status))
 }
 
 remove.cdft.missvals<- function(OH, MH, MF, ds.args, thold=1){
@@ -232,12 +233,14 @@ add.back.in <- function(data, ref){
   if(mode(data)=='list'){
     data <- unlist(data, use.names=FALSE)
   }
-#   print('in add.back.in')
-#   print(length(ref))
-#   print(length(data))
-#   print(sum(is.na(ref)))
-#   print(sum(is.na(data)))
+  print('in add.back.in')
+  print(length(ref))
+  print(length(data))
+  print(sum(!is.na(ref)))
+  print(sum(is.na(data)))
+  print(summary(ref))
   ref[!is.na(ref)] <- data
+  print(summary(ref))
   return(ref)
 }
 

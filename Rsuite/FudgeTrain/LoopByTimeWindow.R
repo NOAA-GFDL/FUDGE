@@ -238,7 +238,10 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               }
             }else{
               #stop('error in assigning to giant messy mask at this point')
+              print(length(is.na(temp.out[[var.name]])))
+              print(sum(!is.na(ttrim.mask)))
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
+              #stop('examine output')
               if(train_qcmask){
                 qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
               }

@@ -144,6 +144,10 @@ callPRPreproc <- function(test, input, postproc.output){
   # print(lapply(input$hist.pred, 'summary'))
   # print(summary(input$hist.targ))
   # print(lapply(input$fut.pred, 'summary'))
+#   print(summary(pr_mod$qc_args$targ.prmask))
+#   print(dim((pr_mod$qc_args$targ.prmask)))
+#   print(summary(as.vector(pr_mod$qc_args$targ.prmask[,,c(seq(1:3652))])))
+#   stop('examine output')
   return(list('input'=input,
               's5.list'=postproc.output))
 }
