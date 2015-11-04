@@ -44,10 +44,9 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
 #       print(max.hist.index)
 #       print(years[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
       leapday.range <- sum(days.per.year[(hist.range[1] + leapday.shift) < years & (hist.range[1] + leapday.shift + max.hist.index) >= years])
-      #divide.offset = (h.time.len-leapday.offset) - leapday.range
-      divide.offset = 0 #365 #365*2+1 #365 
+      divide.offset = 0 #365 #365 #365*2+1 #365 
       print(paste("divide.offset:", divide.offset))
-      #stop('examine output')
+      stop(paste("Error in correct.hist.leapdays: future time periods longer than historical time periods are not supported at this time."))
     }else{
       #You're never going to need to divide anything
       divide.offset <- 0

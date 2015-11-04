@@ -437,7 +437,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
           comp.indices <- which(LH!=0)
         }
         while(write.len <= out.len){
-          print('looping on write.len')
+          #print('looping on write.len')
           #delta.downscale removes NAs in the output vector
           if((write.len + in.len) <= length(CF.data)){
             tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 

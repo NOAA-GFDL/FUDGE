@@ -309,6 +309,7 @@ if(ds.method=='DeltaSD'){
   print(summary(delta.mask))
   args$delta.mask <- delta.mask 
   args$delta.adj.index <- delta.adj.index
+  delta.string <- paste("With an OH timseries trimmed from ")
   #stop('exmaine ds.args')
 #   list.target$clim.in <- trim.time.mask(data=list.target$clim.in, mask=delta.mask)
 #   list.hist$clim.in <- lapply(list.hist$clim.in, 'trim.time.mask', mask=delta.mask)

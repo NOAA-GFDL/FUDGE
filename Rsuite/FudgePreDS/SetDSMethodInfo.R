@@ -11,19 +11,19 @@
 SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
   message(ds.method)
   switch(ds.method, 
-                "simple.lm" = setSimpleLM(),
-                'CDFt' = setCDFt(),
-                'CDFtv1' = setCDFt(),
-                'simple.bias.correct' = setSimple.Bias.Correct(),
-                'nothing' = setNothing(), 'Nothing' = setNothing(),     
-                'general.bias.correct' = setGeneral.Bias.Correct(),
+         "simple.lm" = setSimpleLM(),
+         'CDFt' = setCDFt(),
+         'CDFtv1' = setCDFt(),
+         'simple.bias.correct' = setSimple.Bias.Correct(),
+         'nothing' = setNothing(), 'Nothing' = setNothing(),     
+         'general.bias.correct' = setGeneral.Bias.Correct(),
          "BCQM" = setBiasCorrection(), 
          "EDQM" = setEquiDistant(), 
          "CFQM" = setChangeFactor(),
          'lm' = setMultiLM(),
          'lmstep' = setMultiLM(),
          "DeltaSD" = setDeltaSD(),
-                ReturnDownscaleError(ds.method))
+         ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
   #But does run a couple extra checks to make sure that there are no gross mismatches
@@ -175,6 +175,8 @@ setChangeFactor <- function(){
 }
 
 setDeltaSD<- function(){
+  stop(paste("Warning! DeltaSD for this branch is currently undergoing development.", 
+             "Please use a different downscaling method."))
   #Sets global variables if the DS method used is DeltaSD
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE
