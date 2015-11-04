@@ -290,6 +290,32 @@ if(!is.null(spat.mask)){
 print(paste("dimensions of the future predictor data:"))
 print(dim(list.fut$clim.in))
 
+
+######################################################
+###Hasty DeltaSD adjustment for asynchronous leap years
+if(ds.method=='DeltaSD'){
+#   print('applying OH mask correction!')
+#   h.time.len <- dim(list.target$clim.in)[3]
+#   delta.mask <- c(rep(NA, (365*3+1)), rep(1, h.time.len-(365*3+1)))
+  h.time.len <- dim(list.target$clim.in)[3]
+  print(summary(dim(list.fut$clim.in)))
+  delta.adj.index <- correct.hist.leapdays(dim(list.target$clim.in)[3], 
+                                            dim(list.fut$clim.in[[1]])[3], 
+                                            hist.file.start.year_1, hist.file.end.year_1,
+                                            fut.file.start.year_1, fut.file.end.year_1)
+  delta.mask <<- c(rep(NA, delta.adj.index[1]), 
+                  rep(1, (h.time.len-(sum(delta.adj.index)))), 
+                  c(rep(NA, delta.adj.index[2])))
+  print(summary(delta.mask))
+  args$delta.mask <- delta.mask 
+  args$delta.adj.index <- delta.adj.index
+  #stop('exmaine ds.args')
+#   list.target$clim.in <- trim.time.mask(data=list.target$clim.in, mask=delta.mask)
+#   list.hist$clim.in <- lapply(list.hist$clim.in, 'trim.time.mask', mask=delta.mask)
+}
+
+######################################################
+
 message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
   message('Applying S3 Adjustment')

@@ -123,7 +123,19 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
-      window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
+      if(ds.method == 'DeltaSD'){
+        #...is it enough just to mask the masks in this step? 
+        window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
+#         window.predict <- lapply(train.predictor, 'trim.time.mask', mask=downscale.args$delta.mask)
+        mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]], 
+                                                           mask=downscale.args$delta.mask)
+#         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]], 
+#                                                            mask=downscale.args$delta.mask)
+        window.target  <- trim.time.mask(data=window.target,    mask=mask.struct[[2]]$masks[[window]])
+      }else{
+        window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
+        #window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
+      }
       window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
       window.gen     <- lapply(esd.gen        , trim.time.mask, mask=mask.struct[[3]]$masks[[window]])
     }else{
@@ -168,8 +180,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           if(length(mask.struct) > 3){
             use.time.trim.mask <- TRUE
             ttrim.mask <- mask.struct[[3]]$masks[[window]]
-            #ds.ttrim.mask <- trim.time.mask(data=mask.struct[[4]]$masks[[window]], mask=mask.struct[[3]]$masks[[window]])
-            #ds.ttrim.mask <- apply.any.mask(ttrim.mask, mask.struct[[3]]$masks[[window]], dim='temporal')
             ds.ttrim.mask <- mask.struct[[4]]$masks[[window]]
           }else{
             use.time.trim.mask <- FALSE
@@ -209,8 +219,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
-#           stop(paste('what is missval.handling at this point?'))
-#           print(missval.handling)
           temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                    train.predict = kfold.predict,
                                     train.target = kfold.target,
@@ -220,9 +228,6 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                    missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                    ds.var=ds.var, 
                                    min.present=min.present, train_qcmask)
-#           print(!names(temp.out)%in%c('qc.mask'))
-#           print(names(temp.out))
-#           print(names(temp.out)[!names(temp.out)%in%c('qc.mask')])
           tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
           #tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
           #print(tout.names)
@@ -238,8 +243,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
               }
             }else{
               #stop('error in assigning to giant messy mask at this point')
-              print(length(is.na(temp.out[[var.name]])))
-              print(sum(!is.na(ttrim.mask)))
+#               print(length(is.na(temp.out[[var.name]])))
+#               print(sum(!is.na(ttrim.mask)))
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
               #stop('examine output')
               if(train_qcmask){

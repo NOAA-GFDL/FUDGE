@@ -119,9 +119,19 @@ trim.time.mask <- function(data, mask, verbose=FALSE){ #switched 'mask' and 'dat
     if(length(data.dim) > 1){
       #There is more than one dimension present
       #         print( c(length(data.dim), 1:(length(data.dim)-1)))
-      data.perm <- aperm(data, c(length(data.dim), 1:(length(data.dim)-1)))#t,x,y order
+      perm.dim <- c(length(data.dim), seq(1:(length(data.dim)-1)))
+      data.perm <- aperm(data, perm.dim)#t,x,y order
       result <- data.perm[!is.na(rep(mask, length.out=length(data.perm)))] #t,x,y order(yay vector recycling)
-      result <- aperm(result, c(2:(length(data.dim)), 1))
+#       print(dim(data))
+#       print(perm.dim)
+#       print(dim(data)[perm.dim])
+#       print(length(result))
+      #Drop first dimension (time); re-partition time dim
+      dim(result) <- c(length(result)/prod(dim(data)[perm.dim[-1]]), dim(data)[perm.dim[-1]])
+#       print(length(result))
+#       print(dim(result))
+#       print(c(seq(2, (length(data.dim))), 1))
+      result <- aperm(result, c(seq(2, (length(data.dim))), 1))
       ##Let's see...removing missing values might get complicated
     }else{
       #Assume that the only dimension is time

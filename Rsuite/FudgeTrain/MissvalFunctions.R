@@ -233,14 +233,14 @@ add.back.in <- function(data, ref){
   if(mode(data)=='list'){
     data <- unlist(data, use.names=FALSE)
   }
-  print('in add.back.in')
-  print(length(ref))
-  print(length(data))
-  print(sum(!is.na(ref)))
-  print(sum(is.na(data)))
-  print(summary(ref))
+#   print('in add.back.in')
+#   print(length(ref))
+#   print(length(data))
+#   print(sum(!is.na(ref)))
+#   print(sum(is.na(data)))
+#   print(summary(ref))
   ref[!is.na(ref)] <- data
-  print(summary(ref))
+#   print(summary(ref))
   return(ref)
 }
 

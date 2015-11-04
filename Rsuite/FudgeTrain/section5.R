@@ -28,7 +28,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                            hist.targ = NA, 
                            fut.pred = NA, 
                            create.qc.mask=FALSE, create.adjust.out=FALSE, 
-                           verbose=FALSE){
+                           verbose=TRUE){
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
@@ -197,8 +197,13 @@ callPRPostproc <- function(test, input, adjusted.output){
         test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here
       }else{
         print("Downscaling took place on the OH dataset; adjusting OH pr mask to fit")
+        #delta-specific adjustment for the leapyear indices: 
+        print(summary(delta.mask))
+        temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, 
+                                                   mask=delta.mask)
+        #Note: you can't modify this in-place if you are working with the multi rip case!
         targ.mask <- array(NA, dim=c(dim(temp.adjust)))
-        targ.timelen <- dim(test$qc_args$targ.prmask)[3]
+        targ.timelen <- dim(temp.prmask)[3]
         fut.timelen <- dim(temp.adjust)[3]
         print(summary(test$qc_args$targ.prmask))
         print(dim(test$qc_args$targ.prmask))
@@ -206,37 +211,37 @@ callPRPostproc <- function(test, input, adjusted.output){
         print(paste('fut.timelen:', fut.timelen))
         for(t in seq(from=1, to=fut.timelen, by=targ.timelen)){
           if((t + targ.timelen - 1) > fut.timelen){
+            #Final case of the fut.timelen > hist.timelen case:
             t.stop <- fut.timelen
-            t.ref <- fut.timelen #(t + targ.timelen - 1)%%fut.timelen
+            #t.ref <- fut.timelen #(t + targ.timelen - 1)%%fut.timelen
+            t.ref <- fut.timelen - t + 1
           }else{
             t.stop <- t + targ.timelen - 1
             t.ref <- targ.timelen
           }
-          print(t)
-          print(t.stop)
-          print(t.ref)
-          print(sum(is.na(targ.mask[,,c(seq(from=t, to=t.stop))])))
-          print(sum(is.na(test$qc_args$targ.prmask[,,c(seq(from=1, to=t.ref))])))
-          targ.mask[,,c(seq(from=t, to=t.stop))] <- test$qc_args$targ.prmask[,,c(seq(from=1, to=t.ref, by=1))]
+           print(paste("t:", t))
+           print(t.stop)
+           print(t.ref)
+           print(sum(is.na(targ.mask[,,c(seq(from=t, to=t.stop))])))
+           print(sum(is.na(test$qc_args$targ.prmask[,,c(seq(from=1, to=t.ref))])))
+          targ.mask[,,c(seq(from=t, to=t.stop))] <- temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]
         }
-#         print('summary of target mask:')
-#         print(summary(targ.mask))
-#         print('entire prmask output:')
-#         image(test$qc_args$targ.prmask[1,,], x=seq(1:114), y=seq(1:10958), main='entire target mask output')
+        print('summary of target mask:')
+        print(summary(targ.mask))
+        print('summary of downscaled output:')
+        print(summary(as.vector(temp.adjust)))
+        print('entire prmask output:')
+        print(dim(test$qc_args$targ.prmask))
+#         image(test$qc_args$targ.prmask[1,,], x=seq(1:114), y=seq(1:16436), main='entire target mask output')
 #         image(targ.mask[1,,c(seq(1:3652))], x=seq(1:114), y=seq(1:3652), main='target mask output')
 #         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='pre-adjust ds output')
-#         print('summary of ds before adjustment:')
-#         print(summary(as.vector(temp.adjust)))
-#         print(dim(targ.mask))
-#         print(dim(temp.adjust))
-#         temp.adjust[is.na(targ.mask)] <- 0
-#         print('summary of ds after adjustment:')
-#         print(summary(as.vector(temp.adjust)))
+        temp.adjust[is.na(targ.mask)] <- 0
 #         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='post-adjust ds output')
-#         print(length(temp.adjust))
-#         adjusted.output$ds.out[[ds.var]] <- temp.adjust
-        temp.adjust[is.na(temp.adjust)] <- 0
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
+#        print(adjusted.output$ds.out[[ds.var]][1,,1])
+        ##Fast, simple, and wrong fix
+#         temp.adjust[is.na(temp.adjust)] <- 0
+#         adjusted.output$ds.out[[ds.var]] <- temp.adjust
         #adjusted.output$ds.out[[ds.var]][is.na(adjusted.output$ds.out[[ds.var]])] <- 0
         #test$qc_args$targ.prmask <- 'calculated from the input pr data' #I have no memory of why this was included here
       }
