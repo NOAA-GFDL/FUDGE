@@ -38,7 +38,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       #that check still has potential to be very useful
       esd.index[[rip]] <- esd.gen[rip.list==rip][[1]]
     }
-  }else if('OH' %in% ds.names){
+  }else if('OH' %in% ds.names){ #if downscaling with Delta or CFQM
     for(rip in rips){
       esd.index[[rip]] <- rep(train.target, length.out=length(esd.gen[rip.list==rip][[1]]))
     }
@@ -94,15 +94,17 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                          'fut.pred' = att.table$fut.pred[esd.gen.rip.index])
       ds.input <- assess.missvals(train.target, train.predict, esd.gen.rip, type=missval.handling, 
                                   ds.method, args, min.present, att.table = rip.att.table, qcmask=train_qc_mask)
-      if((ds.input$status > 0 && 'MF'%in%train.names)){
-        if((ds.input$status==130)){
+      if((ds.input$status > 0 && ('MF'%in%train.names && 'MF'%in%ds.names))){
+#        if((ds.input$status==130)){
           #If you are working with the DeltaSD downscaling method
-          esd.index[[rip]] <- rep(ds.input$OH, length.out=length(esd.index[[rip]]))
-        }else{
+ #         esd.index[[rip]] <- rep(ds.input$OH, length.out=length(esd.index[[rip]]))
+#        }else{
           #If the number of missing values has been altered by the fxn, get a new addition index
           esd.index[[rip]] <- ds.input$MF[[1]]
-        }
-      }
+#        }
+#       }else if(ds.method=='DeltaSD'){
+#         esd.index[[rip]] <- rep(ds.input$OH, length.out=length(esd.index[[rip]]))
+       }
       if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
         #Use 200 to refer to fatal errors; everything else should be recoverable
         out <- switch(ds.method, 
@@ -115,6 +117,11 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                       "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       ReturnDownscaleError(ds.method))
+#         print(length((esd.index[[rip]])))
+#         print(summary(esd.index[[rip]]))
+#         print(length(out[[1]]))
+#         print(summary(out[[1]]))
+#         stop('examine and compare output')
         out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])    
         if(ds.method%in%c('CDFt', 'DeltaSD')){
           for(i in 1:length(out)){
@@ -430,6 +437,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
           comp.indices <- which(LH!=0)
         }
         while(write.len <= out.len){
+          print('looping on write.len')
           #delta.downscale removes NAs in the output vector
           if((write.len + in.len) <= length(CF.data)){
             tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
@@ -468,8 +476,15 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
           write.len <- write.len + in.len
         }
       }
+      #Adjusted 11-4 to account for presence of missing value vectors
+      #being used to determine how many repetitions are needed for a delta
+      SDF <- SDF[!is.na(SDF)]
       num.na <- (sum(is.na(SDF)))
 #       if(num.na > 0){
+#         print(length(CF.data))
+#         print(length(LH))
+#         print(summary(LH))
+#         print(summary(SDF))
 #         print(num.na)
 #         stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
 #       }

@@ -199,8 +199,11 @@ callPRPostproc <- function(test, input, adjusted.output){
         print("Downscaling took place on the OH dataset; adjusting OH pr mask to fit")
         #delta-specific adjustment for the leapyear indices: 
         print(summary(delta.mask))
-        temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, 
-                                                   mask=delta.mask)
+#         temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, 
+#                                                    mask=delta.mask)
+        print(dim(test$qc_args$targ.prmask))
+        temp.prmask <- test$qc_args$targ.prmask[,,c(which(!is.na(delta.mask))), drop=FALSE]
+        print(dim(temp.prmask))
         #Note: you can't modify this in-place if you are working with the multi rip case!
         targ.mask <- array(NA, dim=c(dim(temp.adjust)))
         targ.timelen <- dim(temp.prmask)[3]
@@ -222,10 +225,19 @@ callPRPostproc <- function(test, input, adjusted.output){
            print(paste("t:", t))
            print(t.stop)
            print(t.ref)
-           print(sum(is.na(targ.mask[,,c(seq(from=t, to=t.stop))])))
-           print(sum(is.na(test$qc_args$targ.prmask[,,c(seq(from=1, to=t.ref))])))
+          print('counts of missing values in each:')
+           print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))])))
+           print(sum(is.na(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))])))
+          print('missing value overlap:')
+          missval.olap <- mapply(sum, as.vector(is.na(adjusted.output$ds.out[[ds.var]][1,,c(seq(from=t, to=t.stop, by=1))])), 
+                              as.vector(is.na(temp.prmask[1,,c(seq(from=1, to=t.ref, by=1))])))
+          print(summary(missval.olap))
+          print(length(missval.olap))
+          print(sum(missval.olap==2))
+          #print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))]) && is.na(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))])))
           targ.mask[,,c(seq(from=t, to=t.stop))] <- temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]
         }
+        #stop('examine result')
         print('summary of target mask:')
         print(summary(targ.mask))
         print('summary of downscaled output:')

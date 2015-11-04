@@ -43,9 +43,11 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
       max.hist.index <- floor((hist.range[2] - hist.range[1])/4)*4 # of commensurable leapday periods covered
 #       print(max.hist.index)
 #       print(years[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
-      leapday.range <- sum(days.per.year[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
-      divide.offset = (h.time.len-leapday.offset) - leapday.range
+      leapday.range <- sum(days.per.year[(hist.range[1] + leapday.shift) < years & (hist.range[1] + leapday.shift + max.hist.index) >= years])
+      #divide.offset = (h.time.len-leapday.offset) - leapday.range
+      divide.offset = 365*2+1 #365 
       print(paste("divide.offset:", divide.offset))
+      #stop('examine output')
     }else{
       #You're never going to need to divide anything
       divide.offset <- 0
