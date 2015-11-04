@@ -257,6 +257,15 @@ override.f.defaults <- function(ds.args=NA,
       missval.handling <<- pr_opts$ignore0
     }
   }
+  #Final check added for ignore0.Delta and the pr ignore0 option
+  if('ignore0.Delta'%in%names(ds.args)){
+    if(ds.args$ignore0.Delta=='on' && pr_opts$ignore0!='off'){
+      stop(paste("Error in override.f.dfaults! The options", 
+                 "ignore0 in the pr args and ignore0.Delta", 
+                 "in the DeltaSD downscaling arguments are mutually", 
+                 "exclusive! Please turn one of them off!"))
+    }
+  }
   return(out.list)
 }
 

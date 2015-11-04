@@ -187,11 +187,12 @@ callPRPostproc <- function(test, input, adjusted.output){
     #Apply the 0 mask, if needed
     if(test$qc_args$ignore0=='on'){
       message(paste('Applying wetday mask for rip', rip,
-                    '. Output will have at least as many days without precip as the CF datset.'))
+                    '. Output will have at least as many days without precip as the data used to downscale.'))
       temp.adjust <- adjusted.output$ds.out[[ds.var]]
       #temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
       #If you downscaled on the future dataset, the adjustment is straightforward
       if(sum(grepl('MF', ds.names)) > 0){
+        print("Downscaling took place on the MH dataset")
         temp.adjust[is.na(test$qc_args$fut.prmask[[rip]])] <- 0
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
         test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here
@@ -247,7 +248,9 @@ callPRPostproc <- function(test, input, adjusted.output){
 #         image(test$qc_args$targ.prmask[1,,], x=seq(1:114), y=seq(1:16436), main='entire target mask output')
 #         image(targ.mask[1,,c(seq(1:3652))], x=seq(1:114), y=seq(1:3652), main='target mask output')
 #         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='pre-adjust ds output')
-        temp.adjust[is.na(targ.mask)] <- 0
+        #temp.adjust[is.na(targ.mask)] <- 0
+        #Correction 11-4 for pr masks of 0, 1, and NA
+        temp.adjust[targ.mask==0] <- 0
 #         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='post-adjust ds output')
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
 #        print(adjusted.output$ds.out[[ds.var]][1,,1])

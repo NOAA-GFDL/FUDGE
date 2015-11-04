@@ -45,7 +45,7 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
 #       print(years[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
       leapday.range <- sum(days.per.year[(hist.range[1] + leapday.shift) < years & (hist.range[1] + leapday.shift + max.hist.index) >= years])
       #divide.offset = (h.time.len-leapday.offset) - leapday.range
-      divide.offset = 365*2+1 #365 
+      divide.offset = 0 #365 #365*2+1 #365 
       print(paste("divide.offset:", divide.offset))
       #stop('examine output')
     }else{

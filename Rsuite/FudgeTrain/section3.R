@@ -105,15 +105,19 @@ callPRPreproc <- function(test, input, postproc.output){
                               opt.wetday=threshold, 
                               lopt.drizzle=lopt.drizzle, 
                               lopt.conserve=lopt.conserve, 
-                              zero.to.na=apply.0.mask)
+                              zero.to.na=FALSE) #formerly apply.0.mask
     #Add back into the original structure
     if(rip==rip.list[length(rip.list)]){
       #Added 10-27: only adjust in place if on the last rip being used! adds extra wet days to subsequent data
       input$hist.targ        <- temp.out$ref$data   #only a single target variable
       input$hist.pred[[1]]   <- temp.out$adjust$data
       if(apply.0.mask){
-        input$hist.targ        <- (temp.out$ref$data   * temp.out$ref$pr_mask)
-        input$hist.pred <- lapply(input$hist.pred, "*", temp.out$adjust$pr_mask)
+        tmp.ref <- temp.out$ref$pr_mask
+        tmp.adj <- temp.out$adjust$pr_mask
+        tmp.ref[tmp.ref==0] <- NA
+        tmp.adj[tmp.adj==0] <- NA
+        input$hist.targ        <- (temp.out$ref$data   * tmp.ref)
+        input$hist.pred <- lapply(input$hist.pred, "*", tmp.adj)
       }
     }    
 #     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
@@ -123,7 +127,9 @@ callPRPreproc <- function(test, input, postproc.output){
     if(apply.0.mask){
       #This should make sure that when extra missing values are added, all datasets
       #in the predictor datasets will have the missing values added back in
-      input$fut.pred [[fut.pred.var]] <- input$fut.pred[[fut.pred.var]] * temp.out$future$pr_mask
+      tmp.fut <- temp.out$future$pr_mask
+      tmp.fut[tmp.fut==0] <- NA
+      input$fut.pred [[fut.pred.var]] <- input$fut.pred[[fut.pred.var]] * tmp.fut
       #Save future pr mask fo application in section 5;
       #note that it is the presence of this mask that 
       #leads to the adjustment being performed.
@@ -133,8 +139,8 @@ callPRPreproc <- function(test, input, postproc.output){
       }else{
         #Assume that you are downsciang on the OH dataset instead; store accordingly
         print('adding target pr mask')
-        targ.prmask <- temp.out$ref$pr_mask
-        pr_mod$qc_args$targ.prmask <- targ.prmask
+        #targ.prmask <-  temp.out$ref$pr_mask
+        pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
       }
     }
     if(apply.0.mask){
