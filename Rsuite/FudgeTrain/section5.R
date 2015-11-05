@@ -151,12 +151,16 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   #Initialize output structure
   out.list <- adjusted.output
   for(ds.var in ds.vars){
-    mask.vec <- ifelse(adjusted.output$ds.out[[ds.var]] >= 0, yes=1, no=NA)
+#     is.missing  <- ifelse(is.na(adjusted.output$ds.out[[ds.var]]), 0, 1)
+#     mask.vec <- is.missing
+    mask.vec <- ifelse(adjusted.output$ds.out[[ds.var]] >= 0, yes=1, no=0)
     if(test$qc.mask=='on'){
       out.list$qc.mask[[ds.var]] <- mask.vec
+      out.list$qc.mask[[ds.var]][mask.vec==0] <- NA
     }
     if(test$adjust.out=='on'){
-      adjust.vec <- ifelse( (is.na(mask.vec)), yes=0, no=adjusted.output$ds.out[[ds.var]])
+      adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out[[ds.var]])
+      #adjust.vec[is.missing==0] <- NA
       out.list$ds.out[[ds.var]] <- adjust.vec
     }
   }
@@ -193,7 +197,7 @@ callPRPostproc <- function(test, input, adjusted.output){
       #If you downscaled on the future dataset, the adjustment is straightforward
       if(sum(grepl('MF', ds.names)) > 0){
         print("Downscaling took place on the MH dataset")
-        temp.adjust[is.na(test$qc_args$fut.prmask[[rip]])] <- 0
+        temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
         test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here
       }else{
@@ -238,8 +242,6 @@ callPRPostproc <- function(test, input, adjusted.output){
           #print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))]) && is.na(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))])))
           targ.mask[,,c(seq(from=t, to=t.stop))] <- temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]
         }
-        save(file="/home/cew/Code/testing/test_out.R",list=c('targ.mask', 'adjusted.output', 'test', 'input'))
-        stop('examine result')
         print('summary of target mask:')
         print(summary(targ.mask))
         print('summary of downscaled output:')
@@ -355,8 +357,12 @@ callBCSDCorrect <- function(test, input, adjusted.output){
                                model.fut = input$fut.pred[[fut.pred]], 
                                obs.fut = adjusted.output$ds.out[[ds.var]])
     if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]), 
-                                                  1, NA)
+      qc.tmp <- ifelse((is.na(ds.correct) && is.na(as.numeric(adjusted.output$ds.out[[ds.var]]))), 
+                       1, 0)
+      non.missing <- which(qc.tmp==0)
+      qc.tmp[non.missing] <- ifelse(ds.correct[non.missing]==as.numeric(adjusted.output$ds.out[[ds.var]][non.missing]),
+                                    1, NA)
+      adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
       adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct)
@@ -375,12 +381,16 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, opt='mean'){
 #   model.hist.mean <- runmean(as.vector(model.hist), k=30, endrule="mean")
 #   obs.hist.mean <- runmean(as.vector(obs.hist), k=30, endrule="mean")
 #   print('runmean calculated')
-  largex.tmax <- which(model.fut > max(model.hist))    #List of indices for which dist is stretched
-  max.delta.tmax <- max(model.hist) - max(obs.hist)    #Delta calculated as diff of max(hist) - max(obs)
+  model.hist.max <- max(model.hist, na.rm=TRUE)
+  obs.hist.max <- max(obs.hist, na.rm=TRUE)
+  largex.tmax <- which(model.fut > model.hist.max)    #List of indices for which dist is stretched
+  max.delta.tmax <- model.hist.max - obs.hist.max   #Delta calculated as diff of max(hist) - max(obs)
   obs.fut[largex.tmax] <- model.fut[largex.tmax] - max.delta.tmax
   ###Correct for minimum range of the distribution
-  smallx.tmax <- which(model.fut < min(model.hist))    #List of indices for which dist is stretched
-  min.delta.tmax <- min(model.hist) - min(obs.hist)    #Delta calculated as diff of min(hist) - min(obs)
+  model.hist.min <- min(model.hist, na.rm=TRUE)
+  obs.hist.min <- min(obs.hist, na.rm=TRUE)
+  smallx.tmax <- which(model.fut < model.hist.min)    #List of indices for which dist is stretched
+  min.delta.tmax <- model.hist.min - obs.hist.min    #Delta calculated as diff of min(hist) - min(obs)
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
   return(obs.fut)
 }
