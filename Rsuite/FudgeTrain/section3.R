@@ -89,7 +89,7 @@ callPRPreproc <- function(test, input, postproc.output){
   #Insert looping by RIP in this section
   rip.list <- lapply(input$att.list$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
-  for (rip in rip.list){
+  for (rip in rips){
     #at the end, instructions are unchanged
     fut.pred.var <- paste0(var, ".", rip)
     if(is.null(input$att.list$fut.pred[[fut.pred.var]]$units)){
@@ -105,7 +105,7 @@ callPRPreproc <- function(test, input, postproc.output){
                               opt.wetday=threshold, 
                               lopt.drizzle=lopt.drizzle, 
                               lopt.conserve=lopt.conserve, 
-                              zero.to.na=FALSE) #formerly apply.0.mask
+                              zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now
     #Add back into the original structure
     if(rip==rip.list[length(rip.list)]){
       #Added 10-27: only adjust in place if on the last rip being used! adds extra wet days to subsequent data
@@ -134,11 +134,12 @@ callPRPreproc <- function(test, input, postproc.output){
       #note that it is the presence of this mask that 
       #leads to the adjustment being performed.
       if(sum(grepl('MF', ds.names)) > 0){
+        print(paste('adding future prmask for rip', rip))
         fut.prmask <- temp.out$future$pr_mask
         pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
       }else{
         #Assume that you are downsciang on the OH dataset instead; store accordingly
-        print('adding target pr mask')
+        print(paste('adding target pr mask for rip', rip))
         #targ.prmask <-  temp.out$ref$pr_mask
         pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
       }

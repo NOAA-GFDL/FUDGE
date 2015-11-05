@@ -136,9 +136,9 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
     out.list$adjust$data[out.list$adjust$pr_mask==0] <- NA
     out.list$future$data[out.list$future$pr_mask==0] <- NA
-    out.list$ref$pr_mask[out.list$ref$pr_mask==0] <- NA
-    out.list$adjust$pr_mask[out.list$adjust$pr_mask==0] <- NA
-    out.list$future$pr_mask[out.list$future$pr_mask==0] <- NA
+    #out.list$ref$pr_mask[out.list$ref$pr_mask==0] <- NA
+    #out.list$adjust$pr_mask[out.list$adjust$pr_mask==0] <- NA
+    #out.list$future$pr_mask[out.list$future$pr_mask==0] <- NA
   }
   return(out.list)
 }

@@ -28,7 +28,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                            hist.targ = NA, 
                            fut.pred = NA, 
                            create.qc.mask=FALSE, create.adjust.out=FALSE, 
-                           verbose=TRUE){
+                           verbose=FALSE){
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
@@ -196,7 +196,7 @@ callPRPostproc <- function(test, input, adjusted.output){
       #temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
       #If you downscaled on the future dataset, the adjustment is straightforward
       if(sum(grepl('MF', ds.names)) > 0){
-        print("Downscaling took place on the MH dataset")
+        print("Downscaling took place on the MF dataset")
         temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
         test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here
