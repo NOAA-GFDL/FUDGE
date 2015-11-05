@@ -404,6 +404,10 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   targ.var <- names(input$data.atts$hist.targ)
   out.list <- adjusted.output
   #print(rips)
+#   print('pre_transform:')
+#     print(lapply(input$hist.pred, 'summary'))
+#     print(summary(input$hist.targ))
+#     print(lapply(input$fut.pred, 'summary'))
   for(rip in rips){
     #print(rip)
     ds.var <- paste0(targ.var, ".", rip)
@@ -444,9 +448,11 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
     input$hist.targ <- do.call(test$qc_args$fxn, 
                                args=list(input$hist.targ))
   }
+#   print('post_transform:')
 #   print(lapply(input$hist.pred, 'summary'))
 #   print(summary(input$hist.targ))
 #   print(lapply(input$fut.pred, 'summary'))
+  #stop('examine at this point')
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
