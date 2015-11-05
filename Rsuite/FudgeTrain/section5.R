@@ -352,16 +352,21 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
                                          "[[", 'var')==targ.var]
+    #print(summary(as.vector(adjusted.output$ds.out[[ds.var]])))
     ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
                                obs.fut = adjusted.output$ds.out[[ds.var]])
+    #print(summary(as.vector(ds.correct)))
     if(test$qc.mask=='on'){
-      qc.tmp <- ifelse((is.na(ds.correct) && is.na(as.numeric(adjusted.output$ds.out[[ds.var]]))), 
+      qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
                        1, 0)
+      #print(summary(as.vector(qc.tmp)))
       non.missing <- which(qc.tmp==0)
-      qc.tmp[non.missing] <- ifelse(ds.correct[non.missing]==as.numeric(adjusted.output$ds.out[[ds.var]][non.missing]),
+      ds.tmp <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]),
                                     1, NA)
+      qc.tmp[non.missing] <- ds.tmp[non.missing]
+      #print(summary(as.vector(qc.tmp)))
       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
