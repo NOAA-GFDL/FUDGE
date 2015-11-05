@@ -507,17 +507,26 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
       }
     }  
   #Make sure that there are no NA values in the current vector
-  if(ignore0.Delta){
-    delta.fut.orig.len <- length(delta.fut)
-    delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
-    delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
-    delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
-  }else{
     delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[!is.na(delta.fut)]
     delta.targ <- delta.targ[!is.na(delta.targ)]
     delta.hist.temp <- delta.hist[!is.na(delta.hist)]
+  if(ignore0.Delta){
+#     delta.fut.orig.len <- length(delta.fut)
+#     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
+#     delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
+#     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
+    #delta.fut.orig.len <- length(delta.fut)
+    delta.fut <- delta.fut[delta.fut!=0]
+    delta.targ <- delta.targ[delta.targ!=0]
+    delta.hist.temp <- delta.hist.temp[delta.hist.temp!=0]
   }
+#   }else{
+#     delta.fut.orig.len <- length(delta.fut)
+#     delta.fut <- delta.fut[!is.na(delta.fut)]
+#     delta.targ <- delta.targ[!is.na(delta.targ)]
+#     delta.hist.temp <- delta.hist[!is.na(delta.hist)]
+#   }
     if(length(delta.hist)==0){
       if(deltaop=='ratio'){
         #Return the OH data
