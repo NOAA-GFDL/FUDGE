@@ -31,6 +31,12 @@ index.a.list <- function(list, index, val){
   }
 }
 
+both.na <- function(x, y){
+  #Convenience frunction for checking if
+  #two vectors are both NA in a location
+  return(is.na(x) && is.na(y))
+}
+
 compact <- function(x){
   #Removes null values from a function;
   #Needed if your lapply function will return
