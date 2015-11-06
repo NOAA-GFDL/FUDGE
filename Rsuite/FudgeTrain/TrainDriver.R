@@ -125,8 +125,9 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
            message(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
          }
-       }
-     }
+         #stop('examine output')
+       }#for j
+     }#for i
      #stop('examine output')
      ####### Loop(1) ends ###################################
      return(list('esd.final' = ds.out, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))

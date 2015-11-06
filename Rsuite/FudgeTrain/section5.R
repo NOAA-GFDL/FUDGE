@@ -117,7 +117,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     #There can be more than pne future predictor for the ensemble
     fut.pred <- unlist(input$fut.pred[[ds.var]])
     #compute difference for all time values
-    hist.bias <- mean(hist.pred-input$hist.targ)
+    hist.bias <- mean(hist.pred-input$hist.targ, na.rm=TRUE)
     fut.targ <- fut.pred-hist.bias
     tmp.diff <- as.numeric(adjusted.output$ds.out[[ds.var]]) - fut.targ
     mask.vec <- ifelse( (botlim <= (tmp.diff) & 
@@ -347,6 +347,13 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   #'MH and MF datasets
   rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   targ.var <- names(input$data.atts$hist.targ)
+  arg.names <- names(test$qc_args)
+  if('ignore0'%in%arg.names){
+    #Hasty adjustment to set missing values to 0 in bcsd correction
+    ignore0 <- (test$qc_args$ignore0=='on')
+  }else{
+    ignore0 <-  FALSE
+  }
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
@@ -380,12 +387,9 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
-bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, opt='mean'){
+bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut){
   #derived from BCSD code provided by Catherine Hayhoe
   #Correct for maximum range of the distribution
-#   model.hist.mean <- runmean(as.vector(model.hist), k=30, endrule="mean")
-#   obs.hist.mean <- runmean(as.vector(obs.hist), k=30, endrule="mean")
-#   print('runmean calculated')
   model.hist.max <- max(model.hist, na.rm=TRUE)
   obs.hist.max <- max(obs.hist, na.rm=TRUE)
   largex.tmax <- which(model.fut > model.hist.max)    #List of indices for which dist is stretched

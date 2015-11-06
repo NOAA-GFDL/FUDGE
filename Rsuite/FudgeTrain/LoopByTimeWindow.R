@@ -256,24 +256,25 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         #And adjust the downscaled output, if applicable
         if(length(s5.instructions.window) > 0){
           if(verbose){message('calling section 5 adjustment')}
-          if(is.na(kfold.orig)){
-            #If there is ds data being passed in from outside, it gets checked
-            data <- temp.out
-          }else{
-            #otherwise, use the ds values from the run you have just completed
-            data <- temp.out[!is.na(temp.out)]
-          }
+#           if(is.na(kfold.orig)){
+#             #If there is ds data being passed in from outside, it gets checked
+#             data <- temp.out
+#           }else{
+#             #otherwise, use the ds values from the run you have just completed
+#             data <- temp.out[!is.na(temp.out)]
+#           }
           if(test){
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
           }
+          data <- temp.out
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
                                        data = data[names(data)!='qc.mask'], 
                                        data.atts= att.table,
-                                       hist.pred = lapply(kfold.predict, remove.missvals), 
-                                       hist.targ = kfold.target[!is.na(kfold.target)], 
-                                       fut.pred = lapply(kfold.gen, remove.missvals))
+                                       hist.pred = kfold.predict, #lapply(kfold.predict, remove.missvals), 
+                                       hist.targ = kfold.target, #kfold.target[!is.na(kfold.target)], 
+                                       fut.pred = kfold.gen) #lapply(kfold.gen, remove.missvals))
           if(test){
             #Add the save in here
             save(file="/home/cew/Code/testing/transform_tests/rdata/save4.R", list=c('temp.out'))
