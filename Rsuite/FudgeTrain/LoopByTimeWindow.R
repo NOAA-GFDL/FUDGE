@@ -81,12 +81,13 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If there are no masks (so whole time series is used)
     mask.data.by.time.window <- FALSE
     num.masks <- 1
-    mask.struct <- list(rep(1, length(train.predictor[[1]])), 
-                        rep(1, length(train.target)), 
-                        rep(1, length(esd.gen[[1]])))
+#     mask.struct <- list(list(masks=rep(1, length(train.predictor[[1]]))), 
+#                         list(masks=rep(1, length(train.target))), 
+#                         list(masks=rep(1, length(esd.gen[[1]]))))
+    mask.struct <- list(list(masks=list(rep(1, length(train.predictor[[1]])))), 
+                        list(masks=list(rep(1, length(train.target)))), 
+                        list(masks=list(rep(1, length(esd.gen[[1]])))))
   }
-  ###Tjis is so problematic from a multivariate standpoint
-  #downscale.length <- length(esd.gen)
   downscale.length <- length(esd.gen[[1]]) #Will always have at least one entry
   rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
   rips <- unique(rip.list)
@@ -122,7 +123,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
-      #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
+      #due to a mask would be the observational dataset, and that dataset should not have to deal with the awkward pooling of the
 #       if('OH'%in%ds.names){
 #         #...is it enough just to mask the masks in this step? 
 #         window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
@@ -222,12 +223,21 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       #at this point to make sure that the OH and MF data start with the 
       #same number of leap years
       if('OH'%in%ds.names){
+#         print(summary(mask.struct[[2]]))
+#         print(length(mask.struct[[2]]$masks[[window]]))
+#         print(summary(delta.mask))
+#         print(length(delta.mask))
         tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[window]], 
                                            mask=delta.mask, 
                                            dim='temporal')
         tmp.ds.time.mask <- trim.time.mask(data=tmp.ds.time.mask, 
                                            mask= mask.struct[[2]]$masks[[window]])
-        kfold.target.final <- trim.time.mask(kfold.target, tmp.ds.time.mask)
+#         print(length(tmp.ds.time.mask))
+#         print(length(kfold.target))
+        kfold.target.final <- trim.time.mask(data=kfold.target, mask=tmp.ds.time.mask)
+#         print(which(is.na(tmp.ds.time.mask))[1:600])
+#         print(length(kfold.target.final))
+#         stop('examine this output')
       }else{
         kfold.target.final <- kfold.target
       }

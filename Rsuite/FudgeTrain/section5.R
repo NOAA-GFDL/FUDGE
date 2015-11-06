@@ -134,9 +134,6 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     return(list('input' = input, 'adjusted.output' = out.list))
 }
 
-
-
-
 callFlagNegativeValues <- function(test, input, adjusted.output){
   #Flags negative values in the downscaled output with NA
   #with the expectation that they may get adjusted later. 
@@ -207,16 +204,17 @@ callPRPostproc <- function(test, input, adjusted.output){
 #         temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, 
 #                                                    mask=delta.mask)
         print(dim(test$qc_args$targ.prmask))
-        temp.prmask <- test$qc_args$targ.prmask[,,c(which(!is.na(delta.mask))), drop=FALSE]
+        #temp.prmask <- test$qc_args$targ.prmask[,,c(which(!is.na(delta.mask))), drop=FALSE]
+        temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, mask=delta.mask)
         print(dim(temp.prmask))
         #Note: you can't modify this in-place if you are working with the multi rip case!
         targ.mask <- array(NA, dim=c(dim(temp.adjust)))
         targ.timelen <- dim(temp.prmask)[3]
         fut.timelen <- dim(temp.adjust)[3]
-        print(summary(test$qc_args$targ.prmask))
-        print(dim(test$qc_args$targ.prmask))
-        print(paste('targ.timelen:', targ.timelen))
-        print(paste('fut.timelen:', fut.timelen))
+#         print(summary(test$qc_args$targ.prmask))
+#         print(dim(test$qc_args$targ.prmask))
+#         print(paste('targ.timelen:', targ.timelen))
+#         print(paste('fut.timelen:', fut.timelen))
         for(t in seq(from=1, to=fut.timelen, by=targ.timelen)){
           if((t + targ.timelen - 1) > fut.timelen){
             #Final case of the fut.timelen > hist.timelen case:
@@ -227,41 +225,25 @@ callPRPostproc <- function(test, input, adjusted.output){
             t.stop <- t + targ.timelen - 1
             t.ref <- targ.timelen
           }
-           print(paste("t:", t))
-           print(t.stop)
-           print(t.ref)
-          print('counts of days without pr in each:')
-           print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))])))
-           print(sum(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]==0))
-#           print('pr overlap:')
-#           missval.olap <- mapply(sum, as.vector(is.na(adjusted.output$ds.out[[ds.var]][1,,c(seq(from=t, to=t.stop, by=1))])), 
-#                               as.vector(is.na(temp.prmask[1,,c(seq(from=1, to=t.ref, by=1))])))
-#           print(summary(missval.olap))
-#           print(length(missval.olap))
-#           print(sum(missval.olap==2))
-          #print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))]) && is.na(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))])))
+#            print(paste("t:", t))
+#            print(t.stop)
+#            print(t.ref)
+#           print('counts of days without pr in each:')
+#            print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))])))
+#            print(sum(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]==0))
           targ.mask[,,c(seq(from=t, to=t.stop))] <- temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]
         }
-        print('summary of target mask:')
-        print(summary(targ.mask))
-        print('summary of downscaled output:')
-        print(summary(as.vector(temp.adjust)))
-        print('entire prmask output:')
-        print(dim(test$qc_args$targ.prmask))
-#         image(test$qc_args$targ.prmask[1,,], x=seq(1:114), y=seq(1:16436), main='entire target mask output')
-#         image(targ.mask[1,,c(seq(1:3652))], x=seq(1:114), y=seq(1:3652), main='target mask output')
-#         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='pre-adjust ds output')
-        #temp.adjust[is.na(targ.mask)] <- 0
+#         print('summary of target mask:')
+#         print(summary(targ.mask))
+#         print('summary of downscaled output:')
+#         print(summary(as.vector(temp.adjust)))
+#         print('entire prmask output:')
+#         print(dim(test$qc_args$targ.prmask))
         #Correction 11-4 for pr masks of 0, 1, and NA
         temp.adjust[targ.mask==0] <- 0
-#         image(temp.adjust[1,,],  x=seq(1:114), y=seq(1:3652), main='post-adjust ds output')
+        print('summary of temp.adjust after mask application:')
+        print(summary(temp.adjust))
         adjusted.output$ds.out[[ds.var]] <- temp.adjust
-#        print(adjusted.output$ds.out[[ds.var]][1,,1])
-        ##Fast, simple, and wrong fix
-#         temp.adjust[is.na(temp.adjust)] <- 0
-#         adjusted.output$ds.out[[ds.var]] <- temp.adjust
-        #adjusted.output$ds.out[[ds.var]][is.na(adjusted.output$ds.out[[ds.var]])] <- 0
-        #test$qc_args$targ.prmask <- 'calculated from the input pr data' #I have no memory of why this was included here
       }
     }else{
       message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')

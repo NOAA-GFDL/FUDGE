@@ -46,14 +46,16 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
       #Make sure that the historical time period is comensurable by 4, for leapdays
       #(the centennial leap years shouldn't matter now, because of y2k)
       max.hist.index <- floor((end.year - start.year)/4)*4 # of commensurable leapday periods covered
-      end.year <- start.year + max.hist.index
+      end.year <- start.year + (max.hist.index - 1)
 #       print(max.hist.index)
 #       print(years[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
-      leapday.range <- sum(days.per.year[(start.year) < years & (start.year + max.hist.index) >= years])
+      leapday.range <- sum(days.per.year[(start.year) < years & (start.year + max.hist.index) >= years]) #start.year + max.hist.index
+      print(leapday.range)
       divide.offset <- h.time.len-(leapday.range + leapday.offset)
       #divide.offset = 0 #365 #365 #365*2+1 #365 
       print(paste("divide.offset:", divide.offset))
-      stop(paste("Error in correct.hist.leapdays: future time periods longer than historical time periods are not supported at this time."))
+#      stop('examine this out')
+      #stop(paste("Error in correct.hist.leapdays: future time periods longer than historical time periods are not supported at this time."))
     }else{
       #You're never going to need to divide anything
       divide.offset <- 0
