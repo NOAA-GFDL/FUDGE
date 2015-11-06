@@ -1,3 +1,11 @@
+11-6-15
+(cew)
+- Methods that downscale with OH (i.e. Delta) have adjusted OH data to match position of leapdays
+in data and sample before entering downscaling function
+- PR pre- and post-ds adjustments return prmask based off of OH data if OH data used to downscale
+- BCQM.tail.adj bugfix for experiments with ignore0 
+- R code exits with error if ignore0 and ignore0.delta are both turned on
+
 10-27-15
 (cew)
 - the recover.ignore0 function only applies to those datastets identified in the downscaling method's train.names list, and only insufficent data in the training period can set the status to greater than 1 for the distributional and synchronous missing value removal methods.
