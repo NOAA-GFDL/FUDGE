@@ -23,7 +23,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          post.ds.adjustments=list('na'), 
                               climatology = NULL, 
                               fut.pred.rip = NULL, 
-                              missval.handling='na', minval.present=1){
+                              missval.handling='na', minval.present=1, 
+                              delta.string=""){
   #a1r: removing count.dep.samples=NA,count.indep.samples=NA from function params
   #'Adds global attributes to existing netCDF dataset 
   #'#TODO CEW: What is the purpose of the comments attribute? 
@@ -34,6 +35,9 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(!is.na(downscaling.method)){ 
     comment.info <- paste(comment.info, 'downscaled output via ',downscaling.method,' downscaling',sep='')
+  }
+  if(delta.string!=""){
+    comment.info <- paste(comment.info, delta.string)
   }
   #
   if(grid_region!='somewhere'){

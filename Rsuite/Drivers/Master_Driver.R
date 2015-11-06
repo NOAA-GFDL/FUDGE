@@ -293,7 +293,8 @@ print(dim(list.fut$clim.in))
 
 ######################################################
 ###Hasty DeltaSD adjustment for asynchronous leap years
-if(ds.method=='DeltaSD'){
+delta.string <- ""
+if('OH'%in%ds.names){
 #   print('applying OH mask correction!')
 #   h.time.len <- dim(list.target$clim.in)[3]
 #   delta.mask <- c(rep(NA, (365*3+1)), rep(1, h.time.len-(365*3+1)))
@@ -304,12 +305,14 @@ if(ds.method=='DeltaSD'){
                                             hist.file.start.year_1, hist.file.end.year_1,
                                             fut.file.start.year_1, fut.file.end.year_1)
   delta.mask <<- c(rep(NA, delta.adj.index[1]), 
-                  rep(1, (h.time.len-(sum(delta.adj.index)))), 
+                  rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
                   c(rep(NA, delta.adj.index[2])))
   print(summary(delta.mask))
-  args$delta.mask <- delta.mask 
-  args$delta.adj.index <- delta.adj.index
-  delta.string <- paste("With an OH timseries trimmed from ")
+  #args$delta.mask <- delta.mask 
+  #args$delta.adj.index <- delta.adj.index
+  delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
+                        "to", delta.adj.index[4], "for the downscaling step")
+  #stop('examine the output of this function')
   #stop('exmaine ds.args')
 #   list.target$clim.in <- trim.time.mask(data=list.target$clim.in, mask=delta.mask)
 #   list.hist$clim.in <- lapply(list.hist$clim.in, 'trim.time.mask', mask=delta.mask)
@@ -462,7 +465,8 @@ for (rip in fut.pred.rip.list){
                     post.ds.adjustments=post_ds_adj, 
                     climatology=list.fut$att_table[[target.var]]$climatology, 
                     fut.pred.rip = rip, 
-                    missval.handling=missval.handling, minval.present=min.present)
+                    missval.handling=missval.handling, minval.present=min.present, 
+                    delta.string=delta.string)
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   #}
   

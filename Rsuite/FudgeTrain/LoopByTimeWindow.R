@@ -123,19 +123,20 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dtaaset should not have to deal with the awkward pooling of the
-      if(ds.method == 'DeltaSD'){
-        #...is it enough just to mask the masks in this step? 
-        window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
-#         window.predict <- lapply(train.predictor, 'trim.time.mask', mask=downscale.args$delta.mask)
-        mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]], 
-                                                           mask=downscale.args$delta.mask)
-#         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]], 
+#       if('OH'%in%ds.names){
+#         #...is it enough just to mask the masks in this step? 
+#         window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
+# #         window.predict <- lapply(train.predictor, 'trim.time.mask', mask=downscale.args$delta.mask)
+#         mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]], 
 #                                                            mask=downscale.args$delta.mask)
-        window.target  <- trim.time.mask(data=window.target,    mask=mask.struct[[2]]$masks[[window]])
-      }else{
-        window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
-        #window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
-      }
+# #         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]], 
+# #                                                            mask=downscale.args$delta.mask)
+#         window.target  <- trim.time.mask(data=window.target,    mask=mask.struct[[2]]$masks[[window]])
+#       }else{
+#         window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
+#         #window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
+#       }
+      window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
       window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
       window.gen     <- lapply(esd.gen        , trim.time.mask, mask=mask.struct[[3]]$masks[[window]])
     }else{
@@ -217,11 +218,24 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }else{
           s5.instructions.window <- s5.instructions
         }
+      #If a method that uses the OH data is used, perform a final trimming step
+      #at this point to make sure that the OH and MF data start with the 
+      #same number of leap years
+      if('OH'%in%ds.names){
+        tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[window]], 
+                                           mask=delta.mask, 
+                                           dim='temporal')
+        tmp.ds.time.mask <- trim.time.mask(data=tmp.ds.time.mask, 
+                                           mask= mask.struct[[2]]$masks[[window]])
+        kfold.target.final <- trim.time.mask(kfold.target, tmp.ds.time.mask)
+      }else{
+        kfold.target.final <- kfold.target
+      }
         #perform downscaling on the series and merge into new vector
         if(create.ds.out){
           temp.out <- CallDSMethod(ds.method = downscale.fxn,
                                    train.predict = kfold.predict,
-                                    train.target = kfold.target,
+                                    train.target = kfold.target.final,
                                          esd.gen = kfold.gen,
                                    att.table=att.table,
                                    args=downscale.args, 

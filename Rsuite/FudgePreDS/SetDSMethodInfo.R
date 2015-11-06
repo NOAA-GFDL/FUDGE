@@ -175,8 +175,6 @@ setChangeFactor <- function(){
 }
 
 setDeltaSD<- function(){
-  stop(paste("Warning! DeltaSD for this branch is currently undergoing development.", 
-             "Please use a different downscaling method."))
   #Sets global variables if the DS method used is DeltaSD
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE

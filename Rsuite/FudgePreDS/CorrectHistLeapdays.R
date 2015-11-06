@@ -26,25 +26,32 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
   fut.range <- c(substr(fut.start.year, 1, 4), substr(fut.end.year, 1, 4))
   hist.range <- as.numeric(hist.range)
   fut.range <- as.numeric(fut.range)
+  start.year <- hist.range[1]
+  end.year <- hist.range[2]
   fut.leap.index <- leapyears[leapyears >= fut.range[1]][1] - fut.range[1]
   hist.leap.index <- leapyears[leapyears >= hist.range[1]][1] - hist.range[1]
-  if(hist.leap.index==fut.leap.index){
+  if((hist.leap.index==fut.leap.index) && (h.time.len >= f.time.len)){
     #No adjustments need to be made
-    return(c(front.offset=0, back.offset=0))
+    return(c(front.offset=0, back.offset=0, start.year=start.year, end.year=end.year))
   }else{
     #remove enough years from front of vector to match the leapday index
     leapday.shift <- (hist.leap.index-fut.leap.index)%%4
     print(paste("leapday.shift:", leapday.shift))
-    leapday.offset <- sum(days.per.year[(years > hist.range[1] & (years <= (hist.range[1] + leapday.shift)))])
+    start.year <- start.year + leapday.shift
+    #print(start.year)
+    leapday.offset <- sum(days.per.year[(years > start.year) & (years <= start.year + leapday.shift)])
+    start.year <- start.year + leapday.shift
     print(paste("leapday.offset:", leapday.offset))
     if( (h.time.len-leapday.offset) < f.time.len){
       #Make sure that the historical time period is comensurable by 4, for leapdays
       #(the centennial leap years shouldn't matter now, because of y2k)
-      max.hist.index <- floor((hist.range[2] - hist.range[1])/4)*4 # of commensurable leapday periods covered
+      max.hist.index <- floor((end.year - start.year)/4)*4 # of commensurable leapday periods covered
+      end.year <- start.year + max.hist.index
 #       print(max.hist.index)
 #       print(years[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
-      leapday.range <- sum(days.per.year[(hist.range[1] + leapday.shift) < years & (hist.range[1] + leapday.shift + max.hist.index) >= years])
-      divide.offset = 0 #365 #365 #365*2+1 #365 
+      leapday.range <- sum(days.per.year[(start.year) < years & (start.year + max.hist.index) >= years])
+      divide.offset <- h.time.len-(leapday.range + leapday.offset)
+      #divide.offset = 0 #365 #365 #365*2+1 #365 
       print(paste("divide.offset:", divide.offset))
       stop(paste("Error in correct.hist.leapdays: future time periods longer than historical time periods are not supported at this time."))
     }else{
@@ -52,5 +59,5 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
       divide.offset <- 0
     }
   }
-  return(c(front.offset=leapday.offset, back.offset=divide.offset))
+  return(c(front.offset=leapday.offset, back.offset=divide.offset, start.year=start.year, end.year=end.year))
 }
