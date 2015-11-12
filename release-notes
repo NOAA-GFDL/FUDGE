@@ -1,3 +1,8 @@
+11-12-15
+(cew)
+- leapday correction for OH downscaling working for the CFQM method
+- runscript redirects stdout and stderr to the logfile
+
 11-6-15
 (cew)
 - Methods that downscale with OH (i.e. Delta) have adjusted OH data to match position of leapdays
