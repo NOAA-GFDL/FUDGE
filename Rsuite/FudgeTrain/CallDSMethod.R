@@ -71,10 +71,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         out.tmp <- apply(mapply('rep', NA, sapply(esd.index, length), simplify=TRUE), 2, as.list)
       }
       names(out.tmp) <- paste0(ds.var, ".", rips)
-#       print('ds out summary:')
-#       print(summary(out.tmp))
-#       print(names(out.tmp))
-#       stop('examien output')
     }
     if(train_qc_mask){
       out.tmp$qc.mask <- ds.input$qcmask
@@ -95,17 +91,14 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       ds.input <- assess.missvals(train.target, train.predict, esd.gen.rip, type=missval.handling, 
                                   ds.method, args, min.present, att.table = rip.att.table, qcmask=train_qc_mask)
       if((ds.input$status > 0 && ('MF'%in%train.names && 'MF'%in%ds.names))){
-#        if((ds.input$status==130)){
-          #If you are working with the DeltaSD downscaling method
- #         esd.index[[rip]] <- rep(ds.input$OH, length.out=length(esd.index[[rip]]))
-#        }else{
-          #If the number of missing values has been altered by the fxn, get a new addition index
           esd.index[[rip]] <- ds.input$MF[[1]]
-#        }
-#       }else if(ds.method=='DeltaSD'){
-#         esd.index[[rip]] <- rep(ds.input$OH, length.out=length(esd.index[[rip]]))
-       }
-      if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
+      }
+      if(ds.method=='CFQM'){
+        #Add optional argument to CFQM to track the appropriate length of len.out
+        args$len.out=sum(!is.na(esd.index[[rip]]))
+      }
+      if(ds.input$status < 200 & sum(lapply(ds.input$MF, length)==0)==0 & 
+           sum(!is.na(esd.index[[rip]]))!=0){ 
         #Use 200 to refer to fatal errors; everything else should be recoverable
         out <- switch(ds.method, 
                       'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
@@ -781,7 +774,13 @@ callCFQMv3<-function(LH,CH,CF, args, ds.var='variable', att_table=NULL)
     CF.data <- CF[rip.index]
     CF.data <- unlist(CF.data)
     lengthCF<-length(CF.data)
-    
+    if(is.null(args$len.out)){
+      message(paste("Warning in callCFQMv3: len.out not specified; will be deduced from", 
+                    'length of CF data'))
+      len.out <- lengthCF
+    }else{
+      len.out <- args$len.out
+    }
     #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
     #if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
     maxdim=max(c(lengthCH, lengthCF, lengthLH))
@@ -794,7 +793,7 @@ callCFQMv3<-function(LH,CH,CF, args, ds.var='variable', att_table=NULL)
     mindim=min(c(sum(!is.na(CF.data)), sum(!is.na(CH)), sum(!is.na(LH))))
     
     # first define vector with probabilities [0,1]
-    prob<-seq(0.001,0.999,length.out=lengthCF)
+    prob<-seq(0.001,0.999,length.out=len.out) #lengthCF
     
     # initialize data.frame
     temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
@@ -806,28 +805,28 @@ callCFQMv3<-function(LH,CH,CF, args, ds.var='variable', att_table=NULL)
     if (ORDERING=="CF"){
       # CHANGE FACTOR ORDERED BY COARSE FUTURE
       temp.CFsorted2<-temp[order(temp$CF),]
-      temp.CFsorted2$qLH[1:lengthCF]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
-      temp.CFsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
-      temp.CFsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
+      temp.CFsorted2$qLH[1:len.out]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
+      temp.CFsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
+      temp.CFsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
       temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),] #By this point, it has successfully ordered the first lengthCF members of the output data
     }
     if (ORDERING=="LH"){
       # CHANGE FACTOR ORDERED BY LOCAL HISTORICAL
       temp.LHsorted2<-temp[order(temp$LH),] 
-      temp.LHsorted2$qLH[1:lengthCF]<-quantile(temp.LHsorted2$LH,prob,na.rm =TRUE)
-      temp.LHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-      temp.LHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+      temp.LHsorted2$qLH[1:len.out]<-quantile(temp.LHsorted2$LH,prob,na.rm =TRUE)
+      temp.LHsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+      temp.LHsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
       temp.CFQM2<-temp.LHsorted2[order(temp.LHsorted2$index),]
     }
     if (ORDERING=="CH"){
       # CHANGE FACTOR ORDERED BY COARSE HISTORICAL
       temp.CHsorted2<-temp[order(temp$CH),] 
-      temp.CHsorted2$qLH[1:lengthCF]<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
-      temp.CHsorted2$ecdfCHqLH[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-      temp.CHsorted2$qCFecdfCHqLH[1:lengthCF]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
+      temp.CHsorted2$qLH[1:len.out]<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
+      temp.CHsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
+      temp.CHsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
       temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),]
     }
-    out.list[[out.var.name]][1:lengthCF]<-temp.CFQM2$qCFecdfCHqLH[!is.na(temp.CFQM2$qCFecdfCHqLH)]
+    out.list[[out.var.name]][1:len.out]<-temp.CFQM2$qCFecdfCHqLH[!is.na(temp.CFQM2$qCFecdfCHqLH)]
   }
   
 #   if (ORDERING=="CF"){

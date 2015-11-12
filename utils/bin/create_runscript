@@ -185,7 +185,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
 #Add line to create mask directory
 echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
 end
-echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} > ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &"  >> $runpath
+echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} |& tee ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &"  >> $runpath
  echo "wait " >> $runpath 
 # Add lines to gcp output from VFTMP to /arch 
 foreach OUTDIR ($outdir)

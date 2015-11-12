@@ -219,3 +219,8 @@ callPRTransform <- function(test, input, postproc.output){
   return(list('input'=input,
               's5.list'=postproc.output))
 }
+
+exp10 <- function(x){
+  #'Convenience function for using a log base 10 transform
+  return(10^x)
+}
