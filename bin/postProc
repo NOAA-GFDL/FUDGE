@@ -39,6 +39,7 @@ def postProc():
      parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
      parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
+     parser.add_argument("-m", "--mail", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
      args = vars(parser.parse_args())
 
      if userinput == "none":
@@ -47,7 +48,7 @@ def postProc():
      vname = ""
      global ensarg	
      ensarg = "undefined"	
-     print "Test test",ensarg	
+     NEMSemail1 = "none" # default	
      for argu,valu in args.iteritems(): 
         if(argu == 'uinput'):
 			 #print "test"
@@ -61,6 +62,8 @@ def postProc():
 		        lvname = lvname1.split(',')
 			print lvname1 
 			print "Variable(s) to be post-processed: ",lvname
+	if(argu == 'NEMSemail1'):
+	   NEMSemail1 = valu
 	if(argu == 'ens'):
 	     global ensarg
 	     ensarg = valu
@@ -166,13 +169,15 @@ def postProc():
                 fromEmail = "oar.gfdl.esd@noaa.gov"
         else:
                 fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
-        try:
-                uemail  = os.environ["NEMSemail"]
+        if(NEMSemail1 != "none"):
+          try:
+                uemail  = NEMSemail1 #os.environ["NEMSemail"]
                 send_to = uemail
-        except KeyError:
-                print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
+          except KeyError:
+                print "Please make sure  you use -mail option to pass email for notifications "
                 uemail = "na"
-		send_to = None
+	else:
+		uemail = "na"
         #e o header
         if (retcode == - 13 ):
 		print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
@@ -225,7 +230,14 @@ def postProc():
 						sys.exit("ERROR")
            			else:
                 			print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-                			sys.exit()
+                			subject = "fudge notification- postProc/failed"
+                			text = "An error occured in postProc suite of tools,call_ppFudge "
+                			text = text + "\n\nMinfiles directory does not exists for this experiment."
+                			text = text + "\n\npostProc cannot be run at this time"
+                			text = text + "\n\nExperiment XML for reference-\n"+uinput
+                			text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+                			notifyUser(send_to,subject,text)
+                			sys.exit(-1)
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
                                         filedire = indir+"/../" #../../"+region+"/"+ver+"/"
@@ -275,13 +287,15 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		fromEmail = "oar.gfdl.esd@noaa.gov"  
 	else:
 		fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
-        try:
-                uemail  = os.environ["NEMSemail"]
+        if(NEMSemail1 != "none"):
+          try:
+                uemail  = NEMSemail1 ## using cmd line arg in g release os.environ["NEMSemail"]
                 send_to = uemail
-        except KeyError:
+          except KeyError:
                 print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
                 uemail = "na"
-		send_to = None
+        else:
+		uemail = "na"
         if (p.returncode != 0):
          	print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
 ##
@@ -319,7 +333,9 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 
 def notifyUser(mailid,subject,text):
         # email header
-        send_from = "aparna.radhakrishnan@noaa.gov"
+        uinfo = os.environ.get('USER')
+        hostnam = "princeton.rdhpcs.noaa.gov"
+        send_from = uinfo+"@"+hostnam
         send_to = mailid
         msg = MIMEMultipart()
         msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd

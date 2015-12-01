@@ -75,7 +75,7 @@ set hist_train_start_year = $argv[12]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.START.YEAR":${hist_train_start_year} )
 set hist_train_end_year = $argv[13]
 if ($hist_train_end_year:q =~ *_*) then 
-set hist_train_suffix =  `echo "$hist_file_end_year" | cut -d'_' -f2 `
+#cset hist_train_suffix =  `echo "$hist_file_end_year" | cut -d'_' -f2 `
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.TRAIN.SUFFIX":"'_"${hist_train_suffix}"'")
 set hist_train_end_year = `echo "$hist_train_end_year" | cut -d'_' -f1 `
 else
@@ -84,6 +84,29 @@ endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.END.YEAR":${hist_train_end_year} )
 set hist_scenario = $argv[14]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.SCENARIO":"'"${hist_scenario}"'" )
+####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
+if ($hist_scenario:q =~ *to*) then
+set h_cutone = `echo "$hist_scenario" | cut -d '_' -f2`
+set h_cuttwo  = `echo "$h_cutone" | awk -F"to" '{print $1}'`
+set h_rstart = `echo "$h_cuttwo" | awk -F"r" '{print $2}'`      ##
+set h_cutthree = `echo "$h_cutone" | awk -F"to" '{print $2}'`
+set h_rend = `echo "$h_cutthree" | awk -F"i" '{print $1}'`   ##
+set h_ip = `echo "$h_cutthree" | awk -F"i" '{print $2}'`   
+set hctr = 1 
+foreach hr (`seq $h_rstart 1 $h_rend`)
+  if($hctr == 1) then 
+  set harr = "'"r${hr}i${h_ip}"'"
+  else
+  set harr = "$harr,'r${hr}i${h_ip}'"
+  endif 
+  @ hctr = $hctr + 1
+end 
+set h_rip = $harr
+else #close if 
+set h_rip = "'`echo "$hist_scenario" | cut -d '_' -f2`'"
+endif 
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.PRED.RIPS":"c("${h_rip}")" )
+####
 set hist_model = $argv[15]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.MODEL":"'"${hist_model}"'" )
 set hist_freq = $argv[16]
@@ -109,6 +132,29 @@ set fut_train_end_year = $argv[22]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.END.YEAR":${fut_train_end_year} )
 set fut_scenario = $argv[23]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.SCENARIO":"'"${fut_scenario}"'" )
+####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
+if ($fut_scenario:q =~ *to*) then
+set f_cutone = `echo "$fut_scenario" | cut -d '_' -f2`
+set f_cuttwo  = `echo "$f_cutone" | awk -F"to" '{print $1}'`
+set f_rstart = `echo "$f_cuttwo" | awk -F"r" '{print $2}'`      ##
+set f_cutthree = `echo "$f_cutone" | awk -F"to" '{print $2}'`
+set f_rend = `echo "$f_cutthree" | awk -F"i" '{print $1}'`   ##
+set f_ip = `echo "$f_cutthree" | awk -F"i" '{print $2}'`
+set fctr = 1
+foreach fr (`seq $f_rstart 1 $f_rend`)
+  if($fctr == 1) then
+  set farr = "'"r${fr}i${f_ip}"'"
+  else
+  set farr = "$farr,'r${fr}i${f_ip}'"
+  endif
+  @ fctr = $fctr + 1
+end
+set f_rip = $farr
+else #close if
+set f_rip = "'`echo "$fut_scenario" | cut -d '_' -f2`'"
+endif
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.PRED.RIPS":"c("${f_rip}")" )
+####
 set fut_model = $argv[24]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.MODEL":"'"${fut_model}"'" )
 set fut_freq = $argv[25]
@@ -120,6 +166,13 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TIME.WINDOW":"'"${fut_time_window}"'")
 set target_file_start_year = $argv[28]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FILE.START.YEAR":${target_file_start_year} )
 set target_file_end_year = $argv[29]
+if ($target_file_end_year:q =~ *_*) then
+set target_suffix =  `echo "$target_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SUFFIX":"'_"${target_suffix}"'")
+set target_file_end_year = `echo "$target_file_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FILE.END.YEAR":${target_file_end_year} )
 set target_train_start_year = $argv[30]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.START.YEAR":${target_train_start_year} )
@@ -127,6 +180,29 @@ set target_train_end_year = $argv[31]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.END.YEAR":${target_train_end_year} )
 set target_scenario = $argv[32]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SCENARIO":"'"${target_scenario}"'")
+####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
+if ($target_scenario:q =~ *to*) then
+set t_cutone = `echo "$target_scenario" | cut -d '_' -f2`
+set t_cuttwo  = `echo "$t_cutone" | awk -F"to" '{print $1}'`
+set t_rstart = `echo "$t_cuttwo" | awk -F"r" '{print $2}'`      ##
+set t_cutthree = `echo "$t_cutone" | awk -F"to" '{print $2}'`
+set t_rend = `echo "$t_cutthree" | awk -F"i" '{print $1}'`   ##
+set t_ip = `echo "$t_cutthree" | awk -F"i" '{print $2}'`
+set tctr = 1
+foreach tr (`seq $t_rstart 1 $t_rend`)
+  if($tctr == 1) then
+  set tarr = "'"r${tr}i${t_ip}"'"
+  else
+  set tarr = "$tarr,'r${tr}i${t_ip}'"
+  endif
+  @ tctr = $tctr + 1
+end
+set t_rip = $tarr
+else #close if
+set t_rip = "'`echo "$target_scenario" | cut -d '_' -f2`'"
+endif
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.RIPS":"c("${t_rip}")" )
+####
 set target_model = $argv[33]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.MODEL":"'"${target_model}"'")
 set target_freq = $argv[34]

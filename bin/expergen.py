@@ -453,12 +453,13 @@ def main():
         help="pass location of XML template", metavar="FILE")
       #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
         parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
-        #parser.add_option("-v", "--version",action="store_true", dest="version",default="v20120422", help="Assign version for downscaled data. Default is set to v20120422")        
+        parser.add_option("-m", "--mail",action="store_true", dest="NEMSemail1",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")        
         
         (options, args) = parser.parse_args()
         verOpt = True #default
 	msub = False 
         forOpt = True #default
+	NEMSemail1 = "none" #default
         inter = 'on' #for debugging
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
         system,node,release,version,machine = os.uname()
@@ -495,6 +496,8 @@ def main():
                 		else:
                     			print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
                     			sys.exit()
+			if(opts == 'mail'):
+			    	NEMSemail1 = vals
             		if(opts == 'msub'):
                 		if (vals == True):
                     			msub = True 
@@ -570,7 +573,7 @@ def main():
          print "Step1:!!!! FAILED !!!!, please contact developer."
          print output, errors
          sys.exit(0)
-        #cprint output, errors
+        #print output, errors
 	#cprint "----Log-----"
         #print output,errors
         ###############################################################################################
@@ -593,7 +596,7 @@ def main():
          print "Step2:!!!! FAILED !!!!, please contact developer."
          print output1, errors1
          sys.exit(0)
-        print output1, errors1
+        #cprint output1, errors1
         ###################################### 3 ################################################################
         script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate
@@ -631,6 +634,15 @@ def main():
 	dev = "off" 
         msubwrapper = []
 	print "multi output (Writing to multiple output directories) ....",multi
+        #if cmd line -m is passsed use that, otherwise use following
+        if (NEMSemail1 == "none"):
+                  print "debug bde................", NEMSemail1
+                  try:
+                        NEMSemail1 = os.environ["NEMSemail"]
+                        print "Notification email set to .......", NEMSemail1
+                  except KeyError:
+                        NEMSemail1 = "none"
+
         #print(sbase+"/postProc/aux/")
 	if (multi == "on"):
 	 suffix = ['suff1','suff2','suff3']
@@ -659,9 +671,9 @@ def main():
 		else:
 		   moutsuff = " "	
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -m "+NEMSemail1+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
+                        pp_cmnd = "python $BASEDIR/bin/postProc -m "+NEMSemail1+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
   		ppfile.write(pp_cmnd)
 		print "wrote to ",ppfile
   		ppfile.close()
@@ -719,7 +731,10 @@ def main():
         print "Summary Log File: ", slogloc
 	print "-----------"
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   " 
-	print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+	if(NEMSemail1 != "none"):
+           print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
+	else:
+	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
 ####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:

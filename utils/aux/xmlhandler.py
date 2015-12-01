@@ -98,7 +98,7 @@ class XMLHandler:
 #TODO id lists
         			hist_id.append(histid_node.text)
 				dictParams['hist_id'] = hist_id 
-                        for hist_suff_node in histid_node.findall('.//suffix'):
+                        for hist_suff_node in hist_node.findall('.//suffix'):
                                 hist_suffix = hist_suff_node.text
                                 dictParams['historical_predictor_suffix'] = hist_suffix
 	 ################# get historical target information ##################
@@ -117,8 +117,10 @@ class XMLHandler:
                         for targetid_node in target_node.findall('.//dataset'):
                                 target_id.append(targetid_node.text)
                                 dictParams['target_id'] = target_id
-                        for target_suffix_node in targetid_node.findall('.//suffix'):
+                        for target_suffix_node in target_node.findall('.//suffix'):
                                 target_suffix = target_suffix_node.text
+                                print "suff...............t",target_suffix
+
                                 dictParams['target_suffix'] = target_suffix 
 	 ############## get future predictor information ######################
                 for fut_node in tree.iter('future_predictor'):
