@@ -246,7 +246,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
             text = "Your postProc jobs have been submitted.\n\nExperiment_info.txt for reference-\n"+uinput
 	    text = text + "\n\njob IDs for reference-\n"+ jobids
 	    text = text + "\nPP scripts for reference-\n"+ wscript
-	    notifyUser(mailid,subject,text)
+	notifyUser(mailid,subject,text)
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')
 	hostnam = "princeton.rdhpcs.noaa.gov"
