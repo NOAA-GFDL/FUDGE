@@ -185,7 +185,7 @@ def postProc():
                 subject = "fudge notification- postProc/failed"
                 text = "Insufficient number of minfiles exist. "
 	        text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
-		text = text + "\n\npostProc cannot be run at this time for "+var+"."
+		text = text + "\n\npostProc cannot be run at this time for "+vname+"."
 		text = text + "\n\nExperiment XML for reference-\n"+uinput
                 text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 	        notifyUser(send_to,subject,text)
