@@ -1,3 +1,9 @@
+12-1-15
+(a1r)
+- -v option made default for watcher script
+- suffix tags added to parsing for training and predictor datasts in XML; list of
+rips present in target, predictor, and future datasts added to the runcode
+
 11-12-15
 (cew)
 - leapday correction for OH downscaling working for the CFQM method
