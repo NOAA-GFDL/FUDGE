@@ -23,6 +23,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          'lm' = setMultiLM(),
          'lmstep' = setMultiLM(),
          "DeltaSD" = setDeltaSD(),
+         "ARRM" = setARRM(),
          ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
@@ -209,3 +210,22 @@ setMultiLM <- function(){
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')
 }
+
+setARRM <- function(){
+  #Sets global variables if the DS method used is lm
+  #Is it possible to use cross-validation with this method?
+  crossval.possible <<- TRUE
+  # Does this method use some of the same data to train the 
+  # ESD equations/quantiles AND generate the downscaled data?
+  train.and.use.same <<- FALSE
+  # What are the arguments to the args() parameter that are accepted? 
+  names.of.args <<- c()
+  #Is it possible to use multiple predictors with this method?
+  supports.multivariate <<- FALSE
+  #How are missing values handled when going into the downscaling code?
+  missval.handling <<- 'synchronous'
+  train.names <<- c('OH', 'MH')
+  #What are the names of the datasets used to downscale?
+  ds.names <<- c('MF')
+}
+  
