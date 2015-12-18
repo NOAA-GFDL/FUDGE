@@ -128,7 +128,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   # DETERMINE HIGHEST AND LOWEST VALUES FOR X|P<0.1 AND X|P>0.9 FOR EACH MONTH
   p_low <- round(0.1*hist.pred.len)
   p_high <- round(0.9*hist.pred.len)
-
+  
   # determine length of moving window (5% of data length), diff for each month, and decreasing towards the tails
   #CEW note: this changes to 10% in what I think is the cross-validated code. 
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
@@ -139,12 +139,6 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   min_window <- 2
   #CEW: okay, they split this into 3 sections: one for quantiles 0-0.1, 
   #one for the middle ('good') range, and one for the quantiles 0.9-1.0
-  #...I think that I see what they were trying to do; I'm just at a loss 
-  #as to how this was going to work. 
-  #This is line 523 in the original data
-  #...ooooh, I think I get it. They're appending the contents of the window
-  #per month. THAT's why it doesn't matter if you initialize an empty list of
-  #lists. 
   window_temp_new <- rep(NA, hist.pred.len)
   #for the low tail
   for(j in 1:p_low){
@@ -154,14 +148,14 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   for (j in seq((p_low+1), (p_high-1))){
     window_temp_new[j] <- window_temp
   }
-#   for (j in 1:(hist.pred.len)-p_high[i]+1)){
-#     window_temp_new[j] <- (hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window)
-#   }
+  #   for (j in 1:(hist.pred.len)-p_high[i]+1)){
+  #     window_temp_new[j] <- (hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window)
+  #   }
   
-#   for (j in 1:(length(model_mon[[i]])-p_high[i]+1)){
-#     window_temp_new[[i]] <- c(window_temp_new[[i]],
-#                               ((length(model_mon[[i]])-p_high[i]+1)-j+1)/(length(model_mon[[i]])-p_high[i]+1)*(window_temp[i] - min_window[i]) + min_window[i])
-#   }
+  #   for (j in 1:(length(model_mon[[i]])-p_high[i]+1)){
+  #     window_temp_new[[i]] <- c(window_temp_new[[i]],
+  #                               ((length(model_mon[[i]])-p_high[i]+1)-j+1)/(length(model_mon[[i]])-p_high[i]+1)*(window_temp[i] - min_window[i]) + min_window[i])
+  #   }
   for(j in seq(p_high, hist.pred.len)){
     j.val <- (p_high-j + 1) #should steadily get larger
     #window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
@@ -170,15 +164,15 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   
   print('summary of window_temp_new:')
   print(summary(window_temp_new))
-#  stop('are there missing valyes at this point?')
+  #  stop('are there missing valyes at this point?')
   #for most of the distribution:
-#   window_temp_new[seq((p_low+1), (p_high-1))] <- window_temp
-#   #for the high tail
-#   for(j in seq(p_high, hist.pred.len)){
-#     j.val <- (p_high-j + 1) #should steadily get larger
-#     #window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
-#     window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
-#   }
+  #   window_temp_new[seq((p_low+1), (p_high-1))] <- window_temp
+  #   #for the high tail
+  #   for(j in seq(p_high, hist.pred.len)){
+  #     j.val <- (p_high-j + 1) #should steadily get larger
+  #     #window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
+  #     window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
+  #   }
   print('final call on window_tmp_new')
   print(summary(window_temp_new))
   if(any(is.na(window_temp_new))){
@@ -186,9 +180,10 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   }
   
   #find length of window so that it is always the same span in temperature
-  window1 <- rep(0, (hist.pred.len-start))
+  window1 <- rep(NA, (hist.pred.len-start))
   print(summary(start:hist.pred.len))
-  for (j in start:hist.pred.len){
+  #for (j in start:hist.pred.len){
+  for (j in 1:(hist.pred.len-start)){
     q <- 0
     val <- hist_pred[j]
     q <- which( hist_pred > (val-window_temp_new[j]) )[1] - 1
@@ -200,20 +195,20 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   #CEW: look at what this does in more detail later; I'm not sure how the resets work 
   window1[which(window1<10)] <- 10
   window1 <- c(rep(NA,(start-1)),window1) #...okay, this makes no sense. missvals give error later.
-  #
+  #These values don't get referenced - they just seem to be here for padding to make sure
+  #that the other indices are in the right place.
   
   #calculate r squared of linear regressions the length of 'window1'
   #CEW: reference line is 550
   r_sq1 <- rep(NA, hist.pred.len-start)
   n <- start
-  print('problematic window1 call')
-  print(summary(window1))
-  print(length(window1))
-  for(j in seq(start, hist.pred.len)){
-    sm <- hist_targ[n-(window1[j]-1):n]
+  #window1 issues started around here
+  for(j in 1:(hist.pred.len-start)){
+    j.win <- (j+start-1)
+    sm <- hist_targ[n-(window1[j.win]-1):n]
     ix=which(!is.na(sm))
     sm=sm[ix]
-    mm <- hist_pred[n-(window1[j]-1):n] #same index as earlier
+    mm <- hist_pred[n-(window1[j.win]-1):n] #same index as earlier
     mm=mm[ix]
     qrd=qr(matrix(c(rep(1,length(ix)),mm),ncol=2,byrow=F))
     yhat=qr.fitted(qrd,sm)
@@ -236,9 +231,8 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   k <- bp.1$breakpoints
   r_sq1 <- bp.1$r_sq
   
-  print('summaries of r_sq1_save and r_sq1:')
+  print('summaries of r_sq1_save')
   print(summary(r_sq1_save)) #note: these are both 1, rather than a lowercase 'l'
-  print(summary(r_sq1))
   
   print('summary of k:')
   print(k)
@@ -319,10 +313,8 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   k2 <- bp.2$breakpoints
   r_sq2 <- bp.2$r_sq
   
-  print('summaries of r_sq2_save and r_sq2:')
+  print('summaries of r_sq2_save')
   print(summary(r_sq2_save))
-  print(summary(r_sq2))
-  
   print('summary of k2:')
   print(k2)
   
@@ -352,26 +344,12 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   
   #cut off break point if it is in the first 20 points or the last 5
   breakpoints0 = rep(NA, 6)
-  #check first vector of breakpoints
-  #   for(j in 1:sum(!is.na(k))){
-  #     if(k[j] > 20 & k[j] < hist.pred.len-4){
-  #       r_sq <- r_sq_new1[j]
-  #     }
-  #   }
-  print('k values:')
-  print(k)
+  
   k.indices <- k[!is.na(k) & k > 20 & (k < hist.pred.len-4)]
-  print('k.indices:')
-  print(k.indices)
   breakpoints0 <- k.indices
   r_sq1 <- r_sq_new1[k.indices]
   #check second vector of breakpoints
-  print('k2 values:')
-  print(k2)
   k2.indices <- k2[!is.na(k2) & k2 > 20 & (k2 < hist.pred.len-4)]
-  print('k2.indices:')
-  print(k2.indices)
-  breakpoints0 <- c(breakpoints0, k2.indices)
   r_sq2 <- r_sq_new2[k2.indices]
   
   if(length(breakpoints0)==0){ #there was a second check for nas.2 and nas.4 in here, but I'm not sure it's relevant any more
@@ -380,7 +358,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   
   breakpoints <- sort(breakpoints0, na.last=T)
   print('summary of breakpoints:')
-  print(summary(breakpoints))
+  print(breakpoints)
   rank <- rank(breakpoints0, na.last=T, ties='first')
   #get the actual values of temp/precip where the break is
   if(length(breakpoints) > 0){
@@ -484,68 +462,64 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
         values_new1 <- values_new1[values_new1!=values2[slope_rank==1]]
         breakpoints3 <- breakpoints3[breakpoints3!=breakpoints2[slope_rank==1]]
       }
-    }else{
-      #do nothing, I think?
-      #       values_new1 <- values_new1
-      #       breakpoints3 <- breakpoints3
-    }
-    #Perform regressions again with the first slope taken out
-    ds <- data.frame(mod=hist_pred, sta=hist_targ)
-    if(!is.na(breakpoints[1])){
-      regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,Boundary.knots=c(-999,999)),data=ds)
-    }else{
-      print("No breakpoints found; activating simple lm prediction")
-      regr_piecewise2 <- lm(sta ~ mod, data=ds)
-    }
-    # recalculate slopes
-    xvals2 <- c(min(hist_pred),values_new1,max(hist_pred))
-    yvals2 <- c(regr_piecewise2$fitted[1],
-                regr_piecewise2$fitted[breakpoints3],
-                regr_piecewise2$fitted[length(regr_piecewise2$fitted)])
-    #remove missing values
-    x.dx <- which(is.na(xvals2))
-    y.dx <- which(is.na(yvals2))
-    if (length(c(x.dx,y.dx))>0){
-      xvals2 <- xvals2[-c(x.dx,y.dx)]
-      yvals2 <- yvals2[-c(x.dx,y.dx)]
-    }
-    for(j in 1:length(xvals2)-1){
-      slopes[j] <- (yvals2[j+1]-yvals2[j])/(xvals2[j+1]-xvals2[j]+0.0001)
-    }
-    bad.value.indices <- rep(F, length(values))
-    bad.break.indices <- rep(F, length(slopes))
-    bad.slope.indices <- rep(F, length(slopes))
-    if(!is.na(breakpoints[1])){
-      for(j in 1:length(slopes)){
-        if(slopes[j]<=0.1 & j==1){
-          bad.value.indices[j] <- T
-          bad.break.indices[j] <- T
-          bad.slope.indices[j] <- T
-        }
-        if(slopes[j]<=0.1 & j==length(slopes)){
-          bad.value.indices[j-1] <- T
-          bad.break.indices[j-1] <- T
-          bad.slope.indices[j] <- T
-        }
-        if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes))
-           & ((xvals[j+1]-xvals[j])>5)){
-          bad.value.indices[j-1] <- T
-          bad.break.indices[j-1] <- T
-          bad.slope.indices[j] <- T
-        }
-        if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
-           & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
-          bad.value.indices[j] <- T
-          bad.break.indices[j] <- T
-          bad.slope.indices[j] <- T
+      #Perform regressions again with the first slope taken out
+      ds <- data.frame(mod=hist_pred, sta=hist_targ)
+      if(!is.na(breakpoints[1])){
+        print("Beginning piecewise linear regression")
+        regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,Boundary.knots=c(-999,999)),data=ds)
+      }else{
+        print("No breakpoints found; activating simple lm prediction")
+        regr_piecewise2 <- lm(sta ~ mod, data=ds)
+      }
+      # recalculate slopes
+      xvals2 <- c(min(hist_pred),values_new1,max(hist_pred))
+      yvals2 <- c(regr_piecewise2$fitted[1],
+                  regr_piecewise2$fitted[breakpoints3],
+                  regr_piecewise2$fitted[length(regr_piecewise2$fitted)])
+      #remove missing values
+      x.dx <- which(is.na(xvals2))
+      y.dx <- which(is.na(yvals2))
+      if (length(c(x.dx,y.dx))>0){
+        xvals2 <- xvals2[-c(x.dx,y.dx)]
+        yvals2 <- yvals2[-c(x.dx,y.dx)]
+      }
+      for(j in 1:length(xvals2)-1){
+        slopes[j] <- (yvals2[j+1]-yvals2[j])/(xvals2[j+1]-xvals2[j]+0.0001)
+      }
+      bad.value.indices <- rep(F, length(values))
+      bad.break.indices <- rep(F, length(slopes))
+      bad.slope.indices <- rep(F, length(slopes))
+      if(!is.na(breakpoints[1])){
+        for(j in 1:length(slopes)){
+          if(slopes[j]<=0.1 & j==1){
+            bad.value.indices[j] <- T
+            bad.break.indices[j] <- T
+            bad.slope.indices[j] <- T
+          }
+          if(slopes[j]<=0.1 & j==length(slopes)){
+            bad.value.indices[j-1] <- T
+            bad.break.indices[j-1] <- T
+            bad.slope.indices[j] <- T
+          }
+          if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes))
+             & ((xvals[j+1]-xvals[j])>5)){
+            bad.value.indices[j-1] <- T
+            bad.break.indices[j-1] <- T
+            bad.slope.indices[j] <- T
+          }
+          if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
+             & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
+            bad.value.indices[j] <- T
+            bad.break.indices[j] <- T
+            bad.slope.indices[j] <- T
+          }
         }
       }
-    }
-    slope_rank <- rank(slopes[bad.slope.indices], ties='first')
+      slope_rank <- rank(slopes[bad.slope.indices], ties='first')
+      regr_piecewise <- regr_piecewise2 #regression model
+      values <- values_new1             #values of hist_pred at those points
+    }#end check for any present bad values
   }#end k loop
-  
-  regr_piecewise <- regr_piecewise2 #regression model
-  values <- values_new1             #values of hist_pred at those points
   
   ##################
   ###            ###
