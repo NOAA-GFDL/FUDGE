@@ -44,10 +44,16 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
     #And to make sure that everything has the same names as
     #earlier, rename the list in the selected dataset
     names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
-    rip.order = order(unlist(rip.data))
-    out.tmp <- arrm.downscale(sort(unlist(rip.data)), ds.var, 
+    #rip.order = order(unlist(rip.data))
+    rip.rank = rank(unlist(rip.data))
+    #targ.order = order(hist_targ)
+    out.tmp <- arrm.downscale(sort(unlist(rip.data)), sort(hist.targ.tmp), ds.var, 
                               arrm.model, calc_bias)
-    out.list[[out.var]] <- out.tmp$fut_obs[rip.order]
+    rip.len <- length(out.tmp$fut_obs)
+    #plot(1:rip.len, out.tmp$fut_obs, col='red')
+    #lines(1:rip.len, out.tmp$fut_obs[rip.order], col='blue')
+    #lines(1:rip.len, out.tmp$fut_obs[targ.order], col='blue')
+    out.list[[out.var]] <- out.tmp$fut_obs[rip.rank]
   }
   #return(predict.lm(lm.model, newdata=new))
   return(out.list)
@@ -118,7 +124,64 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 428, more or less
   #(not currently on the table for implemenation)
+  message('starting ARRM step 1: removing bad target/predictor pairs based on rank')
+  hist.pred.len <- length(hist_pred)
+  bad_pairs <- rep(F, hist.pred.len)
+  dt_model_list_begin <- rep(NA_real_, hist.pred.len)
+  dt_sta_list_begin <- rep(NA_real_, hist.pred.len)
   
+  for(j in 1:100){
+    dt_mod <- hist_pred[j+1] - hist_pred[j]
+    dt_sta <- hist_targ[j+1] - hist_targ[j] + 0.01  #add 0.01 otherwise two days with equal value will have dT[sta]=0, 
+    #and any dT[mod] will be infinitely larger
+    #CEW: why is this more likely in the obs data than the GCM data?
+    if (dt_mod > (50 * dt_sta)){
+      bad_pairs[j] <- T
+      dt_model_list_begin[j] <- dt_mod
+      dt_sta_list_begin[j] <- dt_sta
+    }
+  }
+  
+  dt_model_list_end <- rep(NA_real_, hist.pred.len)
+  dt_sta_list_end <- rep(NA_real_, hist.pred.len)
+  
+  for(j in hist.pred.len:(hist.pred.len-99)){
+    dt_mod <- hist_pred[j] - hist_pred[j-1]
+    dt_sta <- hist_targ[j] - hist_targ[j-1] + 0.01  #add 0.01 otherwise two days with equal value will have dT[sta]=0, 
+    if (dt_mod > (50 * dt_sta)){
+      bad_pairs[j] <- T
+      dt_model_list_end[j] <- dt_mod
+      dt_sta_list_end[j] <- dt_sta
+    }
+  }
+  if ((hist_pred[hist.pred.len]-hist_pred[hist.pred.len-1])>5){
+    bad_pairs[hist.pred.len] <- T
+  }
+  
+  #...not sure I understand the point of these lines at the moment
+  if (length(which(bad_pairs==1)>1)){
+    bad_pairs[-which(bad_pairs==1)[1]]
+  }
+  if (length(which(bad_pairs==length(hist_targ))>1)){
+    bad_pairs[-which(bad_pairs==length(hist_targ))[1]]
+  }
+  
+  print(paste('sum of bad pairs:'))
+  print(sum(bad_pairs))
+  #finally, remove the 'bad' values
+  if(sum(bad_pairs) > 0){
+    print('summary before bad value removal:')
+    print(summary(hist_pred))
+    print(summary(hist_targ))
+    hist_targ <- hist_targ[-bad_pairs]
+    hist_pred <- hist_pred[-bad_pairs]
+    print('summary after bad value removal:')
+    print(summary(hist_pred))
+    print(summary(hist_targ))
+  }
+  
+  sta_mon_save <- hist_targ
+
   message('Starting AARM step 2: find first set of breakpoints')
   #AARM 2: Piecewise linear regression
   #ref line: 502
@@ -527,11 +590,17 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   ###            ###
   ##################
   
+  hist.predict <- predict(regr_piecewise, data.frame(mod=hist_pred))
+#   ybounds=range(c(hist.predict, hist_targ))
+#   plot(seq(1:hist.pred.len), 
+#        hist_pred, col='orange', main="DS vs fitted vs fut model", cex=2, ylim=ybounds)
+#   lines(seq(1:hist.pred.len), hist_targ, col='red', lwd=5)
+#  lines(seq(1:hist.pred.len), hist.predict, type='l', col='blue')
   return(ds.model=regr_piecewise)
   
 }#end arrm.train
 
-arrm.downscale <- function(fut_pred, ds.var, regr_piecewise, 
+arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise, 
                            calc_bias=FALSE){
   
   #AARM 6: Run the regrssion on the future predictor data.
@@ -540,7 +609,9 @@ arrm.downscale <- function(fut_pred, ds.var, regr_piecewise,
   #ref: line 1030, more or less
   
   print('calling predict')
+  #points(seq(1:length(fut_pred)), fut_pred, col='red')
   fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
+#   lines(seq(1:length(fut_pred)), fut_obs, type='l', col='black', lwd=3)
   regr <- regr_piecewise
   model_future_fit <- fut_obs
   
@@ -553,7 +624,7 @@ arrm.downscale <- function(fut_pred, ds.var, regr_piecewise,
     model_future_fit2_rank <- rank(model_future_fit)
     
     downsc_train <- downsc_train0
-    sta_mon_train <- sta_mon_save
+    sta_mon_train <- hist_targ
     model_future_fit_new <- model_future_fit2
     
     sta_mon_save_new <- sta_mon_train
@@ -562,6 +633,7 @@ arrm.downscale <- function(fut_pred, ds.var, regr_piecewise,
     rank_train <- matrix(NA,nrow=length(q1),ncol=length(downsc_train))
     rank_fut <- matrix(NA,nrow=length(q1),ncol=length(model_future_fit_new))
     for (j in 1:length(q1)){
+      print(paste('on q1 val', j))
       rank_train[j,] <- rank(downsc_train)
       downsc_train <- sort(downsc_train)
       rank_fut[j,] <- rank(model_future_fit_new)
@@ -617,13 +689,15 @@ arrm.downscale <- function(fut_pred, ds.var, regr_piecewise,
     model_future_fit <- model_future_fit3[model_future_fit2_rank]
     ##INSERT TMASK CODE
     ##SPECIAL CASE FOR TEMP
-    if( variable != 'pr'){
+    if( ds.var != 'pr'){
+      tmask = 'on' #I'm not sure what this parameter does
       if(tmask =='on'){
         model_future_fit_copy <- model_future_fit
-        model_future_fit_copy[which(model_future_fit_copy<(min(sta_mon_save,na.rm=T)-10))] <- NA
-        model_future_fit_copy[which(model_future_fit_copy>(max(sta_mon_save,na.rm=T)+10))] <- NA
+        model_future_fit_copy[which(model_future_fit_copy<(min(hist_targ,na.rm=T)-10))] <- NA
+        model_future_fit_copy[which(model_future_fit_copy>(max(hist_targ,na.rm=T)+10))] <- NA
       }
     }
+    #lines(seq(1:length(fut_pred)), model_future_fit, type='l', col='violet')
   }else{
    model_future_fit_copy=NULL
   } #end calc_bias

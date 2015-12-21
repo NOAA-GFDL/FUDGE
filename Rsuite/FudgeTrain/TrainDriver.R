@@ -130,6 +130,14 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      }#for i
      #stop('examine output')
      ####### Loop(1) ends ###################################
+#      save(list=c('ds.out', 'hist.masked.in', 'target.masked.in', 'fut.masked.in'), file='/home/cew/Code/testing/test_out.R')
+#      print('starting plot commands')
+#      plot(seq(1:length(ds.out[[1]][1,1,])), ds.out[[1]][1,1,], type='l', col='green')
+#      print(length(fut.masked.in[[1]][1,1,]))
+#      print(length(ds.out[[1]]))
+#      print(summary(ds.out[[1]]))
+#      lines(seq(1:length(ds.out[[1]][1,1,])), fut.masked.in[[1]][1,1,], col='red')
+#      stop('examine this output')
      return(list('esd.final' = ds.out, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
      ############## end of TrainDriver.R ############################
 }
