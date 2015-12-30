@@ -429,7 +429,7 @@ for (rip in fut.pred.rip.list){
                             dim.list=c(list.target$dim, list.fut$dim),
                             var.data=c(list.target$vars, list.fut$vars),
                             #prec=list.target$att_table[[target.var]]$prec,
-                            prec='double',
+                            prec='float', #swapped for double 12-29
                             units=list.target$att_table[[target.var]]$units,
                             lname=paste('Downscaled', list.target$att_table[[target.var]]$long_name), #list.fut$long_name$value
                             cfname=list.target$att_table[[target.var]]$standard_name, 

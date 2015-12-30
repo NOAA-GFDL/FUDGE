@@ -223,7 +223,7 @@ setARRM <- function(){
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
-  missval.handling <<- 'synchronous'
+  missval.handling <<- 'distributional' #probably should NOT be synchronous
   train.names <<- c('OH', 'MH')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')

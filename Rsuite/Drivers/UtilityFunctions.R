@@ -289,3 +289,9 @@ assign.by.index <- function(array1, array2, index){
   array1[!is.na(index)] <- array2[!is.na(array2)]
   return(array1)
 }
+
+#An inverse function for the log10 operation. 
+#Used by the precipitation transforms
+exp10 <- function(x){
+  return(10^x)
+}
