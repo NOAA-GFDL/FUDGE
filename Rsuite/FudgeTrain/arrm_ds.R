@@ -44,6 +44,14 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
     #assume any string argument is false
     if(!is.numeric(args$round)){round.ds<-F}else{round.ds<-T}
   }
+  if(!'pool_predictors'%in%names(args)){
+    args$pool_predictors <- TRUE
+  }else{
+    if(args$pool_predictors=='on'){args$pool_predictors<-T}else{args$pool_predictors<-F}
+  }
+  if(!'bias_method'%in%names(args)){
+    args$bias_method <- 'old'
+  }
   
   #Now, call the aarm training code
   #CEW: the missing value removal step might not be neccessary. 
@@ -51,8 +59,10 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
   #returning output identical to the 
   hist.pred.tmp <- unlist(hist_pred) #[!is.na(unlist(hist_pred))]
   hist.targ.tmp <- unlist(hist_targ) #[!is.na(unlist(hist_targ))]
-  arrm.model <- arrm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
-                           sort(hist.targ.tmp[!is.na(hist.pred.tmp)]), args, ds.var)
+  arrm.train.data <- arrm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
+                           sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
+  arrm.model <- arrm.train.data$ds.model
+  #arrm.targ <- arrm.train.data$hist.pred
   #should be a list of one element - ds.model
   
   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
@@ -68,19 +78,27 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
     names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
     rip.tmp <- unlist(rip.data)
     rip.len = length(rip.tmp[!is.na(rip.tmp)]) 
-    model_combine_data <- c(rip.tmp[!is.na(rip.tmp)], hist.pred.tmp[!is.na(hist.pred.tmp)])
+    if(args$pool_predictors){
+      model_combine_data <- c(rip.tmp[!is.na(rip.tmp)], 
+                              hist.pred.tmp[!is.na(hist.pred.tmp)])
+    }else{
+      model_combine_data <- rip.tmp[!is.na(rip.tmp)]
+    }
     rip.rank <- rank(model_combine_data)
     model_combine_data <- sort(model_combine_data)
     #call downscaling function
     out.tmp <- arrm.downscale(model_combine_data, 
-                              sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), ds.var, #[!is.na(rip.tmp)]
+                              #hist.targ.tmp[!is.na(hist.targ.tmp)],
+                              sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
+                              #arrm.train.data$hist.pred,
+                              ds.var,
                               arrm.model, args)
     if(!args$calc_bias){
       #out.list[[out.var]] <- out.tmp$fut_obs[rip.rank]
       rip.tmp <- out.tmp$fut_obs
     }else{
       #out.list[[out.var]] <- out.tmp$fit[rip.rank]
-      rip.tmp <- out.tmp$fut_obs
+      rip.tmp <- out.tmp$fit
       print('modified values returned')
     }
     #round reference: close to line 1180
@@ -207,7 +225,6 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
       hist_targ <- hist_targ[-bad_pairs]
       hist_pred <- hist_pred[-bad_pairs]
     }
-    sta_mon_save <- hist_targ
   }
 
   message('Starting AARM step 2: find first set of breakpoints')
@@ -400,22 +417,14 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   k2 <- bp.2$breakpoints
   r_sq2 <- bp.2$r_sq
   
-    print('summary of k2 before the adjust:')
-    print(k2) 
+    #print('summary of k2 before the adjust:')
+    #print(k2) 
   #Addin index correction (line 668)
   if(!is.na(k2[1])){
     for(j in 1:length(k2)){
       k2[j] <- k2[j] + floor(1/2*window2[k2[j]])
     }
-  }
-    print('summary of k2:')
-    print(k2)
-  
-#   print('summary of r_sq2_save')
-#   print(summary(r_sq2_save))
-#   print('summary of k2:')
-#   print(k2)
-  
+  }  
   #save vector with only those months that have breakpoints
   #CEW: I'm not sure that I see the point of this bit of the code. 
   #Check later to see if if has an effect again, after more of the calcs are complete?
@@ -441,8 +450,8 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   }
   
   breakpoints <- sort(breakpoints0, na.last=T)
-  print('summary of breakpoints:')
-  print(breakpoints)
+  #print('summary of breakpoints:')
+  #print(breakpoints)
   if(length(breakpoints)==6){
     print('there is at least one case where you get all 6 breakpoints')
   }
@@ -614,7 +623,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
 #  lines(seq(1:hist.pred.len), hist.predict, type='l', col='blue')
 #   print('length of fit:')
 #   print(length(regr_piecewise$fit))
-  return(ds.model=regr_piecewise)
+  return(list(ds.model=regr_piecewise, sta_mon_save=hist_targ))
   
 }#end arrm.train
 
@@ -635,72 +644,34 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
   ### FIX HIGH PRECIP VALUES BY BIAS FACTOR
   if(args$calc_bias){
     print('fixing high values via bias correction')
-    downsc_train0 <- sort(regr_piecewise$fitted)
-    downsc_rank0 <- rank(regr_piecewise$fitted)
+    downsc_train <- sort(regr_piecewise$fitted)
+    downsc_rank <- rank(regr_piecewise$fitted)
     model_future_fit2 <- sort(model_future_fit)
     model_future_fit2_rank <- rank(model_future_fit)
     
-    downsc_train <- downsc_train0
-    sta_mon_train <- hist_targ
-    model_future_fit_new <- model_future_fit2
+    #sta_mon_train <- hist_targ
+    #model_future_fit_new <- model_future_fit2
     
-    sta_mon_save_new <- sta_mon_train
+    #sta_mon_save_new <- sta_mon_train
+    
+    #new_bias_method=T
     q1 <- seq(0.05,0,by=(-0.005))
-    
-    rank_train <- matrix(NA,nrow=length(q1),ncol=length(downsc_train))
-    rank_fut <- matrix(NA,nrow=length(q1),ncol=length(model_future_fit_new))
-    for (j in 1:length(q1)){
-      print(paste('on q1 val', j))
-      rank_train[j,] <- rank(downsc_train)
-      downsc_train <- sort(downsc_train)
-      rank_fut[j,] <- rank(model_future_fit_new)
-      model_future_fit_new <- sort(model_future_fit_new)
-      q_val <- quantile(sta_mon_save_new,probs=q1[j])
-      if (round(q_val,digits=1)!=round(max(sta_mon_train),digits=1))  q_point <- which(sta_mon_save_new>=q_val)[1]
-      if (round(q_val,digits=1)==round(max(sta_mon_train),digits=1))  q_point <- which(sta_mon_save_new<=q_val)[length(which(sta_mon_save_new<=q_val))]
-      if (sta_mon_train[q_point]!=0){
-        bias <- (downsc_train[q_point] - sta_mon_train[q_point])/sta_mon_train[q_point]}
-      if (sta_mon_train[q_point]==0){
-        bias <- (downsc_train[q_point] - sta_mon_train[q_point])/downsc_train[q_point]}
-      q_val2 <- downsc_train[q_point]
-      q_val3 <- which.min(abs(model_future_fit_new-q_val2))
-      if ((is.na(bias)==F) & ((bias>0.03) | (bias<(-0.03)))){
-        print(paste('q =',q1[j],'; bias =',bias,sep=' '))
-        downsc_train[1:q_point] <- downsc_train[1:q_point] / (1+bias)
-        model_future_fit_new[1:q_val3] <- model_future_fit_new[1:q_val3] / (1+bias)
-      }}
-    for (k in 1:length(q1)){
-      downsc_train <- downsc_train[rank_train[k,]]
-      model_future_fit_new <- model_future_fit_new[rank_fut[k,]]
-    }
-    
-    q2 <- seq(0.95,1.00,by=0.005)
-    #    print(names(downsc_train)[[i]])
-    rank_train <- matrix(NA,nrow=length(q2),ncol=length(downsc_train))
-    rank_fut <- matrix(NA,nrow=length(q2),ncol=length(model_future_fit_new))
-    for (j in 1:length(q2)){
-      rank_train[j,] <- rank(downsc_train)
-      downsc_train <- sort(downsc_train)
-      rank_fut[j,] <- rank(model_future_fit_new)
-      model_future_fit_new <- sort(model_future_fit_new)
-      q_val <- quantile(sta_mon_save_new,probs=q2[j])
-      if (round(q_val,digits=1)!=round(max(sta_mon_train),digits=1))  q_point <- which(sta_mon_save_new>=q_val)[1]
-      if (round(q_val,digits=1)==round(max(sta_mon_train),digits=1))  q_point <- which(sta_mon_save_new<=q_val)[length(which(sta_mon_save_new<=q_val))]
-      if (sta_mon_train[q_point]!=0){
-        bias <- (downsc_train[q_point] - sta_mon_train[q_point])/sta_mon_train[q_point]}
-      if (sta_mon_train[q_point]==0){
-        bias <- (downsc_train[q_point] - sta_mon_train[q_point])/downsc_train[q_point]}
-      q_val2 <- downsc_train[q_point]
-      q_val3 <- which.min(abs(model_future_fit_new-q_val2))
-      if ((is.na(bias)==F) & ((bias>0.015) | (bias<(-0.015)))){
-        print(paste('q2 =',q2[j],'; bias =',bias,sep=' '))
-        downsc_train[q_point:length(downsc_train)] <- downsc_train[q_point:length(downsc_train)] / (1+bias)
-        model_future_fit_new[q_val3:length(model_future_fit_new)] <- model_future_fit_new[q_val3:length(model_future_fit_new)] / (1+bias)
-      }}
-    for (k in 1:length(q2)){
-      downsc_train <- downsc_train[rank_train[k,]]
-      model_future_fit_new <- model_future_fit_new[rank_fut[k,]]
-    }
+    q2 <- seq(0.95, 1.00, by=0.005)
+    bias.low.max = 0.03
+    bias.low.min = -0.03
+    bias.high.max = 0.015
+    bias.high.min = -0.015
+    tmp.out <- arrm.bias.correct(downsc_train, downsc_rank, 
+                                 model_future_fit2, model_future_fit2_rank, 
+                                 q1, #sort(hist_targ), 
+                                 hist_targ, bias.low.max, bias.low.min, 'low')
+    tmp.out <- arrm.bias.correct(sort(tmp.out$train), rank(tmp.out$train), 
+                                 sort(tmp.out$ds), rank(tmp.out$ds), 
+                                 q2, hist_targ, 
+                                 #sort(hist_targ), 
+                                 bias.high.max, bias.high.min, 'high')
+    model_future_fit_copy = tmp.out$ds[model_future_fit2_rank]
+
     model_future_fit3 <- model_future_fit_new
     model_future_fit <- model_future_fit3[model_future_fit2_rank]
     model_future_fit_copy <- model_future_fit
@@ -720,3 +691,61 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
   } #end calc_bias
   return(list(fut_obs=fut_obs, fit=model_future_fit_copy))
 }#end arrm.downscale
+
+arrm.bias.correct <- function(trained_vals, trained_rank, ds_vals, ds_rank, qtile_vals, hist_targ, 
+                              bias.max, bias.min, tail='low'){
+  #'trained_vals, trained_rank: the rank and downscaled values, respectively, 
+  #'  of the downscaled training data, returned from a model
+  #'ds_vals, ds_rank: the rank and downscaled values of the new esd.gen/future
+  #'  predictor data, returned from using the model on new data
+  #'  
+  #'hist_targ: the historic target data that was used for the training step.  
+
+  #set looped vals
+  rank_train <- matrix(NA,nrow=length(qtile_vals),ncol=length(trained_vals))
+  rank_ds <- matrix(NA,nrow=length(qtile_vals),ncol=length(ds_vals))
+  
+  for(j in 1:length(qtile_vals)){
+    rank_train[j,] <- rank(trained_vals)
+    trained_vals <- sort(trained_vals)
+    rank_ds[j,] <- rank(ds_vals)
+    ds_vals <- sort(ds_vals)
+    #
+    q_val <- quantile(hist_targ, probs=qtile_vals[j])
+    if(round(q_val, 1)!=round(max(hist_targ), digits=1)){
+      q_point <- which(hist_targ >= q_val)[1] #first element
+    }else{ #If they are equal
+      q_point <- tail(which(hist_targ <= q_val), n=1) #tail selects last element
+      #q_point <- which(hist_targ <= q_val)[length(which(hist_targ <= q_val))]
+    }
+    if(hist_targ[q_point]!=0){
+      bias <- (trained_vals[q_point] - hist_targ[q_point])/hist_targ[q_point]
+    }else{
+      bias <- (trained_vals[q_point] - hist_targ[q_point])/trained_vals[q_point]
+    }
+    q_val2 <- trained_vals[q_point]
+    q_val3 <- which.min(abs(ds_vals-q_val2))
+    if(!is.na(bias) & (bias > bias.max | bias < bias.min)){ #Check moved up further to keep seq creation from giving error for this case
+      if(tail=='low'){
+        tr_seq <- 1:q_point
+        ds_seq <- 1:q_val3
+      }else if(tail=='high'){
+        tr_seq <- length(trained_vals):q_point
+        ds_seq <- length(ds_vals):q_val3
+      }
+      #if(){ #moved missing bias check
+        #print(paste("q =", qtile_vals[j], "; bias =", bias))
+        trained_vals[tr_seq] <- trained_vals[tr_seq] / (1+bias)
+        ds_vals[ds_seq] <- ds_vals[ds_seq] /(1+bias)
+      #}
+    }else{
+      message('Bias of NA; no change made') #...surprisingly common error.
+    }
+  }
+  for(k in 1:length(qtile_vals)){
+    #successive rank steps to restore the new order
+    trained_vals <- trained_vals[rank_train[k,]]
+    ds_vals <- ds_vals[rank_ds[k,]]
+  }
+  return(list('train'=trained_vals, 'ds'=ds_vals))
+}

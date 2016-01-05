@@ -71,10 +71,6 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         out.tmp <- apply(mapply('rep', NA, sapply(esd.index, length), simplify=TRUE), 2, as.list)
       }
       names(out.tmp) <- paste0(ds.var, ".", rips)
-#       print('ds out summary:')
-#       print(summary(out.tmp))
-#       print(names(out.tmp))
-#       stop('examien output')
     }
     if(train_qc_mask){
       out.tmp$qc.mask <- ds.input$qcmask
@@ -471,7 +467,7 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
               print(summary(LH))
               print(summary(CH))
               print(summary(CF.data[write.len:(write.len + in.len)]))
-              stop(paste("Error in DeltaSD: you whould not have reached this point!"))
+              stop(paste("Error in DeltaSD: you should not have reached this point!"))
             }
           }
           write.len <- write.len + in.len
