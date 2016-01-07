@@ -99,7 +99,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste("No time masks were used to process this data; ")
   }
   if(ds.arguments[[1]]!='na'){
-    argnames <- ls.str(args)
+    #argnames <- ls.str(args)
+    arnames <- names(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }

@@ -62,7 +62,7 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
   arrm.train.data <- arrm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                            sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
   arrm.model <- arrm.train.data$ds.model
-  #arrm.targ <- arrm.train.data$hist.pred
+  arrm.targ <- arrm.train.data$sta_mon_save
   #should be a list of one element - ds.model
   
   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
@@ -89,7 +89,9 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
     #call downscaling function
     out.tmp <- arrm.downscale(model_combine_data, 
                               #hist.targ.tmp[!is.na(hist.targ.tmp)],
-                              sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
+                              #sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
+                              #sort(arrm.targ[!is.na(arrm.targ)]), #may have fewer points than the orig hist_targ data
+                              arrm.targ, #maintain orig order and orig placement of missvals
                               #arrm.train.data$hist.pred,
                               ds.var,
                               arrm.model, args)
@@ -635,7 +637,7 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 1030, more or less
   
-  print('calling predict')
+  message('Starting AARM step 7: predicting future observations')
   #points(seq(1:length(fut_pred)), fut_pred, col='red')
   fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
   regr <- regr_piecewise
@@ -643,7 +645,7 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
   
   ### FIX HIGH PRECIP VALUES BY BIAS FACTOR
   if(args$calc_bias){
-    print('fixing high values via bias correction')
+    message('Starting AARM step 8: fixing high values via bias correction')
     downsc_train <- sort(regr_piecewise$fitted)
     downsc_rank <- rank(regr_piecewise$fitted)
     model_future_fit2 <- sort(model_future_fit)
@@ -659,8 +661,10 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
     q2 <- seq(0.95, 1.00, by=0.005)
     bias.low.max = 0.03
     bias.low.min = -0.03
-    bias.high.max = 0.015
+    bias.high.max = 0.015 #found in original arrm settings; not match for paper. re-running with higher bias
     bias.high.min = -0.015
+#    bias.high.max = 0.03
+#    bias.high.min = -0.03
     tmp.out <- arrm.bias.correct(downsc_train, downsc_rank, 
                                  model_future_fit2, model_future_fit2_rank, 
                                  q1, #sort(hist_targ), 
@@ -672,8 +676,9 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
                                  bias.high.max, bias.high.min, 'high')
     model_future_fit_copy = tmp.out$ds[model_future_fit2_rank]
 
-    model_future_fit3 <- model_future_fit_new
-    model_future_fit <- model_future_fit3[model_future_fit2_rank]
+    #model_future_fit3 <- model_future_fit
+    #model_future_fit <- model_future_fit3[model_future_fit2_rank]
+    model_future_fit <- model_future_fit[model_future_fit2_rank]
     model_future_fit_copy <- model_future_fit
     ##INSERT TMASK CODE
     ##SPECIAL CASE FOR TEMP
