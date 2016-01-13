@@ -100,7 +100,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(ds.arguments[[1]]!='na'){
     #argnames <- ls.str(args)
-    arnames <- names(args)
+    argnames <- names(args)
     argstring <- paste(argnames, args, sep="=", collapse=", ")
     info <- paste(info, "Arguments used in downscaling function: ", argstring, "; ", sep="")
   }

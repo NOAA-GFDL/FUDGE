@@ -11,7 +11,7 @@
 #'rip in the hist_pred dataset for now. 
 #'
 
-arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
+arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, hist.train.data=NA){
   #'Control the looping by rip and missval removal from within this function. 
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
@@ -79,8 +79,13 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table){
     rip.tmp <- unlist(rip.data)
     rip.len = length(rip.tmp[!is.na(rip.tmp)]) 
     if(args$pool_predictors){
+     # if(!is.na(hist.train.data)){
       model_combine_data <- c(rip.tmp[!is.na(rip.tmp)], 
                               hist.pred.tmp[!is.na(hist.pred.tmp)])
+      }else{
+        model_combine_data <- c(rip.tmp[!is.na(rip.tmp)], 
+                                hist.train.data[!is.na(hist.train.data)])
+      }
     }else{
       model_combine_data <- rip.tmp[!is.na(rip.tmp)]
     }
@@ -167,6 +172,50 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
   return(list(breakpoints=k, r_sq=r_sq))
 }
 
+arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
+  #Finds bad breakpoints based on the ciriteria described in the 
+  #ARRM paper. 
+  # find negative/flat slopes and the value of corresponding breakpoints 
+  # note: if negative slope is first segment, breakpoint to the right is removed
+  #       if negative slope is any other segment, breakpoint to the left is removed
+  # values2 is list of breakpoints corresponding to bad slopes
+  # slopes2 is list of bad slopes
+  # breakpoints2 is list of points (not temp values) where bad breakpoints are located
+  #CEW: replacing with list of indices corresponding to points to get booted, one for 
+  #each of the quantities listed above.
+  bad.value.indices <- rep(F, length(values))
+  bad.break.indices <- rep(F, length(slopes))
+  bad.slope.indices <- rep(F, length(slopes))
+  if(run){
+    for(j in 1:length(slopes)){
+      if(slopes[j]<=0.1 & j==1){
+        bad.value.indices[j] <- T
+        bad.break.indices[j] <- T
+        bad.slope.indices[j] <- T
+      }
+      if(slopes[j]<=0.1 & j==length(slopes)){
+        bad.value.indices[j-1] <- T
+        bad.break.indices[j-1] <- T
+        bad.slope.indices[j] <- T
+      }
+      if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
+         & ((xvals[j+1]-xvals[j])>5)){
+        bad.value.indices[j-1] <- T
+        bad.break.indices[j-1] <- T
+        bad.slope.indices[j] <- T
+      }
+      if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
+         & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
+        bad.value.indices[j] <- T
+        bad.break.indices[j] <- T
+        bad.slope.indices[j] <- T
+      }
+    }
+  }
+  return(list('bad.value' = bad.value.indices, 'bad.break' = bad.break.indices, 
+              'bad.slope' = bad.slope.indices))
+}
+
 arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   #'Assume for now that the dataset merging is done up in a prior step - 
   #'all that you have to worry about in this step is a single 
@@ -181,6 +230,9 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   message('starting ARRM step 1: removing bad target/predictor pairs based on rank')
   remove_points=args$remove_points
   if(remove_points){
+    #hist.pred 
+    #
+    
     hist.pred.len <- length(hist_pred)
     bad_pairs <- rep(F, hist.pred.len)
     dt_model_list_begin <- rep(NA_real_, hist.pred.len)
@@ -210,12 +262,17 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
         dt_sta_list_end[j] <- dt_sta
       }
     }
-    if ((hist_pred[hist.pred.len]-hist_pred[hist.pred.len-1])>5){
+    #Check for the max and min of the historic obs; make sure it's not a dramatic outlier
+    if ((hist_targ[2]-hist_targ[1])>5){
+      bad_pairs[1] <- T
+    }
+    if ((hist_targ[hist.pred.len]-hist_targ[hist.pred.len-1])>5){
       bad_pairs[hist.pred.len] <- T
     }
     
     #...not sure I understand the point of these lines at the moment
-    if (length(which(bad_pairs==1)>1)){
+    #seriously, they don't even assign anything
+    if (length(which(bad_pairs==1)>1)){ #If there is more than one bad pair
       bad_pairs[-which(bad_pairs==1)[1]]
     }
     if (length(which(bad_pairs==length(hist_targ))>1)){
@@ -224,8 +281,10 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
     #finally, remove the 'bad' values
     if(sum(bad_pairs) > 0){
       print(paste('removing', sum(bad_pairs), 'bad pairs from input sample'))
-      hist_targ <- hist_targ[-bad_pairs]
-      hist_pred <- hist_pred[-bad_pairs]
+#       hist_targ <- hist_targ[-bad_pairs]
+#       hist_pred <- hist_pred[-bad_pairs]
+      hist_targ <- hist_targ[-which(bad_pairs)] #remove all for which bad_pairs=T
+      hist_pred <- hist_pred[-which(bad_pairs)]
     }
   }
 
@@ -279,10 +338,6 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
     window_temp_new[j.val] <- ((hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
     j.val <- j.val + 1
   }  
-#    print('summary of window_temp_new:')
-#    print(summary(window_temp_new))
-#   print(which(window_temp_new == max(window_temp_new)))
-#   print(length(window_temp_new))
   if(any(is.na(window_temp_new))){
     stop(paste("Error when making windows: check your inputs!"))
   }
@@ -337,9 +392,6 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   bp.1 <- arrm.find.breakpoints(r_sq1, window1, start)
   k <- bp.1$breakpoints
   r_sq1 <- bp.1$r_sq
-  
-#   print('summary of r_sq1_save')
-#   print(summary(r_sq1_save)) #note: these are both 1, rather than a lowercase 'l'
 
   r_sq_new1 <- r_sq1_save[k]
   k <- (k + start - 1)
@@ -347,17 +399,11 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   
   #CEW: I have no idea what this bit of code is supposed to accomplish, and I 
   #can think of one case where if fails spectacularly (the single NA breakpoint case)
-#   print('summary of k before adjust:')
-#   print(k)
-
   if(!is.na(k[1])){
     for(j in 1:length(k)){
       k[j] <- k[j] - floor(1/2*window1[k[j]])
     }
   }
-#   print('summary of k:')
-#   print(k)
-  
   #AARM 3: find second set of breakpoints in the R code
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 646, more or less  
@@ -402,8 +448,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
     rss=sum((sm-yhat)^2)
     r_sq2[(start2-j)+1] <- mss/(mss+rss)
     n <- n-1
-  }
-  
+  }  
   #reverse the r_sq2 vectors
   r_sq2 <- rev(r_sq2)
   r_sq2_save <- r_sq2
@@ -412,15 +457,12 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   #remove values around the first break point found in part 1
   r_sq2[( length(r_sq2)-round(0.5*window2[start2]) ):length(r_sq2)] <- NA
   
-  
   ###Modification 12-18 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
   bp.2 <- arrm.find.breakpoints(r_sq2, window2) #no start
   k2 <- bp.2$breakpoints
   r_sq2 <- bp.2$r_sq
   
-    #print('summary of k2 before the adjust:')
-    #print(k2) 
   #Addin index correction (line 668)
   if(!is.na(k2[1])){
     for(j in 1:length(k2)){
@@ -460,6 +502,8 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   rank <- rank(breakpoints0, na.last=T, ties='first')
   #get the actual values of temp/precip where the break is
   if(length(breakpoints) > 0){
+    print('current breakpoints:')
+    print(breakpoints)
     values <- hist_pred[breakpoints]
   }else{
     values <- NA
@@ -469,7 +513,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 5: Compute the regression model using the breakpoints
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 860, more or less
-  message('Starting AARM step 5: combining the lists of breakpoints')
+  message('Starting AARM step 5: compute regression model using the breakpoints')
   #perform regressions
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
   if(!is.na(breakpoints[1])){
@@ -504,46 +548,20 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
   #CEW: replacing with list of indices corresponding to points to get booted, one for 
   #each of the quantities listed above.
   
-  bad.value.indices <- rep(F, length(values))
-  bad.break.indices <- rep(F, length(slopes))
-  bad.slope.indices <- rep(F, length(slopes))
-  if(!is.na(breakpoints[1])){
-    for(j in 1:length(slopes)){
-      if(slopes[j]<=0.1 & j==1){
-        bad.value.indices[j] <- T
-        bad.break.indices[j] <- T
-        bad.slope.indices[j] <- T
-      }
-      if(slopes[j]<=0.1 & j==length(slopes)){
-        bad.value.indices[j-1] <- T
-        bad.break.indices[j-1] <- T
-        bad.slope.indices[j] <- T
-      }
-      if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
-         & ((xvals[j+1]-xvals[j])>5)){
-        bad.value.indices[j-1] <- T
-        bad.break.indices[j-1] <- T
-        bad.slope.indices[j] <- T
-      }
-      if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
-         & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
-        bad.value.indices[j] <- T
-        bad.break.indices[j] <- T
-        bad.slope.indices[j] <- T
-      }
-    }
-  }
+  bad.indices <- arrm.find.bad.slopes(values, slopes, xvals, 
+                                      run=!is.na(breakpoints[1]))
   # slope_rank is the rank of bad slopes, so the lowest can be removed first
-  slope_rank <- rank(slopes[bad.slope.indices], ties='first')
-  values2 <- values[bad.value.indices]
-  breakpoints2 <- breakpoints[bad.break.indices]
-  
+  slope_rank <- rank(slopes[bad.indices$bad.slopes], ties='first') #lowest bad slope
+  values2 <- values[bad.indices$bad.values]                        #all bad values
+  breakpoints2 <- breakpoints[bad.indices$bad.breaks]              #all bad breaks
   values_new1 <- values
   breakpoints3 <- breakpoints
   
   for (k in 1:5){# do loop up to 5 times (assuming that one month cannot possibly have that many negative slope segments)
-    if(sum(bad.slope.indices)>=1){
+    #if(sum(bad.slope.indices)>=1){
+    if(sum(bad.indices$bad.slopes)>=1){
       print('there is at least one point where the bad slope indices are activated')
+    #}
       if(length(values_new1)==1)  values_new1 <- NA
       else{
         #Store all points but the single bad value of interest
@@ -556,7 +574,8 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
       ds <- data.frame(mod=hist_pred, sta=hist_targ)
       if(!is.na(breakpoints[1])){
         print("Beginning piecewise linear regression")
-        regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,Boundary.knots=c(-999,999)),data=ds)
+        regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,
+                                       Boundary.knots=c(-999,999)),data=ds)
       }else{
         print("No breakpoints found; activating simple lm prediction")
         regr_piecewise2 <- lm(sta ~ mod, data=ds)
@@ -577,54 +596,19 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
       for(j in 1:(length(xvals2)-1)){
         slopes[j] <- (yvals2[j+1]-yvals2[j])/(xvals2[j+1]-xvals2[j]+0.0001)
       }
-      bad.value.indices <- rep(F, length(values))
-      bad.break.indices <- rep(F, length(slopes))
-      bad.slope.indices <- rep(F, length(slopes))
-      if(!is.na(breakpoints[1])){
-        for(j in 1:length(slopes)){
-          if(slopes[j]<=0.1 & j==1){
-            bad.value.indices[j] <- T
-            bad.break.indices[j] <- T
-            bad.slope.indices[j] <- T
-          }
-          if(slopes[j]<=0.1 & j==length(slopes)){
-            bad.value.indices[j-1] <- T
-            bad.break.indices[j-1] <- T
-            bad.slope.indices[j] <- T
-          }
-          if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes))
-             & ((xvals[j+1]-xvals[j])>5)){
-            bad.value.indices[j-1] <- T
-            bad.break.indices[j-1] <- T
-            bad.slope.indices[j] <- T
-          }
-          if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
-             & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
-            bad.value.indices[j] <- T
-            bad.break.indices[j] <- T
-            bad.slope.indices[j] <- T
-          }
-        }
+      bad.indices <- arrm.find.bad.slopes(values, slopes, xvals, 
+                                          run=!is.na(breakpoints[1]))
+      if(sum(bad.indices$bad.slopes) >= 1){
+        slope_rank <- rank(slopes[bad.indices$bad.slopes], ties='first')
       }
-      slope_rank <- rank(slopes[bad.slope.indices], ties='first')
       #Added 12-22, to try and catch the breakpoint differences
-      values2 <- values[bad.value.indices]
-      breakpoints2 <- breakpoints[bad.break.indices]
-      
-      regr_piecewise <- regr_piecewise2 #regression model
-      values <- values_new1             #values of hist_pred at those points
-    }#end check for any present bad values
+      ##removed 1-11, to try and figure out why points are failing to match
+      ##values2 <- values[bad.indices$bad.values]
+      ##breakpoints2 <- breakpoints[bad.indices$bad.breaks]
+      ##regr_piecewise <- regr_piecewise2 #regression model
+      ##values <- values_new1             #values of hist_pred at those points
+    }#end check for any present bad values; commented out 1-11 to better match the  original arrm code
   }#end k loop
-  
-  # Code for diagnostic plotting; no longer used
-#  hist.predict <- predict(regr_piecewise, data.frame(mod=hist_pred))
-#   ybounds=range(c(hist.predict, hist_targ))
-#   plot(seq(1:hist.pred.len), 
-#        hist_pred, col='orange', main="DS vs fitted vs fut model", cex=2, ylim=ybounds)
-#   lines(seq(1:hist.pred.len), hist_targ, col='red', lwd=5)
-#  lines(seq(1:hist.pred.len), hist.predict, type='l', col='blue')
-#   print('length of fit:')
-#   print(length(regr_piecewise$fit))
   return(list(ds.model=regr_piecewise, sta_mon_save=hist_targ))
   
 }#end arrm.train
@@ -661,6 +645,8 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
     q2 <- seq(0.95, 1.00, by=0.005)
     bias.low.max = 0.03
     bias.low.min = -0.03
+#     bias.low.max = 0.015
+#     bias.low.min = -0.015
     bias.high.max = 0.015 #found in original arrm settings; not match for paper. re-running with higher bias
     bias.high.min = -0.015
 #    bias.high.max = 0.03
@@ -668,22 +654,28 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
     tmp.out <- arrm.bias.correct(downsc_train, downsc_rank, 
                                  model_future_fit2, model_future_fit2_rank, 
                                  q1, #sort(hist_targ), 
-                                 hist_targ, bias.low.max, bias.low.min, 'low')
-    tmp.out <- arrm.bias.correct(sort(tmp.out$train), rank(tmp.out$train), 
-                                 sort(tmp.out$ds), rank(tmp.out$ds), 
+                                 hist_targ, 
+                                 bias.low.max, bias.low.min, 'low')
+    tmp.out <- arrm.bias.correct(sort(tmp.out$train), 
+                                 #tmp.out$train,
+                                 rank(tmp.out$train), 
+                                 sort(tmp.out$ds), 
+                                 #tmp.out$ds,
+                                 rank(tmp.out$ds), 
                                  q2, hist_targ, 
                                  #sort(hist_targ), 
                                  bias.high.max, bias.high.min, 'high')
-    model_future_fit_copy = tmp.out$ds[model_future_fit2_rank]
+    #model_future_fit_copy = tmp.out$ds[model_future_fit2_rank]
+    model_future_fit = tmp.out$ds[model_future_fit2_rank]
 
     #model_future_fit3 <- model_future_fit
     #model_future_fit <- model_future_fit3[model_future_fit2_rank]
-    model_future_fit <- model_future_fit[model_future_fit2_rank]
+    #model_future_fit <- model_future_fit[model_future_fit2_rank]
     model_future_fit_copy <- model_future_fit
     ##INSERT TMASK CODE
     ##SPECIAL CASE FOR TEMP
     if( ds.var != 'pr'){
-      tmask = 'on' #I'm not sure what this parameter does
+      tmask = 'on' #I'm not sure why this parameter is still called tmask
       if(tmask =='on'){
         model_future_fit_copy <- model_future_fit
         model_future_fit_copy[which(model_future_fit_copy<(min(hist_targ,na.rm=T)-10))] <- NA
@@ -709,6 +701,8 @@ arrm.bias.correct <- function(trained_vals, trained_rank, ds_vals, ds_rank, qtil
   #set looped vals
   rank_train <- matrix(NA,nrow=length(qtile_vals),ncol=length(trained_vals))
   rank_ds <- matrix(NA,nrow=length(qtile_vals),ncol=length(ds_vals))
+  na_count = 0
+  bias_count = 0
   
   for(j in 1:length(qtile_vals)){
     rank_train[j,] <- rank(trained_vals)
@@ -730,23 +724,26 @@ arrm.bias.correct <- function(trained_vals, trained_rank, ds_vals, ds_rank, qtil
     }
     q_val2 <- trained_vals[q_point]
     q_val3 <- which.min(abs(ds_vals-q_val2))
-    if(!is.na(bias) & (bias > bias.max | bias < bias.min)){ #Check moved up further to keep seq creation from giving error for this case
+    if(!is.na(bias) & ( (bias > bias.max) | (bias < bias.min))){ #Check moved up further to keep seq creation from giving error for this case
+      bias_count  = bias_count + 1
       if(tail=='low'){
         tr_seq <- 1:q_point
         ds_seq <- 1:q_val3
       }else if(tail=='high'){
-        tr_seq <- length(trained_vals):q_point
-        ds_seq <- length(ds_vals):q_val3
+        tr_seq <- q_point:length(trained_vals)
+        ds_seq <- q_val3:length(ds_vals)
       }
-      #if(){ #moved missing bias check
-        #print(paste("q =", qtile_vals[j], "; bias =", bias))
-        trained_vals[tr_seq] <- trained_vals[tr_seq] / (1+bias)
-        ds_vals[ds_seq] <- ds_vals[ds_seq] /(1+bias)
-      #}
+      trained_vals[c(tr_seq)] <- trained_vals[c(tr_seq)] /(1+bias)
+      ds_vals[c(ds_seq)] <- ds_vals[c(ds_seq)] /(1+bias)
     }else{
-      message('Bias of NA; no change made') #...surprisingly common error.
+      if(is.na(bias)){
+        na_count = na_count + 1
+      }
+      #message('Bias of NA; no change made')
     }
   }
+  if(bias_count > 0){message(paste('Bias corrected for', tail, 'tail', bias_count, 'times'))}
+  if(na_count > 0){message(paste('Bias of NA; no change made', na_count, 'times'))}  #...surprisingly common error.
   for(k in 1:length(qtile_vals)){
     #successive rank steps to restore the new order
     trained_vals <- trained_vals[rank_train[k,]]
