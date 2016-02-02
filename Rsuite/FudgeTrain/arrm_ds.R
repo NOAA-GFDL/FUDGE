@@ -79,7 +79,7 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
     rip.tmp <- unlist(rip.data)
     rip.len = length(rip.tmp[!is.na(rip.tmp)]) 
     if(args$pool_predictors){
-     # if(!is.na(hist.train.data)){
+      if(!is.na(hist.train.data)){
       model_combine_data <- c(rip.tmp[!is.na(rip.tmp)], 
                               hist.pred.tmp[!is.na(hist.pred.tmp)])
       }else{
@@ -109,6 +109,7 @@ arrm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
       print('modified values returned')
     }
     #round reference: close to line 1180
+  #out.list[out.var] <- rip.tmp - look, I don't think that this is making a difference.
     if(round.ds){
       message('rounding downscaled values')
       out.list[[out.var]] <- round(rip.tmp[rip.rank][1:rip.len], digits=args$round)
@@ -272,6 +273,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
     
     #...not sure I understand the point of these lines at the moment
     #seriously, they don't even assign anything
+    print(sum(bad_pairs))
     if (length(which(bad_pairs==1)>1)){ #If there is more than one bad pair
       bad_pairs[-which(bad_pairs==1)[1]]
     }
@@ -287,6 +289,9 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
       hist_pred <- hist_pred[-which(bad_pairs)]
     }
   }
+  print('summary of data after qc steps:')
+  print(summary(hist_pred))
+  print(summary(hist_targ))
 
   message('Starting AARM step 2: find first set of breakpoints')
   #AARM 2: Find first set of breakpoints for the piecewise linear regression
@@ -567,7 +572,7 @@ arrm.train <- function(hist_pred, hist_targ, args, ds.var){
         #Store all points but the single bad value of interest
         #CEW edit 12-13: == not working for values removal; adding .eps for now
         eps = .Machine['double.eps'][[1]]*2
-        values_new1 <- values_new1[abs(values_new1 - values2[slope_rank==1]) <= eps]
+        values_new1 <- values_new1[abs(values_new1 - values2[slope_rank==1]) <= eps] #closest equivalent point
         breakpoints3 <- breakpoints3[breakpoints3!=breakpoints2[slope_rank==1]]
       }
       #Perform regressions again with the first slope taken out
@@ -665,12 +670,7 @@ arrm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
                                  q2, hist_targ, 
                                  #sort(hist_targ), 
                                  bias.high.max, bias.high.min, 'high')
-    #model_future_fit_copy = tmp.out$ds[model_future_fit2_rank]
     model_future_fit = tmp.out$ds[model_future_fit2_rank]
-
-    #model_future_fit3 <- model_future_fit
-    #model_future_fit <- model_future_fit3[model_future_fit2_rank]
-    #model_future_fit <- model_future_fit[model_future_fit2_rank]
     model_future_fit_copy <- model_future_fit
     ##INSERT TMASK CODE
     ##SPECIAL CASE FOR TEMP
