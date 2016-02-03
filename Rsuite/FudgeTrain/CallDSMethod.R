@@ -255,6 +255,14 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
      }else{
        stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
      }
+     if(is.null(args$retry)){
+       args$retry <- "stop"
+     }
+     if(is.null(args$maxdevretry)){
+       maxdev <- 20
+     }else{
+       maxdev <- args$maxdevretry
+     }
      
      out.list <- list()
      pred <- unlist(pred)  #No need to reference the historic predictor names
@@ -296,12 +304,11 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
          temp <-tryCatch({#dev.1 <- dev 
                          do.call("CDFt", c(list(targ, pred, new.data), 
                                            list(npas=npas, dev=dev)))$DS}, 
-                         #error=function(e){return(rep(NA, length(new.data)))},
                          error=function(e){
                            retry <<- TRUE;
                            loop.try <- FALSE
                            i=1;
-                           while(dev <= 20 && loop.try==FALSE){
+                           while(dev <= maxdev && loop.try==FALSE){
                               message(paste0("Error caught from CDFt with dev=",
                                              dev," and npas=",npas,
                                              "; retrying with dev=dev+",1))
@@ -314,15 +321,32 @@ callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
                                               error=function(e){return(FALSE)}
                               )
                            }
-                           return(do.call("CDFt", 
-                                          c(list(targ, pred, new.data), 
-                                            list(npas=npas, dev=(dev))))$DS)
-                           }, 
+                           if(dev > maxdev){
+                             #This has not come up yet in testing, but it might.
+                             if(args$retry=='stop'){
+                             stop(paste("Error in callCDFt: In the process of retrying", 
+                                        "CDFt downscaling at this point",
+                                        "dev grew to >", maxdev,
+                                        "without the CDFt function",
+                                        "being able to complete", 
+                                        'while retry was set to "stop".', 
+                                        "Please retry with different settings", 
+                                        "or contact Carolyn Whitlock."))
+                             }else if(args$retry=='missing'){
+                               return(rep(NA, length(new.data)))
+                             }else if(args$retry=='predictor'){
+                               return(new.data)
+                             }
+                           }else{
+                             return(do.call("CDFt", 
+                                            c(list(targ, pred, new.data), 
+                                              list(npas=npas, dev=(dev))))$DS)
+                           }
+                         }, 
                          silent=FALSE)
        }
        out.list[[out.var.name]] <- as.numeric(temp)
        if(retry){
-         #save(file='/home/cew/Code/testing/test_out.R', list=c('targ', 'pred', 'new.data'))
          attr(out.list[[out.var.name]], 'status') <- 1
        }
      }
