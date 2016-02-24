@@ -23,7 +23,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          'lm' = setMultiLM(),
          'lmstep' = setMultiLM(),
          "DeltaSD" = setDeltaSD(),
-         "ARRM" = setARRM(),
+         "ABARD" = setABARD(),
          ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
@@ -211,7 +211,7 @@ setMultiLM <- function(){
   ds.names <<- c('MF')
 }
 
-setARRM <- function(){
+setABARD <- function(){
   #Sets global variables if the DS method used is lm
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE

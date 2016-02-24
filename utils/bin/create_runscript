@@ -189,7 +189,8 @@ end
 echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath #Redirect stdout/stderr to runpath commented out; duplicates large logfiles in fudge.fudge_master
 #Unfortunately, this also affects my favorite debugging technique. Is there a way to determine whether
 #a runscript is being called from the master vs being called from here?
-echo "logfile output redirect from $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} to ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix}" >> $runpath
+#CEW looking at this line 2-23, and at a loss as to why it is present.
+echo "#logfile output redirect from $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} to ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix}" >> $runpath
  echo "wait " >> $runpath 
 # Add lines to gcp output from VFTMP to /arch 
 foreach OUTDIR ($outdir)

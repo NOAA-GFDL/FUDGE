@@ -112,7 +112,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                       "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table, ds.input$status), #esd.gen,
                       "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                      "ARRM" = arrm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                      "ABARD" = abard.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                       ReturnDownscaleError(ds.method))
 #         print(length((esd.index[[rip]])))
 #         print(summary(esd.index[[rip]]))

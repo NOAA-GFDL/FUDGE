@@ -17,7 +17,11 @@ abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, 
   #'of linear variability of one or more variables in 
   #'pred, and then uses the data in new to predict
   #'the future results. 
-  #'Does not currently take any arguments
+  #'Currently takes 2 arguments to downscaling function: 
+  #' window_width, specifying width of windows used for determining knots of
+  #'   best fit in percentage points (defaults to 5)
+  #' round, specifying if and how to round the output in accordance with prior
+  #'   arrm teachnique (defaults to FALSE)
   
   library(splines) #needed for the training, but might be present in base install now.
   #any general pooling steps go in here - keep in mind, 
@@ -51,10 +55,10 @@ abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, 
   #returning output identical to the 
   hist.pred.tmp <- unlist(hist_pred) #[!is.na(unlist(hist_pred))]
   hist.targ.tmp <- unlist(hist_targ) #[!is.na(unlist(hist_targ))]
-  arrm.train.data <- arrm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
+  abard.train.data <- abard.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                 sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
-  arrm.model <- arrm.train.data$ds.model
-  arrm.targ <- arrm.train.data$sta_mon_save
+  abard.model <- abard.train.data$ds.model
+  abard.targ <- abard.train.data$sta_mon_save
   #should be a list of one element - ds.model
   
   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
@@ -74,11 +78,11 @@ abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, 
     rip.rank <- rank(model_combine_data)
     model_combine_data <- sort(model_combine_data)
     #call downscaling function
-    out.tmp <- arrm.downscale(model_combine_data, 
-                              arrm.targ, #maintain orig order and orig placement of missvals
+    out.tmp <- abard.downscale(model_combine_data, 
+                              abard.targ, #maintain orig order and orig placement of missvals
                               ds.var,
-                              arrm.model, args)
-    rip.tmp <- out.tmp$fit
+                              abard.model, args)
+    rip.tmp <- out.tmp$fut_obs
     #round reference: close to line 1180
     #out.list[out.var] <- rip.tmp - look, I don't think that this is making a difference.
     if(round.ds){
@@ -88,6 +92,7 @@ abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, 
       out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
     }
   }
+  #print(summary(out.list))
   return(out.list)
 }
 
@@ -225,59 +230,18 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
   
   #CEW removed scaling for tails on 2-19; all windows are now 5% of the max data length
-  window_temp_new <- rep(fixed_window_length, hist.pred.len)
+  window_temp_new <- rep(fixed_window_width, hist.pred.len)
   ##Alt structure (discuss /w 3rd floor?)
   window_temp <- (fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
   window_temp_new <- rep(fixed_window_width, hist.pred.len)
   
-  #CEW: this is not what is present in the ARRM code, but it matches teh intent of the comment
-  #window_temp <- (0.05*(hist.pred.len)) #Seriously, I don't know what is up with this line
-  window_temp <- (fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
-  min_window <- 2
-  #CEW: okay, they split this into 3 sections: one for quantiles 0-0.1, 
-  #one for the middle ('good') range, and one for the quantiles 0.9-1.0
-  window_temp_new <- rep(NA, hist.pred.len)
-  #for the low tail
-  for (j in 1:p_low){
-    window_temp_new[j] <- c(min_window + j/p_low*(window_temp-min_window))
-  }
-  #for most of the distribution
-  for (j in (p_low+1):(p_high-1)){
-    window_temp_new[j] <- window_temp
-  }
-  #for the high tail
-  j.val <- p_high
-  for(j in 1:(hist.pred.len-p_high+1) ){
-    #for(j in seq(p_high, hist.pred.len)){
-    #window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
-    #window_temp_new[j] <- ((hist.pred.len-p_high+1)-j.val+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
-    window_temp_new[j.val] <- ((hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
-    j.val <- j.val + 1
-  }  
-  if(any(is.na(window_temp_new))){
-    stop(paste("Error when making windows: check your inputs!"))
-  }
-  
-  #find length of window so that it is always the same span in temperature
-  window1 <- rep(NA, (hist.pred.len-start+1))
-  #for (j in start:hist.pred.len){
-  for (j in start:hist.pred.len){
-    j.val <- (j-start + 1)
-    q <- 0
-    val <- hist_pred[j]
-    q <- which( hist_pred > (val-window_temp_new[j]) )[1] - 1
-    window1[j.val] <- (j-q)
-  }
-  #CEW: look at what this does in more detail later; I'm not sure how the resets work 
-  #   print('window1')
-  #   print(summary(window1))
-  if(any(is.na(window1))){
-    stop('something is off about this add')
-  }
-  window1[which(window1<10)] <- 10
-  window1 <- c(rep(NA,(start-1)),window1) #...okay, this makes no sense. missvals give error later.
-  #These values don't get referenced - they just seem to be here for padding to make sure
-  #that the other indices are in the right place.
+  #Cutting out about 100 lines of code related to finding the temeprature-based windows
+#   window1 <- rep(NA, (hist.pred.len-start+1))
+#   window1 <- c(rep(NA,(start-1)),window1)
+  window1 <- rep(fixed_window_width, hist.pred.len)
+  window2 <- rep(fixed_window_width, hist.pred.len)
+  #Although they are called the same thing, they are each used slightly differently
+  #when calculating the windows. See diagram.
   
   #calculate r squared of linear regressions the length of 'window1'
   #CEW: reference line is 550
@@ -336,18 +300,6 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
     start2 <- hist.pred.len
   }
   print(paste('k2 starts from', start2))
-  
-  #Determine windows going in the opposite direction
-  window2 <- rep(NA, hist.pred.len)
-  for(j in hist.pred.len:1){
-    q <- 0
-    val <- hist_pred[j]
-    q <- which(hist_pred > (val-window_temp_new[j]))[1]-1
-    window2[(hist.pred.len-j)+1] <- (j-q)
-  }
-  window2[which(window2<10)] <- 10
-  #   print('summary of window2:')
-  #   print(summary(window2))
   
   #calculate r squared of linear regressions the length of 'window2'
   r_sq2 <- rep(NA, start2)
