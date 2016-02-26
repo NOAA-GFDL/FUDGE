@@ -24,6 +24,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          'lmstep' = setMultiLM(),
          "DeltaSD" = setDeltaSD(),
          "ARRM" = setARRM(),
+         "GFDL_CDFt" = setCDFt(),
          ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
