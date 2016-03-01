@@ -106,7 +106,6 @@ callGFDL_CDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL)
 GFDL_CDFt <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="original"){
   #'GFDL-specific modifications to the CDFt method
   #'mostly related to the low tail of the distribution
-  print(low_tail)
   mO = mean(ObsRp)
   mGp = mean(DataGp)
   DataGp2 = DataGp + (mO - mGp)
@@ -155,16 +154,18 @@ GFDL_CDFt <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="ori
       while(x[i] <= QQ){
         i=i+1
       }
-      j=1 #2?
-      while(j < length(x) && FRF[j]==FRF[1]){
+      #added 2-29 to better match lower adjust
+      i=i-1
+      j=2 #2?
+      while(j <= length(x) && FRF[j]==FRF[1]){
         j=j+1
       }
-      if(j==length(x)){
-        stop("In CDFt, dev must be higher for low tail")
+      if( j==(length(x)+1) ){
+        stop("In CDFt, dev must be higher for low tail\n")
       }
       dif_lo = min(j, i)
       FRF[(j-dif_lo+1):j] = FRP[(i-dif_lo+1):i]
-      k = j-dif_lo
+      k = j-dif_lo+1
       if(k > 1){
         FRF[1:k] = 0
       }

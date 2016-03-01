@@ -104,7 +104,9 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
         #Use 200 to refer to fatal errors; everything else should be recoverable
         out <- switch(ds.method, 
-                      'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                      'CDFt' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, c(list(low_tail='original'), args), 
+                                           ds.var, rip.att.table),
+                      'CDFtmod' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
                       "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
                       "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
@@ -113,7 +115,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                       "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       "ARRM" = arrm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
-                      "GFDL_CDFt" = callGFDL_CDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                      #"GFDL_CDFt" = callGFDL_CDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                       ReturnDownscaleError(ds.method))
 #         print(length((esd.index[[rip]])))
 #         print(summary(esd.index[[rip]]))
