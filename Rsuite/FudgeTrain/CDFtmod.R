@@ -22,8 +22,8 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
   #'  'predictor': return the future predictor (MF) values if maxdev is exceeded
   #'  'stop':      stop with a large and helpful error message.
   #' @citation P.-A. Michelangeli, M. Vrac, H. Loukos. "Probabilistic downscaling approaches: 
-     #' @citation Application to wind cumulative distribution functions", 
-     #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
+  #' @citation Application to wind cumulative distribution functions", 
+  #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
      
      ###Obtain required arguments (and throw errors if not specified)
      if(!is.null(args$dev)){

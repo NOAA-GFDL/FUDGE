@@ -12,8 +12,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
   message(ds.method)
   switch(ds.method, 
          "simple.lm" = setSimpleLM(),
-         'CDFt' = setCDFt(),
-         'CDFtv1' = setCDFt(),
+         'CDFt' = setCDFtmod(),
          'simple.bias.correct' = setSimple.Bias.Correct(),
          'nothing' = setNothing(), 'Nothing' = setNothing(),     
          'general.bias.correct' = setGeneral.Bias.Correct(),
@@ -24,7 +23,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          'lmstep' = setMultiLM(),
          "DeltaSD" = setDeltaSD(),
          "ARRM" = setARRM(),
-         "CDFtmod" = setCDFt(),
+         "CDFtmod" = setCDFtmod(),
          ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
@@ -43,7 +42,7 @@ ReturnDownscaleError <- function(ds.method){
              "is not supported for FUDGE at this time."))
 }
 
-setCDFt<- function(){
+setCDFtmod<- function(){
  #Sets global variables if the DS method used is CDFt
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- FALSE
