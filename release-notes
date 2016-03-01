@@ -1,3 +1,10 @@
+3-1-15
+(cew)
+- New DS method, CDFtmod, allows for contol of low tail adjustments in CDFt code
+- CDFt now invokes CDFtmod with a fixed low_tail value of 'original'
+- Stdout and stderr from runcode redirect in same stream to .out logfiles
+- stdout frum runcode removed from fudge_master logfiles
+
 11-12-15
 (cew)
 - leapday correction for OH downscaling working for the CFQM method
