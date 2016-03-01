@@ -84,7 +84,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      
      for(i.index in 1:targ.dim[1]){  #Most of the time, this will be 1
        for(j.index in 1:targ.dim[2]){ #
-       #for(j.index in 1:7){
+       #for(j.index in 78:targ.dim[2]){ #65 and 78
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[[1]][i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[[1]][i.index,j.index,]))!=0){ #For predictors, use first entry as a proxy for NAs across the board
@@ -130,6 +130,14 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      }#for i
      #stop('examine output')
      ####### Loop(1) ends ###################################
+#      save(list=c('ds.out', 'hist.masked.in', 'target.masked.in', 'fut.masked.in'), file='/home/cew/Code/testing/test_out.R')
+#      print('starting plot commands')
+#      plot(seq(1:length(ds.out[[1]][1,1,])), ds.out[[1]][1,1,], type='l', col='green')
+#      print(length(fut.masked.in[[1]][1,1,]))
+#      print(length(ds.out[[1]]))
+#      print(summary(ds.out[[1]]))
+#      lines(seq(1:length(ds.out[[1]][1,1,])), fut.masked.in[[1]][1,1,], col='red')
+#      stop('examine this output')
      return(list('esd.final' = ds.out, 'qc.mask' = qc.mask)) #'postproc.out'=postproc.out))
      ############## end of TrainDriver.R ############################
 }
