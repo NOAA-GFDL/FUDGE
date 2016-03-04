@@ -476,11 +476,6 @@ def main():
         	print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
         	sys.exit()	
         		
-        verOpt = True #default
-	msub = False 
-        forOpt = True #default
-	NEMSemail1 = "none" #default
-        inter = 'on' #for debugging
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
         system,node,release,version,machine = os.uname()
         if(node.startswith('pp')):
