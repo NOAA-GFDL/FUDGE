@@ -39,6 +39,7 @@ def postProc():
      parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
      #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
      parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
+     parser.add_argument("-m", "--mail", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
      args = vars(parser.parse_args())
 
      if userinput == "none":
@@ -46,8 +47,9 @@ def postProc():
         print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
      vname = ""
      global ensarg	
-     ensarg = "undefined"	
-     print "Test test",ensarg	
+     ensarg = "undefined"
+     global NEMSemail1	
+     NEMSemail1 = "none" # default	
      for argu,valu in args.iteritems(): 
         if(argu == 'uinput'):
 			 #print "test"
@@ -61,6 +63,8 @@ def postProc():
 		        lvname = lvname1.split(',')
 			print lvname1 
 			print "Variable(s) to be post-processed: ",lvname
+	if(argu == 'NEMSemail1'):
+	   NEMSemail1 = valu
 	if(argu == 'ens'):
 	     global ensarg
 	     ensarg = valu
@@ -78,8 +82,6 @@ def postProc():
      if(basedir is None):
            print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
 	   sys.exit(1)
-#4-15 incredibly messy CEW edit
-#     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists = expergen.listVars(uinput,basedir=basedir,pp=True) 
      output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= expergen.listVars(uinput,basedir=basedir,pp=True)
      basedire = basedir	
      esdMethod = method
@@ -166,25 +168,32 @@ def postProc():
                 fromEmail = "oar.gfdl.esd@noaa.gov"
         else:
                 fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
-        try:
-                uemail  = os.environ["NEMSemail"]
+	print "check..",NEMSemail1
+        if(NEMSemail1 != "none"):
+          try:
+                uemail  = NEMSemail1 #os.environ["NEMSemail"]
                 send_to = uemail
-        except KeyError:
-                print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
+          except KeyError:
+                print "Please make sure  you use -mail option to pass email for notifications "
                 uemail = "na"
-		send_to = None
+	else:
+		uemail = "na"
         #e o header
         if (retcode == - 13 ):
-		print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
-	 	#email user
-                subject = "fudge notification- postProc/failed"
-                text = "Insufficient number of minfiles exist. "
-	        text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
-		text = text + "\n\npostProc cannot be run at this time for "+var+"."
-		text = text + "\n\nExperiment XML for reference-\n"+uinput
-                text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-	        notifyUser(send_to,subject,text)
-		sys.exit(-13) 
+			print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
+	 		#email user
+			subject = "fudge notification- postProc/failed"
+			text = "Insufficient number of minfiles exist. "
+			text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
+			text = text + "\n\npostProc cannot be run at this time for "+vname+"."
+			text = text + "\n\nExperiment XML for reference-\n"+uinput
+			text = text + "\n\nExperiment output directory: "+indir
+			text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
+			text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+			print "send to:" + send_to
+			print "fromEmail: " + fromEmail
+			notifyUser(send_to,subject,text)
+			sys.exit(-13) 
  
         ################################################
 	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
@@ -196,7 +205,7 @@ def postProc():
              				if (exists == False):
 
            					#print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput)
+						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
 						slogloc = sbase+"/"+"experiment_info.txt"
@@ -225,7 +234,14 @@ def postProc():
 						sys.exit("ERROR")
            			else:
                 			print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-                			sys.exit()
+                			subject = "fudge notification- postProc/failed"
+                			text = "An error occured in postProc suite of tools,call_ppFudge "
+                			text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
+                			text = text + "\n\npostProc cannot be run at this time"
+                			text = text + "\n\nExperiment XML for reference-\n"+uinput
+                			text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+                			notifyUser(send_to,subject,text)
+                			sys.exit(-1)
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
                                         filedire = indir+"/../" #../../"+region+"/"+ver+"/"
@@ -249,7 +265,7 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 					#cprint filename
 				        return exists		
 
-def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg,uinput):
+def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg,uinput,sbase):
         script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
 	print script1Loc 
 #check if output already exists
@@ -268,68 +284,79 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
         p = subprocess.Popen('tcsh -f -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 	error,output = p.communicate()
 	print p.returncode ,output, error
-        word = "ERROR"
-        # email header
+	word = "ERROR"
 	fromEmail1 = os.environ["USER"] 
-        if ( fromEmail1 == "esd" ): # ie you run from the role account
+	if ( fromEmail1 == "esd" ): # ie you run from the role account
 		fromEmail = "oar.gfdl.esd@noaa.gov"  
 	else:
 		fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
-        try:
-                uemail  = os.environ["NEMSemail"]
-                send_to = uemail
-        except KeyError:
-                print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
-                uemail = "na"
-		send_to = None
-        if (p.returncode != 0):
-         	print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
-##
-                subject = "fudge notification- postProc/failed"
-                text = "An error occured in postProc suite of tools,call_ppFudge "
-                text = text + "\n\nThere may be one or more minfiles absent for the specified region."
-                text = text + "\n\npostProc cannot be run at this time for "+var+"."
-                text = text + "\n\nExperiment XML for reference-\n"+uinput
-                text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+	if(NEMSemail1 != "none"):
+		try:
+			uemail  = NEMSemail1 ## using cmd line arg in g release os.environ["NEMSemail"]
+			send_to = uemail
+		except KeyError:
+			print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
+			uemail = "na"
+	else:
+		uemail = "na"
+	if (p.returncode != 0):
+		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
+		subject = "fudge notification- postProc/failed"
+		text = "An error occured in postProc suite of tools,call_ppFudge "
+		text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+		text = text + "\n\npostProc cannot be run at this time for "+var+"."
+		text = text + "\n\nExperiment XML for reference-\n"+uinput
+		text = text + "\n\nExperiment output directory: "+indir
+		text = text + "\n\nMinifile logs: "+ sbase + "\log\out.*"
+		text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
+		text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 		notifyUser(send_to,subject,text)
-##
-         	sys.exit(0)
+		sys.exit(0)
 	if word in error:
-         	print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
-                subject = "fudge notification- postProc/failed"
-                text = "An error occured in postProc suite of tools,call_ppFudge "
-                text = text + "\n\nThere may be one or more minfiles absent for the specified region."
-                text = text + "\n\npostProc cannot be run at this time for "+var+"."
-                text = text + "\n\nExperiment XML for reference-\n"+uinput
-                text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-	        notifyUser(send_to,subject,text)
-         	sys.exit(0)
-         ############################################################################################
-        global cnt
+		print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
+		subject = "fudge notification- postProc/failed"
+		text = "An error occured in postProc suite of tools,call_ppFudge "
+		text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+		text = text + "\n\npostProc cannot be run at this time for "+var+"."
+		text = text + "\n\nExperiment XML for reference-\n"+uinput
+		text = text + "\n\nExperiment output directory: "+indir
+		text = text + "\n\nMinifile logs:"+ sbase + "/log/out.*"
+		text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
+		text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+		notifyUser(send_to,subject,text)
+		sys.exit(0)
+############################################################################################
+	global cnt
 	cnt = cnt + 1
-        print "1- completed\n"
+	print "1- completed\n"
 ## success email 
-        subject = "fudge notification- postProc/success"
-        text = "Your postProc run has succeeded for "+var+"."
-        text = text + "\n\nExperiment XML for reference-\n"+uinput
-        text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
+	subject = "fudge notification- postProc/success"
+	text = "Your postProc run has succeeded for "+var+"."
+	text = text + "\n\nExperiment XML for reference-\n"+uinput
+	text = text + "\n\nExperiment output directory: "+indir
+	text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
+	text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
 	notifyUser(send_to,subject,text)
 ## 
 	return p.returncode
 
 def notifyUser(mailid,subject,text):
         # email header
-        send_from = "aparna.radhakrishnan@noaa.gov"
+        print('entering notifyUser')
+        uinfo = os.environ.get('USER')
+        hostnam = "princeton.rdhpcs.noaa.gov"
+        send_from = uinfo+"@"+hostnam
         send_to = mailid
         msg = MIMEMultipart()
-        msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        #msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+        msg['From'] = 'oar.gfdl.esd'+'@'+"noaa.gov" #todo change to esd
         msg['To'] = mailid
         msg['Date'] = formatdate(localtime=True)
         msg['Subject'] = subject
         msg.attach( MIMEText(text))
         if (mailid is not None):
                 smtp = smtplib.SMTP("localhost")
-                smtp.sendmail(send_from, send_to, msg.as_string())
+                smtp.sendmail(send_from, [send_to], msg.as_string())
                 smtp.close()
 if __name__ == '__main__':
     postProc()
