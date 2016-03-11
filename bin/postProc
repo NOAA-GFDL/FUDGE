@@ -4,6 +4,7 @@ __author__ = "A.Radhakrishnan"
 
 import expergen 
 import os,sys,subprocess,shutil
+from os import path as osp
 from subprocess import PIPE
 import argparse
 import shlex
@@ -141,6 +142,10 @@ def postProc():
 
      for indir in listout:
       outdir = indir
+      #CEW edits for email convenience
+      total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
+      out_split = indir.split("/")
+      final_out_dir = '/'.join(map(str, out_split[0:out_split.index(grid)+1])) #outdir
       for vname in listvname:
 	print vname,"check 1"
         vname = vname.strip(",")
@@ -182,12 +187,12 @@ def postProc():
         if (retcode == - 13 ):
 			print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
 	 		#email user
-			subject = "fudge notification- postProc/failed"
+			subject = "fudge postProc failure for " + total_exp_name
 			text = "Insufficient number of minfiles exist. "
 			text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
 			text = text + "\n\npostProc cannot be run at this time for "+vname+"."
 			text = text + "\n\nExperiment XML for reference-\n"+uinput
-			text = text + "\n\nExperiment output directory: "+indir
+			text = text + "\n\nExperiment output minifile directory: "+indir
 			text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
 			text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 			print "send to:" + send_to
@@ -234,7 +239,7 @@ def postProc():
 						sys.exit("ERROR")
            			else:
                 			print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-                			subject = "fudge notification- postProc/failed"
+                			subject = "fudge postProc failure for " + total_exp_name
                 			text = "An error occured in postProc suite of tools,call_ppFudge "
                 			text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
                 			text = text + "\n\npostProc cannot be run at this time"
@@ -267,6 +272,10 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 
 def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg,uinput,sbase):
         script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
+        #CEW edits for email convenience
+        total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
+        out_split = indir.split("/")
+        final_out_dir = '/'.join(map(str, out_split[0:out_split.index(region)+1])) #outdir
 	print script1Loc 
 #check if output already exists
 #options basedir indir method var epoch rip region ver
@@ -301,12 +310,12 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		uemail = "na"
 	if (p.returncode != 0):
 		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
-		subject = "fudge notification- postProc/failed"
-		text = "An error occured in postProc suite of tools,call_ppFudge "
+		subject = "fudge postProc failure for " + total_exp_name
+		text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
 		text = text + "\n\nThere may be one or more minfiles absent for the specified region."
 		text = text + "\n\npostProc cannot be run at this time for "+var+"."
 		text = text + "\n\nExperiment XML for reference-\n"+uinput
-		text = text + "\n\nExperiment output directory: "+indir
+		text = text + "\n\nExperiment output directory: "+final_out_dir
 		text = text + "\n\nMinifile logs: "+ sbase + "\log\out.*"
 		text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
 		text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
@@ -314,12 +323,12 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		sys.exit(0)
 	if word in error:
 		print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
-		subject = "fudge notification- postProc/failed"
-		text = "An error occured in postProc suite of tools,call_ppFudge "
+		subject = "fudge postProc failure for " + total_exp_name
+		text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
 		text = text + "\n\nThere may be one or more minfiles absent for the specified region."
 		text = text + "\n\npostProc cannot be run at this time for "+var+"."
 		text = text + "\n\nExperiment XML for reference-\n"+uinput
-		text = text + "\n\nExperiment output directory: "+indir
+		text = text + "\n\nExperiment output directory: "+final_out_dir
 		text = text + "\n\nMinifile logs:"+ sbase + "/log/out.*"
 		text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
 		text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
@@ -330,17 +339,42 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	cnt = cnt + 1
 	print "1- completed\n"
 ## success email 
-	subject = "fudge notification- postProc/success"
+	subject = "fudge postProc success for " + total_exp_name
 	text = "Your postProc run has succeeded for "+var+"."
 	text = text + "\n\nExperiment XML for reference-\n"+uinput
-	text = text + "\n\nExperiment output directory: "+indir
+	text = text + "\n\nExperiment output directory: "+final_out_dir
 	text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
 	text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
 	notifyUser(send_to,subject,text)
 ## 
 	return p.returncode
+	
+def notifyUser(mailid, subject, text):
+	#Implemenation of email notifications 
+	#using the mailx utility instead.
+	#Since mailx is used for FRE, this should be less
+	#likely to break.	
+	print('entering notifyUser')
+	uinfo = os.environ.get('USER')
+	tmpdir = os.environ.get("TMPDIR")
+	hostnam = "princeton.rdhpcs.noaa.gov"
+	send_from = uinfo+"@"+hostnam
+	send_to = mailid
+	if (mailid is not None):
+		text_file = osp.join(tmpdir, "fudge_mail.tmp")
+		f = open(text_file, 'wb')
+		f.write(text)
+		f.close()
+		command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
+		m = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+		m_out,m_err = m.communicate()
+	print("message sent and completed")	
+	
+notifyUser(mailid, subject, text)	
 
-def notifyUser(mailid,subject,text):
+def notifyUser_py(mailid,subject,text):
+	#Implementation of email notifications using python's 
+	#smtp package.
         # email header
         print('entering notifyUser')
         uinfo = os.environ.get('USER')
@@ -358,5 +392,7 @@ def notifyUser(mailid,subject,text):
                 smtp = smtplib.SMTP("localhost")
                 smtp.sendmail(send_from, [send_to], msg.as_string())
                 smtp.close()
+                
+                
 if __name__ == '__main__':
     postProc()

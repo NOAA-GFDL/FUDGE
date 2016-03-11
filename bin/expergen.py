@@ -453,14 +453,29 @@ def main():
         help="pass location of XML template", metavar="FILE")
       #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
         parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
-        parser.add_option("-m", "--mail",action="store_true", dest="NEMSemail1",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")        
+        parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")        
         
         (options, args) = parser.parse_args()
-        verOpt = True #default
-	msub = False 
-        forOpt = True #default
-	NEMSemail1 = "none" #default
-        inter = 'on' #for debugging
+        #CEW edits 3-3 for clarity (and only haing to search env vars once)
+        if(options.mail=="none"):
+        	try:
+        		NEMSemail1 = os.environ["NEMSemail"]
+        	except KeyError: 
+   				print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."	
+   				NEMSemail1 = 'none'
+        else:
+        	NEMSemail1 = options.mail
+        print "Status emails will be sent to: " + NEMSemail1
+        msub = options.msub
+        print "Will jobs be automatically submitted? " + str(msub)
+        if(os.path.exists(options.uinput)):
+        	uinput = options.uinput
+        	print "XML input: " + uinput
+        else:
+        	print "XML input " + options.uinput + "not found!"
+        	print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
+        	sys.exit()	
+        		
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
         system,node,release,version,machine = os.uname()
         if(node.startswith('pp')):
@@ -472,38 +487,7 @@ def main():
 		 sys.exit(-5)
 
    
-######################################################################################### 
-        if (inter == 'off'):
-		uinput = 'dstemplate.xml'
-	        dversion = "v20120422"
-                force = False
-                if os.path.exists(uinput):
-                                        parser = xml.sax.make_parser(  )
-                                        handler = temphandler.TempHandler(  )
-                                        parser.setContentHandler(handler)
-                                        parser.parse(uinput)
-        if (inter == 'on'):  
-        	for opts,vals in options.__dict__.items():
-           	# print opts,vals
-            		if(opts == 'uinput'):
-                		uinput = vals
-                		if os.path.exists(uinput):
-				        print "XML input:",uinput
-                    			#parser = xml.sax.make_parser(  )
-                    			#handler = temphandler.TempHandler(  )
-                    			#parser.setContentHandler(handler)
-                    			#parser.parse(uinput)
-                		else:
-                    			print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
-                    			sys.exit()
-			if(opts == 'mail'):
-			    	NEMSemail1 = vals
-            		if(opts == 'msub'):
-                		if (vals == True):
-                    			msub = True 
-				else:
-					msub = False
-                		msub = vals 
+#########################################################################################      		
         #########  call listVars() #############################################################
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
         ######### call script creators..  #######################################################
@@ -635,6 +619,9 @@ def main():
         msubwrapper = []
 	print "multi output (Writing to multiple output directories) ....",multi
         #if cmd line -m is passsed use that, otherwise use following
+        #CEW edit 3-3
+        
+        '''
         if (NEMSemail1 == "none"):
                   print "debug bde................", NEMSemail1
                   try:
@@ -642,6 +629,13 @@ def main():
                         print "Notification email set to .......", NEMSemail1
                   except KeyError:
                         NEMSemail1 = "none"
+         '''
+	if (NEMSemail1=='none'):
+         mail_command = ""
+         msub_mail_command = ""
+	else:
+         mail_command = "-m " + NEMSemail1 + " "
+         msub_mail_command = "-m ae -M "+ NEMSemail1 + " "               
 
         #print(sbase+"/postProc/aux/")
 	if (multi == "on"):
@@ -670,10 +664,11 @@ def main():
 		   moutsuff = " -e "+mout.strip()
 		else:
 		   moutsuff = " "	
+		 #3-3 CEW edits related to email notifications  
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -m "+NEMSemail1+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc -m "+NEMSemail1+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
+                        pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
   		ppfile.write(pp_cmnd)
 		print "wrote to ",ppfile
   		ppfile.close()
@@ -694,16 +689,16 @@ def main():
                 #print "4-"+str(suffctr)+" completed"
                 print "----------------------------------------"
 		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
-                try:  
-   			NEMSemail = os.environ["NEMSemail"]
-		        msubwrapper.append("msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
-                        print "msub -d $HOME -m ae -M "+os.environ.get('NEMSemail')+" "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-		except KeyError: 
+		print(NEMSemail1)
+                if (NEMSemail1 != 'none'):  
+		        msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
+                        print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
+                else:       
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
                         msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
 
 			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-	  else:
+          else:
 		print "postProc_command cannot be created. postProc_source does not exist"
 	  suffctr = suffctr + 1
 	print "----------------------------------------"
