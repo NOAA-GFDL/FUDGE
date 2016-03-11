@@ -71,7 +71,7 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }
        low_tail='original'
        if('low_tail'%in%names(args)){
-         if(args$low_tail=="modified" | args$low_tail=="none"){
+         if(args$low_tail=="modified" | args$low_tail=="none" | args$low_tail == "newcheck"){
            low_tail = args$low_tail
          }else if(args$low_tail!='original'){
            stop(paste("Error in CDFtmod: low_tail should be one of original, modified or none, but was", args$low_tail, "!"))
@@ -140,99 +140,6 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
      return(out.list)
 }
 
-
-# callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
-# 
-#      
-#      ###Obtain required arguments (and throw errors if not specified)
-#      if(!is.null(args$dev)){
-#        dev <- args$dev
-#      }else{
-#        stop(paste("CDFtmod Method Error: parameter dev was missing from the args list"))
-#      }
-#      
-#      out.list <- list()
-#      pred <- unlist(pred)  #No need to reference the historic predictor names
-#      rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-#      for(rip in rip.list){
-#        #Select the future predictor vars that you are interested in
-#        out.var.name <- paste0(ds.var, ".", rip)
-#        #Unlist the ensemble members
-#        rip.index <- (rip.list==rip)
-#        new.data <- new[rip.index]
-#        new.data <- unlist(new.data)
-#        
-#        if(!is.null(args$npas)){
-#          npas <- args$npas
-#          if(npas=='default' || npas==0){
-#            npas=ifelse(length(targ) > length(new.data), length(new.data), length(targ))
-#          }else if(npas=='training_target'){
-#            #Note: this option is needed to duplicate 'default'
-#            #for results prior to 10-20-14
-#            npas=length(targ)
-#          }else if(npas=='future_predictor'){
-#            npas=length(new.data)
-#          }
-#          if(npas <= dev){
-#            stop(paste("Error in callCDFtmod: npas shouuld be greater than dev, but npas was", 
-#                       npas, "and dev was", dev))
-#          }
-#        }else{
-#          stop(paste("CDFtmod Method Error: parameter npas was missing from the args list"))
-#        }
-#        low_tail='original'
-#        if('low_tail'%in%names(args)){
-#          if(args$low_tail=="modified" | args$low_tail=="none"){
-#            low_tail = args$low_tail
-#          }else if(args$low_tail!='original'){
-#            stop(paste("Error in CDFtmod: low_tail should be one of original, modified or none, but was", args$low_tail, "!"))
-#          }
-#        }
-#           if(is.null(args)){
-#             temp <- CDFtmod(targ, pred, new.data, npas=length(targ), low_tai=low_tail)$DS
-#           }else{
-#             ##Note: if any of the input data parameters are named, CDFt will 
-#             ## fail to run with an 'unused arguments' error, without any decent
-#             ## explanation as to why. This way works.)
-#             retry <- FALSE
-#             temp <-tryCatch({#dev.1 <- dev 
-#               do.call("CDFtmod", c(list(targ, pred, new.data), 
-#                                      list(npas=npas, dev=dev, low_tail=low_tail)))$DS}, 
-#                             #error=function(e){return(rep(NA, length(new.data)))},
-#                             error=function(e){
-#                               retry <<- TRUE;
-#                               loop.try <- FALSE
-#                               i=1;
-#                               while(dev <= 20 && loop.try==FALSE){
-#                                 message(paste0("Error caught from CDFtmod with dev=",
-#                                                dev," and npas=",npas,
-#                                                "; retrying with dev=dev+",1))
-#                                 loop.try <- TRUE
-#                                 dev=dev+1
-#                                 i=i+1
-#                                 loop.try <- tryCatch(do.call("CDFtmod", 
-#                                                              c(list(targ, pred, new.data), 
-#                                                                list(npas=npas, dev=dev, 
-#                                                                     low_tail=low_tail)))$DS, 
-#                                                      error=function(e){return(FALSE)}
-#                                 )
-#                               }
-#                               return(do.call("CDFtmod", 
-#                                              c(list(targ, pred, new.data), 
-#                                                list(npas=npas, dev=dev, low_tail=low_tail)))$DS)
-#                             }, 
-#                             silent=FALSE)
-#           }
-#           out.list[[out.var.name]] <- as.numeric(temp)
-#           if(retry){
-#             #save(file='/home/cew/Code/testing/test_out.R', list=c('targ', 'pred', 'new.data'))
-#             attr(out.list[[out.var.name]], 'status') <- 1
-#           }
-#      }
-#      return(out.list)
-# }
-
-
 CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="original"){
   #'GFDL-specific modifications to the CDFt method
   #'mostly related to the low tail of the distribution. 
@@ -256,6 +163,29 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
   #Low tail correction
   if(low_tail=='original'){
     if (min(ObsRp) < min(DataGf2)) {
+      message("Original low tail adjust peformed")
+      i = 1
+      while (x[i] <= quantile(ObsRp, probs = FRF[1])) {
+        i = i + 1
+      }
+      j = 1
+      while (x[j] < min(DataGf2)) {
+        j = j + 1
+      }
+      k = i
+      while (j > 0 && k > 0) {
+        FRF[j] = FRP[k]
+        j = j - 1
+        k = k - 1
+      }
+      if (j > 0) {
+        for (k in j:1) {
+          FRF[k] = 0
+        }
+      }
+    }
+  }else if(low_tail=='newcheck'){
+    if (FRF[1] > 0) {
       message("Original low tail adjust peformed")
       i = 1
       while (x[i] <= quantile(ObsRp, probs = FRF[1])) {
