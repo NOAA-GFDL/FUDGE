@@ -145,7 +145,7 @@ def postProc():
       #CEW edits for email convenience
       total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
       out_split = indir.split("/")
-      final_out_dir = '/'.join(map(str, out_split[0:out_split.index(grid)+1])) #outdir
+      final_out_dir = '/'.join(map(str, out_split[0:out_split.index(region)+1])) #outdir
       for vname in listvname:
 	print vname,"check 1"
         vname = vname.strip(",")
@@ -368,9 +368,7 @@ def notifyUser(mailid, subject, text):
 		command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
 		m = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 		m_out,m_err = m.communicate()
-	print("message sent and completed")	
-	
-notifyUser(mailid, subject, text)	
+	print("message sent and completed")		
 
 def notifyUser_py(mailid,subject,text):
 	#Implementation of email notifications using python's 

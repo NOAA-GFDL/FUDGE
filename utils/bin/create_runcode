@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/tcsh -f
 ###User input interactive
 if ($#argv < 11) then
  echo "Usage: make.code.tmax.sh number_of_years_to_leave_out lon_start lon_end lat_start lat_end basedir outdir [start_year] [end_year] [varname_to_downscale] [futurelist]"
@@ -85,7 +85,14 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.END.YEAR":${hist_train_end_year} )
 set hist_scenario = $argv[14]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.SCENARIO":"'"${hist_scenario}"'" )
 ####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
-if ($hist_scenario:q =~ *to*) then
+#CEW edit to fail on 'historic_r1i1p1'
+set hist_search = `echo $hist_scenario | grep -P ".*_.*to"`
+set hist_status = $status
+#if ($hist_scenario:q =~ *to*) then
+#if ($hist_scenario:q =~ *_*to*) then
+#if( `echo $hist_scenario | grep -P ".*_.*to"` ) then
+if ( $hist_status == 0 ) then
+echo "just after hist if"
 set h_cutone = `echo "$hist_scenario" | cut -d '_' -f2`
 set h_cuttwo  = `echo "$h_cutone" | awk -F"to" '{print $1}'`
 set h_rstart = `echo "$h_cuttwo" | awk -F"r" '{print $2}'`      ##
@@ -133,7 +140,13 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.END.YEAR":${fut_train_end_year} )
 set fut_scenario = $argv[23]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.SCENARIO":"'"${fut_scenario}"'" )
 ####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
-if ($fut_scenario:q =~ *to*) then
+#CEW editing regex to fail on 'historical_r1i1p1'
+echo $fut_scenario | grep -P ".*_.*to"
+set fut_status = $status
+echo $fut_status
+#if ($fut_scenario:q =~ *to*) then
+echo "just before fut status"
+if ( $fut_status == 0 ) then
 set f_cutone = `echo "$fut_scenario" | cut -d '_' -f2`
 set f_cuttwo  = `echo "$f_cutone" | awk -F"to" '{print $1}'`
 set f_rstart = `echo "$f_cuttwo" | awk -F"r" '{print $2}'`      ##
@@ -180,8 +193,12 @@ set target_train_end_year = $argv[31]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.END.YEAR":${target_train_end_year} )
 set target_scenario = $argv[32]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SCENARIO":"'"${target_scenario}"'")
-####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
-if ($target_scenario:q =~ *to*) then
+####if there are multiple rips in target, then parse and put them in hist.pred.rips
+#CEW regex edit
+set targ_search = `echo $target_scenario | grep -P ".*_.*to"`
+set targ_status = $status
+#if ($target_scenario:q =~ *to*) then
+if ($targ_status == 0) then
 set t_cutone = `echo "$target_scenario" | cut -d '_' -f2`
 set t_cuttwo  = `echo "$t_cutone" | awk -F"to" '{print $1}'`
 set t_rstart = `echo "$t_cuttwo" | awk -F"r" '{print $2}'`      ##
