@@ -71,7 +71,9 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }
        low_tail='original'
        if('low_tail'%in%names(args)){
-         if(args$low_tail=="modified" | args$low_tail=="none" | args$low_tail == "newcheck" | args$low_tail == "newcheck2"){
+         if(args$low_tail=="modified" | args$low_tail=="none" 
+            #| args$low_tail == "newcheck" | args$low_tail == "newcheck2"
+            ){
            low_tail = args$low_tail
          }else if(args$low_tail!='original'){
            stop(paste("Error in CDFtmod: low_tail should be one of original, modified or none, but was", args$low_tail, "!"))
@@ -184,54 +186,54 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
         }
       }
     }
-  }else if(low_tail=='newcheck'){
-    if (FRF[1] > 0) {
-      message("Modified if-check low tail adjust peformed")
-      i = 1
-      while (x[i] <= quantile(ObsRp, probs = FRF[1])) {
-        i = i + 1
-      }
-      j = 1
-      while (x[j] < min(DataGf2)) {
-        j = j + 1
-      }
-      k = i
-      while (j > 0 && k > 0) {
-        FRF[j] = FRP[k]
-        j = j - 1
-        k = k - 1
-      }
-      if (j > 0) {
-        for (k in j:1) {
-          FRF[k] = 0
-        }
-      }
-    }
-  }else if(low_tail=='newcheck2'){
-    if (FRF[1] > 0) {
-      message("Other modified if-check low tail adjust peformed")
-      i = 1
-      while (x[i] <= quantile(ObsRp, probs = FRF[1])) {
-        i = i + 1
-      }
-      #Modifed from original to match the low tail adjustment (fencepost error?)
-      i = i - 1
-      j = 2
-      while (x[j] < min(DataGf2)) {
-        j = j + 1
-      }
-      k = i
-      while (j > 0 && k > 0) {
-        FRF[j] = FRP[k]
-        j = j - 1
-        k = k - 1
-      }
-      if (j > 0) {
-        for (k in j:1) {
-          FRF[k] = 0
-        }
-      }
-    }
+#   }else if(low_tail=='newcheck'){
+#     if (FRF[1] > 0) {
+#       message("Modified if-check low tail adjust peformed")
+#       i = 1
+#       while (x[i] <= quantile(ObsRp, probs = FRF[1])) {
+#         i = i + 1
+#       }
+#       j = 1
+#       while (x[j] < min(DataGf2)) {
+#         j = j + 1
+#       }
+#       k = i
+#       while (j > 0 && k > 0) {
+#         FRF[j] = FRP[k]
+#         j = j - 1
+#         k = k - 1
+#       }
+#       if (j > 0) {
+#         for (k in j:1) {
+#           FRF[k] = 0
+#         }
+#       }
+#     }
+#   }else if(low_tail=='newcheck2'){
+#     if (FRF[1] > 0) {
+#       message("Other modified if-check low tail adjust peformed")
+#       i = 1
+#       while (x[i] <= quantile(ObsRp, probs = FRF[1])) {
+#         i = i + 1
+#       }
+#       #Modifed from original to match the low tail adjustment (fencepost error?)
+#       i = i - 1
+#       j = 2
+#       while (x[j] < min(DataGf2)) {
+#         j = j + 1
+#       }
+#       k = i
+#       while (j > 0 && k > 0) {
+#         FRF[j] = FRP[k]
+#         j = j - 1
+#         k = k - 1
+#       }
+#       if (j > 0) {
+#         for (k in j:1) {
+#           FRF[k] = 0
+#         }
+#       }
+#     }
   }else if(low_tail=='modified'){
     if (FRF[1] > 0) {
       message("Modified low tail adjust performed")
