@@ -437,6 +437,8 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #ref: line 860, more or less
   message('Starting PARM step 5: compute regression model using the breakpoints')
   #perform regressions
+  mod=hist_pred
+  sta=hist_targ
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
   if(!is.na(breakpoints[1])){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
