@@ -11,7 +11,7 @@
 #'rip in the hist_pred dataset for now. 
 #'
 
-abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, hist.train.data=NA){
+parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, hist.train.data=NA){
   #'Control the looping by rip and missval removal from within this function. 
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
@@ -47,18 +47,25 @@ abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, 
   }else{
     args$tail_prob <- as.nuemric(args$tail_prob)
   }
-  
-  
+  if(!'slope_window'%in%names(args)){
+    args$slope_window = 'simple'
+  }else{
+    if(!(args$slope_window%in%c("original", 'simple'))){
+      stop(paste("Error in PARM: slope_window must be one of 'original' or",
+                 "'simple', but was", args$slope_window))
+    }
+  }
+
   #Now, call the aarm training code
   #CEW: the missing value removal step might not be neccessary. 
   #Removing on 12-24 to see if it solves the pm2weeks predictor
   #returning output identical to the 
   hist.pred.tmp <- unlist(hist_pred) #[!is.na(unlist(hist_pred))]
   hist.targ.tmp <- unlist(hist_targ) #[!is.na(unlist(hist_targ))]
-  abard.train.data <- abard.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
+  parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                 sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
-  abard.model <- abard.train.data$ds.model
-  abard.targ <- abard.train.data$sta_mon_save
+  parm.model <- parm.train.data$ds.model
+  parm.targ <- parm.train.data$sta_mon_save
   #should be a list of one element - ds.model
   
   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
@@ -78,10 +85,10 @@ abard.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, 
     rip.rank <- rank(model_combine_data)
     model_combine_data <- sort(model_combine_data)
     #call downscaling function
-    out.tmp <- abard.downscale(model_combine_data, 
-                              abard.targ, #maintain orig order and orig placement of missvals
+    out.tmp <- parm.downscale(model_combine_data, 
+                              parm.targ, #maintain orig order and orig placement of missvals
                               ds.var,
-                              abard.model, args)
+                              parm.model, args)
     rip.tmp <- out.tmp$fut_obs
     #round reference: close to line 1180
     #out.list[out.var] <- rip.tmp - look, I don't think that this is making a difference.
@@ -193,7 +200,7 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
               'bad.slope' = bad.slope.indices))
 }
 
-abard.train <- function(hist_pred, hist_targ, args, ds.var){
+parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #'Assume for now that the dataset merging is done up in a prior step - 
   #'all that you have to worry about in this step is a single 
   #'vector for each dataset. 
@@ -201,11 +208,11 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #'order can be done in the main method of the ds method.
   #'
   #'Modification of the fudge-adapted ARRM code to fit the current requirments of the 
-  #'ABARD method - i.e. strippign out everything that the ESD team does not need
+  #'PARM method - i.e. strippign out everything that the ESD team does not need
   #'in order to downscale with anomaly data.
   
   
-  message('Starting ABARD step 2: find first set of breakpoints')
+  message('Starting PARM step 2: find first set of breakpoints')
   fixed_window_width = args$window_width
   #Assume that the tails are always going to be symmetric (for now)
   pmin = args$tail_prob
@@ -229,17 +236,64 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #CEW note: this changes to 10% in what I think is the cross-validated code. 
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
   
-  #CEW removed scaling for tails on 2-19; all windows are now 5% of the max data length
-  window_temp_new <- rep(fixed_window_width, hist.pred.len)
-  ##Alt structure (discuss /w 3rd floor?)
-  window_temp <- (fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
-  window_temp_new <- rep(fixed_window_width, hist.pred.len)
-  
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
 #   window1 <- rep(NA, (hist.pred.len-start+1))
 #   window1 <- c(rep(NA,(start-1)),window1)
-  window1 <- rep(fixed_window_width, hist.pred.len)
-  window2 <- rep(fixed_window_width, hist.pred.len)
+  if(args$slope_window=='simple'){
+#     #CEW removed scaling for tails on 2-19; all windows are now 5% of the max data length
+#     window_temp_new <- rep(fixed_window_width, hist.pred.len)
+#     ##Alt structure (discuss /w 3rd floor?)
+#     window_temp <- (fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
+#     window_temp_new <- rep(fixed_window_width, hist.pred.len)
+    window1 <- rep(fixed_window_width, hist.pred.len)
+    window2 <- rep(fixed_window_width, hist.pred.len)
+  }else if(args$slope_window=='original'){
+    window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
+    min_window <- 2
+    #CEW: okay, they split this into 3 sections: one for quantiles 0-0.1, 
+    #one for the middle ('good') range, and one for the quantiles 0.9-1.0
+    window_temp_new <- rep(NA, hist.pred.len)
+    #for the low tail
+    for (j in 1:p_low){
+      window_temp_new[j] <- c(min_window + j/p_low*(window_temp-min_window))
+    }
+    #for most of the distribution
+    for (j in (p_low+1):(p_high-1)){
+      window_temp_new[j] <- window_temp
+    }
+    #for the high tail
+    j.val <- p_high
+    for(j in 1:(hist.pred.len-p_high+1) ){
+      window_temp_new[j.val] <- ((hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
+      j.val <- j.val + 1
+    }  
+    if(any(is.na(window_temp_new))){
+      stop(paste("Error when making windows: check your inputs!"))
+    }    
+    #find length of window so that it is always the same span in temperature
+    window1 <- rep(NA, (hist.pred.len-start+1))
+    for (j in start:hist.pred.len){
+      j.val <- (j-start + 1)
+      q <- 0
+      val <- hist_pred[j]
+      q <- which( hist_pred > (val-window_temp_new[j]) )[1] - 1
+      window1[j.val] <- (j-q)
+    }
+    if(any(is.na(window1))){
+      stop('something is off about this add')
+    }
+    window1[which(window1<10)] <- 10
+    window1 <- c(rep(NA,(start-1)),window1)
+    #Determine windows going in the opposite direction
+    window2 <- rep(NA, hist.pred.len)
+    for(j in hist.pred.len:1){
+      q <- 0
+      val <- hist_pred[j]
+      q <- which( hist_pred > (val-window_temp_new[j]) )[1]-1
+      window2[(hist.pred.len-j)+1] <- (j-q)
+    }
+    window2[which(window2<10)] <- 10
+  }
   #Although they are called the same thing, they are each used slightly differently
   #when calculating the windows. See diagram.
   
@@ -287,7 +341,7 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 3: find second set of breakpoints in the R code
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 646, more or less  
-  message('Starting ABARD step 3: find second set of breakpoints')
+  message('Starting PARM step 3: find second set of breakpoints')
   nas.3 <- is.na(k[1])
   if(!is.na(k[1])){
     print('deriving k from the min of the previous breakpoints')
@@ -345,7 +399,7 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 4: combine the breakpoints calculated in parts 1 and 2
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 795, more or less
-  message('Starting ABARD step 4: combining the lists of breakpoints')
+  message('Starting PARM step 4: combining the lists of breakpoints')
   #cut off break point if it is in the first 20 points or the last 5
   breakpoints0 = rep(NA, 6)
   
@@ -381,7 +435,7 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 5: Compute the regression model using the breakpoints
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 860, more or less
-  message('Starting ABARD step 5: compute regression model using the breakpoints')
+  message('Starting PARM step 5: compute regression model using the breakpoints')
   #perform regressions
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
   if(!is.na(breakpoints[1])){
@@ -395,7 +449,7 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 6: Go through the model and remove slopes close to 0
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 880, more or less
-  message('Starting ABARD step 6: removing model slopes close to 0')
+  message('Starting PARM step 6: removing model slopes close to 0')
   
   # find model values (xvals) and obs values (yvals) of start point, breakpoints, and end point to calculate slopes
   xvals <- c(min(hist_pred),values,max(hist_pred))
@@ -481,10 +535,10 @@ abard.train <- function(hist_pred, hist_targ, args, ds.var){
   
 }#end arrm.train
 
-abard.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise, 
+parm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise, 
                             args){
   
-  #'Modified version of ARRM step 6, modified to fit into the abard framework
+  #'Modified version of ARRM step 6, modified to fit into the parm framework
   #'(i.e. stripping out everything not related to downscaling.)
   
   #AARM 6: Run the regression on the future predictor data.
@@ -492,7 +546,7 @@ abard.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 1030, more or less
   
-  message('Starting ABARD step 7: predicting future observations')
+  message('Starting PARM step 7: predicting future observations')
   #points(seq(1:length(fut_pred)), fut_pred, col='red')
   fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
   regr <- regr_piecewise
