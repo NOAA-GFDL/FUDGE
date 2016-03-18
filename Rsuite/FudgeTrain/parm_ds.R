@@ -245,8 +245,13 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
 #     ##Alt structure (discuss /w 3rd floor?)
 #     window_temp <- (fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
 #     window_temp_new <- rep(fixed_window_width, hist.pred.len)
-    window1 <- rep(fixed_window_width, hist.pred.len)
-    window2 <- rep(fixed_window_width, hist.pred.len)
+    window_len = hist.pred.len * fixed_window_width
+    window1 <- rep(window_len, hist.pred.len)
+    window2 <- rep(window_len, hist.pred.len)
+#     print(summary(window1))
+#     print(window1[1:10])
+#     print(summary(window2))
+#     print(window2[1:10])
   }else if(args$slope_window=='original'){
     window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
     min_window <- 2
@@ -293,6 +298,10 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
       window2[(hist.pred.len-j)+1] <- (j-q)
     }
     window2[which(window2<10)] <- 10
+#     print(summary(window1))
+#     print(window1[1:10])
+#     print(summary(window2))
+#     print(window2[1:10])
   }
   #Although they are called the same thing, they are each used slightly differently
   #when calculating the windows. See diagram.
