@@ -50,13 +50,15 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
   if(!'slope_window'%in%names(args)){
     args$slope_window = 'simple'
   }else{
-    if(!(args$slope_window%in%c("original", 'simple'))){
-      stop(paste("Error in PARM: slope_window must be one of 'original' or",
-                 "'simple', but was", args$slope_window))
+    slope_window_choices <- c("original", 'simple', 'simple_range')
+    if(!(args$slope_window%in%slope_window_choices)){
+      stop(paste("Error in PARM: slope_window must be one of",
+                 paste(slope_window_choices, collapse=","),
+                 "but was", args$slope_window))
     }
   }
 
-  #Now, call the aarm training code
+  #Now, call the training code
   #CEW: the missing value removal step might not be neccessary. 
   #Removing on 12-24 to see if it solves the pm2weeks predictor
   #returning output identical to the 
@@ -99,7 +101,6 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
       out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
     }
   }
-  #print(summary(out.list))
   return(out.list)
 }
 
@@ -134,13 +135,16 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
         #cut out section of 'window' surrounding the found break point
         if(k.out[j] < window.index ){
           r_sq[0:(k.out[j]+window.index)]<- NA    #break point is close to beginning of vector...
+          #print(0:(k.out[j]+window.index))
         }
         if ((k.out[j]>=window.index) & (k.out[j]<=(length(r_sq)-window.index))){
           r_indices <- (k.out[j]-window.index):(k.out[j]+window.index)
           r_sq[r_indices] <- NA
+         # print(r_indices)
         }
         if (k.out[j]>(length(r_sq)-window.index)){
           r_sq[(k.out[j]-window.index):length(r_sq)] <- NA    #break point is close to end of vector
+          #print((k.out[j]-window.index):length(r_sq))
         }
       }
     }else{
@@ -241,17 +245,30 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
 #   window1 <- c(rep(NA,(start-1)),window1)
   if(args$slope_window=='simple'){
 #     #CEW removed scaling for tails on 2-19; all windows are now 5% of the max data length
-#     window_temp_new <- rep(fixed_window_width, hist.pred.len)
-#     ##Alt structure (discuss /w 3rd floor?)
-#     window_temp <- (fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
-#     window_temp_new <- rep(fixed_window_width, hist.pred.len)
     window_len = hist.pred.len * fixed_window_width
     window1 <- rep(window_len, hist.pred.len)
     window2 <- rep(window_len, hist.pred.len)
-#     print(summary(window1))
-#     print(window1[1:10])
-#     print(summary(window2))
-#     print(window2[1:10])
+  }else if(args$slope_window=='simple_range'){
+    var.range = range(hist_pred)
+    window_delta = fixed_window_width * (var.range[2] - var.range[1])
+    #Determine lower windows
+    window1 <- rep(NA, (hist.pred.len-start+1))
+    for (j in start:hist.pred.len){
+      j.val <- (j-start + 1)
+      q <- 0
+      val <- hist_pred[j]
+      q <- which( hist_pred > (val-window_delta) )[1] - 1
+      window1[j.val] <- (j-q)
+    }
+    window1 <- c(rep(NA,(start-1)),window1)
+    #Determine windows going in the opposite direction
+    window2 <- rep(NA, hist.pred.len)
+    for(j in hist.pred.len:1){
+      q <- 0
+      val <- hist_pred[j]
+      q <- which( hist_pred > (val-window_delta) )[1]-1
+      window2[(hist.pred.len-j)+1] <- (j-q)
+    }
   }else if(args$slope_window=='original'){
     window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
     min_window <- 2
@@ -387,6 +404,8 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   window2 <- rev(window2)
   #remove values around the first break point found in part 1
   r_sq2[( length(r_sq2)-round(0.5*window2[start2]) ):length(r_sq2)] <- NA
+  #print(bp.1)
+  #print(r_sq2)
   
   ###Modification 12-18 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
