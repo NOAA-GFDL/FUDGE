@@ -72,11 +72,11 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        low_tail='original'
        if('low_tail'%in%names(args)){
          if(args$low_tail=="modified" | args$low_tail=="none" 
-            #| args$low_tail == "newcheck" | args$low_tail == "newcheck2"
+            | args$low_tail == "test_modified"
             ){
            low_tail = args$low_tail
          }else if(args$low_tail!='original'){
-           stop(paste("Error in CDFtmod: low_tail should be one of original, modified or none, but was", args$low_tail, "!"))
+           stop(paste("Error in CDFtmod: low_tail should be one of original, modified, test_modified or none, but was", args$low_tail, "!"))
          }
        }
        if(is.null(args)){
@@ -206,6 +206,31 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
       dif_lo = min(j, i)
       FRF[(j-dif_lo+1):j] = FRP[(i-dif_lo+1):i]
       k = j-dif_lo+1
+      if(k > 1){
+        FRF[1:k] = 0
+      }
+    }
+  }else if(low_tail=='test_modified'){
+    if (FRF[1] > 0) {
+      message("Testing Modified low tail adjust performed")
+      i=1
+      QQ = quantile(ObsRp, probs=FRF[1])
+      while(x[i] <= QQ){
+        i=i+1
+      }
+      i=i-1
+      j=2
+      while(j <= length(x) && FRF[j]==FRF[1]){
+        j=j+1
+      }
+      j=j-1 #Added JL 3-29
+      if( j==(length(x)+1) ){
+        stop("In CDFt, dev must be higher for low tail\n")
+      }
+      dif_lo = min(j, i)
+      FRF[(j-dif_lo+1):j] = FRP[(i-dif_lo+1):i]
+      #k = j-dif_lo+1
+      k = j-dif_lo #...look, is this supposed to skip an index?
       if(k > 1){
         FRF[1:k] = 0
       }
