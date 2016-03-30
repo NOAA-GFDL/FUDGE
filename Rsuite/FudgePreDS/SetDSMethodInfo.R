@@ -247,6 +247,5 @@ setPARM <- function(){
   ds.names <<- c('MF')
   #Are the training and ds steps split so that training can take place once?
   train.ds.split <<- TRUE
-  
 }
   
