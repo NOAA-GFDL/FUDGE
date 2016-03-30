@@ -216,7 +216,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #'in order to downscale with anomaly data.
   
   
-  message('Starting PARM step 2: find first set of breakpoints')
+  message('Starting PARM steps 2 and 3: find first and second set of breakpoints')
   fixed_window_width = args$window_width
   #Assume that the tails are always going to be symmetric (for now)
   pmin = args$tail_prob
@@ -346,7 +346,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   
   ###Modification 12-18 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
-  print('finding breakpoints')
+  #print('finding breakpoints')
   #   print('summary of r_sq1')
   #   print(summary(r_sq1))
   bp.1 <- arrm.find.breakpoints(r_sq1, window1, start)
@@ -367,10 +367,10 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 3: find second set of breakpoints in the R code
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 646, more or less  
-  message('Starting PARM step 3: find second set of breakpoints')
+  #message('Starting PARM step 3: find second set of breakpoints')
   nas.3 <- is.na(k[1])
   if(!is.na(k[1])){
-    print('deriving k from the min of the previous breakpoints')
+    #print('deriving k from the min of the previous breakpoints')
     start2 <- min(k,na.rm=T) #most common case
   }else{
     start2 <- start
@@ -379,7 +379,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
     print('setting second start based on hist.pred.len')
     start2 <- hist.pred.len
   }
-  print(paste('k2 starts from', start2))
+  #print(paste('k2 starts from', start2))
   
   #calculate r squared of linear regressions the length of 'window2'
   r_sq2 <- rep(NA, start2)
@@ -427,7 +427,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #AARM 4: combine the breakpoints calculated in parts 1 and 2
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 795, more or less
-  message('Starting PARM step 4: combining the lists of breakpoints')
+  #message('Starting PARM step 4: combining the lists of breakpoints')
   #cut off break point if it is in the first 20 points or the last 5
   breakpoints0 = rep(NA, 6)
   
@@ -452,10 +452,11 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   rank <- rank(breakpoints0, na.last=T, ties='first')
   #get the actual values of temp/precip where the break is
   if(length(breakpoints) > 0){
-    print('current breakpoints:')
-    print(breakpoints)
+    #print('current breakpoints:')
+    #print(breakpoints)
     values <- hist_pred[breakpoints]
   }else{
+    print("No breakpoints found")
     values <- NA
     breakpoints <- NA
   }
