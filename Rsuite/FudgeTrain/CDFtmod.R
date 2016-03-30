@@ -231,7 +231,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
       FRF[(j-dif_lo+1):j] = FRP[(i-dif_lo+1):i]
       #k = j-dif_lo+1
       k = j-dif_lo #...look, is this supposed to skip an index?
-      if(k > 1){
+      if(k > 0){
         FRF[1:k] = 0
       }
     }
