@@ -81,8 +81,8 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }
        high_tail='original'
        if('high_tail'%in%names(args)){
-         if(args$high_tail=="modified" | args$low_tail=="none"){
-           high_tail = args$low_tail
+         if(args$high_tail=="modified" | args$high_tail=="none"){
+           high_tail = args$high_tail
          }else if(args$high_tail!='original'){
            stop(paste("Error in CDFtmod: high_tail should be one of original, modified, or none, but was", args$low_tail, "!"))
          }

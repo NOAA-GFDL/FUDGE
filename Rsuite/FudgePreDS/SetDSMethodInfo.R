@@ -50,7 +50,7 @@ setCDFtmod<- function(){
   # ESD equations/quantiles AND generate the downscaled data?
   train.and.use.same <<- TRUE
   # What are the arguments to the args() parameter that are accepted? 
-  names.of.args <<- c("npas", "dev", "retry", "maxdevretry", "low_tail")
+  names.of.args <<- c("npas", "dev", "retry", "maxdevretry", "low_tail",'high_tail')
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
