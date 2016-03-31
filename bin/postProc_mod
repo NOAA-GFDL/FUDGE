@@ -337,7 +337,91 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
 	text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
 	notifyUser(send_to,subject,text)
+	if ("Anom" in var):
+		callAddAnom(final_out_dir, total_exp_name,var,send_to)
 	return p.returncode
+	
+callAddAnom(final_out_dir,exp_name,var,mailid=None):
+	#Figure out the final output in the output dir:
+	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(mypath, f))]
+	#If there is more that one file present, select the one with the shortest name
+	anom_file = min(out_files, key=len)
+	anom_file = osp.join(final_out_dir, anom_file)
+	#Find the location for the clim + anom file
+	clim_anom_file = re.sub('Anom','',anom_file)
+	#Find the var from the filename
+	#clim_var = osp.basename(clim_anom_file).split("_")[0]
+	clim_var = re.sub('Anom',var)
+	#No longer including this bit; the -f command above renders it irrelevant
+	#if (!osp.exists(clim_anom_file)):
+	#Create the anomaly file
+	with Dataset(anom_file, 'r') as nc_obj:
+		try:
+			clim = nc_obj.__dict__['climatology']
+		except KeyError:
+			clim_error = cat('Climatology not found in input file ', anom_file)
+			print("Error in anomaly addition! " + clim_error + " ;exiting")
+			if( mailid is not None):
+				send_anomadd_message('failure',exp_name,mailid,
+									anom_file,"None","None",
+									clim_error,"")	
+			exit(1)
+	#Remove temporary directories from beginning of pathname, 
+	#going as far as needed to complete
+	clim_split = clim.split("/")
+	s_idx = 0
+	clim_exists = False
+	while(split_index < len(clim_split)):
+		if(osp.exists(clim_split[s_idx:len(clim_split)-1].join("/")):
+			clim_exists = True
+			clim_mod = clim_split[s_idx:len(clim_split)-1].join("/")
+			break
+		else:
+			s_idx += 1		
+	if(!clim_exists):
+		clim_error = cat("Climatology file", clim, 'not found on system')
+		print ("Error in anomaly addition!" + clim_error + " ; exiting")
+		if( mailid is not None):
+			send_anom_message('failure', clim_error, )
+		exit(1)
+	else:
+		fudge_env = dict(os.environ)
+		s8_path = fudge_env['S8_PATH']				
+		r_command = paste(s8_path, "/AddAnom.R --clim ", clim, " --anom " anom_file, ' --var ' var, " -o ", clim_anom_file)
+		p = subprocess.Popen('Rscript "'+r_command+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+		error,output = p.communicate()
+		print p.returncode
+		if(p.returncode != 0):
+			err_message = "error in call to AddAnom.R"
+			print ("Error in anomaly addition!")
+			print (err_message)
+			if(mailid is not None):
+			send_anomadd_message('failure',exp_name,mailid,
+								anom_file,clim_file,clim_anom_file,
+								err_message,aux=r_command)
+		else:
+			if(mailid is not None):
+				send_anomadd_message('success',exp_name,mailid,
+									anom_file,clim_file,clim_anom_file,
+									err_message="",aux=r_command)						
+	return clim_anom_file	
+
+def send_anomadd_message(status,exp_name,mailid,
+						anom_file,clim_file,clim_anom_file,
+						err_message="",aux=""):
+	#Helper function for sending messages from the anomaly addition code					
+	sep = "\n\n"
+	subject = "Fudge postProc anomaly addition"  + status + " for"  + exp_name
+	if (err_message != ""):
+		err_message = "due to " + err_message
+	text = "Anomaly addition experienced a " + status + err_message + "."
+	text = text + sep + "Anomaly input: " + anom_file
+	text = text + sep + "Climatology input: " + clim_file
+	text = text + sep + "Reconstructed output: " + clim_anom_file
+	text = text + sep + "Logfiles: " + anom_file	
+	if (aux != ""):
+		text = text + sep + aux		
+	notifyUser(mailid,subject,text)	
 	
 def notifyUser(mailid, subject, text):
 	#Implemenation of email notifications 

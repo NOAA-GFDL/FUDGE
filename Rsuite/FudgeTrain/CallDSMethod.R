@@ -80,70 +80,88 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
   }else{
     #For all other cases:
     out.tmp <- list()
-    for(rip in rips){
-      esd.gen.rip.index <- lapply(att.table$fut.pred, '[[', 'rip')==rip
-      esd.gen.rip <- esd.gen[esd.gen.rip.index]
-      targ.var <- att.table$hist.targ[[1]]$var
-      out.var <- paste0(targ.var, ".", rip)
-      rip.att.table <- list('hist.pred' = att.table$hist.pred, 
-                         'hist.targ' = att.table$hist.targ, 
-                         'fut.pred' = att.table$fut.pred[esd.gen.rip.index])
-      ds.input <- assess.missvals(train.target, train.predict, esd.gen.rip, type=missval.handling, 
-                                  ds.method, args, min.present, att.table = rip.att.table, qcmask=train_qc_mask)
-      if((ds.input$status > 0 && ('MF'%in%train.names && 'MF'%in%ds.names))){
+    if(!train.ds.split){
+      for(rip in rips){
+        esd.gen.rip.index <- lapply(att.table$fut.pred, '[[', 'rip')==rip
+        esd.gen.rip <- esd.gen[esd.gen.rip.index]
+        targ.var <- att.table$hist.targ[[1]]$var
+        out.var <- paste0(targ.var, ".", rip)
+        rip.att.table <- list('hist.pred' = att.table$hist.pred, 
+                              'hist.targ' = att.table$hist.targ, 
+                              'fut.pred' = att.table$fut.pred[esd.gen.rip.index])
+        ds.input <- assess.missvals(train.target, train.predict, esd.gen.rip, type=missval.handling, 
+                                    ds.method, args, min.present, att.table = rip.att.table, qcmask=train_qc_mask)
+        if((ds.input$status > 0 && ('MF'%in%train.names && 'MF'%in%ds.names))){
           esd.index[[rip]] <- ds.input$MF[[1]]
+        }
+        if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
+          #Use 200 to refer to fatal errors; everything else should be recoverable
+          out <- switch(ds.method, 
+                        'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
+                        "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
+                        "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
+                        "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
+                        "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table, ds.input$status), #esd.gen,
+                        "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        "PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                        ReturnDownscaleError(ds.method))
+          out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])    
+          if(ds.method%in%c('CDFt', 'DeltaSD')){
+            for(i in 1:length(out)){
+              if(!is.null(attr(out[[i]], 'status'))){
+                ds.input$qcmask[[out.var]] <- rep(NA, length(ds.input$qcmask[[1]])) #this is where this particular 
+              }
+            }
+            names(ds.input$qcmask) <- names(out)
+          }
+        }else{
+          #The qcmask return code goes in here, eventually
+          message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
+                        'when using a present val threshold for esd.gen of', 1)) #This code is now used ONLY for ds methods
+          out.tmp[[out.var]] <- rep(NA, length(esd.index[[1]])) #It should be possible to generalize this, but it isn't working
+        }
+        if(train_qc_mask){
+          out.tmp$qc.mask[[out.var]] <- ds.input$qcmask[[length(ds.input$qcmask)]]
+        }
       }
-      if(ds.method=='CFQM'){
-        #Add optional argument to CFQM to track the appropriate length of len.out
-        args$len.out=sum(!is.na(esd.index[[rip]]))
+    }else{
+      #If it's posisble to split the training and downscaling into separate steps within the ds function
+      ds.input <- assess.missvals(train.target, train.predict, esd.gen, type=missval.handling, 
+                                  ds.method, args, min.present, att.table=att.table, qcmask=train_qc_mask)
+      if(((ds.input$status > 0 && 'MF'%in%train.names) || ds.input$status==130) && ds.input$status !=120){
+        #If the number of missing values has been altered by the fxn, get a new addition index
+        for(rip in rips){
+          esd.index[[rip]] <- ds.input$MF[rip.list==rip][[1]]
+        }
       }
-      if(ds.input$status < 200 & sum(lapply(ds.input$MF, length)==0)==0 & 
-           sum(!is.na(esd.index[[rip]]))!=0){ 
+      if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
         #Use 200 to refer to fatal errors; everything else should be recoverable
         out <- switch(ds.method, 
-                      'CDFt' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, c(list(low_tail='original'), args), 
-                                           ds.var, rip.att.table),
-                      'CDFtmod' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                      'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
-                      "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
-                      "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
-                      "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
-                      "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table, ds.input$status), #esd.gen,
-                      "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                      "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                      "ARRM" = arrm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
-                      #"GFDL_CDFt" = callGFDL_CDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                      "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                      "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                      "PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                       ReturnDownscaleError(ds.method))
-#         print(length((esd.index[[rip]])))
-#         print(summary(esd.index[[rip]]))
-#         print(length(out[[1]]))
-#         print(summary(out[[1]]))
-#         stop('examine and compare output')
-        out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])    
-        if(ds.method%in%c('CDFt', 'DeltaSD')){
-          for(i in 1:length(out)){
-            if(!is.null(attr(out[[i]], 'status'))){
-              ds.input$qcmask[[out.var]] <- rep(NA, length(ds.input$qcmask[[1]])) #this is where this particular 
-            }
-          }
-          names(ds.input$qcmask) <- names(out)
-        }
+        out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
+        names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
       }else{
         #The qcmask return code goes in here, eventually
         message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
                       'when using a present val threshold for esd.gen of', 1)) #This code is now used ONLY for ds methods
-          out.tmp[[out.var]] <- rep(NA, length(esd.index[[1]])) #It should be possible to generalize this, but it isn't working
+        if(length(esd.index)==1){
+          out.tmp <- list(rep(NA, length(esd.index[[1]]))) #It should be possible to generalize this, but it isn't working
+        }else{
+          out.tmp <- apply(mapply('rep', NA, sapply(esd.index, length), simplify=TRUE), 2, as.list)
+        }
+        names(out.tmp) <- paste0(ds.var, ".", rips)
       }
       if(train_qc_mask){
-        out.tmp$qc.mask[[out.var]] <- ds.input$qcmask[[length(ds.input$qcmask)]]
+        out.tmp$qc.mask <- ds.input$qcmask
+        names(out.tmp$qc.mask) <- paste0(ds.var, ".", rips)
       }
+      return(out.tmp)  
     }
-#     print(summary(out.tmp))
-#     print(lapply(out.tmp, 'typeof'))
-#     print(summary(out.tmp$qc.mask))
-#     print(lapply(out.tmp$qc.mask, 'summary'))
-#     stop('examine output')
-#     print(summary(out.tmp))
     return(out.tmp)
   }
 }

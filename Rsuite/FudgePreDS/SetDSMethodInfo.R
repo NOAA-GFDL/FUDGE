@@ -24,6 +24,7 @@ SetDSMethodInfo <- function(ds.method, predictor.vars=list('na')){
          "DeltaSD" = setDeltaSD(),
          "ARRM" = setARRM(),
          "CDFtmod" = setCDFtmod(),
+         "PARM" = setPARM(),
          ReturnDownscaleError(ds.method))
   #Function returns nothing, just sets globals
   
@@ -60,6 +61,8 @@ setCDFtmod<- function(){
   train.names <<- c('OH', 'MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setSimple.Bias.Correct <- function(){
@@ -79,6 +82,8 @@ setSimple.Bias.Correct <- function(){
   train.names <<- c('OH', 'MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('OH', 'MH', 'MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setGeneral.Bias.Correct <- function(){
@@ -99,6 +104,8 @@ setGeneral.Bias.Correct <- function(){
   train.names <<- c('OH', 'MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('OH', 'MH', 'MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setNothing <- function(){
@@ -117,6 +124,8 @@ setNothing <- function(){
   train.names <<- c('OH', 'MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('OH', 'MH', 'MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setBiasCorrection <- function(){
@@ -136,6 +145,8 @@ setBiasCorrection <- function(){
   #train.names <<- c('MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setEquiDistant <- function(){
@@ -154,6 +165,8 @@ setEquiDistant <- function(){
   train.names <<- c('OH', 'MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setChangeFactor <- function(){
@@ -173,6 +186,8 @@ setChangeFactor <- function(){
   train.names <<- c('MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('OH')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setDeltaSD<- function(){
@@ -191,6 +206,8 @@ setDeltaSD<- function(){
   train.names <<- c('MH', 'MF')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('OH')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- FALSE
 }
 
 setMultiLM <- function(){
@@ -209,9 +226,11 @@ setMultiLM <- function(){
   train.names <<- c('OH', 'MH')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- TRUE
 }
 
-setARRM <- function(){
+setPARM <- function(){
   #Sets global variables if the DS method used is lm
   #Is it possible to use cross-validation with this method?
   crossval.possible <<- TRUE
@@ -227,5 +246,7 @@ setARRM <- function(){
   train.names <<- c('OH', 'MH')
   #What are the names of the datasets used to downscale?
   ds.names <<- c('MF')
+  #Are the training and ds steps split so that training can take place once?
+  train.ds.split <<- TRUE
 }
   
