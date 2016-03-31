@@ -463,7 +463,7 @@ for (rip in fut.pred.rip.list){
                     pre.ds.adjustments=pre_ds,
                     is.post.ds.adjust=(length(post_ds_adj) > 0),
                     post.ds.adjustments=post_ds_adj, 
-                    climatology=list.fut$att_table[[target.var]]$climatology, 
+                    climatology=list.fut$att_table[[ds.var]]$climatology, 
                     fut.pred.rip = rip, 
                     missval.handling=missval.handling, minval.present=min.present, 
                     delta.string=delta.string)
