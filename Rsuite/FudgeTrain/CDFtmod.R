@@ -79,6 +79,14 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
            stop(paste("Error in CDFtmod: low_tail should be one of original, modified, test_modified or none, but was", args$low_tail, "!"))
          }
        }
+       high_tail='original'
+       if('high_tail'%in%names(args)){
+         if(args$high_tail=="modified" | args$low_tail=="none"){
+           high_tail = args$low_tail
+         }else if(args$high_tail!='original'){
+           stop(paste("Error in CDFtmod: high_tail should be one of original, modified, or none, but was", args$low_tail, "!"))
+         }
+       }
        if(is.null(args)){
          temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
        }else{
@@ -87,10 +95,11 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
          ## explanation as to why. This way works.
          #args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
          is.retry <- FALSE
-         temp <-tryCatch({#dev.1 <- dev 
+         temp <-tryCatch({
            do.call("CDFtmod", c(list(targ, pred, new.data), 
                              list(npas=npas, dev=dev,
-                                  low_tail=low_tail)))$DS}, 
+                                  low_tail=low_tail,
+                                  high_tail=high_tail)))$DS}, 
                          error=function(e){
                            is.retry <<- TRUE;
                            loop.try <- FALSE
@@ -105,7 +114,8 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
                              loop.try <- tryCatch(do.call("CDFtmod", 
                                                           c(list(targ, pred, new.data), 
                                                             list(npas=npas, dev=(dev), 
-                                                                 low_tail=low_tail)))$DS, 
+                                                                 low_tail=low_tail,
+                                                                 high_tail=high_tail)))$DS, 
                                                   error=function(e){return(FALSE)}
                              )
                            }
@@ -129,7 +139,8 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
                              return(do.call("CDFtmod", 
                                             c(list(targ, pred, new.data), 
                                               list(npas=npas, dev=(dev), 
-                                                   low_tail=low_tail)))$DS)
+                                                   low_tail=low_tail,
+                                                   high_tail=high_tail)))$DS)
                            }
                          }, 
                          silent=FALSE)
@@ -142,7 +153,8 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
      return(out.list)
 }
 
-CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="original"){
+CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, 
+                     low_tail="original", high_tail='original'){
   #'GFDL-specific modifications to the CDFt method
   #'mostly related to the low tail of the distribution. 
   #'
@@ -229,8 +241,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
       }
       dif_lo = min(j, i)
       FRF[(j-dif_lo+1):j] = FRP[(i-dif_lo+1):i]
-      #k = j-dif_lo+1
-      k = j-dif_lo #...look, is this supposed to skip an index?
+      k = j-dif_lo
       if(k > 0){
         FRF[1:k] = 0
       }
@@ -238,8 +249,9 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
   }
   #otherwise, include no tail correction.
   #High tail correction:
+  if(high_tail == "original"){
   if (FRF[length(x)] < 1) {
-    message("High tail adjust performed")
+    message("Original High tail adjust performed")
     i = length(x)
     QQ = quantile(ObsRp, probs = FRF[length(x)])
     while (x[i] >= QQ) {
@@ -258,6 +270,31 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2, low_tail="origi
     k = j + dif
     if (k < length(x)) {
       FRF[k:(length(x))] = 1
+    }
+  }
+  }else if (high_tail=='modified'){
+    if (FRF[length(x)] < 1) {
+      message("Modified High tail adjust performed")
+      i = length(x)
+      QQ = quantile(ObsRp, probs = FRF[length(x)])
+      while (x[i] >= QQ) {
+        i = i - 1
+      }
+      i = i + 1
+      j = length(x) - 1
+      while (j > 0 && FRF[j] == FRF[length(x)]) {
+        j = j - 1
+      }
+      j=j+1
+      if (j == 0) {
+        stop("In CDFt, dev must be higher\n")
+      }
+      dif = min((length(x) - j), (length(x) - i))
+      FRF[j:(j + dif)] = FRP[i:(i + dif)]
+      k = j + dif + 1
+      if (k < (length(x) + 1) ) {
+        FRF[k:(length(x))] = 1
+      }
     }
   }
   qntl = FGf(DataGf2)
