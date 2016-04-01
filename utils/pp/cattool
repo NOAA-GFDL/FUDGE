@@ -99,6 +99,10 @@ while ( $inc > 0 )
 #cecho $endonce
 
 @ cend = $clast - $endonce 
+echo $cend
+echo $c
+echo $cstart
+echo $chead
 if($cend <= $clast) then
 #c	echo "all points covered, disregard ctail"
 	set ctail = "na"
@@ -134,9 +138,15 @@ endif
 ########################
 
 ###############################
+echo "setting argpath"
 set argpath = "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
+echo "echoing argpath"
+echo "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
+echo ${argpath}
 while ( $c <= $cend)
+       echo $c
        set argpath = `echo $argpath ${prepath}/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
+       echo $argpath
        @ c++
 end
 if ( $region == 'global' ) then
@@ -146,7 +156,7 @@ else
 #c echo $argpath
 
 endif 
-source ${auxfiledir}/loadit
+#source ${auxfiledir}/loadit
 
 #cecho "ncecat  $argpath $OFILE"
 ############if spat mask is na ############

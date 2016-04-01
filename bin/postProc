@@ -11,286 +11,280 @@ import shlex
 import fudgeList
 import checker
 import smtplib
+import re
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
+import netCDF4
+from netCDF4 import Dataset
 
 
 cnt = 0
 def postProc():
-     #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
-     force = False #default
-     usage = "\n############################################################################"
-     usage = usage + "\nEg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
-     parser = argparse.ArgumentParser(description=usage)	
-     usage = "Eg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
-     try:
-	userinput 
-	uinput = userinput
-     except:
-#	 print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.." 	
-	 userinput = "none"	
-     #parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
-     parser.add_argument("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
-    # parser.add_argument("-d", "--dir", dest="dir",help="for multi ensembles specifically, pass which ensemble member OneD dir to postprocess. By default processes all ensemble members", metavar="FILE")
-     parser.add_argument("-e", "--ensarg", dest="ens",help="for multi ensembles specifically, pass which ensemble member to postprocess. By default processes all ensemble members", metavar="FILE")
-     #parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
-     parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
-     parser.add_argument("-m", "--mail", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
-     args = vars(parser.parse_args())
+	#userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
+	force = False #default
+	usage = "\n############################################################################"
+	usage = usage + "\nEg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
+	parser = argparse.ArgumentParser(description=usage)	
+	usage = "Eg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
+	try:
+		#userinput 
+		uinput = userinput
+	except:
+		userinput = "none"	
+	#parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
+	parser.add_argument("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
+	 # parser.add_argument("-d", "--dir", dest="dir",help="for multi ensembles specifically, pass which ensemble member OneD dir to postprocess. By default processes all ensemble members", metavar="FILE")
+	parser.add_argument("-e", "--ensarg", dest="ens",help="for multi ensembles specifically, pass which ensemble member to postprocess. By default processes all ensemble members", metavar="FILE")
+	#parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
+	parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
+	#parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
+	parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
+	parser.add_argument("-m", "--mail", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
+	args = vars(parser.parse_args())
 
-     if userinput == "none":
-        print "Looking for XML location taken from command line option.."
-        print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
-     vname = ""
-     global ensarg	
-     ensarg = "undefined"
-     global NEMSemail1	
-     NEMSemail1 = "none" # default	
-     for argu,valu in args.iteritems(): 
-        if(argu == 'uinput'):
-			 #print "test"
-                	 uinput = valu  
-                 	 print uinput
-        if(argu == 'force'):
+	if userinput == "none":
+		print "Looking for XML location taken from command line option.."
+		print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
+	vname = ""
+	global ensarg	
+	ensarg = "undefined"
+	global NEMSemail1	
+	NEMSemail1 = "none" # default	
+	for argu,valu in args.iteritems(): 
+		if(argu == 'uinput'):
+			uinput = valu  
+			print uinput
+		if(argu == 'force'):
 			force = valu
-        if(argu == 'vname'):
+		if(argu == 'vname'):
 			lvname = valu 
-		        lvname1 = ' '.join(lvname)
-		        lvname = lvname1.split(',')
+			lvname1 = ' '.join(lvname)
+			lvname = lvname1.split(',')
 			print lvname1 
 			print "Variable(s) to be post-processed: ",lvname
 	if(argu == 'NEMSemail1'):
-	   NEMSemail1 = valu
+		NEMSemail1 = valu
 	if(argu == 'ens'):
-	     global ensarg
-	     ensarg = valu
-	     print "Process ensemble member",ensarg
-     if uinput is None:	
-        uinput = userinput
+		global ensarg
+		ensarg = valu
+		print "Process ensemble member",ensarg
+	if uinput is None:	
+		uinput = userinput
 	
-     if not os.path.exists(uinput):
-                        print "ERROR Invalid XML path.Quitting. Please use -h for help ",uinput
-                        sys.exit()
-     print "Force override existing output is set to ",force
-     #start_time1, start_time2, end_time1, end_time2, varname, hires1,lowres1,hires2,lowres2,strlist,futstart,futend,amip,calendar,esdMethod,expname1,expname2,freq,truth, predictor,rootdir1,rootdir2,dsuffix,region,lats,late,tstamp,lons,lone,yrtot,leaveit,basedire,outdire,futprefix,params,listlos,listfuts,ver = expergen.listVars(uinput,pp=True)
+	if not os.path.exists(uinput):
+		print "ERROR Invalid XML path.Quitting. Please use -h for help ",uinput
+		sys.exit()
+	print "Force override existing output is set to ",force
+	#start_time1, start_time2, end_time1, end_time2, varname, hires1,lowres1,hires2,lowres2,strlist,futstart,futend,amip,calendar,esdMethod,expname1,expname2,freq,truth, predictor,rootdir1,rootdir2,dsuffix,region,lats,late,tstamp,lons,lone,yrtot,leaveit,basedire,outdire,futprefix,params,listlos,listfuts,ver = expergen.listVars(uinput,pp=True)
 ################ get BASEDIR #################
-     basedir = os.environ.get('BASEDIR')
-     if(basedir is None):
-           print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
-	   sys.exit(1)
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= expergen.listVars(uinput,basedir=basedir,pp=True)
-     basedire = basedir	
-     esdMethod = method
-     varname = target 
-     if(spat_mask != 'na'):
-     	grid = spat_mask+"../"+region+".nc"
-     else:
-	grid = 'na'
-     region = ds_region
-     outrec = outdir.split('_')
-     #amip = outrec[0] 
-     #fut = outrec[1]
-     #print "amip outdir", amip
-     #print "fut outdir", fut
-     suff = ".nc"
-     cond = 1 
-     indir = fut_pred_dir 
-     freq = fut_freq
-     exper_rip = fut_scenario
-     scenario = exper_rip.split('_')[0]
-     ens = exper_rip.split('_')[1]	
-     #ver = dversion
-     ver = "na" 	
-     actualver = ""
-     property = {}
-     listout = []		
-     #a1r, comment out above because as per new directory strucytre, there is no dversion. 	
-     predModel = fut_model 	
-     listfacet = outdir.split('#')
-     print "check",listfacet
-     if (listfacet[1] == "na"): 
-     		indir = outdir #Our mini op from dscaling is the input to PP 
+	basedir = os.environ.get('BASEDIR')
+	if(basedir is None):
+		print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
+		sys.exit(1)
+	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= expergen.listVars(uinput,basedir=basedir,pp=True)
+	basedire = basedir	
+	esdMethod = method
+	varname = target 
+	if(spat_mask != 'na'):
+		grid = spat_mask+"../"+region+".nc"
+	else:
+		grid = 'na'
+	region = ds_region
+	outrec = outdir.split('_')
+	#amip = outrec[0] 
+	#fut = outrec[1]
+	#print "amip outdir", amip
+	#print "fut outdir", fut
+	suff = ".nc"
+	cond = 1 
+	indir = fut_pred_dir 
+	freq = fut_freq
+	exper_rip = fut_scenario
+	scenario = exper_rip.split('_')[0]
+	ens = exper_rip.split('_')[1]	
+	#ver = dversion
+	ver = "na" 	
+	actualver = ""
+	property = {}
+	listout = []		
+	#a1r, comment out above because as per new directory strucytre, there is no dversion. 	
+	predModel = fut_model 	
+	listfacet = outdir.split('#')
+	print "check",listfacet
+	if (listfacet[1] == "na"): 
+		indir = outdir #Our mini op from dscaling is the input to PP 
 		listout.append(listfacet[0]) 
-     else:
-	   if(ensarg != "undefined"):
-	      property[listfacet[1]] = ensarg 
-	   else:
-              property[listfacet[1]] = listfacet[2]
-	   out_dir = listfacet[0] 
-	   if '$(' in out_dir:
-                   for pname,pval in property.iteritems():
-                          replace = pval
-                          break; 
-                   list_new_out_dir = replace.split(",")
-                   for lnew in list_new_out_dir:
-	              print "tesst",lnew	
-                      listout.append(out_dir.replace(pname,lnew))
+	else:
+		if(ensarg != "undefined"):
+			property[listfacet[1]] = ensarg 
+		else:
+			property[listfacet[1]] = listfacet[2]
+	out_dir = listfacet[0] 
+	if '$(' in out_dir:
+		for pname,pval in property.iteritems():
+			replace = pval
+			break; 
+		list_new_out_dir = replace.split(",")
+		for lnew in list_new_out_dir:
+			print "tesst",lnew	
+			listout.append(out_dir.replace(pname,lnew))
 ## if vname  contains the word mask, then yes let's set the indir differently  ##
-     listvname = []	
-     if(lvname is not None):
-     	listvname = lvname #.split(',')  
-     else:
-	listvname.append(varname)
+	listvname = []	
+	if(lvname is not None):
+		listvname = lvname #.split(',')  
+	else:
+		listvname.append(varname)
 ####if multiple outdirs then loop through each..please use -d or its going to take forever.Use expergen to format the commands for you. You dont have to remember the outdir dirs
 
 #/work/a1r/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/$(RIP)/v20110601/PMtxp1-multi.lm-C01r11ens_test1X01K00/tasmax/US48/OneD/#$(RIP)#r1i1p1,r2i1p1,r3i1p1'
 
-     for indir in listout:
-      outdir = indir
-      #CEW edits for email convenience
-      total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
-      out_split = indir.split("/")
-      final_out_dir = '/'.join(map(str, out_split[0:out_split.index(region)+1])) #outdir
-      for vname in listvname:
-	print vname,"check 1"
-        vname = vname.strip(",")
-        vname = vname.strip()
-	print "Processing variable ",vname 
-    	if(vname is not None):
-    	 	if "mask" in vname:
-			print "The variable you're trying to PP appears to be a mask variable"
-        		#indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
-                	indir = indir+"/"+target+"_qcmask/"
-        		print "indir ",indir 
-	        else:
-			indir = outdir	
-      	#if vname is passed, we assume we PP the target variable
-     	else: 
-        	vname = varname 
-        	print "default target variable chose to be post-processed. Override with a -v varname.", vname
+	for indir in listout:
+		outdir = indir
+		#CEW edits for email convenience
+		total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
+		out_split = indir.split("/")
+		final_out_dir = '/'.join(map(str, out_split[0:out_split.index(region)+1])) #outdir
+		for vname in listvname:
+			print vname,"check 1"
+			vname = vname.strip(",")
+			vname = vname.strip()
+			print "Processing variable ",vname 
+	 		if(vname is not None):
+	 	 		if "mask" in vname:
+					print "The variable you're trying to PP appears to be a mask variable"
+					#indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
+			 		indir = indir+"/"+target+"_qcmask/"
+					print "indir ",indir 
+				else:
+					indir = outdir	
+	 	#if vname is passed, we assume we PP the target variable
+			else: 
+				vname = varname 
+			print "default target variable chose to be post-processed. Override with a -v varname.", vname
 	##### lets run the checker on OneD first ###############
-	tnum = int(lone) - int(lons) + 1 
-	print "checker on OneD"
-       	retcode = checker.checker(indir,tnum,varname=vname)
-        # email header
-        fromEmail1 = os.environ["USER"]
-        if ( fromEmail1 == "esd" ): # ie you run from the role account
-                fromEmail = "oar.gfdl.esd@noaa.gov"
-        else:
-                fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
-	print "check..",NEMSemail1
-        if(NEMSemail1 != "none"):
-          try:
-                uemail  = NEMSemail1 #os.environ["NEMSemail"]
-                send_to = uemail
-          except KeyError:
-                print "Please make sure  you use -mail option to pass email for notifications "
-                uemail = "na"
-	else:
-		uemail = "na"
-        #e o header
-        if (retcode == - 13 ):
-			print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
-	 		#email user
-			subject = "fudge postProc failure for " + total_exp_name
-			text = "Insufficient number of minfiles exist. "
-			text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
-			text = text + "\n\npostProc cannot be run at this time for "+vname+"."
-			text = text + "\n\nExperiment XML for reference-\n"+uinput
-			text = text + "\n\nExperiment output minifile directory: "+indir
-			text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
-			text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-			print "send to:" + send_to
-			print "fromEmail: " + fromEmail
-			notifyUser(send_to,subject,text)
-			sys.exit(-13) 
+			tnum = int(lone) - int(lons) + 1 
+			print "checker on OneD"
+	  		retcode = checker.checker(indir,tnum,varname=vname)
+			# email header
+			fromEmail1 = os.environ["USER"]
+			if ( fromEmail1 == "esd" ): # ie you run from the role account
+			 	fromEmail = "oar.gfdl.esd@noaa.gov"
+			else:
+			 	fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
+			print "check..",NEMSemail1
+			if(NEMSemail1 != "none"):
+				try:
+			 		uemail  = NEMSemail1 #os.environ["NEMSemail"]
+			 		send_to = uemail
+				except KeyError:
+			 		print "Please make sure  you use -mail option to pass email for notifications "
+			 		uemail = "na"
+			else:
+				uemail = "na"
+		#e o header
+			if (retcode == - 13 ):
+				print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
+	 			#email user
+				subject = "fudge postProc failure for " + total_exp_name
+				text = "Insufficient number of minfiles exist. "
+				text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
+				text = text + "\n\npostProc cannot be run at this time for "+vname+"."
+				text = text + "\n\nExperiment XML for reference-\n"+uinput
+				text = text + "\n\nExperiment output minifile directory: "+indir
+				text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
+				text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+				print "send to:" + send_to
+				print "fromEmail: " + fromEmail
+				notifyUser(send_to,subject,text)
+				sys.exit(-13) 
  
-        ################################################
-	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
-     #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
-
-     	if (cond == 1):
-           			if (os.path.exists(indir)):
-                                        exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
-             				if (exists == False):
-
-           					#print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
-						print "call_ppFudge: COMPLETE "
-						print "fudgeList invocation: BEGINS"
-						slogloc = sbase+"/"+"experiment_info.txt"
-						fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
-						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-						out, err = f.communicate() 
-						#print "fudgeList out", out
-						#if err is not None:
-						#	print "fudgeList err", err	
-						print "Summary Log File: ", slogloc
-						slogloc_alt = indir+"../../../"
-						if("mask" in vname): 
-                                                	slogloc_alt = indir+"../../../../"
+		################################################
+		obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
+		if (cond == 1):
+		 	if (os.path.exists(indir)):
+				exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
+				if (exists == False):
+					cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
+					print "call_ppFudge: COMPLETE "
+					print "fudgeList invocation: BEGINS"
+					slogloc = sbase+"/"+"experiment_info.txt"
+					fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
+					f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+					out, err = f.communicate() 
+					#print "fudgeList out", out
+					#if err is not None:
+					#	print "fudgeList err", err	
+					print "Summary Log File: ", slogloc
+					slogloc_alt = indir+"../../../"
+					if("mask" in vname): 
+						slogloc_alt = indir+"../../../../"
 						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
-					        shutil.copy2(slogloc, slogloc_alt)
-                                        ###final checker test for extraneous existing files ######
-                       		                print "checker on TwoD "
-                                               # filedirect = indir+"/../../../"+region+"/"+actualver+"/"
-					        filedirect = indir+"/../"
-                                                if "mask" in vname: #spl cases are not great
-                                                #	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
-							filedirect = indir+"/../../"
-
-                                        	checker.checker(filedirect,2,"warning")
-					else:
-						sys.exit("ERROR")
-           			else:
-                			print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-                			subject = "fudge postProc failure for " + total_exp_name
-                			text = "An error occured in postProc suite of tools,call_ppFudge "
-                			text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
-                			text = text + "\n\npostProc cannot be run at this time"
-                			text = text + "\n\nExperiment XML for reference-\n"+uinput
-                			text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-                			notifyUser(send_to,subject,text)
-                			sys.exit(-1)
+						shutil.copy2(slogloc, slogloc_alt)
+					###final checker test for extraneous existing files ######
+					print "checker on TwoD "
+					# filedirect = indir+"/../../../"+region+"/"+actualver+"/"
+					filedirect = indir+"/../"
+					if "mask" in vname: #spl cases are not great
+						#	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
+						filedirect = indir+"/../../"
+					checker.checker(filedirect,2,"warning")
+				else:
+					sys.exit("ERROR")
+		 	else:
+			 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
+			 	subject = "fudge postProc failure for " + total_exp_name
+			 	text = "An error occured in postProc suite of tools,call_ppFudge "
+			 	text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
+			 	text = text + "\n\npostProc cannot be run at this time"
+			 	text = text + "\n\nExperiment XML for reference-\n"+uinput
+			 	text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+			 	notifyUser(send_to,subject,text)
+			 	sys.exit(-1)
+			 		#########end indir loop	
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
-                                        filedire = indir+"/../" #../../"+region+"/"+ver+"/"
-				        print "In checkExists()......"
-				        if "mask" in var: #spl cases are not great
-	                                        filedire = indir+"/../../" #../../"+region+"/"+ver+"/"
-						print "-----Looking for PP output in:", filedire		
-                                        filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
-#                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
-
-					#print "test test",filedire,filename	
-                                        if not os.path.exists(filedire+"/"+filename):                
-                                           exists = False  
-                                        else:
-					   if (force == True):	
-					   	print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"	
-						exists = False
-					   else:
-						exists = True
-						print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
-					#cprint filename
-				        return exists		
+	filedire = indir+"/../" #../../"+region+"/"+ver+"/"
+	print "In checkExists()......"
+	if "mask" in var: #spl cases are not great
+		filedire = indir+"/../../" #../../"+region+"/"+ver+"/"
+	print "-----Looking for PP output in:", filedire		
+	filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
+#	filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
+	if not os.path.exists(filedire+"/"+filename):			 
+		exists = False  
+	else:
+		if (force == True):	
+			print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"	
+			exists = False
+		else:
+			exists = True
+			print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
+	return exists		
 
 def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg,uinput,sbase):
-        script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
-        #CEW edits for email convenience
-        total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
-        out_split = indir.split("/")
-        final_out_dir = '/'.join(map(str, out_split[0:out_split.index(region)+1])) #outdir
+	script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
+	#CEW edits for email convenience
+	total_exp_name = filter(None, sbase.split("/"))[-1] #The name of the experiment as a whole (not rip-split)
+	out_split = indir.split("/")
+	final_out_dir = '/'.join(map(str, out_split[0:out_split.index(region)+1])) #outdir
 	print script1Loc 
-#check if output already exists
-#options basedir indir method var epoch rip region ver
-#TODO rem redundant region to cattool
-#	print "test", ensarg
+	#check if output already exists
+	#options basedir indir method var epoch rip region ver
+	#TODO rem redundant region to cattool
+	#	print "test", ensarg
 	if (ensarg == "undefined") | (ensarg == None):
-        	fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
-        else:
-	        futexpername = exper_rip.split('_')[0]
-	        ensarg = futexpername+"_"+ensarg
+		fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
+	else:
+		futexpername = exper_rip.split('_')[0]
+		ensarg = futexpername+"_"+ensarg
 		fileprefix = var+"_"+freq+"_"+dexper+"_"+ensarg+"_"+region+"_"+start+"-"+end 	
 	cmd =  script1Loc+" "+basedire+" "+indir+" "+method+" "+var+" "+dexper+" "+exper_rip+" "+region+" "+ver+" "+str(lons)+" "+str(lone)+" "+str(lats)+" "+str(late)+" "+str(grid)+" "+fileprefix+" "+obsid+" "+output_grid
-        print "PP ..in progress", cmd 
-       	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        p = subprocess.Popen('tcsh -f -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+	print "PP ..in progress", cmd 
+	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	p = subprocess.Popen('tcsh -f -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 	error,output = p.communicate()
 	print p.returncode ,output, error
 	word = "ERROR"
@@ -306,8 +300,10 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		except KeyError:
 			print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
 			uemail = "na"
+			send_to = 'na'
 	else:
 		uemail = "na"
+		send_to = 'na'
 	if (p.returncode != 0):
 		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
 		subject = "fudge postProc failure for " + total_exp_name
@@ -338,7 +334,7 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	global cnt
 	cnt = cnt + 1
 	print "1- completed\n"
-## success email 
+	## success email 
 	subject = "fudge postProc success for " + total_exp_name
 	text = "Your postProc run has succeeded for "+var+"."
 	text = text + "\n\nExperiment XML for reference-\n"+uinput
@@ -346,8 +342,116 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
 	text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
 	notifyUser(send_to,subject,text)
-## 
+	if ("Anom" in var):
+		callAddAnom(final_out_dir, total_exp_name,var,send_to)
 	return p.returncode
+	
+def callAddAnom(final_out_dir,exp_name,var,mailid=None):
+	#Figure out the final output in the output dir:
+	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+	#If there is more that one file present, select the one with the shortest name
+	anom_file = min(out_files, key=len)
+	anom_file = osp.join(final_out_dir, anom_file)
+	#Find the location for the clim + anom file
+	clim_anom_file = re.sub('Anom','',anom_file)
+	clim_anom_var = re.sub('Anom',"",var)
+	with Dataset(anom_file, 'r') as nc_obj:
+		try:
+			clim = nc_obj.__dict__['climatology']
+		except KeyError:
+			clim_error = 'Climatology not found in input file ' + anom_file
+			print("Error in anomaly addition! " + clim_error + " ;exiting")
+			if( mailid is not None):
+				send_anomadd_message('failure',exp_name,mailid,
+									anom_file,"None","None", clim_error,"")	
+			exit(1)
+	#Remove temporary directories from beginning of pathname, 
+	#going as far as needed to complete
+	clim_split = clim.split("/")
+	s_idx = 0
+	clim_exists = False
+	while(s_idx < len(clim_split)):
+		if(osp.exists("/".join(clim_split[s_idx:len(clim_split)]))):
+			clim_exists = True
+			clim_file = "/".join(clim_split[s_idx:len(clim_split)])
+			break
+		else:
+			s_idx += 1		
+	if(not clim_exists):
+		clim_error = "Climatology file " + clim + ' not found on system'
+		print ("Error in anomaly addition!" + clim_error + " ; exiting")
+		if( mailid is not None):
+			send_anom_message('failure', clim_error, exp_name,mailid,
+									anom_file,clim,"None",clim_err,"")
+		exit(1)
+	else:
+		if( not osp.exists(osp.dirname(clim_anom_file)) ):
+			print 'Making output anom + clim directory'
+			os.makedirs(osp.dirname(clim_anom_file))	
+		s8_path = os.environ.get("S8_PATH")
+		clim_anom_file_out = gcp(clim_anom_file, 'TMPDIR')
+		clim_file_out = gcp(clim_file, 'TMPDIR')			
+		r_command = "Rscript " + s8_path + "/AddAnom.R --clim " + clim_file_out + " --anom " + gcp(anom_file,'TMPDIR') + ' --var ' + clim_anom_var + " -o " + clim_anom_file_out
+		print "Calling AddAnom.R"
+		p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+		error,output = p.communicate()
+		#Check on what this returns with an R error
+		if(p.returncode != 0):
+			err_message = "error in call to AddAnom.R"
+			print ("Error in anomaly addition! There was an " + err_message)
+			print(r_command)
+			if(mailid is not None):
+				send_anomadd_message('failure',exp_name,mailid,
+									anom_file,clim_file,clim_anom_file,
+									err_message,aux=r_command)
+		else:
+			print "Anomaly addition successful"
+			height_vars = ['tasmax', 'tasmin']
+			if (clim_anom_var in height_vars):
+				print ("Adding height for " + clim_anom_var)
+				p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
+						shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			print "Copying to final location"			
+			gcp(clim_anom_file_out, clim_anom_file)						
+			if(mailid is not None):
+				send_anomadd_message('success',exp_name,mailid,
+									anom_file,clim_file,clim_anom_file,
+									err_message="",aux=r_command)						
+	return clim_anom_file	
+
+def send_anomadd_message(status,exp_name,mailid,
+						anom_file,clim_file,clim_anom_file,
+						err_message="",aux=""):
+	#Helper function for sending messages from the anomaly addition code					
+	sep = "\n\n"
+	subject = "Fudge postProc anomaly addition"  + status + " for"  + exp_name
+	if (err_message != ""):
+		err_message = "due to " + err_message
+	text = "Anomaly addition experienced a " + status + err_message + "."
+	text = text + sep + "Anomaly input: " + anom_file
+	text = text + sep + "Climatology input: " + clim_file
+	text = text + sep + "Reconstructed output: " + clim_anom_file
+	#text = text + sep + "Logfiles: " + anom_file	
+	if (aux != ""):
+		text = text + sep + aux		
+	notifyUser(mailid,subject,text)	
+	
+def send_pp_message(status,step,exp_name,err, var,xml,outdir, minilog,pplog):
+	#send a message about the pp status
+	print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
+	subject = "fudge postProc failure for " + total_exp_name
+	sep = "\n\n"
+	#step='callPPFudge'
+	text = "An error occured in postProc suite of tools," + step + " for experiment " + exp_name
+	text = text + sep + err
+	#text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+	text = text + sep + "postProc cannot be run at this time for "+var+"."
+	text = text + sep + "\n\nExperiment XML for reference-\n"+xml
+	text = text + sep + "\n\nExperiment output directory: "+outdir
+	text = text + sep + "\n\nMinifile logs:"+ minilog
+	text = text + sep + "\n\nPostProc logs: "+ pplog
+	text = text + sep  + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+	notifyUser(mailid,subject,text)	
 	
 def notifyUser(mailid, subject, text):
 	#Implemenation of email notifications 
@@ -373,24 +477,40 @@ def notifyUser(mailid, subject, text):
 def notifyUser_py(mailid,subject,text):
 	#Implementation of email notifications using python's 
 	#smtp package.
-        # email header
-        print('entering notifyUser')
-        uinfo = os.environ.get('USER')
-        hostnam = "princeton.rdhpcs.noaa.gov"
-        send_from = uinfo+"@"+hostnam
-        send_to = mailid
-        msg = MIMEMultipart()
-        #msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
-        msg['From'] = 'oar.gfdl.esd'+'@'+"noaa.gov" #todo change to esd
-        msg['To'] = mailid
-        msg['Date'] = formatdate(localtime=True)
-        msg['Subject'] = subject
-        msg.attach( MIMEText(text))
-        if (mailid is not None):
-                smtp = smtplib.SMTP("localhost")
-                smtp.sendmail(send_from, [send_to], msg.as_string())
-                smtp.close()
-                
-                
+		# email header
+		print('entering notifyUser')
+		uinfo = os.environ.get('USER')
+		hostnam = "princeton.rdhpcs.noaa.gov"
+		send_from = uinfo+"@"+hostnam
+		send_to = mailid
+		msg = MIMEMultipart()
+		#msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+		msg['From'] = 'oar.gfdl.esd'+'@'+"noaa.gov" #todo change to esd
+		msg['To'] = mailid
+		msg['Date'] = formatdate(localtime=True)
+		msg['Subject'] = subject
+		msg.attach( MIMEText(text))
+		if (mailid is not None):
+			 smtp = smtplib.SMTP("localhost")
+			 smtp.sendmail(send_from, [send_to], msg.as_string())
+			 smtp.close()
+			 
+def gcp(infile, outfile="TMPDIR"):
+	#Wrapper for GFDL's GCP function
+	#for copying from /archive to /vftmp
+	if (outfile=='TMPDIR'):
+		tdir = os.environ.get("TMPDIR")
+		outfile = osp.join(tdir,infile.lstrip("/"))
+		#os.mkdirs(outpath)
+	#outpath = osp.join(tmpdir,osp.dirname(infile))
+	command = "gcp -cd " + infile + " " + outfile
+	print(command)
+	g = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+	g_out,g_err = g.communicate()
+	if(g.returncode != 0):
+		print "Error in gcp: file " + infile + " did not copy to " + outfile
+	return(outfile)			 
+			 
+			 
 if __name__ == '__main__':
-    postProc()
+	 postProc()

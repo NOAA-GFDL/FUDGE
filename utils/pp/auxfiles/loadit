@@ -1,2 +1,4 @@
+module unload nco
 module load nco/4.3.1
+module unload gcp
 module load gcp/2.3

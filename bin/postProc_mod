@@ -11,11 +11,14 @@ import shlex
 import fudgeList
 import checker
 import smtplib
+import re
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
+import netCDF4
+from netCDF4 import Dataset
 
 
 cnt = 0
@@ -79,7 +82,7 @@ def postProc():
 ################ get BASEDIR #################
 	basedir = os.environ.get('BASEDIR')
 	if(basedir is None):
-		 print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
+		print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
 		sys.exit(1)
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= expergen.listVars(uinput,basedir=basedir,pp=True)
 	basedire = basedir	
@@ -88,7 +91,7 @@ def postProc():
 	if(spat_mask != 'na'):
 		grid = spat_mask+"../"+region+".nc"
 	else:
-	grid = 'na'
+		grid = 'na'
 	region = ds_region
 	outrec = outdir.split('_')
 	#amip = outrec[0] 
@@ -119,15 +122,15 @@ def postProc():
 			property[listfacet[1]] = ensarg 
 		else:
 			property[listfacet[1]] = listfacet[2]
-		out_dir = listfacet[0] 
-		if '$(' in out_dir:
-				for pname,pval in property.iteritems():
-					replace = pval
-					break; 
-				list_new_out_dir = replace.split(",")
-				for lnew in list_new_out_dir:
-					print "tesst",lnew	
-					listout.append(out_dir.replace(pname,lnew))
+	out_dir = listfacet[0] 
+	if '$(' in out_dir:
+		for pname,pval in property.iteritems():
+			replace = pval
+			break; 
+		list_new_out_dir = replace.split(",")
+		for lnew in list_new_out_dir:
+			print "tesst",lnew	
+			listout.append(out_dir.replace(pname,lnew))
 ## if vname  contains the word mask, then yes let's set the indir differently  ##
 	listvname = []	
 	if(lvname is not None):
@@ -177,8 +180,8 @@ def postProc():
 			 		uemail  = NEMSemail1 #os.environ["NEMSemail"]
 			 		send_to = uemail
 				except KeyError:
-			 	print "Please make sure  you use -mail option to pass email for notifications "
-			 	uemail = "na"
+			 		print "Please make sure  you use -mail option to pass email for notifications "
+			 		uemail = "na"
 			else:
 				uemail = "na"
 		#e o header
@@ -254,11 +257,11 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
 		exists = False  
 	else:
 		if (force == True):	
-		print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"	
-		exists = False
-	else:
-		exists = True
-		print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
+			print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"	
+			exists = False
+		else:
+			exists = True
+			print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
 	return exists		
 
 def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid,ensarg,uinput,sbase):
@@ -297,8 +300,10 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		except KeyError:
 			print "Please set the environment variable NEMSemail to receive email notifications about your FUDGE jobs "
 			uemail = "na"
+			send_to = 'na'
 	else:
 		uemail = "na"
+		send_to = 'na'
 	if (p.returncode != 0):
 		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
 		subject = "fudge postProc failure for " + total_exp_name
@@ -341,9 +346,10 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		callAddAnom(final_out_dir, total_exp_name,var,send_to)
 	return p.returncode
 	
-callAddAnom(final_out_dir,exp_name,var,mailid=None):
+def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 	#Figure out the final output in the output dir:
-	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(mypath, f))]
+	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+	print(out_files)
 	#If there is more that one file present, select the one with the shortest name
 	anom_file = min(out_files, key=len)
 	anom_file = osp.join(final_out_dir, anom_file)
@@ -351,7 +357,7 @@ callAddAnom(final_out_dir,exp_name,var,mailid=None):
 	clim_anom_file = re.sub('Anom','',anom_file)
 	#Find the var from the filename
 	#clim_var = osp.basename(clim_anom_file).split("_")[0]
-	clim_var = re.sub('Anom',var)
+	clim_anom_var = re.sub('Anom',"",var)
 	#No longer including this bit; the -f command above renders it irrelevant
 	#if (!osp.exists(clim_anom_file)):
 	#Create the anomaly file
@@ -359,7 +365,7 @@ callAddAnom(final_out_dir,exp_name,var,mailid=None):
 		try:
 			clim = nc_obj.__dict__['climatology']
 		except KeyError:
-			clim_error = cat('Climatology not found in input file ', anom_file)
+			clim_error = 'Climatology not found in input file ' + anom_file
 			print("Error in anomaly addition! " + clim_error + " ;exiting")
 			if( mailid is not None):
 				send_anomadd_message('failure',exp_name,mailid,
@@ -371,35 +377,49 @@ callAddAnom(final_out_dir,exp_name,var,mailid=None):
 	clim_split = clim.split("/")
 	s_idx = 0
 	clim_exists = False
-	while(split_index < len(clim_split)):
-		if(osp.exists(clim_split[s_idx:len(clim_split)-1].join("/")):
+	while(s_idx < len(clim_split)):
+		if(osp.exists("/".join(clim_split[s_idx:len(clim_split)]))):
 			clim_exists = True
-			clim_mod = clim_split[s_idx:len(clim_split)-1].join("/")
+			clim_file = "/".join(clim_split[s_idx:len(clim_split)])
 			break
 		else:
 			s_idx += 1		
-	if(!clim_exists):
-		clim_error = cat("Climatology file", clim, 'not found on system')
+	if(not clim_exists):
+		clim_error = "Climatology file " + clim + ' not found on system'
 		print ("Error in anomaly addition!" + clim_error + " ; exiting")
 		if( mailid is not None):
-			send_anom_message('failure', clim_error, )
+			send_anom_message('failure', clim_error, exp_name,mailid,
+									anom_file,clim,"None",clim_err,"")
 		exit(1)
 	else:
-		fudge_env = dict(os.environ)
-		s8_path = fudge_env['S8_PATH']				
-		r_command = paste(s8_path, "/AddAnom.R --clim ", clim, " --anom " anom_file, ' --var ' var, " -o ", clim_anom_file)
-		p = subprocess.Popen('Rscript "'+r_command+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+		if( not osp.exists(osp.dirname(clim_anom_file)) ):
+			print 'Making output anom + clim directory'
+			os.makedirs(osp.dirname(clim_anom_file))	
+		s8_path = os.environ.get("S8_PATH")
+		clim_anom_file_out = gcp(clim_anom_file, 'TMPDIR')
+		clim_file_out = gcp(clim_file, 'TMPDIR')			
+		r_command = "Rscript " + s8_path + "/AddAnom.R --clim " + clim_file_out + " --anom " + gcp(anom_file,'TMPDIR') + ' --var ' + clim_anom_var + " -o " + clim_anom_file_out
+		print "Calling AddAnom.R"
+		p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 		error,output = p.communicate()
-		print p.returncode
+		#Check on what this returns with an R error
 		if(p.returncode != 0):
 			err_message = "error in call to AddAnom.R"
-			print ("Error in anomaly addition!")
-			print (err_message)
+			print ("Error in anomaly addition! There was an " + err_message)
+			print(r_command)
 			if(mailid is not None):
-			send_anomadd_message('failure',exp_name,mailid,
-								anom_file,clim_file,clim_anom_file,
-								err_message,aux=r_command)
+				send_anomadd_message('failure',exp_name,mailid,
+									anom_file,clim_file,clim_anom_file,
+									err_message,aux=r_command)
 		else:
+			print "Anomaly addition successful"
+			height_vars = ['tasmax', 'tasmin']
+			if (clim_anom_var in height_vars):
+				print ("Adding height for " + clim_anom_var)
+				p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
+						shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			print "Copying to final location"			
+			gcp(clim_anom_file_out, clim_anom_file)						
 			if(mailid is not None):
 				send_anomadd_message('success',exp_name,mailid,
 									anom_file,clim_file,clim_anom_file,
@@ -418,9 +438,26 @@ def send_anomadd_message(status,exp_name,mailid,
 	text = text + sep + "Anomaly input: " + anom_file
 	text = text + sep + "Climatology input: " + clim_file
 	text = text + sep + "Reconstructed output: " + clim_anom_file
-	text = text + sep + "Logfiles: " + anom_file	
+	#text = text + sep + "Logfiles: " + anom_file	
 	if (aux != ""):
 		text = text + sep + aux		
+	notifyUser(mailid,subject,text)	
+	
+def send_pp_message(status,step,exp_name,err, var,xml,outdir, minilog,pplog):
+	#send a message about the pp status
+	print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
+	subject = "fudge postProc failure for " + total_exp_name
+	sep = "\n\n"
+	#step='callPPFudge'
+	text = "An error occured in postProc suite of tools," + step + " for experiment " + exp_name
+	text = text + sep + err
+	#text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+	text = text + sep + "postProc cannot be run at this time for "+var+"."
+	text = text + sep + "\n\nExperiment XML for reference-\n"+xml
+	text = text + sep + "\n\nExperiment output directory: "+outdir
+	text = text + sep + "\n\nMinifile logs:"+ minilog
+	text = text + sep + "\n\nPostProc logs: "+ pplog
+	text = text + sep  + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 	notifyUser(mailid,subject,text)	
 	
 def notifyUser(mailid, subject, text):
@@ -464,6 +501,22 @@ def notifyUser_py(mailid,subject,text):
 			 smtp = smtplib.SMTP("localhost")
 			 smtp.sendmail(send_from, [send_to], msg.as_string())
 			 smtp.close()
+			 
+def gcp(infile, outfile="TMPDIR"):
+	#Wrapper for GFDL's GCP function
+	#for copying from /archive to /vftmp
+	if (outfile=='TMPDIR'):
+		tdir = os.environ.get("TMPDIR")
+		outfile = osp.join(tdir,infile.lstrip("/"))
+		#os.mkdirs(outpath)
+	#outpath = osp.join(tmpdir,osp.dirname(infile))
+	command = "gcp -cd " + infile + " " + outfile
+	print(command)
+	g = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+	g_out,g_err = g.communicate()
+	if(g.returncode != 0):
+		print "Error in gcp: file " + infile + " did not copy to " + outfile
+	return(outfile)			 
 			 
 			 
 if __name__ == '__main__':
