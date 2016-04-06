@@ -9,6 +9,8 @@ from subprocess import PIPE
 import argparse
 import shlex
 import fudgeList
+import fudgeUtils
+from fudgeUtils import gcp
 import checker
 import smtplib
 import re
@@ -140,7 +142,7 @@ def postProc():
 ####if multiple outdirs then loop through each..please use -d or its going to take forever.Use expergen to format the commands for you. You dont have to remember the outdir dirs
 
 #/work/a1r/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/$(RIP)/v20110601/PMtxp1-multi.lm-C01r11ens_test1X01K00/tasmax/US48/OneD/#$(RIP)#r1i1p1,r2i1p1,r3i1p1'
-
+	print listout
 	for indir in listout:
 		outdir = indir
 		#CEW edits for email convenience
@@ -168,6 +170,7 @@ def postProc():
 			tnum = int(lone) - int(lons) + 1 
 			print "checker on OneD"
 	  		retcode = checker.checker(indir,tnum,varname=vname)
+	  		print retcode
 			# email header
 			fromEmail1 = os.environ["USER"]
 			if ( fromEmail1 == "esd" ): # ie you run from the role account
@@ -202,47 +205,50 @@ def postProc():
 				sys.exit(-13) 
  
 		################################################
-		obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
-		if (cond == 1):
-		 	if (os.path.exists(indir)):
-				exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
-				if (exists == False):
-					cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
-					print "call_ppFudge: COMPLETE "
-					print "fudgeList invocation: BEGINS"
-					slogloc = sbase+"/"+"experiment_info.txt"
-					fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
-					f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-					out, err = f.communicate() 
-					#print "fudgeList out", out
-					#if err is not None:
-					#	print "fudgeList err", err	
-					print "Summary Log File: ", slogloc
-					slogloc_alt = indir+"../../../"
-					if("mask" in vname): 
-						slogloc_alt = indir+"../../../../"
-						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
-						shutil.copy2(slogloc, slogloc_alt)
-					###final checker test for extraneous existing files ######
-					print "checker on TwoD "
-					# filedirect = indir+"/../../../"+region+"/"+actualver+"/"
-					filedirect = indir+"/../"
-					if "mask" in vname: #spl cases are not great
-						#	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
-						filedirect = indir+"/../../"
-					checker.checker(filedirect,2,"warning")
-				else:
-					sys.exit("ERROR")
-		 	else:
-			 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-			 	subject = "fudge postProc failure for " + total_exp_name
-			 	text = "An error occured in postProc suite of tools,call_ppFudge "
-			 	text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
-			 	text = text + "\n\npostProc cannot be run at this time"
-			 	text = text + "\n\nExperiment XML for reference-\n"+uinput
-			 	text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-			 	notifyUser(send_to,subject,text)
-			 	sys.exit(-1)
+			obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
+			print "obsid reached"
+			if (cond == 1):
+			 	if (os.path.exists(indir)):
+					exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
+					print 'exists check completed'
+					print exists
+					if (exists == False):
+						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
+						print "call_ppFudge: COMPLETE "
+						print "fudgeList invocation: BEGINS"
+						slogloc = sbase+"/"+"experiment_info.txt"
+						fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
+						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+						out, err = f.communicate() 
+						#print "fudgeList out", out
+						#if err is not None:
+						#	print "fudgeList err", err	
+						print "Summary Log File: ", slogloc
+						slogloc_alt = indir+"../../../"
+						if("mask" in vname): 
+							slogloc_alt = indir+"../../../../"
+							print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
+							shutil.copy2(slogloc, slogloc_alt)
+						###final checker test for extraneous existing files ######
+						print "checker on TwoD "
+						# filedirect = indir+"/../../../"+region+"/"+actualver+"/"
+						filedirect = indir+"/../"
+						if "mask" in vname: #spl cases are not great
+							#	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
+							filedirect = indir+"/../../"
+						checker.checker(filedirect,2,"warning")
+					else:
+						sys.exit("ERROR")
+			 	else:
+				 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
+				 	subject = "fudge postProc failure for " + total_exp_name
+				 	text = "An error occured in postProc suite of tools,call_ppFudge "
+				 	text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
+				 	text = text + "\n\npostProc cannot be run at this time"
+				 	text = text + "\n\nExperiment XML for reference-\n"+uinput
+				 	text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+				 	notifyUser(send_to,subject,text)
+				 	sys.exit(-1)
 			 		#########end indir loop	
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
@@ -283,8 +289,8 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		fileprefix = var+"_"+freq+"_"+dexper+"_"+ensarg+"_"+region+"_"+start+"-"+end 	
 	cmd =  script1Loc+" "+basedire+" "+indir+" "+method+" "+var+" "+dexper+" "+exper_rip+" "+region+" "+ver+" "+str(lons)+" "+str(lone)+" "+str(lats)+" "+str(late)+" "+str(grid)+" "+fileprefix+" "+obsid+" "+output_grid
 	print "PP ..in progress", cmd 
-	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-	p = subprocess.Popen('tcsh -f -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+	p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	#p = subprocess.Popen('tcsh -f -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 	error,output = p.communicate()
 	print p.returncode ,output, error
 	word = "ERROR"
@@ -342,8 +348,12 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
 	text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
 	notifyUser(send_to,subject,text)
+	supp_strings = ['qcmask', 'save']
 	if ("Anom" in var):
-		callAddAnom(final_out_dir, total_exp_name,var,send_to)
+		#supp_match = [ for r in range(0, len(supp_string) if re.match() not None]
+		if (supp_strings[0] not in var and supp_strings[1] not in var):
+			print "Calling the anomaly addition script"
+			anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to)
 	return p.returncode
 	
 def callAddAnom(final_out_dir,exp_name,var,mailid=None):
@@ -393,17 +403,18 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 			print("Error in anomaly addition: $S8_PATH not set.")
 		tdir = os.environ.get("TMPDIR")
 		clim_anom_file_out = osp.join(tdir, clim_anom_file.lstrip("/"))
-		os.makedirs(osp.dirname(clim_anom_file_out))
+		if not osp.exists(osp.dirname(clim_anom_file_out)):
+			os.makedirs(osp.dirname(clim_anom_file_out))
 		clim_file_out = gcp(clim_file, 'TMPDIR')	
-		anom_file_out = gcp(anom_file,'TMPDIR')
-		print clim_file_out
-		print anom_file_out
-		print clim_anom_var
-		print clim_anom_file_out
-		print s8_path	
+		anom_file_out = gcp(anom_file,'TMPDIR')	
 		r_command = "Rscript " + s8_path + "/AddAnom.R --clim " + str(clim_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(clim_anom_var) + " -o " + str(clim_anom_file_out)
 		print "Calling AddAnom.R"
-		p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+		try:
+			p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+		except: 
+			print("Error in subprocess call of callAddAnom! Please examine call in more detail.")
+			print(r_command)
+			sys.exit(1)	
 		error,output = p.communicate()
 		#Check on what this returns with an R error
 		print(error)
@@ -421,6 +432,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 			height_vars = ['tasmax', 'tasmin']
 			if (clim_anom_var in height_vars):
 				print ("Adding height for " + clim_anom_var)
+				print("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out)
 				p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
 						shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			print "Copying to final location"			
@@ -505,24 +517,7 @@ def notifyUser_py(mailid,subject,text):
 		if (mailid is not None):
 			 smtp = smtplib.SMTP("localhost")
 			 smtp.sendmail(send_from, [send_to], msg.as_string())
-			 smtp.close()
-			 
-def gcp(infile, outfile="TMPDIR"):
-	#Wrapper for GFDL's GCP function
-	#for copying from /archive to /vftmp
-	if (outfile=='TMPDIR'):
-		tdir = os.environ.get("TMPDIR")
-		outfile = osp.join(tdir,infile.lstrip("/"))
-		#os.mkdirs(outpath)
-	#outpath = osp.join(tmpdir,osp.dirname(infile))
-	command = "gcp -cd " + infile + " " + outfile
-	print(command)
-	g = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-	g_out,g_err = g.communicate()
-	if(g.returncode != 0):
-		print "Error in gcp: file " + infile + " did not copy to " + outfile
-	return(outfile)			 
-			 
-			 
+			 smtp.close() 
+			 			 
 if __name__ == '__main__':
 	 postProc()

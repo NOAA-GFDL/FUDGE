@@ -1,3 +1,7 @@
+4-6-15
+(cew)
+- Adding automatic addition of anomaly data to postproc; adding ensemble generation tool
+
 3-3-15
 (cew)
 - g_orangeplus merged into main dev branch; postproc email notifications added for failure and success of postproc operations. 
