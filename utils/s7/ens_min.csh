@@ -19,7 +19,6 @@ set dataSource = $argv[4]
 set epoch = $argv[5]
 set trange = $argv[6]
 set orig_inFiles = $argv[7]
-#set inFiles = ($argv[`seq 7 $#argv`])
 set inFiles = $argv[8]
 set inFiles_array = `echo $inFiles | awk 'BEGIN{FS=","}{for (i=1; i<=NF; i++) print $i}'`
 

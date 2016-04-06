@@ -28,12 +28,15 @@ def makeExpEns():
 	parser.add_option("-p", "--project", dest="project", default="NA", help="Project used for the experiment (i.e. PM, RR2). Will be used to reconstruct an ESD-standard path to the scripts directory.")
 	parser.add_option("-e", "--exp_name", dest="exp_name", default='NA', help="Experiment name used for the experiment (PMeCRtnp1-CDFtmod-A04r1e3X01K00). Will be used to reconstruct an ESD-standard path to the scripts directory.")
 	parser.add_option("-i", "--input", dest="input", default="NA", help="Path to an experiment_info file for the experment. If no experiment_info.txt file is provided, the project (-p) and exp_name (-e) arguments will be used to derive the scripts directory.")
-	parser.add_option("--anom_only_ens", action="store_true", dest="anom_only_ens", default=False, help="If present and ensembles of downscaled anomaly data are being made, will not make ensembles of anom+clim data - only the downscaled anomaly data")
+	parser.add_option("--anom_only_ens", action="store_true", dest="anom_only_ens", default=False, help="If present and ensembles of downscaled anomaly data are being made, will not make ensembles of downscaled anom+clim data - only the downscaled anomaly data. Cannot be specified with --reconstruct_only_ens.")
+	parser.add_option("--reconstruct_only_ens", action="store_true", dest='rec_only_ens', default=False, help="If present and ensembles of downscaled anomaly are being made, will only make ensembles of downscaled anom + clim data - not the downcsaled anomaly data. Cannot be specified with --anom_only_ens.")
 	parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
 	(options, args) = parser.parse_args()
 	if([options.input,options.project,options.exp_name].count("NA") == 3):
 		print("Error in makeExpEns: one of the options -i -p -e should be non-missing!")
 		sys.exit(1)
+	if(options.anom_only_ens and options.rec_only_ens):
+		print("Error in makeExpEns: only one of --anom_only_ens and --reconstruct_only_ens should be specficied!")	
 	if (options.input!="NA"):
 		if not osp.exists(options.input):
 			print("Error in makeExpEns: file " + options.input + " not found!")
@@ -101,8 +104,9 @@ def makeExpEns():
 	ens_list = []
 	for flist in all_outfiles:
 		flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
-		outfile = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,isAnom,verbose)
-		ens_list.append(outfile)
+		outfile = call_ens_creation(flist,climvar,rips,rip_string,out_rip,\
+				exp_name,epoch,trange_string,isAnom,options.rec_only_ens,verbose)
+		ens_list = ens_list + outfile		
 	#When everything is over, add the list of output ensemble files to the experiment_info.txt files
 	#in all locations.
 	if(len([e for e in ens_list if e is not None]) == 0):
@@ -126,7 +130,8 @@ def makeExpEns():
 	print("Modified experiment.info files copied to all locations:")
 	print("\n".join(outpaths_all))							
 	
-def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,isAnom=False, verbose=False):	
+def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
+						trange_string,isAnom=False, recOnly=False,verbose=False):	
 	#Given a list of files and some handy metadata information, 
 	#calls a simple anomaly addition script to generate the 
 	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
@@ -146,11 +151,15 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trang
 		print("Checking for presence of anomaly var")
 		supp_strings = ["qcmask","save"]
 		if supp_strings[0] not in vname and supp_strings[1] not in vname:
+			if not recOnly:
+				outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
+			else:
+				outfile_anom = []	
 			print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
 			anom_files = [re.sub("Anom","",f) for f in flist]
 			climvar = re.sub("Anom", "", climvar)
-			outfile = call_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
-			return(outfile)
+			outfile_clim = call_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
+			return(outfile_clim + outfile_anom)
 	#Generate output file by doing a series of find-and-replace regexes on outdir
 	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]	
 	outfile = re.sub(current_rip, out_rip, flist[0])
@@ -180,7 +189,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trang
 			print(str(out0))
 			print(str(err0))
 		gcp(tmp_outfile, outfile, verbose, verbose)
-		return(outfile)					 
+		return([outfile])					 
 			 			 
 if __name__ == '__main__':
 	print(sys.argv)
