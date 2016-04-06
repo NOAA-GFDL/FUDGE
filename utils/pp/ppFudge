@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/tcsh -f
 #PBS -S /bin/tcsh
 #PBS -l nodes=1:ppn=2,walltime=12:00:00
 #PBS -r y
@@ -9,7 +9,12 @@
 #PBS -q batch
 #
 #unset echo
+module load gcp
+module load nco/4.3.1
+module load ncarg/6.2.1
 module list
+echo $PATH
+module show gcp
 echo "entering pp_fudge"
 if ($#argv < 9) then
  set usage=" (run on PAN) Please provide 8 command line arguments- basedir indir method var epoch rip region ver \n"
@@ -182,12 +187,12 @@ echo "source env"
 #uselessecho " source ${auxfiledir}/loadit"
 
 # check for output file & if there, remove tmp file and correct offsets
-echo `pwd`
 \ls -l ${prefix}.nc
    if ($status == 0) then
      set outfile = ${prefix}.nc 
-     module load gcp/2.1 	
      #echo "testing...."
+     echo $PATH
+     module show gcp
      module list
      echo "testing..."
      module avail gcp

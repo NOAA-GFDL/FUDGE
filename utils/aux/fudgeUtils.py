@@ -10,15 +10,13 @@ def gcp(infile, outfile="TMPDIR", verbose=False, gcp_verbose=False):
 	if (outfile=='TMPDIR'):
 		tdir = os.environ.get("TMPDIR")
 		outfile = osp.join(tdir,infile.lstrip("/"))
-		#os.mkdirs(outpath)
-	#outpath = osp.join(tmpdir,osp.dirname(infile))
 	if gcp_verbose:
 		command = "gcp -v -cd " + infile + " " + outfile
 	else:
 		command = "gcp -cd " + infile + " " + outfile
 	if verbose:	
 		print(command)
-	g = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+	g = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True,env=os.environ)
 	g_out,g_err = g.communicate()
 	if(g.returncode != 0):
 		print "Error in gcp: file " + infile + " did not copy to " + outfile
