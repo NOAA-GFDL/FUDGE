@@ -146,6 +146,7 @@ else
 #c echo $argpath
 
 endif 
+echo "sourcing loadit"
 source ${auxfiledir}/loadit
 
 #cecho "ncecat  $argpath $OFILE"

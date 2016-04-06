@@ -1,6 +1,6 @@
-module unload nco
+#It is not neccessary to unload before loading - 
+#that has led to errors in ppFudge
+#that may be due to the unloads being passed on without the
+#corresponding load commands
 module load nco/4.3.1
-module unload gcp
-module load gcp/2.3
-module unload ncarg
 module load ncarg/6.2.1

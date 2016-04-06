@@ -43,9 +43,10 @@ def makeExpEns():
 		user = os.environ.get('USER')
 		if (user!='esd'):
 			print("Warning in makeExpEns: -p and -e args assume an ESD-standard directory structure.")
-		infile = osp.join("/home/", user, "/PROJECTS/DOWNSCALING/SUBPROJECTS/", options.project, options.exp_name, "experiment_info.txt")
+		infile = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", options.project, options.exp_name, "experiment_info.txt")
+		print(infile)
 		if not osp.exists(infile):
-			print("Error in makeExpEns: file" + infile + "not found! Please re-examine directory structure or use -i to point to a file directly.")
+			print("Error in makeExpEns: file " + infile + " not found! Please re-examine directory structure or use -i to point to a file directly.")
 			sys.exit(1)
 		expdict = read_exp_info_file(infile)	
 	else:
