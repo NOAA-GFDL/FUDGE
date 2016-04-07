@@ -97,7 +97,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
           #Use 200 to refer to fatal errors; everything else should be recoverable
           out <- switch(ds.method, 
-                        'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        'CDFt' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                         'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
                         "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
                         "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
@@ -257,123 +257,6 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
     }
   }
   return(out.list)
-}
-
-
-callCDFt <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
-  #' Calls the CDFt function (Vrac et. al 2009) on a single variable
-  #' predictor and target, returning the downscaled (DS) output.
-  #' Takes as an argument
-  #' npas: The number of quantiles to split the input dataset into. 
-  #' If dev is 0 or 'default', uses the number of observations in either the
-  #' future or historical datasets, depending upon which has fewer observations.
-  #' dev : The number of deviations used when calculating. 
-  #' @citation P.-A. Michelangeli, M. Vrac, H. Loukos. "Probabilistic downscaling approaches: 
-     #' @citation Application to wind cumulative distribution functions", 
-     #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
-     
-     ###Obtain required arguments (and throw errors if not specified)
-     if(!is.null(args$dev)){
-       dev <- args$dev
-     }else{
-       stop(paste("CDFt Method Error: parameter dev was missing from the args list"))
-     }
-     if(is.null(args$retry)){
-       args$retry <- "stop"
-     }
-     if(is.null(args$maxdevretry)){
-       maxdev <- 20
-     }else{
-       maxdev <- args$maxdevretry
-     }
-     
-     out.list <- list()
-     pred <- unlist(pred)  #No need to reference the historic predictor names
-     rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-     for(rip in rip.list){
-       #Select the future predictor vars that you are interested in
-       out.var.name <- paste0(ds.var, ".", rip)
-       #Unlist the ensemble members
-       rip.index <- (rip.list==rip)
-       new.data <- new[rip.index]
-       new.data <- unlist(new.data)
-       
-       if(!is.null(args$npas)){
-         npas <- args$npas
-         if(npas=='default' || npas==0){
-           npas=ifelse(length(targ) > length(new.data), length(new.data), length(targ))
-         }else if(npas=='training_target'){
-           #Note: this option is needed to duplicate 'default'
-           #for results prior to 10-20-14
-           npas=length(targ)
-         }else if(npas=='future_predictor'){
-           npas=length(new.data)
-         }
-         if(npas <= dev){
-           stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was", 
-                      npas, "and dev was", dev))
-         }
-       }else{
-         stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
-       }
-       if(is.null(args)){
-         temp <- CDFt(targ, pred, new.data, npas=length(targ))$DS
-       }else{
-         ##Note: if any of the input data parameters are named, CDFt will 
-         ## fail to run with an 'unused arguments' error, without any decent
-         ## explanation as to why. This way works.
-         #args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
-         retry <- FALSE
-         temp <-tryCatch({#dev.1 <- dev 
-                         do.call("CDFt", c(list(targ, pred, new.data), 
-                                           list(npas=npas, dev=dev)))$DS}, 
-                         error=function(e){
-                           retry <<- TRUE;
-                           loop.try <- FALSE
-                           i=1;
-                           while(dev <= maxdev && loop.try==FALSE){
-                              message(paste0("Error caught from CDFt with dev=",
-                                             dev," and npas=",npas,
-                                             "; retrying with dev=dev+",1))
-                              loop.try <- TRUE
-                              dev=dev+1
-                              i=i+1
-                              loop.try <- tryCatch(do.call("CDFt", 
-                                                      c(list(targ, pred, new.data), 
-                                                        list(npas=npas, dev=(dev))))$DS, 
-                                              error=function(e){return(FALSE)}
-                              )
-                           }
-                           if(dev > maxdev){
-                             #This has not come up yet in testing, but it might.
-                             if(args$retry=='stop'){
-                             stop(paste("Error in callCDFt: In the process of retrying", 
-                                        "CDFt downscaling at this point",
-                                        "dev grew to >", maxdev,
-                                        "without the CDFt function",
-                                        "being able to complete", 
-                                        'while retry was set to "stop".', 
-                                        "Please retry with different settings", 
-                                        "or contact Carolyn Whitlock."))
-                             }else if(args$retry=='missing'){
-                               return(rep(NA, length(new.data)))
-                             }else if(args$retry=='predictor'){
-                               return(new.data)
-                             }
-                           }else{
-                             return(do.call("CDFt", 
-                                            c(list(targ, pred, new.data), 
-                                              list(npas=npas, dev=(dev))))$DS)
-                           }
-                         }, 
-                         silent=FALSE)
-       }
-       out.list[[out.var.name]] <- as.numeric(temp)
-       if(retry){
-         attr(out.list[[out.var.name]], 'status') <- 1
-       }
-     }
-     return(out.list)
 }
 
 callSimple.bias.correct <- function(pred, targ, new, args){
