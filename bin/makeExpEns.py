@@ -1,9 +1,9 @@
 import expergen 
 import fudgeList
 import fudgeUtils
-from fudgeUtils import gcp
+from fudgeUtils import gcp,tstamp
 from fudgeUtils import read_exp_info_file
-import os,sys,subprocess,shutil
+import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
 import argparse
@@ -119,7 +119,10 @@ def makeExpEns():
 	outens_loc = list(set(outens_loc))
 	outpaths_all = sbase_loc + outpath_loc + outens_loc
 	tmpfile = osp.join(tdir, "experiment_info.txt")	
-	append_str = "\n" +"#"*80 + '\n' + 'ensemble.files:' + "\n".join(ens_list)
+	ens_list = ens_namemap(ens_list)
+	#ens_list_ii = [n,ens for e in range(0, len(en_list)) if not None]
+	#append_str = "\n" +"#"*80 + '\n' + 'ensemble.files:' + "\n".join(ens_list)
+	append_str = "\n" +"#"*80 +"\n"+"\n".join(ens_list)
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+expdict['xml.path']+" -o "+tmpfile 
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate() 
@@ -137,11 +140,16 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 	basedir = os.environ.get('BASEDIR')
 	tdir = os.environ.get('TMPDIR')
+	tdir_ens = osp.join(tdir, "proc_ens")
+	if not osp.exists(tdir_ens):
+		os.makedirs(tdir_ens)
 	for f in flist:
 		if not osp.isfile(f):
 			print("Error in call_ens_creation! File " + f + " does not exist!")
 			sys.exit(1)
-	inFiles = ",".join([gcp(f, "TMPDIR", verbose, verbose) for f in flist])
+	#inFiles = ",".join([gcp(f, "TMPDIR", verbose, verbose) for f in flist])
+	inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, verbose, verbose) for f in flist])
+	print inFiles
 	orig_inFiles = ",".join(flist)
 	print("Calling ensemble creation on " + inFiles)
 	with Dataset(flist[0], 'r') as nc_obj:
@@ -168,13 +176,14 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	if not osp.exists(osp.dirname(outfile)):
 		print("Making " + osp.dirname(outfile))
 		os.makedirs(osp.dirname(outfile))
-	tmp_outfile = osp.join(tdir, outfile.lstrip("/"))
-	if not osp.exists(osp.dirname(tmp_outfile)):
-		os.makedirs(osp.dirname(tmp_outfile))			
-	#Finally, call the ensemble generation code:		
-	#ens_command = " ".join(["tcsh /home/cew/Code/ginger_testing/make_ens_fudge/ens_min.csh", tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles])
-	ens_min = basedir + "utils/s7/ens_min.csh"
-	ens_command = " ".join(["tcsh -f ",ens_min, outfile.lstrip("/"), vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, orig_inFiles])
+	#tmp_outfile = osp.join(tdir, outfile.lstrip("/"))
+	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())
+	#if not osp.exists(osp.dirname(tmp_outfile)):
+	#	os.makedirs(osp.dirname(tmp_outfile))			
+	#Finally, call the ensemble generation code:	
+	ens_min = basedir + "utils/s7/ens_min.csh"	
+	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles])
+	#ens_command = " ".join(["tcsh -f ",ens_min, outfile.lstrip("/"), vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, orig_inFiles])
 	p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
 	out0,err0 = p.communicate()
 	if (p.returncode != 0):
@@ -189,8 +198,30 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 			print(str(out0))
 			print(str(err0))
 		gcp(tmp_outfile, outfile, verbose, verbose)
-		return([outfile])					 
+		return([outfile])
+		
+def ens_namemap(ens_list): 
+	ens_loc = copy.copy(ens_list)
+	ens_names = ['qc.ensemble','save.ensemble', 'anom.ensemble', 'ds.ensemble']
+	ens_search = ['qcmask', 'save', 'Anom', '']
+	ens_order = [ens_names[x] for x in [3, 2, 0, 1]]
+	ens_indexed = []
+	for e in range(0,len(ens_names)):
+		match_indices = [x for x in range(0,len(ens_loc)) if re.search(ens_search[e], ens_loc[x]) is not None]
+		matchlen = len(match_indices)
+		if matchlen == 1:
+			appendstr = ens_names[e] + ":" + ens_loc[match_indices[0]]
+			ens_indexed.append(appendstr)
+			del ens_loc[match_indices[0]]
+		elif matchlen != 0:
+			print("Error in ens_namemap: match in" + str(matchlen)+"locations in " + ",".join(ens_list))
+			sys.exit(1)	
+	print ens_indexed		
+	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_order)) if re.search(ens_order[e],x) is not None][0])
+	print(out)						
+	return(out)	
+							 
 			 			 
 if __name__ == '__main__':
 	print(sys.argv)
-	makeExpEns()					
+	makeExpEns()		

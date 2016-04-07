@@ -1,15 +1,18 @@
 #GFDL- or FUDGE-specific utility functions
 #likely to be used by more than one of the tools in the postproc workflow.
-import os,sys,subprocess,shutil
+import os,sys,subprocess,shutil,time
 from os import path as osp
 from subprocess import PIPE
+import re
 
-def gcp(infile, outfile="TMPDIR", verbose=False, gcp_verbose=False):
+def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=False):
 	#Wrapper for GFDL's GCP function
 	#for copying from /archive to /vftmp
 	if (outfile=='TMPDIR'):
 		tdir = os.environ.get("TMPDIR")
 		outfile = osp.join(tdir,infile.lstrip("/"))
+	if timestamp: 
+		outfile  = outfile +"." + tstamp()	
 	if gcp_verbose:
 		command = "gcp -v -cd " + infile + " " + outfile
 	else:
@@ -50,3 +53,7 @@ def read_exp_info_file(exp_info):
 					key,entry=keytmp,entrytmp	
 				expdict[key] =  entry
 	return expdict	
+	
+def tstamp():
+	#Returns a simple timestamp for the output file
+	return(re.sub("\\.", "_", str(time.time())))	

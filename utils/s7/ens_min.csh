@@ -45,7 +45,6 @@ ncdump -h $outFile |grep plev
   else
     ncpdq -O -h -v $climvar -a time,ensmem,lat,lon $outFile tmp.nc
   endif
-  #echo '>>>> (NOTE: "ncpdq: INFO nco_var_dmn_rdr_mtd() for variable...." message is NOT an error.)'
   \mv tmp.nc $outFile
   
   #echo ">>>> use nco tools to refine new file contents "
