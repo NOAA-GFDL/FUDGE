@@ -271,13 +271,13 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
     }
   }else if(args$slope_window=='original'){
     window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
-    min_window <- 2
+    #min_window <- 2
     #CEW: okay, they split this into 3 sections: one for quantiles 0-0.1, 
     #one for the middle ('good') range, and one for the quantiles 0.9-1.0
     window_temp_new <- rep(NA, hist.pred.len)
     #for the low tail
     for (j in 1:p_low){
-      window_temp_new[j] <- c(min_window + j/p_low*(window_temp-min_window))
+      window_temp_new[j] <- j/p_low*(window_temp)
     }
     #for most of the distribution
     for (j in (p_low+1):(p_high-1)){
@@ -286,7 +286,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
     #for the high tail
     j.val <- p_high
     for(j in 1:(hist.pred.len-p_high+1) ){
-      window_temp_new[j.val] <- ((hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp - min_window) + min_window
+      window_temp_new[j.val] <- ((hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp)
       j.val <- j.val + 1
     }  
     if(any(is.na(window_temp_new))){
@@ -314,7 +314,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
       q <- which( hist_pred > (val-window_temp_new[j]) )[1]-1
       window2[(hist.pred.len-j)+1] <- (j-q)
     }
-    window2[which(window2<10)] <- 10
+    window2[which(window2<min_window_points)] <- min_window_points
 #     print(summary(window1))
 #     print(window1[1:10])
 #     print(summary(window2))
