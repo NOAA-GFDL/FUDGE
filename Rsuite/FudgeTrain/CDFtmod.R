@@ -81,10 +81,10 @@ callCDFtmod <- function (pred, targ, new, args, ds.var='null', att_table=NULL){
        }
        high_tail='original'
        if('high_tail'%in%names(args)){
-         if(args$high_tail=="modified" | args$high_tail=="none"){
+         if(args$high_tail=="test_modified" | args$high_tail=="none"){
            high_tail = args$high_tail
          }else if(args$high_tail!='original'){
-           stop(paste("Error in CDFtmod: high_tail should be one of original, modified, or none, but was", args$low_tail, "!"))
+           stop(paste("Error in CDFtmod: high_tail should be one of original, test_modified, or none, but was", args$low_tail, "!"))
          }
        }
        if(is.null(args)){
@@ -250,31 +250,31 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2,
   #otherwise, include no tail correction.
   #High tail correction:
   if(high_tail == "original"){
-  if (FRF[length(x)] < 1) {
-    message("Original High tail adjust performed")
-    i = length(x)
-    QQ = quantile(ObsRp, probs = FRF[length(x)])
-    while (x[i] >= QQ) {
-      i = i - 1
-    }
-    i = i + 1
-    j = length(x) - 1
-    while (j > 0 && FRF[j] == FRF[length(x)]) {
-      j = j - 1
-    }
-    if (j == 0) {
-      stop("In CDFt, dev must be higher\n")
-    }
-    dif = min((length(x) - j), (length(x) - i))
-    FRF[j:(j + dif)] = FRP[i:(i + dif)]
-    k = j + dif
-    if (k < length(x)) {
-      FRF[k:(length(x))] = 1
-    }
-  }
-  }else if (high_tail=='modified'){
     if (FRF[length(x)] < 1) {
-      message("Modified High tail adjust performed")
+      message("Original High tail adjust performed")
+      i = length(x)
+      QQ = quantile(ObsRp, probs = FRF[length(x)])
+      while (x[i] >= QQ) {
+        i = i - 1
+      }
+      i = i + 1
+      j = length(x) - 1
+      while (j > 0 && FRF[j] == FRF[length(x)]) {
+        j = j - 1
+      }
+      if (j == 0) {
+        stop("In CDFt, dev must be higher\n")
+      }
+      dif = min((length(x) - j), (length(x) - i))
+      FRF[j:(j + dif)] = FRP[i:(i + dif)]
+      k = j + dif
+      if (k < length(x)) {
+        FRF[k:(length(x))] = 1
+      }
+    }
+  }else if (high_tail=='test_modified'){
+    if (FRF[length(x)] < 1) {
+      message("Testing Modified High tail adjust performed")
       i = length(x)
       QQ = quantile(ObsRp, probs = FRF[length(x)])
       while (x[i] >= QQ) {

@@ -103,12 +103,13 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                         "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
                         "CFQM" = callCFQMv3(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
                         "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table, ds.input$status), #esd.gen,
-                        "lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                        "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                        "PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
+                        #"lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        #"lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        'CDFtmod' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        #"PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                         ReturnDownscaleError(ds.method))
           out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])    
-          if(ds.method%in%c('CDFt', 'DeltaSD')){
+          if(ds.method%in%c('CDFt', "CDFtmod", 'DeltaSD')){
             for(i in 1:length(out)){
               if(!is.null(attr(out[[i]], 'status'))){
                 ds.input$qcmask[[out.var]] <- rep(NA, length(ds.input$qcmask[[1]])) #this is where this particular 
