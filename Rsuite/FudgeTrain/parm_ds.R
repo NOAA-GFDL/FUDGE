@@ -18,7 +18,7 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
   #'pred, and then uses the data in new to predict
   #'the future results. 
   #'Currently takes 2 arguments to downscaling function: 
-  #' window_width, specifying width of windows used for determining knots of
+  #' subsample_pct, specifying width of windows used for determining knots of
   #'   best fit in percentage points (defaults to 5)
   #' round, specifying if and how to round the output in accordance with prior
   #'   arrm teachnique (defaults to FALSE)
@@ -35,27 +35,27 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
     #assume any string argument is false
     if(!is.numeric(args$round)){round.ds<-F}else{round.ds<-T}
   }
-  #Add check for presence of window option
-  if(!'window_width'%in%names(args)){
-    args$window_width <- 0.05
+  if(!'reg_sample_method'%in%names(args)){
+    args$reg_sample_method = 'climvar_range'
   }else{
-    args$window_width <- as.numeric(args$window_width)/100 #percentage-based
-  }
-  #Add check for the definition of the tails
-  if(!'tail_prob'%in%names(args)){
-    args$tail_prob <- 0.1
-  }else{
-    args$tail_prob <- as.nuemric(args$tail_prob)
-  }
-  if(!'slope_window'%in%names(args)){
-    args$slope_window = 'simple'
-  }else{
-    slope_window_choices <- c("original", 'simple', 'simple_range')
-    if(!(args$slope_window%in%slope_window_choices)){
-      stop(paste("Error in PARM: slope_window must be one of",
-                 paste(slope_window_choices, collapse=","),
-                 "but was", args$slope_window))
+    reg_sample_method_choices <- c('sample_size', 'climvar_range')
+    if(!(args$reg_sample_method%in%reg_sample_method_choices)){
+      stop(paste("Error in PARM: reg_sample_method must be one of",
+                 paste(reg_sample_method_choices, collapse=","),
+                 "but was", args$reg_sample_method))
     }
+  }
+  #Add check for the definition of the tails/whether to taper the tails at ends of dist
+  if(!'tail_taper_fraction'%in%names(args)){
+    args$tail_taper_fraction <- 0.1
+  }else{
+    args$tail_taper_fraction <- as.nuemric(args$tail_taper_fraction)
+  }
+  #Add check for presence of window option
+  if(!'subsample_pct'%in%names(args)){
+    args$subsample_pct <- 0.05
+  }else{
+    args$subsample_pct <- as.numeric(args$subsample_pct) #no longer pct-based
   }
 
   #Now, call the training code
@@ -217,11 +217,11 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   
   
   message('Starting PARM steps 2 and 3: find first and second set of breakpoints')
-  fixed_window_width = args$window_width
+  fixed_window_width = args$subsample_pct
   #Assume that the tails are always going to be symmetric (for now)
-  pmin = args$tail_prob
-  pmax = 1-(args$tail_prob)
-  min_window_width = 2  #2 degrees celsius or 10 points, whichever is larger
+  pmin = args$tail_taper_fraction
+  pmax = 1-(args$tail_taper_fraction)
+  #min_window_width = 2  #2 degrees celsius or 10 points, whichever is larger
   #pr uses 5 % of mean or 10 points, whichever is larger
   min_window_points = 10 #There have to be at least this many points in the sample
   #...max breakpoints is going to be a bit trickier to set (for one, it needs
@@ -243,82 +243,93 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
 #   window1 <- rep(NA, (hist.pred.len-start+1))
 #   window1 <- c(rep(NA,(start-1)),window1)
-  if(args$slope_window=='simple'){
-#     #CEW removed scaling for tails on 2-19; all windows are now 5% of the max data length
-    window_len = hist.pred.len * fixed_window_width
-    window1 <- rep(window_len, hist.pred.len)
-    window2 <- rep(window_len, hist.pred.len)
-  }else if(args$slope_window=='simple_range'){
-    var.range = range(hist_pred)
-    window_delta = fixed_window_width * (var.range[2] - var.range[1])
-    #Determine lower windows
-    window1 <- rep(NA, (hist.pred.len-start+1))
-    for (j in start:hist.pred.len){
-      j.val <- (j-start + 1)
-      q <- 0
-      val <- hist_pred[j]
-      q <- which( hist_pred > (val-window_delta) )[1] - 1
-      window1[j.val] <- (j-q)
+  if(args$reg_sample_method=='sample_size'){
+    if(tail_taper_fraction==0){
+      #If not tapering on the tails, however they are defined
+      window_len = hist.pred.len * fixed_window_width
+      window1 <- rep(window_len, hist.pred.len)
+      window2 <- rep(window_len, hist.pred.len)
+    }else{
+      #If tapering on the tails
+      window_len = hist.pred.len * fixed_window_width
+      window_samples = rep(window_len, hist.pred.len)
+      for(j in 1:p_low){
+        window_samples[j] <- j/p_low*window_len
+      }
+      j.val <- p_high
+      p_val = hist.pred.len - p_high + 1
+      for(j in 1:(p_val)){
+        window_samples[j.val] <- (p_val-(j+1))/p_val*window_len
+        j.val <- j.val + 1
+      }
+      window_samples[window_samples < min_window_points] <- min_window_points
+      window1 <- window_samples
+      window2 <- window_samples
     }
-    window1 <- c(rep(NA,(start-1)),window1)
-    #Determine windows going in the opposite direction
-    window2 <- rep(NA, hist.pred.len)
-    for(j in hist.pred.len:1){
-      q <- 0
-      val <- hist_pred[j]
-      q <- which( hist_pred > (val-window_delta) )[1]-1
-      window2[(hist.pred.len-j)+1] <- (j-q)
+  }else if(args$reg_sample_method=='climvar_range'){
+    if(args$tail_taper_fraction==0){
+      #If allowing the range to taper naturally on the tails
+      var.range = range(hist_pred)
+      window_delta = fixed_window_width * (var.range[2] - var.range[1])
+      window1 <- rep(NA, (hist.pred.len-start+1))
+      for (j in start:hist.pred.len){
+        j.val <- (j-start + 1)
+        q <- 0
+        val <- hist_pred[j]
+        q <- which( hist_pred > (val-window_delta) )[1] - 1
+        window1[j.val] <- (j-q)
+      }
+      window1 <- c(rep(NA,(start-1)),window1)
+      window2 <- rep(NA, hist.pred.len)
+      for(j in hist.pred.len:1){
+        q <- 0
+        val <- hist_pred[j]
+        q <- which( hist_pred > (val-window_delta) )[1]-1
+        window2[(hist.pred.len-j)+1] <- (j-q)
+      }
+    }else{
+      #If controlling the taper of the tails
+      window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
+      #min_window <- 2
+      window_temp_new <- rep(NA, hist.pred.len)
+      for (j in 1:p_low){       #for the low tail
+        window_temp_new[j] <- j/p_low*(window_temp)
+      }
+      for (j in (p_low+1):(p_high-1)){       #for most of the distribution
+        window_temp_new[j] <- window_temp
+      }
+      j.val <- p_high
+      p_val = hist.pred.len - p_high + 1
+      for(j in 1:(p_val) ){       #for the high tail
+        window_temp_new[j.val] <- (p_val-j+1)/(p_val)*(window_temp)
+        j.val <- j.val + 1
+      }  
+      if(any(is.na(window_temp_new))){
+        stop(paste("Error when making windows: check your inputs!"))
+      }    
+      #find length of window so that it is always the same span in temperature
+      window1 <- rep(NA, (hist.pred.len-start+1))
+      for (j in start:hist.pred.len){
+        j.val <- (j-start + 1)
+        q <- 0
+        val <- hist_pred[j]
+        q <- which( hist_pred > (val-window_temp_new[j]) )[1] - 1
+        window1[j.val] <- (j-q)
+      }
+      if(any(is.na(window1))){
+        stop('something is off about this add')
+      }
+      window1[which(window1<min_window_points)] <- min_window_points
+      window1 <- c(rep(NA,(start-1)),window1)
+      window2 <- rep(NA, hist.pred.len)
+      for(j in hist.pred.len:1){
+        q <- 0
+        val <- hist_pred[j]
+        q <- which( hist_pred > (val-window_temp_new[j]) )[1]-1
+        window2[(hist.pred.len-j)+1] <- (j-q)
+      }
+      window2[which(window2<min_window_points)] <- min_window_points
     }
-  }else if(args$slope_window=='original'){
-    window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
-    #min_window <- 2
-    #CEW: okay, they split this into 3 sections: one for quantiles 0-0.1, 
-    #one for the middle ('good') range, and one for the quantiles 0.9-1.0
-    window_temp_new <- rep(NA, hist.pred.len)
-    #for the low tail
-    for (j in 1:p_low){
-      window_temp_new[j] <- j/p_low*(window_temp)
-    }
-    #for most of the distribution
-    for (j in (p_low+1):(p_high-1)){
-      window_temp_new[j] <- window_temp
-    }
-    #for the high tail
-    j.val <- p_high
-    for(j in 1:(hist.pred.len-p_high+1) ){
-      window_temp_new[j.val] <- ((hist.pred.len-p_high+1)-j+1)/(hist.pred.len-p_high+1)*(window_temp)
-      j.val <- j.val + 1
-    }  
-    if(any(is.na(window_temp_new))){
-      stop(paste("Error when making windows: check your inputs!"))
-    }    
-    #find length of window so that it is always the same span in temperature
-    window1 <- rep(NA, (hist.pred.len-start+1))
-    for (j in start:hist.pred.len){
-      j.val <- (j-start + 1)
-      q <- 0
-      val <- hist_pred[j]
-      q <- which( hist_pred > (val-window_temp_new[j]) )[1] - 1
-      window1[j.val] <- (j-q)
-    }
-    if(any(is.na(window1))){
-      stop('something is off about this add')
-    }
-    window1[which(window1<10)] <- 10
-    window1 <- c(rep(NA,(start-1)),window1)
-    #Determine windows going in the opposite direction
-    window2 <- rep(NA, hist.pred.len)
-    for(j in hist.pred.len:1){
-      q <- 0
-      val <- hist_pred[j]
-      q <- which( hist_pred > (val-window_temp_new[j]) )[1]-1
-      window2[(hist.pred.len-j)+1] <- (j-q)
-    }
-    window2[which(window2<min_window_points)] <- min_window_points
-#     print(summary(window1))
-#     print(window1[1:10])
-#     print(summary(window2))
-#     print(window2[1:10])
   }
   #Although they are called the same thing, they are each used slightly differently
   #when calculating the windows. See diagram.
