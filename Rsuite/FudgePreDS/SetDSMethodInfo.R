@@ -238,7 +238,7 @@ setPARM <- function(){
   # ESD equations/quantiles AND generate the downscaled data?
   train.and.use.same <<- FALSE
   # What are the arguments to the args() parameter that are accepted? 
-  names.of.args <<- c('reg_sample_method', 'tail_taper_fraction', 'subsample_pct')
+  names.of.args <<- c('regression_sample_method', 'tail_taper_pct', 'subsample_pct')
   #Is it possible to use multiple predictors with this method?
   supports.multivariate <<- FALSE
   #How are missing values handled when going into the downscaling code?
