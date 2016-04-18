@@ -216,9 +216,9 @@ def ens_namemap(ens_list):
 		elif matchlen != 0:
 			print("Error in ens_namemap: match in" + str(matchlen)+"locations in " + ",".join(ens_list))
 			sys.exit(1)	
-	print ens_indexed		
+	#print ens_indexed		
 	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_order)) if re.search(ens_order[e],x) is not None][0])
-	print(out)						
+	#print(out)						
 	return(out)	
 							 
 			 			 

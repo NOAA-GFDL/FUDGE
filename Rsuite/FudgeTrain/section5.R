@@ -336,6 +336,11 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   }else{
     ignore0 <-  FALSE
   }
+  if(!('sample_size')%in%arg.names){
+    sample_size <- 0
+  }else{
+    sample_size = test$qc_args$sample_size
+  }
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
@@ -345,7 +350,8 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
-                               obs.fut = adjusted.output$ds.out[[ds.var]])
+                               obs.fut = adjusted.output$ds.out[[ds.var]], 
+                               sample_size = sample_size)
     #print(summary(as.vector(ds.correct)))
     if(test$qc.mask=='on'){
       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
@@ -369,19 +375,35 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
-bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut){
+bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=0){
   #derived from BCSD code provided by Catherine Hayhoe
   #Correct for maximum range of the distribution
-  model.hist.max <- max(model.hist, na.rm=TRUE)
-  obs.hist.max <- max(obs.hist, na.rm=TRUE)
-  largex.tmax <- which(model.fut > model.hist.max)    #List of indices for which dist is stretched
-  max.delta.tmax <- model.hist.max - obs.hist.max   #Delta calculated as diff of max(hist) - max(obs)
+  if(sample_size==0){
+    model.hist.val <- max(model.hist, na.rm=TRUE)
+    obs.hist.val <- max(obs.hist, na.rm=TRUE)
+  }else{
+    mh.len <- length(model.hist)
+    model.hist.val <- mean(sort(model.hist)[(mh.len-sample_size):sample_size])
+    oh.len <- length(obs.hist)
+    obs.hist.val <- mean(sort(obs.hist)[(oh.len-sample_size):sample_size])
+  }
+  largex.tmax <- which(model.fut > model.hist.val)    #List of indices for which dist is stretched
+  max.delta.tmax <- model.hist.val - obs.hist.val   #Delta calculated as diff of max(hist) - max(obs)
+  #print(max.delta.tmax)
   obs.fut[largex.tmax] <- model.fut[largex.tmax] - max.delta.tmax
   ###Correct for minimum range of the distribution
-  model.hist.min <- min(model.hist, na.rm=TRUE)
-  obs.hist.min <- min(obs.hist, na.rm=TRUE)
-  smallx.tmax <- which(model.fut < model.hist.min)    #List of indices for which dist is stretched
-  min.delta.tmax <- model.hist.min - obs.hist.min    #Delta calculated as diff of min(hist) - min(obs)
+  if(sample_size==0){
+    model.hist.val <- min(model.hist, na.rm=TRUE)
+    obs.hist.val <- min(obs.hist, na.rm=TRUE)
+  }else{
+    mh.len <- length(model.hist)
+    model.hist.val <- mean(sort(model.hist)[1:sample_size])
+    oh.len <- length(obs.hist)
+    obs.hist.val <- mean(sort(obs.hist)[1:sample_size])
+  }
+  smallx.tmax <- which(model.fut < model.hist.val)    #List of indices for which dist is stretched
+  min.delta.tmax <- model.hist.val - obs.hist.val    #Delta calculated as diff of min(hist) - min(obs)
+  #print(min.delta.tmax)
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
   return(obs.fut)
 }
