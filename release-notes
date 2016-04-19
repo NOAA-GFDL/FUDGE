@@ -1,12 +1,17 @@
-4-6-15
+4-19-16
 (cew)
-- Adding automatic addition of anomaly data to postproc; adding ensemble generation tool
+- CDFt and CDFtmod now refer to separate functions both involed by callCDFt
+- final CDFt tail adjustments made permanent fixture of CDFtmod
 
-3-3-15
+4-6-16
+(cew)
+- Adding automatic addition of anomaly data to postproc; adding ensemble generation tool makeExpEns
+
+3-3-16
 (cew)
 - g_orangeplus merged into main dev branch; postproc email notifications added for failure and success of postproc operations. 
  
-3-1-15
+3-1-16
 (cew)
 - New DS method, CDFtmod, allows for contol of low tail adjustments in CDFt code
 - CDFt now invokes CDFtmod with a fixed low_tail value of 'original'
