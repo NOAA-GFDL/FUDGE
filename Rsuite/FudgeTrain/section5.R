@@ -409,7 +409,6 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=
   min.delta.tmax <- model.hist.val - obs.hist.val    #Delta calculated as diff of min(hist) - min(obs)
   print(length(smallx.tmax))
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
-  stop('examine output')
   return(obs.fut)
 }
 

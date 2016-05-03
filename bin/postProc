@@ -141,12 +141,12 @@ def postProc():
 		listvname.append(varname)
 		
 	#CEW edit 5-3 to support writing of status files
-	ppStatloc = sbase + "postProc/ppStatus"
-	print "Checking for prior status files to remove"
-	#remove any statfiles using this rip
-	ppstatfiles = [p for p in osp.listdir(ppStatloc) if re.search(p, ens) is not None]
-	for p in ppstatfiles:
-		os.remove(p)	
+	#ppStatloc = sbase + "postProc/ppStatus"
+	#print "Checking for prior status files to remove"
+	##remove any statfiles using this rip
+	#ppstatfiles = [p for p in osp.listdir(ppStatloc) if re.search(p, ens) is not None]
+	#for p in ppstatfiles:
+	#	os.remove(p)	
 ####if multiple outdirs then loop through each..please use -d or its going to take forever.Use expergen to format the commands for you. You dont have to remember the outdir dirs
 #/work/a1r/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/$(RIP)/v20110601/PMtxp1-multi.lm-C01r11ens_test1X01K00/tasmax/US48/OneD/#$(RIP)#r1i1p1,r2i1p1,r3i1p1'		
 	print listout
@@ -244,9 +244,7 @@ def postProc():
 							#	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
 							filedirect = indir+"/../../"
 						checker.checker(filedirect,2,"warning")
-						write_pp_status(ppStatloc, vname + "_" + ens, 'success')
 					else:
-						write_pp_status(ppStatloc, vname + "_" + ens, 'failure')
 						sys.exit("ERROR")
 			 	else:
 				 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
@@ -257,7 +255,6 @@ def postProc():
 				 	text = text + "\n\nExperiment XML for reference-\n"+uinput
 				 	text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 				 	notifyUser(send_to,subject,text)
-				 	write_pp_status(ppStatloc, vname + "_" + ens, 'failure')
 				 	sys.exit(-1)
 			 		#########end indir loop	
 

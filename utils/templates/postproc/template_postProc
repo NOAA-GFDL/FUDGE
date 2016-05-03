@@ -10,7 +10,7 @@
 
 	echo "Setting FUDGE environment.."
 	# If a1r/cew is testing from a non-esd module, change the following for testing only
-  
+find <PP_STATDIR> | grep <PREFIX> | xargs rm -rf  
 	#module use -a /home/esd/local/modulefiles/
 	module use -a /home/cew/Code/modulefiles/
 	module load <BRANCH> 
