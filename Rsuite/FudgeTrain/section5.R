@@ -54,6 +54,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output), 
                   'add.five' = callAddFive(test, out$input, out$adjusted.output), 
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
+                  'TailAdjust' = callTailAdjust(test,  out$input, out$adjusted.output),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type, 
                              "is not supported for callS5Adjustment. Please check your input.")))
@@ -337,7 +338,9 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     ignore0 <-  FALSE
   }
   if(!('sample_size')%in%arg.names){
-    sample_size <- 0
+    sample_size <- 1
+  }else if(test$qc_args$sample_size==0){
+    sample_size = 1
   }else{
     sample_size = test$qc_args$sample_size
   }
@@ -378,18 +381,19 @@ callBCSDCorrect <- function(test, input, adjusted.output){
 bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=0){
   #derived from BCSD code provided by Catherine Hayhoe
   #Correct for maximum range of the distribution
+  sample_size = sample_size - 1
   if(sample_size==0){
     model.hist.val <- max(model.hist, na.rm=TRUE)
     obs.hist.val <- max(obs.hist, na.rm=TRUE)
   }else{
     mh.len <- length(model.hist)
-    model.hist.val <- mean(sort(model.hist)[(mh.len-sample_size):sample_size])
+    model.hist.val <- mean(sort(model.hist)[(mh.len-sample_size):mh.len])
     oh.len <- length(obs.hist)
-    obs.hist.val <- mean(sort(obs.hist)[(oh.len-sample_size):sample_size])
+    obs.hist.val <- mean(sort(obs.hist)[(oh.len-sample_size):oh.len])
   }
   largex.tmax <- which(model.fut > model.hist.val)    #List of indices for which dist is stretched
   max.delta.tmax <- model.hist.val - obs.hist.val   #Delta calculated as diff of max(hist) - max(obs)
-  #print(max.delta.tmax)
+  print(length(largex.tmax))
   obs.fut[largex.tmax] <- model.fut[largex.tmax] - max.delta.tmax
   ###Correct for minimum range of the distribution
   if(sample_size==0){
@@ -403,8 +407,9 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=
   }
   smallx.tmax <- which(model.fut < model.hist.val)    #List of indices for which dist is stretched
   min.delta.tmax <- model.hist.val - obs.hist.val    #Delta calculated as diff of min(hist) - min(obs)
-  #print(min.delta.tmax)
+  print(length(smallx.tmax))
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
+  stop('examine output')
   return(obs.fut)
 }
 
