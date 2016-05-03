@@ -23,7 +23,7 @@ from netCDF4 import Dataset
 def makeExpEns():
 	#Performs steps over all ensembles that count as part of the 
 	#standardization process (such as collecting into ensemble files for the experiment)
-	usage = "usage: %prog [-p project -e exp_name] [-i input] [--anom_only_ens --verbose]"
+	usage = "usage: %prog [-p project -e exp_name] [-i input] [--anom_only_ens] [--verbose]"
 	parser = OptionParser(usage=usage, version='makeExpEns 1.0')
 	parser.add_option("-p", "--project", dest="project", default="NA", help="Project used for the experiment (i.e. PM, RR2). Will be used to reconstruct an ESD-standard path to the scripts directory.")
 	parser.add_option("-e", "--exp_name", dest="exp_name", default='NA', help="Experiment name used for the experiment (PMeCRtnp1-CDFtmod-A04r1e3X01K00). Will be used to reconstruct an ESD-standard path to the scripts directory.")

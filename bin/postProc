@@ -89,7 +89,7 @@ def postProc():
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= expergen.listVars(uinput,basedir=basedir,pp=True)
 	basedire = basedir	
 	esdMethod = method
-	varname = target 
+	varname = target 	
 	if(spat_mask != 'na'):
 		grid = spat_mask+"../"+region+".nc"
 	else:
@@ -139,9 +139,16 @@ def postProc():
 		listvname = lvname #.split(',')  
 	else:
 		listvname.append(varname)
+		
+	#CEW edit 5-3 to support writing of status files
+	ppStatloc = sbase + "postProc/ppStatus"
+	print "Checking for prior status files to remove"
+	#remove any statfiles using this rip
+	ppstatfiles = [p for p in osp.listdir(ppStatloc) if re.search(p, ens) is not None]
+	for p in ppstatfiles:
+		os.remove(p)	
 ####if multiple outdirs then loop through each..please use -d or its going to take forever.Use expergen to format the commands for you. You dont have to remember the outdir dirs
-
-#/work/a1r/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/$(RIP)/v20110601/PMtxp1-multi.lm-C01r11ens_test1X01K00/tasmax/US48/OneD/#$(RIP)#r1i1p1,r2i1p1,r3i1p1'
+#/work/a1r/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/$(RIP)/v20110601/PMtxp1-multi.lm-C01r11ens_test1X01K00/tasmax/US48/OneD/#$(RIP)#r1i1p1,r2i1p1,r3i1p1'		
 	print listout
 	for indir in listout:
 		outdir = indir
@@ -213,16 +220,16 @@ def postProc():
 					print 'exists check completed'
 					print exists
 					if (exists == False):
-						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
+						try: 
+							cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
+						except SystemExit:
+							sys.exit(status) 	
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
 						slogloc = sbase+"/"+"experiment_info.txt"
 						fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
 						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 						out, err = f.communicate() 
-						#print "fudgeList out", out
-						#if err is not None:
-						#	print "fudgeList err", err	
 						print "Summary Log File: ", slogloc
 						slogloc_alt = indir+"../../../"
 						if("mask" in vname): 
@@ -237,7 +244,9 @@ def postProc():
 							#	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
 							filedirect = indir+"/../../"
 						checker.checker(filedirect,2,"warning")
+						write_pp_status(ppStatloc, vname + "_" + ens, 'success')
 					else:
+						write_pp_status(ppStatloc, vname + "_" + ens, 'failure')
 						sys.exit("ERROR")
 			 	else:
 				 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
@@ -248,6 +257,7 @@ def postProc():
 				 	text = text + "\n\nExperiment XML for reference-\n"+uinput
 				 	text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 				 	notifyUser(send_to,subject,text)
+				 	write_pp_status(ppStatloc, vname + "_" + ens, 'failure')
 				 	sys.exit(-1)
 			 		#########end indir loop	
 
@@ -376,6 +386,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 				send_anomadd_message('failure',exp_name,mailid,
 									anom_file,"None","None", clim_error,"")	
 			exit(1)
+			
 	#Remove temporary directories from beginning of pathname, 
 	#going as far as needed to complete
 	clim_split = clim.split("/")
@@ -522,6 +533,11 @@ def notifyUser_py(mailid,subject,text):
 			 smtp = smtplib.SMTP("localhost")
 			 smtp.sendmail(send_from, [send_to], msg.as_string())
 			 smtp.close() 
+			 
+def write_pp_status(loc, filename, status):
+	newfile = loc + "/" + filename + "." + status
+	f = open(newfile, 'aw')
+	f.close() 			 
 			 			 
 if __name__ == '__main__':
 	 postProc()

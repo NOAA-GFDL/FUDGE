@@ -647,6 +647,9 @@ def main():
 
         if not os.path.exists(sbase+"/postProc/aux/"):
         	os.makedirs(sbase+"/postProc/aux/")
+        #CEW edit 5-2-16 for writing postproc status files
+        if not os.path.exists(sbase+"/postProc/ppStatus/"):
+        	os.makedirs(sbase+"/postProc/ppStatus/")	
 	suffctr = 1
         for pname,pval in copyprop.iteritems():
 	   listrips = pval.split(',')
@@ -658,13 +661,17 @@ def main():
 		tsuffix = "_"+tstamp
                 ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
 	  try:
-  		ppfile = open(ppbase, 'w')
-#check if qc_mask is relevant  
+  		ppfile = open(ppbase, 'w') 
 	        if(mout != 'na'):
 		   moutsuff = " -e "+mout.strip()
+		   mout_prefix = mout.strip()
 		else:
-		   moutsuff = " "	
+		   moutsuff = " "
+		   mout_prefix = "fakerip"	
+		 #CEW edits 5-2 related to writing postproc status files
+		 #ppstat_command = "if ($status == 0) then \n touch "  
 		 #3-3 CEW edits related to email notifications  
+		#check if qc_mask is relevant  
 		if(qc_mask != 'off'):
   			pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
@@ -678,7 +685,7 @@ def main():
           if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
                 ppLoc = basedir+"/utils/bin/"+"create_postProc"
-                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch
+                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+" "+mout_prefix
                 p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
                 output4, error4 = p4.communicate()
                 if(p4.returncode != 0):

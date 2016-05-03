@@ -16,4 +16,9 @@
 	module load <BRANCH> 
 	##################
 source <POSTPROC_CMD>
+if ($status == 0) then
+	touch <PP_SUCCESS>
+else
+	touch <PP_FAIL>
+endif
 
