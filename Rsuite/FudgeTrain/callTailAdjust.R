@@ -24,6 +24,8 @@ callTailAdjust <- function(test, input, adjusted.output){
   }else if(!test$qc_args$triggertype%in%triggertypes){
     stop(paste("Error in callTailAdjust: triggertype must be one of", 
                paste(triggertypes, collapse=",")))
+  }else{
+    triggertype = test$qc_args$triggertype
   }
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)

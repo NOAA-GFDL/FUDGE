@@ -371,10 +371,6 @@ callBCSDCorrect <- function(test, input, adjusted.output){
       adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct)
     }
   }
-#   print(lapply(input$hist.pred, 'summary'))
-#   print(summary(input$hist.targ))
-#   print(lapply(input$fut.pred, 'summary'))
-#   print(lapply(adjusted.output$ds.out, 'summary'))
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
@@ -391,7 +387,7 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=
     oh.len <- length(obs.hist)
     obs.hist.val <- mean(sort(obs.hist)[(oh.len-sample_size):oh.len])
   }
-  largex.tmax <- which(model.fut > model.hist.val)    #List of indices for which dist is stretched
+  largex.tmax <- which(model.fut > max(model.hist))    #List of indices for which dist is stretched
   max.delta.tmax <- model.hist.val - obs.hist.val   #Delta calculated as diff of max(hist) - max(obs)
   print(length(largex.tmax))
   obs.fut[largex.tmax] <- model.fut[largex.tmax] - max.delta.tmax
@@ -405,11 +401,10 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=
     oh.len <- length(obs.hist)
     obs.hist.val <- mean(sort(obs.hist)[1:sample_size])
   }
-  smallx.tmax <- which(model.fut < model.hist.val)    #List of indices for which dist is stretched
+  smallx.tmax <- which(model.fut < min(model.hist))    #List of indices for which dist is stretched
   min.delta.tmax <- model.hist.val - obs.hist.val    #Delta calculated as diff of min(hist) - min(obs)
   print(length(smallx.tmax))
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
-  stop('examine output')
   return(obs.fut)
 }
 
