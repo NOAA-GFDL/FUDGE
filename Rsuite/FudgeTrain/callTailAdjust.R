@@ -11,12 +11,12 @@ callTailAdjust <- function(test, input, adjusted.output){
   }else{
     ignore0 <-  FALSE
   }
-  if(!('sample_size')%in%arg.names){
-    sample_size <- 1
-  }else if(test$qc_args$sample_size==0){
-    sample_size = 1
+  if(!('lastNpts')%in%arg.names){
+    delta_sample <- 1
+  }else if(test$qc_args$lastNpts==0){
+    delta_sample = 1
   }else{
-    sample_size = test$qc_args$sample_size
+    delta_sample = test$qc_args$lastNpts
   }
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
@@ -27,7 +27,8 @@ callTailAdjust <- function(test, input, adjusted.output){
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
                                obs.fut = adjusted.output$ds.out[[ds.var]], 
-                               args = test$qc_args)
+                               args = list(delta_sample = delta_sample, 
+                                           triggertype = triggertype))
     if(test$qc.mask=='on'){
       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
                        1, 0)
@@ -48,7 +49,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, obs.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
   hitail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='upper'))
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='lower'))
-  cond.data = switch(args$method, 
+  cond.data = switch(args$triggertype, 
          'GfGh' = model.fut, 
          'OhGh' = obs.fut)
   obs.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
@@ -60,27 +61,27 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, obs.fut, args){
 tail_cutoff <- function(MH, OH, MF, DS, args){
   #'Function for switching from one tail adjustment to another
   #'Currently accepts the arguments 'BCQM' and 'CDFt'
-  sample.fxn <- function(data, tail, sample_size){
-    sample_size = sample_size - 1
+  sample.fxn <- function(data, tail, delta_sample){
+    delta_sample = delta_sample - 1
     s.start <- switch(tail, 
-                      'upper'= length(data) - sample_size, 
+                      'upper'= length(data) - delta_sample, 
                       'lower' = 1)
-    return(mean(sort(data)[s.start:(s.start+sample_size)], 
+    return(mean(sort(data)[s.start:(s.start+delta_sample)], 
                 na.rm=T))
   }
-  if(args$method=='GfGh'){
+  if(args$triggertype=='GfGh'){
     mh.thold <- sample.fxn(MH, args$tail, 1)
-    mh.sample <- sample.fxn(MH, args$tail, args$sample_size)
-    oh.sample <- sample.fxn(OH, args$tail, args$sample_size)  
+    mh.sample <- sample.fxn(MH, args$tail, args$delta_sample)
+    oh.sample <- sample.fxn(OH, args$tail, args$delta_sample)  
     tail.comp = switch(args$tail, 
                        upper=">", 
                        lower="<")
     bcsd.delta <- mh.sample - oh.sample
     mf.cond <- do.call(tail.comp, list(MF, mh.thold))
     return(list(cond=mf.cond, offset=bcsd.delta))
-  }else if(args$method=='OhGh'){
-    mh.sample <- sample.fxn(MH, args$tail, args$sample_size)
-    oh.sample <- sample.fxn(OH, args$tail, args$sample_size)
+  }else if(args$triggertype=='OhGh'){
+    mh.sample <- sample.fxn(MH, args$tail, args$delta_sample)
+    oh.sample <- sample.fxn(OH, args$tail, args$delta_sample)
     mh.thold <- sample.fxn(MH, args$tail, 1)
     tail.comp = switch(args$tail, 
                        upper=">", 
