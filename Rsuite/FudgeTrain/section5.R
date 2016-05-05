@@ -54,7 +54,7 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output), 
                   'add.five' = callAddFive(test, out$input, out$adjusted.output), 
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
-                  'TailAdjust' = callTailAdjust(test,  out$input, out$adjusted.output),
+                  'simpletailadj' = callTailAdjust(test,  out$input, out$adjusted.output),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type, 
                              "is not supported for callS5Adjustment. Please check your input.")))

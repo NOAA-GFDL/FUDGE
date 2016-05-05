@@ -49,8 +49,8 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, obs.fut, args){
   hitail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='upper'))
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='lower'))
   cond.data = switch(args$method, 
-         'BCQM' = model.fut, 
-         'CDFt' = obs.fut)
+         'GfGh' = model.fut, 
+         'OhGh' = obs.fut)
   obs.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
   obs.fut[lotail$cond] = cond.data[lotail$cond] - lotail$offset
   #stop('examine output')
@@ -68,23 +68,25 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     return(mean(sort(data)[s.start:(s.start+sample_size)], 
                 na.rm=T))
   }
-  if(args$method=='BCQM'){
+  if(args$method=='GfGh'){
+    mh.thold <- sample.fxn(MH, args$tail, 1)
     mh.sample <- sample.fxn(MH, args$tail, args$sample_size)
-    oh.sample <- sample.fxn(OH, args$tail, args$sample_size)
+    oh.sample <- sample.fxn(OH, args$tail, args$sample_size)  
     tail.comp = switch(args$tail, 
                        upper=">", 
                        lower="<")
     bcsd.delta <- mh.sample - oh.sample
-    mf.cond <- do.call(tail.comp, list(MF, mh.sample))
+    mf.cond <- do.call(tail.comp, list(MF, mh.thold))
     return(list(cond=mf.cond, offset=bcsd.delta))
-  }else if(args$method=='CDFt'){
+  }else if(args$method=='OhGh'){
     mh.sample <- sample.fxn(MH, args$tail, args$sample_size)
     oh.sample <- sample.fxn(OH, args$tail, args$sample_size)
+    mh.thold <- sample.fxn(MH, args$tail, 1)
     tail.comp = switch(args$tail, 
                        upper=">", 
                        lower="<")
     if(do.call(tail.comp, list(oh.sample, mh.sample))){
-      oh.prob <- ecdf(x=OH)(mh.sample)
+      oh.prob <- ecdf(x=OH)(mh.thold)
       #Map from quantile space to downscaled space
       ds.condval <- quantile(DS, probs=oh.prob)
       mf.diffval <- quantile(MF, probs=oh.prob)
