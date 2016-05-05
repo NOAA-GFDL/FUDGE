@@ -56,6 +56,9 @@ def makeExpEns():
 		print("Error in makeExpEns: either --input or --project and --exp_name must be provided!")
 		sys.exit(1)
 	verbose = options.verbose	
+	runMakeExpEns(expdict, options.anom_only_ens, options.rec_only_ens, verbose)
+	
+def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=False):	
 	###main script
 	#obtain environment variables
 	basedir = os.environ.get('BASEDIR')
@@ -85,7 +88,7 @@ def makeExpEns():
 	isAnom=False
 	if ("Anom" in climvar):
 		print("This var may be an anomaly var")
-		if(options.anom_only_ens):
+		if(anom_only_ens):
 			print("however, since anom_only_ens is set, the anom + clim data will not be searched for")
 		else:	
 			isAnom=True		
@@ -105,7 +108,7 @@ def makeExpEns():
 	for flist in all_outfiles:
 		flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 		outfile = call_ens_creation(flist,climvar,rips,rip_string,out_rip,\
-				exp_name,epoch,trange_string,isAnom,options.rec_only_ens,verbose)
+				exp_name,epoch,trange_string,isAnom,rec_only_ens,verbose)
 		ens_list = ens_list + outfile		
 	#When everything is over, add the list of output ensemble files to the experiment_info.txt files
 	#in all locations.
@@ -177,9 +180,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		print("Making " + osp.dirname(outfile))
 		os.makedirs(osp.dirname(outfile))
 	#tmp_outfile = osp.join(tdir, outfile.lstrip("/"))
-	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())
-	#if not osp.exists(osp.dirname(tmp_outfile)):
-	#	os.makedirs(osp.dirname(tmp_outfile))			
+	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())			
 	#Finally, call the ensemble generation code:	
 	ens_min = basedir + "utils/s7/ens_min.csh"	
 	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles])
@@ -201,6 +202,8 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		return([outfile])
 		
 def ens_namemap(ens_list): 
+	#Sorts the esemble files into the order in which they should be written 
+	#to the experiment_info.txt file, since dicts are unordered.
 	ens_loc = copy.copy(ens_list)
 	ens_names = ['qc.ensemble','save.ensemble', 'anom.ensemble', 'ds.ensemble']
 	ens_search = ['qcmask', 'save', 'Anom', '']
@@ -216,9 +219,7 @@ def ens_namemap(ens_list):
 		elif matchlen != 0:
 			print("Error in ens_namemap: match in" + str(matchlen)+"locations in " + ",".join(ens_list))
 			sys.exit(1)	
-	#print ens_indexed		
-	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_order)) if re.search(ens_order[e],x) is not None][0])
-	#print(out)						
+	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_order)) if re.search(ens_order[e],x) is not None][0])					
 	return(out)	
 							 
 			 			 

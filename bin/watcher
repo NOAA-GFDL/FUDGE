@@ -247,6 +247,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 	    text = text + "\n\njob IDs for reference-\n"+ jobids
 	    text = text + "\nPP scripts for reference-\n"+ wscript
 	notifyUser(mailid,subject,text)
+	
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')
 	hostnam = "princeton.rdhpcs.noaa.gov"

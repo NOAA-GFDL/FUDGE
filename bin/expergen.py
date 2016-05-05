@@ -649,7 +649,10 @@ def main():
         	os.makedirs(sbase+"/postProc/aux/")
         #CEW edit 5-2-16 for writing postproc status files
         if not os.path.exists(sbase+"/postProc/ppStatus/"):
-        	os.makedirs(sbase+"/postProc/ppStatus/")	
+        	os.makedirs(sbase+"/postProc/ppStatus/")
+        #CEW edit 5-4-16 for writing cross-validation status files
+        if not os.path.exists(sbase+"/postProc/ppStatus/"):
+        	os.makedirs(sbase+"/postProc/cvStatus/")		
 	suffctr = 1
         for pname,pval in copyprop.iteritems():
 	   listrips = pval.split(',')
