@@ -18,6 +18,13 @@ callTailAdjust <- function(test, input, adjusted.output){
   }else{
     delta_sample = test$qc_args$lastNpts
   }
+  triggertypes <- c('GfGh', 'OhGh')
+  if(!('triggertype')%in%arg.names){
+    stop(paste("Error in callTailAdjust: triggertype must be specified!"))
+  }else if(!test$qc_args$triggertype%in%triggertypes){
+    stop(paste("Error in callTailAdjust: triggertype must be one of", 
+               paste(triggertypes, collapse=",")))
+  }
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
