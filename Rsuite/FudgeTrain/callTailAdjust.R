@@ -63,53 +63,53 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, obs.fut, args){
          'OhGh' = obs.fut)
   obs.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
   obs.fut[lotail$cond] = cond.data[lotail$cond] - lotail$offset
-  #stop('examine output')
   return(obs.fut)
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
   #'Function for switching from one tail adjustment to another
-  #'Currently accepts the arguments 'BCQM' and 'CDFt'
-  sample.fxn <- function(data, tail, delta_sample){
-    delta_sample = delta_sample - 1
-    s.start <- switch(tail, 
-                      'upper'= length(data) - delta_sample, 
-                      'lower' = 1)
-    return(mean(sort(data)[s.start:(s.start+delta_sample)], 
-                na.rm=T))
-  }
+  #'Currently accepts the arguments 'GfGh' and 'OhGh'
+  select.cond = switch(args$tail, 
+                       lower = '>=', 
+                       upper = '<=')
+  adjust.cond = switch(args$tail, 
+                       lower='<',
+                       upper='>')
   if(args$triggertype=='GfGh'){
-    mh.thold <- sample.fxn(MH, args$tail, 1)
-    mh.sample <- sample.fxn(MH, args$tail, args$delta_sample)
-    oh.sample <- sample.fxn(OH, args$tail, args$delta_sample)  
-    tail.comp = switch(args$tail, 
-                       upper=">", 
-                       lower="<")
-    bcsd.delta <- mh.sample - oh.sample
-    mf.cond <- do.call(tail.comp, list(MF, mh.thold))
-    return(list(cond=mf.cond, offset=bcsd.delta))
-  }else if(args$triggertype=='OhGh'){
-    mh.sample <- sample.fxn(MH, args$tail, args$delta_sample)
-    oh.sample <- sample.fxn(OH, args$tail, args$delta_sample)
-    mh.thold <- sample.fxn(MH, args$tail, 1)
-    tail.comp = switch(args$tail, 
-                       upper=">", 
-                       lower="<")
-    if(do.call(tail.comp, list(oh.sample, mh.sample))){
-      oh.prob <- ecdf(x=OH)(mh.thold)
-      #Map from quantile space to downscaled space
-      ds.condval <- quantile(DS, probs=oh.prob)
-      mf.diffval <- quantile(MF, probs=oh.prob)
-      cdft.diff <- mf.diffval - ds.condval
-      ds.cond <- do.call(tail.comp, list(DS, ds.condval))
-      return(list(cond=ds.cond, offset=cdft.diff))
+    mf.rank = rank(MF)
+    MF  = sort(MF)
+    DS = sort(DS)
+    #mf.idx = tail(which(MF <= max(MH)), 1)
+    mf.idx = tail(which(do.call(select.cond, list(MF, max(MH)))), 1)
+    mf.tmp = MF[mf.idx]
+    ##get delta
+    delta.idx = (mf.idx-delta_sample-1):mf.idx
+    delta = mean(MF[delta.idx] - DS[delta.idx])
+    ##get selection
+    mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+    #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
+    return(list(cond=mf.cond, offset=delta))
+  }else if(args$triggertype=='OhMh'){
+    if (max(OH) <= max(MH)){
+      oh.prob = ecdf(x=OH)(max(MH))
+      #Assume that the sort is going to be the same for both datasetes
+      ds.val  = quantile(DS, probs=OH)
+      mf.val = quantile(MF, probs=OH)
+      ds.cond <- do.call(adjust.cond, list(DS, ds.val))
+      #Calculate delta
+      MF = sort(MF)
+      DS = sort(DS)
+      #mf.idx = tail(which(MF <= mf.val),1)
+      mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
+      delta.idx = (mf.idx-delta_sample-1):mf.idx
+      delta = mean(MF[delta.idx] - DS[delta.idx])
+      #DS[DS > ds.val] = DS[DS > ds.val] - delta
+      return(list(cond=ds.cond, offset=delta))
     }else{
       print('no adjust')
       cond=rep(FALSE, length(DS))
       offset=0
       return(list(cond=cond, offset=offset))
     }
-  }else{
-    stop("Error in tail_cutoff: method should be one of BCQM or CDFt!") 
   }
 }
