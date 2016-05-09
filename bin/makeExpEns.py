@@ -88,8 +88,9 @@ def makeExpEns():
 		if(options.anom_only_ens):
 			print("however, since anom_only_ens is set, the anom + clim data will not be searched for")
 		else:	
-			isAnom=True		
-	out_rip = "r1to" + str(len(expdict['output.path'])) + "i1p1" 
+			isAnom=True
+	rip_suffix = rips[1][-4:]				
+	out_rip = "r1to" + str(len(expdict['output.path'])) + rip_suffix
 	#Create ensembles of the data from this experiment:	
 	outpaths = [osp.dirname(p) for p in expdict['output.path']]
 	print outpaths

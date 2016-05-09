@@ -35,7 +35,7 @@ callTailAdjust <- function(test, input, adjusted.output){
     ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
-                               obs.fut = adjusted.output$ds.out[[ds.var]], 
+                               ds.fut = adjusted.output$ds.out[[ds.var]], 
                                args = list(delta_sample = delta_sample, 
                                            triggertype = triggertype))
     if(test$qc.mask=='on'){
@@ -54,54 +54,78 @@ callTailAdjust <- function(test, input, adjusted.output){
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
-tail.correct <-  function(model.hist, obs.hist,  model.fut, obs.fut, args){
+tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
-  hitail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='upper'))
-  lotail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='lower'))
+  hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+  lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
   cond.data = switch(args$triggertype, 
          'GfGh' = model.fut, 
-         'OhGh' = obs.fut)
-  obs.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
-  obs.fut[lotail$cond] = cond.data[lotail$cond] - lotail$offset
-  return(obs.fut)
+         'OhGh' = ds.fut)
+  ds.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
+  ds.fut[lotail$cond] = cond.data[lotail$cond] - lotail$offset
+  return(ds.fut)
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
   #'Function for switching from one tail adjustment to another
   #'Currently accepts the arguments 'GfGh' and 'OhGh'
+  trigger.fxn = switch(args$tail, 
+                         lower='min',
+                         upper='max')
   select.cond = switch(args$tail, 
                        lower = '>=', 
                        upper = '<=')
   adjust.cond = switch(args$tail, 
                        lower='<',
                        upper='>')
+  delta_sample = args$delta_sample
+  delta.by = switch(args$tail, 
+                    lower=(-1), 
+                    upper=(1))
   if(args$triggertype=='GfGh'){
     mf.rank = rank(MF)
     MF  = sort(MF)
     DS = sort(DS)
     #mf.idx = tail(which(MF <= max(MH)), 1)
-    mf.idx = tail(which(do.call(select.cond, list(MF, max(MH)))), 1)
-    mf.tmp = MF[mf.idx]
-    ##get delta
-    delta.idx = (mf.idx-delta_sample-1):mf.idx
-    delta = mean(MF[delta.idx] - DS[delta.idx])
-    ##get selection
-    mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
-    #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
-    return(list(cond=mf.cond, offset=delta))
-  }else if(args$triggertype=='OhMh'){
-    if (max(OH) <= max(MH)){
-      oh.prob = ecdf(x=OH)(max(MH))
+    mf.idx = tail(which(do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))), 1)
+    if(length(mf.idx)==1){
+      mf.tmp = MF[mf.idx]
+      ##get delta
+      #delta.idx = (mf.idx-delta_sample):mf.idx
+      #print(mf.idx)
+      #print(summary(MF))
+      #print(summary(MH))
+      #print(which(do.call(select.cond, list(MF, do.call(trigger.fxn, MH)))))
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+      print(delta.idx)
+      delta = mean(MF[delta.idx] - DS[delta.idx])
+      ##get selection
+      mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+      print("condition sum:")
+      print(sum(mf.cond))
+      #stop('examine output')
+      #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
+      return(list(cond=mf.cond, offset=delta))
+    }else{
+      print("No adjust")
+      cond=rep(FALSE, length(DS))
+      offset=0
+      return(list(cond=cond, offset=offset))
+    }
+  }else if(args$triggertype=='OhGh'){
+    if (do.call(trigger.fxn, OH) <= do.call(trigger.fxn, MH)){
+      oh.prob = ecdf(x=OH)(do.call(trigger.fxn, MH))
       #Assume that the sort is going to be the same for both datasetes
-      ds.val  = quantile(DS, probs=OH)
-      mf.val = quantile(MF, probs=OH)
+      ds.val  = quantile(DS, probs=oh.prob)
+      mf.val = quantile(MF, probs=oh.prob)
       ds.cond <- do.call(adjust.cond, list(DS, ds.val))
       #Calculate delta
       MF = sort(MF)
       DS = sort(DS)
       #mf.idx = tail(which(MF <= mf.val),1)
       mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
-      delta.idx = (mf.idx-delta_sample-1):mf.idx
+      #delta.idx = (mf.idx-delta_sample):mf.idx
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
       delta = mean(MF[delta.idx] - DS[delta.idx])
       #DS[DS > ds.val] = DS[DS > ds.val] - delta
       return(list(cond=ds.cond, offset=delta))
