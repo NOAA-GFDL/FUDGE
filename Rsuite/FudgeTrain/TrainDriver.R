@@ -84,7 +84,7 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      
      for(i.index in 1:targ.dim[1]){  #Most of the time, this will be 1
        for(j.index in 1:targ.dim[2]){ #
-       #for(j.index in 78:targ.dim[2]){ #65 and 78
+       #for(j.index in 52:targ.dim[2]){ #65 and 78
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[[1]][i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[[1]][i.index,j.index,]))!=0){ #For predictors, use first entry as a proxy for NAs across the board
@@ -125,7 +125,31 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
            #Nothing needs to be done because there is already a vector of NAs of the right dimensions inititalized.
            message(paste("Too many missing values in i =", i.index,",", "j =", j.index,"; skipping without downscaling"))
          }
-         #stop('examine output')
+#          if(j.index==52){
+#            for(name in ds.varnames){
+#              print(summary(ds.out[[name]][i.index,j.index,]))
+#              print(sum(qc.mask[[name]][i.index,j.index,], na.rm=T))
+#            }
+# #          train.predictor = lapply(hist.masked.in, '[', i.index, j.index,)#hist.masked.in[i.index, j.index,], 
+# #          train.target = target.masked.in[i.index, j.index,] 
+# #          esd.gen = lapply(fut.masked.in, '[', i.index, j.index,)
+# #          ds.var=ds.var
+# #          att.table=att.table
+# #          mask.struct = mask.list
+# #          create.ds.out=create.ds.out 
+# #          downscale.fxn = ds.method 
+# #          downscale.args = downscale.args
+# #          kfold=k
+# # #          save(file='/home/cew/Code/ginger_testing/tail_adj/save/nPts10.R', list=c('train.predictor', 'train.target', 'esd.gen', 
+# # #                                                                                   'ds.var', 'att.table', 'mask.list', 
+# # #                                                                                   's5.instructions', 's5.adjust', 
+# # #                                                                                   'ds.out', 'qc.mask'))
+# #          save(file='/home/cew/Code/ginger_testing/tail_adj/save/nPts5.R', list=c('train.predictor', 'train.target', 'esd.gen', 
+# #                                                                                   'ds.var', 'att.table', 'mask.list', 
+# #                                                                                   's5.instructions', 's5.adjust', 
+# #                                                                                   'ds.out', 'qc.mask'))
+#          stop('examine output')
+#          }
        }#for j
      }#for i
      #stop('examine output')

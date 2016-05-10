@@ -42,9 +42,17 @@ callTailAdjust <- function(test, input, adjusted.output){
       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
                        1, 0)
       non.missing <- which(qc.tmp==0)
-      ds.tmp <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]),
+      #Getting what look and act like errors in epsilon
+      #when comparing n=1 with n > 1; 
+      #adding an epsilon check to see if that solves the issue.
+      eps = .Machine['double.eps'][[1]]*2
+      #abs(values_new1 - values2[slope_rank==1]) <= eps
+      ds.tmp <- ifelse(
+        abs(ds.correct - as.numeric(adjusted.output$ds.out[[ds.var]]))<=eps,
                        1, NA)
       qc.tmp[non.missing] <- ds.tmp[non.missing]
+      print('Total number of points different:')
+      print(sum((qc.tmp)==1, na.rm=T))
       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
@@ -56,13 +64,20 @@ callTailAdjust <- function(test, input, adjusted.output){
 
 tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
+  print('calling upper')
   hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+  print('calling lower')
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
   cond.data = switch(args$triggertype, 
          'GfGh' = model.fut, 
          'OhGh' = ds.fut)
-  ds.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
-  ds.fut[lotail$cond] = cond.data[lotail$cond] - lotail$offset
+#  ds.orig <- ds.fut
+#   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
+#                                                         'model.hist', 'obs.hist', 'model.fut'))
+  ds.fut[hitail$cond] = cond.data[hitail$cond] + hitail$offset
+  ds.fut[lotail$cond] = cond.data[lotail$cond] + lotail$offset
+  #print('Total number of points different at this point:')
+  #print(which((ds.fut-ds.orig)==0))
   return(ds.fut)
 }
 
@@ -80,15 +95,20 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
                        upper='>')
   delta_sample = args$delta_sample
   delta.by = switch(args$tail, 
-                    lower=(-1), 
-                    upper=(1))
+                    lower=(1), 
+                    upper=(-1))
   if(args$triggertype=='GfGh'){
     mf.rank = rank(MF)
     MF  = sort(MF)
     DS = sort(DS)
     #mf.idx = tail(which(MF <= max(MH)), 1)
-    mf.idx = tail(which(do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))), 1)
-    if(length(mf.idx)==1){
+    mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+    trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)), 
+                                             do.call(trigger.fxn, list(MH))))
+    if(any(mf.points==TRUE) && trigger.cond){
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      #Check on behavior when Max(MH) == max(MF)
+     #do.call(trigger.fxn, list(MH))
       mf.tmp = MF[mf.idx]
       ##get delta
       #delta.idx = (mf.idx-delta_sample):mf.idx
@@ -97,10 +117,19 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #print(summary(MH))
       #print(which(do.call(select.cond, list(MF, do.call(trigger.fxn, MH)))))
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
-      print(delta.idx)
-      delta = mean(MF[delta.idx] - DS[delta.idx])
+      #print(delta.idx)
+      if(any(delta.idx < 1)){
+        print(trigger.fxn)
+        print(summary(MF))
+        print(summary(MH))
+        print("Overlap too small of delta_sample; resizing")
+        delta.idx <- delta.idx[delta.idx >= 1]
+      }
+      delta = mean(DS[delta.idx] - MF[delta.idx])
+      #print(paste("Delta:", delta))
       ##get selection
       mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+      print(mf.tmp)
       print("condition sum:")
       print(sum(mf.cond))
       #stop('examine output')
@@ -127,7 +156,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #delta.idx = (mf.idx-delta_sample):mf.idx
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
       delta = mean(MF[delta.idx] - DS[delta.idx])
-      #DS[DS > ds.val] = DS[DS > ds.val] - delta
+      #DS[DS < ds.val] = DS[DS < ds.val] - delta
       return(list(cond=ds.cond, offset=delta))
     }else{
       print('no adjust')
