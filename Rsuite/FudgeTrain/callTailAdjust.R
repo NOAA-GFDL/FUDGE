@@ -96,7 +96,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
   #print('Total number of points different at this point:')
   #print(which((ds.fut-ds.orig)==0))
-  return(list(ds = ds.fut, mask = (hitail$cond|lotail$cond)))
+  return(list(ds = ds.orig, mask = (hitail$cond|lotail$cond)))
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
@@ -141,8 +141,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #print(paste("Delta:", delta))
       ##get selection
       mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
-      print("condition sum:")
-      #stop('examine output')
       #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
       return(list(cond=mf.cond, offset=delta))
     }else{
