@@ -39,24 +39,27 @@ callTailAdjust <- function(test, input, adjusted.output){
                                args = list(delta_sample = delta_sample, 
                                            triggertype = triggertype))
     if(test$qc.mask=='on'){
-      qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
-                       1, 0)
-      non.missing <- which(qc.tmp==0)
-      #Getting what look and act like errors in epsilon
-      #when comparing n=1 with n > 1; 
-      #adding an epsilon check to see if that solves the issue.
-      eps = .Machine['double.eps'][[1]]*2
-      #abs(values_new1 - values2[slope_rank==1]) <= eps
-      ds.tmp <- ifelse(
-        abs(ds.correct - as.numeric(adjusted.output$ds.out[[ds.var]]))<=eps,
-                       1, NA)
-      qc.tmp[non.missing] <- ds.tmp[non.missing]
-      print('Total number of points different:')
-      print(sum((qc.tmp)==1, na.rm=T))
-      adjusted.output$qc.mask[[ds.var]] <- qc.tmp
+      ds.correct$mask[ds.correct$mask==0] <- NA
+      adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
+      
+#       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
+#                        1, 0)
+#       non.missing <- which(qc.tmp==0)
+#       #Getting what look and act like errors in epsilon
+#       #when comparing n=1 with n > 1; 
+#       #adding an epsilon check to see if that solves the issue.
+#       eps = .Machine['double.eps'][[1]]*2
+#       #abs(values_new1 - values2[slope_rank==1]) <= eps
+#       ds.tmp <- ifelse(
+#         abs(ds.correct - as.numeric(adjusted.output$ds.out[[ds.var]]))<=eps,
+#                        1, NA)
+#       qc.tmp[non.missing] <- ds.tmp[non.missing]
+#       print('Total number of points different:')
+#       print(sum((qc.tmp)==1, na.rm=T))
+#       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
-      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct)
+      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
     }
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))
@@ -64,21 +67,36 @@ callTailAdjust <- function(test, input, adjusted.output){
 
 tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
+  cond.data = switch(args$triggertype, 
+                     'GfGh' = model.fut, 
+                     'OhGh' = ds.fut)
+  cond.missvals <- !is.na(cond.data)
+  ds.orig <- ds.fut
+  model.hist <- remove.missvals(model.hist)
+  obs.hist <- remove.missvals(obs.hist)
+  model.fut <- remove.missvals(model.fut)
+  ds.fut <- remove.missvals(ds.fut)
+  #Calculate high and low tails
   print('calling upper')
   hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
   print('calling lower')
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
-  cond.data = switch(args$triggertype, 
-         'GfGh' = model.fut, 
-         'OhGh' = ds.fut)
+  #Add missing values of condition back into main
+  cond.tmp <- cond.missvals
+  cond.tmp[cond.tmp] <- hitail$cond
+  hitail$cond <- cond.tmp
+  cond.tmp <- cond.missvals
+  cond.tmp[cond.tmp] <- lotail$cond
+  lotail$cond <- cond.tmp
+  
 #  ds.orig <- ds.fut
 #   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
 #                                                         'model.hist', 'obs.hist', 'model.fut'))
-  ds.fut[hitail$cond] = cond.data[hitail$cond] + hitail$offset
-  ds.fut[lotail$cond] = cond.data[lotail$cond] + lotail$offset
+  ds.orig[hitail$cond] = cond.data[hitail$cond] + hitail$offset
+  ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
   #print('Total number of points different at this point:')
   #print(which((ds.fut-ds.orig)==0))
-  return(ds.fut)
+  return(list(ds = ds.fut, mask = (hitail$cond|lotail$cond)))
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
@@ -105,19 +123,13 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
     trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)), 
                                              do.call(trigger.fxn, list(MH))))
-    if(any(mf.points==TRUE) && trigger.cond){
+    if(any(mf.points==TRUE, na.rm=T) && trigger.cond){
       mf.idx = do.call(trigger.fxn, list(which(mf.points)))
       #Check on behavior when Max(MH) == max(MF)
      #do.call(trigger.fxn, list(MH))
       mf.tmp = MF[mf.idx]
       ##get delta
-      #delta.idx = (mf.idx-delta_sample):mf.idx
-      #print(mf.idx)
-      #print(summary(MF))
-      #print(summary(MH))
-      #print(which(do.call(select.cond, list(MF, do.call(trigger.fxn, MH)))))
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
-      #print(delta.idx)
       if(any(delta.idx < 1)){
         print(trigger.fxn)
         print(summary(MF))
@@ -129,21 +141,19 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #print(paste("Delta:", delta))
       ##get selection
       mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
-      print(mf.tmp)
       print("condition sum:")
-      print(sum(mf.cond))
       #stop('examine output')
       #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
       return(list(cond=mf.cond, offset=delta))
     }else{
       print("No adjust")
-      cond=rep(FALSE, length(DS))
+      cond=rep(FALSE, length(MF))
       offset=0
       return(list(cond=cond, offset=offset))
     }
   }else if(args$triggertype=='OhGh'){
-    if (do.call(trigger.fxn, OH) <= do.call(trigger.fxn, MH)){
-      oh.prob = ecdf(x=OH)(do.call(trigger.fxn, MH))
+    if (do.call(trigger.fxn, OH) <= do.call(trigger.fxn, list(MH))){
+      oh.prob = ecdf(x=OH)(do.call(trigger.fxn, list(MH)))
       #Assume that the sort is going to be the same for both datasetes
       ds.val  = quantile(DS, probs=oh.prob)
       mf.val = quantile(MF, probs=oh.prob)
@@ -152,8 +162,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       MF = sort(MF)
       DS = sort(DS)
       #mf.idx = tail(which(MF <= mf.val),1)
-      mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
-      #delta.idx = (mf.idx-delta_sample):mf.idx
+      #mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
+      mf.points = do.call(select.cond, list(MF, mf.val))
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      #get delta
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
       delta = mean(MF[delta.idx] - DS[delta.idx])
       #DS[DS < ds.val] = DS[DS < ds.val] - delta
