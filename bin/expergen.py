@@ -651,7 +651,7 @@ def main():
         if not os.path.exists(sbase+"/postProc/ppStatus/"):
         	os.makedirs(sbase+"/postProc/ppStatus/")
         #CEW edit 5-4-16 for writing cross-validation status files
-        if not os.path.exists(sbase+"/postProc/ppStatus/"):
+        if not os.path.exists(sbase+"/postProc/cvStatus/"):
         	os.makedirs(sbase+"/postProc/cvStatus/")		
 	suffctr = 1
         for pname,pval in copyprop.iteritems():
