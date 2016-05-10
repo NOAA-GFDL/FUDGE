@@ -11,12 +11,21 @@ callTailAdjust <- function(test, input, adjusted.output){
   }else{
     ignore0 <-  FALSE
   }
-  if(!('sample_size')%in%arg.names){
-    sample_size <- 1
-  }else if(test$qc_args$sample_size==0){
-    sample_size = 1
+  if(!('lastNpts')%in%arg.names){
+    delta_sample <- 1
+  }else if(test$qc_args$lastNpts==0){
+    delta_sample = 1
   }else{
-    sample_size = test$qc_args$sample_size
+    delta_sample = test$qc_args$lastNpts
+  }
+  triggertypes <- c('GfGh', 'OhGh')
+  if(!('triggertype')%in%arg.names){
+    stop(paste("Error in callTailAdjust: triggertype must be specified!"))
+  }else if(!test$qc_args$triggertype%in%triggertypes){
+    stop(paste("Error in callTailAdjust: triggertype must be one of", 
+               paste(triggertypes, collapse=",")))
+  }else{
+    triggertype = test$qc_args$triggertype
   }
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
@@ -26,78 +35,144 @@ callTailAdjust <- function(test, input, adjusted.output){
     ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
-                               obs.fut = adjusted.output$ds.out[[ds.var]], 
-                               args = test$qc_args)
+                               ds.fut = adjusted.output$ds.out[[ds.var]], 
+                               args = list(delta_sample = delta_sample, 
+                                           triggertype = triggertype))
     if(test$qc.mask=='on'){
-      qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
-                       1, 0)
-      non.missing <- which(qc.tmp==0)
-      ds.tmp <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]),
-                       1, NA)
-      qc.tmp[non.missing] <- ds.tmp[non.missing]
-      adjusted.output$qc.mask[[ds.var]] <- qc.tmp
+      ds.correct$mask[ds.correct$mask==0] <- NA
+      adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
+      
+#       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
+#                        1, 0)
+#       non.missing <- which(qc.tmp==0)
+#       #Getting what look and act like errors in epsilon
+#       #when comparing n=1 with n > 1; 
+#       #adding an epsilon check to see if that solves the issue.
+#       eps = .Machine['double.eps'][[1]]*2
+#       #abs(values_new1 - values2[slope_rank==1]) <= eps
+#       ds.tmp <- ifelse(
+#         abs(ds.correct - as.numeric(adjusted.output$ds.out[[ds.var]]))<=eps,
+#                        1, NA)
+#       qc.tmp[non.missing] <- ds.tmp[non.missing]
+#       print('Total number of points different:')
+#       print(sum((qc.tmp)==1, na.rm=T))
+#       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
-      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct)
+      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
     }
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
-tail.correct <-  function(model.hist, obs.hist,  model.fut, obs.fut, args){
+tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
-  hitail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='upper'))
-  lotail = tail_cutoff(model.hist, obs.hist, model.fut, obs.fut, c(args, tail='lower'))
-  cond.data = switch(args$method, 
-         'BCQM' = model.fut, 
-         'CDFt' = obs.fut)
-  obs.fut[hitail$cond] = cond.data[hitail$cond] - hitail$offset
-  obs.fut[lotail$cond] = cond.data[lotail$cond] - lotail$offset
-  #stop('examine output')
-  return(obs.fut)
+  cond.data = switch(args$triggertype, 
+                     'GfGh' = model.fut, 
+                     'OhGh' = ds.fut)
+  cond.missvals <- !is.na(cond.data)
+  ds.orig <- ds.fut
+  model.hist <- remove.missvals(model.hist)
+  obs.hist <- remove.missvals(obs.hist)
+  model.fut <- remove.missvals(model.fut)
+  ds.fut <- remove.missvals(ds.fut)
+  #Calculate high and low tails
+  print('calling upper')
+  hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+  print('calling lower')
+  lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+  #Add missing values of condition back into main
+  cond.tmp <- cond.missvals
+  cond.tmp[cond.tmp] <- hitail$cond
+  hitail$cond <- cond.tmp
+  cond.tmp <- cond.missvals
+  cond.tmp[cond.tmp] <- lotail$cond
+  lotail$cond <- cond.tmp
+  
+#  ds.orig <- ds.fut
+#   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
+#                                                         'model.hist', 'obs.hist', 'model.fut'))
+  ds.orig[hitail$cond] = cond.data[hitail$cond] + hitail$offset
+  ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
+  #print('Total number of points different at this point:')
+  #print(which((ds.fut-ds.orig)==0))
+  return(list(ds = ds.orig, mask = (hitail$cond|lotail$cond)))
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
   #'Function for switching from one tail adjustment to another
-  #'Currently accepts the arguments 'BCQM' and 'CDFt'
-  sample.fxn <- function(data, tail, sample_size){
-    sample_size = sample_size - 1
-    s.start <- switch(tail, 
-                      'upper'= length(data) - sample_size, 
-                      'lower' = 1)
-    return(mean(sort(data)[s.start:(s.start+sample_size)], 
-                na.rm=T))
-  }
-  if(args$method=='BCQM'){
-    mh.sample <- sample.fxn(MH, args$tail, args$sample_size)
-    oh.sample <- sample.fxn(OH, args$tail, args$sample_size)
-    tail.comp = switch(args$tail, 
-                       upper=">", 
-                       lower="<")
-    bcsd.delta <- mh.sample - oh.sample
-    mf.cond <- do.call(tail.comp, list(MF, mh.sample))
-    return(list(cond=mf.cond, offset=bcsd.delta))
-  }else if(args$method=='CDFt'){
-    mh.sample <- sample.fxn(MH, args$tail, args$sample_size)
-    oh.sample <- sample.fxn(OH, args$tail, args$sample_size)
-    tail.comp = switch(args$tail, 
-                       upper=">", 
-                       lower="<")
-    if(do.call(tail.comp, list(oh.sample, mh.sample))){
-      oh.prob <- ecdf(x=OH)(mh.sample)
-      #Map from quantile space to downscaled space
-      ds.condval <- quantile(DS, probs=oh.prob)
-      mf.diffval <- quantile(MF, probs=oh.prob)
-      cdft.diff <- mf.diffval - ds.condval
-      ds.cond <- do.call(tail.comp, list(DS, ds.condval))
-      return(list(cond=ds.cond, offset=cdft.diff))
+  #'Currently accepts the arguments 'GfGh' and 'OhGh'
+  trigger.fxn = switch(args$tail, 
+                         lower='min',
+                         upper='max')
+  select.cond = switch(args$tail, 
+                       lower = '>=', 
+                       upper = '<=')
+  adjust.cond = switch(args$tail, 
+                       lower='<',
+                       upper='>')
+  delta_sample = args$delta_sample
+  delta.by = switch(args$tail, 
+                    lower=(1), 
+                    upper=(-1))
+  if(args$triggertype=='GfGh'){
+    mf.rank = rank(MF)
+    MF  = sort(MF)
+    DS = sort(DS)
+    #mf.idx = tail(which(MF <= max(MH)), 1)
+    mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+    trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)), 
+                                             do.call(trigger.fxn, list(MH))))
+    if(any(mf.points==TRUE, na.rm=T) && trigger.cond){
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      #Check on behavior when Max(MH) == max(MF)
+     #do.call(trigger.fxn, list(MH))
+      mf.tmp = MF[mf.idx]
+      ##get delta
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+      if(any(delta.idx < 1)){
+        print(trigger.fxn)
+        print(summary(MF))
+        print(summary(MH))
+        print("Overlap too small of delta_sample; resizing")
+        delta.idx <- delta.idx[delta.idx >= 1]
+      }
+      delta = mean(DS[delta.idx] - MF[delta.idx])
+      #print(paste("Delta:", delta))
+      ##get selection
+      mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+      #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
+      return(list(cond=mf.cond, offset=delta))
+    }else{
+      print("No adjust")
+      cond=rep(FALSE, length(MF))
+      offset=0
+      return(list(cond=cond, offset=offset))
+    }
+  }else if(args$triggertype=='OhGh'){
+    if (do.call(trigger.fxn, OH) <= do.call(trigger.fxn, list(MH))){
+      oh.prob = ecdf(x=OH)(do.call(trigger.fxn, list(MH)))
+      #Assume that the sort is going to be the same for both datasetes
+      ds.val  = quantile(DS, probs=oh.prob)
+      mf.val = quantile(MF, probs=oh.prob)
+      ds.cond <- do.call(adjust.cond, list(DS, ds.val))
+      #Calculate delta
+      MF = sort(MF)
+      DS = sort(DS)
+      #mf.idx = tail(which(MF <= mf.val),1)
+      #mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
+      mf.points = do.call(select.cond, list(MF, mf.val))
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      #get delta
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+      delta = mean(MF[delta.idx] - DS[delta.idx])
+      #DS[DS < ds.val] = DS[DS < ds.val] - delta
+      return(list(cond=ds.cond, offset=delta))
     }else{
       print('no adjust')
       cond=rep(FALSE, length(DS))
       offset=0
       return(list(cond=cond, offset=offset))
     }
-  }else{
-    stop("Error in tail_cutoff: method should be one of BCQM or CDFt!") 
   }
 }
