@@ -21,8 +21,7 @@ import netCDF4
 from netCDF4 import Dataset		
 	
 def makeExpEns():
-	#Performs steps over all ensembles that count as part of the 
-	#standardization process (such as collecting into ensemble files for the experiment)
+	#Input parsing and arg checking for main body of code
 	usage = "usage: %prog [-p project -e exp_name] [-i input] [--anom_only_ens] [--verbose]"
 	parser = OptionParser(usage=usage, version='makeExpEns 1.0')
 	parser.add_option("-p", "--project", dest="project", default="NA", help="Project used for the experiment (i.e. PM, RR2). Will be used to reconstruct an ESD-standard path to the scripts directory.")
@@ -60,6 +59,8 @@ def makeExpEns():
 	
 def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=False):	
 	###main script
+	#Performs steps over all ensembles that count as part of the 
+	#standardization process (such as collecting into ensemble files for the experiment)
 	#obtain environment variables
 	basedir = os.environ.get('BASEDIR')
 	tdir = os.environ.get('TMPDIR')
@@ -133,7 +134,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	with open(tmpfile, 'a') as f:
 		f.write(append_str)
 	for out in outpaths_all:
-		gcp(tmpfile, out, verbose, verbose)
+		gcp(tmpfile, out, False, verbose, verbose)
 	print("Modified experiment.info files copied to all locations:")
 	print("\n".join(outpaths_all))							
 	
@@ -199,7 +200,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		if verbose:
 			print(str(out0))
 			print(str(err0))
-		gcp(tmp_outfile, outfile, verbose, verbose)
+		gcp(tmp_outfile, outfile, False, verbose, verbose)
 		return([outfile])
 		
 def ens_namemap(ens_list): 

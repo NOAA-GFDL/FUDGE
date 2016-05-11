@@ -15,7 +15,8 @@ from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
-frpm ppWatcher import runPPWatcher
+import ppWatcher
+from ppWatcher import runPPWatcher
 
 def parserWatcher():
 	verbose = False #default
@@ -57,7 +58,7 @@ def parserWatcher():
 			if (vals == True):	
 				verbose = vals
 				sev = 1
-			    verbopt = 1
+				verbopt = 1
 		if(opts == 'debug'):
 			if (vals == True):
 				debug = vals
@@ -127,7 +128,7 @@ def asciiParser(uinput):
 		op  = True
 		if(op == True) & (spatmask == False):
 			if not ":" in line: 
-			output_path = output_path+","+line
+				output_path = output_path+","+line
 		if(line.startswith('spat.mask.path_1:')):
 			spatmask  = True
 		if(line.startswith('script.base:')):
@@ -167,48 +168,48 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		retcode = 1
 		#TODO include retcode2 somehow in the following
 		while ((retcode != 0) & (retcode != -13)): # | (len(list_output)!=0)) ) &( (retcode != -13))):
-		v_print(1,"INFO: loop --"+(str)(nloop_start+1)) 
-		v_print(3,"return after a loop"+(str)(retcode))
-		v_print(2,"length of output.path"+(str)(len(list_output)))
-		v_print(2,"nloops"+"<="+(str)(nloop_start)) 
-		if ((int)(nloops) <= (int)(nloop_start)):
-		 	subject = "fudge notification- watcher/failure"
-		 	text = "Your watcher has timed out. postProc cannot be submitted at this time. \n\nExperiment_info.txt for reference-\n"+uinput
-			text = text + "\n Please contact Aparna and Carolyn for assistance"
-			notifyUser(mailid,subject,text)
-			sys.exit("Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start))
-		v_print(1, "checker to run on the file ") 
-		retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt)
-		if (qc_mask_bool == 'on'):
-			v_print(1, "qc_mask seems to be on, checker to run on qc_mask")
-			outmask = out+"/"+target+"_qcmask"
-			retcode2 = checker.checker(outmask,exp_cnt,"warning",verbose=verbopt)
+			v_print(1,"INFO: loop --"+(str)(nloop_start+1)) 
+			v_print(3,"return after a loop"+(str)(retcode))
+			v_print(2,"length of output.path"+(str)(len(list_output)))
+			v_print(2,"nloops"+"<="+(str)(nloop_start)) 
+			if ((int)(nloops) <= (int)(nloop_start)):
+		 		subject = "fudge notification- watcher/failure"
+		 		text = "Your watcher has timed out. postProc cannot be submitted at this time. \n\nExperiment_info.txt for reference-\n"+uinput
+				text = text + "\n Please contact Aparna and Carolyn for assistance"
+				notifyUser(mailid,subject,text)
+				sys.exit("Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start))
+			v_print(1, "checker to run on the file ") 
+			retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt)
+			if (qc_mask_bool == 'on'):
+				v_print(1, "qc_mask seems to be on, checker to run on qc_mask")
+				outmask = out+"/"+target+"_qcmask"
+				retcode2 = checker.checker(outmask,exp_cnt,"warning",verbose=verbopt)
 		#print retcode
-			if (retcode3 == 0) & (retcode2 == 0):
-				v_print(1,"Both ds output and mask output seem to be available") 
-				#cprint "pop ", ctr
-			#com list_output.pop(ctr)
-				ctr = ctr - 1	
-				retcode = 0
-			else:
-				if(retcode2 != 0):
-					retcode = retcode2
-					v_print(2,"Mask file(s) to be assessed") 
+				if (retcode3 == 0) & (retcode2 == 0):
+					v_print(1,"Both ds output and mask output seem to be available") 
+					#cprint "pop ", ctr
+					#com list_output.pop(ctr)
+					ctr = ctr - 1	
+					retcode = 0
 				else:
-					retcode = retcode3
-					v_print(2,"DS output to be assessed")
+					if(retcode2 != 0):
+						retcode = retcode2
+						v_print(2,"Mask file(s) to be assessed") 
+					else:
+						retcode = retcode3
+						v_print(2,"DS output to be assessed")
 				v_print(2,"RETURN CODE "+ (str)(retcode))
-		if(qc_mask_bool == 'off'):
-		if (retcode3 == 0):
-			retcode = 0 
-			#clist_output.pop(ctr)
-			ctr = ctr - 1 
-		else:
-			retcode = retcode3 
-		ctr = ctr+1
-		v_print(1,"Sleep between loops to initiate "+(str)(sleeptime))
-		time.sleep(sleeptime)
-		nloop_start = nloop_start + 1
+			if(qc_mask_bool == 'off'):
+				if (retcode3 == 0):
+					retcode = 0 
+					#clist_output.pop(ctr)
+					ctr = ctr - 1 
+				else:
+					retcode = retcode3 
+					ctr = ctr+1
+			v_print(1,"Sleep between loops to initiate "+(str)(sleeptime))
+			time.sleep(sleeptime)
+			nloop_start = nloop_start + 1
 		  #cnloop_start = nloop_start + 1  
 ############# check if postProc_call is False	
 	if(postProc_call == False):
@@ -237,16 +238,18 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		 subject = "fudge notification- watcher/failed"
 		 text = "One or more batch jobs may have failed for this run. postProc cannot be run at this time. Experiment_info.txt for reference: "+uinput
 		 text = text + "\n--Please contact Aparna and Carolyn for help with the runs."
+		 notifyUser(mailid,subject,text)
 	else:
 		 print "jobs submitted"
 		 subject = "fudge notification- watcher/success"
 		 text = "Your postProc jobs have been submitted.\n\nExperiment_info.txt for reference-\n"+uinput
 		 text = text + "\n\njob IDs for reference-\n"+ jobids
 		 text = text + "\nPP scripts for reference-\n"+ wscript
+		 notifyUser(mailid,subject,text)
 		 #CEW edit 5-4 for teh ppWatcher workflow
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
-		 runPPWatcher(exp_info, waittime, nrips)
-	notifyUser(mailid,subject,text)
+		 #runPPWatcher(uinput, waittime, nrips)
+		 runPPWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid)
 	
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')

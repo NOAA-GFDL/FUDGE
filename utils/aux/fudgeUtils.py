@@ -19,7 +19,9 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=Fa
 		command = "gcp -cd " + infile + " " + outfile
 	if verbose:	
 		print(command)
-	g = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True,env=os.environ)
+	modulepath = "source /usr/local/Modules/default/init/sh"	
+	mod_command = modulepath + "; module load gcp; module load globus;"	
+	g = subprocess.Popen(mod_command + command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True,env=os.environ)
 	g_out,g_err = g.communicate()
 	if(g.returncode != 0):
 		print "Error in gcp: file " + infile + " did not copy to " + outfile
@@ -57,3 +59,45 @@ def read_exp_info_file(exp_info):
 def tstamp():
 	#Returns a simple timestamp for the output file
 	return(re.sub("\\.", "_", str(time.time())))	
+	
+def notifyUser(mailid, subject, text):
+	#Implemenation of email notifications 
+	#using the mailx utility instead.
+	#Since mailx is used for FRE, this should be less
+	#likely to break.	
+	print('entering notifyUser')
+	#uinfo = os.environ.get('USER')
+	tmpdir = os.environ.get("TMPDIR")
+	hostnam = "princeton.rdhpcs.noaa.gov"
+	#send_from = uinfo+"@"+hostnam
+	send_to = mailid
+	if (mailid is not None):
+		text_file = osp.join(tmpdir, "fudge_mail.tmp")
+		f = open(text_file, 'wb')
+		f.write(text)
+		f.close()
+		command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
+		m = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+		m_out,m_err = m.communicate()
+	print("message sent and completed")		
+
+def notifyUser_py(mailid,subject,text):
+	#Implementation of email notifications using python's 
+	#smtp package.
+		# email header
+		print('entering notifyUser')
+		uinfo = os.environ.get('USER')
+		hostnam = "princeton.rdhpcs.noaa.gov"
+		send_from = uinfo+"@"+hostnam
+		send_to = mailid
+		msg = MIMEMultipart()
+		#msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
+		msg['From'] = 'oar.gfdl.esd'+'@'+"noaa.gov" #todo change to esd
+		msg['To'] = mailid
+		msg['Date'] = formatdate(localtime=True)
+		msg['Subject'] = subject
+		msg.attach( MIMEText(text))
+		if (mailid is not None):
+			 smtp = smtplib.SMTP("localhost")
+			 smtp.sendmail(send_from, [send_to], msg.as_string())
+			 smtp.close() 

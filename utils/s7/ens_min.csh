@@ -9,6 +9,7 @@ module unload ncarg
 module load ncarg/6.2.1
 module unload gcp
 module load gcp/2.3
+module load 
 #module list
 #Please note that the scraper script uses the default python install. If cdat
 #is loaded, the python script will fail.
