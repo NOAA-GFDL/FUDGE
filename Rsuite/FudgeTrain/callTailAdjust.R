@@ -88,7 +88,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   cond.tmp <- cond.missvals
   cond.tmp[cond.tmp] <- lotail$cond
   lotail$cond <- cond.tmp
-  
 #  ds.orig <- ds.fut
 #   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
 #                                                         'model.hist', 'obs.hist', 'model.fut'))
@@ -96,7 +95,17 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
   #print('Total number of points different at this point:')
   #print(which((ds.fut-ds.orig)==0))
-  return(list(ds = ds.orig, mask = (hitail$cond|lotail$cond)))
+#   xval = length(model.fut)
+#   yrange <- range(c(ds.fut, ds.orig, model.fut,model.hist))
+#   plot(x=1:xval, y=model.fut, col='red', lwd=2, main="MF, DS and DS with tail adjust", ylim=yrange)
+#   abline(h=max(model.hist), col='green')
+#   lines(x=1:xval, y=ds.fut, col='black', lwd=2)
+#   lines(x=1:xval, y=remove.missvals(ds.orig), col="blue",lwd=2, lty=2)
+#   legend('bottomright',legend=c('MF','DS','DS /w tailadj'), col=c('red', 'black', 'blue'), lty=c(1,1,2)) 
+#   abline(v=(hitail$cond|lotail$cond))
+  
+  # mask = (hitail$cond|lotail$cond)
+  return(list(ds = ds.orig, mask = (hitail$cond + lotail$cond)))
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
@@ -121,26 +130,35 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     DS = sort(DS)
     #mf.idx = tail(which(MF <= max(MH)), 1)
     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
-    trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)), 
-                                             do.call(trigger.fxn, list(MH))))
-    if(any(mf.points==TRUE, na.rm=T) && trigger.cond){
-      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-      #Check on behavior when Max(MH) == max(MF)
-     #do.call(trigger.fxn, list(MH))
-      mf.tmp = MF[mf.idx]
-      ##get delta
-      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
-      if(any(delta.idx < 1)){
-        print(trigger.fxn)
-        print(summary(MF))
-        print(summary(MH))
-        print("Overlap too small of delta_sample; resizing")
-        delta.idx <- delta.idx[delta.idx >= 1]
-      }
-      delta = mean(DS[delta.idx] - MF[delta.idx])
-      #print(paste("Delta:", delta))
-      ##get selection
-      mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+#     trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)), 
+#                                              do.call(trigger.fxn, list(MH))))
+    mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
+    #print(trigger.cond)
+    if(any(mf.points==TRUE, na.rm=T)){
+        mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+        #Check on behavior when Max(MH) == max(MF)
+        #do.call(trigger.fxn, list(MH))
+        mf.tmp = MF[mf.idx]
+        ##get delta
+        if(mf.overlap){
+          delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+          if(any(delta.idx < 1)){
+            print(trigger.fxn)
+            print("Overlap too small of delta_sample; resizing")
+            delta.idx <- delta.idx[delta.idx >= 1]
+          }
+          delta = mean(DS[delta.idx] - MF[delta.idx])
+          #print(paste("Delta:", delta))
+          ##get selection
+          mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+        }else{
+          print("Selecting mean(OH) - mean(MH)")
+          delta = mean(OH) - mean(MH)
+          print(mf.tmp)
+          print(adjust.cond)
+          mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
+          mf.cond <- mf.cond * 3
+        }
       #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
       return(list(cond=mf.cond, offset=delta))
     }else{

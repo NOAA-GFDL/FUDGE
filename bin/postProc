@@ -21,6 +21,8 @@ from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
+import fudgeUtils
+from fudgeUtils import notifyUser
 
 
 cnt = 0
@@ -488,48 +490,6 @@ def send_pp_message(status,step,exp_name,err, var,xml,outdir, minilog,pplog):
 	text = text + sep + "\n\nPostProc logs: "+ pplog
 	text = text + sep  + "\n\n--Please contact Aparna and Carolyn for help with the runs."
 	notifyUser(mailid,subject,text)	
-	
-def notifyUser(mailid, subject, text):
-	#Implemenation of email notifications 
-	#using the mailx utility instead.
-	#Since mailx is used for FRE, this should be less
-	#likely to break.	
-	print('entering notifyUser')
-	uinfo = os.environ.get('USER')
-	tmpdir = os.environ.get("TMPDIR")
-	hostnam = "princeton.rdhpcs.noaa.gov"
-	send_from = uinfo+"@"+hostnam
-	send_to = mailid
-	if (mailid is not None):
-		text_file = osp.join(tmpdir, "fudge_mail.tmp")
-		f = open(text_file, 'wb')
-		f.write(text)
-		f.close()
-		command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
-		m = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-		m_out,m_err = m.communicate()
-	print("message sent and completed")		
-
-def notifyUser_py(mailid,subject,text):
-	#Implementation of email notifications using python's 
-	#smtp package.
-		# email header
-		print('entering notifyUser')
-		uinfo = os.environ.get('USER')
-		hostnam = "princeton.rdhpcs.noaa.gov"
-		send_from = uinfo+"@"+hostnam
-		send_to = mailid
-		msg = MIMEMultipart()
-		#msg['From'] = 'aparna.radhakrishnan@noaa.gov' #todo change to esd
-		msg['From'] = 'oar.gfdl.esd'+'@'+"noaa.gov" #todo change to esd
-		msg['To'] = mailid
-		msg['Date'] = formatdate(localtime=True)
-		msg['Subject'] = subject
-		msg.attach( MIMEText(text))
-		if (mailid is not None):
-			 smtp = smtplib.SMTP("localhost")
-			 smtp.sendmail(send_from, [send_to], msg.as_string())
-			 smtp.close() 
 			 
 def write_pp_status(loc, filename, status):
 	newfile = loc + "/" + filename + "." + status

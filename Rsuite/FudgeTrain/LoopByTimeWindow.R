@@ -120,7 +120,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
-  #for (window in 10:10){
+  #for (window in 9:9){
     print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*

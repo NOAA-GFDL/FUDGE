@@ -87,101 +87,18 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid):
 			else:
 				print("Calling cross-validated ensemble creation script")
 				print("Or we would, if it existed right now.")
-				#runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+				try:
+					runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+				except:
+					import sys, cgitb
+					cgitb.enable()
+					print(cgitb.text(sys.exc_info()))
+					send_ppWatcher_message('failure')
+				else:
+					send_ppWatcher_message('success')		
 			#Make cross-validated ensemble; add to the relevant experiment info files	
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
 		send_ppWatcher_message('failure', 'what is a step', expdict['ds.experiment'], 'what is the error', \
 		                       expdict['script.base'], minilog, pplog, mailid)
-	sys.exit(0)
-		
-def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
-	#Makes the two cross-validated ensemble files for two historical
-	#experiments in the current setup. 
-	for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
-		fname = exp + ".lock"
-		open(osp.join(p, "postProc/cvStatus/",fname), 'a').close()	
-	exp1,exp2 = sort(exp1,exp2)
-	scriptdir1,scriptdir2 = sort(scriptdir1,scriptdir2)
-	expdict1 = read_exp_info_file(osp.join(scriptdir1,"experiment_info.txt"))
-	expdict2 = read_exp_info_file(osp.join(scriptdir1,"experiment_info.txt"))	
-	#Do a brief check for anomaly vars in the input files	
-	#There are two distinct classes of file; create each in turn
-	setdict = {'DSDEPh': {'odesc': 'dp', 'dataID':'DSDEPh', 'kfold':'K00', }}
-	for kty in ['DSDEPh', 'DSCVh']:
-		try:
-			call_cv_ens_creation()
-		except:
-			for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
-				prevname = exp + ".lock"
-				os.remove(osp.join(p, "postProc/cvStatus/",prevname), 'a')	
-				fname = exp + "_" + kty + "_" +".failure"	
-				open(osp.join(p, "postProc/cvStatus/",fname), 'a').close()	
-		else:
-			for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
-				prevname = exp + ".lock"
-				os.remove(osp.join(p, "postProc/cvStatus/",prevname), 'a')	
-				fname = exp + "_" + kty + "_" + ".success"	
-				open(osp.join(p, "postProc/cvStatus/",fname), 'a').close()	
-	
-def call_cv_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
-						trange_string,isAnom=False, recOnly=False,verbose=False):	
-	#Given a list of files and some handy metadata information, 
-	#calls a simple anomaly addition script to generate the 
-	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
-	basedir = os.environ.get('BASEDIR')
-	tdir = os.environ.get('TMPDIR')
-	tdir_ens = osp.join(tdir, "proc_cv_ens")
-	if not osp.exists(tdir_ens):
-		os.makedirs(tdir_ens)
-	for f in flist:
-		if not osp.isfile(f):
-			print("Error in call_cv_ens_creation! File " + f + " does not exist!")
-			sys.exit(1)
-	inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, verbose, verbose) for f in flist])
-	orig_inFiles = ",".join(flist)
-	print("Calling", cv_type, "ensemble creation on " + inFiles)
-	with Dataset(flist[0], 'r') as nc_obj:
-		varnames = nc_obj.variables.keys()
-	vname = [varnames[v] for v in range(0, len(varnames)) if re.search(climvar,varnames[v]) is not None][0]
-	if isAnom:
-		print("Checking for presence of anomaly var")
-		supp_strings = ["qcmask","save"]
-		if supp_strings[0] not in vname and supp_strings[1] not in vname:
-			if not recOnly:
-				outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
-			else:
-				outfile_anom = []	
-			print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
-			anom_files = [re.sub("Anom","",f) for f in flist]
-			climvar = re.sub("Anom", "", climvar)
-			outfile_clim = call_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
-			return(outfile_clim + outfile_anom)
-	#Generate output file by doing a series of find-and-replace regexes on outdir
-	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]	
-	outfile = re.sub(current_rip, out_rip, flist[0])
-	outfile = re.sub("\.nc$", "_ensmbl.nc", outfile)
-	print("Output file location: " + outfile)
-	if not osp.exists(osp.dirname(outfile)):
-		print("Making " + osp.dirname(outfile))
-		os.makedirs(osp.dirname(outfile))
-	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())			
-	#Finally, call the ensemble generation code:	
-	ens_min = basedir + "utils/s7/ens_min.csh"	
-	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles])
-	p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
-	out0,err0 = p.communicate()
-	if (p.returncode != 0):
-		print(str(out0))
-		print(str(err0))
-		print("Error in processing ensemble " +  inFiles + "; call to c-shell failed.")
-		print("Command that failed: " + ens_command)
-		sys.exit(1)
-		return(None)
-	else:
-		if verbose:
-			print(str(out0))
-			print(str(err0))
-		gcp(tmp_outfile, outfile, verbose, verbose)
-		return([outfile])
-						
+	sys.exit(0)						
