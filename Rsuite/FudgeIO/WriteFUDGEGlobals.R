@@ -195,6 +195,9 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if(!is.null(climatology)){
    ncatt_put(nc.object, 0, "climatology", climatology) 
   }
+  if(fut.pred.rip!=""){
+    ncatt_put(nc.object, 0, "realization")
+  }
   nc_close(nc.object) 
   return(filename)
 }
