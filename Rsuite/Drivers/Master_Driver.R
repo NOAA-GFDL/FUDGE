@@ -517,6 +517,13 @@ for (rip in fut.pred.rip.list){
                         post.ds.adjustments=post_ds_adj, 
                         fut.pred.rip = rip, 
                         missval.handling=missval.handling, minval.present=min.present)
+      if(qc.maskopts$qc.method=='simpletailadj'){
+        WriteSelectGlobals(qc.out.filename,
+                           atts=list('comment'=paste('1 = simpletailadj appliedto upper or lower tail;', 
+                                                     '2 = simpletailadj applied to upper and lower tail', 
+                                                     '3 = simpletailadj for non-overlapping MH and MF distributions used', 
+                                                     sep=";")),append=T)
+      }
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }

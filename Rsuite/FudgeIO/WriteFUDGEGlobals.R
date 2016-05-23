@@ -189,7 +189,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     ncatt_put(nc.object, 0 , "references", reference )
   }
   if(is.qcmask){
-    ncatt_put(nc.object, paste(predictand, "_qcmask",sep=""), "comments", "Flagged cases = missing; Non-flagged cases = 1.0" )
+    ncatt_put(nc.object, paste(predictand, "_qcmask",sep=""), 
+              "comments", "Unadjusted cases = missing; adjusted cases = 1 or greater" )
   }
   if(!is.null(climatology)){
    ncatt_put(nc.object, 0, "climatology", climatology) 

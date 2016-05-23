@@ -23,6 +23,7 @@ from fudgeUtils import gcp,tstamp
 from fudgeUtils import read_exp_info_file
 import makeExpEns
 from makeExpEns import runMakeExpEns
+import cgitb
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid):	
 	expdict = read_exp_info_file(infile)
@@ -90,8 +91,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid):
 				try:
 					runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
 				except:
-					import sys, cgitb
-					cgitb.enable()
+					#import sys, cgitb
+					#cgitb.enable()
 					print(cgitb.text(sys.exc_info()))
 					send_ppWatcher_message('failure')
 				else:

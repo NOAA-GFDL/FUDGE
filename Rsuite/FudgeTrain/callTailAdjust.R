@@ -83,28 +83,41 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
   #Add missing values of condition back into main
   cond.tmp <- cond.missvals
-  cond.tmp[cond.tmp] <- hitail$cond
+  cond.tmp[cond.tmp] <- hitail$cond * 2
   hitail$cond <- cond.tmp
   cond.tmp <- cond.missvals
-  cond.tmp[cond.tmp] <- lotail$cond
+  cond.tmp[cond.tmp] <- (lotail$cond)
   lotail$cond <- cond.tmp
 #  ds.orig <- ds.fut
 #   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
 #                                                         'model.hist', 'obs.hist', 'model.fut'))
   ds.orig[hitail$cond] = cond.data[hitail$cond] + hitail$offset
   ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
+  print(sum(cond.tmp))
   #print('Total number of points different at this point:')
   #print(which((ds.fut-ds.orig)==0))
 #   xval = length(model.fut)
 #   yrange <- range(c(ds.fut, ds.orig, model.fut,model.hist))
-#   plot(x=1:xval, y=model.fut, col='red', lwd=2, main="MF, DS and DS with tail adjust", ylim=yrange)
+#   plot(x=1:length(model.hist), sort(model.hist), col='green')
+#   lines(x=1:length(model.hist), sort(obs.hist), col='black')
+#   plot(x=1:xval, y=sort(model.fut), col='red', lwd=2, main="MF, DS and DS with tail adjust", ylim=yrange)
 #   abline(h=max(model.hist), col='green')
-#   lines(x=1:xval, y=ds.fut, col='black', lwd=2)
-#   lines(x=1:xval, y=remove.missvals(ds.orig), col="blue",lwd=2, lty=2)
+#   abline(h=max(obs.hist), col='black')
+#   lines(x=1:xval, y=sort(ds.fut), col='black', lwd=2)
+#   lines(x=1:xval, y=sort(remove.missvals(ds.orig)), col="blue",lwd=2, lty=2)
+#   for(i in seq(0, 300, 30)){
+#     abline(v=i)
+#   }
 #   legend('bottomright',legend=c('MF','DS','DS /w tailadj'), col=c('red', 'black', 'blue'), lty=c(1,1,2)) 
-#   abline(v=(hitail$cond|lotail$cond))
-  
+#   
   # mask = (hitail$cond|lotail$cond)
+  tmp.mask <- hitail$cond + lotail$cond
+  tmp.mask[tmp.mask > 4] = 4
+  #print(tmp.mask)
+#   print(hitail$offset)
+#   print(lotail$offset)
+#   print(sum(tmp.mask))
+#   print(sum(ds.fut==ds.orig))
   return(list(ds = ds.orig, mask = (hitail$cond + lotail$cond)))
 }
 
@@ -157,7 +170,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
           print(mf.tmp)
           print(adjust.cond)
           mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
-          mf.cond <- mf.cond * 3
+          mf.cond <- mf.cond * 4
         }
       #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
       return(list(cond=mf.cond, offset=delta))
@@ -168,15 +181,16 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       return(list(cond=cond, offset=offset))
     }
   }else if(args$triggertype=='OhGh'){
-    if (do.call(trigger.fxn, OH) <= do.call(trigger.fxn, list(MH))){
+    if (do.call(adjust.cond, list(do.call(trigger.fxn, list(OH)), do.call(trigger.fxn, list(MH))))){
       oh.prob = ecdf(x=OH)(do.call(trigger.fxn, list(MH)))
       #Assume that the sort is going to be the same for both datasetes
       ds.val  = quantile(DS, probs=oh.prob)
       mf.val = quantile(MF, probs=oh.prob)
-      ds.cond <- do.call(adjust.cond, list(DS, ds.val))
       #Calculate delta
       MF = sort(MF)
+      ds.rank = rank(DS)
       DS = sort(DS)
+      ds.cond <- do.call(adjust.cond, list(DS[ds.rank], ds.val))
       #mf.idx = tail(which(MF <= mf.val),1)
       #mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
       mf.points = do.call(select.cond, list(MF, mf.val))
