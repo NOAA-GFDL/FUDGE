@@ -10,6 +10,8 @@ import fudgeList
 from subprocess import PIPE 
 import optparse
 from optparse import OptionParser
+import cleanup_script
+from cleanup_script import clean_prior_experiments
 
 list_title = []
 dictDS_hi = {}
@@ -31,57 +33,57 @@ preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
 idirsuffix = ""
 global mutli 
 def checkTags(dictParams,key):
-	        if(dictParams.has_key(key)):
-               	 	val = dictParams[key]
+		if(dictParams.has_key(key)):
+	       	 	val = dictParams[key]
 		else:
 			if(key == 'oroot'):
 				print "output root tag is being deprecated from darkchocolate."
 				sys.exit("error")
 				
-                        elif(key == 'sroot'):
-                                print "Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again " 
+			elif(key == 'sroot'):
+				print "Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again " 
 				sys.exit("error")
 			elif(key == 'outdir'):
 				val = 'na'
-                        elif(key == 'params'):
-                                val = 'na'
-                        elif(key == 'pr_opts'):
-                                val = 'na'
+			elif(key == 'params'):
+				val = 'na'
+			elif(key == 'pr_opts'):
+				val = 'na'
 			elif(key == 'experiment'):
 				val = 'na'
-                        elif(key == 'fut_time_trim_mask'):
-                                val = 'na'
-                        elif(key == 'qc_mask'):
-                                val = 'off'
-                        elif(key == 'qc_varname'):
-                                val = 'na'  
-                        elif(key == 'qc_type'):
-                                val = 'na'
-                        elif(key == 'qcparams'):
-                                val = 'na'
-                        elif(key == 'adjust_out'):
-                                val = 'na'
-                        elif(key == 'masklists'):
-                                val = 'na'
-                        elif(key == 'target_time_window'):
-                                val = 'na'
-                        elif(key == 'hist_time_window'):
-                                val = 'na'
-                        elif(key == 'fut_time_window'):
-                                val = 'na'
-                        elif(key == 'spat_mask'):
-                                val = 'na'
-                        elif(key == 'maskvar'):
-                                val = 'na'
-                        elif(key == 'future_predictor_suffix'):
-                                val = ''
-                        elif(key == 'historical_predictor_suffix'):
-                                val = ''
-                        elif(key == 'target_suffix'):
-                                val = ''
-                        elif(key == 'property'):
-                                val = {} 
-		        else:		
+			elif(key == 'fut_time_trim_mask'):
+				val = 'na'
+			elif(key == 'qc_mask'):
+				val = 'off'
+			elif(key == 'qc_varname'):
+				val = 'na'  
+			elif(key == 'qc_type'):
+				val = 'na'
+			elif(key == 'qcparams'):
+				val = 'na'
+			elif(key == 'adjust_out'):
+				val = 'na'
+			elif(key == 'masklists'):
+				val = 'na'
+			elif(key == 'target_time_window'):
+				val = 'na'
+			elif(key == 'hist_time_window'):
+				val = 'na'
+			elif(key == 'fut_time_window'):
+				val = 'na'
+			elif(key == 'spat_mask'):
+				val = 'na'
+			elif(key == 'maskvar'):
+				val = 'na'
+			elif(key == 'future_predictor_suffix'):
+				val = ''
+			elif(key == 'historical_predictor_suffix'):
+				val = ''
+			elif(key == 'target_suffix'):
+				val = ''
+			elif(key == 'property'):
+				val = {} 
+			else:		
 				print "Error: Missing value for ",key
 				sys.exit(1)  
 		return val 
@@ -95,164 +97,166 @@ def parse_outdir(out_dir,property):
 	for outdirs in outdirsplit:
 		if '$(' in outdirs:
 		   print "outdirs as defined expects a property tag.."
-	           expect_prop = 1
-        	   for pname,pval in property.iteritems():
+		   expect_prop = 1
+		   for pname,pval in property.iteritems():
 			pname = '$('+pname+')' 
-		        if pname == outdirs:
-		          print "we may have located the property tag"
+			if pname == outdirs:
+			  print "we may have located the property tag"
 			  replace = pval
-		 #         new_out_dir = out_dir.replace('$(RIP)',replace)
+		 #	 new_out_dir = out_dir.replace('$(RIP)',replace)
 			  break;
-        if(replace != ""):
+	if(replace != ""):
 	 if (out_dir  != ""):
 	     list_new_out_dir = replace.split(",")	
 	     for lnew in list_new_out_dir: 
-	        listout.append(out_dir.replace(pname,lnew))
+		listout.append(out_dir.replace(pname,lnew))
 	#print "test",pname,new_out_dir,listout
 	if(replace == "") & (expect_property == 1):
 		replace = "na" 
-	        print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
-        if (replace == "") & (expect_property == 0):
+		print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
+	if (replace == "") & (expect_property == 0):
 		replace ="na" 
  	if not bool(property):	
 	 list_subs = out_dir+"#na#na"
 	else:
-         list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
+	 list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
 	return list_subs,listout	
 def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
-        ctr = 0
+	ctr = 0
 	dictDS = {}
 	listDS = []
 	if(output_grid == "na"):
 		print "ERROR, output_grid not accepted as na"
 		sys.exit(1)
-        for itemj in listDatasetID:
-                #print "counter .......",ctr
-                ds_title = label+str(ctr)
-                list_title.append(ds_title)
-                dshi = itemj
-                hi = dshi.split('.')
-                hi_proj =hi[0]
-                hi_product = hi[1]
-                if(hi[2] != 'NOAA-GFDL'):
-                 ind = 2
-                 hi_instit = ''
-                else:
-                 hi_instit = hi[2]
-                 ind = 3
-                hi_model = hi[ind]
-                hi_exp = hi[ind+1]
-                hi_freq = hi[ind+2]
-                hi_realm = hi[ind+3]
-                hi_mip = hi[ind+4]
-                hi_rip = hi[ind+5]
-                hi_ver = hi[ind+6]
-                hi_expname = hi_exp+"_"+hi_rip
-                hi_expname = hi_expname
-#                dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
-                hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+output_grid+"/"+dim+"/"
+	for itemj in listDatasetID:
+		#print "counter .......",ctr
+		ds_title = label+str(ctr)
+		list_title.append(ds_title)
+		dshi = itemj
+		hi = dshi.split('.')
+		hi_proj =hi[0]
+		hi_product = hi[1]
+		if(hi[2] != 'NOAA-GFDL'):
+		 ind = 2
+		 hi_instit = ''
+		else:
+		 hi_instit = hi[2]
+		 ind = 3
+		hi_model = hi[ind]
+		hi_exp = hi[ind+1]
+		hi_freq = hi[ind+2]
+		hi_realm = hi[ind+3]
+		hi_mip = hi[ind+4]
+		hi_rip = hi[ind+5]
+		hi_ver = hi[ind+6]
+		hi_expname = hi_exp+"_"+hi_rip
+		hi_expname = hi_expname
+#		dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
+		hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+output_grid+"/"+dim+"/"
 		dictDS['proj']=hi_proj
-                dictDS['product']=hi_product
-                dictDS['instit']=hi_instit
-                dictDS['model']=hi_model
-                dictDS['exp']=hi_exp
-                dictDS['freq']=hi_freq
-                dictDS['mip']=hi_mip
-                dictDS['realm']=hi_realm
-                dictDS['rip']=hi_rip
-                dictDS['ver']=hi_ver
-                dictDS['expname']=hi_expname
-                listDS.append(hiresdir)
-                ctr = ctr + 1
-        #########################################
-        return dictDS,listDS
+		dictDS['product']=hi_product
+		dictDS['instit']=hi_instit
+		dictDS['model']=hi_model
+		dictDS['exp']=hi_exp
+		dictDS['freq']=hi_freq
+		dictDS['mip']=hi_mip
+		dictDS['realm']=hi_realm
+		dictDS['rip']=hi_rip
+		dictDS['ver']=hi_ver
+		dictDS['expname']=hi_expname
+		listDS.append(hiresdir)
+		ctr = ctr + 1
+	#########################################
+	return dictDS,listDS
 
 def getDir(listDir,label):
 #GCM_DATA.CMIP5.BOGUS.amip.day.atmos.anomSbx7C360LR.r1i1p1.v1
 	i=0
 	dictDIR = {}
-        for getdir in listDir:
+	for getdir in listDir:
 		#cprint getdir
-                dir_lo = label+str(i)
-                dictDIR[dir_lo] = rootdir+"/"+getdir
-                i = i + 1
-                dire = dictDIR[dir_lo].strip()
+		dir_lo = label+str(i)
+		dictDIR[dir_lo] = rootdir+"/"+getdir
+		i = i + 1
+		dire = dictDIR[dir_lo].strip()
 	return dire	
+	
+	
 def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "PP option is set to ",pp
-        if os.path.exists(uinput):
+	if os.path.exists(uinput):
 		handler = xmlhandler.XMLHandler(  )
 		dictParams = handler.getParams(uinput)
 		try:
 			dversion = dictParams['dversion']
-	        except:
+		except:
 			dversion='' #dversion deprecated
-        print "----Downscaling XML template-", uinput
+	print "----Downscaling XML template-", uinput
       #  print "----Force Override existing output Flag-", force
-        ###################################
-        print "Input from XML"
-        print "########################"
+	###################################
+	print "Input from XML"
+	print "########################"
 	for name,val in dictParams.iteritems():
 		print name,"=",val 
-        ###### get dictParams #################################
-        predictor =  checkTags(dictParams,'predictor_list')
-        target = checkTags(dictParams,'target') 
-        target_ID = checkTags(dictParams,'target_ID')
-        target_id = checkTags(dictParams,'target_id')
-        target_train_start_time = checkTags(dictParams,'target_train_start_time')
-        target_train_end_time = checkTags(dictParams,'target_train_end_time')
-        target_file_start_time = checkTags(dictParams,'target_file_start_time')
-        target_file_end_time = checkTags(dictParams,'target_file_end_time')
-        target_time_window = checkTags(dictParams,'target_time_window')
-        hist_id = checkTags(dictParams,'hist_id')
+	###### get dictParams #################################
+	predictor =  checkTags(dictParams,'predictor_list')
+	target = checkTags(dictParams,'target') 
+	target_ID = checkTags(dictParams,'target_ID')
+	target_id = checkTags(dictParams,'target_id')
+	target_train_start_time = checkTags(dictParams,'target_train_start_time')
+	target_train_end_time = checkTags(dictParams,'target_train_end_time')
+	target_file_start_time = checkTags(dictParams,'target_file_start_time')
+	target_file_end_time = checkTags(dictParams,'target_file_end_time')
+	target_time_window = checkTags(dictParams,'target_time_window')
+	hist_id = checkTags(dictParams,'hist_id')
 	hist_train_start_time = checkTags(dictParams,'hist_train_start_time')
-        hist_train_end_time = checkTags(dictParams,'hist_train_end_time')
-        hist_file_start_time = checkTags(dictParams,'hist_file_start_time')
-        hist_file_end_time = checkTags(dictParams,'hist_file_end_time')
+	hist_train_end_time = checkTags(dictParams,'hist_train_end_time')
+	hist_file_start_time = checkTags(dictParams,'hist_file_start_time')
+	hist_file_end_time = checkTags(dictParams,'hist_file_end_time')
 	hist_time_window = checkTags(dictParams,'hist_time_window')
-        fut_id = checkTags(dictParams,'fut_id')
-        fut_train_start_time = checkTags(dictParams,'fut_train_start_time')
-        fut_train_end_time = checkTags(dictParams,'fut_train_end_time')
-        fut_file_start_time = checkTags(dictParams,'fut_file_start_time')
-        fut_file_end_time = checkTags(dictParams,'fut_file_end_time')
-        fut_time_window = checkTags(dictParams,'fut_time_window')
+	fut_id = checkTags(dictParams,'fut_id')
+	fut_train_start_time = checkTags(dictParams,'fut_train_start_time')
+	fut_train_end_time = checkTags(dictParams,'fut_train_end_time')
+	fut_file_start_time = checkTags(dictParams,'fut_file_start_time')
+	fut_file_end_time = checkTags(dictParams,'fut_file_end_time')
+	fut_time_window = checkTags(dictParams,'fut_time_window')
  	fut_time_trim_mask = checkTags(dictParams,'fut_time_trim_mask') 
 	######## use auxcustom ############
 	auxcustom = fut_time_trim_mask
 	###########################################
-        dim = checkTags(dictParams,'dim')
-        output_grid = checkTags(dictParams,'output_grid')
+	dim = checkTags(dictParams,'dim')
+	output_grid = checkTags(dictParams,'output_grid')
 	###CEW edit
 	print "Initiate checkTags"
-        region = checkTags(dictParams,'maskvar')
+	region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
-        spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
+	spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
 	ds_region = spat_mask_ID
-        file_j_range = checkTags(dictParams,'file_j_range')
-        lats = checkTags(dictParams,'lats')
-        late = checkTags(dictParams,'late')
-        lons = checkTags(dictParams,'lons')
-        lone = checkTags(dictParams,'lone')
+	file_j_range = checkTags(dictParams,'file_j_range')
+	lats = checkTags(dictParams,'lats')
+	late = checkTags(dictParams,'late')
+	lons = checkTags(dictParams,'lons')
+	lone = checkTags(dictParams,'lone')
 	kfold = checkTags(dictParams,'kfold')
 	method = checkTags(dictParams,'method')
-        if(basedir is None):#env variable has precedence over XML basedir
-                basedir = checkTags(dictParams,'basedir')
+	if(basedir is None):#env variable has precedence over XML basedir
+		basedir = checkTags(dictParams,'basedir')
 	experiment = checkTags(dictParams,'experiment') #downscaling experiment configuration
 	######## construct experiment config name ###########
 	if(experiment == 'na'): #if not present in XML
-	        proj = checkTags(dictParams,'project')
-	        project_ID = checkTags(dictParams,'project_ID')
-                series = checkTags(dictParams,'series') #experiment series
+		proj = checkTags(dictParams,'project')
+		project_ID = checkTags(dictParams,'project_ID')
+		series = checkTags(dictParams,'series') #experiment series
  		#experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
-                experiment,dsold_region = naming.constructExpname(project_ID,target_ID,series,method,kfold,basedir,dumb="yes")
-        ##################################################### 
+		experiment,dsold_region = naming.constructExpname(project_ID,target_ID,series,method,kfold,basedir,dumb="yes")
+	##################################################### 
 	params = checkTags(dictParams,'params')
 	#### pr_opts #######
-        pr_opts = checkTags(dictParams,'pr_opts')
+	pr_opts = checkTags(dictParams,'pr_opts')
 	#### get file name suffix #####	
 	hist_suffix = checkTags(dictParams,'historical_predictor_suffix')
-        target_suffix = checkTags(dictParams,'target_suffix')
-        fut_suffix = checkTags(dictParams,'future_predictor_suffix')
+	target_suffix = checkTags(dictParams,'target_suffix')
+	fut_suffix = checkTags(dictParams,'future_predictor_suffix')
 	##### end filename suffix ######
 	# removing the following precipitation check. Checks in XMLGen should be good enough. And this condition may not apply any more. Espresso release
 	# if(target != 'pr'):
@@ -260,32 +264,32 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	#		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
 	#		sys.exit()	 
 	print "pr_opts:---------------- ",pr_opts 
-        #### pr_opts #########
+	#### pr_opts #########
 	auxcustom1 = "na"  #$auxcustom1 now not used
 	if (params != 'na'):
 		splitparams = params.split(';')
 		#TODO support multiple auxfiles in custom
-        	for par in splitparams:
-            		getpar = par.split('=')
+		for par in splitparams:
+	    		getpar = par.split('=')
 	    		val = getpar[1]
 	    		if (val.startswith( "'/archive" )): 
 	    			print "file to be gcpied to vftmp: ",val
 				auxcustom1 = val
 			print "auxcustom1:",auxcustom1
-        #projectRoot = checkTags(dictParams,'oroot')
+	#projectRoot = checkTags(dictParams,'oroot')
 	global rootdir 
-        rootdir = checkTags(dictParams,'in_root') 
+	rootdir = checkTags(dictParams,'in_root') 
 	outdir = checkTags(dictParams,'outdir')
 	out_dir = checkTags(dictParams,'out_dir')
-        out_dir = out_dir.strip()
-            
-        property = checkTags(dictParams,'property')
+	out_dir = out_dir.strip()
+	    
+	property = checkTags(dictParams,'property')
 #c	if not bool(property):
 #c	    out_dir = out_dir+"#na#na" 
 #c	    listoutdir = out_dir
 #c	else:
 #c	   print "or not"
-        out_dir,listoutdir =  parse_outdir(out_dir,property)
+	out_dir,listoutdir =  parse_outdir(out_dir,property)
 	print "new out_dir", out_dir	
 	global copyprop	
 	copyprop = property
@@ -298,19 +302,19 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	   global multi
 	   multi = "off" 
 	##script -and- log prefix section ##
-        sroot = checkTags(dictParams,'sroot')
+	sroot = checkTags(dictParams,'sroot')
 	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
-        print "qc_mask....... ",qc_mask
+	print "qc_mask....... ",qc_mask
 	adjust_out = checkTags(dictParams,'adjust_out')
 	#adjust_out = "na"
 	qc_varname = checkTags(dictParams,'qc_varname')
 	if(qc_varname is None):
 		qc_varname = target+"_qcmask"
 	qc_type = checkTags(dictParams,'qc_type')
-        ### get qc options ##
-        qc_params = checkTags(dictParams,'qcparams') 
+	### get qc options ##
+	qc_params = checkTags(dictParams,'qcparams') 
 	#new way of getting masklist
 	masklists = checkTags(dictParams,'masklists')
 	preexist = checkTags(dictParams,'preexist')
@@ -318,44 +322,44 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	print "preexist"+preexist
 	if(preexist == 'exit'):
 		force = False
-        elif(preexist == 'erase'):
+	elif(preexist == 'erase'):
 		force = True
 	elif(preexist == 'move'):
 		force = True #new move feature in clobber - support
 	else:
-	        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
+		print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
 		sys.exit(-2)
-        #print "----Force Override existing output Flag-", force
-        ####### end get  dictParams ###########################
-        ## OneD or ZeroD that's the question and starting feb 10 2015 this will be received from xml##  
-        #if(region != "station"):
-        # dim = "OneD"
-        #else:
-        # dim = "ZeroD"
+	#print "----Force Override existing output Flag-", force
+	####### end get  dictParams ###########################
+	## OneD or ZeroD that's the question and starting feb 10 2015 this will be received from xml##  
+	#if(region != "station"):
+	# dim = "OneD"
+	#else:
+	# dim = "ZeroD"
 	#print(dim)
-        if(output_grid == 'station'):
-                if(latjstart == latjend):
-                        dsuffix = "J"+str(latjstart)
+	if(output_grid == 'station'):
+		if(latjstart == latjend):
+			dsuffix = "J"+str(latjstart)
 			region = output_grid
-                else:
-                        print "Please specify a single station. "
-                        sys.exit()
-        else:
+		else:
+			print "Please specify a single station. "
+			sys.exit()
+	else:
 	   if(file_j_range != ''):
 	   	dsuffix=file_j_range
 		dim1 = dim
 	#comment out RR a1r	dim = output_grid+"/"+dim1
 	   else:
-           	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
+	   	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
 	#print(dim1)
-        ############ target get dir info ########################
+	############ target get dir info ########################
 	dict_target,listt = getFacets(target_id,target,dim,'target_id',output_grid)
 	#print dict_target
 	############ historical predictor ######################
-        dict_hist,listh = getFacets(hist_id,"","",'hist_id',"") #make it base
+	dict_hist,listh = getFacets(hist_id,"","",'hist_id',"") #make it base
 	#print dict_hist
 	########### future predictor information ############## 
-        dict_fut,listf = getFacets(fut_id,"","",'fut_id',"") #make it basedir for support 2x vars
+	dict_fut,listf = getFacets(fut_id,"","",'fut_id',"") #make it basedir for support 2x vars
 	#print dict_fut
 	###########  esdgen information ####################################
 
@@ -363,47 +367,47 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	target_dir = getDir(listt,'hidir')
 	target_dir = os.path.abspath(target_dir)
 	print "target dir: ",target_dir 
-        hist_pred_dir = getDir(listh,'lodir')
-        hist_pred_dir = os.path.abspath(hist_pred_dir)	
+	hist_pred_dir = getDir(listh,'lodir')
+	hist_pred_dir = os.path.abspath(hist_pred_dir)	
 	print "historical predictor dir",hist_pred_dir
 	fut_pred_dir = getDir(listf,'futdir')
 	fut_pred_dir = os.path.abspath(fut_pred_dir)
 	print "future predictor dir",fut_pred_dir
 	global idirsuffix
-        idirsuffix = "/"+output_grid+"/"+dim+"/"
+	idirsuffix = "/"+output_grid+"/"+dim+"/"
 	print "idirsuffix",idirsuffix
 	#### get outdir #####
-        if(out_dir != 'na'):
-            category = 'downscaled'
-            instit="NOAA-GFDL"
-            predModel = dict_fut['model'] 
-            freq = dict_fut['freq']
-            realm = dict_fut['realm']
-            mip = dict_fut['mip']
-            pversion = dict_fut['ver']
-            dmodel = method
+	if(out_dir != 'na'):
+	    category = 'downscaled'
+	    instit="NOAA-GFDL"
+	    predModel = dict_fut['model'] 
+	    freq = dict_fut['freq']
+	    realm = dict_fut['realm']
+	    mip = dict_fut['mip']
+	    pversion = dict_fut['ver']
+	    dmodel = method
 	    dexper = dict_fut['expname']
 	    ens = dict_fut['rip']
-            predictand = target
-            #dversion from command line args. default value is v20120422
+	    predictand = target
+	    #dversion from command line args. default value is v20120422
 	    if (out_dir == 'na'):
 #Commenting the following since xmlGen now constructs outpath and is already set in xml
-            	outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
+	    	outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
 	    else:
 		outdir = out_dir
-            #experiment in the above is expconfig that's constructed 
+	    #experiment in the above is expconfig that's constructed 
 	    print "Output directory is :",outdir
 	    print "Script directory is:",sbase  
 #new
 	    if (pp == False):	
-                    	for lon in range(int(lons),int(lone)):
-	                	exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
-                         	if (exists == True) & (force == False):
-                                	print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
+		    	for lon in range(int(lons),int(lone)):
+				exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
+			 	if (exists == True) & (force == False):
+					print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
 					sys.exit(-7)
-                         	if (exists == True) & (force == True):
+			 	if (exists == True) & (force == True):
 					print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
-                               # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
+			       # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
 					global overwrite
 					overwrite = True	
 					break	
@@ -421,10 +425,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    target_ver = dict_target['ver']
 	    hist_scenario = dict_hist['exp']+"_"+dict_hist['rip']
 	    hist_freq = dict_hist['freq'] #CEW edit to test
-            hist_model = dict_hist['model']
+	    hist_model = dict_hist['model']
 	    fut_scenario = dict_fut['exp']+"_"+dict_fut['rip']	
-            fut_model = dict_fut['model']
-            fut_freq = dict_fut['freq'] #CEW edit mip to freq
+	    fut_model = dict_fut['model']
+	    fut_freq = dict_fut['freq'] #CEW edit mip to freq
 	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
 	    ### add those suffix in 
 
@@ -435,237 +439,240 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 ############end of listVars###################### 
 def main():
     #################### args parsing ############
-        help = "#################Usage:(run from AN nodes)##################\n dsTemplater -i <input XML> \n "
-        help = help + "Example 1: expergen -i dstemplate.xml \n "
-        help = help + "Example 2: expergen -i examples/dstemplate.60lo0FUTURE.xml \n"
-        #print usage
+	help = "#################Usage:(run from AN nodes)##################\n dsTemplater -i <input XML> \n "
+	help = help + "Example 1: expergen -i dstemplate.xml \n "
+	help = help + "Example 2: expergen -i examples/dstemplate.60lo0FUTURE.xml \n"
+	#print usage
 	basedir = os.environ.get('BASEDIR')
-        if(basedir is None):
+	if(basedir is None):
 	   print "Warning: BASEDIR environment variable not set"	
 	##### get version BRANCH info ######################
-        branch = os.environ.get('BRANCH')
-        if(branch is None):
-           print "Warning: BRANCH env variable not set. BRANCH will be set to undefined"
-           branch = "undefined"
+	branch = os.environ.get('BRANCH')
+	if(branch is None):
+	   print "Warning: BRANCH env variable not set. BRANCH will be set to undefined"
+	   branch = "undefined"
 	####################################################
-        parser = OptionParser(usage=help)
-        parser.add_option("-i", "--file", dest="uinput",
-        help="pass location of XML template", metavar="FILE")
+	parser = OptionParser(usage=help)
+	parser.add_option("-i", "--file", dest="uinput",
+	help="pass location of XML template", metavar="FILE")
       #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
-        parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
-        parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")        
-        
-        (options, args) = parser.parse_args()
-        #CEW edits 3-3 for clarity (and only haing to search env vars once)
-        if(options.mail=="none"):
-        	try:
-        		NEMSemail1 = os.environ["NEMSemail"]
-        	except KeyError: 
+	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
+	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
+	
+	(options, args) = parser.parse_args()
+	#CEW edits 3-3 for clarity (and only haing to search env vars once)
+	if(options.mail=="none"):
+		try:
+			NEMSemail1 = os.environ["NEMSemail"]
+		except KeyError: 
    				print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."	
    				NEMSemail1 = 'none'
-        else:
-        	NEMSemail1 = options.mail
-        print "Status emails will be sent to: " + NEMSemail1
-        msub = options.msub
-        print "Will jobs be automatically submitted? " + str(msub)
-        if(os.path.exists(options.uinput)):
-        	uinput = options.uinput
-        	print "XML input: " + uinput
-        else:
-        	print "XML input " + options.uinput + "not found!"
-        	print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
-        	sys.exit()	
-        		
+	else:
+		NEMSemail1 = options.mail
+	print "Status emails will be sent to: " + NEMSemail1
+	msub = options.msub
+	print "Will jobs be automatically submitted? " + str(msub)
+	if(os.path.exists(options.uinput)):
+		uinput = options.uinput
+		print "XML input: " + uinput
+	else:
+		print "XML input " + options.uinput + "not found!"
+		print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
+		sys.exit()	
+			
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
-        system,node,release,version,machine = os.uname()
-        if(node.startswith('pp')):
-                print "Running on PP(PAN) node", node
-        if(node.startswith('an')):
-                print "Running on AN(PAN) node", node
-        else:
-                 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
+	system,node,release,version,machine = os.uname()
+	if(node.startswith('pp')):
+		print "Running on PP(PAN) node", node
+	if(node.startswith('an')):
+		print "Running on AN(PAN) node", node
+	else:
+		 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
 		 sys.exit(-5)
 
    
 #########################################################################################      		
-        #########  call listVars() #############################################################
+	#########  call listVars() #############################################################
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
-        ######### call script creators..  #######################################################
-        ############################### 1 ###############################################################
-        #  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
+	######### call script creators..  #######################################################
+	############################### 1 ###############################################################
+	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
 
 	# If the runscript directory already exists, please quit
 	#/home/a1r/gitlab/cew/fudge2014///scripts/tasmax/35txa-CDFt-A00X01K02
 	scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
-        for sd in scriptdir:
-	    if(os.path.exists(sd)):
-       		 if os.listdir(sd):
-		    if (overwrite == False):    
-			print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
-                        print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
-                	sys.exit(-6)
-		    if (overwrite == True):
-			print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
-			print "Now invoking cleanup utility..........."
-		        cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
-			if(preexist_glob == 'erase'):
-				print "Lets erase it ........... ifpreexist"
-		        	cleaner_cmd = cleaner_script+" d "+uinput 
-			else: 
-				if(preexist_glob != 'move') & (preexist_glob != 'exit'):
-					print "CHECK ifpreexist settings, quitting now"
-					sys.exit(1)
-				print "Lets move it............... if preexist" 
-                               	cleaner_cmd = cleaner_script+" m "+uinput
-	                print "cleaner_cmd"
-			print cleaner_cmd		
-	                pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-			#check return code
-        		output0, errors0 = pclean.communicate()
-        		if(pclean.returncode != 0):
-         			print "033[1;41mCleaner Step:!!!! FAILED !!!!, please contact developer.033[1;m"
-         			print output0, errors0
-        			sys.exit(1)
-			else:
-				print output0,errors0
-			print "continue expergen run...................." 
-			break 
-	    else:
-		   print "scriptdir "+sd+" does not exist. Looks like a clean slate "
-        #print  "hist_freq"+hist_freq
-        script1Loc = basedir+"/utils/bin/create_runcode"
-        make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
-        make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
+	print(scriptdir)
+	for sd in scriptdir:
+		if(os.path.exists(sd)):
+			if os.listdir(sd):
+				if (overwrite == False):    
+					print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
+					print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
+					sys.exit(-6)
+				if (overwrite == True):
+					print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
+					print "Now invoking cleanup utility..........."
+					clean_prior_experiments(uinput, basedir, preexist_glob)
+		    #    cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
+			#if(preexist_glob == 'erase'):
+			#	print "Lets erase it ........... ifpreexist"
+		    #    	cleaner_cmd = cleaner_script+" d "+uinput 
+			#else: 
+			#	if(preexist_glob != 'move') & (preexist_glob != 'exit'):
+			#		print "CHECK ifpreexist settings, quitting now"
+			#		sys.exit(1)
+			#	print "Lets move it............... if preexist" 
+	    #		  	cleaner_cmd = cleaner_script+" m "+uinput
+		#	print "cleaner_cmd"
+			#print cleaner_cmd		
+		#	pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+			##check return code
+		#	output0, errors0 = pclean.communicate()
+		#	if(pclean.returncode != 0):
+	 	#		print "033[1;41mCleaner Step:!!!! FAILED !!!!, please contact developer.033[1;m"
+	 	#		print output0, errors0
+		#		sys.exit(1)
+			#else:
+			#	print output0,errors0
+			#print "continue expergen run...................." 
+					break 
+	   	else:
+			print "scriptdir "+sd+" does not exist. Looks like a clean slate "
+	#sys.exit("examine outcome of script")  
+	#print  "hist_freq"+hist_freq
+	script1Loc = basedir+"/utils/bin/create_runcode"
+	make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
+	make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
 	make_code_cmd = make_code_cmd+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(hist_train_start_time)+" "+str(hist_train_end_time)+" "+str(hist_scenario)+" "+str(hist_model)+" "+hist_freq+" "+str(hist_pred_dir)+" "+str(hist_time_window)
-        make_code_cmd = make_code_cmd+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(fut_train_start_time)+" "+str(fut_train_end_time)+" "+str(fut_scenario)+" "+str(fut_model)+" "+fut_freq+" "+str(fut_pred_dir)+" "+str(fut_time_window)
-        make_code_cmd = make_code_cmd+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(target_train_start_time)+" "+str(target_train_end_time)+" "+str(target_scenario)+" "+str(target_model)+" "+target_freq+" "+str(target_dir)+" "+str(target_time_window)
-        make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" '"+str(outdir)+"' "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
+	make_code_cmd = make_code_cmd+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(fut_train_start_time)+" "+str(fut_train_end_time)+" "+str(fut_scenario)+" "+str(fut_model)+" "+fut_freq+" "+str(fut_pred_dir)+" "+str(fut_time_window)
+	make_code_cmd = make_code_cmd+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(target_train_start_time)+" "+str(target_train_end_time)+" "+str(target_scenario)+" "+str(target_model)+" "+target_freq+" "+str(target_dir)+" "+str(target_time_window)
+	make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" '"+str(outdir)+"' "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
 
-        print "Step 1: R code starters generation ..in progress"
-        #p = subprocess.Popen('tcsh -c "'+make_code_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        
-        params_new =  '"'+str(params)+'\"'
+	print "Step 1: R code starters generation ..in progress"
+	#p = subprocess.Popen('tcsh -c "'+make_code_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	
+	params_new =  '"'+str(params)+'\"'
 	params_pr_opts = '"'+str(pr_opts)+'\"'
-        make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
-        make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"'+" "+str(idirsuffix) 
+	make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
+	make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"'+" "+str(idirsuffix) 
 	#cprint make_code_cmd
-        #p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	#p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 	#cprint make_code_cmd
-        p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        output, errors = p.communicate() 
-        if(p.returncode != 0):
-         print "Step1:!!!! FAILED !!!!, please contact developer."
-         print output, errors
-         sys.exit(0)
-        #print output, errors
+	p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	output, errors = p.communicate() 
+	if(p.returncode != 0):
+	 print "Step1:!!!! FAILED !!!!, please contact developer."
+	 print output, errors
+	 sys.exit(0)
+	#print output, errors
 	#cprint "----Log-----"
-        #print output,errors
-        ###############################################################################################
-        print "1- completed\n"
-        #print "debug............msub turned ",msub
-        ############################### 2 ################################################################
+	#print output,errors
+	###############################################################################################
+	print "1- completed\n"
+	#print "debug............msub turned ",msub
+	############################### 2 ################################################################
 	#target_time_window,hist_time_window,fut_time_window
 	#CEW hasty edits to support single variable case
-        script2Loc = basedir+"/utils/bin/"+"create_runscript"
-        create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
-        print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
+	script2Loc = basedir+"/utils/bin/"+"create_runscript"
+	create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
+	print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
 	#cprint create_runscript_cmd
-        #p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	#p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
  	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        print "Step 2: Individual runscript  creation.. in progress"
-        output1, errors1 = p1.communicate()
+	print "Step 2: Individual runscript  creation.. in progress"
+	output1, errors1 = p1.communicate()
 	#cprint output1,errors1
-        print "2- completed\n"
-        if(p1.returncode != 0):
-         print "Step2:!!!! FAILED !!!!, please contact developer."
-         print output1, errors1
-         sys.exit(0)
-        #cprint output1, errors1
-        ###################################### 3 ################################################################
-        script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
+	print "2- completed\n"
+	if(p1.returncode != 0):
+	 print "Step2:!!!! FAILED !!!!, please contact developer."
+	 print output1, errors1
+	 sys.exit(0)
+	#cprint output1, errors1
+	###################################### 3 ################################################################
+	script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate
-        create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
-        print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
+	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
+	print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
 	#CEW edit to diagnose older behavior
 	#cprint create_master_cmd
-        p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        #cprint create_master_cmd
-        print "Create master script .. in progress"
-        output2, errors2 = p2.communicate()
-        #######
-        if(p2.returncode != 0):
-         print "Step3:!!!! FAILED !!!!, please contact developer."
-         print output2, errors2
-         sys.exit(0)
-        print output2, errors2
-        print "3- completed"
+	p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	#cprint create_master_cmd
+	print "Create master script .. in progress"
+	output2, errors2 = p2.communicate()
+	#######
+	if(p2.returncode != 0):
+	 print "Step3:!!!! FAILED !!!!, please contact developer."
+	 print output2, errors2
+	 sys.exit(0)
+	print output2, errors2
+	print "3- completed"
 	##################################### 4 ############################################
-        # copy xml to configs dir 
-        cdir = sbase+"/config/"
-        try:
+	# copy xml to configs dir 
+	cdir = sbase+"/config/"
+	try:
 	  os.mkdir(cdir)
 	except:
 	  print "Unable to create dir. Dir may exist already", cdir 
 	shutil.copy2(uinput, cdir)
-        print "Config XML saved in ",cdir 
-        print "RunScripts will be saved under:",sbase
+	print "Config XML saved in ",cdir 
+	print "RunScripts will be saved under:",sbase
 	print "----See readMe in fudge2014 directory for the next steps----"
 	print "Use submit_job to submit scripts"
 
 ############### crte ppscript #################
-        print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
+	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
 	print " ========================="
 	dev = "off" 
-        msubwrapper = []
+	msubwrapper = []
 	print "multi output (Writing to multiple output directories) ....",multi
-        #if cmd line -m is passsed use that, otherwise use following
-        #CEW edit 3-3
-        
-        '''
-        if (NEMSemail1 == "none"):
-                  print "debug bde................", NEMSemail1
-                  try:
-                        NEMSemail1 = os.environ["NEMSemail"]
-                        print "Notification email set to .......", NEMSemail1
-                  except KeyError:
-                        NEMSemail1 = "none"
-         '''
+	#if cmd line -m is passsed use that, otherwise use following
+	#CEW edit 3-3
+	
+	'''
+	if (NEMSemail1 == "none"):
+		  print "debug bde................", NEMSemail1
+		  try:
+			NEMSemail1 = os.environ["NEMSemail"]
+			print "Notification email set to .......", NEMSemail1
+		  except KeyError:
+			NEMSemail1 = "none"
+	 '''
 	if (NEMSemail1=='none'):
-         mail_command = ""
-         msub_mail_command = ""
+	 mail_command = ""
+	 msub_mail_command = ""
 	else:
-         mail_command = "-m " + NEMSemail1 + " "
-         msub_mail_command = "-m ae -M "+ NEMSemail1 + " "               
+	 mail_command = "-m " + NEMSemail1 + " "
+	 msub_mail_command = "-m ae -M "+ NEMSemail1 + " "	       
 
-        #print(sbase+"/postProc/aux/")
+	#print(sbase+"/postProc/aux/")
 	if (multi == "on"):
 	 suffix = ['suff1','suff2','suff3']
-         listrips = []
+	 listrips = []
 	else:
 	 suffix = ['']	
-         listrips = ['na']
+	 listrips = ['na']
 
-        if not os.path.exists(sbase+"/postProc/aux/"):
-        	os.makedirs(sbase+"/postProc/aux/")
-        #CEW edit 5-2-16 for writing postproc status files
-        if not os.path.exists(sbase+"/postProc/ppStatus/"):
-        	os.makedirs(sbase+"/postProc/ppStatus/")
-        #CEW edit 5-4-16 for writing cross-validation status files
-        if not os.path.exists(sbase+"/postProc/cvStatus/"):
-        	os.makedirs(sbase+"/postProc/cvStatus/")		
+	if not os.path.exists(sbase+"/postProc/aux/"):
+		os.makedirs(sbase+"/postProc/aux/")
+	#CEW edit 5-2-16 for writing postproc status files
+	if not os.path.exists(sbase+"/postProc/ppStatus/"):
+		os.makedirs(sbase+"/postProc/ppStatus/")
+	#CEW edit 5-4-16 for writing cross-validation status files
+	if not os.path.exists(sbase+"/postProc/cvStatus/"):
+		os.makedirs(sbase+"/postProc/cvStatus/")		
 	suffctr = 1
-        for pname,pval in copyprop.iteritems():
+	for pname,pval in copyprop.iteritems():
 	   listrips = pval.split(',')
 	for mout in listrips: 
-          if (dev == "off"):
+	  if (dev == "off"):
 		tsuffix = ""
-        	ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
+		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
 	  else:
 		tsuffix = "_"+tstamp
-                ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
+		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
 	  try:
   		ppfile = open(ppbase, 'w') 
-	        if(mout != 'na'):
+		if(mout != 'na'):
 		   moutsuff = " -e "+mout.strip()
 		   mout_prefix = mout.strip()
 		else:
@@ -678,66 +685,66 @@ def main():
 		if(qc_mask != 'off'):
   			pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-                        pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
+			pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
   		ppfile.write(pp_cmnd)
 		print "wrote to ",ppfile
   		ppfile.close()
 	  except:
   		print "Unable to create postProc command file. You may want to check your settings."
 	#c	print create_pp_cmd
-          if(os.path.exists(ppbase)):
+	  if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
-                ppLoc = basedir+"/utils/bin/"+"create_postProc"
-                create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+" "+mout_prefix
-                p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-                output4, error4 = p4.communicate()
-                if(p4.returncode != 0):
-                        print "Step4:!!!! FAILED !!!!, please contact developer."
-                        print output4, error4
-                        sys.exit(-4)
-                #uncomment print output4, error4
-                #print "4-"+str(suffctr)+" completed"
-                print "----------------------------------------"
+		ppLoc = basedir+"/utils/bin/"+"create_postProc"
+		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+" "+mout_prefix
+		p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+		output4, error4 = p4.communicate()
+		if(p4.returncode != 0):
+			print "Step4:!!!! FAILED !!!!, please contact developer."
+			print output4, error4
+			sys.exit(-4)
+		#uncomment print output4, error4
+		#print "4-"+str(suffctr)+" completed"
+		print "----------------------------------------"
 		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
 		print(NEMSemail1)
-                if (NEMSemail1 != 'none'):  
-		        msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
-                        print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-                else:       
+		if (NEMSemail1 != 'none'):  
+			msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
+			print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
+		else:       
    			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-                        msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
+			msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
 
 			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-          else:
+	  else:
 		print "postProc_command cannot be created. postProc_source does not exist"
 	  suffctr = suffctr + 1
 	print "----------------------------------------"
-        try:
-                msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
+	try:
+		msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
 		os.chmod(msubwrap.name, 0744)
-	        content = "#!/bin/tcsh -f"
-	        for msubitem in msubwrapper:
+		content = "#!/bin/tcsh -f"
+		for msubitem in msubwrapper:
 		    content = content + "\n" + msubitem
 		content = content + "\n"
-	        msubwrap.write(content)
+		msubwrap.write(content)
 		msubwrap.close()	
 	except:
 		print "Unable to create msubwrapper script for you at this time"
 	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", msubwrap.name 
-        print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 fudgeList invocation ##############################################
-        slogloc = sbase+"/"+"experiment_info.txt"
-        fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
-        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-        out, err = f.communicate()
-        #print "fudgeList out", out
-        #if err is not None:
-        #       print "fudgeList err", err
-        print "Summary Log File: ", slogloc
+	slogloc = sbase+"/"+"experiment_info.txt"
+	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+	out, err = f.communicate()
+	#print "fudgeList out", out
+	#if err is not None:
+	#       print "fudgeList err", err
+	print "Summary Log File: ", slogloc
 	print "-----------"
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   " 
 	if(NEMSemail1 != "none"):
-           print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
+	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
 	else:
 	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
 ####################################################################################
@@ -745,9 +752,9 @@ def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,en
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc
      
-    print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."        
+    print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."	
     if(projectRoot == 'na'):
-        print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
+	print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
     dexperonly = dexper.split("_")[0]	
     if(freq == ""):
 	freq = mip
@@ -763,15 +770,15 @@ def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_
 #checkExisting(outdir,lon,dsuffix,target,freq,dmodel,dexper,ens,fut_train_start_time,fut_train_end_time,'mini')
 
 	exists = False 
-        if(os.path.exists(dire)):
+	if(os.path.exists(dire)):
 		#print "Warning Warning---------Output directory",dire,"already exists"
 		filesuff = ".nc"
-	        Jsuffix = Jsuffix.replace('"', '').strip()
-	        fileid= ".I"+str(lon)+"_"+str(Jsuffix)+filesuff
-                filename = variable+"_"+"day"+"_"+exper+"_"+str(scenario)+"_"+str(region)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
+		Jsuffix = Jsuffix.replace('"', '').strip()
+		fileid= ".I"+str(lon)+"_"+str(Jsuffix)+filesuff
+		filename = variable+"_"+"day"+"_"+exper+"_"+str(scenario)+"_"+str(region)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
 		if(os.path.exists(dire+"/"+filename)):
 		#	print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
 			exists = True 
-        return exists			
+	return exists			
 if __name__ == '__main__':
     main()
