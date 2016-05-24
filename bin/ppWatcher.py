@@ -72,7 +72,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid):
 		print "postProc jobs are complete."
 		if(nrips > 1):
 			print("More than one experiment rip is present; calling makeExpEns")
-			runMakeExpEns(expdict, verbose=(verbopt==1))
+			runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
 			#...check on the error returns from this. There shouldn't be an issue,
 			#since multiple exit points aren't that much of an issue and you
 			#WANT things to come to a screeching halt, but that may change later.
@@ -97,7 +97,9 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid):
 					send_ppWatcher_message('failure')
 				else:
 					send_ppWatcher_message('success')		
-			#Make cross-validated ensemble; add to the relevant experiment info files	
+			#Make cross-validated ensemble; add to the relevant experiment info files
+			send_pp_message('success', 'ppWatcher')
+			
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
 		send_ppWatcher_message('failure', 'what is a step', expdict['ds.experiment'], 'what is the error', \

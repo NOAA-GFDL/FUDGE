@@ -249,7 +249,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		 #CEW edit 5-4 for teh ppWatcher workflow
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
 		 #runPPWatcher(uinput, waittime, nrips)
-		 runPPWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid)
+		 runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
 	
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')

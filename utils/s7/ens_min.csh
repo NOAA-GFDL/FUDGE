@@ -55,9 +55,10 @@ ncdump -h $outFile |grep plev
   endif
   ncks -A -h -v $vars2copy $inFiles_array[1]  $outFile
 
-  ncatted -O -h -a comment,global,m,c,"Ensemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" -a title,global,m,c,"$climvar, $dataSource $epoch $trange" $outFile
+  ncatted -O -h -a comment,global,a,c,"Ensemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" -a title,global,m,c,"$dataSource $epoch $trange" $outFile
 
 # the realization attribute is in all CMIP5 and GFDL model metadata, but "gfdl_experiment_name" is only in GFDL's model data. 
 # execute separately so that if either is missing from netCDF files, the other edit is still executed.
   ncatted -O -h -a realization,global,d,, -a realizations,global,c,c,""$rips"" $outFile
   ncatted -O -h -a gfdl_experiment_name,global,d,, $outFile
+  #ncatted -O -h -a gfdl_experiment_name,global,m, #pass in the output array as well? 

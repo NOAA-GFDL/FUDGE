@@ -30,6 +30,7 @@ def makeExpEns():
 	parser.add_option("--anom_only_ens", action="store_true", dest="anom_only_ens", default=False, help="If present and ensembles of downscaled anomaly data are being made, will not make ensembles of downscaled anom+clim data - only the downscaled anomaly data. Cannot be specified with --reconstruct_only_ens.")
 	parser.add_option("--reconstruct_only_ens", action="store_true", dest='rec_only_ens', default=False, help="If present and ensembles of downscaled anomaly are being made, will only make ensembles of downscaled anom + clim data - not the downcsaled anomaly data. Cannot be specified with --anom_only_ens.")
 	parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
+	parser.add_option("--sev", dest="sev", default=1, help="Level of status messages provided. Defaults to 1 and goes to 3; higher numbers mean more messages.")
 	(options, args) = parser.parse_args()
 	if([options.input,options.project,options.exp_name].count("NA") == 3):
 		print("Error in makeExpEns: one of the options -i -p -e should be non-missing!")
@@ -55,9 +56,10 @@ def makeExpEns():
 		print("Error in makeExpEns: either --input or --project and --exp_name must be provided!")
 		sys.exit(1)
 	verbose = options.verbose	
-	runMakeExpEns(expdict, options.anom_only_ens, options.rec_only_ens, verbose)
+	sev = options.sev
+	runMakeExpEns(expdict, options.anom_only_ens, options.rec_only_ens, verbose, sev)
 	
-def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=False):	
+def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=False, sev=1):	
 	###main script
 	#Performs steps over all ensembles that count as part of the 
 	#standardization process (such as collecting into ensemble files for the experiment)
@@ -110,7 +112,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	for flist in all_outfiles:
 		flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 		outfile = call_ens_creation(flist,climvar,rips,rip_string,out_rip,\
-				exp_name,epoch,trange_string,isAnom,rec_only_ens,verbose)
+				exp_name,epoch,trange_string,isAnom,rec_only_ens,verbose, sev)
 		ens_list = ens_list + outfile		
 	#When everything is over, add the list of output ensemble files to the experiment_info.txt files
 	#in all locations.
@@ -134,12 +136,12 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	with open(tmpfile, 'a') as f:
 		f.write(append_str)
 	for out in outpaths_all:
-		gcp(tmpfile, out, False, verbose, verbose)
+		gcp(tmpfile, out, False, False, sev > 1) #verbose, verbose
 	print("Modified experiment.info files copied to all locations:")
 	print("\n".join(outpaths_all))							
 	
 def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
-						trange_string,isAnom=False, recOnly=False,verbose=False):	
+						trange_string,isAnom=False, recOnly=False,verbose=False, sev=1):	
 	#Given a list of files and some handy metadata information, 
 	#calls a simple anomaly addition script to generate the 
 	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
@@ -154,7 +156,6 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 			sys.exit(1)
 	#inFiles = ",".join([gcp(f, "TMPDIR", verbose, verbose) for f in flist])
 	inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, verbose, verbose) for f in flist])
-	print inFiles
 	orig_inFiles = ",".join(flist)
 	print("Calling ensemble creation on " + inFiles)
 	with Dataset(flist[0], 'r') as nc_obj:
@@ -200,7 +201,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		if verbose:
 			print(str(out0))
 			print(str(err0))
-		gcp(tmp_outfile, outfile, False, verbose, verbose)
+		gcp(tmp_outfile, outfile, False, verbose, sev > 1)
 		return([outfile])
 		
 def ens_namemap(ens_list): 
