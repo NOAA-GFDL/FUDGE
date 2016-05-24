@@ -93,7 +93,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
 #                                                         'model.hist', 'obs.hist', 'model.fut'))
   ds.orig[hitail$cond] = cond.data[hitail$cond] + hitail$offset
   ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
-  print(sum(cond.tmp))
+  #print(sum(cond.tmp))
   #print('Total number of points different at this point:')
   #print(which((ds.fut-ds.orig)==0))
 #   xval = length(model.fut)

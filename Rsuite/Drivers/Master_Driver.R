@@ -453,12 +453,14 @@ for (rip in fut.pred.rip.list){
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
-                    title=paste(simpleCap(ds.experiment), "downscaled by FUDGE", BRANCH, 
-                                ds.experiment),
+                    title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
+                                "downscaled by FUDGE", BRANCH, 
+                                ds.experiment, substr(rip,1,2)),
                     ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                     grid_region=grid, mask_region=ds.region,
                     time.trim.mask=fut.time.trim.mask, 
-                    tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+                    tempdir=TMPDIR, 
+                    include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                     is.pre.ds.adjust=(length(pre_ds) > 0),
                     pre.ds.adjustments=pre_ds,
                     is.post.ds.adjust=(length(post_ds_adj) > 0),
@@ -503,8 +505,10 @@ for (rip in fut.pred.rip.list){
       #For now, patch the variables in here until se get s5 formalized in the XML
       WriteFUDGEGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                         configURL,label.validation,institution='NOAA/GFDL',
-                        version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
-                                                                                                          ds.method, ds.experiment), 
+                        version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
+                        title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
+                                    "downscaled by FUDGE", BRANCH, 
+                                    ds.experiment, substr(rip,1,2)), 
                         ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                         grid_region=grid, mask_region=ds.region,
                         time.trim.mask=fut.time.trim.mask, 
@@ -519,9 +523,10 @@ for (rip in fut.pred.rip.list){
                         missval.handling=missval.handling, minval.present=min.present)
       if(qc.maskopts$qc.method=='simpletailadj'){
         WriteSelectGlobals(qc.out.filename,
-                           atts=list('comment'=paste('1 = simpletailadj appliedto upper or lower tail;', 
-                                                     '2 = simpletailadj applied to upper and lower tail', 
-                                                     '3 = simpletailadj for non-overlapping MH and MF distributions used', 
+                           atts=list('comment'=paste('1 = simpletailadj applied to lower tail;', 
+                                                     '2 = simpletailadj applied to upper tail', 
+                                                     '3 = adjust applied to upper and lower tail',
+                                                     '4 = simpletailadj for non-overlapping MH and MF distributions used', 
                                                      sep=";")),append=T)
       }
       message(paste('QC Mask output file:',qc.out.filename,sep=''))

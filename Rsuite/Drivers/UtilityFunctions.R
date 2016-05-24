@@ -295,3 +295,28 @@ assign.by.index <- function(array1, array2, index){
 exp10 <- function(x){
   return(10^x)
 }
+
+get_orig_experiment <- function(in.file, var='tasmax'){
+  #Gets the original experiment from an input file
+  #according to the metadata present
+  print("obtaining file")
+  test.nc <- nc_open(in.file)
+  atts = ncatt_get(test.nc, 0)
+  nc_close(test.nc)
+  att.names <- names(atts)
+  test.1 <- c("model_id", 'experiment', 'realization')
+  test.2 <- c('parent_experiment', "experiment_id", 'realization')
+  test.3 <- c('title')
+  if(sum(sapply(test.1, '%in%', att.names))==2){
+    orig_exp <- paste0(atts['model_id'], ", ", atts['experiment'])
+  }else if (sum(sapply(test.1, '%in%', att.names))==2){
+    orig_exp <- paste0(atts['parent_experiment'], ", ", atts['experiment_id'])
+  }else{
+    #Assume only title att present
+    orig_exp <- gsub(paste0(var,", "), "", atts['title']) #var with or without a trailing comma
+  }
+#   if('realization' %in% att.names){
+#     orig_exp <- paste(orig_exp, 'realization', atts['realization'])
+#   }
+  return(orig_exp)
+}
