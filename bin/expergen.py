@@ -500,19 +500,20 @@ def main():
 
 	# If the runscript directory already exists, please quit
 	#/home/a1r/gitlab/cew/fudge2014///scripts/tasmax/35txa-CDFt-A00X01K02
-	scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
-	print(scriptdir)
-	for sd in scriptdir:
-		if(os.path.exists(sd)):
-			if os.listdir(sd):
-				if (overwrite == False):    
-					print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
-					print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
-					sys.exit(-6)
-				if (overwrite == True):
-					print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
-					print "Now invoking cleanup utility..........."
-					clean_prior_experiments(uinput, basedir, preexist_glob)
+	#scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
+	#print(scriptdir)
+	sd = sbase
+	#for sd in scriptdir:
+	if(os.path.exists(sd)):
+		if os.listdir(sd):
+			if (overwrite == False):    
+				print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
+				print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
+				sys.exit(-6)
+			if (overwrite == True):
+				print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
+				print "Now invoking cleanup utility..........."
+				clean_prior_experiments(uinput, basedir, preexist_glob)
 		    #    cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
 			#if(preexist_glob == 'erase'):
 			#	print "Lets erase it ........... ifpreexist"
@@ -535,9 +536,9 @@ def main():
 			#else:
 			#	print output0,errors0
 			#print "continue expergen run...................." 
-					break 
-	   	else:
-			print "scriptdir "+sd+" does not exist. Looks like a clean slate "
+				#break 
+	else:
+		print "scriptdir "+sd+" does not exist. Looks like a clean slate "
 	#sys.exit("examine outcome of script")  
 	#print  "hist_freq"+hist_freq
 	script1Loc = basedir+"/utils/bin/create_runcode"

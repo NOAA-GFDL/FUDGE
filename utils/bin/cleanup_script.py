@@ -106,13 +106,14 @@ def clean_prior_experiments(xml, basedir, opt):
 		if (len(cv_match) == 1):
 			is_crossval=True
 			dirpaths.append(get_crossval_paths(outdirs))
-	if(re.search('anom', targvar) is not None):
-		anomaddpaths = get_anomadd_paths(outdirs)
-		dirpaths.append(anomaddpaths)
-		if is_ensemble:
-			dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
-		if is_crossval:
-			dirpaths.append(get_crossval_paths(anomaddpaths))	
+	#CEW removing 5-25; not needed in current directory structure		
+	#if(re.search('anom', targvar) is not None):
+	#	anomaddpaths = get_anomadd_paths(outdirs)
+	#	dirpaths.append(anomaddpaths)
+	#	if is_ensemble:
+	#		dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
+	#	if is_crossval:
+	#		dirpaths.append(get_crossval_paths(anomaddpaths))	
 				
 	print "Starting cleanup file operations"			
 	if opt=='erase':
