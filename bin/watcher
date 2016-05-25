@@ -15,8 +15,8 @@ from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
-import ppWatcher
-from ppWatcher import runPPWatcher
+#import ppWatcher
+#from ppWatcher import runPPWatcher
 
 def parserWatcher():
 	verbose = False #default
@@ -27,7 +27,8 @@ def parserWatcher():
 	sleeptime = None
 	nloops = None
 	mailid = None
-	verbopt = 0		
+	verbopt = 0
+	sev = 0		
 	usage = "\n############################################################################\n"
 	parser = OptionParser(usage)
 	usage = usage + "Eg. watcher -i /home/a1r/cew/experiment_info.txt -t 5 \n"
@@ -102,7 +103,7 @@ def parserWatcher():
 	v_print(1,"experiment_info.txt: "+uinput)
 
 	v_print(1,"Default timeout to quit"+ (str)(timeout)+" minute")
-	runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid)
+	runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev)
 
 def asciiParser(uinput):
 	op = False #not yet spotted output_path
@@ -143,7 +144,7 @@ def asciiParser(uinput):
 		sys.exit(-18)
 	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask
 
-def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
+def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	postProc_call = True
 	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
 	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask = asciiParser(uinput)
@@ -241,15 +242,15 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid):
 		 notifyUser(mailid,subject,text)
 	else:
 		 print "jobs submitted"
-		 subject = "fudge notification- watcher/success"
-		 text = "Your postProc jobs have been submitted.\n\nExperiment_info.txt for reference-\n"+uinput
-		 text = text + "\n\njob IDs for reference-\n"+ jobids
-		 text = text + "\nPP scripts for reference-\n"+ wscript
-		 notifyUser(mailid,subject,text)
+		 #subject = "fudge notification- watcher/success"
+		 #text = "Your postProc jobs have been submitted.\n\nExperiment_info.txt for reference-\n"+uinput
+		 #text = text + "\n\njob IDs for reference-\n"+ jobids
+		 #text = text + "\nPP scripts for reference-\n"+ wscript
+		 #notifyUser(mailid,subject,text)
 		 #CEW edit 5-4 for teh ppWatcher workflow
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
 		 #runPPWatcher(uinput, waittime, nrips)
-		 runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
+		 #runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
 	
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')

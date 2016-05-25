@@ -451,10 +451,10 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 				print(p_err)		
 			print "Copying to final location"			
 			gcp(clim_anom_file_out, clim_anom_file)						
-			if(mailid is not None):
-				send_anomadd_message('success',exp_name,mailid,
-									anom_file,clim_file,clim_anom_file,
-									err_message="",aux=r_command)						
+			#if(mailid is not None):
+			#	send_anomadd_message('success',exp_name,mailid,
+			#						anom_file,clim_file,clim_anom_file,
+			#						err_message="",aux=r_command)						
 	return clim_anom_file	
 
 def send_anomadd_message(status,exp_name,mailid,

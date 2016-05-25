@@ -25,7 +25,7 @@ import makeExpEns
 from makeExpEns import runMakeExpEns
 import cgitb
 
-def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid):	
+def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
 	expdict = read_exp_info_file(infile)
 	pp_statdir = osp.join(expdict['script.base'], "postProc/ppStatus")
 	logfile_loc = osp.join(expdict['script.base'], 'log/fudge_postProc_.mfudge_*')

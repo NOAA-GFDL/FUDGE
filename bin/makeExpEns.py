@@ -155,7 +155,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 			print("Error in call_ens_creation! File " + f + " does not exist!")
 			sys.exit(1)
 	#inFiles = ",".join([gcp(f, "TMPDIR", verbose, verbose) for f in flist])
-	inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, verbose, verbose) for f in flist])
+	inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, sev > 1, sev > 1) for f in flist])
 	orig_inFiles = ",".join(flist)
 	print("Calling ensemble creation on " + inFiles)
 	with Dataset(flist[0], 'r') as nc_obj:

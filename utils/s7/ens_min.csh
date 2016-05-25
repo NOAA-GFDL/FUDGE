@@ -34,7 +34,7 @@ echo $inFiles
 foreach i (`seq $#inFiles_array`)
 	ls $inFiles_array[$i]
 end
-ls `dirname($outFile)`
+#ls `dirname($outFile)`
 
 echo "ncecat --ovr -v $climvar $inFiles_array -o $outFile"
 ncecat --ovr -v $climvar $inFiles_array -o $outFile
@@ -55,7 +55,7 @@ ncdump -h $outFile |grep plev
   endif
   ncks -A -h -v $vars2copy $inFiles_array[1]  $outFile
 
-  ncatted -O -h -a comment,global,a,c,"Ensemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" -a title,global,m,c,"$dataSource $epoch $trange" $outFile
+  ncatted -O -h -a comment,global,a,c,"; \nEnsemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" -a title,global,m,c,"$dataSource $epoch $trange" $outFile
 
 # the realization attribute is in all CMIP5 and GFDL model metadata, but "gfdl_experiment_name" is only in GFDL's model data. 
 # execute separately so that if either is missing from netCDF files, the other edit is still executed.
