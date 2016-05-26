@@ -138,16 +138,19 @@ def asciiParser(uinput):
 			target = line
 		if(line.startswith('qc.mask')):
 			qc_mask = line	
+		#CEW edit 5-25
+		if(line.startswith("ds.experiment"))
+			ds_exp = line	
 	f.close()
 	if ((minifile_i_start == "undefined") | (minifile_i_end == "undefined") | (output_path == "undefined") | (spatmask == "undefined") | (script_base == "undefined") | (target == "undefined") | (qc_mask == "undefined")):
 		print("\033[1;31m One of the fields from your input file is missing. Please check if minifile.I.start,minifile.I.end,output.path,spat.mask.path_1,script.base,target,q.mask are all available in your input file. Program quitting now..\033[1;m")
 		sys.exit(-18)
-	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask
+	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask,ds_exp
 
 def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	postProc_call = True
 	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
-	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask = asciiParser(uinput)
+	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask,exp_name = asciiParser(uinput)
 
 	#if < 2 minifile length, postProc should not be called. 
 	if (((int)(minifile_i_end) - (int)(minifile_i_start)) == 0):
@@ -159,6 +162,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	list_output = dirs_output.split(',')	
 	qc_mask_bool = qc_mask.split(':')[1]
 	target = target.split(':')[1]
+	exp_name = exp_name.split(':')[1]
 	#will be nice to have target also in experiment_info.txt 
 	ctr = 0 
 	#based on status while loop through the following with sleep to check minifile existence
@@ -214,6 +218,9 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		  #cnloop_start = nloop_start + 1  
 ############# check if postProc_call is False	
 	if(postProc_call == False):
+		send_status_email("success", 'complete', exp_name, \\
+		                   traceback="One or more minfiles failed to write; sample indices include " + ",".join(mini_indices), 
+		                   mailid=mailid, logfiles = minilogs, exp_info_file ="", outfiles = "")
 		subject = "fudge notification- watcher/update"
 		text = "Your watcher has run to completion. But, postProc cannot be submitted at this time. The number of minifiles as specified in the XML may be too low (=1) to run postProc on it \n\nExperiment_info.txt for reference-\n"+uinput
 		text = text + "\n Please contact Aparna and Carolyn for assistance"
@@ -235,11 +242,16 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	v_print(1,"time to quit program"+ (str)(timeout) +"mins")
 	ppwaittime = timeout * 60
 	time.sleep(ppwaittime) 
-	if (retcode == - 13 ): #when mini.fail is out there 
-		 subject = "fudge notification- watcher/failed"
-		 text = "One or more batch jobs may have failed for this run. postProc cannot be run at this time. Experiment_info.txt for reference: "+uinput
-		 text = text + "\n--Please contact Aparna and Carolyn for help with the runs."
-		 notifyUser(mailid,subject,text)
+	if (retcode == -13 ): #when mini.fail is out there 
+		 minilogs,mini_indices = get_bad_minfiles(script_base)
+		 send_status_email("failure", 'R code', exp_name, \\
+		                   traceback="One or more minfiles failed to write; sample indices include " + ",".join(mini_indices), 
+		                   mailid=mailid, logfiles = minilogs, exp_info_file ="", outfiles = "")
+		 sys.exit(1)
+		 #subject = "fudge notification- watcher/failed"
+		 #text = "One or more batch jobs may have failed for this run. postProc cannot be run at this time. Experiment_info.txt for reference: "+uinput
+		 #text = text + "\n--Please contact Aparna and Carolyn for help with the runs."
+		 #notifyUser(mailid,subject,text)
 	else:
 		 print "jobs submitted"
 		 #subject = "fudge notification- watcher/success"
@@ -251,6 +263,20 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
 		 #runPPWatcher(uinput, waittime, nrips)
 		 #runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
+		 
+def get_bad_minfiles(logpath):
+	#Gets j-indices of all minfiles that have an error message in logfile
+	#at the R code level
+	minilogs = [f for f in os.listdir(logpath) if re.search('out',f) is not None]
+	indices = []
+	logfiles = []
+	for m in minilogs:
+		mfile = osp.join(logpath, m)
+		if("Error in" in open(mfile)):
+			mini_index = re.findall(r'.I(.*?)_J', m)
+			indices.append(mini_index)
+			logfiles.append(mfile)
+	return(logfiles, indices)			 
 	
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')

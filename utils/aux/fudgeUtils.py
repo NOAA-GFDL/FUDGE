@@ -76,7 +76,8 @@ def notifyUser(mailid, subject, text):
 		f = open(text_file, 'wb')
 		f.write(text)
 		f.close()
-		command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
+		command = "mailx -r " + 'fudge.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
+		#command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
 		m = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
 		m_out,m_err = m.communicate()
 	print("message sent and completed")		
@@ -101,3 +102,36 @@ def notifyUser_py(mailid,subject,text):
 			 smtp = smtplib.SMTP("localhost")
 			 smtp.sendmail(send_from, [send_to], msg.as_string())
 			 smtp.close() 
+			 
+def send_status_email(status,step,exp_name,mailid, \\
+						traceback="",exp_info_file="", logfiles = "", 
+						outfiles = "", note=""):
+	#Sends an email message to a user explaining the current
+	#status of the workflow. 					
+	if status=='failure':
+		subject = exp_name + " failed in " + step
+		text = "FUDGE " + step + "failed with the following error message:"
+		text = text + "\n\n" + traceback						
+	else if status=='success':
+		if step = 'complete':
+			subject = exp_name + " completed successfully!"
+			text = "FUDGE experiment " + exp_name + "completed all steps successfully."
+			if note != "":
+				text = text + "\n" + note
+		else:
+			subject = exp_name + " finished step " + step
+	if exp_info_file != "":
+		text = text + "Experiment info file: " + exp_info_file + "\n"
+	if xml != "":	
+	text = text + "Experiment XML:" + xml + "\n"
+	if logfiles != "":
+		text = text + "Logfiles:"
+		for l in logfiles:
+			text = text + "\n\t" + l
+	if outfiles != "":			
+		text = text + "Output files:"
+			for o in outfiles:
+				text = text + "\n\t" + o				
+	notfyUser(mailid, subject,text)	
+
+						 
