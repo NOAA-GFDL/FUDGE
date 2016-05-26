@@ -23,7 +23,7 @@ def get_ensemble_path(outdirs, rips):
 		sys.exit()				 
 	return(ens_outdir)
 
-def get_crossval_path(cv_paths):
+def get_crossval_paths(cv_paths):
 	#Okay, this is going to be more complicated - this relies on some of the code
 	#that was established by the ESD team for dealing with the cross-validated paths
 	orig_expname = re.split("/",cv_paths[0])[-1]
@@ -103,16 +103,16 @@ def clean_prior_experiments(xml, basedir, opt):
 		dirpaths.append(get_ensemble_path(outdirs, rip_list))
 		crossval_patt = ['00r1e2', '00r2e2']
 		cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, outdirs[1]) is not None]
-		if (len(cv_match) == 1):
-			is_crossval=True
-			dirpaths.append(get_crossval_paths(outdirs))
-	if(re.search('anom', targvar) is not None):
-		anomaddpaths = get_anomadd_paths(outdirs)
-		dirpaths.append(anomaddpaths)
-		if is_ensemble:
-			dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
-		if is_crossval:
-			dirpaths.append(get_crossval_paths(anomaddpaths))	
+		#if (len(cv_match) == 1):
+		#	is_crossval=True
+		#	dirpaths.append(get_crossval_paths(outdirs))
+	#if(re.search('anom', targvar) is not None):
+	#	anomaddpaths = get_anomadd_paths(outdirs)
+	#	dirpaths.append(anomaddpaths)
+	#	if is_ensemble:
+	#		dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
+	#	#if is_crossval:
+	#	#	dirpaths.append(get_crossval_paths(anomaddpaths))	
 				
 	print "Starting cleanup file operations"			
 	if opt=='erase':
