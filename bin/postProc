@@ -200,17 +200,22 @@ def postProc():
 			if (retcode == - 13 ):
 				print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
 	 			#email user
-				subject = "fudge postProc failure for " + total_exp_name
-				text = "Insufficient number of minfiles exist. "
-				text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
-				text = text + "\n\npostProc cannot be run at this time for "+vname+"."
-				text = text + "\n\nExperiment XML for reference-\n"+uinput
-				text = text + "\n\nExperiment output minifile directory: "+indir
-				text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
-				text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-				print "send to:" + send_to
-				print "fromEmail: " + fromEmail
-				notifyUser(send_to,subject,text)
+				#subject = "fudge postProc failure for " + total_exp_name
+				#text = "Insufficient number of minfiles exist. "
+				#text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
+				#text = text + "\n\npostProc cannot be run at this time for "+vname+"."
+				#text = text + "\n\nExperiment XML for reference-\n"+uinput
+				#text = text + "\n\nExperiment output minifile directory: "+indir
+				#text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
+				#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+				#print "send to:" + send_to
+				#print "fromEmail: " + fromEmail
+				#notifyUser(send_to,subject,text)
+				send_status_email("failure", 'postProc', total_exp_name, \
+		                   traceback="Insufficient number of minifiles exist", \
+		                   mailid=send_to, logfiles = os.path.join(sbase, log), \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = expdict['output.path'], xml = uinput)		
 				sys.exit(-13) 
  
 		################################################
@@ -250,13 +255,18 @@ def postProc():
 						sys.exit("ERROR")
 			 	else:
 				 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-				 	subject = "fudge postProc failure for " + total_exp_name
-				 	text = "An error occured in postProc suite of tools,call_ppFudge "
-				 	text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
-				 	text = text + "\n\npostProc cannot be run at this time"
-				 	text = text + "\n\nExperiment XML for reference-\n"+uinput
-				 	text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-				 	notifyUser(send_to,subject,text)
+				 	#subject = "fudge postProc failure for " + total_exp_name
+				 	#text = "An error occured in postProc suite of tools,call_ppFudge "
+				 	#text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
+				 	#text = text + "\n\npostProc cannot be run at this time"
+				 	#text = text + "\n\nExperiment XML for reference-\n"+uinput
+				 	#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+				 	#notifyUser(send_to,subject,text)
+				 	send_status_email("failure", 'postProc', total_exp_name, \
+		                   traceback="Minfiles directory "+ indir+" does not exist for this experiment.", \
+		                   mailid=send_to, logfiles = os.path.join(sbase, log), \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = expdict['output.path'], xml = uinput)	
 				 	sys.exit(-1)
 			 		#########end indir loop	
 
@@ -322,42 +332,58 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		send_to = 'na'
 	if (p.returncode != 0):
 		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
-		subject = "fudge postProc failure for " + total_exp_name
-		text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
-		text = text + "\n\nThere may be one or more minfiles absent for the specified region."
-		text = text + "\n\npostProc cannot be run at this time for "+var+"."
-		text = text + "\n\nExperiment XML for reference-\n"+uinput
-		text = text + "\n\nExperiment output directory: "+final_out_dir
-		text = text + "\n\nMinifile logs: "+ sbase + "\log\out.*"
-		text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
-		text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-		notifyUser(send_to,subject,text)
+		#subject = "fudge postProc failure for " + total_exp_name
+		#text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
+		#text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+		#text = text + "\n\npostProc cannot be run at this time for "+var+"."
+		#text = text + "\n\nExperiment XML for reference-\n"+uinput
+		#text = text + "\n\nExperiment output directory: "+final_out_dir
+		#text = text + "\n\nMinifile logs: "+ sbase + "\log\out.*"
+		#text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
+		#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+		#notifyUser(send_to,subject,text)
+		send_status_email("failure", 'postProc', total_exp_name, \
+		                   traceback="One or more minifiles may be absent for the specified region", \
+		                   mailid=send_to, logfiles = [os.path.join(sbase, "fudge_postProc.mfudge_postProc*")], \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir, xml = uinput)			
+		                   
+		
 		sys.exit(0)
 	if word in error:
 		print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
-		subject = "fudge postProc failure for " + total_exp_name
-		text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
-		text = text + "\n\nThere may be one or more minfiles absent for the specified region."
-		text = text + "\n\npostProc cannot be run at this time for "+var+"."
-		text = text + "\n\nExperiment XML for reference-\n"+uinput
-		text = text + "\n\nExperiment output directory: "+final_out_dir
-		text = text + "\n\nMinifile logs:"+ sbase + "/log/out.*"
-		text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
-		text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-		notifyUser(send_to,subject,text)
+		#subject = "fudge postProc failure for " + total_exp_name
+		#text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
+		#text = text + "\n\nThere may be one or more minfiles absent for the specified region."
+		#text = text + "\n\npostProc cannot be run at this time for "+var+"."
+		#text = text + "\n\nExperiment XML for reference-\n"+uinput
+		#text = text + "\n\nExperiment output directory: "+final_out_dir
+		#text = text + "\n\nMinifile logs:"+ sbase + "/log/out.*"
+		#text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
+		#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+		#notifyUser(send_to,subject,text)
+		send_status_email("failure", 'postProc', total_exp_name, \
+		                   traceback="One or more minifiles may be absent for the specified region", \
+		                   mailid=send_to, logfiles = os.path.join(sbase, "log/fudge_postProc.mfudge_postProc*"), \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir, xml = uinput)
 		sys.exit(0)
 ############################################################################################
 	global cnt
 	cnt = cnt + 1
 	print "1- completed\n"
 	## success email 
-	subject = "fudge postProc success for " + total_exp_name
-	text = "Your postProc run has succeeded for "+var+"."
-	text = text + "\n\nExperiment XML for reference-\n"+uinput
-	text = text + "\n\nExperiment output directory: "+final_out_dir
-	text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
-	text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
-	notifyUser(send_to,subject,text)
+	#subject = "fudge postProc success for " + total_exp_name
+	#text = "Your postProc run has succeeded for "+var+"."
+	#text = text + "\n\nExperiment XML for reference-\n"+uinput
+	#text = text + "\n\nExperiment output directory: "+final_out_dir
+	#text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
+	#text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
+	#notifyUser(send_to,subject,text)
+	send_status_email("success", 'postProc', total_exp_name, \
+		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir, xml = uinput)
 	supp_strings = ['qcmask', 'save']
 	if ("Anom" in var):
 		#supp_match = [ for r in range(0, len(supp_string) if re.match() not None]

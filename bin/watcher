@@ -10,11 +10,14 @@ import shlex
 import checker
 import time
 import smtplib
+import re
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
+import fudgeUtils
+from fudgeUtils import send_status_email
 #import ppWatcher
 #from ppWatcher import runPPWatcher
 
@@ -139,7 +142,7 @@ def asciiParser(uinput):
 		if(line.startswith('qc.mask')):
 			qc_mask = line	
 		#CEW edit 5-25
-		if(line.startswith("ds.experiment"))
+		if(line.startswith("ds.experiment")):
 			ds_exp = line	
 	f.close()
 	if ((minifile_i_start == "undefined") | (minifile_i_end == "undefined") | (output_path == "undefined") | (spatmask == "undefined") | (script_base == "undefined") | (target == "undefined") | (qc_mask == "undefined")):
@@ -218,13 +221,14 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		  #cnloop_start = nloop_start + 1  
 ############# check if postProc_call is False	
 	if(postProc_call == False):
-		send_status_email("success", 'complete', exp_name, \\
-		                   traceback="One or more minfiles failed to write; sample indices include " + ",".join(mini_indices), 
-		                   mailid=mailid, logfiles = minilogs, exp_info_file ="", outfiles = "")
-		subject = "fudge notification- watcher/update"
-		text = "Your watcher has run to completion. But, postProc cannot be submitted at this time. The number of minifiles as specified in the XML may be too low (=1) to run postProc on it \n\nExperiment_info.txt for reference-\n"+uinput
-		text = text + "\n Please contact Aparna and Carolyn for assistance"
-		notifyUser(mailid,subject,text)
+		send_status_email("success", 'complete', exp_name, \
+		                   traceback="",
+		                   mailid=mailid, logfiles = minilogs, exp_info_file=uinput, outfiles=[output_path.split(",")], 
+		                   note = "Please note: postproc was not run on this job, probably due to one minfile being present in the XML.")
+		#subject = "fudge notification- watcher/update"
+		#text = "Your watcher has run to completion. But, postProc cannot be submitted at this time. The number of minifiles as specified in the XML may be too low (=1) to run postProc on it \n\nExperiment_info.txt for reference-\n"+uinput
+		#text = text + "\n Please contact Aparna and Carolyn for assistance"
+		#notifyUser(mailid,subject,text)
 		sys.exit("Quitting watcher, number of minifiles not enough to proceed with postProc")
 
 	if (retcode == 0) | (len(list_output)==0):
@@ -235,18 +239,18 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		output, errors = p.communicate()
 		if(p.returncode != 0):
    			v_print(1,"Step1:!!!! FAILED !!!!, please contact Aparna and Carolyn.")
-	v_print(1,"INFO: job IDs"+ output)
-	jobids =  output
-	v_print(2,"INFO:"+ errors)
+			v_print(1,"INFO: job IDs"+ output)
+			jobids =  output
+			v_print(2,"INFO:"+ errors)
 
 	v_print(1,"time to quit program"+ (str)(timeout) +"mins")
 	ppwaittime = timeout * 60
 	time.sleep(ppwaittime) 
 	if (retcode == -13 ): #when mini.fail is out there 
-		 minilogs,mini_indices = get_bad_minfiles(script_base)
-		 send_status_email("failure", 'R code', exp_name, \\
-		                   traceback="One or more minfiles failed to write; sample indices include " + ",".join(mini_indices), 
-		                   mailid=mailid, logfiles = minilogs, exp_info_file ="", outfiles = "")
+		 minilogs,mini_indices = get_bad_minfiles(os.path.join(script_base.split(":")[1], "log"))
+		 send_status_email("failure", 'R code', exp_name, \
+		                   traceback="One or more minfiles failed to write; sample indices include " + ",".join(mini_indices), \
+		                   mailid=mailid, logfiles = minilogs, exp_info_file = uinput, outfiles = "")
 		 sys.exit(1)
 		 #subject = "fudge notification- watcher/failed"
 		 #text = "One or more batch jobs may have failed for this run. postProc cannot be run at this time. Experiment_info.txt for reference: "+uinput
@@ -262,20 +266,27 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		 #CEW edit 5-4 for teh ppWatcher workflow
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
 		 #runPPWatcher(uinput, waittime, nrips)
-		 #runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
+		 runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
 		 
 def get_bad_minfiles(logpath):
 	#Gets j-indices of all minfiles that have an error message in logfile
 	#at the R code level
+	print(logpath)
 	minilogs = [f for f in os.listdir(logpath) if re.search('out',f) is not None]
 	indices = []
 	logfiles = []
 	for m in minilogs:
-		mfile = osp.join(logpath, m)
-		if("Error in" in open(mfile)):
-			mini_index = re.findall(r'.I(.*?)_J', m)
-			indices.append(mini_index)
-			logfiles.append(mfile)
+		mfile = os.path.join(logpath, m)
+		with open(mfile, 'r') as newfile:
+			for line in newfile:
+				if "Error in" in line:
+				#if("Error in" in open(mfile)):
+					mini_index = re.findall(r'.I(.*?)_J', m)[0]
+					indices.append(mini_index)
+					logfiles.append(mfile)
+	if(len(indices) > 10):
+		indices = indices[0:4] + indices[-5:-1]
+		logfiles = logfiles[0:4] + logfiles[-5:-1]				
 	return(logfiles, indices)			 
 	
 def notifyUser(mailid,subject,text):

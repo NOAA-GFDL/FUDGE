@@ -58,6 +58,11 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
 			send_ppWatcher_message('success', 'what is a step', expdict['ds.experiment'], 'what is the error', \
 		                       expdict['script.base'], minilog, pplog, mailid)
+		    send_status_email("failure", 'ppWatcher', exp_name, \
+		                   traceback="One or more pp jobs have failed; sample jobs include" + \
+		                   (",").join([re.sub(".failure", "", p) for p in nfail]), \
+		                   mailid=mailid, logfiles = logfile_loc, 
+		                   exp_info_file = infile, outfiles = "")                   
 			sys.exit(1)
 		else:
 			nsucceed = len([p for p in status_files if re.search('success',p) is not None])
@@ -86,22 +91,28 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			#...in the event that the above errors out, you probably want this to 
 			#have a command-line argument as well
 			else:
-				print("Calling cross-validated ensemble creation script")
-				print("Or we would, if it existed right now.")
-				try:
-					runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
-				except:
-					#import sys, cgitb
-					#cgitb.enable()
-					print(cgitb.text(sys.exc_info()))
-					send_ppWatcher_message('failure')
-				else:
-					send_ppWatcher_message('success')		
+				#print("Calling cross-validated ensemble creation script")
+				#print("Or we would, if it existed right now.")
+				#try:
+				#	runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+				#except:
+				#	#import sys, cgitb
+				#	#cgitb.enable()
+				#	print(cgitb.text(sys.exc_info()))
+				#	send_ppWatcher_message('failure')
+				#else:
+				#	send_ppWatcher_message('success')		
 			#Make cross-validated ensemble; add to the relevant experiment info files
-			send_pp_message('success', 'ppWatcher')
+			send_status_email("success", 'complete', exp_name, \
+		                   traceback="" \
+		                   mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
+		                   exp_info_file = infile, outfiles = "")
 			
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
-		send_ppWatcher_message('failure', 'what is a step', expdict['ds.experiment'], 'what is the error', \
-		                       expdict['script.base'], minilog, pplog, mailid)
+		send_status_email("failure", 'ppWatcher', exp_name, \
+		                   traceback="Job timed out", \
+		                   mailid=mailid, logfiles = logfile_loc, exp_info_file = infile, 
+		                   outfiles = expdict['output.path'])
+		sys.exit(1)                   		                       
 	sys.exit(0)						
