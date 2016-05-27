@@ -126,7 +126,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
 #   print(lotail$offset)
 #   print(sum(tmp.mask))
 #   print(sum(ds.fut==ds.orig))
-  return(list(ds = ds.orig, mask = (hitail$cond + lotail$cond)))
+  return(list(ds = ds.orig, mask = (tmp.mask)))
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
