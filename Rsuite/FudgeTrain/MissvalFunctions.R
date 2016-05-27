@@ -230,17 +230,13 @@ replace.missval <- function(x, val){
 
 add.back.in <- function(data, ref){
   #adds data back into a reference vector
+  if(mode(ref)=='list'){
+    ref <- unlist(ref, use.names=F)
+  }
   if(mode(data)=='list'){
     data <- unlist(data, use.names=FALSE)
   }
-#   print('in add.back.in')
-#   print(length(ref))
-#   print(length(data))
-#   print(sum(!is.na(ref)))
-#   print(sum(is.na(data)))
-#   print(summary(ref))
   ref[!is.na(ref)] <- data
-#   print(summary(ref))
   return(ref)
 }
 

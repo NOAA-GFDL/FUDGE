@@ -72,12 +72,15 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
                      'OhGh' = ds.fut)
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
-  model.hist <- remove.missvals(model.hist)
-  obs.hist <- remove.missvals(obs.hist)
-  model.fut <- remove.missvals(model.fut)
-  ds.fut <- remove.missvals(ds.fut)
+  model.hist <- remove.missvals(unlist(model.hist))
+  obs.hist <- remove.missvals(unlist(obs.hist))
+  model.fut <- remove.missvals(unlist(model.fut))
+  ds.fut <- remove.missvals(unlist(ds.fut))
   #Calculate high and low tails
   print('calling upper')
+  #print(summary(ds.fut))
+  #print(summary(model.fut))
+  #stop('examine output')
   hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
   print('calling lower')
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
@@ -118,7 +121,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
 #   print(lotail$offset)
 #   print(sum(tmp.mask))
 #   print(sum(ds.fut==ds.orig))
-stop("examine output")
+#stop("examine output")
   return(list(ds = ds.orig, mask = (hitail$cond + lotail$cond)))
 }
 
@@ -139,6 +142,9 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
                     lower=(1), 
                     upper=(-1))
   if(args$triggertype=='GfGh'){
+    #print(summary(MF))
+    #print(summary(DS))
+    #print(summary(MH))
     mf.rank = rank(MF)
     MF  = sort(MF)
     DS = sort(DS)

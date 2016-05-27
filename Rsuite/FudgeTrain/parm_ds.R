@@ -91,15 +91,15 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
                               parm.targ, #maintain orig order and orig placement of missvals
                               ds.var,
                               parm.model, args)
-    rip.tmp <- out.tmp$fut_obs
+    rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
     #round reference: close to line 1180
     #out.list[out.var] <- rip.tmp - look, I don't think that this is making a difference.
-    if(round.ds){
-      message('rounding downscaled values')
-      out.list[[out.var]] <- round(rip.tmp[rip.rank][1:rip.len], digits=args$round)
-    }else{
+    #if(round.ds){
+    #  message('rounding downscaled values')
+    #  out.list[[out.var]] <- round(rip.tmp[rip.rank][1:rip.len], digits=args$round)
+    #}else{
       out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
-    }
+    #}
   }
   return(out.list)
 }
