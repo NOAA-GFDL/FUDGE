@@ -62,6 +62,7 @@ callTailAdjust <- function(test, input, adjusted.output){
       adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
     }
   }
+#stop('examine output')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
@@ -86,35 +87,42 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
   #Add missing values of condition back into main
   cond.tmp <- cond.missvals
-  cond.tmp[cond.tmp] <- hitail$cond * 2
+  cond.tmp[cond.tmp] <- hitail$cond
   hitail$cond <- cond.tmp
   cond.tmp <- cond.missvals
   cond.tmp[cond.tmp] <- (lotail$cond)
-  lotail$cond <- cond.tmp
+  hitail.pts = hitail$cond >= 1
+  lotail.pts = lotail$cond >= 1
+  #lotail$cond <- cond.tmp
 #  ds.orig <- ds.fut
 #   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
 #                                                         'model.hist', 'obs.hist', 'model.fut'))
-  ds.orig[hitail$cond] = cond.data[hitail$cond] + hitail$offset
-  ds.orig[lotail$cond] = cond.data[lotail$cond] + lotail$offset
-  #print(sum(cond.tmp))
+# print(hitail$offset)
+# print(lotail$offset)
+  ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
+  ds.orig[lotail.pts] = cond.data[lotail.pts] + lotail$offset
+#   print(sum(hitail$cond))
+# print(hitail$cond * 2)
+# print(sum(lotail$cond))
+# print(sum(cond.tmp))
   #print('Total number of points different at this point:')
   #print(which((ds.fut-ds.orig)==0))
 #   xval = length(model.fut)
 #   yrange <- range(c(ds.fut, ds.orig, model.fut,model.hist))
 #   plot(x=1:length(model.hist), sort(model.hist), col='green')
 #   lines(x=1:length(model.hist), sort(obs.hist), col='black')
-#   plot(x=1:xval, y=sort(model.fut), col='red', lwd=2, main="MF, DS and DS with tail adjust", ylim=yrange)
+#   plot(x=1:xval, y=model.fut, col='red', lwd=2, main="MF, DS and DS with tail adjust", ylim=yrange)
 #   abline(h=max(model.hist), col='green')
 #   abline(h=max(obs.hist), col='black')
-#   lines(x=1:xval, y=sort(ds.fut), col='black', lwd=2)
-#   lines(x=1:xval, y=sort(remove.missvals(ds.orig)), col="blue",lwd=2, lty=2)
-#   for(i in seq(0, 300, 30)){
-#     abline(v=i)
-#   }
+#   lines(x=1:xval, y=ds.fut, col='black', lwd=2)
+#   lines(x=1:xval, y=remove.missvals(ds.orig), col="blue",lwd=2, lty=2)
+# #   for(i in seq(0, 300, 30)){
+# #     abline(v=i)
+# #   }
 #   legend('bottomright',legend=c('MF','DS','DS /w tailadj'), col=c('red', 'black', 'blue'), lty=c(1,1,2)) 
 #   
   # mask = (hitail$cond|lotail$cond)
-  tmp.mask <- hitail$cond + lotail$cond
+  tmp.mask <- (hitail$cond)*2 + lotail$cond
   tmp.mask[tmp.mask > 4] = 4
   #print(tmp.mask)
 #   print(hitail$offset)
