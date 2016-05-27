@@ -21,6 +21,7 @@ from netCDF4 import Dataset
 import fudgeUtils
 from fudgeUtils import gcp,tstamp
 from fudgeUtils import read_exp_info_file
+from FudgeUtils import send_status_email
 import makeExpEns
 from makeExpEns import runMakeExpEns
 import cgitb
