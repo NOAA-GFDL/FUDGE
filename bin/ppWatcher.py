@@ -56,9 +56,9 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		nfail = len([p for p in status_files if re.search('failure',p) is not None])
 		if nfail != 0:
 			print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
-			send_ppWatcher_message('success', 'what is a step', expdict['ds.experiment'], 'what is the error', \
-		                       expdict['script.base'], minilog, pplog, mailid)
-		    send_status_email("failure", 'ppWatcher', exp_name, \
+			#send_ppWatcher_message('success', 'what is a step', expdict['ds.experiment'], 'what is the error', \
+		    #                   expdict['script.base'], minilog, pplog, mailid)
+			send_status_email("failure", 'ppWatcher', exp_name, \
 		                   traceback="One or more pp jobs have failed; sample jobs include" + \
 		                   (",").join([re.sub(".failure", "", p) for p in nfail]), \
 		                   mailid=mailid, logfiles = logfile_loc, 
@@ -90,7 +90,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				print("Cross-validation ensemble creation for this experiment is either in progress or has completed. Please check the experiment_info file.") 
 			#...in the event that the above errors out, you probably want this to 
 			#have a command-line argument as well
-			else:
+			#else:
 				#print("Calling cross-validated ensemble creation script")
 				#print("Or we would, if it existed right now.")
 				#try:
@@ -104,7 +104,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				#	send_ppWatcher_message('success')		
 			#Make cross-validated ensemble; add to the relevant experiment info files
 			send_status_email("success", 'complete', exp_name, \
-		                   traceback="" \
+		                   traceback="", \
 		                   mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
 		                   exp_info_file = infile, outfiles = "")
 			

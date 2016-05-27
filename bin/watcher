@@ -18,8 +18,8 @@ from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 import fudgeUtils
 from fudgeUtils import send_status_email
-#import ppWatcher
-#from ppWatcher import runPPWatcher
+import ppWatcher
+from ppWatcher import runPPWatcher
 
 def parserWatcher():
 	verbose = False #default
