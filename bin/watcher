@@ -266,7 +266,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		 #CEW edit 5-4 for teh ppWatcher workflow
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
 		 #runPPWatcher(uinput, waittime, nrips)
-		 runPPWatcher(uinput,timeout,verbopt,sev,nloops,sleeptime,mailid)
+		 runPPWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev)
 		 
 def get_bad_minfiles(logpath):
 	#Gets j-indices of all minfiles that have an error message in logfile

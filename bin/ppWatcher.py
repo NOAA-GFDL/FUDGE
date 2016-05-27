@@ -21,7 +21,7 @@ from netCDF4 import Dataset
 import fudgeUtils
 from fudgeUtils import gcp,tstamp
 from fudgeUtils import read_exp_info_file
-from FudgeUtils import send_status_email
+from fudgeUtils import send_status_email
 import makeExpEns
 from makeExpEns import runMakeExpEns
 import cgitb
@@ -54,13 +54,14 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		print("Checking " + pp_statdir + " for status files")
 		status_files = [p for p in os.listdir(pp_statdir) if osp.isfile(osp.join(pp_statdir,p))]
 		print(status_files)
-		nfail = len([p for p in status_files if re.search('failure',p) is not None])
-		if nfail != 0:
+		nfail = [p for p in status_files if re.search('failure',p) is not None]
+		if len(nfail) != 0:
 			print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
 			#send_ppWatcher_message('success', 'what is a step', expdict['ds.experiment'], 'what is the error', \
 		    #                   expdict['script.base'], minilog, pplog, mailid)
+			#print(nfail)
 			send_status_email("failure", 'ppWatcher', exp_name, \
-		                   traceback="One or more pp jobs have failed; sample jobs include" + \
+		                   traceback="One or more pp jobs have failed; sample jobs include " + \
 		                   (",").join([re.sub(".failure", "", p) for p in nfail]), \
 		                   mailid=mailid, logfiles = logfile_loc, 
 		                   exp_info_file = infile, outfiles = "")                   

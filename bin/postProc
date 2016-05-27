@@ -22,7 +22,7 @@ from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
 import fudgeUtils
-from fudgeUtils import notifyUser
+from fudgeUtils import send_status_email
 
 
 cnt = 0
@@ -389,10 +389,10 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		#supp_match = [ for r in range(0, len(supp_string) if re.match() not None]
 		if (supp_strings[0] not in var and supp_strings[1] not in var):
 			print "Calling the anomaly addition script"
-			anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to)
+			anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
 	return p.returncode
 	
-def callAddAnom(final_out_dir,exp_name,var,mailid=None):
+def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 	#Figure out the final output in the output dir:
 	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
 	#If there is more that one file present, select the one with the shortest name
@@ -408,8 +408,13 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 			clim_error = 'Climatology not found in input file ' + anom_file
 			print("Error in anomaly addition! " + clim_error + " ;exiting")
 			if( mailid is not None):
-				send_anomadd_message('failure',exp_name,mailid,
-									anom_file,"None","None", clim_error,"")	
+				send_status_email("failure", 'callAddAnom', total_exp_name, \
+							traceback = clim_error,\
+		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir, xml = uinput)
+				#send_anomadd_message('failure',exp_name,mailid,
+				#					anom_file,"None","None", clim_error,"")	
 			exit(1)
 			
 	#Remove temporary directories from beginning of pathname, 
@@ -430,7 +435,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 		if( mailid is not None):
 			#send_anom_message('failure', clim_error, exp_name,mailid,
 			#						anom_file,clim,"None",clim_err,"")
-			send_status_email("success", 'postProc', total_exp_name, \
+			send_status_email("failure", 'postProc', total_exp_name, \
 			               traceback = "Climatology file " + clim + "not found on system",\
 		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
@@ -506,6 +511,7 @@ def send_anomadd_message(status,exp_name,mailid,
 	if (aux != ""):
 		text = text + sep + aux		
 	notifyUser(mailid,subject,text)	
+	
 	
 def send_pp_message(status,step,exp_name,err, var,xml,outdir, minilog,pplog):
 	#send a message about the pp status

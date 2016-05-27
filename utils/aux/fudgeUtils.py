@@ -107,7 +107,8 @@ def send_status_email(status,step,exp_name,mailid, \
 						traceback="",exp_info_file="", logfiles = "", 
 						outfiles = "", note="", xml=""):
 	#Sends an email message to a user explaining the current
-	#status of the workflow. 					
+	#status of the workflow. 	
+	text = ""				
 	if status=='failure':
 		subject = exp_name + " failed in " + step
 		text = "FUDGE " + step + " failed with the following error message:"
@@ -130,10 +131,15 @@ def send_status_email(status,step,exp_name,mailid, \
 		text = text + "\nLogfiles:"
 		for l in logfiles:
 			text = text + "\n\t" + l
-	if outfiles != "":			
-		text = text + "Output files:"
+	if outfiles != "":	
+		if isinstance(outfiles,basestring):
+			outfiles = [outfiles]		
+		text = text + "\nOutput files:"
 		for o in outfiles:
-			text = text + "\n\t" + o				
+			text = text + "\n\t" + o
+	print(mailid)
+	print(subject)
+	print(text)						
 	notifyUser(mailid, subject,text)	
 
 						 
