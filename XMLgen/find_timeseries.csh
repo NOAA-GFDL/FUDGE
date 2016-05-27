@@ -3,12 +3,17 @@
 # FIND AVAILABLE TIME SERIES
 # --------------------------
 
+<<<<<<< HEAD
   set filePartA = $1
   set filePartB = $2
   set fileDir = $3
 
   cd $fileDir
   set files = (`\ls ${filePartA}_*-*.${filePartB}`)
+=======
+  cd $fileDir
+  set files = (`\ls ${filePartA}_${fileTrangeIn}*.${filePartB}`)
+>>>>>>> g_bcqmtailadj
   set listDate1 = ()
   set listDate2 = ()
   set listTrange = ()

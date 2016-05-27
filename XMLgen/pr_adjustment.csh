@@ -14,18 +14,34 @@
   if (-e pr_XML) \rm pr_XML
 
   set pr_opts = (pr_threshold_in pr_conserve_in pr_threshold_out pr_conserve_out pr_freqadj_in)
+<<<<<<< HEAD
+=======
+  set varvals = ("'us_trace'" "'global_trace'" "'zero'")
+>>>>>>> g_bcqmtailadj
 
   if (!("$targVar" =~ "pr*")) then
     echo "    precip adjustment can not be done for $targVar = $targVar. "
     exit 0
   else
 
+<<<<<<< HEAD
   echo "    Options for Precip INPUT:"
+=======
+  echo "    Description of options for Precip INPUT threshold:"
+  echo " "
+  echo "   'us_trace' == 0.01 in./day"
+  echo "   'global_trace' == 0.1 mm/day" 
+  echo "   'zero'  == 0 precipitation"
+  echo " "
+>>>>>>> g_bcqmtailadj
   echo " "
 
 # pr_threshold_in  
 
+<<<<<<< HEAD
   set varvals = ("'us_trace' (0.01 in./day)" "'global_trace' (0.1 mm/day)" "'zero' (0 precipitation)")
+=======
+>>>>>>> g_bcqmtailadj
   set dinfo = "precip input data, what threshold value is to be used to distinguish between dry days and wet days?"
   source $QueryVals
   set opt = ($kval)
@@ -87,7 +103,10 @@
 
 # pr_threshold_out  
 
+<<<<<<< HEAD
   set varvals = ("'us_trace' (0.01 in./day)" "'global_trace' (0.1 mm/day)" "'zero' (0 precipitation)")
+=======
+>>>>>>> g_bcqmtailadj
   set dinfo = "downscaled precip output timeseries, what threshold value is to be used to distinguish between dry days and wet days?"
   source $QueryVals
   set opt = ($kval)
@@ -121,6 +140,35 @@
     set pr_conserve_out = "'off'"
   endif
 
+<<<<<<< HEAD
+=======
+# 8/20/2015
+# ignore0 not working for espresso 
+# commenting out section and forcing to 'off'
+#
+  echo ">>  ZERO VALUE MASKING (i.e. ignore0 not functioning adequately in espresso. setting it to 'off') "
+# echo ">>  ZERO VALUE MASKING "
+# echo ">>  Do you want to mask out precip = zero? "
+# echo ">>  This may be desired if the downscaling method does NOT involve quantile mapping."
+# echo ">>  Your DS Method is $dsMethod ."
+# echo ">>  "
+# echo ">>  Do you want to mask out precip = zero ? "
+# echo -n ">>  Enter y for 'yes' ; Enter n or hit the 'Enter' key for 'no' :  "
+# set ans=$<
+# echo $ans >> $INtxt
+# 
+# if ($ans != "y") then
+    set ignore0 = "'off'"
+    echo "    precip = 0. will NOT be masked for precip adjustments."
+# else
+#   set ignore0 = "'on'"
+#   echo "    precip = 0. WILL be masked."
+# endif
+# END COMMENTING OUT OF ignore0 option-setting
+#
+  echo " "
+  sleep 1
+>>>>>>> g_bcqmtailadj
 
 cat > pr_XML<<EOF
         <pr_opts>
@@ -129,6 +177,7 @@ cat > pr_XML<<EOF
            <pr_conserve_in>$pr_conserve_in</pr_conserve_in>
            <pr_threshold_out>$pr_threshold_out</pr_threshold_out>
            <pr_conserve_out>$pr_conserve_out</pr_conserve_out>
+<<<<<<< HEAD
         </pr_opts>
 EOF
 
@@ -151,6 +200,12 @@ EOF
 #--------------------------------------------------------------------------------------------
 # NOTE 
 
+=======
+           <ignore0>$ignore0</ignore0>
+        </pr_opts>
+EOF
+
+>>>>>>> g_bcqmtailadj
   endif
 
 exit 0

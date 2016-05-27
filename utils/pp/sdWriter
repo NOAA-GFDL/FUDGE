@@ -1,4 +1,7 @@
 #!/bin/csh 
+module load gcp
+module load nco/4.3.1
+module load ncarg/6.2.1
 
 if ($#argv < 4) then
    echo "ERROR: wrong number of arguments"
@@ -439,7 +442,7 @@ if ( "$AARMVAR" =~ *"mask"* ) then
 	set mcom = "Flagged cases = missing; Non-flagged cases = 1.0" 
 	ncatted -O -h -a comments,${AARMVAR},a,c,"${mcom}" $OFILE
 else
-ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE
+	ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE
 endif
 
 #ncatted -O -h -a title,global,o,c,"downscaled estimate of tasmax for the MPI-ESM-LR.rcp85_r1i1p1.2006-2099 experiment" $OFILE #TODO from R

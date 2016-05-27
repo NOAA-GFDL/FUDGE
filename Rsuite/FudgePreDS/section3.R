@@ -25,23 +25,27 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                    hist.pred = NA, 
                    hist.targ = NA, 
                    fut.pred = NA, 
+                           att.list=NA,
+                   create.qc.mask=FALSE, create.adjust.out=FALSE, 
                    s5.instructions=list('na')){
   #Define data that will change with iteration
-  adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred), 
+  adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 
+                                   'att.list'=att.list), 
                         s5.list=s5.instructions)
-  
+  #print(paste("lenght of section 3 instructions:", length(s3.instructions)))
   for(element in 1:length(s3.instructions)){
     test <- s3.instructions[[element]]
-    print(test)
     #Note that BOTH ELEMENTS get returned for the adjusted output. 
     #The transforms may have elements that will depend on the conditions of the initial transform, 
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
     adjusted.list <- switch(test$type,
-                              'PR' = return(callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list)),
-                              stop(paste('Adjustment Method Error: method', test$s5.method, 
-                                         "is not supported for callS5Adjustment. Please check your input.")))
+                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list),
+                            'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list),
+                            stop(paste('Adjustment Method Error: method', test$type, 
+                                       "is not supported for callS3Adjustment. Please check your input.")))
   }
+  #stop('examine this output')
   return(adjusted.list)
 }
 
@@ -50,8 +54,10 @@ callPRPreproc <- function(test, input, postproc.output){
   #as output by the precipitation adjustment
   #functions
   #Note: you get truly SPECTACULAR fatal errors if one of the units values
-  #passed to the function is null. 
-
+  #passed to the function is null.
+  ##Revising 4-14 for the 
+  #att_table in input$att.list, and is further organized by hist.pred, hist.targ and fut.pred
+  
   pr.names <- (names(test$pp.args))
   #Obtain function args
   if('thold'%in%pr.names && 'freqadj'%in%pr.names && 'conserve'%in%pr.names){
@@ -60,32 +66,153 @@ callPRPreproc <- function(test, input, postproc.output){
     lopt.conserve = ( test$pp.args$conserve =='on')
   }else{
     stop(paste("Precipitation Pre-Processing Argument Error: one or more of pr_threshold_in, 
-               ir_freqadj_in, or pr_conserve_in not present in arguments to precipitation
+               pr_freqadj_in, or pr_conserve_in not present in arguments to precipitation
                pre-processing function."))
   }
-  if('apply_0_mask'%in%pr.names){
-    apply.0.mask = (test$pp.args$apply_0_mask=='on')
+  if('ignore0'%in%pr.names){
+    apply.0.mask = (test$pp.args$ignore0=='on')
+    pr_mod <- postproc.output$propts #Used later to add masks for later application
   }else{
     message("Assuming that an old XML is being used; default behavior in place")
     apply.0.mask=FALSE
   }
-  #at the end, instructions are unchanged
-  temp.out <- AdjustWetdays(ref.data=input$hist.targ, ref.units=attr(input$hist.targ, "units")$value, 
-                                         adjust.data=input$hist.pred, adjust.units=attr(input$hist.pred, "units")$value, 
-                                         adjust.future=input$fut.pred, adjust.future.units=attr(input$fut.pred, "units")$value,
-                                         opt.wetday=threshold, 
-                                         lopt.drizzle=lopt.drizzle, 
-                                         lopt.conserve=lopt.conserve, 
-                            zero.to.na=apply.0.mask)
-  if(apply.0.mask){  
-#     fut.prmask <- temp.out$future$pr_mask
-#     pr_mod <- postproc.output$propts
-#     pr_mod$qc_args$fut.prmask <- fut.prmask
-#     postproc.output$propts <- pr_mod
-    temp.out$ref$data     <- (temp.out$ref$data    * temp.out$ref$pr_mask)
-    temp.out$adjust$data  <- (temp.out$adjust$data * temp.out$adjust$pr_mask)
-    temp.out$future$data  <- (temp.out$future$data * temp.out$future$pr_mask) 
+  #Select the variables of interest, and put them through the pr pre_processing function
+  var <- names(input$att.list$hist.targ)
+  #Insert looping by RIP in this section
+  rip.list <- lapply(input$att.list$fut.pred, '[[', 'rip')
+  rips <- unique(rip.list)
+  for (rip in rips){
+    #at the end, instructions are unchanged
+    fut.pred.var <- paste0(var, ".", rip)
+    if(is.null(input$att.list$fut.pred[[fut.pred.var]]$units)){
+      stop(paste("Error in callPRPreproc: one of the required units attributes was null!"))
+    }
+    #     save(file="~/Code/testing/test_out.R", list=c('input'))
+    #     stop('examine input and adjust the error message')
+    temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
+                              adjust.data=input$hist.pred[[1]],  adjust.units=input$att.list$hist.pred[[1]]$units, #temporarily hard-coded; will work for next 3 mons.
+                              #Looping by rip makes future predictor more complicated, but not anything else (yet)
+                              adjust.future=input$fut.pred[[fut.pred.var]], 
+                              adjust.future.units=input$att.list$fut.pred[[fut.pred.var]]$units,
+                              opt.wetday=threshold, 
+                              lopt.drizzle=lopt.drizzle, 
+                              lopt.conserve=lopt.conserve, 
+                              zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now
+    #Add back into the original structure
+    if(rip==rip.list[length(rip.list)]){
+      #Added 10-27: only adjust in place if on the last rip being used! adds extra wet days to subsequent data
+      input$hist.targ        <- temp.out$ref$data   #only a single target variable
+      input$hist.pred[[1]]   <- temp.out$adjust$data
+      if(apply.0.mask){
+        tmp.ref <- temp.out$ref$pr_mask
+        tmp.adj <- temp.out$adjust$pr_mask
+        tmp.ref[tmp.ref==0] <- NA
+        tmp.adj[tmp.adj==0] <- NA
+        input$hist.targ        <- (temp.out$ref$data   * tmp.ref)
+        input$hist.pred <- lapply(input$hist.pred, "*", tmp.adj)
+      }
+    }    
+#     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
+#     out.list$adjust$data[out.list$adjust$pr_mask==0] <- NA
+#     out.list$future$data[out.list$future$pr_mask==0] <- NA
+    input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
+    if(apply.0.mask){
+      #This should make sure that when extra missing values are added, all datasets
+      #in the predictor datasets will have the missing values added back in
+      tmp.fut <- temp.out$future$pr_mask
+      tmp.fut[tmp.fut==0] <- NA
+      input$fut.pred [[fut.pred.var]] <- input$fut.pred[[fut.pred.var]] * tmp.fut
+      #Save future pr mask fo application in section 5;
+      #note that it is the presence of this mask that 
+      #leads to the adjustment being performed.
+      if(sum(grepl('MF', ds.names)) > 0){
+        print(paste('adding future prmask for rip', rip))
+        fut.prmask <- temp.out$future$pr_mask
+        pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
+      }else{
+        #Assume that you are downsciang on the OH dataset instead; store accordingly
+        print(paste('adding target pr mask for rip', rip))
+        #targ.prmask <-  temp.out$ref$pr_mask
+        pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
+      }
+    }
+    if(apply.0.mask){
+      postproc.output$propts <- pr_mod
+    }
   }
-  return(list('input'=list('hist.targ' = temp.out$ref$data, 'hist.pred' = temp.out$adjust$data, 'fut.pred' = temp.out$future$data),
+  # print(lapply(input$hist.pred, 'summary'))
+  # print(summary(input$hist.targ))
+  # print(lapply(input$fut.pred, 'summary'))
+#   print(summary(pr_mod$qc_args$targ.prmask))
+#   print(dim((pr_mod$qc_args$targ.prmask)))
+#   print(summary(as.vector(pr_mod$qc_args$targ.prmask[,,c(seq(1:3652))])))
+#   stop('examine output')
+  return(list('input'=input,
               's5.list'=postproc.output))
+}
+
+callPRTransform <- function(test, input, postproc.output){
+  #Transforms non-gaussian data present in the OH, MH and MF
+  #data into a more gaussian form
+  
+  #Insert check for presence of transfrom in here at a later point
+  tform <- test$pp.args$transform
+  ds.var <- names(input$att.list$hist.targ)
+  transform.vars <- test$pp.args$vars
+  
+  #Do a basic check for the presence of the variables you want to check  
+  t.fxn <- switch(tform,
+                    'log base e' = list('log', NULL, 'exp', NULL), 
+                    'log base 10' = list('log10', NULL, 'exp10', NULL), 
+                    'power' = list('^', test$pp.args$arg, '^', (1/test$pp.args$arg)), 
+                    stop(paste("Error in callPRTransform: transform", tform, 
+                               "was not one of the allowed options!")))
+    #Insert saving of t.fxn in the section 5 list in this bit
+    #note that the adjustment gets added to the TOP of the stack
+    backtform <- list(type='backtransform',
+                      adjust.out='on',
+                      qc.mask='off',
+                      loc='present', #shouldn't need to be set; 
+                      #should be added to the current s5 list and executed
+                      #accordingly; check to see whether this needs new entries
+                      #in the metadata
+                      qc_args=list(fxn=t.fxn[[3]], 
+                                   arg=t.fxn[[4]], 
+                                   vars=""))
+  postproc.output <- c(list(backtform), postproc.output)
+  
+  #...you know, for more readable metadata, it might be with it to do cubrt and 
+  #sqrt functions. Since the names wind up in the metadata.
+  for(i in 1:3){
+    #Calculate the regex in here
+    if(i!=2){
+      data.names <- names(input[[i]])
+      data.index <- unlist(lapply(transform.vars, 'grep', data.names, fixed=TRUE))
+      if(length(data.index) > 0){
+        for (index in data.index){
+          # save(file='/home/cew/Code/testing/test_out.R', list=c('index', 't.fxn', 'input', 'i'))
+          if(!is.null(t.fxn[[2]])){
+            input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]], t.fxn[[2]]))
+          }else{
+            input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]]))
+          }
+        }
+      }
+    }else{
+      if(ds.var%in%transform.vars){
+        if(!is.null(t.fxn[[2]])){
+          input[[2]] <- do.call(t.fxn[[1]], list(input[[2]], t.fxn[[2]]))
+        }else{
+          input[[2]] <- do.call(t.fxn[[1]], list(input[[2]]))
+        }
+      }
+    }
+  }
+  return(list('input'=input,
+              's5.list'=postproc.output))
+}
+
+exp10 <- function(x){
+  #'Convenience function for using a log base 10 transform
+  return(10^x)
 }

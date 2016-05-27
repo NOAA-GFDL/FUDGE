@@ -47,7 +47,11 @@ while (! $?ok)
   grep -w $kval $workDir/varvals
     if ($status == 0) then
        set ok
+<<<<<<< HEAD
        echo "You chose $kval ."
+=======
+#      echo "You chose $kval ."
+>>>>>>> g_bcqmtailadj
      else
        echo "You entered $kval . Please enter one of the options listed."
      endif

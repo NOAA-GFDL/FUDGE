@@ -3,7 +3,11 @@
 #set echo
 #============================================================
 # ASSUMPTIONS
+<<<<<<< HEAD
   set epochList = (amip sst2090)
+=======
+  set epochList = (amip sst2090 sst2030)
+>>>>>>> g_bcqmtailadj
 # Julian calendar, set timemaskSuffix = ""
 # NOLEAP calendar, set timemaskSuffix = ".NOLEAP"
   set timemaskSuffix = ""
@@ -31,15 +35,26 @@
   set hpDataSource = "GFDL-HIRAM-C360-COARSENED"
   set hpEpoch = "amip"
 
+<<<<<<< HEAD
   set futureDate1 = 20860101
   set futureDate2 = 20951231
   set fpFileDate1 = $futureDate1
   set fpFileDate2 = $futureDate2
+=======
+#  set futureDate1 = 20860101
+#  set futureDate2 = 20951231
+#  set fpFileDate1 = $futureDate1
+#  set fpFileDate2 = $futureDate2
+>>>>>>> g_bcqmtailadj
 
   set fpDataCategory = "GCM_DATA"
   set fpDataType = "NCPP"
   set fpDataSource = "GFDL-HIRAM-C360-COARSENED"
+<<<<<<< HEAD
   set fpEpoch = "sst2090"
+=======
+# set fpEpoch = "sst2090"
+>>>>>>> g_bcqmtailadj
 
 # ONLY set up so far for kfold = 0, but logic for kfold 
   set kfold = 0
@@ -76,7 +91,16 @@
 #============================================================
 
 # find available variables
+<<<<<<< HEAD
   source $xmlGenDir/find_vars.csh $inputDir
     if ($status != 0) exit 1
+=======
+  source $xmlGenDir/find_vars.csh $inputDir >& /dev/null
+    if ($status != 0) then
+      echo "Problem with $xmlGenDir/find_vars.csh $inputDir "
+      echo "No variables found. Exit."
+      exit 1
+    endif
+>>>>>>> g_bcqmtailadj
 
 exit 0

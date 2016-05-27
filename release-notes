@@ -1,3 +1,165 @@
+5-25-16: 
+(cew)
+- Changing email sender; all notification emails not come from fudge.esd
+- Adding common email error notification system
+- module load in postproc template now appends both locations on ESD and locations
+  on developer workspaces; should work just fine as long as module names remain 
+  different
+- Changing order of email notifications;   
+
+
+4-6-16
+(cew)
+- Adding automatic addition of anomaly data to postproc; adding ensemble generation tool
+
+3-3-16
+(cew)
+- g_orangeplus merged into main dev branch; postproc email notifications added for failure and success of postproc operations. 
+ 
+3-1-16
+(cew)
+- New DS method, CDFtmod, allows for contol of low tail adjustments in CDFt code
+- CDFt now invokes CDFtmod with a fixed low_tail value of 'original'
+- Stdout and stderr from runcode redirect in same stream to .out logfiles
+- stdout frum runcode removed from fudge_master logfiles
+
+12-1-15
+(a1r)
+- -v option made default for watcher script
+- suffix tags added to parsing for training and predictor datasts in XML; list of
+rips present in target, predictor, and future datasts added to the runcode
+
+11-12-15
+(cew)
+- leapday correction for OH downscaling working for the CFQM method
+- runscript redirects stdout and stderr to the logfile
+
+11-6-15
+(cew)
+- Methods that downscale with OH (i.e. Delta) have adjusted OH data to match position of leapdays
+in data and sample before entering downscaling function
+- PR pre- and post-ds adjustments return prmask based off of OH data if OH data used to downscale
+- BCQM.tail.adj bugfix for experiments with ignore0 
+- R code exits with error if ignore0 and ignore0.delta are both turned on
+
+10-27-15
+(cew)
+- the recover.ignore0 function only applies to those datastets identified in the downscaling method's train.names list, and only insufficent data in the training period can set the status to greater than 1 for the distributional and synchronous missing value removal methods.
+
+10-26-15
+(cew)
+- New pr opt for adding flag.neg adjustment in conjunction with the BCQM.tail.adj method
+
+10-23-15
+(cew)
+- bugfix for backtransforms operating more than once on ds out
+- bugfix for backtransforms operating only on ds data, which interfered with 
+subsequent calculations that used the input datasets (BCQM.tail.adj)
+
+10-19-15
+(cew)
+- Merging branch with ignore0/missing value handling for all methods
+into the main F development branch
+
+10-20-14
+(cew)
+- changing name of lm.step method to lmstep
+
+10-12-15
+(cew)
+- Merging ESD role account Espresso XMLGen into the main development branch, for archiving
+- Updating README documentation
+- Updating other documentation
+
+10-8-15
+(mjn)
+- Adding Espresso XMLGen to ESD repo
+
+10-7-15
+(cew)
+- Bugfix for more CF samples than LH samples in the ignore0.Delta case
+
+10-1-15
+(cew)
+- preliminary version of lm.step working for the forward selection case
+- preliminary recovery functions added for failure to pass the missing
+value thresholds
+
+9-30-15
+(cew)
+- global metadata record of missing value thresold added to metadata
+- global record of missing value handling added
+- XML input added in ds method options for missing value threshold, XML
+value for missing value handling added in ignore0
+
+9-28-15
+(cew)
+- Edits to all methods but CDFt and Delta to deal with uneven missing values
+- ignore0 option working for all methods but CDFt and Delta; returns missing values
+if insufficent data for downscaling
+
+9-24-15
+(cew)
+- transform options implemented at XML level in the pr_opts section for the 
+power transforms
+
+9-1-15
+(cew)
+- DeltaSD method updates for low pr and 0 value cases
+- bcsd.correct method name change to BCQM.tail.adj
+- flag.neg interpretation changed to run after final pr adjustment
+
+8-24-15
+(cew)
+- option change for DeltaSD from 'keep.zeroes' to 'ignore0.Delta'
+- option change from 'apply_0_mask' to 'ignore0'
+
+8-17-2015
+(cew)
+- bugfix for DeltaSD with remove.zeroes in the 'add' branch of the code
+- ESD git repo updated with multi-future-predictor ensemble code
+
+08-13-2015
+(a1r)
+-fudgeList to include target,mask presence info
+-Watcher suite out for WG testing
+-expergen also outputs watcher commands
+
+07-24-2015
+(a1r)
+-fudgeList to include minifile.I.start and
+minifile.I.end  
+07-2-2015
+(cew)
+- multi.lm method changed to lm method in R code for the XML
+- correction in R WriteGlobals metadata for default standard names
+
+06-24-2015
+(cew)
+- R code writes bnds of minifiles as double rather than int
+
+06-16-2015
+(cew)
+- R code update for compatibility with multivar, multi-enseble case
+
+06-9-2015
+(cew)
+- clobber script update for multi-ensemble case
+
+(a1r)
+-ensemble support in postProc suite of tools
+-- expergen to provide commands/sourcing scripts or msub scripts to submit
+each PP job. In addition, it also provides a msubwrapper script to submit all ensemble member related PP jobs for a specific experiment at once.  
+
+06-2-2015
+(a1r)
+- ensemble support in expergen.
+
+5-29-2015
+(cew)
+- Multi-ensemble changes working with modified expergen runcode
+- Modifications to metadata to support recoding future predictor rip 
+
 05/07/2015
 (a1r)
 1. submit jobs from $HOME directory
@@ -6,6 +168,23 @@
 (cew)
 1. Cleanup/removal of no-longer-used code
 2. Explicit documentation directory
+
+4-29-2015
+(cew)
+- bugfix for qc masks overwriting full downscaled runs, leading to failed postproc
+- bugfix for create_master_runscript's runscript names based off of predictor list rather than target
+
+04/28/2015
+(cew)
+1. Added support for a multivariate workflow in the R code
+-- added method multi.lm for linear regression with multiple predictors
+-- updated ReadNC, WriteNC to read in multivariate files; added a new function, ReadMultiVars, 
+to exted the ReadNC framework to multiple predictor variables
+-- updated internal methods of R code for more explicit metadata passing between functions (att_table)
+2. Cleaned up excess print statements in the R code; started addition of a --verbose option
+3. Minor bugfixes in create_runcode and create_runscript to maintain univariate functionality
+4. Added initial draft of climatology cloning from input datasets; added climatology to att_table
+5. Revising and updating inline Roxygen documentation in the R code
 
 04/01/2015
 (a1r)

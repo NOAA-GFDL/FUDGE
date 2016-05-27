@@ -1,6 +1,10 @@
 #!/bin/csh -f
+<<<<<<< HEAD
 source /usr/local/Modules/default/init/csh
 
+=======
+#source /usr/local/Modules/default/init/csh
+>>>>>>> g_bcqmtailadj
 
   echo " "
   echo "=================================================================================== "
@@ -16,7 +20,10 @@ source /usr/local/Modules/default/init/csh
 # ASSUMPTIONS
 #============================================================
 
+<<<<<<< HEAD
 # set echo
+=======
+>>>>>>> g_bcqmtailadj
 # xmlGenDir is set in XMLgen.csh
 
 # The directory where the experiment-specific scripts/ascii-files/code will be written once ExperGen executes.
@@ -89,8 +96,18 @@ source /usr/local/Modules/default/init/csh
       set inRoot=$<
       echo $inRoot >> $INtxt
       echo "inRoot = $inRoot ,XMLgen.non-syn.csh" >> $INtxt.key
+<<<<<<< HEAD
     else
       set inRoot = "/archive/esd/PROJECTS/DOWNSCALING"
+=======
+    else if ($ans == "n") then
+      set inRoot = "/archive/esd/PROJECTS/DOWNSCALING"
+    else
+      echo "    "
+      echo "    You entered  $ans . This is not a valid response. Exiting. "
+      echo "    "
+      exit 1
+>>>>>>> g_bcqmtailadj
     endif
 
 
@@ -104,11 +121,20 @@ source /usr/local/Modules/default/init/csh
   echo "======================================================================================================= "
   echo " "
   echo "    You need to pick which Datasets to use for the downscaling experiment."
+<<<<<<< HEAD
   echo "    Currently we have 3 distinct resolutions of data available : "
   echo " "
   echo "    SCCSC0p1 data which is used for the Red River project. All data are"
   echo "      on a 0.1 x 0.1 grid. Observations available for historical target"
   echo "      is Livneh. GCMs include MPI-ESM-LR, CCSM4, MIROC5."
+=======
+  echo "    Currently we have 2 distinct resolutions of data available : "
+  echo " "
+  echo "    SCCSC0p1 data which is used for the Red River project. All data are"
+  echo "      on a 0.1 x 0.1 grid. Observations available for historical target"
+  echo "      is Livneh. The time range is 1961-2005."
+  echo "      GCMs include MPI-ESM-LR, CCSM4, MIROC5."
+>>>>>>> g_bcqmtailadj
   echo " "
   echo "    PerfectModel data is the GFDL-HIRAM-C360 and GDFL-HIRAM-C360-COARSENED."
   echo "      'Historical Targets' are the amip r1i1p1 & r2i1p1 for 1979-2008."
@@ -123,6 +149,10 @@ source /usr/local/Modules/default/init/csh
   echo "    --------------"
   echo "    "
   echo " "
+<<<<<<< HEAD
+=======
+  sleep 4
+>>>>>>> g_bcqmtailadj
 
   echo " "
   echo "    ///////////////"
@@ -144,7 +174,13 @@ source /usr/local/Modules/default/init/csh
   source $xmlGenDir/$dataGroup.csh
     if ($status == 1) exit 1
 
+<<<<<<< HEAD
   sleep 2
+=======
+  set htTrange = "${htDate1}-$htDate2"
+  echo "    Default Time range for $dataGroup = $htTrange "
+  sleep 5
+>>>>>>> g_bcqmtailadj
 
 #
 # TARGET VARIABLE
@@ -179,8 +215,13 @@ source /usr/local/Modules/default/init/csh
        echo " "
        echo -n ">>  Please enter 2-3 character ID for $targVar & we will add it to the variable table. Or ctrl-c to end : "
        set targID=$<
+<<<<<<< HEAD
 #       echo $targID >> $INtxt
 #       echo "targID = $targID, XMLgen.non-syn.csh" >> $INtxt.key
+=======
+#      echo $targID >> $INtxt
+#      echo "targID = $targID, XMLgen.non-syn.csh" >> $INtxt.key
+>>>>>>> g_bcqmtailadj
        echo "$targID $targVar" >> $xmlGenDir/target_ID_table.txt
        echo "$targID $targVar     has been added to $xmlGenDir/target_ID_table.txt"
      else
@@ -191,6 +232,15 @@ source /usr/local/Modules/default/init/csh
   echo "    Target ID       = $targID"
   sleep 2
 
+<<<<<<< HEAD
+=======
+#  If target is pr or prc, query later for pr_adjustment
+  set use_pr_adjustment = "False"
+  if ($targVar == "pr" || $targVar == "prc") then
+    set use_pr_adjustment = "True"
+  endif
+
+>>>>>>> g_bcqmtailadj
 
 #
 # Project 
@@ -207,7 +257,11 @@ source /usr/local/Modules/default/init/csh
      echo " "
      cat $xmlGenDir/project_ID_table.txt
      echo " "
+<<<<<<< HEAD
      echo ">>  Enter a 2-3 character project ID, new or existing, for the Project "
+=======
+     echo ">>  Enter a short project ID, new or existing, for the Project."
+>>>>>>> g_bcqmtailadj
      echo ">>  (e.g. PM for Perfect Model) "
      set projectID = $<
      echo "$projectID" >> $INtxt
@@ -232,8 +286,13 @@ source /usr/local/Modules/default/init/csh
              set checkProj = `grep -w $project $xmlGenDir/project_ID_table.txt`
                if ($status != 0) then 
                  set done = "true"
+<<<<<<< HEAD
 #                 echo $project >> $INtxt
 #                 echo "project = $project , XMLgen.non-syn.csh" >> $INtxt.key
+=======
+#                echo $project >> $INtxt
+#                echo "project = $project , XMLgen.non-syn.csh" >> $INtxt.key
+>>>>>>> g_bcqmtailadj
                  echo "$projectID $project" >> $xmlGenDir/project_ID_table.txt
                  echo "$projectID $project     has been added to $xmlGenDir/project_ID_table.txt"
                else 
@@ -292,6 +351,94 @@ source /usr/local/Modules/default/init/csh
   set DSMethod_options =  $xmlGenDir/${dsMethod}-Options.csh
   echo "$dsMethod" >> $INtxt
   echo "dsMethod = $dsMethod , XMLgen.non-syn.csh" >> $INtxt.key
+<<<<<<< HEAD
+=======
+# check if multiPredictor method
+  set multiPredictor = "False"
+  foreach meth (`cat $xmlGenDir/MultiPredictor_table.txt`)
+    if ("$dsMethod" == "$meth") then
+       set multiPredictor = "True"
+    endif
+  end
+
+set predVars = ()
+if ($multiPredictor == "True") then
+# make backup of full variable list
+  \cp $workDir/varListFile $workDir/varListFile.backup
+
+  echo " "
+  echo "   Multiple predictors may be used for downscaling method, $dsMethod ."
+  echo " "
+
+# Do not assume target variable is a predictor. Ask.
+
+  echo "Is the target variable, $targVar, a predictor also?"
+  echo -n "Enter "n" or "no" if not. Hit enter or "y" or "yes" to include target variable in the predictor list."
+  set ans=$<
+  echo "$ans" >> $INtxt
+  echo "Is target also a predictor? answer = $ans , XMLgen.non-syn.csh" >> $INtxt.key
+  if ($ans != "n" && $ans != "no") then
+    set predVars = ($predVars $targVar)  
+        
+# remove targVar from varListFile
+    grep -v -w "$predVars" $workDir/varListFile > $workDir/tmpvarListFile
+    \mv $workDir/tmpvarListFile $workDir/varListFile
+
+# ask if any additional predictors are desired
+    echo "Are any additional predictor variables desired?"
+    echo -n "Enter "n" or "no" if not. Hit enter or "y" or "yes" to include target variable in the predictor list."
+    set ans=$<
+    echo "$ans" >> $INtxt
+    echo "Additional predictor variables desired? answer = $ans , XMLgen.non-syn.csh" >> $INtxt.key
+    if ($ans != "n" && $ans != "no") then
+      set selectVar = "True"
+    else
+      set selectVar = "False"
+    endif
+  else
+    if ($use_pr_adjustment == "True") then
+       set use_pr_adjustment = "False"
+       echo " "
+       echo "    Even though the target variable is $targVar, you chose not to use $targVar as a predictor."
+       echo "    Precip adjustment is not an option. "
+       echo "    (Precip adjustment is only an option if 'pr' or 'prc' are both the target and a predictor.)"
+       echo " "
+       echo "    If you desire precip adjustment anyway, modifications to FUDGE will need to be made."
+       echo " "
+    endif
+    set predVars = ()
+    set selectVar = "True"
+  endif
+
+  set varvals = (`cat $workDir/varListFile`)
+  set dinfo = "Available Variables"
+  while ($selectVar == "True") 
+    source $QueryVals
+    set pickedVar = "$kval"
+    echo "$pickedVar" >> $INtxt
+    echo "pickedVar = $pickedVar, XMLgen.non-syn.csh" >> $INtxt.key
+    set predVars = ($predVars $pickedVar)
+    echo " "
+    echo " "
+    echo "So far you have $predVars. "
+# remove pickedVar from varListFile
+    grep -v -w "$pickedVar" $workDir/varListFile > $workDir/tmpvarListFile
+    \mv $workDir/tmpvarListFile $workDir/varListFile
+
+    echo -n "Enter "n" or "no" if done. Hit enter or "y" or "yes" to select another variable."
+    set ans=$<
+    if ($ans == "n" || $ans == "no") then
+       set selectVar = "False"
+    endif
+  end
+# restore full variable list to varListFile
+  \cp $workDir/varListFile.backup $workDir/varListFile
+else
+  set predVars = "$targVar"
+endif
+set pVars = `echo $predVars | sed 's/ /,/g'`
+set predVars = "$pVars"
+>>>>>>> g_bcqmtailadj
 
 #
 # Historical Target
@@ -319,6 +466,10 @@ source /usr/local/Modules/default/init/csh
     set findSource = $htDataSource
     set findEpoch = $htEpoch
     set findRIP = ""
+<<<<<<< HEAD
+=======
+    set allowEns = "False"
+>>>>>>> g_bcqmtailadj
     source $findData
       if ($status != 0) exit 1
   
@@ -362,6 +513,10 @@ source /usr/local/Modules/default/init/csh
   set findSource = $hpDataSource 
   set findRIP = $prefRIP
   set findEpoch = ""
+<<<<<<< HEAD
+=======
+  set allowEns = "False"
+>>>>>>> g_bcqmtailadj
   if ($?epochList) then
      set findEpoch = $epochList[1]
   endif
@@ -402,6 +557,11 @@ source /usr/local/Modules/default/init/csh
   set findSource = $fpDataSource 
   set findRIP = $prefRIP
   set findEpoch = ""
+<<<<<<< HEAD
+=======
+  set allowEns = "True"
+# set allowEns = "False"
+>>>>>>> g_bcqmtailadj
 
   source $findData
       if ($status != 0) exit 1
@@ -433,7 +593,10 @@ source /usr/local/Modules/default/init/csh
   endif
   end
 
+<<<<<<< HEAD
 # set echo
+=======
+>>>>>>> g_bcqmtailadj
 # full paths to the 2d input files (up one level from the minifile directories)
 
   set htPath = "$inRoot/$htDataCategory/$htDataType/$htDataSource/$htEpoch/$htFreq/$htRealm/$htMisc/$htRIP/$htVs/$targVar/$region"
@@ -470,6 +633,7 @@ source /usr/local/Modules/default/init/csh
   echo "    -------------------------"
   echo "    \\\\\\\\\\\\\\\\\\\\\\\\\"
   echo " "
+<<<<<<< HEAD
   echo "    Reminder:  Target time window = $htDate1 to $htDate2"
   echo " "
 
@@ -479,12 +643,31 @@ source /usr/local/Modules/default/init/csh
   echo " "
   echo "    Available time period(s) for $hpDataSource :"
   echo "    (Target time window will be reset to selected window if possible.)"
+=======
+  echo "    Reminder:  Target time window = $htTrange"
+  echo " "
+
+# find all time series available
+# until time pruning is added, have to use files that match the target period
+
+  echo " "
+  echo "    Available training masks for $hpDataSource :"
+  echo "    (Target time window has to match training window.)"
+>>>>>>> g_bcqmtailadj
 
   set hpDir = "$hpPath/$dim/"
   set hpPartA = "${targVar}_${hpFreq}_${hpDataSource}_${hpEpoch}_${hpRIP}_${region}"
   set hpPartB = "I${lons}_${file_j_range}.nc"
 
+<<<<<<< HEAD
   source $findTS "$hpPartA" "$hpPartB" "$hpDir"
+=======
+  set filePartA = "$hpPartA"
+  set filePartB = "$hpPartB"
+  set fileDir = "$hpDir"
+  set fileTrangeIn = "$htTrange"
+  source $findTS 
+>>>>>>> g_bcqmtailadj
      if ($status == 1) exit 1
  
   if ($tsDate1 >= $htDate1) then 
@@ -530,11 +713,18 @@ source /usr/local/Modules/default/init/csh
   echo " "
   set windowDate1 = $tsDate1
   set windowDate2 = $tsDate2
+<<<<<<< HEAD
 
   source $xmlGenDir/time_window.csh
   set trainTimeWindowFile = "$TimeWindowFile"
 
 
+=======
+  
+  source $xmlGenDir/time_window.csh
+  set trainTimeWindowFile = "$TimeWindowFile"
+
+>>>>>>> g_bcqmtailadj
 # ----------------------------------------------
 # "Future" (i.e.Independent sample) TIME WINDOW
 # ----------------------------------------------
@@ -550,13 +740,24 @@ source /usr/local/Modules/default/init/csh
   set fpPartB = "I${lons}_${file_j_range}.nc"
 
   echo "    Available time period(s) for Future $fpDir :"
+<<<<<<< HEAD
   source $findTS "$fpPartA" "$fpPartB" "$fpDir"
+=======
+  set filePartA = "$fpPartA"
+  set filePartB = "$fpPartB"
+  set fileDir = "$fpDir"
+  set fileTrangeIn = ""
+  source $findTS
+>>>>>>> g_bcqmtailadj
      if ($status == 1) exit 1
 
   set fpFileDate1 = $tsDate1
   set fpFileDate2 = $tsDate2
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> g_bcqmtailadj
   echo " "
   echo "    /////////////////////////////////"
   echo "    ---------------------------------"
@@ -592,8 +793,16 @@ source /usr/local/Modules/default/init/csh
 # set Experiment "datasetID" and "epochID" differently depending on dataGroup
 # if SCCSC0p1, datasetID = 1 for CCSM4, 2 for MPI, 3 for MIROC5 and epochID depends on if future predictor is hist (0), rcp26(2), rcp45(4) or rcp85(8)
 # (SCCSC0p1 GCM datasetID set in LivnehInfo.csh - checked when determined which Livneh calendar to use.)
+<<<<<<< HEAD
 # if PM, datasetID = 1 for amip r1i1p1, 2 for amip r2i1p1, and epochID is 3 character "a" for amip, "s" for sst2090; then # of realization and # of physics
 #  example C1s32 would be series.
+=======
+# if PM, datasetID = 00 for amip, 01 = sst2090 physics 1; 02 = sst2090 physics 2; 03 = sst2030 physics 1; 04 = sst2030 physics 2
+#
+
+  set fpSuffix = ""
+  set outRIP = $fpRIP
+>>>>>>> g_bcqmtailadj
 
   if ($dataGroup == "SCCSC0p1") then
      if ($fpEpoch == "historical") then
@@ -609,6 +818,7 @@ source /usr/local/Modules/default/init/csh
       endif
    endif
 
+<<<<<<< HEAD
    if ($dataGroup == "PerfectModel") then
 # assumes historical data are always "amip"
      if ($htRIP == "r1i1p1") then 
@@ -658,6 +868,98 @@ source /usr/local/Modules/default/init/csh
    endif 
  
 
+=======
+# no cross-validation possible yet
+   set kfold = "0"
+   set kfoldID = "K00"
+
+# assumes RIPs in form rKi1pM for single-realization files where K=integer realization number and M=physics
+#  or for ensembles, RIP = rK1toK2i1pM or rK1-K2-K3i1pM 
+#  where K1, K2, Kn =integer realizations, "K1toK2" is a range of realizations from K1 to K2 while
+#    hyphen-separated list shows only the realizations included.
+
+# get the historical amip physics number
+     set hphysics = `echo $hpRIP|awk '{ print substr(  $0, length($0), length($0) ) }'`
+
+# assumes historical data are always "amip", one realization, either r1i1p1 or r2i1p1
+   if ($dataGroup == "PerfectModel") then
+     if ($hphysics != 1) then
+       echo "PROBLEM. amip RIP = $hpRIP, and physics should be = 1"
+       exit 1
+     endif
+     set histRealz=`echo $hpRIP|awk '{ print substr( $0, 2, 1) }'`
+   endif
+
+# decode the RIP to check for ensemble and set variables as needed
+   set decodeRIP = "$fpRIP"
+   source $xmlGenDir/decodeRIP.csh
+
+# reassign values assigned in decodeRIP.csh
+   set fpPhysics = "$physics"
+   set fpSuffix = "$suffix"
+   set fpPropName = "$propertyName"
+   set fpPropValue = "$propertyValue"
+ 
+# --------------------------
+# put this in decodeRIP.csh
+# more generic. 
+# --------------------------
+# assumes future predictor data can be any epoch/rip
+# get the future physics number
+#  set fpPhysics = `echo $fpRIP|awk '{ print substr(  $0, length($0), length($0) ) }'`
+#
+# separate the realization information from the RIP 
+#  set Realz=`echo $fpRIP|awk '{ print substr(  $0, 1, length($0) - 4 ) }'`
+#
+# check for ensemble or individual realization
+#   if (("$Realz" =~ *to*) || ("$Realz" =~ *-*)) then
+#      set fpSuffix = "_ensmbl"
+#      set fpPropName = "RIP"
+#      set outRIP = '$(RIP)'
+#      if ("$Realz" =~ *to*) then
+#        set ensBeg=`echo $Realz|awk '{ print substr(  $0, 2, 1) }'`
+#        set ensEnd=`echo $Realz|awk '{ print substr(  $0, 5, 1) }'`
+#        @ nEnsMembers = $ensEnd - $ensBeg + 1
+#        set futRealz = "e$nEnsMembers"
+#        set k = $ensBeg 
+#        set fpPropValue = "r${k}i1p$fpPhysics"
+#        while ($k < $ensEnd) 
+#          @ k++
+#          set fpPropValue = "$fpPropValue,r${k}i1p$fpPhysics"
+#        end
+#      else if ("$Realz" =~ *-*) then
+#        set kmems = `echo $Realz | sed -e 's/-/ /g' -e 's/r/ /g'`
+#        set fpPropValue = "r${kmems[1]}i1p$fpPhysics"
+#        foreach k ($kmems[2-])
+#          set fpPropValue = "$fpPropValue,r${k}i1p$fpPhysics"
+#        end
+#      endif
+#   else
+#      set ensBeg=`echo $Realz|awk '{ print substr(  $0, 2, 1) }'`
+#      set ensEnd=$ensBeg
+#      set futRealz = "$ensBeg"
+#   endif
+#
+
+# downscaled output experiment name, i.e. A01r13, for Perfect Model indicates 
+#   which experiment series (A), epoch (00 = amip, 01 = sst2090 esm, 02 = sst2090 cm3),
+#   which realizations (r) were used for training (historical realization 1 and future predictory realization 3)
+#   If future predictor is an ensemble, use "eN" were N = # members.
+#   So A01r1e3 would be training on amip r1i1p1 vs sst2090 esm ensemble containing 3 members
+#
+   if ($dataGroup == "PerfectModel") then
+     if ($fpEpoch == "amip") then
+       set dataID = 0
+     else if ($fpEpoch == "sst2090") then
+       set dataID = $fpPhysics
+     else if ($fpEpoch == "sst2030") then
+       @ dataID = $fpPhysics + 2
+     endif
+     set datasetID = "0$dataID"
+     set epochID = "r${histRealz}${futRealz}"
+   endif 
+ 
+>>>>>>> g_bcqmtailadj
 # Experiment Series ID
 # --------------------
   echo " "
@@ -671,6 +973,7 @@ source /usr/local/Modules/default/init/csh
   echo "   >>  The user must set the {expID}, which is usually a letter identifying the Experiment Series."
   echo "   >> "
   echo -n ">>  Enter the Letter of the Experiment Series: "
+<<<<<<< HEAD
     set expID=$<
     echo $expID 
 #   stty echo
@@ -691,6 +994,24 @@ source /usr/local/Modules/default/init/csh
     endif
     echo "expOptionID = $expOptionID , XMLgen.non-syn.csh" >> $INtxt.key
 
+=======
+  set expID=$<
+  echo $expID 
+  echo " "
+  echo $expID >> $INtxt
+  echo "expID = $expID , XMLgen.non-syn.csh" >> $INtxt.key
+  echo "   >> "
+  echo -n ">>  Enter an option string (i.e. {expOptionID}) to be added onto the Experiment Series (i.e. {expID}) name. (Just hit Return if no string is desired): "
+  set expOptionID=$<
+  echo $expOptionID
+  echo " "
+  if ($expOptionID == "") then
+    echo " " >> $INtxt
+  else
+    echo $expOptionID >> $INtxt
+  endif
+  echo "expOptionID = $expOptionID , XMLgen.non-syn.csh" >> $INtxt.key
+>>>>>>> g_bcqmtailadj
 
 #   -----------------------------------------------
 #   CREATE EXPERIMENT NAME BASED ON INPUTS THUS FAR
@@ -714,12 +1035,24 @@ source /usr/local/Modules/default/init/csh
   echo "   ${projectID}${targID}${platformID}-${dsMethod}-${expLabel}${kfoldID} <= Experiment Name"
   echo " "
 
+<<<<<<< HEAD
   source $xmlGenDir/check_experiment_name.csh $expName
 
   set outDir = "$inRoot/$projectID/downscaled/${fpDataSource}/${fpEpoch}/${fpFreq}/${fpRealm}/${fpMisc}/${fpRIP}/${fpVs}/$expName/$targVar/$spatMaskID/$dim/"
 #
 cd $cDir
 echo " "
+=======
+  set quitjob = 0
+  source $xmlGenDir/check_experiment_name.csh $expName
+  if ($quitjob == 1) then
+    echo "Exiting XMLgen."
+    exit 1
+  endif
+#
+  cd $cDir
+  echo " "
+>>>>>>> g_bcqmtailadj
   echo "--------------------------------------------------------------------------------------------"
   echo "--------------------------------------------------------------------------------------------"
   echo "............................................................................................."
@@ -729,7 +1062,11 @@ echo " "
   echo "............................................................................................."
   echo "--------------------------------------------------------------------------------------------"
   echo "--------------------------------------------------------------------------------------------"
+<<<<<<< HEAD
 echo " "
+=======
+  echo " "
+>>>>>>> g_bcqmtailadj
 cat > XMLfile <<EOF
 <downscale>
     <!-- Created using $xmlGenDir/XMLgen.csh ; $dateMDY -->
@@ -737,7 +1074,11 @@ cat > XMLfile <<EOF
     <!-- ifpreexist options: erase, move, exit (default for XML creation) -->
 
     <ifpreexist>$preExistOpt</ifpreexist>
+<<<<<<< HEAD
     <input predictor_list = "$targVar" target = "$targVar" target_ID = "$targID" spat_mask = "$spatMaskDir" maskvar = "$maskVar" spat_mask_ID = "$spatMaskID" in_root = "$inRoot">
+=======
+    <input predictor_list = "$predVars" target = "$targVar" target_ID = "$targID" spat_mask = "$spatMaskDir" maskvar = "$maskVar" spat_mask_ID = "$spatMaskID" in_root = "$inRoot">
+>>>>>>> g_bcqmtailadj
         <dim>$dim</dim>
         <grid region = "$region">
             <lons>$lons</lons>
@@ -774,6 +1115,14 @@ cat > XMLfile <<EOF
                 time_trim_mask = '$futureTimeTrimFile'
             >
                 <dataset>${fpDataCategory}.${fpDataType}.${fpDataSource}.${fpEpoch}.${fpFreq}.${fpRealm}.${fpMisc}.${fpRIP}.${fpVs}</dataset>
+<<<<<<< HEAD
+=======
+EOF
+if ("$fpSuffix" != "") then
+   echo "                <suffix>$fpSuffix</suffix>" >> XMLfile
+endif
+cat >> XMLfile <<EOF
+>>>>>>> g_bcqmtailadj
             </future_predictor>
         </training>
         <esdgen>
@@ -786,14 +1135,33 @@ cat > XMLfile <<EOF
 	<project_ID>$projectID</project_ID>
         <kfold>$kfold</kfold>
         <output>
+<<<<<<< HEAD
             <out_dir>$outDir</out_dir>
+=======
+EOF
+
+if ($fpPropName != "") then
+echo "            <property name="\"$fpPropName\" value=\"$fpPropValue\""/> " >> XMLfile
+endif
+cat >> XMLfile <<EOF
+            <out_dir>$inRoot/$projectID/downscaled/${fpDataSource}/${fpEpoch}/${fpFreq}/${fpRealm}/${fpMisc}/${outRIP}/${fpVs}/$expName/$targVar/$spatMaskID/$dim/</out_dir>
+>>>>>>> g_bcqmtailadj
             <script_root>$scriptDir</script_root>
         </output>
 EOF
 
 # ADD PR ADJUSTMENT XML
+<<<<<<< HEAD
   if ("$targVar" == "pr" || "$targVar" == "prc") then
     echo "   Adding precip adjustment options to XML ... "
+=======
+  if ("$use_pr_adjustment" == "True") then
+    echo "   "
+    echo "   Adding precip adjustment options to XML ... "
+    echo "   "
+    echo "   (Reminder. Target = $targVar. Predictor variable(s) = $predVars )"
+    echo "   "
+>>>>>>> g_bcqmtailadj
     source $prAdjustment
       if($status != 0) then
         echo "PROBLEM.  File $prAdjustment does not exist or has an issue to be checked."
@@ -835,11 +1203,21 @@ cat >> XMLfile<< EOF
 </downscale>
 EOF
 
+<<<<<<< HEAD
+=======
+  echo " "
+  echo " "
+  echo " "
+  echo ">>>  Finalizing XMLfile "
+  echo " "
+  echo " "
+>>>>>>> g_bcqmtailadj
 
   set xmlDir=$scriptDir/scripts/$projectID/XML
     if (! -e $xmlDir) mkdir -p $xmlDir
   set xmltxtDir=$scriptDir/scripts/$projectID/XMLtxt
     if (! -e $xmltxtDir) mkdir -p $xmltxtDir
+<<<<<<< HEAD
   if (-e $xmlDir/$expName.xml) \mv $xmlDir/$expName.xml $xmlDir/$expName.xml.backup
   if (-e $xmltxtDir/$expName.input.txt) \mv $xmltxtDir/$expName.input.txt $xmltxtDir/$expName.input.txt.backup
   \mv XMLfile $xmlDir/$expName.xml
@@ -859,10 +1237,35 @@ EOF
   echo " >>>  ......................................................................................."
   echo " >>>  ......................................................................................."
   echo " >>>  ......................................................................................."
+=======
+  set datetime=`date +%m.%d.%Y-%k.%M.%S`
+  if (-e $xmlDir/$expName.xml) \mv $xmlDir/$expName.xml $xmlDir/$expName.xml.$datetime
+  if (-e $xmltxtDir/$expName.input.txt) \mv $xmltxtDir/$expName.input.txt $xmltxtDir/$expName.input.txt.$datetime
+  \mv XMLfile $xmlDir/$expName.xml
+  \mv $INtxt $xmltxtDir/$expName.input.txt
+  \mv $INtxt.key $xmltxtDir/$expName.input.txt.key
+  echo ">>>  "
+  echo ">>>  ......................................................................................."
+  echo ">>>  ......................................................................................."
+  echo ">>>  "
+  echo ">>>  "
+  echo ">>>  Your XMLfile =  $xmlDir/$expName.xml " 
+  echo ">>>  "
+  echo ">>>  "
+  chmod -xw $xmlDir/$expName.xml 
+  echo ">>>  Keyboard inputs you entered:  $xmltxtDir/$expName.input.txt "
+  echo ">>>  Keyboard inputs with additional info:  $xmltxtDir/$expName.input.txt.key "
+  echo ">>>  "
+  echo ">>>  ......................................................................................."
+  echo ">>>  ......................................................................................."
+  echo ">>>  "
+  echo ">>>  "
+>>>>>>> g_bcqmtailadj
   $xmlGenDir/XMLchecker.py $xmlDir/$expName.xml
   set logfile = `\ls $expName.*log`
   \mv $expName.*log $xmltxtDir
   echo " "
+<<<<<<< HEAD
   echo " *****                     PLEASE CHECK XMLchecker output file :                        ***** "
   echo " *****                                                                                  ***** "
   echo "        $xmltxtDir/$logfile "
@@ -877,9 +1280,25 @@ EOF
   echo " >>>  ......................................................................................."
   echo " >>>  ......................................................................................."
   echo " >>>  ......................................................................................."
+=======
+  echo " ***** PLEASE CHECK XMLchecker output: $xmltxtDir/$logfile "
+  echo " ***** "
+  echo " ***** It will indicate if there are any problems with your inputs."
+  echo " ***** (This could easily happen if you edited an *input.txt file and used "
+  echo " *****  that as input to XMLgen.csh to create a new XML, e.g.  XMLgen.csh < myfile.input.txt "
+  echo " *****  which is NOT recommended unless you know what you are doing.)"
+  echo " "
+  echo " "
+>>>>>>> g_bcqmtailadj
 
   cd $cDir
   
   echo "Removing work directory $workDir"
+<<<<<<< HEAD
+=======
+  echo " "
+  echo "Done."
+  echo " "
+>>>>>>> g_bcqmtailadj
   sleep 4
   \rm -rf $workDir

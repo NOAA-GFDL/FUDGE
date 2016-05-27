@@ -59,6 +59,18 @@ if kfold <= 9:
   kfold = "0" + str(kfold)
 
 dsMiniArcDir = root.findtext("./core/output/out_dir")
+<<<<<<< HEAD
+=======
+RIPname = "na"
+RIPvalues = "na"
+for property in root.findall("./core/output/property"):
+  RIPname = property.get('name')
+  Rvalues = property.get('value')
+  RIPvalues = Rvalues.split(",")
+  for val in RIPvalues:
+    print ("RIP:"+val)
+
+>>>>>>> g_bcqmtailadj
 inRootDir = root.findtext("./core/output/in_dir")
 scriptRootDir = root.findtext("./core/output/script_root")
 exper_series = root.findtext("./core/exper_series")
@@ -98,7 +110,11 @@ hpItems = histPred[0].items()
 hpRootDir = "/archive/esd/PROJECTS/DOWNSCALING"
 hpSubDirs = histPred[0].findtext("dataset").split(".")
 #hpSubDirs.insert(4,"day")
+<<<<<<< HEAD
 hpVars = predictor_list.split(".")
+=======
+hpVars = predictor_list.split(",")
+>>>>>>> g_bcqmtailadj
 
 np=len(hpSubDirs)-1
 
@@ -197,6 +213,30 @@ for dir in fpSubDirs:
    fpArcDir = fpArcDir + "/" + dir
    k=k+1
 
+<<<<<<< HEAD
+=======
+k=0
+for pvar in hpVars:
+  fpPath = fpArcDir + "/" + pvar + "/" + region
+# print ("HistPredictor Path = " + hpPath)
+  fpFileName = fpPath+'/*'+fpFileYrBeg+'*'+fpFileYrEnd+'*.nc'
+  p1 = subprocess.Popen('\ls -l '+fpPath+'/*'+fpFileYrBeg+'*'+fpFileYrEnd+'*.nc',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+  tmpFile,fpError = p1.communicate()
+  fpFile = tmpFile.strip()
+  if(fpError!=""):
+    print(fpError)
+#   print("Exiting.")
+#   sys.exit()
+# print ("HistPredictor File "+str(k)+": "+fpFile)
+  if k == 0:
+    fpFiles = [fpFile]
+    fpFileNames = [fpFileName]
+  else:
+    fpFiles.append(fpFile)
+    fpFileNames.append(fpFileName)
+  k=k+1 
+
+>>>>>>> g_bcqmtailadj
 fpArcDir = fpArcDir + "/" + target + "/" + region
 fpFileName = fpArcDir+'/*'+fpFileYrBeg+'*'+fpFileYrEnd+'*.nc'
 #print ("FuturePredictor Path = " + fpArcDir)
@@ -264,7 +304,11 @@ logfile.write("\n")
 logfile.write("--------------------\n")
 logfile.write("INPUT FILES CHECKING\n")
 logfile.write("-------------------- \n")
+<<<<<<< HEAD
 logfile.write("historical_target_file:  \n")
+=======
+logfile.write("historical_target_file: \n")
+>>>>>>> g_bcqmtailadj
 logfile.write('   ' + htFile + "\n")
 fmissing = False
 if not htFile:
@@ -286,6 +330,7 @@ for hpFile in hpFiles:
     fmissing = True
   k=k+1
 logfile.write("\n")
+<<<<<<< HEAD
 logfile.write('future_pedictor_file: \n')
 logfile.write('   ' + fpFile + "\n")
 if not fpFile:
@@ -295,6 +340,22 @@ if not fpFile:
   print(">>>>>>>  MISSING   2D future_pedictor_file:"+fpFileName.strip()+"\n")
   fmissing = True
 logfile.write("\n")
+=======
+
+k=0
+for fpFile in fpFiles:
+  logfile.write('future_predictor_file_'+str(k)+': ' + '\n')
+  logfile.write('   ' + fpFiles[k] + '\n')
+  if not fpFiles[k]:
+    logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+    logfile.write(">>>>>>>  MISSING  2D historical_predictor_file:"+fpFileNames[k].strip()+"\n")
+    logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+    print(">>>>>>>  MISSING  2D historical_predictor_file:"+fpFileNames[k].strip()+"\n")
+    fmissing = True
+  k=k+1
+logfile.write("\n")
+
+>>>>>>> g_bcqmtailadj
 if smask!="na":
   logfile.write("spatial_mask_file: \n")
   if not spFile:
@@ -305,6 +366,7 @@ if smask!="na":
     fmissing = True
   logfile.write("   " + spFile + "\n")
   logfile.write("\n")
+<<<<<<< HEAD
 logfile.write("historical_time_window_file: \n")
 logfile.write("   " + htwFile + "\n")
 if not htwFile:
@@ -324,6 +386,28 @@ if not ftwFile:
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
   print(">>>>>>>  MISSING  future time window FileName = "+ftwFileName.strip())
   fmissing = True
+=======
+
+logfile.write("historical_time_window_file: " + htwFileName + "\n")
+if htwFileName!="na":
+  if not htwFile:
+    logfile.write(htwFileName + " \n")
+    logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+    logfile.write(">>>>>>>  MISSING  htwFileName = "+htwFileName.strip()+ " \n")
+    logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+    print(">>>>>>>  MISSING  historical time window FileName = "+htwFileName.strip())
+    fmissing = True
+logfile.write("\n")
+logfile.write("future_time_window_file: " + ftwFileName+ "\n")
+if ftwFileName!="na":
+  if not ftwFile:
+    logfile.write(ftwFileName + " \n")
+    logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+    logfile.write(">>>>>>>  MISSING  ftwFileName = "+ftwFileName.strip() + " \n")
+    logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
+    print(">>>>>>>  MISSING  future time window FileName = "+ftwFileName.strip())
+    fmissing = True
+>>>>>>> g_bcqmtailadj
 logfile.write("\n")
 logfile.write("-------------------------- \n")
 logfile.write("DOWNSCALED OUTPUT CHECKING \n")
@@ -333,9 +417,38 @@ logfile.write("%%%%%  \n")
 logfile.write("%%%%% CHECKS ON DOWNSCALED OUTPUT ARE CONTINGENT ON WHETHER DOWNSCALING JOB HAS RUN.  \n")
 logfile.write("%%%%%  \n")
 logfile.write("\n")
+<<<<<<< HEAD
 logfile.write("downscaled_output_dir: "+dsArcDir + "\n")
 logfile.write("downscaled minifile dir:"+dsMiniArcDir+"\n")
 logfile.write("qc mask minifile dir:"+qcMiniArcDir+"\n")
+=======
+if RIPname!="na":
+  logfile.write("Ensemble output directories for $(RIP) values :\n")
+  logfile.write("\n")
+  k=1
+  for val in RIPvalues:
+#   logfile.write("    " + val + "\n")
+    dir = dsArcDir.replace("$(RIP)", val);
+    logfile.write("downscaled_output_dir_"+str(k)+": "+dir + "\n")
+    k=k+1
+  logfile.write("\n")
+  k=1
+  for val in RIPvalues:
+    dir = dsMiniArcDir.replace("$(RIP)", val);
+    logfile.write("downscaled_minifile_dir_"+str(k)+": "+dir+"\n")
+    k=k+1
+  logfile.write("\n")
+  k=1
+  for val in RIPvalues:
+    dir = qcMiniArcDir.replace("$(RIP)", val);
+    logfile.write("qc_mask_minifile_dir_"+str(k)+": "+dir+"\n")
+    k=k+1
+  logfile.write("\n")
+else:
+  logfile.write("downscaled_output_dir: "+dsArcDir + "\n")
+  logfile.write("downscaled_minifile_dir: "+dsMiniArcDir+"\n")
+  logfile.write("qc_mask_minifile_dir: "+qcMiniArcDir+"\n")
+>>>>>>> g_bcqmtailadj
 logfile.write("\n")
 logfile.write('Number_minifiles_expected: ' + str(nOneDFiles) + "\n")
 logfile.write('Number_downscaled_minifiles_found: ' + numds1DFiles + "\n")

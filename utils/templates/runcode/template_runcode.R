@@ -22,40 +22,51 @@ rm(list=ls())
         hist.train.start.year_1 <- <H.TRAIN.START.YEAR>
 	hist.train.end.year_1 <- <H.TRAIN.END.YEAR> 
 	hist.scenario_1 <- <H.SCENARIO>
+        hist.pred.rips <- <H.PRED.RIPS>
 	hist.nyrtot_1 <- (hist.train.end.year_1 - hist.train.start.year_1) + 1
 	hist.model_1 <- <H.MODEL> 
 	hist.freq_1 <- <H.FREQ> 
 	hist.indir_1 <- <H.INDIR> 
 	hist.time.window <- <H.TIME.WINDOW> 
+        hist.pred.suffix <- <HIST.PRED.SUFFIX>
 #------------ future predictor(s) -------------# 
 	fut.file.start.year_1 <- <F.FILE.START.YEAR> 
 	fut.file.end.year_1 <- <F.FILE.END.YEAR> 
         fut.train.start.year_1 <- <F.TRAIN.START.YEAR> 
         fut.train.end.year_1 <- <F.TRAIN.END.YEAR> 
 	fut.scenario_1 <- <F.SCENARIO>
+ 	fut.pred.rips <- <F.PRED.RIPS>
 	fut.nyrtot_1 <- (fut.train.end.year_1 - fut.train.start.year_1) + 1
 	fut.model_1 <- <F.MODEL> 
 	fut.freq_1 <- <F.FREQ> 
 	fut.indir_1 <- <F.INDIR>
 	fut.time.window <- <F.TIME.WINDOW>
         fut.time.trim.mask <- <FUT.TIME.TRIM.MASK>
+        fut.pred.suffix <- <FUT.PRED.SUFFIX>
+
+#-------------- predictor directory suffix -----------#
+        pred.dir.suffix <- <PRED.DIR.SUFFIX> #use this predictor variable and this  suffix with fut.indir_1 and hist.indir_1
 #------------- target -------------------------# 
 	target.file.start.year_1 <- <T.FILE.START.YEAR> 
 	target.file.end.year_1 <- <T.FILE.END.YEAR> 
         target.train.start.year_1 <- <T.TRAIN.START.YEAR> 
         target.train.end.year_1 <- <T.TRAIN.END.YEAR> 
 	target.scenario_1 <- <T.SCENARIO>
+	target.rips <- <T.RIPS>
 	target.nyrtot_1 <- (target.train.end.year_1 - target.train.start.year_1) + 1 
 	target.model_1 <- <T.MODEL>
 	target.freq_1 <- <T.FREQ> 
         target.indir_1 <- <T.INDIR>
 	target.time.window <- <T.TIME.WINDOW>
+	target.suffix <- <T.SUFFIX> 
+
 #------------- method name k-fold specs-----------------------#
         ds.method <- <METHOD> 
 	ds.experiment <- <DEXPER> 
 	k.fold <- <KFOLD> 
 	<PR_OPTS>
 #-------------- output -----------------------#
+        <PROPERTY>	
 	output.dir <- <OUTPUT.DIR>
 	mask.output.dir <- <MASK.OUTPUT.DIR> 
 #-------------  custom -----------------------#

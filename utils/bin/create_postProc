@@ -9,18 +9,23 @@ set postproc_cmd = $argv[1]
 set sbasedir = $argv[2]
 set logdir = $sbasedir/log
 set basedir = $argv[3]
-set tstamp = $argv[4]
+set suffctr = $argv[4]
 set branch = $argv[5]
+set prefix = $argv[6]
+##
+set ppstatdir = $sbasedir/postProc/ppStatus
+set pp_success = "$ppstatdir/${prefix}.success"
+set pp_failure = "$ppstatdir/${prefix}.failure"
 ############ dev
 set dev = "off"
-if($dev == "off") then
- set tstamp = ""
- set tsuffix = "$tstamp"
-else
-set tsuffix = "_$tstamp"
-endif
+#if($dev == "off") then
+# set tstamp = ""
+# set tsuffix = "$tstamp"
+#else
+#set tsuffix = "_$tstamp"
+#endif
 #############dev
-set codepath=$sbasedir/postProc/postProc_command$tsuffix
+set codepath=$sbasedir/postProc/postProc_command$suffctr
 mkdir -p $sbasedir/postProc/
 
 set template = $basedir/utils/templates/postproc/template_postProc
@@ -28,8 +33,12 @@ set template = $basedir/utils/templates/postproc/template_postProc
   unalias cp
   cp -f $template $codepath
   sed -i 's%<'LOGDIR'>%'$logdir% $codepath
+   sed -i 's%<'PP_STATDIR'>%'$ppstatdir% $codepath
+  sed -i 's%<'PREFIX'>%'$prefix% $codepath
   sed -i 's%<'POSTPROC_CMD'>%'$postproc_cmd% $codepath
   sed -i 's%<'BRANCH'>%'fudge/$branch% $codepath
+  sed -i 's%<'PP_SUCCESS'>%'$pp_success% $codepath
+  sed -i 's%<'PP_FAIL'>%'$pp_failure% $codepath
   echo "postProc command script location: $codepath"
   chmod u+x $codepath
  else 

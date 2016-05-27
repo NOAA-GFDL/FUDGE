@@ -10,9 +10,17 @@
 
 	echo "Setting FUDGE environment.."
 	# If a1r/cew is testing from a non-esd module, change the following for testing only
-  
+find <PP_STATDIR> | grep <PREFIX> | xargs rm -rf  
+	#note: below code works as long as all module names in 
+	#both locations are unique.
 	module use -a /home/esd/local/modulefiles/
+	module use -a /home/cew/Code/modulefiles/
 	module load <BRANCH> 
 	##################
 source <POSTPROC_CMD>
+if ($status == 0) then
+	touch <PP_SUCCESS>
+else
+	touch <PP_FAIL>
+endif
 

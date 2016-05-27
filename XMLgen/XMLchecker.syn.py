@@ -316,8 +316,13 @@ logfile.write("-------------------------- \n")
 logfile.write("DOWNSCALED OUTPUT CHECKING \n")
 logfile.write("-------------------------- \n")
 logfile.write("\n")
+<<<<<<< HEAD
 logfile.write("downscaled minifile dir:"+dsMiniArcDir+"\n")
 logfile.write("qc mask minifile dir:"+qcMiniArcDir+"\n")
+=======
+logfile.write("downscaled_minifile_dir:"+dsMiniArcDir+"\n")
+logfile.write("qc_mask_minifile_dir:"+qcMiniArcDir+"\n")
+>>>>>>> g_bcqmtailadj
 logfile.write("\n")
 logfile.write("%%%%% NOTE: CHECKS ON DOWNSCALED OUTPUT ARE CONTINGENT ON WHETHER DOWNSCALING JOB HAS RUN.  \n")
 logfile.write("\n")

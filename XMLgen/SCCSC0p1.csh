@@ -64,8 +64,17 @@
   endif
 
 # find available variables
+<<<<<<< HEAD
   source $xmlGenDir/find_vars.csh $htDir
      if ($status != 0) exit 1
+=======
+  source $xmlGenDir/find_vars.csh $htDir >& /dev/null
+     if ($status != 0) then
+       echo "Problem with $xmlGenDir/find_vars.csh $htDir "
+       echo "No variables found. Exit."
+       exit 1
+     endif
+>>>>>>> g_bcqmtailadj
 
 # historical predictor information
   set hpDataCategory = "GCM_DATA"

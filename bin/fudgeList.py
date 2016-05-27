@@ -1,4 +1,8 @@
 #!/usr/local/x64/python/2.7.3/bin/python
+
+"""fudgeList.py: Prints out a summary log experiment_info file for the corresponding experiment XML."""
+__author__ = "A.Radhakrishnan"
+
 import expergen 
 import os,sys,subprocess
 from subprocess import PIPE
@@ -34,7 +38,6 @@ def fudgeList():
 
      parser.add_option("-o", "--outlog", dest="sumlogloc",help="pass location of summary log file", metavar="FILE")
      parser.add_option("-v", "--fversion",action="store_true",default=False,help="Print FUDGE CODE VERSION. Default is set to FALSE/no-printing")
-
      (options, args) = parser.parse_args()
      #if userinput == "none":
        # print "Looking for XML location taken from command line option.."
@@ -66,11 +69,17 @@ def fudgeList():
            print "ERROR: BASEDIR environment variable not set"
 	   sys.exit(1)
      print "==============================runtime log from parser==================================================="
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklist = expergen.listVars(uinput,basedir=basedir,pp=True) 
+     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklist,idirsuffix = expergen.listVars(uinput,basedir=basedir,pp=True) 
      print "=================================================================================="		
+     #print "QC_MASK ",qc_switch	
+     #print "lons",lons,"lone",lone	
      basedire = basedir	
      esdMethod = method
      varname = target 
+     #### split and put in list ####
+     list_pred = predictor.split(',')
+     #print list_pred  	
+     #####
      if(spat_mask == "na"):
 	grid = "na"
      else:	
@@ -122,21 +131,65 @@ def fudgeList():
 							ascii = ascii+"\n"+"xml.path:"+os.path.abspath(uinput)+"\n"
 							ascii = ascii+"FUDGE.version:"+fudgeversion+"\n"
 							ascii = ascii+"region:"+region+"\n"
+					                ascii = ascii+"minifile.I.start:"+lons+"\n"
+                                                        ascii = ascii+"minifile.I.end:"+lone+"\n" 	
+						        ascii = ascii+"qc.mask:"+qc_switch+"\n" 
+                                                        ascii = ascii+"target:"+target+"\n"
 							delim="_"
 						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"-"+target_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")	
 							target_file = delim.join(target_parts)	
 							target_inpath_1=os.path.normpath(target_dir)+"/"+target_file
 							ascii = ascii+"target.inpath_1:"+target_inpath_1+"\n"
-                                                        hist_parts = (predictor,hist_freq,hist_model,hist_scenario,output_grid,hist_file_start_time+"-"+hist_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
-                                                        hist_file = delim.join(hist_parts)
+							n_plist = 0 
+							for plist in list_pred:
+							  n_plist = n_plist + 1 
+						          plist = plist.strip()
+                                                          #print "predictor",n_plist
+                                                          hist_parts = (plist,hist_freq,hist_model,hist_scenario,output_grid,hist_file_start_time+"-"+hist_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
+                                                          hist_file = delim.join(hist_parts)
 
-							hist_inpath_1=os.path.normpath(hist_pred_dir)+"/"+hist_file
-							ascii = ascii+"hist.inpath_1:"+hist_inpath_1+"\n"
-                                                        fut_parts = (predictor,fut_freq,fut_model,fut_scenario,output_grid,fut_file_start_time+"-"+fut_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
-                                                        fut_file = delim.join(fut_parts)
-                                                        fut_inpath_1=os.path.normpath(fut_pred_dir)+"/"+fut_file
-                                                        ascii = ascii+"fut.inpath_1:"+fut_inpath_1+"\n"
-						        output_path = os.path.normpath(outdir)	
+#####dict test
+					                  histdict = {} 
+        						  histdict["hist.inpath_"+str(n_plist)]=os.path.normpath(hist_pred_dir+"/"+plist)+idirsuffix+hist_file
+						          for hkey,hval in histdict.iteritems():
+							    ascii = ascii+str(hkey)+":"+hval+"\n"	
+
+##########
+                                                          fut_parts = (plist,fut_freq,fut_model,fut_scenario,output_grid,fut_file_start_time+"-"+fut_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
+                                                          fut_file = delim.join(fut_parts)
+
+                                                          futdict = {}
+                                                          futdict["fut.inpath_"+str(n_plist)]=os.path.normpath(fut_pred_dir+"/"+plist)+idirsuffix+fut_file
+                                                          for fkey,fval in futdict.iteritems():
+                                                            ascii = ascii+str(fkey)+":"+fval+"\n"
+
+
+                                                          #cfut_inpath_1=os.path.normpath(fut_pred_dir)+"/"+plist+"/"+idirsuffix+"/"+fut_file
+                                                          #cascii = ascii+"fut.inpath_1:"+fut_inpath_1+"\n"
+						        listout = []
+							property = {} 
+     						        listfacet = outdir.split('#')
+     							if (listfacet[1] == "na"):
+                					      listout.append(listfacet[0])
+							else:
+#### start property resolution 
+						           property[listfacet[1]] = listfacet[2]
+						           unres_outdir = listfacet[0]
+
+						           if '$(' in unres_outdir:
+        					              for pname,pval in property.iteritems():
+				                                 replace = pval
+                          					 break;
+                   				              list_new_out_dir = replace.split(",")
+                   					      for lnew in list_new_out_dir:
+                                                                listout.append(unres_outdir.replace(pname,lnew))
+#### end property resolution
+						        output_path = ""
+				                        for outdir in listout: 
+							   if(output_path != ""):
+						           	output_path = output_path +"\n"+ os.path.normpath(outdir)
+							   else:
+                                                                output_path = output_path + os.path.normpath(outdir) 	
 							ascii = ascii+"output.path:"+output_path+"\n"
 							spat_mask_path_1 = os.path.normpath(grid)
                                                         ascii = ascii+"spat.mask.path_1:"+spat_mask_path_1+"\n"
@@ -164,7 +217,7 @@ def fudgeList():
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
                                         filedire = indir+"/../../../"+region+"/"+ver+"/"
                                         filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
-#                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"-"+end+".nc"
+#                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
 
 				#	print "test test",filedire,filename	
                                         if not os.path.exists(filedire+"/"+filename):                

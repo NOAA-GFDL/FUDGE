@@ -17,6 +17,10 @@ set dT = $findType
 set dS = $findSource
 set dRIP = $findRIP
 set dEpoch = $findEpoch
+<<<<<<< HEAD
+=======
+set dallowEns = $allowEns
+>>>>>>> g_bcqmtailadj
 
 cd $inRoot/$dC
 #echo "Looking for directories under $inRoot/$dC ..."
@@ -28,7 +32,15 @@ foreach d ( $dirs )
   if ($dT != "NCPP" || $dRIP != "") then
     set dlist = ($d/${dEpoch}*/*/*/*/${dRIP}*/v*)
   else
+<<<<<<< HEAD
     set dlist = ($d/${dEpoch}*/*/*/*/r?i?p?/v*)
+=======
+    if ($dallowEns == "True") then
+      set dlist = ($d/${dEpoch}*/*/*/*/{r?i?p?,r?to?i?p?}/v*)
+    else
+      set dlist = ($d/${dEpoch}*/*/*/*/r?i?p?/v*)
+    endif
+>>>>>>> g_bcqmtailadj
   endif
   foreach dl ($dlist)
     set varCheck = (`\ls -m $dl |grep -w $varn`)
@@ -69,7 +81,11 @@ source $QueryVals
 set dataSet = "$kval"
 echo "$dataSet" >> $INtxt
 echo "dataSet = $dataSet, find_dataset_based_on_var.csh" >> $INtxt.key
+<<<<<<< HEAD
 set excludedData = "$dataSet"
+=======
+#set excludedData = "$dataSet"
+>>>>>>> g_bcqmtailadj
 
 sleep 5
 

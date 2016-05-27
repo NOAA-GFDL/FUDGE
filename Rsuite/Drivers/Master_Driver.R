@@ -1,6 +1,7 @@
 #' driver_a1rv2.r
 #' phase 1 of driver script implementation for FUDGE: CDFt train driver 
 #' originally created: a1r,08/2014
+#' Modified heavily by 4-6-2015 
 
 ############### Library calls, source necessary functions ###################################################
 #TODO the following sapplys and sourcing should be a library call
@@ -14,16 +15,16 @@ source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
 #source(paste(FUDGEROOT,'Rsuite/drivers/CDFt/TrainDriver.R',sep=''))
 
 #-------Add traceback call for error handling -------
-stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
-error.handler.function <- function(){
-  #message(writeLines(traceback()))
-  traceback()
-  message("Quitting gracefully with exit status 1")
-  #If quitting from a non-interactive session, a status of 1 should be sent. Test this.
-  #quit(save="no", status=1, runLast=FALSE, save=FALSE) #runLast=FALSE
-}
-#previously traceback
-options(error=error.handler.function, warn = 1, showErrorCalls=TRUE)
+# stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
+# error.handler.function <- function(){
+#   #message(writeLines(traceback()))
+#   traceback()
+#   message("Quitting gracefully with exit status 1")
+#   #If quitting from a non-interactive session, a status of 1 should be sent. Test this.
+#   #quit(save="no", status=1, runLast=FALSE, save=FALSE) #runLast=FALSE
+# }
+# #previously traceback
+# options(error=error.handler.function, warn = 1, showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
 ###after this point. Probably not a component of a --vanilla run. 
 ###But it unquestionably simplifies debugging.
@@ -110,22 +111,19 @@ LoadLib(ds.method)
 #' output.dir: Output root location
 #' mask.output.dir: Ouput root location for qc masks
 
-# ----- Begin segment like FUDGE Schematic Section 2: Access Input Data Sets -----
-
-###First, do simple QC checks, and set variables to be used later.
-
-#message("Attempting to break script deliberately")
-#print(fakevar)
-
 message("Setting downscaling method information")
-SetDSMethodInfo(ds.method)
+SetDSMethodInfo(ds.method, predictor.vars)
 message("Checking downscaling arguments")
-QCDSArguments(k=k.fold, ds.method = ds.method, args=args)
+QCDSArguments(k=k.fold, ds.method = ds.method, args=args, 
+              is.multivar=(length(predictor.vars) > 1), 
+              is.multi_ens=(length(fut.pred.rip.list) > 1))
+
 #Check for writable output directory 
 #TODO: remove this; only needed if testing R code separately
-message("Checking output directory")
-QCIO(output.dir)
+# message("Checking output directory")
+# QCIO(output.dir)
 
+##Call the code that converts the instructions for section 3 and section 5
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
   message('Conversion of pre- and post- downscaling adjustment input')
   if(exists('pr_opts')){
@@ -135,36 +133,63 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
   }
   pre_ds <- pp.out$pre_ds
   post_ds <- pp.out$post_ds
+  train_qcmask <- pp.out$train_qcmask
 }
-print(pre_ds)
-print(post_ds)
+
+##Make sure that you have the experiment rip ready to apply to 
+##other code (i.e. the actual rip experiment is being run under)
+experiment.rip <- gsub("(.*_)", "", fut.scenario_1)
+##Extra code added for compatibility with the darkchocolte-style
+##runcodes that expergen is capable of producing
+if(exists('RIP')){
+  fut.pred.rip.list <- unlist(strsplit(RIP, split=","))
+}else{
+  message('Creating darkchocolate-compatible RIP list')
+  fut.pred.rip.list <- unlist(strsplit(fut.scenario_1, "_"))[2]
+}
 
 #Initialize instructions for pre- and post-ds adjustment
+message("Checking pre- and post-downscaling adjustments")
 post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
 post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
-qc.maskopts <- qc.mask.check(post.ds.train, post.ds)
+qc.maskopts <- qc.mask.check(post.ds.train, post.ds, train_qcmask)
 pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
 pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
 #Generate metadata references for the pre- and post-processing functions
 #Things that contain an ADJUSTMENT
-post_ds_adj <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+post_ds_adj_tmp <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
+post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
+post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 
 
+#Adapt some of the parameters being set by the f-to-g bridge code 
+if(!exists('pr_opts')){
+  f.list <- override.f.defaults(args)
+}else{
+  f.list <- override.f.defaults(args, pr_opts)
+}
+min.present <- f.list$threshold
+args <- f.list$args
 
-message("Checking post-processing/section5 adjustments")
+#Then, check that the s3 and s5 adjustments you are performing make sense in 
+#this context
+QCAdjustArguments(pre_ds, post_ds, 
+                 is.multivar=(length(predictor.vars) > 1), 
+                 is.multi.ens=(length(fut.pred.rip.list) > 1), 
+                 target.in.predictors = (target.var%in%predictor.vars), 
+                 predictor.vars, target.var)
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only for the masks, but as an immediate check upon the dimensions
 #### of the files being read in.
 
 # # spatial mask read check
- message("Checking for spatial masks vars")
+message("Checking for spatial masks vars")
 if(spat.mask.dir_1!="na"){
-  #spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
   spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
   spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
-  print('OpenNC spatial mask: success..1') 
-  #ReadNC(spat.mask.ncobj,spat.mask.var,dstart=c(1,22),dcount=c(1,2))
+  print('OpenNC spatial mask: success..1')
   spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=FALSE)#TODO: remove opt for getting the bounds vars from fxn
   print('ReadMaskNC spatial mask: success..1')
 }else{
@@ -200,14 +225,22 @@ if (train.and.use.same){ #set by SetDSMethodInfo() (currently edited for test se
   }
 }else{ #Once esd.gen implemented, should be most common use case
   #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
-  if(target.time.window!='na'){
-  tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
-                                     esd.gen.mask = esdgen.time.window, k=kfold, method=ds.method)
-  names(tmask.list) <- c("train.pred", "train.targ", "esd.gen")
+  if(fut.time.trim.mask=='na'){
+    if(target.time.window!='na'){
+      tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                         esd.gen.mask = fut.time.window, k=kfold, method=ds.method)
+      names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+    }else{
+      #Otherwise, if there were no masks included at all
+      message("no time windows included; moving on to next step")
+      tmask.list <- list("na")
+    }
   }else{
-    #Otherwise, if there were no masks included at all
-    message("no time windows included; moving on to next step")
-    tmask.list <- list("na")
+    print(paste("time trimming mask", fut.time.trim.mask))
+    tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
+                                       esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
+                                       time.prune.mask = fut.time.trim.mask)
+    names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
   }
 }
 
@@ -216,52 +249,103 @@ message("Reading in target data")
 target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                    target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
 print(target.filename)
-list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial")#,dstart=c(1,1,1),dcount=c(1,140,16436)
+list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial", force_dim=3) #no longer adding ens dim
 message("Applying spatial mask to target data")
-list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
+#list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
+if(!is.null(spat.mask)){
+  list.target$clim.in <-apply.any.mask(data=list.target$clim.in, mask=spat.mask$masks[[1]], dim.apply='spatial')
+}
 
 #TODO: When multiple RIP support is enabled, move the output files to the inner RIP loop
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
                                 fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-print(out.filename)
-  for (predictor.var in 1:length(predictor.vars)){
-    print(paste("predictor:",predictor.var,sep='')) 
-    p.var <- predictor.vars[predictor.var]
-  
-    #Obtain coarse GCM data
-    message("Obtaining Coarse Historical data (predictor)")
-    hist.filename <- GetMiniFileName(p.var,hist.freq_1,hist.model_1,hist.scenario_1,grid,
-                                     hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
-    print(hist.filename)
-    hist.ncobj <- OpenNC(hist.indir_1,hist.filename)
-    list.hist <- ReadNC(nc.object = hist.ncobj, var.name=p.var)
-    print("Applying spatial mask to coarse predictor dataset")
-    list.hist$clim.in <- ApplySpatialMask(list.hist$clim.in, spat.mask$masks[[1]])
-    message(paste("Obtaining future predictor dataset for var", p.var, "and rip (rip)"))
-      fut.filename <- GetMiniFileName(p.var,fut.freq_1,fut.model_1,fut.scenario_1,grid,
-                                    fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
-      fut.ncobj <- OpenNC(fut.indir_1,fut.filename)
-      list.fut <- ReadNC(fut.ncobj,var.name=p.var, dim='temporal') #rip=rip, 
-      print("Applying spatial mask to future predictor dataset")
-      list.fut$clim.in <- ApplySpatialMask(list.fut$clim.in, spat.mask$masks[[1]])
-    
-    if(length(pre.ds) !=0){
-      message('Applying S3 Adjustment')
-      temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
-                                      hist.pred = list.hist$clim.in, 
-                                      hist.targ = list.target$clim.in, 
-                                      fut.pred = list.fut$clim.in,  
-                                      s5.instructions=post.ds)
-      #Assign output and remove temporary output 
-      post.ds <- temp.output$s5.list
-      list.target$clim.in <- temp.output$input$hist.targ
-      list.hist$clim.in <- temp.output$input$hist.pred
-      list.fut$clim.in <- temp.output$input$fut.pred
-      remove(temp.output)
-    }
-  }
 
-print("FUDGE training begins...")
+hist.filename <- GetMiniFileName("VAR",hist.freq_1,hist.model_1,hist.scenario_1,grid,
+                                 hist.file.start.year_1,hist.file.end.year_1,i.file,file.j.range)
+message("Reading in historical predictor data")
+list.hist <- ReadMultiVars(file.prefix=hist.indir_1, 
+                           file.suffix=pred.dir.suffix, 
+                           blank.filename=hist.filename, 
+                           var.list=predictor.vars, 
+                           add.ens.dim=TRUE,
+                           verbose=TRUE)
+message("Applying spatial mask to historic predictor dataset")
+if(!is.null(spat.mask)){
+  list.hist$clim.in <- lapply(list.hist$clim.in, apply.any.mask, mask=spat.mask$masks[[1]], dim.apply='spatial')
+}
+
+fut.filename <- GetMiniFileName("VAR",fut.freq_1,fut.model_1,fut.scenario_1,grid,
+                                 fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+message("Reading in future predictor data")
+list.fut <- ReadMultiVars(file.prefix=fut.indir_1, 
+                           file.suffix=pred.dir.suffix, 
+                           blank.filename=fut.filename, 
+                           var.list=predictor.vars,
+                          rip.list = fut.pred.rip.list, rip.suffix = fut.pred.suffix, 
+                           dim=c('temporal'), 
+                           add.ens.dim=TRUE,
+                          #check.for.ens = TRUE, ens.member = fut.scenario_1,
+                          #rip.list = fut.pred.rip.list, rip.suffix = fut.filename.suffix, 
+                           verbose=TRUE)
+
+message("Applying spatial mask to future predictor dataset")
+if(!is.null(spat.mask)){
+  list.fut$clim.in <- lapply(list.fut$clim.in, apply.any.mask, mask=spat.mask$masks[[1]], dim.apply='spatial')
+}
+print(paste("dimensions of the future predictor data:"))
+print(dim(list.fut$clim.in))
+
+
+######################################################
+###Hasty DeltaSD adjustment for asynchronous leap years
+delta.string <- ""
+if('OH'%in%ds.names){
+#   print('applying OH mask correction!')
+#   h.time.len <- dim(list.target$clim.in)[3]
+#   delta.mask <- c(rep(NA, (365*3+1)), rep(1, h.time.len-(365*3+1)))
+  h.time.len <- dim(list.target$clim.in)[3]
+  print(summary(dim(list.fut$clim.in)))
+  delta.adj.index <- correct.hist.leapdays(dim(list.target$clim.in)[3], 
+                                            dim(list.fut$clim.in[[1]])[3], 
+                                            hist.file.start.year_1, hist.file.end.year_1,
+                                            fut.file.start.year_1, fut.file.end.year_1)
+  delta.mask <<- c(rep(NA, delta.adj.index[1]), 
+                  rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
+                  c(rep(NA, delta.adj.index[2])))
+  print(summary(delta.mask))
+  #args$delta.mask <- delta.mask 
+  #args$delta.adj.index <- delta.adj.index
+  delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
+                        "to", delta.adj.index[4], "for the downscaling step")
+  #stop('examine the output of this function')
+  #stop('exmaine ds.args')
+#   list.target$clim.in <- trim.time.mask(data=list.target$clim.in, mask=delta.mask)
+#   list.hist$clim.in <- lapply(list.hist$clim.in, 'trim.time.mask', mask=delta.mask)
+}
+
+######################################################
+
+message('Looking for pre-processing functions to apply')
+if(length(pre.ds) !=0){
+  message('Applying S3 Adjustment')
+  temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
+                                  hist.pred = list.hist$clim.in,
+                                  hist.targ = list.target$clim.in,
+                                  fut.pred = list.fut$clim.in,,
+                                  att.list =list('hist.pred'=list.hist$att_table, 
+                                                 'hist.targ'=list.target$att_table, 
+                                                 'fut.pred'=list.fut$att_table),
+                                  s5.instructions=post.ds)
+  #Assign output and remove temporary output 
+  post.ds <- temp.output$s5.list
+  list.target$clim.in <- temp.output$input$hist.targ
+  list.hist$clim.in <- temp.output$input$hist.pred
+  list.fut$clim.in <- temp.output$input$fut.pred
+  remove(temp.output)
+}
+
+message("FUDGE training begins...")
+message(paste("Starting at:", Sys.time()))
 start.time <- proc.time()
 
 #args should always exist; it's specified in the runcode
@@ -270,19 +354,36 @@ if (args[1]=='na'){
 }else{
   ds.args=args
 }
-
+all.att.table <- list('hist.pred'=list.hist$att_table, 
+                      'hist.targ'=list.target$att_table, 
+                      'fut.pred'=list.fut$att_table)
+##DS does not currently include the attribute table; frankly, should include it. 
+##This si sprobably the next to-do item on the list
+print(paste("dimensions of the future predictor data:"))
+print(dim(list.fut$clim.in))
   ds <- TrainDriver(target.masked.in = list.target$clim.in, 
                     hist.masked.in = list.hist$clim.in, 
                     fut.masked.in = list.fut$clim.in, ds.var=target.var, 
+                    att.table =list('hist.pred'=list.hist$att_table, 
+                                    'hist.targ'=list.target$att_table, 
+                                    'fut.pred'=list.fut$att_table),
                     mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
                     istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
                     s3.instructions=pre.ds.train,
                     s5.instructions=post.ds.train, 
-                    create.qc.mask=(qc.maskopts$qc.inloop))
-print(summary(ds$esd.final[!is.na(ds$esd.final)]))
+                    train_qcmask=train_qcmask,
+                    create.qc.mask=sum(c(qc.maskopts$qc.inloop,train_qcmask)), 
+                    min.present=min.present,
+                    verbose=FALSE)
+#print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
-
+# save(file="~/Code/testing/test_out.R", list=c('ds'))
+# stop('examine your results')
+print('summary of downscaled data:')
+print(lapply(ds$esd.final, 'summary'))
+#  ds.tmp.out <- lapply(ds$esd.final, 'remove.missvals')
+#  print(lapply(ds.tmp.out, 'summary'))
 ############## end call TrainDriver ######################################
 # + + + end Training + + +
 
@@ -296,100 +397,153 @@ if(length(post.ds) !=0){
                                     data = ds$esd.final,
                                     hist.pred = list.hist$clim.in, 
                                     hist.targ = list.target$clim.in, 
-                                    fut.pred  = list.fut$clim.in)
+                                    fut.pred  = list.fut$clim.in, 
+                                    data.atts = all.att.table)
   ds$esd.final <- temp.postproc$ds.out
   if(qc.maskopts$qc.outloop){
     ds$qc.mask <- temp.postproc$qc.mask
   }
   remove(temp.postproc)
 }
+print('summary of downscaled data after adjustment:')
+print(lapply(ds$esd.final, 'summary'))
 
-message("checking summary data")
-print(summary(as.vector(ds$esd.final), digits=6))
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
-#Replace NAs by missing 
-ds$esd.final[is.na(ds$esd.final)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
+# rip.list <- lapply(att_table, '[[', 'rip')
+# rips <- unique(rip.list)
 
-out.file <- paste(output.dir,"/", out.filename,sep='')
+#Output file destinations should be saved and printed for later reference
+#But there can be some debate about how best to do that
+out.file.list <- rep(list(NA), length(fut.pred.rip.list))
+names(out.file.list) <- unlist(fut.pred.rip.list)
 
-ds.out.filename = WriteNC(out.file,ds$esd.final,target.var,
-                          xlon=list.target$dim$lon,ylat=list.target$dim$lat,
-                          downscale.tseries=list.fut$dim$time, 
-                          var.data=c(list.target$vars, list.fut$vars),
-                          units=list.fut$units$value,
-                          lname=paste('Downscaled ',list.fut$long_name$value,sep=''),
-                          cfname=list.fut$cfname$value, 
-                          prec='double'
-                          )
-
-#Write Global attributes to downscaled netcdf
-label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
-label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
-
-###Code to determine whether or not to include the git branch
-if(Sys.getenv("USERNAME")=='cew'){
-  git.needed=TRUE
-}else{
-  #Someone else is running it, modules are available and presumably git branch not needed
-  git.needed=FALSE
-}
-
-WriteGlobals(ds.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
-             configURL,label.validation,institution='NOAA/GFDL',
-             version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
-                                                                                               ds.method, ds.experiment), 
-             ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-             grid_region=grid, mask_region=ds.region,
-             time.trim.mask=fut.time.trim.mask, 
-             tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-             is.pre.ds.adjust=(length(pre_ds) > 0),
-             pre.ds.adjustments=pre_ds,
-             is.post.ds.adjust=(length(post_ds_adj) > 0),
-             post.ds.adjustments=post_ds_adj)
-message(paste('Downscaled output file:',ds.out.filename,sep=''))
-#}
-
-if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop){ ##Created waaay back at the beginning, as part of the QC functions
-  for (var in predictor.vars){
-    ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
-    ###qc.method needs to get included in here SOMEWHERE.
-    qc.var <- paste(var, 'qcmask', sep="_")
-    qc.file <- paste(mask.output.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
-    ###Check to make sure that it is possible to create the qc file; create dirs if not
-    message("Attempting creation of QC file")
-    message(qc.file)
-    exists <- file.create(qc.file)
-    if(!exists){
-      print("ERROR! Dir creation script not beahving as expected!")
+for (rip in fut.pred.rip.list){
+  #Replace NAs by missing
+  ds.var <- paste0(target.var, ".", rip)
+  ds.temp <- ds$esd.final[[ds.var]]
+  ds.temp[is.na(ds.temp)] <- 1.0e+20 #TODO: Mod for changing all missing values. 
+  
+  loop.out.dir <- output.dir
+  loop.out.dir <- sub("$(RIP)", rip, loop.out.dir, fixed=TRUE)
+  out.file <- paste(loop.out.dir,"/", out.filename,sep='')
+  out.loop.file <- sub(experiment.rip, rip, out.file)
+  message(paste("Writing to file", out.loop.file))
+  ds.out.filename = WriteNC(out.loop.file, ds.temp,
+                            target.var,
+                            dim.list=c(list.target$dim, list.fut$dim),
+                            var.data=c(list.target$vars, list.fut$vars),
+                            #prec=list.target$att_table[[target.var]]$prec,
+                            prec='float', #swapped for double 12-29
+                            units=list.target$att_table[[target.var]]$units,
+                            lname=paste('Downscaled', list.target$att_table[[target.var]]$long_name), #list.fut$long_name$value
+                            cfname=list.target$att_table[[target.var]]$standard_name, 
+                            #var.orig.file=attr(list.target, "filename"),
+                            verbose=TRUE 
+  )
+  out.file.list[[rip]] <- ds.out.filename
+  
+  #Write Global attributes to downscaled netcdf
+  label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
+  label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
+  
+  ###Code to determine whether or not to include the git branch
+  if(Sys.getenv("USERNAME")=='cew'){
+    git.needed=TRUE
+  }else{
+    #Someone else is running it, modules are available and presumably git branch not needed
+    git.needed=FALSE
+  }
+  message('writing global attributes')
+  WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
+                    configURL,label.validation,institution='NOAA/GFDL',
+                    version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
+                    title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
+                                "downscaled by FUDGE", BRANCH, 
+                                ds.experiment, substr(rip,1,2)),
+                    ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+                    grid_region=grid, mask_region=ds.region,
+                    time.trim.mask=fut.time.trim.mask, 
+                    tempdir=TMPDIR, 
+                    include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+                    is.pre.ds.adjust=(length(pre_ds) > 0),
+                    pre.ds.adjustments=pre_ds,
+                    is.post.ds.adjust=(length(post_ds_adj) > 0),
+                    post.ds.adjustments=post_ds_adj, 
+                    climatology=list.fut$att_table[[ds.var]]$climatology, 
+                    fut.pred.rip = rip, 
+                    missval.handling=missval.handling, minval.present=min.present, 
+                    delta.string=delta.string)
+  message(paste('Downscaled output file:',ds.out.filename,sep=''))
+  #}
+  
+  if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){ 
+    ##Created waaay back at the beginning, as part of the QC functions
+    for (var in target.var){
+      ds$qc.mask[is.na(ds$qc.mask)] <- as.double(1.0e20)
+      qc.var <- paste(var, 'qcmask', sep="_")
+      #Sunstitute to get mask output directory
+      mask.loop.out.dir <- mask.output.dir
+      mask.loop.out.dir <- sub("$(RIP)", rip, mask.loop.out.dir, fixed=TRUE)
+      #REMOVE THIS LINE FOR THE FINAL RELEASE
+      if(!(Sys.info()["nodename"]=="ldt-4078325")){
+        mask.loop.out.dir <- paste0(mask.loop.out.dir, "/", qc.var, "/")
+      }
+      qc.file <- paste(mask.loop.out.dir, sub(pattern=var, replacement=qc.var, out.filename), sep="")
+      qc.file <- sub(experiment.rip, rip, qc.file)
+      
+      ###Check to make sure that it is possible to create the qc file; create dirs if not
+      message("Attempting creation of QC file")
+      message(qc.file)
+      exists <- file.create(qc.file)
+      if(!exists){
+        print("ERROR! Dir creation script not beahving as expected!")
+      }
+      message(paste('attempting to write to', qc.file))
+      qc.out.filename = WriteNC(qc.file,ds$qc.mask[[ds.var]],qc.var,
+                                dim.list=c(list.target$dim, list.fut$dim),
+                                var.data=c(list.target$vars, list.fut$vars),
+                                prec='float',
+                                units="1",
+                                lname=paste('QC Mask')
+      )
+      #For now, patch the variables in here until se get s5 formalized in the XML
+      WriteFUDGEGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
+                        configURL,label.validation,institution='NOAA/GFDL',
+                        version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
+                        title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
+                                    "downscaled by FUDGE", BRANCH, 
+                                    ds.experiment, substr(rip,1,2)), 
+                        ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
+                        grid_region=grid, mask_region=ds.region,
+                        time.trim.mask=fut.time.trim.mask, 
+                        tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+                        is.qcmask=TRUE,
+                        qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
+                        is.pre.ds.adjust=(length(pre_ds) > 0),
+                        pre.ds.adjustments=pre_ds,
+                        is.post.ds.adjust=(length(post_ds_adj) > 0),
+                        post.ds.adjustments=post_ds_adj, 
+                        fut.pred.rip = rip, 
+                        missval.handling=missval.handling, minval.present=min.present)
+      if(qc.maskopts$qc.method=='simpletailadj'){
+        WriteSelectGlobals(qc.out.filename,
+                           atts=list('comment'=paste('1 = simpletailadj applied to lower tail;', 
+                                                     '2 = simpletailadj applied to upper tail', 
+                                                     '3 = adjust applied to upper and lower tail',
+                                                     '4 = simpletailadj for non-overlapping MH and MF distributions used', 
+                                                     sep=";")),append=T)
+      }
+      message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
-    message(paste('attempting to write to', qc.file))
-    qc.out.filename = WriteNC(qc.file,ds$qc.mask,qc.var,
-                              xlon=list.target$dim$lon,ylat=list.target$dim$lat,
-                              downscale.tseries=list.fut$dim$time, 
-                              var.data=c(list.target$vars, list.fut$vars),
-                              prec='float',missval=1.0e20,
-                              units="1",
-                              lname=paste('QC Mask')
-    )
-    WriteGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
-                 configURL,label.validation,institution='NOAA/GFDL',
-                 version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
-                                                                                                   ds.method, ds.experiment), 
-                 ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
-                 grid_region=grid, mask_region=ds.region,
-                 time.trim.mask=fut.time.trim.mask, 
-                 tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
-                 is.qcmask=TRUE,
-                 qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
-                 is.pre.ds.adjust=(length(pre_ds) > 0),
-                 pre.ds.adjustments=pre_ds,
-                 is.post.ds.adjust=(length(post_ds_adj) > 0),
-                 post.ds.adjustments=post_ds_adj)
-    message(paste('QC Mask output file:',qc.out.filename,sep=''))
   }
 }
 #Do not change formatting of this: it is used as a flag by two components of the
 #regression testing scripts parsing stdout
 #message(paste('Final Downscaled output file location:', sub(pattern=TMPDIR, replacement="", ds.out.filename),sep=""))
-message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
+#message(paste('Final Downscaled output file location:', ds.out.filename,sep=""))
+message(paste('File(s)', convert.list.to.string(out.file.list), "written to file."))
+message(paste('Final Downscaled output file location:', convert.list.to.string(out.file.list),sep=""))
+message(paste('Target file location:', attr(list.target, 'filename')))
+message(paste('Future Predictor file(s):', attr(list.fut, 'filename')))
+message(paste('Historic Predictor files(s):', attr(list.hist, 'filename')))

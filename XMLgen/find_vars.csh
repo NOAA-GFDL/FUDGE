@@ -29,9 +29,15 @@ cd $indir
 set varList = ()
 set dirs=(*/*/*/*/*)
 
+<<<<<<< HEAD
 echo " "
 echo "    (Ignore 'ls: No match.' messages below.)"
 echo " "
+=======
+#echo " "
+#echo "    (Ignore 'ls: No match.' messages below.)"
+#echo " "
+>>>>>>> g_bcqmtailadj
 
 foreach dir ($dirs)
   cd $indir/$dir
@@ -43,7 +49,11 @@ end
 
 cd $indir
 foreach var ($varList)
+<<<<<<< HEAD
 # based on darkchocolate input file path structure, 
+=======
+# based on espresso input file path structure, 
+>>>>>>> g_bcqmtailadj
 # look for "dim" directories (e.g. OneD) to construct list of available variables
   set dimdirs = (`\ls -l */*/*/*/*/$var/* | awk '/^d/ {print $9}'`) 
   if ("$dimdirs" != "") then
@@ -52,16 +62,35 @@ foreach var ($varList)
 end
 
 set varList = (`sort -u $workDir/tmpvarlist`)
+<<<<<<< HEAD
 echo " "
 echo -n "    FINAL LIST : "
 echo "$varList"
 echo " "
+=======
+#echo " "
+#echo -n "    FINAL LIST : "
+#echo "$varList"
+#echo " "
+>>>>>>> g_bcqmtailadj
 \rm $workDir/tmpvarlist
 
 cd $c1Dir
 if ($#varList >= 0) then
+<<<<<<< HEAD
   exit 0
 else
   echo "No variables found. Exiting."
   exit 1
 endif
+=======
+  foreach var ($varList)
+     echo $var >> $workDir/varListFile
+  end
+  exit 0
+else
+#  echo "No variables found. Exiting."
+  exit 1
+endif
+
+>>>>>>> g_bcqmtailadj

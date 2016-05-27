@@ -63,7 +63,16 @@
 #============================================================
 
 # find available variables
+<<<<<<< HEAD
   source $xmlGenDir/find_vars.csh $inputDir
     if ($status != 0) exit 1
+=======
+  source $xmlGenDir/find_vars.csh $inputDir >& /dev/null
+    if ($status != 0) then 
+       echo "Problem with $xmlGenDir/find_vars.csh $inputDir "
+       echo "No variables found. Exit."
+       exit 1
+    endif
+>>>>>>> g_bcqmtailadj
 
 exit 0

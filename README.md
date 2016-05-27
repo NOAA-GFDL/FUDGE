@@ -18,7 +18,11 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
   The Latest Version
   ------------------
 
+<<<<<<< HEAD
   The latest verified version is the darkchocolate release. For more
+=======
+  The latest verified version is the espresso release. For more
+>>>>>>> g_bcqmtailadj
   information, please consult the release notes.
 
   Documentation
@@ -42,7 +46,10 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
      sys, subprocess, optparse, argparse
   - GFDL in-house transfer tools in HPC (gcp 2.3 or higher)
   - moab 7 or higher
+<<<<<<< HEAD
   - access to a c-shell for scripting
+=======
+>>>>>>> g_bcqmtailadj
 
   Licensing
   ---------
@@ -55,15 +62,26 @@ The United States Department of Commerce (DOC) GitHub project code is provided o
   1. This code has been designed for work with the GDFL machines. We make no guarantee that it 
   will still work properly outside of the GFDL. 
 
+<<<<<<< HEAD
   2. This code is a work in progress. The darkchocolate workflow has passed its current tests, 
+=======
+  2. This code is a work in progress. The espresso workflow has passed its current tests, 
+>>>>>>> g_bcqmtailadj
   but is still undergoing revision. 
 
   3. In the course of development, we found that the internal data structures were changing too
   fast for unit regression tests to be useful, and switched to regression tests upon the downscaled
   output. However, those regression tests rely on the GFDL filesystem for input data, and the incusion
   of the end-products of downscaling files to check against would have dramatically increased the size 
+<<<<<<< HEAD
   of the repository. There is an explanation of the current regression testing procedure in the file 
   Regression_tests/README_regression_tests.md
+=======
+  of the repository. These regression tests are now present in a separate repository, FUDGE_regtests.
+  
+  4. XMLGen is used for generating XML in a manner specific to the ESD role account. Please do not
+  try to run it from another account.
+>>>>>>> g_bcqmtailadj
   
 
   Contacts

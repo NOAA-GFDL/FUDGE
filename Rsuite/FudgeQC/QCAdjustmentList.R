@@ -26,7 +26,8 @@ QCAdjustmentList <- function(mask.list){
   qc.args = ""
   for (element in 1:length(mask.list)){
     #message(mask.list[[element]])
-    qc.check <- qc.check + as.numeric(mask.list[[element]]$qc.mask=='on')
+    qc.check <- qc.check + as.numeric(mask.list[[element]]$qc.mask=='on' || 
+                                        mask.list[[element]]$qc.mask=='on')
     if(qc.check==1){
       #Check for QC options
       qc.method <- mask.list[[element]]$type
@@ -71,20 +72,17 @@ QCAdjustmentList <- function(mask.list){
   return(s5.settings)
 }
 
-qc.mask.check <- function(inloop, outloop){
+qc.mask.check <- function(inloop, outloop, train_qcmask=FALSE){
   #' Checks for the existance of zero or one
   #' calls to create a qc mask in the post-processing
   #' adjustment lists, and throws an error if there
   #' are more calls for a qc mask than expected
   #'   inloop.count <- length(compact(lapply(inloop, index.a.list, 'qc.mask', 'on')))
+  if(!train_qcmask){
   outloop.list <- compact(lapply(outloop, index.a.list, 'qc.mask', 'on'))
   inloop.list <- compact(lapply(inloop, index.a.list, 'qc.mask', 'on'))
   outloop.count <- length(outloop.list)
   inloop.count <- length(inloop.list)
-  print(outloop.list)
-  print(inloop.list)
-  print(inloop.count)
-  print(outloop.count)
   if(inloop.count + outloop.count > 1){
     stop(paste("Error in qc.mask.check: There are", inloop.count, "calls to create a", 
                "qc mask inside the time windows and", outloop.count, "calls to create a", 
@@ -104,6 +102,11 @@ qc.mask.check <- function(inloop, outloop){
               'qc.method'=qc.method, 
               'qc.args'=qc.args)
   )
+  }else{
+    return(list('qc.inloop'=1, 'qc.outloop'=0, 
+                'qc.method'='qc.train', 
+                'qc.args'=list('na')))
+  }
 }
 
 #Code for obtaining the filenames of all files from tmask.list

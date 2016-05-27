@@ -1,5 +1,10 @@
 #!/bin/csh -f
 
+<<<<<<< HEAD
+=======
+set quitjob = 0
+
+>>>>>>> g_bcqmtailadj
 echo " "
 echo "   CHECKING IF EXPERIMENT and/or related-files ALREADY EXISTS"
 echo " "
@@ -8,6 +13,7 @@ set expDir = "$scriptDir/scripts/$projectID"
 #check if experiment directory exists in expDir
 unset preExistOpt
 if (-e $expDir/$1) then
+<<<<<<< HEAD
 # echo "   >> $expDir/$1 exists. Do you want to overwrite?"
   set varvals = (exit erase move)
   set dinfo = "$expDir/$1 exists so exit now, or select to either erase or move exiting data/scripts/logfiles/etc. "
@@ -27,6 +33,29 @@ if (-e $expDir/$1) then
 else
   set preExistOpt = "exit"
   echo "   $expDir/$1 does not exists."
+=======
+  set exists = "True"
+  set dinfo = "$expDir/$1, which exists, choose to exit now, or select to either erase or move exiting data/scripts/logfiles/etc. "
+else
+  set exists = "False"
+  set dinfo = "the event that $expDir/$1 exists, select options to either exit, erase or move existing data/scripts/logfiles/etc. "
+endif
+
+set varvals = (exit erase move)
+source $QueryVals
+set preExistOpt = "$kval"
+echo "$preExistOpt" >> $INtxt
+echo "preExistOpt = $preExistOpt, check_experiment_name.csh" >> $INtxt.key
+
+if ("$exists" == "True" && "$preExistOpt" == "exit") then 
+  echo " "
+  echo "   OK. You do not want to overwrite $1."
+  echo "   Please re-run XMLgen with new experiment name."
+  echo "   Exiting."
+  echo " "
+  set quitjob = 1
+  exit 0
+>>>>>>> g_bcqmtailadj
 endif
 
 #

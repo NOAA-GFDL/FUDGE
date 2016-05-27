@@ -10,10 +10,18 @@
   echo "============================================="
   echo "============================================="
   echo " "
+<<<<<<< HEAD
+=======
+  echo "       Only ONE qc adjustment can be specified. "
+  echo " "
+
+# set echo
+>>>>>>> g_bcqmtailadj
 
   if (-e QC_XML) \rm QC_XML
   touch QC_XML
 
+<<<<<<< HEAD
 # qc adjustment may be used for specific variables. 
 # If the qc is not desired - meaning that you do not ask for a mask to be saved 
 #  nor any adjustment to be done, no <qc> tag is generated.
@@ -65,6 +73,63 @@
       echo "You entered $keep_going"
       if ($keep_going != "y") exit 1
    endif
+=======
+  set qclist = `cat $qcOptions_file | cut -d " " -f 1`
+  set qclist = ($qclist none)
+
+  if ($dsMethod == "BCQM") then
+    echo ">>   "
+    echo ">>   IMPORTANT"
+    echo ">>   ========="
+    echo ">>   "
+    echo ">>   You selected $dsMethod as your downscaling method."
+    echo ">>   "
+    echo ">>   It is strongly recommended you select 'BCQM.tail.adj' QC adjustment."
+    echo ">>   "
+    echo ">>   Please note that no other adjustment can be done."
+    echo ">>   "
+    echo -n ">>   If you DO NOT want this adjustment, please type 'n' or 'no'. Otherwise hit return:"
+    set noTailAdj=$<
+    echo $noTailAdj >> $INtxt
+    echo "noTailAdj = $noTailAdj, QC_adjustment.csh" >> $INtxt.key
+    if ($noTailAdj == "") then
+       echo ">>   BCQM.tail.adj will be done."
+       echo "         <qc type="\'BCQM.tail.adj\'" qc_mask="\'on\'" adjust_out="\'on\'">" > QC_XML
+       echo "         </qc>" >> QC_XML
+       exit 0
+    else 
+       echo ">>   "
+       echo ">>   No BCQM.tail.adj will be done."
+       echo ">>   "
+       echo ">>   You will be able to select a different adjustment or none."
+       echo ">>   "
+    endif
+  endif 
+
+  set varvals = ($qclist)
+  set dinfo = "QC data adjustment"
+  source $QueryVals
+  set qcName = "$kval"
+  echo "$qcName" >> $INtxt
+  echo "qcName = $qcName, XMLgen.non-syn.csh" >> $INtxt.key
+
+  if ($qcName == "none") then
+     echo "No adjustment will be made."
+     exit 0
+  endif
+
+# Retrieve any options used by the qc adjustment in the file specified by $qcOptions_file.
+  set qcOptions = (`grep $qcName $qcOptions_file`)
+    if ($status != 0) then
+       echo ">>   IMPORTANT:  $qcName qc adjustment is not listed in $xmlgenDir/QCMask_Options.txt."
+       echo ">>   If you are expecting options outside of whether or not to output the mask or "
+       echo ">>   adjust the values, stop and please contact Mary Jo"
+       echo -n ">>   Continue? (y/n): "
+       set keep_going=$<
+       echo "You entered $keep_going"
+       if ($keep_going != "y") exit 1
+    endif
+>>>>>>> g_bcqmtailadj
 # Set qc_mask Options
   set saveQcMask = "off"
   set qcAdjust = "off"
@@ -93,6 +158,7 @@
      echo " "
   endif
     
+<<<<<<< HEAD
 # do not yet allow this option to be turned on for "flag.neg".
 
   if ($qcName == "SBiasCorr") then
@@ -116,6 +182,22 @@
     echo "   QC adjustment of $targVar downscaled values is not implemented."
     echo " "
   endif
+=======
+  echo " "
+  echo "    ///////////////////"
+  echo "    ------------------ "
+  echo "    MODIFY QC-ed DATA? "
+  echo "    ------------------ "
+  echo "    \\\\\\\\\\\\\\\\\\\"
+  echo " "
+  echo ">> Do you want the QC flagged downscaled values to be modified in the downscaled output?"
+  echo " "
+  echo -n ">> Enter y for 'yes' ; Enter n or hit the 'Enter' key for 'no' :  "
+  set qcout=$<
+  echo "   You entered $qcout"
+  echo $qcout >> $INtxt
+  echo "qcout = $qcout, QC_adjustment.csh" >> $INtxt.key
+>>>>>>> g_bcqmtailadj
 
   if ($qcout == "y") then
      set qcAdjust = "on"

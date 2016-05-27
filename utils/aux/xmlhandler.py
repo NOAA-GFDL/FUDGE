@@ -7,6 +7,7 @@ predictor_list = []
 target = ''
 target_ID = ''
 target_id = []
+dictProperty = {}
 class XMLHandler:
   def __init__(self):
         hist_id = []
@@ -97,6 +98,9 @@ class XMLHandler:
 #TODO id lists
         			hist_id.append(histid_node.text)
 				dictParams['hist_id'] = hist_id 
+                        for hist_suff_node in hist_node.findall('.//suffix'):
+                                hist_suffix = hist_suff_node.text
+                                dictParams['historical_predictor_suffix'] = hist_suffix
 	 ################# get historical target information ##################
                 for target_node in tree.iter('historical_target'):
                         target_file_start_time = target_node.attrib['file_start_time']
@@ -113,6 +117,11 @@ class XMLHandler:
                         for targetid_node in target_node.findall('.//dataset'):
                                 target_id.append(targetid_node.text)
                                 dictParams['target_id'] = target_id
+                        for target_suffix_node in target_node.findall('.//suffix'):
+                                target_suffix = target_suffix_node.text
+                                print "suff...............t",target_suffix
+
+                                dictParams['target_suffix'] = target_suffix 
 	 ############## get future predictor information ######################
                 for fut_node in tree.iter('future_predictor'):
                         fut_file_start_time = fut_node.attrib['file_start_time']
@@ -132,6 +141,9 @@ class XMLHandler:
                 	for futid_node in fut_node.findall('.//dataset'):
                         	fut_id.append(futid_node.text)
                                 dictParams['fut_id'] = fut_id
+                        for future_suffix_node in fut_node.findall('.//suffix'):
+                                future_suffix = future_suffix_node.text
+                                dictParams['future_predictor_suffix'] = future_suffix 
         ###### Get core method information  #####
         for core_node in tree.iter('core'):
 	    for method_node in core_node.findall('.//method'):
@@ -165,6 +177,12 @@ class XMLHandler:
                for outdir_node in output_node.findall('.//out_dir'):
                   out_dir = outdir_node.text
                   dictParams['out_dir'] = out_dir
+               for property_node in output_node.findall('.//property'):
+                  property_name = property_node.attrib.get('name')
+                  property_value = property_node.attrib.get('value')
+		  dictProperty[property_name] = property_value
+	       if bool(dictProperty):
+	       		dictParams['property']=dictProperty
 	####### Get pr_opts #########################
             for pr_node in tree.iter('pr_opts'):
             	listParams_pr = ''
