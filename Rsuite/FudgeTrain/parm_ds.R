@@ -291,7 +291,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
       }
     }else{
       #If controlling the taper of the tails
-      window_temp <- (0.05*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T)))
+      window_temp <- fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T))
       #min_window <- 2
       window_temp_new <- rep(NA, hist.pred.len)
       for (j in 1:p_low){       #for the low tail
