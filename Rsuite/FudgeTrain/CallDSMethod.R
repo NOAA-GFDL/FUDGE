@@ -144,8 +144,12 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                       "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                       "PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                       ReturnDownscaleError(ds.method))
-        out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
-        names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
+        #out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
+        #names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
+        for(o in 1:length(out)){
+          out.name <- names(out)[o]
+          out.tmp[[out.name]] <- out[[o]]
+        }
       }else{
         #The qcmask return code goes in here, eventually
         message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
