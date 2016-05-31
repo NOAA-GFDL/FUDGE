@@ -54,6 +54,9 @@ def read_exp_info_file(exp_info):
 				else:
 					key,entry=keytmp,entrytmp	
 				expdict[key] =  entry
+	#Bugfix to make sure that single rips are always written as a list
+	if isinstance(expdict['output.path'], basestring):
+		expdict['output.path'] = [expdict['output.path']]			
 	return expdict	
 	
 def tstamp():

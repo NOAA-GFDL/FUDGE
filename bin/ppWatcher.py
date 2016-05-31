@@ -31,6 +31,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	pp_statdir = osp.join(expdict['script.base'], "postProc/ppStatus")
 	logfile_loc = osp.join(expdict['script.base'], 'log/fudge_postProc_.mfudge_*')
 	nrips = len(expdict['output.path'])
+	print("Number of rips searched for:" + str(nrips))
 	#Check for whether or not an experiment has a cross-validated companion
 	exp_name = expdict['ds.experiment']
 	isCrossval = False

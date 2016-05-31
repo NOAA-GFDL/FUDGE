@@ -73,6 +73,8 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
                      'OhGh' = ds.fut)
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
+  #print(summary(model.hist))
+  #print(summary(ds.fut))
   model.hist <- remove.missvals(unlist(model.hist))
   obs.hist <- remove.missvals(unlist(obs.hist))
   model.fut <- remove.missvals(unlist(model.fut))

@@ -101,6 +101,8 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
       out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
     #}
   }
+  #print(summary(out.list))
+  #print(lapply(out.list, 'summary'))
   return(out.list)
 }
 
