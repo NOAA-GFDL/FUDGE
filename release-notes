@@ -1,3 +1,8 @@
+5-31-16
+(cew)
+- Adding bugfix for PARM missing value addition in CallDSmethod returning list
+for s5 steps rather than vector
+
 4-19-16
 (cew)
 - CDFt and CDFtmod now refer to separate functions both involed by callCDFt
