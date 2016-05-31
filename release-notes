@@ -1,3 +1,8 @@
+5-31-16:
+(cew)
+- Adding bugfix for PARM missing value addition in CallDSmethod returning list
+for s5 steps rather than vector
+
 5-25-16: 
 (cew)
 - Changing email sender; all notification emails not come from fudge.esd
@@ -7,10 +12,14 @@
   different
 - Changing order of email notifications;   
 
+4-19-16
+(cew)
+- CDFt and CDFtmod now refer to separate functions both involed by callCDFt
+- final CDFt tail adjustments made permanent fixture of CDFtmod
 
 4-6-16
 (cew)
-- Adding automatic addition of anomaly data to postproc; adding ensemble generation tool
+- Adding automatic addition of anomaly data to postproc; adding ensemble generation tool makeExpEns
 
 3-3-16
 (cew)

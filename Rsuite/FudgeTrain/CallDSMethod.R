@@ -97,7 +97,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
           #Use 200 to refer to fatal errors; everything else should be recoverable
           out <- switch(ds.method, 
-                        'CDFt' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.method="CDFt", ds.var, rip.att.table),
                         'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
                         "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
                         "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
@@ -105,7 +105,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                         "DeltaSD" = callDeltaSD(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table, ds.input$status), #esd.gen,
                         #"lm"=callMulti.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
                         #"lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
-                        'CDFtmod' = callCDFtmod(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, rip.att.table),
+                        'CDFtmod' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.method="CDFtmod", ds.var, rip.att.table),
                         #"PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                         ReturnDownscaleError(ds.method))
           out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])    
@@ -144,14 +144,12 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                       "lmstep" = callStep.lm(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                       "PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                       ReturnDownscaleError(ds.method))
-        for(o in 1:length(out)){
-          oname = names(out)[o]
-          out.tmp[[oname]] <- add.back.in(out[[o]], esd.index[[rip]])
-        }
         #out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure 
         #names(out.tmp) <- names(out)                           #that the order of rips doesn't invalidate this
-        print(summary(out.tmp))
-        print(lapply(out.tmp, 'summary'))
+        for(o in 1:length(out)){
+          out.name <- names(out)[o]
+          out.tmp[[out.name]] <- out[[o]]
+        }
       }else{
         #The qcmask return code goes in here, eventually
         message(paste('Warning in CallDSMethod: insufficent data to downscale at this point and time window', 
