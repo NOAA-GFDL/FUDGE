@@ -57,8 +57,8 @@ def count_suffix(path):
 	#Counts the number of directories with a similar path one 
 	#level up. Needed to make sure that a messy cleanup still 
 	#avoids clobbering prior output
-	outdir = re.split("/", path)[-1]
-	basename = ("/").join(re.split("/", path)[:-1])
+	outdir = re.split("/", path.rstrip("/"))[-1]
+	basename = ("/").join(re.split("/", path.rstrip("/"))[:-1])
 	outsuff = [p[-1] for p in os.listdir(basename) if re.search(outdir, p) is not None]
 	outnum = []
 	for el in outsuff:
@@ -122,11 +122,18 @@ def clean_prior_experiments(xml, basedir, opt):
 				shutil.rmtree(el) #check on this - does it work for non-empty directories?
 	elif opt=='move':
 		#set suffix to move new paths to: 
-		suffix = str(max(count_suffix(el) for el in dirpaths) + 1)
+		print(dirpaths)
+		print(count_suffix(dirpaths[0]))
+		print([count_suffix(el) for el in dirpaths])
+		suffix = str(max([count_suffix(el) for el in dirpaths]) + 1)
 		for el in dirpaths:
 			if os.path.exists(el):
 				print(el.rstrip("/"))
 				dest = "~".join([el.rstrip("/"), suffix])
 				print "moving " + str(el) + " to " + dest
 				shutil.move(el, dest)
+				#except: 
+				#"Move failed; indexes are uneven. Trying again."
+					#dest = 	"~".join([el.rstrip("/"), str(int(suffix)+1)])
+					#shutil.move(el, dest)
 	

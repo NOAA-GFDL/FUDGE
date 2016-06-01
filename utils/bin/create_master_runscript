@@ -64,7 +64,7 @@ echo "#PBS -q batch " >> ${masterloc}
 #Starting at this point, keep track of failures and add them to the mini.fail
 #logs
 
- $fudgetag
+# $fudgetag
 ############# notific email ##########
 if($msub == 'True') then
 source /usr/local/Modules/3.1.6/init/csh
