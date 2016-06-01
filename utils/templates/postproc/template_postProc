@@ -13,9 +13,10 @@
 find <PP_STATDIR> | grep <PREFIX> | xargs rm -rf  
 	#note: below code works as long as all module names in 
 	#both locations are unique.
-	module use -a /home/esd/local/modulefiles/
-	module use -a /home/cew/Code/modulefiles/
-	module load <BRANCH> 
+	#module use -a /home/esd/local/modulefiles/
+	#module use -a /home/cew/Code/modulefiles/
+	#module load <BRANCH> 
+	source /home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout-fudge $FUDGETAG
 	##################
 source <POSTPROC_CMD>
 if ($status == 0) then

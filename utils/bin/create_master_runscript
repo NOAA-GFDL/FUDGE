@@ -59,9 +59,12 @@ echo "#PBS -j oe " >> ${masterloc}
 echo "#PBS -N fudge_master " >> ${masterloc}
 echo "#PBS -E " >> ${masterloc}  
 echo "#PBS -o $base/log/fudge."'${MOAB_JOBNAME}.${MOAB_JOBID} '  >> ${masterloc}
-
 echo "#PBS -q batch " >> ${masterloc}
 
+#Starting at this point, keep track of failures and add them to the mini.fail
+#logs
+
+ $fudgetag
 ############# notific email ##########
 if($msub == 'True') then
 source /usr/local/Modules/3.1.6/init/csh
