@@ -1,5 +1,8 @@
 module load git
 module load gcp
 module load R
+module load netcdf
+module load ncarg
+module load moab
 source /home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout-fudge $FUDGETAG
 module list

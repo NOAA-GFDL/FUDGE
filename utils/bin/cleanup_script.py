@@ -122,9 +122,6 @@ def clean_prior_experiments(xml, basedir, opt):
 				shutil.rmtree(el) #check on this - does it work for non-empty directories?
 	elif opt=='move':
 		#set suffix to move new paths to: 
-		print(dirpaths)
-		print(count_suffix(dirpaths[0]))
-		print([count_suffix(el) for el in dirpaths])
 		suffix = str(max([count_suffix(el) for el in dirpaths]) + 1)
 		for el in dirpaths:
 			if os.path.exists(el):
