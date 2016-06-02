@@ -448,9 +448,17 @@ def main():
 	   print "Warning: BASEDIR environment variable not set"	
 	##### get version BRANCH info ######################
 	branch = os.environ.get('BRANCH')
-	if(branch is None):
-	   print "Warning: BRANCH env variable not set. BRANCH will be set to undefined"
-	   branch = "undefined"
+	fudgetag = os.environ.get('FUDGETAG')
+	if branch is None and fudgetag is None:
+		print("Error in expergen: One of BRANCH or FUDGETAG must be set! Please load a module or check out a tag.")
+		exit(1)
+	else:
+		if branch is None:
+			branch = "NA"
+		if fudgetag is None:
+			fudgetag = "NA"	
+	   #print "Warning: BRANCH env variable not set. BRANCH will be set to undefined"
+	   #branch = "undefined"
 	####################################################
 	parser = OptionParser(usage=help)
 	parser.add_option("-i", "--file", dest="uinput",
@@ -696,7 +704,7 @@ def main():
 	  if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
 		ppLoc = basedir+"/utils/bin/"+"create_postProc"
-		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+" "+mout_prefix
+		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+fudgetag+" "+mout_prefix
 		p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 		output4, error4 = p4.communicate()
 		if(p4.returncode != 0):
