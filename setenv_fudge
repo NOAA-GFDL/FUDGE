@@ -1,11 +1,16 @@
+source /usr/local/Modules/3.1.6/init/tcsh
+#Above needs to run as any shell?
+module unload cdat
+module unload python
 module load python/2.7.3
-setenv BASEDIR "/home/cew/Code/fudge2014/" 
-setenv PYTHONPATH ${BASEDIR}/utils/aux/
-alias expergen python $BASEDIR/bin/expergen.py
-alias postProc python $BASEDIR/bin/postProc
- 
-setenv NEMSemail $USER@noaa.gov
-
-## If you're running on esd, then customize the above $USER 
-
-
+module load gcp
+module unload R
+module load R/2.15.2
+module unload git
+module load git/2.4.6
+module unload nco
+module load nco/4.3.1
+module unload gcp
+module load gcp/2.3
+#needed for role accnt
+module load globus

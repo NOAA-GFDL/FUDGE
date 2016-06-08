@@ -114,7 +114,8 @@ foreach i (`seq $lon_start 1 $lon_end`)
  echo "#PBS -N fudge_run "  >> $runpath  
  echo "#PBS -E "  >> $runpath
  echo "#PBS -q batch "  >> $runpath 
- echo "source $basedir/utils/bin/init " >> $runpath 
+ #echo "source $basedir/utils/bin/init " >> $runpath 
+ echo "eval `/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag $FUDGETAG`" >> $runpath
  echo "mkdir -p "$logdir  >> $runpath
 
 ## Add lines to gcp input from /arch to VFTMP for processing
