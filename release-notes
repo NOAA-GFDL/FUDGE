@@ -1,3 +1,8 @@
+6-8-16:
+(cew)
+- Renaming old tags to fit new scheme; adding equivalent tags for module;
+ writes for intergreation with the checkout script in progress
+
 5-31-16:
 (cew)
 - Adding bugfix for PARM missing value addition in CallDSmethod returning list
