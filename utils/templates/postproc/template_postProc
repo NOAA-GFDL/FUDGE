@@ -17,7 +17,7 @@ find <PP_STATDIR> | grep <PREFIX> | xargs rm -rf
 	#module use -a /home/cew/Code/modulefiles/
 	#module load <BRANCH> 
 	#source /home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout-fudge <FUDGETAG>
-	eval `/home/Carolyn.Whitlock/ginger_testing/environment/checkout.bash --fudgetag <FUDGETAG>`
+	eval `/home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout.bash --fudgetag <FUDGETAG>`
 	##################
 source <POSTPROC_CMD>
 if ($status == 0) then

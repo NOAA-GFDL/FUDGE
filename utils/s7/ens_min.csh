@@ -3,13 +3,13 @@
 #needed to allow module loads when not using current environment
 source /usr/local/Modules/default/init/csh
 #module list
-module unload nco
+module load netcdf/4.2
+#module unload nco
 module load nco/4.3.1
-module unload ncarg
+#module unload ncarg
 module load ncarg/6.2.1
 module unload gcp
-module load gcp/2.3
-module load 
+#module load gcp/2.3
 #module list
 #Please note that the scraper script uses the default python install. If cdat
 #is loaded, the python script will fail.

@@ -5,7 +5,7 @@ __author__ = "A.Radhakrishnan"
 import xmlhandler
 import naming
 import pprint,datetime,getopt, os, shutil
-import sys, subprocess
+import sys, subprocess, glob
 import fudgeList
 from subprocess import PIPE 
 import optparse
@@ -449,6 +449,7 @@ def main():
 	##### get version BRANCH info ######################
 	branch = os.environ.get('BRANCH')
 	fudgetag = os.environ.get('FUDGETAG')
+	env_file = os.environ.get('FUDGE_ENV')
 	if branch is None and fudgetag is None:
 		print("Error in expergen: One of BRANCH or FUDGETAG must be set! Please load a module or check out a tag.")
 		exit(1)
@@ -549,6 +550,10 @@ def main():
 		print "scriptdir "+sd+" does not exist. Looks like a clean slate "
 	#sys.exit("examine outcome of script")  
 	#print  "hist_freq"+hist_freq
+	##Adding copy of environment source script to expergen 6-8
+	for f in glob.glob(os.path.dirname(env_file)+"\environment_info.*"):
+		shutil.copy2(f, sd)
+	#shutil.copy2(env_file, sd)
 	script1Loc = basedir+"/utils/bin/create_runcode"
 	make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
 	make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)

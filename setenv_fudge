@@ -1,16 +1,14 @@
 source /usr/local/Modules/3.1.6/init/tcsh
 #Above needs to run as any shell?
-module unload cdat
+#module unload cdat #leads to emssy memory stack trace when cdat is not loaded
 module unload python
 module load python/2.7.3
-module load gcp
-module unload R
+##module unload R #leads to messy memory stack trace
 module load R/2.15.2
-module unload git
-module load git/2.4.6
+##module unload git  #leads to messy memory stack trace
+##module load git/2.4.6 #leads to segfault
 module unload nco
 module load nco/4.3.1
-module unload gcp
-module load gcp/2.3
+module load gcp
 #needed for role accnt
 module load globus
