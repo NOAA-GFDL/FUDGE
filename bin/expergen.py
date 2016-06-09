@@ -551,9 +551,8 @@ def main():
 	#sys.exit("examine outcome of script")  
 	#print  "hist_freq"+hist_freq
 	##Adding copy of environment source script to expergen 6-8
-	for f in glob.glob(os.path.dirname(env_file)+"\environment_info.*"):
-		shutil.copy2(f, sd)
-	#shutil.copy2(env_file, sd)
+	#for f in glob.glob(os.path.dirname(env_file)+"\environment_info.*"):
+	#	shutil.copy2(f, sd)
 	script1Loc = basedir+"/utils/bin/create_runcode"
 	make_code_cmd = script1Loc+" "+str(predictor)+" "+str(target)+" "+str(output_grid)+" "+str(spat_mask)+" "+str(region)
 	make_code_cmd = make_code_cmd+" "+str(file_j_range)+" "+str(lons)+" "+str(lats)+" "+str(late)
@@ -632,6 +631,8 @@ def main():
 	print "RunScripts will be saved under:",sbase
 	print "----See readMe in fudge2014 directory for the next steps----"
 	print "Use submit_job to submit scripts"
+	#Copy environment config file
+	shutil.copy2(env_file, sd+ "/environment_info.csh")
 
 ############### crte ppscript #################
 	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
