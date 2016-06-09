@@ -118,7 +118,7 @@ foreach i (`seq $lon_start 1 $lon_end`)
  #echo "eval `/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag $FUDGETAG`" >> $runpath
  #echo "`/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag $FUDGETAG`" >> $runpath
  #echo "eval \`/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag $FUDGETAG\`" >> $runpath
- echo 'eval `/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag '"${FUDGETAG}"'`' >> $runpath
+ #echo 'eval `/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag '"${FUDGETAG}"'`' >> $runpath
  echo "printenv" >> $runpath
  #echo "eval '`'/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag ${FUDGETAG}'`'" >> $runpath
  #echo "source /home/cew/Code/ginger_testing/environment/fudgesource" >> $runpath

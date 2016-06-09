@@ -632,6 +632,7 @@ def main():
 	print "----See readMe in fudge2014 directory for the next steps----"
 	print "Use submit_job to submit scripts"
 	#Copy environment config file
+	print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
 
 ############### crte ppscript #################
