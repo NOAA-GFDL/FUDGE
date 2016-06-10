@@ -5,7 +5,8 @@ echo "sourcing stenv_fudge located in /home/cew/"
 module unload python
 module load python/2.7.3
 ##module unload R #leads to messy memory stack trace
-module load R/2.15.2
+#module load R/2.15.2
+module load R
 ##module unload git  #leads to messy memory stack trace
 ##module load git/2.4.6 #leads to segfault
 module unload nco

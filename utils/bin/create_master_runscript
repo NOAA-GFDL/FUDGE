@@ -62,6 +62,10 @@ echo "#PBS -o $base/log/fudge."'${MOAB_JOBNAME}.${MOAB_JOBID} '  >> ${masterloc}
 echo "#PBS -q batch " >> ${masterloc}
 #Tring to change location of the path edits to keep things from clobbering each other
 echo 'eval `/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag '"${FUDGETAG}"'`' >> $masterloc
+echo "module load R" >> $masterloc
+echo "module load gcp" >>$masterloc
+echo "module load netcdf" >> $masterloc
+echo "module load nco" >> $masterloc
 #Starting at this point, keep track of failures and add them to the mini.fail
 #logs
 

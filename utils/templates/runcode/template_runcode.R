@@ -78,8 +78,8 @@ rm(list=ls())
 #---------------- reference to go in globals ----------------------------------- 
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
 # ------ Set FUDGE environment ---------------
-#	FUDGEROOT = Sys.getenv(c("FUDGEROOT"))
-	FUDGEROOT <- <FUDGEROOT>
+	FUDGEROOT = Sys.getenv(c("BASEDIR"))
+	#FUDGEROOT <- <FUDGEROOT>
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 	BRANCH <- <BRANCH>
 ################ call main driver ###################################
@@ -130,4 +130,4 @@ mask.output.dir <- paste(TMPDIR,mask.output.dir,sep='')
 #########################################################################
 #-------------------------------------------------#
 #source(paste(FUDGEROOT,'Rsuite/Drivers/',ds.method,'/Driver_',ds.method,'.R',sep=''))
-source(paste(FUDGEROOT,'Rsuite/Drivers/','Master_Driver.R',sep=''))
+source(paste(FUDGEROOT,'/Rsuite/Drivers/','Master_Driver.R',sep=''))

@@ -17,6 +17,7 @@ find <PP_STATDIR> | grep <PREFIX> | xargs rm -rf
 	#module use -a /home/cew/Code/modulefiles/
 	#module load <BRANCH> 
 	#source /home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout-fudge <FUDGETAG>
+	module load git/2.4.6
 	eval `/home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout.bash --fudgetag <FUDGETAG>`
 	##################
 source <POSTPROC_CMD>
