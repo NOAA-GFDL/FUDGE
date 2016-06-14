@@ -33,18 +33,24 @@ set deltaop = "$kval"
   echo "$deltaop" >> $INtxt
   echo "deltaop = $deltaop, $0" >> $INtxt.key
 
+echo "        <deltatype>"\'$deltatype\'"</deltatype>" >> $workDir/custom_XML
+echo "        <deltaop>"\'$deltaop\'"</deltaop>" >> $workDir/custom_XML
 
 # ignore0.Delta
-echo "    Option: ignore0.Delta "
-echo "    ----------------- "
-set varvals = ('on' 'off')
-set dinfo = " ignore0.Delta , select option. ['on' ensures that any values in the initial dataset set to 0 - such as you might get for the pr adjustment functions - are kept as 0 for the downscaling process. It is generally preferred to be kept on for precipitation]"
-source $QueryVals
-set keepzeroes = "$kval"
-  echo "$keepzeroes" >> $INtxt
-  echo "keepzeroes = $keepzeroes, $0" >> $INtxt.key
+if ($use_pr_adjustment == True) then
+  echo "    Option: ignore0.Delta "
+  echo "    ----------------- "
+  set varvals = ('on' 'off')
+  set dinfo = " ignore0.Delta , select option. ['on' ensures that any values in the initial dataset set to 0 - such as you might get for the pr adjustment functions - are kept as 0 for the downscaling process. It is generally preferred to be kept on for precipitation]"
+  source $QueryVals
+  set ignore0Delta = "$kval"
+    echo "$ignore0Delta" >> $INtxt
+    echo "ignore0Delta = $ignore0Delta, $0" >> $INtxt.key
+  echo "        <ignore0.Delta>"\'$ignore0Delta\'"</ignore0.Delta>" >> $workDir/custom_XML
+endif
 
-
-echo "        <deltatype>"\'$deltatype\'"</deltatype>" >> XMLfile
-echo "        <deltaop>"\'$deltaop\'"</deltaop>" >> XMLfile
-echo "        <ignore0.Delta>"\'$keepzeroes\'"</ignore0.Delta>" >> XMLfile
+if ($ignore0Delta == "on") then
+   set ignore0Delta = "'on'"
+else
+   set ignore0Delta = "'off'"
+endif

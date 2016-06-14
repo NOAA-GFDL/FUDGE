@@ -27,7 +27,8 @@ alias ff      'find . -name \!* -print '
 set indir = $1
 cd $indir
 set varList = ()
-set dirs=(*/*/*/*/*)
+#set dirs=(*/*/*/*/*)
+set dirs=(day/*/*/*/*)
 
 #echo " "
 #echo "    (Ignore 'ls: No match.' messages below.)"

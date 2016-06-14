@@ -5,12 +5,18 @@
   echo "====================================================================== "
   echo " "
   echo "    Welcome to the FUDGE XML generator for creating XML for "
-  echo "            SYNTHETIC downscaling experiment "
-  echo "            sing Fudge version darkchocolate. "
+  echo "            SYNTHETIC downscaling experiment ...  "
+  echo "            ... using Fudge version darkchocolate. "
   echo " "
-  echo "====================================================================== "
+  echo "    Yes, darkchocolate. No one has asked for this to be updated, "
+  echo "            so it has not been."
   echo " "
+  echo "    Please talk to your local friendly keeper of XMLgen about updating."
   echo " "
+  echo "    Exiting."
+  echo " "
+
+  exit 1
 
 
 
@@ -648,7 +654,7 @@ echo " "
   echo "--------------------------------------------------------------------------------------------"
   echo "--------------------------------------------------------------------------------------------"
 echo " "
-cat > XMLfile <<EOF
+cat > $workDir/XMLfile <<EOF
 <downscale>
     <!-- Created using  $xmlGenDir/XMLgen.csh ; $dateMDY -->
     <!-- xmlGenDir = $xmlGenDir -->
@@ -717,12 +723,14 @@ EOF
         echo " "
         exit 1
       endif
-    cat pr_XML >> XMLfile
-    \rm pr_XML
+    cat $workDir/pr_XML >> $workDir/XMLfile
+    echo "        </pr_opts>" >> $workDir/XMLfile
+
+    \rm $workDir/pr_XML
   endif
 
-  echo "    </core>" >> XMLfile
-  echo "    <custom>" >> XMLfile
+  echo "    </core>" >> $workDir/XMLfile
+  echo "    <custom>" >> $workDir/XMLfile
 
 # ADD dsMethod options XML
   echo "   Adding $dsMethod options, if any,  to XML ... "
@@ -732,22 +740,23 @@ EOF
       echo " "
       exit 1
     endif
+   cat $workDir/custom_XML >> $workDir/XMLfile
    sleep 2
 
-# END of CUMSTOM section
-  echo "    </custom>" >> XMLfile
+# END of CUSTOM section
+  echo "    </custom>" >> $workDir/XMLfile
 
 # post DS processing - QC adjustments
-  echo "    <pp>" >> XMLfile
+  echo "    <pp>" >> $workDir/XMLfile
   source $qcAdjustment
   sleep 2
-  cat QC_XML >> XMLfile
+  cat QC_XML >> $workDir/XMLfile
   \rm QC_XML
-  echo "    </pp>" >> XMLfile
+  echo "    </pp>" >> $workDir/XMLfile
 
 
-# Finalizing XMLfile 
-cat >> XMLfile<< EOF
+# Finalizing $workDir/XMLfile 
+cat >> $workDir/XMLfile<< EOF
     <exp_check>$expName</exp_check>
 </downscale>
 EOF
@@ -759,14 +768,14 @@ EOF
     if (! -e $xmltxtDir) mkdir -p $xmltxtDir
   if (-e $xmlDir/$expName.xml) \mv $xmlDir/$expName.xml $xmlDir/$expName.xml.backup
   if (-e $xmltxtDir/$expName.input.txt) \mv $xmltxtDir/$expName.input.txt $xmltxtDir/$expName.input.txt.backup
-  \mv XMLfile $xmlDir/$expName.xml
+  \mv $workDir/XMLfile $xmlDir/$expName.xml
   \mv $INtxt $xmltxtDir/$expName.input.txt
   \mv $INtxt.key $xmltxtDir/$expName.input.txt.key
   echo " >>>  ......................................................................................."
   echo " >>>  ......................................................................................."
   echo " >>>  ......................................................................................."
   echo " >>>  "
-  echo " >>>  Your XMLfile =  $xmlDir/$expName.xml " 
+  echo " >>>  Your $workDir/XMLfile =  $xmlDir/$expName.xml " 
   chmod -xw $xmlDir/$expName.xml 
   echo " >>>  "
   echo " >>>  Inputs you entered are in $xmltxtDir/$expName.input.txt "

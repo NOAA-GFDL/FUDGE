@@ -1,31 +1,66 @@
 #!/bin/csh -f
+#
+# Ginger XMLgen
 
-source /usr/local/Modules/default/init/csh
+  set flavor = ginger
+  echo " "
+  echo "   ----------------------------------"
+  echo " "
+  echo "   This is XMLgen for  $flavor FUDGE."
+  echo " "
+  echo "   ----------------------------------"
+  echo " "
+
+#source /usr/local/Modules/default/init/csh
 
   set cDir=`pwd`
   set dateIN = `date +%m.%d.%Y-%k.%M.%S`
   set dateMDY = `date +%m.%d.%Y`
+  set owner="$USER"
 #----------
 # xmlRootDir = where XMLgen directory resides
 #----------
-# set xmlRootDir = "${BASEDIR}"
-#  set xmlRootDir = "/home/esd/MJN_sandbox/darkchocolate"
-   set xmlRootDir = "${BASEDIR}"
+  if ! $?BASEDIR then
+     echo "  Environmental variable BASEDIR is not set. "
+     echo "  BASEDIR must be set to the root directory location of XMLgen/XMLgen.csh"
+     echo "  "
+     echo "  Exiting."
+     echo "  "
+     exit 1
+  endif
+  set xmlRootDir = "${BASEDIR}"
+  echo "  xmlRootDir = $xmlRootDir "
+  echo "  "
+# set xmlRootDir = "/home/esd/MJN_sandbox/$flavor"
 
-# create unique workDir  (which is removed at end)
-  set workDir=/nbhome/esd/work.XMLgen.$dateIN
+
+#----------
+# txtDir = where XMLgen editable text files reside, under ESD
+#----------
+# text files need to be updatable by the user.
+# a static copy is made to the permanent repo when a FUDGE version is pushed out, but 
+#   the user needs to be able to avail themselves of the most up-to-date listings which
+#   are kept in /home/esd in $txtRootDir, editable by 'esd' only.
+
+  set txtDir = "/home/esd/MJN_sandbox/$flavor/XMLgen"
+
+# create unique temporary workDir  (regardless of whether running on PPAN or workstation, which is removed at end unless ctrl-c used)
+  set workDir=/nbhome/$owner/work.XMLgen.$dateIN
 #----------
 #----------
+
+# Location of XMLgen/XMLgen.csh and related scripts
+  set xmlGenDir = ${xmlRootDir}/XMLgen
 
 # Check if running this as "esd". This affects who owns the root directories that ExperGen will use to write scripts/code/downscaled output.
-#  set owner="$USER"
-#  echo "    You are running as user $owner  "
-#  echo " "
-#  whoami|grep -i esd
-#  if ($status != 0) then
-#     echo "    Please run as user esd."
-#     exit 1
-#  endif
+  echo "    You are running as user $owner  "
+  echo " "
+
+# whoami|grep -i esd
+# if ($status != 0) then
+#    echo "    Please run as user esd."
+#    exit 1
+# endif
 
 # set some basic variables that are used by this and child scripts
 
@@ -44,13 +79,12 @@ source /usr/local/Modules/default/init/csh
 
   cd $workDir
 
-  set xmlGenDir = ${xmlRootDir}/XMLgen
 
   echo "    Please select which type of XML you wish to create : "
   set genOpt
   while ($genOpt != 1 && $genOpt != 2) 
    echo "    "
-   echo " 1  Create SCCSC0p1 or Perfect Model data XML"
+   echo " 1  Create SCCSC0p1 (used for 3^5/I35/Red River projects) or Perfect Model data XML"
    echo " "
    echo " 2  Create Synthetic Data XML "
    echo " "
@@ -65,7 +99,7 @@ source /usr/local/Modules/default/init/csh
    endif
    if ($genOpt != 1 && $genOpt != 2) echo "You selected $genOpt , which is not valid."
   end
-  
+
 # use "source" so that variables set in parent script are passed along
 
   if ($genOpt == 1) source $xmlGenDir/XMLgen.non-syn.csh

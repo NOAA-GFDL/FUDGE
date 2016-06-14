@@ -40,6 +40,7 @@ predictor_list = input[0].get("predictor_list")
 smaskDir       = input[0].get("spat_mask")
 smask_ID       = input[0].get("spat_mask_ID")
 smask          = input[0].get("maskvar")
+inRoot         = input[0].get("in_root")
 region    = grid[0].get("region")
 lons = root.findtext("./input/grid/lons")
 lone = root.findtext("./input/grid/lone")
@@ -68,7 +69,7 @@ for property in root.findall("./core/output/property"):
   for val in RIPvalues:
     print ("RIP:"+val)
 
-inRootDir = root.findtext("./core/output/in_dir")
+outRootDir = root.findtext("./core/output/out_dir")
 scriptRootDir = root.findtext("./core/output/script_root")
 exper_series = root.findtext("./core/exper_series")
 project = root.findtext("./core/project")
@@ -104,7 +105,7 @@ hpItems = histPred[0].items()
 
 """
 # create historical predictor path
-hpRootDir = "/archive/esd/PROJECTS/DOWNSCALING"
+hpRootDir = inRoot
 hpSubDirs = histPred[0].findtext("dataset").split(".")
 #hpSubDirs.insert(4,"day")
 hpVars = predictor_list.split(",")
@@ -151,7 +152,7 @@ htTrainYrBeg = histTarg[0].get("train_start_time")
 htTrainYrEnd = histTarg[0].get("train_end_time")
 
 # create historical target path
-htArcDir = "/archive/esd/PROJECTS/DOWNSCALING"
+htArcDir = inRoot
 htSubDirs = histTarg[0].findtext("dataset").split(".")
 #htSubDirs.insert(4,"day")
 
@@ -182,7 +183,7 @@ fpTrainYrBeg = futPred[0].get("train_start_time")
 fpTrainYrEnd = futPred[0].get("train_end_time")
 
 # create future predictor path
-fpArcDir = "/archive/esd/PROJECTS/DOWNSCALING"
+fpArcDir = inRoot
 fpSubDirs = futPred[0].findtext("dataset").split(".")
 #fpSubDirs.insert(4,"day")
 

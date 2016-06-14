@@ -143,6 +143,6 @@ def send_status_email(status,step,exp_name,mailid, \
 	print(mailid)
 	print(subject)
 	print(text)						
-	notifyUser(mailid, subject,text)	
+	notifyUser(mailid, subject,text)		
 
 						 

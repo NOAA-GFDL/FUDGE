@@ -11,3 +11,9 @@ S2 Synthetic_test_2
 MJ MJ_espresso_tests
 CW CEW_espresso_tests
 PMeCR Perfect_Model_espresso_Consumer_Reports
+PMfCR Perfect_Model_fig_Consumer_Reports
+RR3 Red_River_3_figtest
+I35 3^5_2016-2017
+MJf mj_fig_test
+MJg mj_ginger_test
+PMgCR Perfect_Model_ginger_Consumer_Reports

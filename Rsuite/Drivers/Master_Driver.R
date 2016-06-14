@@ -443,12 +443,12 @@ for (rip in fut.pred.rip.list){
   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
   
   ###Code to determine whether or not to include the git branch
-  if(Sys.getenv("USERNAME")=='cew'){
-    git.needed=TRUE
-  }else{
-    #Someone else is running it, modules are available and presumably git branch not needed
-    git.needed=FALSE
-  }
+  #if(Sys.getenv("USERNAME")=='cew'){
+  #  git.needed=TRUE
+  #}else{
+  #  #Someone else is running it, modules are available and presumably git branch not needed
+  #  git.needed=FALSE
+  #}
   message('writing global attributes')
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
@@ -460,7 +460,7 @@ for (rip in fut.pred.rip.list){
                     grid_region=grid, mask_region=ds.region,
                     time.trim.mask=fut.time.trim.mask, 
                     tempdir=TMPDIR, 
-                    include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+                    include.git.branch=T, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                     is.pre.ds.adjust=(length(pre_ds) > 0),
                     pre.ds.adjustments=pre_ds,
                     is.post.ds.adjust=(length(post_ds_adj) > 0),

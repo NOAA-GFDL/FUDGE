@@ -42,7 +42,7 @@ while (! $?ok)
   echo -n "Enter the option desired: "
   set kval=$<
   
-  echo ""
+  echo " "
 
   grep -w $kval $workDir/varvals
     if ($status == 0) then

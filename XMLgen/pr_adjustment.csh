@@ -11,13 +11,14 @@
   echo "============================================="
   echo " "
 
-  if (-e pr_XML) \rm pr_XML
+  if (-e $workDir/pr_XML) \rm $workDir/pr_XML
 
   set pr_opts = (pr_threshold_in pr_conserve_in pr_threshold_out pr_conserve_out pr_freqadj_in)
   set varvals = ("'us_trace'" "'global_trace'" "'zero'")
 
-  if (!("$targVar" =~ "pr*")) then
+  if (! $?prVars ) then
     echo "    precip adjustment can not be done for $targVar = $targVar. "
+    echo "    No precip variables have been selected for target or predictors."
     exit 0
   else
 
@@ -45,8 +46,12 @@
   echo " "
   echo  ">>  Do you want to adjust the training predictor precip timeseries"
   echo  ">>  to have the same frequency of wet days as the training target timeseries?"
-  echo -n ">>  Enter y for 'yes' ; Enter n or hit the 'Enter' key for 'no' :  "
+  echo -n ">>  Type y for yes ; Type n or hit the 'Enter' key for no :  "
   set freqadj=$<
+  echo " "
+  if ($freqadj == "") then
+    set freqadj = n
+  endif
   echo $freqadj >> $INtxt
   echo "freqadj = $freqadj, pr_adjustment.csh" >> $INtxt.key
 
@@ -68,17 +73,25 @@
     echo " "
     echo  ">>  When adjusting the input precip timeseries, "
     echo  ">>  do you want to conserve total precip amount?"
-    echo -n ">>  Enter y for 'yes' ; Enter n or hit the 'Enter' key for 'no' :  "
+    echo -n ">>  Type y for yes ; Type n or hit the 'Enter' key for no :  "
     set conserve_in=$<
+    echo " "
+    if ($conserve_in == "") then
+      set conserve_in = n
+    endif
     echo $conserve_in >> $INtxt
     echo "conserve_in = $conserve_in, pr_adjustment.csh" >> $INtxt.key
   
     if ($conserve_in != "y") then
       set pr_conserve_in = "'off'"
+      echo "  "
       echo "    Input total precip amount will not be conserved."
+      echo "  "
     else
       set pr_conserve_in = "'on'"
+      echo "  "
       echo "    Input total precip amount will be conserved."
+      echo "  "
     endif
     echo " "
     sleep 1
@@ -103,16 +116,22 @@
 
   if ($pr_threshold_out != "'zero'") then
 
+    echo "  "
     echo ">>  CONSERVE OUTPUT? "
     echo ">>  When adjusting the downscaled output precip timeseries, "
     echo ">>    do you want to conserve total precip amount?"
-    echo -n ">>  Enter y for 'yes' ; Enter n or hit the 'Enter' key for 'no' :  "
+    echo -n ">>  Type y for yes ; Type n or hit the 'Enter' key for no :  "
     set conserve_out=$<
+    echo "  "
+    if ($conserve_out == "") then
+      set conserve_out = n
+    endif
     echo $conserve_out >> $INtxt
     echo "conserve_out = $conserve_out, pr_adjustment.csh" >> $INtxt.key
   
     if ($conserve_out != "y") then
       set pr_conserve_out = "'off'"
+      echo "  "
       echo "    Downscaled output total precip amount will not be conserved."
     else
       set pr_conserve_out = "'on'"
@@ -125,34 +144,45 @@
     set pr_conserve_out = "'off'"
   endif
 
-# 8/20/2015
-# ignore0 not working for espresso 
-# commenting out section and forcing to 'off'
 #
-  echo ">>  ZERO VALUE MASKING (i.e. ignore0 not functioning adequately in espresso. setting it to 'off') "
-# echo ">>  ZERO VALUE MASKING "
-# echo ">>  Do you want to mask out precip = zero? "
-# echo ">>  This may be desired if the downscaling method does NOT involve quantile mapping."
-# echo ">>  Your DS Method is $dsMethod ."
-# echo ">>  "
-# echo ">>  Do you want to mask out precip = zero ? "
-# echo -n ">>  Enter y for 'yes' ; Enter n or hit the 'Enter' key for 'no' :  "
-# set ans=$<
-# echo $ans >> $INtxt
-# 
-# if ($ans != "y") then
+# 9/21/2015  Turn ignore0 option on. User beware.
+#
+  if ($dsMethod != "DeltaSD") then
+    echo ">> "
+    echo ">>  Ignore0 option."
+    echo ">> "
+    echo ">>  Do you want to mask where precip = zero? "
+    echo ">>  (Your DS Method is $dsMethod . FUDGE will use the correct masking type for your method.)"
+    echo -n ">>  Type n for no ; Type y or hit the 'Enter' key for yes :  "
+    set ans=$<
+    echo "  "
+    if ($ans == "") then
+      set ans = y
+    endif
+    echo $ans >> $INtxt
+    echo "ignore0? answer = $ans, pr_adjustment.csh" >> $INtxt.key
+    
+    if ($ans == "n") then
+      set ignore0 = "'off'"
+      echo "  "
+      echo "    precip = zero will NOT be masked for training."
+    else
+      set ignore0 = "'on'"
+      echo "  "
+      echo "    precip = zero WILL be masked for training."
+    endif
+  else
+    echo " "
     set ignore0 = "'off'"
-    echo "    precip = 0. will NOT be masked for precip adjustments."
-# else
-#   set ignore0 = "'on'"
-#   echo "    precip = 0. WILL be masked."
-# endif
-# END COMMENTING OUT OF ignore0 option-setting
-#
+    echo "  "
+    echo ">>  Your DS Method is $dsMethod . Can not use ignore0 option here. "
+  endif
+ 
   echo " "
   sleep 1
 
-cat > pr_XML<<EOF
+
+cat > $workDir/pr_XML<<EOF
         <pr_opts>
            <pr_threshold_in>$pr_threshold_in</pr_threshold_in>
            <pr_freqadj_in>$pr_freqadj_in</pr_freqadj_in>
@@ -160,9 +190,42 @@ cat > pr_XML<<EOF
            <pr_threshold_out>$pr_threshold_out</pr_threshold_out>
            <pr_conserve_out>$pr_conserve_out</pr_conserve_out>
            <ignore0>$ignore0</ignore0>
-        </pr_opts>
 EOF
+  echo ">>  Tranforms"
+  echo ">>  "
+  echo ">>  Do you wish to apply a transform to the input data: $prVars?"
+  echo ">>  Currently the only transform option is 'power'."
+  echo -n ">>  Type n for no ; Type y or hit the 'Enter' key for yes :  "
+  set transform=$<
+  echo "    "
+  if ($transform == "") then
+    set transform = y
+  endif
+  echo $transform >> $INtxt
+  echo " "
+  echo "transform ? = $transform"
+  echo " "
+  echo "transform = $transform, pr_adjustment.csh" >> $INtxt.key
+  
+  if ($transform != "n") then
+     echo  ">>  If you want to use value = 1/3, hit the 'Enter' key."
+     echo -n ">>  Otherwise type the value of the power you wish to apply (decimal or fraction acceptable):  "
+     set power=$<
+     echo "    "
+     if ($power == "") then 
+        set power = "1/3"
+     endif
+     echo "$power" >> $INtxt
+     echo " "
+     echo "power = $power" 
+     echo " "
+     echo "power = $power , pr_adjustment.csh" >> $INtxt.key
 
+     echo "           <transform>'power'</transform>" >> $workDir/pr_XML
+     echo "           <arg>$power</arg>" >> $workDir/pr_XML
+     echo "           <vars>'$prVars'</vars>" >> $workDir/pr_XML
+  else
+     echo "           <transform>'none'</transform>" >> $workDir/pr_XML
   endif
 
 exit 0

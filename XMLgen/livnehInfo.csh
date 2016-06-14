@@ -10,12 +10,12 @@
   if ($htVs == "v1p2") set htID = "L01"
 
 
-  set htDate1 = 19610101
+# set htDate1 = 19610101
+  set htDate1 = 19810101
   set htDate2 = 20051231
 
   echo "    "
-  echo "    LIVNEH is currently only available for"
-  echo "    the time period $htDate1 to $htDate2 ."
+  echo "    LIVNEH is available for time period $htDate1 to $htDate2 ."
   echo "    "
 
   set htDataCategory = OBS_DATA

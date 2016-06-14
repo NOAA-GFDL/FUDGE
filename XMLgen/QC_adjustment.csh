@@ -10,43 +10,69 @@
   echo "============================================="
   echo "============================================="
   echo " "
-  echo "       Only ONE qc adjustment can be specified. "
+  echo "       Only ONE qc adjustment can be specified at this time. "
   echo " "
 
 # set echo
 
-  if (-e QC_XML) \rm QC_XML
-  touch QC_XML
+  if (-e $workDir/QC_XML) \rm $workDir/QC_XML
+  touch $workDir/QC_XML
 
   set qclist = `cat $qcOptions_file | cut -d " " -f 1`
   set qclist = ($qclist none)
 
-  if ($dsMethod == "BCQM") then
+  if ($dsMethod == "BCQM" || $dsMethod == "PARM" || $dsMethod == "CDFt") then
     echo ">>   "
     echo ">>   IMPORTANT"
     echo ">>   ========="
     echo ">>   "
     echo ">>   You selected $dsMethod as your downscaling method."
     echo ">>   "
-    echo ">>   It is strongly recommended you select 'BCQM.tail.adj' QC adjustment."
+    echo ">>   'simpletailadj' tail adjustment options are available."
+    if ($dsMethod == "CDFt") then
+       set triggertype = 'OhGh'
+    else
+       set triggertype = 'GfGh'
+    endif
+    echo ">>   'triggertype' = "$triggertype" will be used for downscaling method $dsMethod."
     echo ">>   "
-    echo ">>   Please note that no other adjustment can be done."
+    echo ">>   Please note that a mask will be saved & no other adjustment can be done."
     echo ">>   "
-    echo -n ">>   If you DO NOT want this adjustment, please type 'n' or 'no'. Otherwise hit return:"
+    echo -n ">>   If you DO NOT want this adjustment, please type n for 'no'. Otherwise hit return:"
     set noTailAdj=$<
-    echo $noTailAdj >> $INtxt
-    echo "noTailAdj = $noTailAdj, QC_adjustment.csh" >> $INtxt.key
-    if ($noTailAdj == "") then
-       echo ">>   BCQM.tail.adj will be done."
-       echo "         <qc type="\'BCQM.tail.adj\'" qc_mask="\'on\'" adjust_out="\'on\'">" > QC_XML
-       echo "         </qc>" >> QC_XML
+    if ($noTailAdj != "n") then
+       set noTailAdj = "y"
+       set saveQcMask = "on"
+       echo ">>   "
+       echo ">>   simpletailadj will be done."
+       echo ">>   "
+       echo ">>   Specify 'lastNpts', which is the number, N, of time points from the beginning and end of the distribution to be averaged together to compute deltas/comparisons for tail adjustments."
+       echo -n ">>   lastNpts = 1 will simply use min and max values. Enter an integer value for 'lastNpts' : "
+       @ lastNpts=$<
+       if ("$lastNpts" < 0) then
+         echo ">>   ERROR. lastNpts = $lastNpts, but must be >= 1 . Exit."
+         exit 1
+       endif
+       echo ">>  "
+       echo ">>   simpletailadj will be done."
+       echo "        <qc type="\'simpletailadj\'" qc_mask="\'on\'" adjust_out="\'on\'">" > $workDir/QC_XML
+       echo "        <triggertype>"\'$triggertype\'"</triggertype>" >> $workDir/QC_XML
+       echo "        <lastNpts>$lastNpts</lastNpts>" >> $workDir/QC_XML
+       echo "        </qc>" >> $workDir/QC_XML
+       set use_qc_adjustment = True
+       echo $noTailAdj >> $INtxt
+       echo "noTailAdj = $noTailAdj, QC_adjustment.csh" >> $INtxt.key
+       echo $lastNpts >> $INtxt
+       echo "lastNpts = $lastNpts, QC_adjustment.csh" >> $INtxt.key
        exit 0
     else 
        echo ">>   "
-       echo ">>   No BCQM.tail.adj will be done."
+       echo ">>   simpletailadj will NOT be done."
        echo ">>   "
        echo ">>   You will be able to select a different adjustment or none."
        echo ">>   "
+       echo $noTailAdj >> $INtxt
+       echo "noTailAdj = $noTailAdj, QC_adjustment.csh" >> $INtxt.key
     endif
   endif 
 
@@ -66,13 +92,18 @@
   set qcOptions = (`grep $qcName $qcOptions_file`)
     if ($status != 0) then
        echo ">>   IMPORTANT:  $qcName qc adjustment is not listed in $xmlgenDir/QCMask_Options.txt."
-       echo ">>   If you are expecting options outside of whether or not to output the mask or "
-       echo ">>   adjust the values, stop and please contact Mary Jo"
-       echo -n ">>   Continue? (y/n): "
-       set keep_going=$<
-       echo "You entered $keep_going"
-       if ($keep_going != "y") exit 1
+       echo ">>   If you are expecting $qcName to be available, please contact Mary Jo"
+       echo ">> "
+       echo ">>   Exiting."
+       exit 1
     endif
+
+# Only set use_qc_adjustment = True if the qc adjustment being done is not flag.neg, since use_qc_adjustment is being used to indicate that some qc adjustment other than flag.neg is being used.
+
+  if ($qcName != "flag.neg") then
+    set use_qc_adjustment = True
+  endif
+
 # Set qc_mask Options
   set saveQcMask = "off"
   set qcAdjust = "off"
@@ -134,7 +165,10 @@
      endif
   endif
 
-  echo "         <qc type="\'$qcName\'" qc_mask="\'$saveQcMask\'" adjust_out="\'$qcAdjust\'">" > QC_XML
+  echo "        <qc type="\'$qcName\'" qc_mask="\'$saveQcMask\'" adjust_out="\'$qcAdjust\'">" > $workDir/QC_XML
+
+# set saveQcMask = "on" as a flag for later, even if saveQcMask was = off above
+  set saveQcMask = "on"
 
   if ("$qcOptions" != "") then
     @ nopts = $#qcOptions
@@ -180,12 +214,12 @@
       echo "   You set $qcOptions[$kstring] = $outVal " 
       echo " "
       set optValues = ($optValues "$qcOptions[$kstring]="\"${outVal}\"" ")
-      echo "            <$qcOptions[$kstring]>${outVal}</$qcOptions[$kstring]>" >> QC_XML
+      echo "           <$qcOptions[$kstring]>${outVal}</$qcOptions[$kstring]>" >> $workDir/QC_XML
       @ kstring = $kstring + 1
     end
   endif
 
-  echo "         </qc>" >> QC_XML
+  echo "        </qc>" >> $workDir/QC_XML
 
 
 exit 0

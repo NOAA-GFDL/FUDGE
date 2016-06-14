@@ -4,8 +4,7 @@
   echo " "
   echo "=================================================================================== "
   echo " "
-  echo "    Welcome to the FUDGE XML generator for creating downscaling experiment "
-  echo "                XML file using Fudge version darkchocolate. "
+  echo "    Welcome to the FUDGE $flavor XMLgen for creating downscaling experiment XML "
   echo " "
   echo "==================================================================================== "
   echo " "
@@ -17,21 +16,10 @@
 
 # xmlGenDir is set in XMLgen.csh
 
-# The directory where the experiment-specific scripts/ascii-files/code will be written once ExperGen executes.
-  set scriptDir = "/home/$owner/PROJECTS/DOWNSCALING"
-  if (! -e $scriptDir) then
-    mkdir -p $scriptDir
-    if ($status != 0) then
-      echo "mkdir -p $scriptDir  failed. Exiting. "
-      if ($owner == $USER) exit 1
-    endif
-  endif
-
-# The directory where the downscaled netCDF files will be written.
-  set dsFileDir = "/archive/$owner/PROJECTS/DOWNSCALING"
 
 # These are files that will/may be used by this script
   set QueryVals = "$xmlGenDir/QueryVals.csh"
+  set QueryMultiVals = "$xmlGenDir/QueryMultiVals.csh"
   set findData = "$xmlGenDir/find_dataset_based_on_var.csh"
   set findDim = "$xmlGenDir/minifile_settings.csh"
   set findTS = "$xmlGenDir/find_timeseries.csh"
@@ -51,44 +39,112 @@
 # END ASSUMPTIONS
 #============================================================
 
-  echo "======================================================================================================= "
-  echo " "
-  echo "   This script assumes that downscaling will be performed with the following characteristics:"
-  echo " "
-  echo "    -  Scripts/files created by ExperGen will be written under $scriptDir ."
-  echo "    -  Downscaled output will be written under $dsFileDir ."
-  echo "    -  The Downscaling method you choose has its own file which prompts the user for options."
-  echo "       (This file must be in $xmlGenDir and have the name of : "
-  echo "           {DSMETHOD}-Options.csh where {DSMETHOD} = CDFt, BCQM or EDQM, for example.)"
-  echo "    -  The target variable = the training variable."
-  echo " "
-  echo "======================================================================================================= "
+# initializing values
+  set ignore0Delta = "off"
+  set ignore0 = "off"
+  set saveQcMask = "off"
+
   
   sleep 1
 # ===========================
 # INPUT VALUES 
 # ===========================
  
-# Input root directory
-# ---------------
+# Input, Output & Experiment Home (aka "Script") root directories
+# ---------------------------------------------------------------
     echo " "
     echo " "
-    echo ">>  Is the data input located somewhere other than in the ESD archive under /archive/esd/PROJECTS/DOWNSCALING?"
-    echo -n "    Enter y for 'yes'; Enter n or hit the 'Enter' key for 'no' : "
+    echo "    Input, Output & Experiment "Script" Home root directories "
+    echo "    --------------------------------------------------------- "
+    echo "   "
+    echo "    For FUDGE production experiments, all input data and downscaled output data "
+    echo "    are to be stored under a root directory:  /archive/esd/PROJECTS/DOWNSCALING "
+    echo "    & the experiment Home "script" under root directory:  /home/$USER/PROJECTS/DOWNSCALING ."
+    echo "   "
+    echo "    However, a non-production experiment - for development or testing - may use input data from"
+    echo "    and/or write downscaled output to user-specified root directories with standardized subdirectory "
+    echo "    pathnames below which adhere to the ESD conventions."
+    echo "    "
+    echo ">>  Q: Do you may wish to read input data from or write the downscaled output to a directory other than"
+    echo ">>     /archive/esd/PROJECTS/DOWNSCALING "
+    echo ">>  or write experiment info & scripts to somewhere other than /home/$USER/PROJECTS/DOWNSCALING ?"
+    echo "    "
+    echo -n ">>  Enter y for 'yes'; Enter n or hit the 'Enter' key for 'no' : "
     set ans=$<
     if ($ans == "") set ans = "n"
     echo $ans >> $INtxt
     echo "ans = $ans, Input Root other than /archive/esd/PROJECTS/DOWNSCALING, XMLgen.non-syn.csh" >> $INtxt.key
     if ($ans == "y") then
+
+# INPUT ROOT DIRECTORY
       echo " "
-      echo "    Data will need to be in the proper directory structure, i.e. dataCategory/dataType/dataSource/... ,"
-      echo "    under the root directory."
-      echo -n ">>  Enter the input root directory. "
+      echo "    Input data need to be in our standard directory structure, i.e. dataCategory/dataType/dataSource/... ,"
+      echo "    under the input root directory. (See ESD Team webpage for more information on standard directory structure.)"
+      echo "   "
+      echo -n ">>  Enter the input root directory if not /archive/esd/PROJECTS/DOWNSCALING, otherwise just hit 'Enter' key. "
       set inRoot=$<
+      if ($inRoot == "") then
+        set inRoot = "/archive/esd/PROJECTS/DOWNSCALING"
+      endif
       echo $inRoot >> $INtxt
       echo "inRoot = $inRoot ,XMLgen.non-syn.csh" >> $INtxt.key
+      echo "    Input root directory is $inRoot "
+      sleep 2
+
+# OUTPUT ROOT DIRECTORY
+      echo " "
+      echo "    Downscaled data output will be written in standardized directory structure under the output root directory."
+      echo "    For production runs, output root directory is to be /archive/esd/PROJECTS/DOWNSCALING ."
+      echo "   "
+      echo -n ">>  Enter the output root directory if not /archive/esd/PROJECTS/DOWNSCALING, otherwise just hit 'Enter' key. "
+      set outRoot=$<
+      if ($outRoot == "") then
+        set outRoot = "/archive/esd/PROJECTS/DOWNSCALING"
+      endif
+      echo $outRoot >> $INtxt
+      echo "outRoot = $outRoot ,XMLgen.non-syn.csh" >> $INtxt.key
+      echo "    Output root directory is $outRoot "
+      sleep 2
+
+# Experiment Home Script ROOT DIRECTORY
+      echo " "
+      echo "    FUDGE experiment scripts, standard output, XML & experiment_info.txt files will be written "
+      echo "    in standardized FUDGE directory structure under the scriptDir root directory."
+      echo "    For production runs, experiment scriptDir root directory is to be /home/Oar.Gfdl.Esd/PROJECTS/DOWNSCALING ."
+      echo "   "
+      echo -n ">>  Enter the experiment scriptDir root directory if not /home/$USER/PROJECTS/DOWNSCALING, otherwise just hit 'Enter' key. "
+      set scriptDir=$<
+      if ($scriptDir == "") then
+        set scriptDir = "/home/$owner/PROJECTS/DOWNSCALING"
+      endif
+      echo $scriptDir >> $INtxt
+      echo "scriptDir = $outRoot ,XMLgen.non-syn.csh" >> $INtxt.key
+      if (! -e $scriptDir) then
+        mkdir -p $scriptDir
+          if ($status != 0) then
+             set platform = `gfdl_platform`
+             echo "   "
+             echo "  Can not create $scriptDir from this platform ($platform). Exiting."
+             echo "   "
+             exit 1
+          endif
+      endif
+      echo "    Experiment home scriptDir root directory is $scriptDir "
+      sleep 2
     else if ($ans == "n") then
       set inRoot = "/archive/esd/PROJECTS/DOWNSCALING"
+      set outRoot = "/archive/esd/PROJECTS/DOWNSCALING"
+      set scriptDir = "/home/$owner/PROJECTS/DOWNSCALING"
+      if (! -e $scriptDir) then
+        mkdir -p $scriptDir
+          if ($status != 0) then
+             set platform = `gfdl_platform`
+             echo "   "
+             echo "  Can not create $scriptDir from this platform ($platform). Exiting."
+             echo "   "
+             exit 1
+          endif
+      endif
     else
       echo "    "
       echo "    You entered  $ans . This is not a valid response. Exiting. "
@@ -96,7 +152,34 @@
       exit 1
     endif
 
+# The directory where the experiment-specific scripts/ascii-files/code will be written once ExperGen executes.
+  if (! -e $scriptDir) then
+    mkdir -p $scriptDir
+    if ($status != 0) then
+      echo "mkdir -p $scriptDir  failed. Exiting. "
+      if ($owner == $USER) exit 1
+    endif
+  endif
 
+  echo "======================================================================================================= "
+  echo " "
+  echo "   This script is set up such that downscaling will be performed with the following characteristics:"
+  echo " "
+  echo "    -  Scripts/files created by ExperGen will be written under $scriptDir ."
+  echo " "
+  echo "    -  Input netCDF files will be read from $inRoot ."
+  echo " "
+  echo "    -  Downscaled netCDF output files will be written to $outRoot ."
+  echo " "
+  echo "    -  The Downscaling method you choose has its own file in XMLgen which prompts the user for options."
+  echo "       (This file must be in $xmlGenDir and have the name of : "
+  echo "           {DSMETHOD}-Options.csh where {DSMETHOD} = CDFtmod, BCQM or EDQM, for example.)"
+  echo " "
+  echo "    -  The target variable = the training variable."
+  echo " "
+  echo "======================================================================================================= "
+
+  sleep 4
 #
 # Input Data group
 # ----------------
@@ -105,6 +188,13 @@
   echo " "
   echo " "
   echo "======================================================================================================= "
+  echo " "
+  echo "    ///////////////"
+  echo "    ---------------"
+  echo "        Dataset      "
+  echo "    ---------------"
+  echo "    \\\\\\\\\\\\\\\"
+  echo " "
   echo " "
   echo "    You need to pick which Datasets to use for the downscaling experiment."
   echo "    Currently we have 2 distinct resolutions of data available : "
@@ -127,15 +217,8 @@
   echo "    --------------"
   echo "    "
   echo " "
-  sleep 4
+  sleep 3
 
-  echo " "
-  echo "    ///////////////"
-  echo "    ---------------"
-  echo "    Dataset      "
-  echo "    ---------------"
-  echo "    \\\\\\\\\\\\\\\"
-  echo " "
   set varvals = ($dataGroups)
   set dinfo = "Datasets to use as input for Downscaling "
   source $QueryVals
@@ -151,7 +234,7 @@
 
   set htTrange = "${htDate1}-$htDate2"
   echo "    Default Time range for $dataGroup = $htTrange "
-  sleep 5
+  sleep 1
 
 #
 # TARGET VARIABLE
@@ -173,35 +256,49 @@
   echo "targVar = $targVar, XMLgen.non-syn.csh" >> $INtxt.key
 
 
-  set varInfo = `grep -w $targVar $xmlGenDir/target_ID_table.txt`
+  set varInfo = `grep -w $targVar $txtDir/target_ID_table.txt`
      if ($status != 0) then
-       echo " "
+
        echo "    $targVar has not been chosen before. A 2-3 character ID will need to be provided."
+       echo " "
+# make backup copy of $txtDir/target_ID_table.txt
+       \cp $txtDir/target_ID_table.txt $txtDir/target_ID_table.txt.backup
+            if ($status != 0) then
+               echo ">> Problem. "
+               echo ">> "
+               echo ">> If you are not running under esd role account, you can not update the project table text file as needed."
+               echo ">> Please either run under esd role account or contact the keeper of this XMLgen script."
+               echo ">> "
+               echo ">> Exiting."
+               echo " "
+               exit 1
+            endif
        echo " "
        echo "    These are the currently-defined variables, with IDs listed first."
        echo " "
        echo "    ID VariableName "
-       cat $xmlGenDir/target_ID_table.txt
+       cat $txtDir/target_ID_table.txt
        echo " "
        echo " "
        echo -n ">>  Please enter 2-3 character ID for $targVar & we will add it to the variable table. Or ctrl-c to end : "
        set targID=$<
-#      echo $targID >> $INtxt
-#      echo "targID = $targID, XMLgen.non-syn.csh" >> $INtxt.key
-       echo "$targID $targVar" >> $xmlGenDir/target_ID_table.txt
-       echo "$targID $targVar     has been added to $xmlGenDir/target_ID_table.txt"
+       echo "$targID $targVar" >> $txtDir/target_ID_table.txt
+       echo " "
+       echo "$targID $targVar     has been added to $txtDir/target_ID_table.txt"
+       echo " "
      else
        set targID = $varInfo[1]
      endif
 
   echo "    Target variable = $targVar" 
   echo "    Target ID       = $targID"
-  sleep 2
+  sleep 1
 
 #  If target is pr or prc, query later for pr_adjustment
   set use_pr_adjustment = "False"
   if ($targVar == "pr" || $targVar == "prc") then
     set use_pr_adjustment = "True"
+    set prVars = "$targVar"
   endif
 
 
@@ -218,37 +315,49 @@
      echo " "
      echo "    Currently defined projects (ID followed by the descriptive name) are:"
      echo " "
-     cat $xmlGenDir/project_ID_table.txt
+     cat $txtDir/project_ID_table.txt
      echo " "
      echo ">>  Enter a short project ID, new or existing, for the Project."
      echo ">>  (e.g. PM for Perfect Model) "
      set projectID = $<
      echo "$projectID" >> $INtxt
      echo "projectID = $projectID, XMLgen.non-syn.csh" >> $INtxt.key
-     set projInfo = `grep -w ^$projectID $xmlGenDir/project_ID_table.txt`
+     set projInfo = `grep -w ^$projectID $txtDir/project_ID_table.txt`
        if ($status != 0) then
+            
          echo " "
          echo ">>  $projectID has not been chosen before. "
          echo ">>  "
          echo ">>  You need to supply a new project name. "
+         echo ">>  "
+         \cp $txtDir/project_ID_table.txt $txtDir/project_ID_table.txt.backup
+            if ($status != 0) then
+               echo ">> Problem. "
+               echo ">> If you are not running under esd role account, you can not update the project table text file as needed."
+               echo ">> Please either run under esd role account or contact the keeper of this XMLgen script."
+               echo ">> "
+               echo ">> Exiting."
+               echo " "
+               exit 1
+            endif
          echo ">>  The name can be multi-word, but you MUST use an underscore character, '_', "
          echo ">>  where you want a space in the project name, e.g. Red_River, Perfect_Model, 3_To_The_5th. (3^5 would be ok as is.). "
          echo ">>  "
          echo ">>  The underscore will be removed before writing metadata."
-         echo "  "
+         echo ">>  "
          set done = "false"
          while ($done == "false")
            echo " "
            echo -n ">>  Please enter project name & it will be added along with projectID to the variable table. Or ctrl-c to end : "
            set project=$<
            if ($project != "") then
-             set checkProj = `grep -w $project $xmlGenDir/project_ID_table.txt`
+             set checkProj = `grep -w $project $txtDir/project_ID_table.txt`
                if ($status != 0) then 
                  set done = "true"
 #                echo $project >> $INtxt
 #                echo "project = $project , XMLgen.non-syn.csh" >> $INtxt.key
-                 echo "$projectID $project" >> $xmlGenDir/project_ID_table.txt
-                 echo "$projectID $project     has been added to $xmlGenDir/project_ID_table.txt"
+                 echo "$projectID $project" >> $txtDir/project_ID_table.txt
+                 echo "$projectID $project     has been added to $txtDir/project_ID_table.txt"
                else 
                  if($checkProj[1] != $projectID) then
                    echo "    Problem. $project is already in use. $checkProj" 
@@ -324,11 +433,11 @@ if ($multiPredictor == "True") then
 
 # Do not assume target variable is a predictor. Ask.
 
-  echo "Is the target variable, $targVar, a predictor also?"
-  echo -n "Enter "n" or "no" if not. Hit enter or "y" or "yes" to include target variable in the predictor list."
+  echo "    Is the target variable, $targVar, a predictor also?"
+  echo -n "    Enter n for 'no' if not. Hit Enter or y or 'yes' to include target variable in the predictor list: "
   set ans=$<
   echo "$ans" >> $INtxt
-  echo "Is target also a predictor? answer = $ans , XMLgen.non-syn.csh" >> $INtxt.key
+  echo "    Is target also a predictor? answer = $ans , XMLgen.non-syn.csh" >> $INtxt.key
   if ($ans != "n" && $ans != "no") then
     set predVars = ($predVars $targVar)  
         
@@ -337,12 +446,12 @@ if ($multiPredictor == "True") then
     \mv $workDir/tmpvarListFile $workDir/varListFile
 
 # ask if any additional predictors are desired
-    echo "Are any additional predictor variables desired?"
-    echo -n "Enter "n" or "no" if not. Hit enter or "y" or "yes" to include target variable in the predictor list."
+    echo "    Are any additional predictor variables desired?"
+    echo -n "    Enter n for 'no' if not. Hit Enter or y for 'yes': "
     set ans=$<
     echo "$ans" >> $INtxt
-    echo "Additional predictor variables desired? answer = $ans , XMLgen.non-syn.csh" >> $INtxt.key
-    if ($ans != "n" && $ans != "no") then
+    echo "    Additional predictor variables desired? answer = $ans , XMLgen.non-syn.csh" >> $INtxt.key
+    if ($ans != "n") then
       set selectVar = "True"
     else
       set selectVar = "False"
@@ -365,20 +474,32 @@ if ($multiPredictor == "True") then
   set varvals = (`cat $workDir/varListFile`)
   set dinfo = "Available Variables"
   while ($selectVar == "True") 
-    source $QueryVals
-    set pickedVar = "$kval"
-    echo "$pickedVar" >> $INtxt
-    echo "pickedVar = $pickedVar, XMLgen.non-syn.csh" >> $INtxt.key
-    set predVars = ($predVars $pickedVar)
+    source $QueryMultiVals
+    set pickedVars = "$kval"
+    echo "$pickedVars" >> $INtxt
+    echo "pickedVars = $pickedVars, XMLgen.non-syn.csh" >> $INtxt.key
     echo " "
     echo " "
-    echo "So far you have $predVars. "
-# remove pickedVar from varListFile
-    grep -v -w "$pickedVar" $workDir/varListFile > $workDir/tmpvarListFile
-    \mv $workDir/tmpvarListFile $workDir/varListFile
+    echo "    Predictor Variables selected:  $predVars $pickedVars  "
 
-    echo -n "Enter "n" or "no" if done. Hit enter or "y" or "yes" to select another variable."
+# for each variable selected (multiple variables allowed in this case)
+    foreach pickedVar ($pickedVars)
+      set predVars = ($predVars $pickedVar)
+      if ($pickedVar =~ pr*) then
+        set use_pr_adjustment = True
+        set prVars = "$prVars,$pickedVar"
+      endif
+# remove pickedVar from varListFile
+      grep -v -w "$pickedVar" $workDir/varListFile > $workDir/tmpvarListFile
+      \mv $workDir/tmpvarListFile $workDir/varListFile
+    end
+
+    echo " "
+    echo "    Enter n for 'no' if done."
+    echo -n "    To select another variable, Hit Enter or y for 'yes' : "
     set ans=$<
+    echo "$ans" >> $INtxt
+    echo "ans = $ans , add more predictor variables, XMLgen.non-syn.csh" >> $INtxt.key
     if ($ans == "n" || $ans == "no") then
        set selectVar = "False"
     endif
@@ -517,19 +638,23 @@ set predVars = "$pVars"
   set fpDataSet = $dataSet
   
   if ($fpEpoch == $hpEpoch && $fpRIP == $hpRIP) then
-     echo "    You have picked the same dataset for the historical predictor"
-     echo "    as for the future predictor. Is that what you intended?"
-     echo -n "    Enter y for 'yes'; Enter n or hit the 'Enter' key for 'no' : "
-    set ans=$<
-    if ($ans == "") set ans = "n"
-    echo $ans >> $INtxt
-    echo "ans = $ans , same dataset for the historical predictor as for the future predictor, XMLgen.non-syn.csh" >> $INtxt.key
-    if ($ans != "y") then
-      echo " "
-      echo "Try again. "
-    else 
+#    echo "    You have picked the same dataset for the historical predictor"
+#    echo "    as for the future predictor. Is that what you intended?"
+#    echo -n "    Enter y for 'yes'; Hit Enter or n for 'no' : "
+#   set ans=$<
+#   echo "$ans" >> $INtxt
+#   if ($ans == "") set ans = "n"
+#   echo $ans >> $INtxt
+#   echo "ans = $ans , same dataset for the historical predictor as for the future predictor, XMLgen.non-syn.csh" >> $INtxt.key
+#   if ($ans != "y") then
+#     echo " "
+#     echo "Try again. "
+#   else 
       unset pick
-    endif
+      if ($dataGroup == "SCCSC0p1") then 
+        set FutTSeqHistTS
+      endif
+#   endif
   else
     unset pick
   endif
@@ -550,11 +675,13 @@ set predVars = "$pVars"
 # if mask directory doesn't exist for $dim, however, set spatial mask variables to 'na'.
 
   if ($spatMaskDir != "na") then
-    set spatMaskDir = "$spatMaskDir$dim"
+    set spatMaskDir = "$spatMaskDir$dim/"
     if (! -e $spatMaskDir) then
+       echo "Checking for spatial mask directory $spatMaskDir$dim/ . Does not exist."
        echo "Since you are using dim = $dim, no spatial mask exists. Resetting spatial mask variables to 'na'." 
        set spatMaskDir = "na"
        set maskVar = "na"
+       exit 1
     endif
   endif
 
@@ -657,7 +784,11 @@ set predVars = "$pVars"
   set filePartA = "$fpPartA"
   set filePartB = "$fpPartB"
   set fileDir = "$fpDir"
+  if ($?FutTSeqHistTS) then
+  set fileTrangeIn = "$htTrange"
+  else
   set fileTrangeIn = ""
+  endif
   source $findTS
      if ($status == 1) exit 1
 
@@ -821,7 +952,7 @@ set predVars = "$pVars"
   echo "   >> "
   echo "   >>  The user must set the {expID}, which is usually a letter identifying the Experiment Series."
   echo "   >> "
-  echo -n ">>  Enter the Letter of the Experiment Series: "
+  echo -n ">>  Enter the Experiment Series (usually one capital letter or User's initials for test cases): "
   set expID=$<
   echo $expID 
   echo " "
@@ -880,10 +1011,11 @@ set predVars = "$pVars"
   echo "--------------------------------------------------------------------------------------------"
   echo "--------------------------------------------------------------------------------------------"
   echo " "
-cat > XMLfile <<EOF
+cat > $workDir/XMLfile <<EOF
 <downscale>
     <!-- Created using $xmlGenDir/XMLgen.csh ; $dateMDY -->
     <!-- xmlGenDir = $xmlGenDir -->
+    <!-- FUDGE flavor = ginger -->
     <!-- ifpreexist options: erase, move, exit (default for XML creation) -->
 
     <ifpreexist>$preExistOpt</ifpreexist>
@@ -926,14 +1058,21 @@ cat > XMLfile <<EOF
                 <dataset>${fpDataCategory}.${fpDataType}.${fpDataSource}.${fpEpoch}.${fpFreq}.${fpRealm}.${fpMisc}.${fpRIP}.${fpVs}</dataset>
 EOF
 if ("$fpSuffix" != "") then
-   echo "                <suffix>$fpSuffix</suffix>" >> XMLfile
+   echo "                <suffix>$fpSuffix</suffix>" >> $workDir/XMLfile
 endif
-cat >> XMLfile <<EOF
+cat >> $workDir/XMLfile <<EOF
             </future_predictor>
         </training>
         <esdgen>
         </esdgen>
     </input>    
+EOF
+
+#=====================
+# $workDir/core_XML
+#=====================
+
+cat >> $workDir/core_XML <<EOF
     <core>
         <method name="$dsMethod"> </method>
 	<exper_series>$expLabel</exper_series> 
@@ -944,35 +1083,42 @@ cat >> XMLfile <<EOF
 EOF
 
 if ($fpPropName != "") then
-echo "            <property name="\"$fpPropName\" value=\"$fpPropValue\""/> " >> XMLfile
+echo "            <property name="\"$fpPropName\" value=\"$fpPropValue\""/> " >> $workDir/core_XML
 endif
-cat >> XMLfile <<EOF
-            <out_dir>$inRoot/$projectID/downscaled/${fpDataSource}/${fpEpoch}/${fpFreq}/${fpRealm}/${fpMisc}/${outRIP}/${fpVs}/$expName/$targVar/$spatMaskID/$dim/</out_dir>
+
+cat >> $workDir/core_XML <<EOF
+            <out_dir>$outRoot/$projectID/downscaled/${fpDataSource}/${fpEpoch}/${fpFreq}/${fpRealm}/${fpMisc}/${outRIP}/${fpVs}/$expName/$targVar/$spatMaskID/$dim/</out_dir>
             <script_root>$scriptDir</script_root>
         </output>
 EOF
 
-# ADD PR ADJUSTMENT XML
+#
+# pr adjustment XML part of $workDir/core_XML
+#
+
   if ("$use_pr_adjustment" == "True") then
     echo "   "
     echo "   Adding precip adjustment options to XML ... "
     echo "   "
     echo "   (Reminder. Target = $targVar. Predictor variable(s) = $predVars )"
     echo "   "
-    source $prAdjustment
+    source $prAdjustment 
       if($status != 0) then
         echo "PROBLEM.  File $prAdjustment does not exist or has an issue to be checked."
         echo " "
         exit 1
       endif
-    cat pr_XML >> XMLfile
-    \rm pr_XML
   endif
+   
+#=====================
+# $workDir/custom_XML SECTION 
+#=====================
+#
+  echo "    <custom>" > $workDir/custom_XML
 
-  echo "    </core>" >> XMLfile
-  echo "    <custom>" >> XMLfile
-
-# ADD dsMethod options XML
+#
+# dsMethod options 
+#
   echo "   Adding $dsMethod options, if any,  to XML ... "
   source $DSMethod_options
     if($status != 0) then
@@ -980,22 +1126,133 @@ EOF
       echo " "
       exit 1
     endif
-   sleep 2
+  sleep 1
+
+# echo "  "
+# echo "  use_pr_adjustment = $use_pr_adjustment,  ignore0 =  $ignore0"
+  echo "  "
+
+  if ("$use_pr_adjustment" == "True" && "$ignore0" == "'on'" && !($dsMethod =~ "CDFt"*)) then
+#
+# minimum sample size 
+#
+    echo "======================="
+    echo "  Minimum Sample Size  "
+    echo "======================="
+    echo ">>   Set a minimum sample size for which downscaling will be performed."
+    echo ">>   Hit Return if minimum sample size = 30 is desired, "
+    echo ">>     otherwise enter a value >= 0 and < your data's total size per time window. "
+    echo -n ">>   If 0 is entered, minsamplesize will NOT be set in the XML. : "
+    set minSample=$<
+    echo $minSample
+    echo " "
+    if ($minSample == "") then
+      set minSample = 30
+    else
+      @ vtest = $minSample
+      if ($vtest << 0) then
+        echo "   You set the minimum sample size = $minSample. Value needs to be >= 0." 
+        echo "   Exiting."
+        exit 1
+      endif
+    endif
+    echo $minSample >> $INtxt
+    if ($minSample != 0) then
+      echo "minSample = $minSample , XMLgen.non-syn.csh" >> $INtxt.key
+      echo "        <minsamplesize>$minSample</minsamplesize>" >> $workDir/custom_XML
+    endif
+
+  endif
 
 # END of CUMSTOM section
-  echo "    </custom>" >> XMLfile
+  echo "    </custom>" >> $workDir/custom_XML
 
-# post DS processing - QC adjustments
-  echo "    <pp>" >> XMLfile
-  source $qcAdjustment
-  sleep 2
-  cat QC_XML >> XMLfile
-  \rm QC_XML
-  echo "    </pp>" >> XMLfile
+#=====================
+# $workDir/pp_XML post-processing
+#=====================
+  echo "    <pp>" >> $workDir/pp_XML
 
+#
+# QC adjustments
 
-# Finalizing XMLfile 
-cat >> XMLfile<< EOF
+# if pr_opts are being used, and ignore0 or ignore0.delta is on, then set qcmask on. No other qc options allowed.
+
+  set use_qc_adjustment = False
+  if ($use_pr_adjustment == True) then
+    if ($ignore0Delta == "'on'" || ($ignore0 == "'on'" && $dsMethod != BCQM)) then
+       echo "       <qc type="\'qc.train\'" qc_mask="\'on\'" adjust_out="\'off\'"></qc>" > $workDir/QC_XML
+       set saveQcMask = "on"
+       set use_qc_adjustment = True
+       echo "  "
+       echo "   Since ignore0 = $ignore0 and dsMethod != BCQM, FUDGE will output a mask flagging 'ignore0' points. No QC adjustments can be specified."
+    endif
+  endif
+
+  if ($use_qc_adjustment == "False") then
+    source $qcAdjustment
+  endif
+
+  if ($use_pr_adjustment == True && $use_qc_adjustment == False) then
+    if ($ignore0 == "'on'") then
+       echo "       <qc type="\'qc.train\'" qc_mask="\'on\'" adjust_out="\'off\'"></qc>" > $workDir/QC_XML
+       set use_qc_adjustment = True
+       echo "   Since ignore0 = $ignore0 and no other QC adjustments are specified, FUDGE will output a mask flagging 'ignore0' points."
+    endif
+  endif
+
+  if ($use_qc_adjustment == "True") then
+    cat $workDir/QC_XML >> $workDir/pp_XML
+    \rm $workDir/QC_XML
+  endif
+    
+  echo "    </pp>" >> $workDir/pp_XML
+
+# =====================
+# Special Case
+# =====================
+# Additional mod to $workDir/core_XML if flag_neg desired by another QC Adjustment has been made
+#
+# If QC Adjustments have been made and pr adjustments have been made, check if want flag_neg
+#
+  if ("$use_pr_adjustment" == "True") then
+    if ("$use_qc_adjustment" == "True") then
+      echo ">>  "
+      echo ">>  Negative Downscaled Values Adjustment"
+      echo ">>  "
+      echo ">>  Do you want downscaled values < 0. set = 0 ? "
+      echo ">>   (Because of previous settings, you can't set flag.neg adjustment directly "
+      echo ">>    as a Section 5 QC adjustment. (NOTE: no mask will be created for this.) "
+      echo -n ">> Type y or hit Enter now if set values < 0 equal to zero, otherwise type n. : "
+      set ans=$<
+      echo " "
+      if ($ans == "") then 
+        set ans = y
+      endif
+      echo $ans >> $INtxt
+      echo "ans = $ans , turn on <flag_neg> in pr_XML, XMLgen.non-syn.csh" >> $INtxt.key
+      echo " "
+      echo " flag_neg on ? = $ans"
+      echo " "
+      if ($ans != n) then
+        echo "           <flag_neg>'on'</flag_neg>" >> $workDir/pr_XML
+      else
+        echo "           <flag_neg>'off'</flag_neg>" >> $workDir/pr_XML
+      endif
+    endif
+    echo "        </pr_opts>" >> $workDir/pr_XML
+    cat $workDir/pr_XML >> $workDir/core_XML
+    \rm $workDir/pr_XML
+  endif
+
+  echo "    </core>" >> $workDir/core_XML
+
+# merge XML segments together
+  cat $workDir/core_XML >> $workDir/XMLfile
+  cat $workDir/custom_XML >> $workDir/XMLfile
+  cat $workDir/pp_XML >> $workDir/XMLfile
+
+# Finalizing $workDir/XMLfile 
+cat >> $workDir/XMLfile<< EOF
     <exp_check>$expName</exp_check>
 </downscale>
 EOF
@@ -1003,18 +1260,30 @@ EOF
   echo " "
   echo " "
   echo " "
-  echo ">>>  Finalizing XMLfile "
+  echo ">>>  Finalizing $workDir/XMLfile "
   echo " "
   echo " "
 
   set xmlDir=$scriptDir/scripts/$projectID/XML
-    if (! -e $xmlDir) mkdir -p $xmlDir
+    if (! -e $xmlDir) then
+       mkdir -p $xmlDir
+         if ($status != 0) then
+            echo "Problem. Can't create $xmlDir on $platform. Exiting."
+            exit 1
+         endif
+    endif
   set xmltxtDir=$scriptDir/scripts/$projectID/XMLtxt
-    if (! -e $xmltxtDir) mkdir -p $xmltxtDir
+    if (! -e $xmltxtDir) then
+       mkdir -p $xmltxtDir
+         if ($status != 0) then
+            echo "Problem. Can't create $xmltxtDir on $platform. Exiting."
+            exit 1
+         endif
+    endif
   set datetime=`date +%m.%d.%Y-%k.%M.%S`
   if (-e $xmlDir/$expName.xml) \mv $xmlDir/$expName.xml $xmlDir/$expName.xml.$datetime
   if (-e $xmltxtDir/$expName.input.txt) \mv $xmltxtDir/$expName.input.txt $xmltxtDir/$expName.input.txt.$datetime
-  \mv XMLfile $xmlDir/$expName.xml
+  \mv $workDir/XMLfile $xmlDir/$expName.xml
   \mv $INtxt $xmltxtDir/$expName.input.txt
   \mv $INtxt.key $xmltxtDir/$expName.input.txt.key
   echo ">>>  "
@@ -1022,7 +1291,7 @@ EOF
   echo ">>>  ......................................................................................."
   echo ">>>  "
   echo ">>>  "
-  echo ">>>  Your XMLfile =  $xmlDir/$expName.xml " 
+  echo ">>>  Your XML file =  $xmlDir/$expName.xml " 
   echo ">>>  "
   echo ">>>  "
   chmod -xw $xmlDir/$expName.xml 
@@ -1052,5 +1321,5 @@ EOF
   echo " "
   echo "Done."
   echo " "
-  sleep 4
+  sleep 1
   \rm -rf $workDir

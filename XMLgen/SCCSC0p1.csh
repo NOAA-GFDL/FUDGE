@@ -6,7 +6,7 @@
   set gcmList = ("CCSM4" "MIROC5" "MPI-ESM-LR")
 # prism is from 1981-2005 while livneh is 1961-2005. 
 # set htList = ("livneh" "prism")
-  set htList = ("livneh")
+  set htList = ("livneh" "prism" "daymet")
 
   set epochList = ("historical" "rcp26" "rcp45" "rcp85")
 
@@ -119,8 +119,8 @@
   if ($spatMask != "none" && $spatMask != "sccsc_0p1") then
     set spatMaskDir = "$spatMaskDir$spatMask/"
     set maskVar = "${spatMask}_masks"
-    set spinfo = `grep $spatMask $xmlGenDir/spat_mask_ID_table.txt`
-    if ($status == 0 || "$spinfo[2]" == "$spatMask") then
+    set spinfo = `grep $spatMask $txtDir/spat_mask_ID_table.txt`
+    if ($status == 0) then
 # if an ID has already been assigned to the mask, use it.
       set spatMaskID = "$spinfo[1]"
     else
@@ -131,14 +131,24 @@
         echo ">>  A spatial mask ID has not been assigned yet to $maskVar."
         echo -n ">>  Please enter an ID & it will be added along with $maskVar to the spat_mask_ID table. Or ctrl-c to end : "
         set spatMaskID=$<
+        \cp $txtDir/spat_mask_ID_table.txt $txtDir/spat_mask_ID_table.txt.backup
+           if ($status != 0) then
+               echo ">> Problem. "
+               echo ">> If you are not running under esd role account, you can not update the spat_mask_ID table text file as needed."
+               echo ">> Please either run under esd role account or contact the keeper of this XMLgen script."
+               echo ">> "
+               echo ">> Exiting."
+               echo " "
+               exit 1
+           endif
         echo $spatMaskID >> $INtxt
         echo "spatMaskID = $spatMaskID, SCCSC0p1.csh" >> $INtxt.key
         if ($spatMaskID != "") then
-          set checkMaskID = `grep -w $spatMaskID $xmlGenDir/spat_mask_ID_table.txt`
+          set checkMaskID = `grep -w $spatMaskID $txtDir/spat_mask_ID_table.txt`
             if ($status != 0) then
               set done = "true"
-              echo "$spatMaskID $maskVar" >> $xmlGenDir/spat_mask_ID_table.txt
-              echo "$spatMaskID $maskVar     has been added to $xmlGenDir/spat_mask_ID_table.txt"
+              echo "$spatMaskID $maskVar" >> $txtDir/spat_mask_ID_table.txt
+              echo "$spatMaskID $maskVar     has been added to $txtDir/spat_mask_ID_table.txt"
             else
               if($checkMaskID[1] != $spatMaskID) then
                 echo "    Problem. $project is already in use. $checkMaskID"

@@ -13,6 +13,6 @@ set valSort = "$kval"
 echo $valSort >>  $INtxt
 echo "valSort = $valSort, CFQM-Options.csh" >>  $INtxt.key
 
-cat >> XMLfile <<EOF
+cat >> $workDir/custom_XML <<EOF
         <sort>$valSort</sort>
 EOF

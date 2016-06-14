@@ -1,15 +1,21 @@
 source /usr/local/Modules/3.1.6/init/tcsh
-echo "sourcing stenv_fudge located in /home/cew/"
-#Above needs to run as any shell?
-#module unload cdat #leads to emssy memory stack trace when cdat is not loaded
-module unload python
+echo "sourcing setenv_fudge located in fudge repository"
+
+set whichR = `which R`
+echo $whichR | grep "3.2.1" >> /dev/null
+set rstat = $status
+#if ( $status!=0 ) then
+#	module unload R/2.15.2
+#	module load R/3.2.1
+#endif
+
 module load python/2.7.3
 ##module unload R #leads to messy memory stack trace
-#module load R/2.15.2
-module load R
+module load R/2.15.2
+#module load R/3.2.1
 ##module unload git  #leads to messy memory stack trace
 ##module load git/2.4.6 #leads to segfault
-module unload nco
+module load git/2.4.6
 module load nco/4.3.1
 module load gcp
 #needed for role accnt
