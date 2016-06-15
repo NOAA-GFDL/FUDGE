@@ -5,6 +5,7 @@
 import expergen
 import shutil, re
 import os, sys
+from os import path
 
 def get_ensemble_path(outdirs, rips):
 	range_list = [int(r[1]) for r in rips]
@@ -57,10 +58,12 @@ def count_suffix(path):
 	#Counts the number of directories with a similar path one 
 	#level up. Needed to make sure that a messy cleanup still 
 	#avoids clobbering prior output
+	if not os.path.isdir(path):
+		return(0)	
 	outdir = re.split("/", path.rstrip("/"))[-1]
 	basename = ("/").join(re.split("/", path.rstrip("/"))[:-1])
 	outsuff = [p.split("~")[-1] for p in os.listdir(basename) if re.search(outdir, p) is not None]
-	outnum = []
+	outnum=[]
 	for el in outsuff:
 		try:
 			outnum.append(int(el))
