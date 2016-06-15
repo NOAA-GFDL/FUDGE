@@ -512,7 +512,7 @@ for (rip in fut.pred.rip.list){
                         ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                         grid_region=grid, mask_region=ds.region,
                         time.trim.mask=fut.time.trim.mask, 
-                        tempdir=TMPDIR, include.git.branch=git.needed, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
+                        tempdir=TMPDIR, include.git.branch=T, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                         is.qcmask=TRUE,
                         qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
                         is.pre.ds.adjust=(length(pre_ds) > 0),

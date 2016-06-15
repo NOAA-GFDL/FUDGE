@@ -59,6 +59,7 @@ def count_suffix(path):
 	#level up. Needed to make sure that a messy cleanup still 
 	#avoids clobbering prior output
 	if not os.path.isdir(path):
+		print("dir does not exit; returning 0")
 		return(0)	
 	outdir = re.split("/", path.rstrip("/"))[-1]
 	basename = ("/").join(re.split("/", path.rstrip("/"))[:-1])
