@@ -164,6 +164,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     info <- paste(info, "Git branch:", branch.string, commit.string)
     setwd(popdir)
   }
+
   history <- paste('File processed at ',institution,
                    '  using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, in branch: ', 
                    BRANCH ,' on ', date(), sep='')
@@ -197,6 +198,11 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(fut.pred.rip!=""){
     ncatt_put(nc.object, 0, "realization", fut.pred.rip)
+  }
+  #Check for FUDGETAG; add if present
+  fudgetag = Sys.getenv("FUDGETAG")
+  if (fudgetag != ""){
+    ncatt_put(nc.object, 0, 'git_tag', fudgetag)
   }
   nc_close(nc.object) 
   return(filename)
