@@ -7,8 +7,7 @@ module load netcdf/4.2
 #module unload nco
 module load nco/4.3.1
 #module unload ncarg
-module load ncarg/6.2.1
-module unload gcp
+module load ncarg/6.1.2
 #module load gcp/2.3
 #module list
 #Please note that the scraper script uses the default python install. If cdat

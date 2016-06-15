@@ -2,8 +2,6 @@
 #that has led to errors in ppFudge
 #that may be due to the unloads being passed on without the
 #corresponding load commands
-echo $PATH
-module show gcp
 module load gcp
 module load nco/4.3.1
-module load ncarg/6.2.1
+module load ncarg/6.1.2
