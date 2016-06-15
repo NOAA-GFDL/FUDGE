@@ -1,3 +1,10 @@
+6-15-16:
+- Updates to checkout script for better error handing or move options on files that do not exist
+- Correcting module loads to match esd environment module
+
+6-14-16:
+- Changes needed for checkout script in place; tags present in remote have been updated to match new scheme.
+
 6-8-16:
 (cew)
 - Renaming old tags to fit new scheme; adding equivalent tags for module;
