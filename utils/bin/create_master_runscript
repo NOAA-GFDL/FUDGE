@@ -66,7 +66,7 @@ echo "module load gcp" >>$masterloc
 echo "module load netcdf" >> $masterloc
 echo "module load nco" >> $masterloc
 echo "module load git/2.4.6" >> $masterloc
-echo 'eval `/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag '"${FUDGETAG}"'`' >> $masterloc
+echo 'eval `/home/esd/bin/checkout-fudge --fudgetag '"${FUDGETAG}"'`' >> $masterloc
 #Starting at this point, keep track of failures and add them to the mini.fail
 #logs
 
