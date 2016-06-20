@@ -1,5 +1,5 @@
 source /usr/local/Modules/3.1.6/init/tcsh
-echo "sourcing setenv_fudge located in fudge repository"
+echo "sourcing set_fudge_env located in fudge repository"
 
 set whichR = `which R`
 echo $whichR | grep "3.2.1" >> /dev/null
