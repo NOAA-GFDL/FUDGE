@@ -40,13 +40,13 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	if(len(cv_match) == 1):
 		patt2 = 1 - cv_match[0]
 		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
-		project = split(expdict['script.base'])
+		project = re.split("/", expdict['script.base'])
 		project = project[len(project)-1]
 		user = os.environ.get('USER')
 		if (user!='esd'):
 			print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
 		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
-		if (os.listdir(complement_exp)):
+		if (osp.isdir(complement_exp)):
 			isCrossval = True
 	loop_count = 0
 	complete=False
