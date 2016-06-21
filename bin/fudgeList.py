@@ -12,7 +12,8 @@ import shlex
 cnt = 0
 def fudgeVer():
         try:
-		fudgeversion = 'fudge/'+os.environ['BRANCH'] 
+		#fudgeversion = 'fudge/'+os.environ['BRANCH'] 
+		fudgeversion = 'fudge/'+os.environ['FUDGETAG']
 		print "version",fudgeversion        
 	except:
 		fudgeversion = "<undefined>"
