@@ -61,6 +61,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                     "PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                     ReturnDownscaleError(ds.method))
       #out.tmp <- apply(mapply('add.back.in', out, esd.index), 2, as.list) #TODO: this needs a BIG check to make sure
+      out.tmp <- list()
       for(o in 1:length(out)){
         out.name <- names(out)[o]
         out.tmp[[out.name]] <- out[[o]]
