@@ -408,7 +408,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 			os.makedirs(osp.dirname(clim_anom_file_out))
 		clim_file_out = gcp(clim_file, 'TMPDIR')	
 		anom_file_out = gcp(anom_file,'TMPDIR')	
-		r_command = "Rscript " + s8_path + "/AddAnom.R --clim " + str(clim_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(clim_anom_var) + " -o " + str(clim_anom_file_out)
+		r_command = "Rscript " + s8_path + "/AddAnom.R --clim " + str(clim_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(clim_anom_var) + " -o " + str(clim_anom_file_out) + " --clone_globals"
 		print "Calling AddAnom.R"
 		try:
 			p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
@@ -430,15 +430,16 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None):
 									err_message,aux=r_command)
 		else:
 			print "Anomaly addition successful"
-			height_vars = ['tasmax', 'tasmin']
-			if (clim_anom_var in height_vars):
-				print ("Adding height for " + clim_anom_var)
-				print("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out)
-				p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
-						shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-				p_out,p_err = p.communicate()
-				print(p_out)
-				print(p_err)		
+			##Replacing due to overly-thourough clone from climatology files
+			#height_vars = ['tasmax', 'tasmin']
+			#if (clim_anom_var in height_vars):
+			#	print ("Adding height for " + clim_anom_var)
+			#	print("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out)
+			#	p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
+			#			shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			#	p_out,p_err = p.communicate()
+			#	print(p_out)
+			#	print(p_err)		
 			print "Copying to final location"			
 			gcp(clim_anom_file_out, clim_anom_file)						
 			if(mailid is not None):
