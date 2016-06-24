@@ -446,7 +446,8 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			print 'Making output anom + clim directory'
 			os.makedirs(osp.dirname(clim_anom_file))	
 		s8_path = os.environ.get("S8_PATH")
-		s8_path = "/home/cew/Code/section_8_tools/"
+		#s8_path = "/home/cew/Code/section_8_tools/"
+		#os.putenv("S8_PATH", s8_path)
 		if (s8_path is None):
 			print("Error in anomaly addition: $S8_PATH not set.")
 		tdir = os.environ.get("TMPDIR")

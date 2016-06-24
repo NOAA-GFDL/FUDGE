@@ -60,4 +60,4 @@ ncdump -h $outFile |grep plev
 # execute separately so that if either is missing from netCDF files, the other edit is still executed.
   ncatted -O -h -a realization,global,d,, -a realizations,global,c,c,""$rips"" $outFile
   #changed from deleting this attribute 6-24-16; very useful for some metadata opts in section 8
-  ncatted -O -h -a gfdl_experiment_name,global,c,c, $outFile
+  #ncatted -O -h -a gfdl_experiment_name,global,c,c, $outFile
