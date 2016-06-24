@@ -170,10 +170,10 @@ args <- f.list$args
 #Then, check that the s3 and s5 adjustments you are performing make sense in 
 #this context
 QCAdjustArguments(pre_ds, post_ds, 
-                 is.multivar=(length(predictor.vars) > 1), 
-                 is.multi.ens=(length(fut.pred.rip.list) > 1), 
-                 target.in.predictors = (target.var%in%predictor.vars), 
-                 predictor.vars, target.var)
+                  is.multivar=(length(predictor.vars) > 1), 
+                  is.multi.ens=(length(fut.pred.rip.list) > 1), 
+                  target.in.predictors = (target.var%in%predictor.vars), 
+                  predictor.vars, target.var)
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only for the masks, but as an immediate check upon the dimensions
@@ -270,18 +270,18 @@ if(!is.null(spat.mask)){
 }
 
 fut.filename <- GetMiniFileName("VAR",fut.freq_1,fut.model_1,fut.scenario_1,grid,
-                                 fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+                                fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 message("Reading in future predictor data")
 list.fut <- ReadMultiVars(file.prefix=fut.indir_1, 
-                           file.suffix=pred.dir.suffix, 
-                           blank.filename=fut.filename, 
-                           var.list=predictor.vars,
+                          file.suffix=pred.dir.suffix, 
+                          blank.filename=fut.filename, 
+                          var.list=predictor.vars,
                           rip.list = fut.pred.rip.list, rip.suffix = fut.pred.suffix, 
-                           dim=c('temporal'), 
-                           add.ens.dim=TRUE,
+                          dim=c('temporal'), 
+                          add.ens.dim=TRUE,
                           #check.for.ens = TRUE, ens.member = fut.scenario_1,
                           #rip.list = fut.pred.rip.list, rip.suffix = fut.filename.suffix, 
-                           verbose=TRUE)
+                          verbose=TRUE)
 
 message("Applying spatial mask to future predictor dataset")
 if(!is.null(spat.mask)){
@@ -295,18 +295,18 @@ print(dim(list.fut$clim.in))
 ###Hasty DeltaSD adjustment for asynchronous leap years
 delta.string <- ""
 if('OH'%in%ds.names){
-#   print('applying OH mask correction!')
-#   h.time.len <- dim(list.target$clim.in)[3]
-#   delta.mask <- c(rep(NA, (365*3+1)), rep(1, h.time.len-(365*3+1)))
+  #   print('applying OH mask correction!')
+  #   h.time.len <- dim(list.target$clim.in)[3]
+  #   delta.mask <- c(rep(NA, (365*3+1)), rep(1, h.time.len-(365*3+1)))
   h.time.len <- dim(list.target$clim.in)[3]
   print(summary(dim(list.fut$clim.in)))
   delta.adj.index <- correct.hist.leapdays(dim(list.target$clim.in)[3], 
-                                            dim(list.fut$clim.in[[1]])[3], 
-                                            hist.file.start.year_1, hist.file.end.year_1,
-                                            fut.file.start.year_1, fut.file.end.year_1)
+                                           dim(list.fut$clim.in[[1]])[3], 
+                                           hist.file.start.year_1, hist.file.end.year_1,
+                                           fut.file.start.year_1, fut.file.end.year_1)
   delta.mask <<- c(rep(NA, delta.adj.index[1]), 
-                  rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
-                  c(rep(NA, delta.adj.index[2])))
+                   rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
+                   c(rep(NA, delta.adj.index[2])))
   print(summary(delta.mask))
   #args$delta.mask <- delta.mask 
   #args$delta.adj.index <- delta.adj.index
@@ -314,8 +314,8 @@ if('OH'%in%ds.names){
                         "to", delta.adj.index[4], "for the downscaling step")
   #stop('examine the output of this function')
   #stop('exmaine ds.args')
-#   list.target$clim.in <- trim.time.mask(data=list.target$clim.in, mask=delta.mask)
-#   list.hist$clim.in <- lapply(list.hist$clim.in, 'trim.time.mask', mask=delta.mask)
+  #   list.target$clim.in <- trim.time.mask(data=list.target$clim.in, mask=delta.mask)
+  #   list.hist$clim.in <- lapply(list.hist$clim.in, 'trim.time.mask', mask=delta.mask)
 }
 
 ######################################################
@@ -356,20 +356,20 @@ all.att.table <- list('hist.pred'=list.hist$att_table,
 ##This si sprobably the next to-do item on the list
 print(paste("dimensions of the future predictor data:"))
 print(dim(list.fut$clim.in))
-  ds <- TrainDriver(target.masked.in = list.target$clim.in, 
-                    hist.masked.in = list.hist$clim.in, 
-                    fut.masked.in = list.fut$clim.in, ds.var=target.var, 
-                    att.table =list('hist.pred'=list.hist$att_table, 
-                                    'hist.targ'=list.target$att_table, 
-                                    'fut.pred'=list.fut$att_table),
-                    mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
-                    istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
-                    s3.instructions=pre.ds.train,
-                    s5.instructions=post.ds.train, 
-                    train_qcmask=train_qcmask,
-                    create.qc.mask=sum(c(qc.maskopts$qc.inloop,train_qcmask)), 
-                    min.present=min.present,
-                    verbose=FALSE)
+ds <- TrainDriver(target.masked.in = list.target$clim.in, 
+                  hist.masked.in = list.hist$clim.in, 
+                  fut.masked.in = list.fut$clim.in, ds.var=target.var, 
+                  att.table =list('hist.pred'=list.hist$att_table, 
+                                  'hist.targ'=list.target$att_table, 
+                                  'fut.pred'=list.fut$att_table),
+                  mask.list = tmask.list, ds.method = ds.method, k=0, time.steps=NA, 
+                  istart = NA,loop.start = NA,loop.end = NA, downscale.args=ds.args,
+                  s3.instructions=pre.ds.train,
+                  s5.instructions=post.ds.train, 
+                  train_qcmask=train_qcmask,
+                  create.qc.mask=sum(c(qc.maskopts$qc.inloop,train_qcmask)), 
+                  min.present=min.present,
+                  verbose=FALSE)
 #print(summary(ds$esd.final[!is.na(ds$esd.final)]))
 message("FUDGE training ends")
 message(paste("FUDGE training took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -503,8 +503,9 @@ for (rip in fut.pred.rip.list){
       #For now, patch the variables in here until se get s5 formalized in the XML
       WriteFUDGEGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                         configURL,label.validation,institution='NOAA/GFDL',
-                        version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),title=paste(target.var, "downscaled with", 
-                                                                                                          ds.method, ds.experiment), 
+                        version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
+                        title=paste(target.var, "downscaled with", 
+                                    ds.method, ds.experiment), 
                         ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                         grid_region=grid, mask_region=ds.region,
                         time.trim.mask=fut.time.trim.mask, 

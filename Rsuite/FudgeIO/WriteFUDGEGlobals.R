@@ -160,8 +160,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     out <- pipe('git describe --always --tag')
     commit.string <- readLines(out)
     close(out)
-    message(paste( "Git branch:", branch.string, commit.string))
-    info <- paste(info, "Git branch:", branch.string, commit.string)
+    message(paste( "FUDGE:", branch.string, commit.string))
+    info <- paste(info, "FUDGE:", branch.string, commit.string)
     setwd(popdir)
   }
   history <- paste('File processed at ',institution,
@@ -193,6 +193,9 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   if(!is.null(climatology)){
    ncatt_put(nc.object, 0, "climatology", climatology) 
+  }
+  if (include.git.branch){
+    ncatt_put(nc.object, 0, 'fudgetag', BRANCH)
   }
   nc_close(nc.object) 
   return(filename)
