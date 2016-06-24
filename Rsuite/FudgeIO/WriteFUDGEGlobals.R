@@ -160,8 +160,8 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     out <- pipe('git describe --always --tag')
     commit.string <- readLines(out)
     close(out)
-    message(paste( "Git branch:", branch.string, commit.string))
-    info <- paste(info, "Git branch:", branch.string, commit.string)
+    message(paste( "FUDGE:", branch.string, commit.string))
+    info <- paste(info, "FUDGE:", branch.string, commit.string)
     setwd(popdir)
   }
 
@@ -202,7 +202,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   #Check for FUDGETAG; add if present
   fudgetag = Sys.getenv("FUDGETAG")
   if (fudgetag != ""){
-    ncatt_put(nc.object, 0, 'git_tag', fudgetag)
+    ncatt_put(nc.object, 0, 'fudgetag', fudgetag)
   }
   nc_close(nc.object) 
   return(filename)

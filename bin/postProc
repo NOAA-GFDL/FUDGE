@@ -479,12 +479,12 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		                   outfiles = final_out_dir)
 		else:
 			print "Anomaly addition successful"
-			##Below code commented out; resulted in cloning ALL global climatology atts to output file
+			##Replacing due to overly-thourough clone from climatology files
 			#height_vars = ['tasmax', 'tasmin']
 			#if (clim_anom_var in height_vars):
-			#	#print ("Adding height for " + clim_anom_var)
-			#	#print("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out)
-			#	#p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
+			#	print ("Adding height for " + clim_anom_var)
+			#	print("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out)
+			#	p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
 			#			shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			#	p_out,p_err = p.communicate()
 			#	print(p_out)
