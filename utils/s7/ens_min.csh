@@ -69,11 +69,11 @@ ncdump -h $outFile |grep plev
   	echo $fname
   	set exp_name = `echo $fname | cut -d "_" -f 3`
     echo $exp_name
-    ncatted -O -h -a comment,global,a,c,"; \nEnsemble file of $climvar; ensmem= 1 to $#inFiles_array, in order, are from $orig_inFiles" $outFile
+    ncatted -O -h -a comment,global,o,c,"; \nEnsemble file of $climvar; ensmem= 1 to $#inFiles_array, in order, are from $orig_inFiles" $outFile
     ncatted -O -a title,global,o,c,"$cvtype $exp_name $trange" $outFile
   	ncatted -O -h -a gfdl_experiment_name,global,o,c,"$exp_name" $outFile
   else
-  	ncatted -O -h -a comment,global,a,c,"; \nEnsemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" $outFile
+  	ncatted -O -h -a comment,global,o,c,"; \nEnsemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" $outFile
   	ncatted -O -a title,global,o,c,"$dataSource $epoch $trange" $outFile
   endif
 
