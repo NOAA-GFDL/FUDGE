@@ -12,7 +12,7 @@
 source /usr/local/Modules/default/init/csh
 module load gcp
 module load nco/4.3.1
-module load ncarg/6.1.2
+module load ncarg/6.2.1
 module list
 echo $PATH
 module show gcp
