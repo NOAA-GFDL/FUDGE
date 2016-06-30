@@ -467,6 +467,8 @@ def main():
       #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
 	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
+	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
+	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
 	
 	(options, args) = parser.parse_args()
 	#CEW edits 3-3 for clarity (and only haing to search env vars once)
@@ -523,29 +525,6 @@ def main():
 				print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
 				print "Now invoking cleanup utility..........."
 				clean_prior_experiments(uinput, basedir, preexist_glob)
-		    #    cleaner_script = basedir+"/utils/bin/"+"cleanup_script.csh"
-			#if(preexist_glob == 'erase'):
-			#	print "Lets erase it ........... ifpreexist"
-		    #    	cleaner_cmd = cleaner_script+" d "+uinput 
-			#else: 
-			#	if(preexist_glob != 'move') & (preexist_glob != 'exit'):
-			#		print "CHECK ifpreexist settings, quitting now"
-			#		sys.exit(1)
-			#	print "Lets move it............... if preexist" 
-	    #		  	cleaner_cmd = cleaner_script+" m "+uinput
-		#	print "cleaner_cmd"
-			#print cleaner_cmd		
-		#	pclean = subprocess.Popen(cleaner_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-			##check return code
-		#	output0, errors0 = pclean.communicate()
-		#	if(pclean.returncode != 0):
-	 	#		print "033[1;41mCleaner Step:!!!! FAILED !!!!, please contact developer.033[1;m"
-	 	#		print output0, errors0
-		#		sys.exit(1)
-			#else:
-			#	print output0,errors0
-			#print "continue expergen run...................." 
-				#break 
 	else:
 		print "scriptdir "+sd+" does not exist. Looks like a clean slate "
 	#sys.exit("examine outcome of script")  
@@ -640,6 +619,8 @@ def main():
 	print " ========================="
 	dev = "off" 
 	msubwrapper = []
+	#CEW edit 6-30 for better status file monitoring when queue is full
+	msubwrapper.append("rm -f " + sbase + "postProc/ppStatus/*")
 	print "multi output (Writing to multiple output directories) ....",multi
 	#if cmd line -m is passsed use that, otherwise use following
 	#CEW edit 3-3
