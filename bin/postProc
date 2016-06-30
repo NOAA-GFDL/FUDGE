@@ -38,13 +38,9 @@ def postProc():
 		uinput = userinput
 	except:
 		userinput = "none"	
-	#parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
 	parser.add_argument("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
-	 # parser.add_argument("-d", "--dir", dest="dir",help="for multi ensembles specifically, pass which ensemble member OneD dir to postprocess. By default processes all ensemble members", metavar="FILE")
 	parser.add_argument("-e", "--ensarg", dest="ens",help="for multi ensembles specifically, pass which ensemble member to postprocess. By default processes all ensemble members", metavar="FILE")
-	#parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
 	parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-	#parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
 	parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
 	parser.add_argument("-m", "--mail", dest="NEMSemail1",default="none", help="Pass user email for notifications from postProc (optional argument)")
 	args = vars(parser.parse_args())
@@ -98,10 +94,6 @@ def postProc():
 		grid = 'na'
 	region = ds_region
 	outrec = outdir.split('_')
-	#amip = outrec[0] 
-	#fut = outrec[1]
-	#print "amip outdir", amip
-	#print "fut outdir", fut
 	suff = ".nc"
 	cond = 1 
 	indir = fut_pred_dir 
@@ -141,6 +133,12 @@ def postProc():
 		listvname = lvname #.split(',')  
 	else:
 		listvname.append(varname)
+		#CEW edit 6-30 for postproc success notifications
+	global statmail	
+	if osp.isfile(sbase+"/postProc/verb/verbose.true"):
+		statmail = True
+	else:
+		statmail = False		
 		
 	#CEW edit 5-3 to support writing of status files
 	#ppStatloc = sbase + "postProc/ppStatus"
@@ -200,17 +198,6 @@ def postProc():
 			if (retcode == - 13 ):
 				print "\033[1;31m!!!! mini.fail Failure status file exists in "+ indir+". postProc cannot be run at this time \033[1;m"
 	 			#email user
-				#subject = "fudge postProc failure for " + total_exp_name
-				#text = "Insufficient number of minfiles exist. "
-				#text = text + "\n\n mini.fail Failure status file exists in-\n"+ indir+"."
-				#text = text + "\n\npostProc cannot be run at this time for "+vname+"."
-				#text = text + "\n\nExperiment XML for reference-\n"+uinput
-				#text = text + "\n\nExperiment output minifile directory: "+indir
-				#text = text + "\n\nMinifile logs: "+ sbase + "/log/out.*"
-				#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-				#print "send to:" + send_to
-				#print "fromEmail: " + fromEmail
-				#notifyUser(send_to,subject,text)
 				send_status_email("failure", 'postProc', total_exp_name, \
 		                   traceback="Insufficient number of minifiles exist", \
 		                   mailid=send_to, logfiles = os.path.join(sbase, log), \
@@ -255,13 +242,6 @@ def postProc():
 						sys.exit("ERROR")
 			 	else:
 				 	print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-				 	#subject = "fudge postProc failure for " + total_exp_name
-				 	#text = "An error occured in postProc suite of tools,call_ppFudge "
-				 	#text = text + "\n\nMinfiles directory "+ indir+" does not exist for this experiment."
-				 	#text = text + "\n\npostProc cannot be run at this time"
-				 	#text = text + "\n\nExperiment XML for reference-\n"+uinput
-				 	#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-				 	#notifyUser(send_to,subject,text)
 				 	send_status_email("failure", 'postProc', total_exp_name, \
 		                   traceback="Minfiles directory "+ indir+" does not exist for this experiment.", \
 		                   mailid=send_to, logfiles = os.path.join(sbase, log), \
@@ -314,11 +294,6 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	error,output = p.communicate()
 	print p.returncode ,output, error
 	word = "ERROR"
-	#fromEmail1 = os.environ["USER"] 
-	#if ( fromEmail1 == "esd" ): # ie you run from the role account
-	#	fromEmail = "oar.gfdl.esd@noaa.gov"  
-	#else:
-	#	fromEmail = fromEmail1+"@noaa.gov" #else use the current user's email id
 	if(NEMSemail1 != "none"):
 		try:
 			uemail  = NEMSemail1 ## using cmd line arg in g release os.environ["NEMSemail"]
@@ -332,16 +307,6 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		send_to = 'na'
 	if (p.returncode != 0):
 		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
-		#subject = "fudge postProc failure for " + total_exp_name
-		#text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
-		#text = text + "\n\nThere may be one or more minfiles absent for the specified region."
-		#text = text + "\n\npostProc cannot be run at this time for "+var+"."
-		#text = text + "\n\nExperiment XML for reference-\n"+uinput
-		#text = text + "\n\nExperiment output directory: "+final_out_dir
-		#text = text + "\n\nMinifile logs: "+ sbase + "\log\out.*"
-		#text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
-		#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-		#notifyUser(send_to,subject,text)
 		send_status_email("failure", 'postProc', total_exp_name, \
 		                   traceback="One or more minifiles may be absent for the specified region", \
 		                   mailid=send_to, logfiles = [os.path.join(sbase, "fudge_postProc.mfudge_postProc*")], \
@@ -352,16 +317,6 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		sys.exit(0)
 	if word in error:
 		print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
-		#subject = "fudge postProc failure for " + total_exp_name
-		#text = "An error occured in postProc suite of tools,call_ppFudge for experiment " + total_exp_name
-		#text = text + "\n\nThere may be one or more minfiles absent for the specified region."
-		#text = text + "\n\npostProc cannot be run at this time for "+var+"."
-		#text = text + "\n\nExperiment XML for reference-\n"+uinput
-		#text = text + "\n\nExperiment output directory: "+final_out_dir
-		#text = text + "\n\nMinifile logs:"+ sbase + "/log/out.*"
-		#text = text + "\n\nPostProc logs: "+ sbase + '\log\fudge_postProc.mfudge_postProc*'
-		#text = text + "\n\n--Please contact Aparna and Carolyn for help with the runs."
-		#notifyUser(send_to,subject,text)
 		send_status_email("failure", 'postProc', total_exp_name, \
 		                   traceback="One or more minifiles may be absent for the specified region", \
 		                   mailid=send_to, logfiles = os.path.join(sbase, "log/fudge_postProc.mfudge_postProc*"), \
@@ -370,17 +325,12 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		sys.exit(0)
 ############################################################################################
 	global cnt
+	global statmail
 	cnt = cnt + 1
 	print "1- completed\n"
-	## success email 
-	#subject = "fudge postProc success for " + total_exp_name
-	#text = "Your postProc run has succeeded for "+var+"."
-	#text = text + "\n\nExperiment XML for reference-\n"+uinput
-	#text = text + "\n\nExperiment output directory: "+final_out_dir
-	#text = text + "\n\nExperiment logs for reference: " + sbase + "/log/"
-	#text = text + "\n\n--Please contact Aparna and Carolyn for help if the desired output is missing."
-	#notifyUser(send_to,subject,text)
-	send_status_email("success", 'postProc', total_exp_name, \
+	#CEW edit for email verbosity 6-30
+	if statmail:
+		send_status_email("success", 'postProc', total_exp_name, \
 		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir, xml = uinput)
@@ -412,9 +362,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 							traceback = clim_error,\
 		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
-		                   outfiles = final_out_dir, xml = uinput)
-				#send_anomadd_message('failure',exp_name,mailid,
-				#					anom_file,"None","None", clim_error,"")	
+		                   outfiles = final_out_dir, xml = uinput)	
 			exit(1)
 			
 	#Remove temporary directories from beginning of pathname, 

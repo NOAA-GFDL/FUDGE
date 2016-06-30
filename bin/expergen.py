@@ -489,7 +489,13 @@ def main():
 	else:
 		print "XML input " + options.uinput + "not found!"
 		print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
-		sys.exit()	
+		sys.exit()
+		
+	#CEW edits 6-30 for msub mail verbosity settings
+	msubmail = 0
+	if options.msubmail: 
+		msubmail = 1	
+	statmail = options.statmail		
 			
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
 	system,node,release,version,machine = os.uname()
@@ -583,7 +589,7 @@ def main():
 	###################################### 3 ################################################################
 	script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate
-	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)
+	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)+" "+str(msubmail)
 	print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
 	#CEW edit to diagnose older behavior
 	#cprint create_master_cmd
@@ -634,12 +640,12 @@ def main():
 		  except KeyError:
 			NEMSemail1 = "none"
 	 '''
-	if (NEMSemail1=='none'):
-	 mail_command = ""
-	 msub_mail_command = ""
-	else:
-	 mail_command = "-m " + NEMSemail1 + " "
-	 msub_mail_command = "-m ae -M "+ NEMSemail1 + " "	       
+	mail_command = ""
+	msub_mail_command = ""
+	if (NEMSemail1!='none'):
+	 if msubmail==1:
+	 	mail_command = "-m " + NEMSemail1 + " "
+	 	msub_mail_command = "-m ae -M "+ NEMSemail1 + " " 		       
 
 	#print(sbase+"/postProc/aux/")
 	if (multi == "on"):
@@ -656,7 +662,14 @@ def main():
 		os.makedirs(sbase+"/postProc/ppStatus/")
 	#CEW edit 5-4-16 for writing cross-validation status files
 	if not os.path.exists(sbase+"/postProc/cvStatus/"):
-		os.makedirs(sbase+"/postProc/cvStatus/")		
+		os.makedirs(sbase+"/postProc/cvStatus/")
+	#CEW edit 6-30-16 for the statmail settings
+	if not os.path.exists(sbase+"/postProc/verb/"):
+		os.makedirs(sbase+"/postProc/verb/")
+	if statmail:
+		open(sbase+"/postProc/verb/verbose.true", 'a').close() 
+	else:
+		open(sbase+"/postProc/verb/verbose.false", 'a').close()				
 	suffctr = 1
 	for pname,pval in copyprop.iteritems():
 	   listrips = pval.split(',')

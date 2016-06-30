@@ -138,7 +138,8 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	for out in outpaths_all:
 		gcp(tmpfile, out, False, False, sev > 1) #verbose, verbose
 	print("Modified experiment.info files copied to all locations:")
-	print("\n".join(outpaths_all))							
+	print("\n".join(outpaths_all))
+	return("\n\t".join(ens_list))							
 	
 def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 						trange_string,isAnom=False, recOnly=False,verbose=False, sev=1):	

@@ -21,6 +21,7 @@ set tstamp = $argv[8]
 set ppn = $argv[9]
 #new msub option
 set msub = $argv[10]
+set msubmail=$argv[11]
 #new ends
 set dev = "off" #if dev option is off then tstamp unique does not kick in
 if($dev == "off") then
@@ -76,7 +77,12 @@ if($msub == 'True') then
 source /usr/local/Modules/3.1.6/init/csh
 module load moab
 if ($?NEMSemail)  then
-   set msub_string = "-m ae -M $NEMSemail"
+   if ($msubmail == 1) then
+   	#If msubmail turned on 
+      set msub_string = "-m ae -M $NEMSemail"
+   else
+      set msub_string = ""
+   endif   
 else
    set msub_string = ""
 endif

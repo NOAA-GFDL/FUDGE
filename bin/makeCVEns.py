@@ -50,7 +50,7 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	exp1,exp2 = sorted([exp1,exp2])
 	scriptdir1,scriptdir2 = sorted([scriptdir1,scriptdir2])
 	expdict1 = read_exp_info_file(osp.join(scriptdir1,"experiment_info.txt"))
-	expdict2 = read_exp_info_file(osp.join(scriptdir1,"experiment_info.txt"))
+	expdict2 = read_exp_info_file(osp.join(scriptdir2,"experiment_info.txt"))
 	trange_string = expdict1['fut.train.start.year_1'] +"-" + expdict1['fut.train.end.year_1']	
 	ds_exp1 = [("/").join(p.split("/")[0:len(p.split("/"))-1]) for p in expdict1['output.path']] #trim off OneD
 	ds_exp2 = [("/").join(p.split("/")[0:len(p.split("/"))-1]) for p in expdict2['output.path']]
@@ -59,62 +59,50 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	dsvar = expdict1['target']
 	#Do a brief check for anomaly vars in the input files	
 	#There are two distinct classes of file; create each in turn
+#	print(ds_exp1)
+#	print(ds_exp2)
+#	sys.exit(1)
 	setdict = {'DSDEPh': {'odesc': 'dp', 'dataID':'DSDEPh', 'kfold':'K00', 
 	                      'inDir1': ds_exp1[0], 'inDir2': ds_exp2[1], 
 	                      'f1r' : ds_rip1[0], 'f2r' : ds_rip2[1], 
-	                     'exp1': exp2, 'exp2': exp1
-	                      #'inPath1': expdict1[''], 'inPath2' : osp.join()
+	                     'exp1': exp2, 'exp2': exp1,
+	                      'inPath1': ds_exp1[0], 'inPath2' : ds_exp2[1]
 	                      }, 
 	           'DSCVh': {'odesc': 'cv', 'dataID':'DSCVh', 'kfold':'K02', 
 	                     'inDir1': ds_exp1[1], 'inDir2': ds_exp2[0], 
-	                     'f1r' : ds_rip1[1], 'f2r' : ds_rip2[0], 
-	                     'exp1': exp2, 'exp2': exp1
-	                     #'inPath1': expdict[], 'inPath2' : osp.join()
+	                     'f1r' : ds_rip2[0], 'f2r' : ds_rip1[1], 
+	                     'exp1': exp2, 'exp2': exp1,
+	                     'inPath1': ds_exp2[0], 'inPath2' : ds_exp1[1]
 	                     }
 	}
 	ens_list = []
 	for kty in ['DSDEPh', 'DSCVh']:
 		kdict = setdict[kty]
-			##
-		for outpaths in [ds_exp1,ds_exp2]:
-			all_outfiles =  [[f for f in os.listdir(p) if osp.isfile(osp.join(p, f))] for p in outpaths]
-			num_files = [len(flist) for flist in all_outfiles]
-			if (num_files.count(num_files[0]) != len(num_files)):
-				print("Error in makeExpEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs.")
-				sys.exit(1)
-			elif (num_files[0]==0):
-				print("Error in makeExpEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")		
-			all_outfiles = zip(*all_outfiles)
-			#Add entries to dictionary, after sorting:
-			print(all_outfiles)
-			ens_list = []
-			for flist in all_outfiles:
-				print(flist)
-				flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
-				outfile = call_cv_ens_creation(flist, dsvar, [kdict['f1r'],kdict['f2r']], \
-				",".join([kdict['f1r'],kdict['f2r']]), kty, kdict['odesc'], kdict['kfold'],\
-				[kdict['exp1'], kdict['exp2']], trange_string,isAnom=False,recOnly=False,verbose=False)
-				ens_list.append(outfile)
+		#for outpaths in [ds_exp1,ds_exp2]:
+		print(kdict['inPath1'])
+		outpaths = [kdict['inPath1'] , kdict['inPath2']]
+		all_outfiles =  [[f for f in os.listdir(p) if osp.isfile(osp.join(p, f))] for p in outpaths]
+		num_files = [len(flist) for flist in all_outfiles]
+		if (num_files.count(num_files[0]) != len(num_files)):
+			print("Error in makeCVEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs.")
+			sys.exit(1)
+		elif (num_files[0]==0):
+			print("Error in makeCVEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")
+			sys.exit(1)	
+		all_outfiles = zip(*all_outfiles)
+		#Add entries to dictionary, after sorting:
+		print(all_outfiles)
+		for flist in all_outfiles:
+			print(flist)
+			flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
+			outfile = call_cv_ens_creation(flist, dsvar, [kdict['f1r'],kdict['f2r']], \
+			",".join([kdict['f1r'],kdict['f2r']]), kty, kdict['odesc'], kdict['kfold'],\
+			[kdict['exp1'], kdict['exp2']], trange_string,isAnom=False,recOnly=False,verbose=False)
+			ens_list.append(outfile)
+			print("output file:" + outfile)
 		print("Ensemble files:")
 		for el in ens_list:
 			print el	
-#		try:
-#			call_cv_ens_creation(flist, sdvar, [f1r,f2r], ",".join([f1r,f2r]), kty, \
-#				exp_name, epoch, trange,string,isAnom=False,recOnly=False,verbose=False)
-#		except:
-#			for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
-#				prevname = exp + ".lock"
-#				os.remove(osp.join(p, "postProc/cvStatus/",prevname), 'a')	
-#				fname = exp + "_" + kty + "_" +".failure"	
-#				open(osp.join(p, "postProc/cvStatus/",fname), 'a').close()
-#				raise	
-#				return(1)
-#		else:
-#			for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
-#				prevname = exp + ".lock"
-#				os.remove(osp.join(p, "postProc/cvStatus/",prevname), 'a')	
-#				fname = exp + "_" + kty + "_" + ".success"	
-#				open(osp.join(p, "postProc/cvStatus/",fname), 'a').close()	
 	
 def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
                         exp_names,
@@ -180,7 +168,7 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 			print(str(err0))
 		gcp(tmp_outfile, outfile, verbose, verbose)
 		print("Copied to " + outfile)
-		return([outfile])
+		return(outfile)
 			
 def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold):
 	#Makes a cross-validated ensemble outpath/filename given a non-cv

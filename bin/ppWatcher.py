@@ -24,6 +24,8 @@ from fudgeUtils import read_exp_info_file
 from fudgeUtils import send_status_email
 import makeExpEns
 from makeExpEns import runMakeExpEns
+import makeCVEns
+from makeCVEns import runMakeCVEns
 import cgitb
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
@@ -37,6 +39,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	isCrossval = False
 	crossval_patt = ['00r1e2', '00r2e2']
 	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
+	print(cv_match)
 	if(len(cv_match) == 1):
 		patt2 = 1 - cv_match[0]
 		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
@@ -46,6 +49,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		if (user!='esd'):
 			print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
 		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
+		print(complement_exp)
 		if (osp.isdir(complement_exp)):
 			isCrossval = True
 	loop_count = 0
@@ -80,7 +84,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		print "postProc jobs are complete."
 		if(nrips > 1):
 			print("More than one experiment rip is present; calling makeExpEns")
-			runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
+			outfiles = runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
 			#...check on the error returns from this. There shouldn't be an issue,
 			#since multiple exit points aren't that much of an issue and you
 			#WANT things to come to a screeching halt, but that may change later.
@@ -88,16 +92,18 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			#Check for presence of cross-validated experiment
 			#Check for the presence of a cross-validated lockfile in either dir
 			#before starting the process (prevents multiple writes to same file)
-			cv_statfiles = len(p for p in osp.join())
-			if(len(cv_statfiles) > 0):
-				print("Cross-validation ensemble creation for this experiment is either in progress or has completed. Please check the experiment_info file.") 
+			#cv_statfiles = len(p for p in osp.join())
+			#if(len(cv_statfiles) > 0):
+			#	print("Cross-validation ensemble creation for this experiment is either in progress or has completed. Please check the experiment_info file.") 
 			#...in the event that the above errors out, you probably want this to 
 			#have a command-line argument as well
 			#else:
 				#print("Calling cross-validated ensemble creation script")
 				#print("Or we would, if it existed right now.")
 				#try:
-				#	runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+			print("Cross-validated ensemble script not yet ready; cross-validation will not take place")	
+			#print(" ".join([exp_name, exp_name2, str(expdict['script.base']), str(complement_exp)]))
+			#runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
 				#except:
 				#	#import sys, cgitb
 				#	#cgitb.enable()
@@ -106,10 +112,10 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				#else:
 				#	send_ppWatcher_message('success')		
 			#Make cross-validated ensemble; add to the relevant experiment info files
-			send_status_email("success", 'complete', exp_name, \
-		                   traceback="", \
-		                   mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
-		                   exp_info_file = infile, outfiles = "")
+		send_status_email("success", 'complete', exp_name, \
+		                  traceback="", \
+		                  mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
+		                  exp_info_file = infile, outfiles = outfiles)
 			
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
