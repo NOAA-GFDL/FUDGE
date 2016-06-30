@@ -156,7 +156,8 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 			sys.exit(1)
 	#inFiles = ",".join([gcp(f, "TMPDIR", verbose, verbose) for f in flist])
 	inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, sev > 1, sev > 1) for f in flist])
-	orig_inFiles = ",".join(flist)
+	#orig_inFiles = ",".join(flist)
+	orig_inFiles = ",".join([osp.basename(p) for p in flist])
 	print("Calling ensemble creation on " + inFiles)
 	with Dataset(flist[0], 'r') as nc_obj:
 		varnames = nc_obj.variables.keys()
@@ -186,7 +187,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())			
 	#Finally, call the ensemble generation code:	
 	ens_min = basedir + "utils/s7/ens_min.csh"	
-	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles])
+	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles, 'Exp'])
 	#ens_command = " ".join(["tcsh -f ",ens_min, outfile.lstrip("/"), vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, orig_inFiles])
 	p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
 	out0,err0 = p.communicate()

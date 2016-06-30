@@ -20,19 +20,28 @@ set epoch = $argv[5]
 set trange = $argv[6]
 set orig_inFiles = $argv[7]
 set inFiles = $argv[8]
+set enstype = $argv[9]
+if ($enstype == "CV") then
+	echo "Making cross-validated ensemble"
+	set cvtype = $epoch
+endif
 set inFiles_array = `echo $inFiles | awk 'BEGIN{FS=","}{for (i=1; i<=NF; i++) print $i}'`
 
 #set echo
-echo $outFile
-echo $climvar
-echo $rips
-echo $dataSource
-echo $trange
-echo $inFiles
+#echo $outFile
+#echo $climvar
+#echo $rips
+#echo $dataSource
+#echo $trange
+#echo $inFiles
 
-foreach i (`seq $#inFiles_array`)
-	ls $inFiles_array[$i]
-end
+#set inFiles_short = $inFiles_array
+#foreach i (`seq $#inFiles_array`)
+#	ls $inFiles_array[$i]
+#	set inFiles_short[$i] = "`basename $inFiles_array[$i]`"
+#end
+#print with commas, remove last comma
+#set inFiles_string = "`printf -- "%s," $inFiles_array | sed 's/.$//'`"
 #ls `dirname($outFile)`
 
 echo "ncecat --ovr -v $climvar $inFiles_array -o $outFile"
@@ -53,8 +62,20 @@ ncdump -h $outFile |grep plev
      set vars2copy = "$vars2copy,height"
   endif
   ncks -A -h -v $vars2copy $inFiles_array[1]  $outFile
-
-  ncatted -O -h -a comment,global,a,c,"; \nEnsemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" -a title,global,m,c,"$dataSource $epoch $trange" $outFile
+  
+  if ($enstype == "CV") then
+  	echo "in cross-validated case"
+  	set fname = `basename $outFile`
+  	echo $fname
+  	set exp_name = `echo $fname | cut -d "_" -f 3`
+    echo $exp_name
+    ncatted -O -h -a comment,global,a,c,"; \nEnsemble file of $climvar; ensmem= 1 to $#inFiles_array, in order, are from $orig_inFiles" $outFile
+    ncatted -O -a title,global,o,c,"$cvtype $exp_name $trange" $outFile
+  	ncatted -O -h -a gfdl_experiment_name,global,o,c,"$exp_name" $outFile
+  else
+  	ncatted -O -h -a comment,global,a,c,"; \nEnsemble file of $climvar containing data from $#inFiles_array files: $orig_inFiles" $outFile
+  	ncatted -O -a title,global,o,c,"$dataSource $epoch $trange" $outFile
+  endif
 
 # the realization attribute is in all CMIP5 and GFDL model metadata, but "gfdl_experiment_name" is only in GFDL's model data. 
 # execute separately so that if either is missing from netCDF files, the other edit is still executed.
