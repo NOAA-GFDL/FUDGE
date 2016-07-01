@@ -107,9 +107,9 @@ def clean_prior_experiments(xml, basedir, opt):
 		dirpaths.append(get_ensemble_path(outdirs, rip_list))
 		crossval_patt = ['00r1e2', '00r2e2']
 		cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, outdirs[1]) is not None]
-		#if (len(cv_match) == 1):
-		#	is_crossval=True
-		#	dirpaths.append(get_crossval_paths(outdirs))
+		if (len(cv_match) == 1):
+			is_crossval=True
+			dirpaths.append(get_crossval_paths(outdirs))
 	#if(re.search('anom', targvar) is not None):
 	#	anomaddpaths = get_anomadd_paths(outdirs)
 	#	dirpaths.append(anomaddpaths)

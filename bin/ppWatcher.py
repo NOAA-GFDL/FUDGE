@@ -37,10 +37,13 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	#Check for whether or not an experiment has a cross-validated companion
 	exp_name = expdict['ds.experiment']
 	isCrossval = False
+	warnCrossval=True
 	crossval_patt = ['00r1e2', '00r2e2']
 	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
-	print(cv_match)
 	if(len(cv_match) == 1):
+		#Need a check in here to print warnings for the r1e2 case
+		if cv_match[1] == 0:
+			warnCrossval = True
 		patt2 = 1 - cv_match[0]
 		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
 		project = re.split("/", expdict['script.base'])
@@ -93,6 +96,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			outdir_contents = os.listdir(outdir)	
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
 			outfiles = "\n\t".join(outfiles)
+		if warnCrossval: 
+			print("Experiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles.")	
 		if isCrossval: 
 			#Check for presence of cross-validated experiment
 			#Check for the presence of a cross-validated lockfile in either dir
@@ -106,9 +111,10 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				#print("Calling cross-validated ensemble creation script")
 				#print("Or we would, if it existed right now.")
 				#try:
-			print("Cross-validated ensemble script not yet ready; cross-validation will not take place")	
+			#print("Cross-validated ensemble script not yet ready; cross-validation will not take place")	
 			#print(" ".join([exp_name, exp_name2, str(expdict['script.base']), str(complement_exp)]))
-			#runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+			cv_outfiles = runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+			outfiles = outfiles + "\n" + cv_outfiles
 				#except:
 				#	#import sys, cgitb
 				#	#cgitb.enable()

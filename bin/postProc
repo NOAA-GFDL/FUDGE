@@ -306,7 +306,7 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		uemail = "na"
 		send_to = 'na'
 	if (p.returncode != 0):
-		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
+		print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Carolyn Whitlock'\033[1;m"
 		send_status_email("failure", 'postProc', total_exp_name, \
 		                   traceback="One or more minifiles may be absent for the specified region", \
 		                   mailid=send_to, logfiles = [os.path.join(sbase, "fudge_postProc.mfudge_postProc*")], \
@@ -316,7 +316,7 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		
 		sys.exit(0)
 	if word in error:
-		print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
+		print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Carolyn Whitlock\033[1;m"
 		send_status_email("failure", 'postProc', total_exp_name, \
 		                   traceback="One or more minifiles may be absent for the specified region", \
 		                   mailid=send_to, logfiles = os.path.join(sbase, "log/fudge_postProc.mfudge_postProc*"), \
@@ -466,7 +466,7 @@ def send_anomadd_message(status,exp_name,mailid,
 	
 def send_pp_message(status,step,exp_name,err, var,xml,outdir, minilog,pplog):
 	#send a message about the pp status
-	print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
+	print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Carolyn Whitlock\033[1;m"
 	subject = "fudge postProc failure for " + total_exp_name
 	sep = "\n\n"
 	#step='callPPFudge'
@@ -478,7 +478,7 @@ def send_pp_message(status,step,exp_name,err, var,xml,outdir, minilog,pplog):
 	text = text + sep + "\n\nExperiment output directory: "+outdir
 	text = text + sep + "\n\nMinifile logs:"+ minilog
 	text = text + sep + "\n\nPostProc logs: "+ pplog
-	text = text + sep  + "\n\n--Please contact Aparna and Carolyn for help with the runs."
+	text = text + sep  + "\n\n--Please contact Carolyn for help with the runs."
 	notifyUser(mailid,subject,text)	
 			 
 def write_pp_status(loc, filename, status):
