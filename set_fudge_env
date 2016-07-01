@@ -4,7 +4,7 @@ echo "sourcing set_fudge_env located in fudge repository"
 set whichR = `which R`
 echo $whichR | grep "2.15.2" >> /dev/null
 set rstat = $status
-if ( $status!=0 ) then
+if ($status != 0) then
 	module unload R/2.15.2
 	module load R/3.2.1
 endif

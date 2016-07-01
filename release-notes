@@ -1,3 +1,9 @@
+7-1-16
+- Email notification verbosity settings can be set by expergen (--msubmail, --statmail)
+- Metadata updates for tracking the fudgetag used
+- FUDGE now relies on the checkout script to get copies of FUDGE, located at: 
+/home/esd/bin/checkout-fudge
+
 6-15-16:
 - Updates to checkout script for better error handing or move options on files that do not exist
 - Correcting module loads to match esd environment module
