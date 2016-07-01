@@ -88,6 +88,11 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			#...check on the error returns from this. There shouldn't be an issue,
 			#since multiple exit points aren't that much of an issue and you
 			#WANT things to come to a screeching halt, but that may change later.
+		else:
+			outdir = osp.dirname(expdict['output.path'])
+			outdir_contents = os.listdir(outdir)	
+			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
+			outfiles = "\n\t".join(outfiles)
 		if isCrossval: 
 			#Check for presence of cross-validated experiment
 			#Check for the presence of a cross-validated lockfile in either dir
