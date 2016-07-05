@@ -182,7 +182,7 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                           qc.mask=(ifelse(!qc.maskvar, 
                                           'on', 'off')),
                           loc='outloop',
-                          qc_args=list('na'))
+                          qc_args=list('on')) #Changed for user readability 7-1-16
       #Check for prior qc option that returns a qc mask
       post_ds <- c(post_ds, list(flag.negopt))
     }#else{

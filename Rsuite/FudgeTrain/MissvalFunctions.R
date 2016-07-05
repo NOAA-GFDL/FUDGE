@@ -45,15 +45,10 @@ assess.missvals <- function(OH, MH, MF,
   #for(rip in rips){
     if(ds.list$status < 100 && ds.list$status > 0){
       message('Recovery option enabled; adding precip zeroes back into the training data.')
-#       print(summary(OH))
-#       print(lapply(MH, 'summary'))
-#       print(lapply(MF, 'summary'))
       ds.tmp <- switch(ds.method, 
                        recover.ignore0(OH,MH,MF))
       for(name in (names(ds.tmp))){
-#        print(summary(ds.list[[name]]))
         ds.list[[name]] <- ds.tmp[[name]]
-#        print(summary(ds.tmp[[name]]))
       }
       ds.list$status <- 10 #used recover.ignore0 to fix the input data
     }
