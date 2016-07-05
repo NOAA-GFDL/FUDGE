@@ -306,11 +306,14 @@ get_orig_experiment <- function(in.file, var='tasmax'){
   att.names <- names(atts)
   test.1 <- c("model_id", 'experiment', 'realization')
   test.2 <- c('parent_experiment', "experiment_id", 'realization')
-  test.3 <- c('title')
-  if(sum(sapply(test.1, '%in%', att.names))==2){
+  test.3 <- c("model_id", 'experiment_id')
+  test.4 <- c('title')
+  if(sum(sapply(test.1, '%in%', att.names))==3){
     orig_exp <- paste0(atts['model_id'], ", ", atts['experiment'])
-  }else if (sum(sapply(test.1, '%in%', att.names))==2){
+  }else if (sum(sapply(test.2, '%in%', att.names))==3){
     orig_exp <- paste0(atts['parent_experiment'], ", ", atts['experiment_id'])
+  }else if (sum(sapply(test.3, '%in%', att.names)==2)){
+    orig_exp <- paste0(atts['model_id', 'experiment_id'])
   }else{
     #Assume only title att present
     orig_exp <- gsub(paste0(var,", "), "", atts['title']) #var with or without a trailing comma

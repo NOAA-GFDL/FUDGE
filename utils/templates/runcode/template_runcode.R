@@ -79,6 +79,7 @@ rm(list=ls())
 	configURL <-' Ref:http://gfdl.noaa.gov/esd_experiment_configs'
 # ------ Set FUDGE environment ---------------
 	FUDGEROOT = Sys.getenv(c("BASEDIR"))
+	FUDGETAG = Sys.getenv(c("FUDGETAG"))
 	#FUDGEROOT <- <FUDGEROOT>
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 	BRANCH <- <BRANCH>

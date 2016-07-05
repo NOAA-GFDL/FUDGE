@@ -454,8 +454,8 @@ for (rip in fut.pred.rip.list){
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
                     title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
-                                "downscaled by FUDGE", BRANCH, 
-                                ds.experiment, substr(rip,1,2)),
+                                "downscaled by FUDGE", FUDGETAG, #BRANCH, 
+                                ds.experiment), #, substr(rip,1,2)
                     ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                     grid_region=grid, mask_region=ds.region,
                     time.trim.mask=fut.time.trim.mask, 
@@ -502,9 +502,11 @@ for (rip in fut.pred.rip.list){
                                 units="1",
                                 lname=paste('QC Mask')
       )
+      print(qc.maskopts)
+      print(qc.maskopts$qc.method)
       if(qc.maskopts$qc.method=='simpletailadj'){
         qc.encoding = paste('NA = no adjust', 
-                            '1 = simpletailadj applied to lower tail;', 
+                            '1 = simpletailadj applied to lower tail', 
                             '2 = simpletailadj applied to upper tail', 
                             '3 = adjust applied to upper and lower tail',
                             '4 = simpletailadj for non-overlapping MH and MF distributions used', 
@@ -515,13 +517,15 @@ for (rip in fut.pred.rip.list){
       }else{
         qc.encoding = "Flagged cases = missing; Non-flagged cases = 1.0"
       }
+      print(qc.encoding)
+      #stop('examine results')
       #For now, patch the variables in here until se get s5 formalized in the XML
       WriteFUDGEGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                         configURL,label.validation,institution='NOAA/GFDL',
                         version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
                         title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
-                                    "downscaled by FUDGE", BRANCH, 
-                                    ds.experiment, substr(rip,1,2)), 
+                                    "downscaled by FUDGE", FUDGETAG, #BRANCH, 
+                                    ds.experiment), #, substr(rip,1,2)
                         ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                         grid_region=grid, mask_region=ds.region,
                         time.trim.mask=fut.time.trim.mask, 
