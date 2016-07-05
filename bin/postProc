@@ -217,7 +217,7 @@ def postProc():
 						try: 
 							cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid,ensarg,uinput,sbase)
 						except SystemExit:
-							sys.exit(status) 	
+							sys.exit(-23) 	
 						print "call_ppFudge: COMPLETE "
 						print "fudgeList invocation: BEGINS"
 						slogloc = sbase+"/"+"experiment_info.txt"
