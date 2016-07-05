@@ -1,3 +1,6 @@
+7-5-16
+- Metadata updates for qcmasks; metadata updates for title attributes within R code
+
 7-1-16
 - Email notification verbosity settings can be set by expergen (--msubmail, --statmail)
 - Metadata updates for tracking the fudgetag used

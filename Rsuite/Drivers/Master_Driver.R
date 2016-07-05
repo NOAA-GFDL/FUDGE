@@ -453,7 +453,7 @@ for (rip in fut.pred.rip.list){
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
-                    title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
+                    title=paste(get_orig_experiment(attributes(list.fut)$filename), 
                                 "downscaled by FUDGE", FUDGETAG, #BRANCH, 
                                 ds.experiment), #, substr(rip,1,2)
                     ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
@@ -523,7 +523,7 @@ for (rip in fut.pred.rip.list){
       WriteFUDGEGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                         configURL,label.validation,institution='NOAA/GFDL',
                         version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
-                        title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
+                        title=paste(get_orig_experiment(attributes(list.fut)$filename), 
                                     "downscaled by FUDGE", FUDGETAG, #BRANCH, 
                                     ds.experiment), #, substr(rip,1,2)
                         ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 

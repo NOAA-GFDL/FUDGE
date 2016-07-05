@@ -321,5 +321,18 @@ get_orig_experiment <- function(in.file, var='tasmax'){
 #   if('realization' %in% att.names){
 #     orig_exp <- paste(orig_exp, 'realization', atts['realization'])
 #   }
+if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
+  #Perfect model-specific corrections
+  print(atts['experiment_id'])
+  emissions_scenario <- switch(atts[['experiment_id']], 
+                               'sst2030' = 'RCP 4.5', 
+                               'sst2090' = 'RCP 8.5')
+  physics <- switch(as.character(atts[['physics_version']]), 
+                    '1' = 'ESM', 
+                    '2' = 'CM3')
+  orig_exp <- paste("GFDL-HIRAM", atts['experiment_id'], 
+                    emissions_scenario, physics)
+  
+}
   return(orig_exp)
 }
