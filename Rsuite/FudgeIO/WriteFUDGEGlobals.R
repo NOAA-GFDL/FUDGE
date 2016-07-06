@@ -180,7 +180,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   ncatt_put(nc.object, 0 , "title", title )
   ncatt_put(nc.object, 0 , "history", history )
-  ncatt_put(nc.object, 0 , "institution", institution )
+  ncatt_put(nc.object, 0 , "institution", paste(institution, "(201 Forrestal Rd, Princeton, NJ, 08540)") )
   if(comment.info != ""){
     ncatt_put(nc.object, 0 , "comment", comment.info )
   }

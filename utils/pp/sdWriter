@@ -2,7 +2,7 @@
 module load gcp
 module load nco/4.3.1
 module load ncarg/6.2.1
-set echo
+#set echo
 
 if ($#argv < 4) then
    echo "ERROR: wrong number of arguments"
@@ -360,7 +360,7 @@ EOF
 if ( "$AARMVAR" =~ *"mask"* ) then
 	echo "${TMPCMIPNAME}@comments = ${AARMVAR}@comments;" >> refine.nco 
 endif
-cat refine.nco
+#cat refine.nco
 
 # prepare new dimension variables
 ncap2 -hv -S refine.nco $IFILE refine.nc

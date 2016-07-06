@@ -329,6 +329,7 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 	cnt = cnt + 1
 	print "1- completed\n"
 	#CEW edit for email verbosity 6-30
+	print("sending advanced status messages? " + str(statmail))
 	if statmail:
 		send_status_email("success", 'postProc', total_exp_name, \
 		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
