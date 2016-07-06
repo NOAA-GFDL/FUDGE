@@ -34,24 +34,20 @@ def get_crossval_paths(cv_paths):
 	cv_outpaths = []
 	cv_path = cv_paths[0]
 	#for cv_path in cv_paths:
-	print cv_path
-	dirsplit = re.split("/", cv_path)[-3]
+	dirsplit = re.split("/", cv_path)
 	#ds_rip = dirsplit[-3]
 	ds_rip = re.search("(r[0-9]*i[0-9]*p[0-9]*)", cv_path).group()
-	print(ds_rip)
 	for k in range(0,2):
-		print "k:" + str(k)
+		loop_path = cv_path
 		cv_expname = re.sub("A00r[0-9]*e2", "A00"+odesc[k]+"e2", orig_expname)
 		cv_expname = re.sub("K00", kfold[k], cv_expname)
 		cv_expname = re.sub(ds_rip, dtype[k], cv_expname)
 		#
-		cv_path = re.sub(orig_expname, cv_expname, cv_path)
+		loop_path = re.sub(orig_expname, cv_expname, loop_path)
 		#cv_fname = re.sub(orig_expname, cv_expname, orig_fname)
 		#From this point on, make the changes to the new things instead
-		cv_path = re.sub(ds_rip, dtype[k], cv_path)
-		cv_outpaths.append(cv_path)
-	print(cv_outpaths)
-	#sys.exit(1)		
+		loop_path = re.sub(ds_rip, dtype[k], loop_path)
+		cv_outpaths.append(loop_path)	
 	return(cv_outpaths)		
 			
 def get_file_paths(path):
@@ -109,6 +105,7 @@ def clean_prior_experiments(xml, basedir, opt):
 	#Ensemble obtain
 	is_ensemble = False
 	is_crossval = False
+	cv_warn=False
 	dirpaths = [scriptpath] + outdirs
 	if len(outdirs) > 1:
 		is_ensemble = True
@@ -117,17 +114,21 @@ def clean_prior_experiments(xml, basedir, opt):
 		cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, outdirs[1]) is not None]
 		if (len(cv_match) == 1):
 			is_crossval=True
-			dirpaths.append(get_crossval_paths(outdirs))
+			dirpaths = dirpaths + get_crossval_paths(outdirs)
+			print(cv_match)
+			if cv_match[0]==0:
+				cv_warn = True
+	if cv_warn:
+		print("Warning in cleanup_script! The cross-validated ensembles" + 
+		      "generated with this experiment will not be regenerated" + 
+		      "automatically! Run other member of experiment to regenerate.")			
 	#if(re.search('anom', targvar) is not None):
 	#	anomaddpaths = get_anomadd_paths(outdirs)
 	#	dirpaths.append(anomaddpaths)
 	#	if is_ensemble:
 	#		dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
 	#	#if is_crossval:
-	#	#	dirpaths.append(get_crossval_paths(anomaddpaths))	
-	
-	print(dirpaths)
-	sys.exit(1)			
+	#	#	dirpaths.append(get_crossval_paths(anomaddpaths))		
 	print "Starting cleanup file operations"			
 	if opt=='erase':
 		for el in dirpaths:

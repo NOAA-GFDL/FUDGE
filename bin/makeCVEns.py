@@ -51,6 +51,8 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	expdict1 = read_exp_info_file(osp.join(scriptdir1,"experiment_info.txt"))
 	expdict2 = read_exp_info_file(osp.join(scriptdir2,"experiment_info.txt"))
 	print(expdict1)
+	print(expdict1['fut.train.start.year_1'])
+	print(expdict1['fut.train.end.year_1'])
 	trange_string = expdict1['fut.train.start.year_1'] +"-" + expdict1['fut.train.end.year_1']	
 	ds_exp1 = [("/").join(p.split("/")[0:len(p.split("/"))-1]) for p in expdict1['output.path']] #trim off OneD
 	ds_exp2 = [("/").join(p.split("/")[0:len(p.split("/"))-1]) for p in expdict2['output.path']]

@@ -42,7 +42,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
 	if(len(cv_match) == 1):
 		#Need a check in here to print warnings for the r1e2 case
-		if cv_match[1] == 0:
+		print(cv_match)
+		if cv_match[0] == 0:
 			warnCrossval = True
 		else:	
 			patt2 = 1 - cv_match[0]
@@ -66,9 +67,6 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		nfail = [p for p in status_files if re.search('failure',p) is not None]
 		if len(nfail) != 0:
 			print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
-			#send_ppWatcher_message('success', 'what is a step', expdict['ds.experiment'], 'what is the error', \
-		    #                   expdict['script.base'], minilog, pplog, mailid)
-			#print(nfail)
 			send_status_email("failure", 'ppWatcher', exp_name, \
 		                   traceback="One or more pp jobs have failed; sample jobs include " + \
 		                   (",").join([re.sub(".failure", "", p) for p in nfail]), \
@@ -98,7 +96,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
 			outfiles = "\n\t".join(outfiles)
 		if warnCrossval: 
-			print("Experiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles.")	
+			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles.\033[1;m ")	
 		if isCrossval: 
 			#Check for presence of cross-validated experiment
 			#Check for the presence of a cross-validated lockfile in either dir
