@@ -433,7 +433,7 @@ endif
 set today = `date`
 ncatted -O -h -a Contact,global,a,c,"http://nomads.gfdl.noaa.gov/contacts.html" $OFILE
 ncatted -O -h -a Institute_id,global,a,c,"${instituteid}" $OFILE 
-ncatted -O -h -a institution,global,a,c,"NOAA GFDL (201 Forrestal Rd, Princeton, NJ, 08540)" $OFILE
+ncatted -O -h -a institution,global,o,c,"NOAA GFDL (201 Forrestal Rd, Princeton, NJ, 08540)" $OFILE
 ncatted -O -h -a conventions,global,a,c,"CF-1.4" $OFILE
 if ( (${METHOD} == "GFDL-deltav1") | ( ${METHOD} == "GFDL-deltav2" )) then
 ncatted -O -h -a history,global,a,c,"File processed at NOAA/GFDL using R statistical downscaling suite of tools, version v20130622 on Mon Jul  15 17:03:03 2013" $OFILE

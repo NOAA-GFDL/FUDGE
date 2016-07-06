@@ -119,7 +119,7 @@ def send_status_email(status,step,exp_name,mailid, \
 	elif status=='success':
 		if step == 'complete':
 			subject = exp_name + " completed successfully!"
-			text = "FUDGE experiment " + exp_name + "completed all steps successfully."
+			text = "FUDGE experiment " + exp_name + " completed all steps successfully."
 			if note != "":
 				text = text + "\n" + note
 		else:
