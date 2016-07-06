@@ -693,9 +693,9 @@ def main():
 		 #3-3 CEW edits related to email notifications  
 		#check if qc_mask is relevant  
 		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
+  			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
 	 	else:
-			pp_cmnd = "python $BASEDIR/bin/postProc "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
+			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
   		ppfile.write(pp_cmnd)
 		print "wrote to ",ppfile
   		ppfile.close()

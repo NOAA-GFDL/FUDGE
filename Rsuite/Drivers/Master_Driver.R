@@ -453,9 +453,9 @@ for (rip in fut.pred.rip.list){
   WriteFUDGEGlobals(out.loop.file,k.fold,target.var,predictor.vars,label.training,ds.method,
                     configURL,label.validation,institution='NOAA/GFDL',
                     version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
-                    title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
-                                "downscaled by FUDGE", BRANCH, 
-                                ds.experiment, substr(rip,1,2)),
+                    title=paste(get_orig_experiment(attributes(list.fut)$filename), 
+                                "downscaled by FUDGE", FUDGETAG, #BRANCH, 
+                                ds.experiment), #, substr(rip,1,2)
                     ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                     grid_region=grid, mask_region=ds.region,
                     time.trim.mask=fut.time.trim.mask, 
@@ -502,33 +502,44 @@ for (rip in fut.pred.rip.list){
                                 units="1",
                                 lname=paste('QC Mask')
       )
+      print(qc.maskopts)
+      print(qc.maskopts$qc.method)
+      if(qc.maskopts$qc.method=='simpletailadj'){
+        qc.encoding = paste('NA = no adjust', 
+                            '1 = simpletailadj applied to lower tail', 
+                            '2 = simpletailadj applied to upper tail', 
+                            '3 = adjust applied to upper and lower tail',
+                            '4 = simpletailadj for non-overlapping MH and MF distributions used', 
+                            sep=";")
+      }else if (qc.maskopts$qc.method=='qc.train'){
+        qc.encoding = paste("1 = sufficient data to downscale;", 
+                            "NA = missing values added back in to get enough points to downscale")
+      }else{
+        qc.encoding = "Flagged cases = missing; Non-flagged cases = 1.0"
+      }
+      print(qc.encoding)
+      #stop('examine results')
       #For now, patch the variables in here until se get s5 formalized in the XML
       WriteFUDGEGlobals(qc.out.filename,k.fold,target.var,predictor.vars,label.training,ds.method,
                         configURL,label.validation,institution='NOAA/GFDL',
                         version=as.character(parse(file=paste(FUDGEROOT, "version", sep=""))),
-                        title=paste(simpleCap(get_orig_experiment(attributes(list.fut)$filename)), 
-                                    "downscaled by FUDGE", BRANCH, 
-                                    ds.experiment, substr(rip,1,2)), 
+                        title=paste(get_orig_experiment(attributes(list.fut)$filename), 
+                                    "downscaled by FUDGE", FUDGETAG, #BRANCH, 
+                                    ds.experiment), #, substr(rip,1,2)
                         ds.arguments=args, time.masks=tmask.list, ds.experiment=ds.experiment, 
                         grid_region=grid, mask_region=ds.region,
                         time.trim.mask=fut.time.trim.mask, 
                         tempdir=TMPDIR, include.git.branch=T, FUDGEROOT=FUDGEROOT, BRANCH=BRANCH,
                         is.qcmask=TRUE,
                         qc.method=qc.maskopts$qc.method, qc.args=qc.maskopts$qc.args,
+                        qc.encoding = qc.encoding, 
                         is.pre.ds.adjust=(length(pre_ds) > 0),
                         pre.ds.adjustments=pre_ds,
                         is.post.ds.adjust=(length(post_ds_adj) > 0),
                         post.ds.adjustments=post_ds_adj, 
                         fut.pred.rip = rip, 
                         missval.handling=missval.handling, minval.present=min.present)
-      if(qc.maskopts$qc.method=='simpletailadj'){
-        WriteSelectGlobals(qc.out.filename,
-                           atts=list('comment'=paste('1 = simpletailadj applied to lower tail;', 
-                                                     '2 = simpletailadj applied to upper tail', 
-                                                     '3 = adjust applied to upper and lower tail',
-                                                     '4 = simpletailadj for non-overlapping MH and MF distributions used', 
-                                                     sep=";")),append=T)
-      }
+      WriteSelectGlobals(qc.out.filename, atts=list('comment'=qc.encoding), append=T)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }

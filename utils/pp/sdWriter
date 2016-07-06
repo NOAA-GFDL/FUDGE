@@ -2,6 +2,7 @@
 module load gcp
 module load nco/4.3.1
 module load ncarg/6.2.1
+set echo
 
 if ($#argv < 4) then
    echo "ERROR: wrong number of arguments"
@@ -355,7 +356,12 @@ ${TMPCMIPNAME}@units = ${AARMVAR}@units;
 
 EOF
 
-unset echo
+#CEW edit 7-5
+if ( "$AARMVAR" =~ *"mask"* ) then
+	echo "${TMPCMIPNAME}@comments = ${AARMVAR}@comments;" >> refine.nco 
+endif
+cat refine.nco
+
 # prepare new dimension variables
 ncap2 -hv -S refine.nco $IFILE refine.nc
 set exitcode = $?
@@ -440,7 +446,7 @@ set title = "downscaled estimate of "${AARMVAR}" for fudge experiment: "${EXPNAM
 if ( "$AARMVAR" =~ *"mask"* ) then
 	set title = "Auxiliary QC mask "${AARMVAR}" for fudge experiment: "${EXPNAME}
 	set mcom = "Flagged cases = missing; Non-flagged cases = 1.0" 
-	ncatted -O -h -a comments,${AARMVAR},a,c,"${mcom}" $OFILE
+	#ncatted -O -h -a comments,${AARMVAR},a,c,"${mcom}" $OFILE
 else
 	ncatted -O -h -a predictand_calibration_dataset,global,a,c,"${obs}" $OFILE
 endif

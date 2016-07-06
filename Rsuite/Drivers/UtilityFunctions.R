@@ -182,7 +182,7 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                           qc.mask=(ifelse(!qc.maskvar, 
                                           'on', 'off')),
                           loc='outloop',
-                          qc_args=list('na'))
+                          qc_args=list('on')) #Changed for user readability 7-1-16
       #Check for prior qc option that returns a qc mask
       post_ds <- c(post_ds, list(flag.negopt))
     }#else{
@@ -306,11 +306,14 @@ get_orig_experiment <- function(in.file, var='tasmax'){
   att.names <- names(atts)
   test.1 <- c("model_id", 'experiment', 'realization')
   test.2 <- c('parent_experiment', "experiment_id", 'realization')
-  test.3 <- c('title')
-  if(sum(sapply(test.1, '%in%', att.names))==2){
+  test.3 <- c("model_id", 'experiment_id')
+  test.4 <- c('title')
+  if(sum(sapply(test.1, '%in%', att.names))==3){
     orig_exp <- paste0(atts['model_id'], ", ", atts['experiment'])
-  }else if (sum(sapply(test.1, '%in%', att.names))==2){
+  }else if (sum(sapply(test.2, '%in%', att.names))==3){
     orig_exp <- paste0(atts['parent_experiment'], ", ", atts['experiment_id'])
+  }else if (sum(sapply(test.3, '%in%', att.names))==2){
+    orig_exp <- paste0(atts['model_id'], ", " ,atts['experiment_id'])
   }else{
     #Assume only title att present
     orig_exp <- gsub(paste0(var,", "), "", atts['title']) #var with or without a trailing comma
@@ -318,5 +321,18 @@ get_orig_experiment <- function(in.file, var='tasmax'){
 #   if('realization' %in% att.names){
 #     orig_exp <- paste(orig_exp, 'realization', atts['realization'])
 #   }
+if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
+  #Perfect model-specific corrections
+  print(atts['experiment_id'])
+  emissions_scenario <- switch(atts[['experiment_id']], 
+                               'sst2030' = 'RCP 4.5', 
+                               'sst2090' = 'RCP 8.5')
+  physics <- switch(as.character(atts[['physics_version']]), 
+                    '1' = 'ESM', 
+                    '2' = 'CM3')
+  orig_exp <- paste("GFDL-HIRAM", atts['experiment_id'], 
+                    emissions_scenario, physics)
+  
+}
   return(orig_exp)
 }

@@ -16,7 +16,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
                          time.trim.mask='na', 
                          grid_region='somewhere', mask_region='somewhere_subset',
                          tempdir="", include.git.branch=FALSE, FUDGEROOT="", BRANCH='undefined',
-                         is.qcmask=FALSE, qc.method=NA, qc.args=NA,
+                         is.qcmask=FALSE, qc.method=NA, qc.args=NA, qc.encoding = "",
                          is.pre.ds.adjust=FALSE,
                          pre.ds.adjustments=list('na'),
                          is.post.ds.adjust=FALSE,
@@ -145,8 +145,11 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   #Missing value handling and recording added 9-30
   if(missval.handling!='na'){
-    missval.string <- paste("Missing values in downscaling handled using the", missval.handling, "method", 
-                            "with a minimum present value of", minval.present)
+    missval.string <- paste("Downscaling peformed on x,y,tmask points where,", 
+                            "after removing missing values in input datasets", 
+                            "with the", missval.handling, "missval handing method,", 
+                            "input datasets had at least", minval.present, 
+                            "non-missing value(s).")
     info <- paste0(info, " ", missval.string, ";")
   }
   
@@ -190,8 +193,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
     ncatt_put(nc.object, 0 , "references", reference )
   }
   if(is.qcmask){
-    ncatt_put(nc.object, paste(predictand, "_qcmask",sep=""), 
-              "comments", "Unadjusted cases = missing; adjusted cases = 1 or greater" )
+    ncatt_put(nc.object, paste(predictand, "_qcmask",sep=""), "comments", qc.encoding )
   }
   if(!is.null(climatology)){
    ncatt_put(nc.object, 0, "climatology", climatology) 
