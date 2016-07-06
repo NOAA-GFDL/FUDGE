@@ -44,17 +44,18 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		#Need a check in here to print warnings for the r1e2 case
 		if cv_match[1] == 0:
 			warnCrossval = True
-		patt2 = 1 - cv_match[0]
-		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
-		project = re.split("/", expdict['script.base'])
-		project = project[len(project)-1]
-		user = os.environ.get('USER')
-		if (user!='esd'):
-			print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
-		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
-		print(complement_exp)
-		if (osp.isdir(complement_exp)):
-			isCrossval = True
+		else:	
+			patt2 = 1 - cv_match[0]
+			exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
+			project = re.split("/", expdict['script.base'])
+			project = project[len(project)-1]
+			user = os.environ.get('USER')
+			if (user!='esd'):
+				print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
+			complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
+			print(complement_exp)
+			if (osp.isdir(complement_exp)):
+				isCrossval = True
 	loop_count = 0
 	complete=False
 	while(loop_count < nloops and not complete):

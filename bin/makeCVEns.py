@@ -42,7 +42,6 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	#Makes the two cross-validated ensemble files for two historical
 	#experiments in the current setup. 
 	
-	
 	###Wait on adding the status files/lockfiles for later.
 	#for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
 	#	fname = exp + ".lock"
@@ -60,9 +59,6 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	dsvar = expdict1['target']
 	#Do a brief check for anomaly vars in the input files	
 	#There are two distinct classes of file; create each in turn
-#	print(ds_exp1)
-#	print(ds_exp2)
-#	sys.exit(1)
 	setdict = {'DSDEPh': {'odesc': 'dp', 'dataID':'DSDEPh', 'kfold':'K00', 
 	                      'inDir1': ds_exp1[0], 'inDir2': ds_exp2[1], 
 	                      'f1r' : ds_rip1[0], 'f2r' : ds_rip2[1], 
@@ -203,7 +199,6 @@ def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold):
 	orig_expname = re.split("_", orig_fname)[2]
 	cv_expname = re.sub("A00r[0-9]*e2", "A00"+odesc+"e2", orig_expname)
 	cv_expname = re.sub("K00", kfold, cv_expname)
-	#
 	cv_path = re.sub(orig_expname, cv_expname, orig_path)
 	cv_fname = re.sub(orig_expname, cv_expname, orig_fname)
 	#From this point on, make the changes to the new things instead
