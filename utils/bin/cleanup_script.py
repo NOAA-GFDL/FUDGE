@@ -119,8 +119,8 @@ def clean_prior_experiments(xml, basedir, opt):
 			if cv_match[0]==0:
 				cv_warn = True
 	if cv_warn:
-		print("Warning in cleanup_script! The cross-validated ensembles" + 
-		      "generated with this experiment will not be regenerated" + 
+		print("Warning in cleanup_script! The cross-validated ensembles " + 
+		      "generated with this experiment will not be regenerated " + 
 		      "automatically! Run other member of experiment to regenerate.")			
 	#if(re.search('anom', targvar) is not None):
 	#	anomaddpaths = get_anomadd_paths(outdirs)

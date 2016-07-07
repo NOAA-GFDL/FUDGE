@@ -105,7 +105,7 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	title_list = ["dep.ensemble:", "cv.ensemble:"]
 	ens_title = zip(title_list, ens_list)
 	print(ens_title)	
-	ens_string = "\n" + "#"*80 + "\n".join(["".join(el) for el in ens_title])
+	ens_string = "\n" + "#"*80 +"\n" + "\n".join(["".join(el) for el in ens_title])
 	print(ens_string)
 	#Okay, now append this to the bottom of all downscaled, ensembled and cross-validated experiment info files
 	scriptdirs = [scriptdir1, scriptdir2]
@@ -121,13 +121,19 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 		ds_ensdirs.append("/".join(dirsplit))
 	#cross-validated script dirs
 	cv_dirs = [osp.dirname(osp.dirname(osp.dirname(el))) for el in ens_list]
-	exp_info_file = osp.join(scriptdir1, "experiment_info.txt")
-	with open(exp_info_file, 'a') as f:
-		f.write(ens_string)
-	for el in scriptdirs + dsdirs + ds_ensdirs + cv_dirs:	
-		print el
-		gcp(exp_info_file, osp.join(el, "experiment_info.txt"))			
-	return("\n\t".join(["".join(el) for el in ens_title]))	
+	alldirs = scriptdirs + dsdirs + ds_ensdirs + cv_dirs
+	for el in alldirs:
+		exp_info_file = osp.join(el, "experiment_info.txt")
+		print(exp_info_file)
+		with open(exp_info_file, 'a') as f:
+			f.write(ens_string)	
+	#exp_info_file = osp.join(scriptdir1, "experiment_info.txt")
+	#with open(exp_info_file, 'a') as f:
+	#	f.write(ens_string)
+	#for el in scriptdirs + dsdirs + ds_ensdirs + cv_dirs:	
+	#	print el
+	#	gcp(exp_info_file, osp.join(el, "experiment_info.txt"))			
+	return("\n".join(["".join(["\t"] + list(el)) for el in ens_title]))	
 	
 def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
                         exp_names,
