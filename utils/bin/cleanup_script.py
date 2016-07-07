@@ -128,7 +128,7 @@ def clean_prior_experiments(xml, basedir, opt):
 	#	if is_ensemble:
 	#		dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
 	#	#if is_crossval:
-	#	#	dirpaths.append(get_crossval_paths(anomaddpaths))		
+	#	#	dirpaths.append(get_crossval_paths(anomaddpaths))	
 	print "Starting cleanup file operations"			
 	if opt=='erase':
 		for el in dirpaths:

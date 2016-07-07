@@ -99,33 +99,35 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 			[kdict['exp1'], kdict['exp2']], trange_string,isAnom=False,recOnly=False,verbose=False)
 			ens_list.append(outfile)
 			print("output file:" + outfile)
-		print("Ensemble files:")
-		for el in ens_list:
-			print el
-		title_list = ["dep.ensemble:", "cv.ensemble:"]
-		ens_title = zip(title_list, ens_list)
-		ens_string = "\n" + "#"*80 + "\n".join(["".join(el) for el in ens_title])
-		#Okay, now append this to the bottom of all downscaled, ensembled and cross-validated experiment info files
-		scriptdirs = [scriptdir1, scriptdir2]
-		dsdirs = [osp.dirname(osp.dirname(el)) for el in ds_exp1] + [osp.dirname(osp.dirname(el)) for el in ds_exp2]
-		#...and that should be it for now, right? Is there any need to do the experiment ensembles?
-		ds_ensdirs = []
-		print(dsdirs)
-		for el in dsdirs:
-			dirsplit = re.split("/", el)
-			rip = dirsplit[-3]
-			rip = re.sub("r[0-9]*", "r1to2", rip)
-			dirsplit[-3] = rip
-			ds_ensdirs.append("/".join(dirsplit))
-		#cross-validated script dirs
-		cv_dirs = [osp.dirname(osp.dirname(osp.dirname(el))) for el in ens_list]
-		exp_info_file = osp.join(scriptdir1, "experiment_info.txt")
-		with open(exp_info_file, 'a') as f:
-			f.write(ens_string)
-		for el in scriptdirs + dsdirs + ds_ensdirs + cv_dirs:	
-			print el
-			gcp(exp_info_file, osp.join(el, "experiment_info.txt"))				
-		return("\n\t".join(["".join(el) for el in ens_title]))	
+	print("Ensemble files:")
+	for el in ens_list:
+		print el
+	title_list = ["dep.ensemble:", "cv.ensemble:"]
+	ens_title = zip(title_list, ens_list)
+	print(ens_title)	
+	ens_string = "\n" + "#"*80 + "\n".join(["".join(el) for el in ens_title])
+	print(ens_string)
+	#Okay, now append this to the bottom of all downscaled, ensembled and cross-validated experiment info files
+	scriptdirs = [scriptdir1, scriptdir2]
+	dsdirs = [osp.dirname(osp.dirname(el)) for el in ds_exp1] + [osp.dirname(osp.dirname(el)) for el in ds_exp2]
+	#...and that should be it for now, right? Is there any need to do the experiment ensembles?
+	ds_ensdirs = []
+	print(dsdirs)
+	for el in dsdirs:
+		dirsplit = re.split("/", el)
+		rip = dirsplit[-3]
+		rip = re.sub("r[0-9]*", "r1to2", rip)
+		dirsplit[-3] = rip
+		ds_ensdirs.append("/".join(dirsplit))
+	#cross-validated script dirs
+	cv_dirs = [osp.dirname(osp.dirname(osp.dirname(el))) for el in ens_list]
+	exp_info_file = osp.join(scriptdir1, "experiment_info.txt")
+	with open(exp_info_file, 'a') as f:
+		f.write(ens_string)
+	for el in scriptdirs + dsdirs + ds_ensdirs + cv_dirs:	
+		print el
+		gcp(exp_info_file, osp.join(el, "experiment_info.txt"))			
+	return("\n\t".join(["".join(el) for el in ens_title]))	
 	
 def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
                         exp_names,

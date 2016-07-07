@@ -29,6 +29,8 @@ from makeCVEns import runMakeCVEns
 import cgitb
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
+	#print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
+	#sys.exit("This should trigger the end of the script")
 	expdict = read_exp_info_file(infile)
 	pp_statdir = osp.join(expdict['script.base'], "postProc/ppStatus")
 	logfile_loc = osp.join(expdict['script.base'], 'log/fudge_postProc_.mfudge_*')
@@ -37,26 +39,29 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	#Check for whether or not an experiment has a cross-validated companion
 	exp_name = expdict['ds.experiment']
 	isCrossval = False
-	warnCrossval=True
+	warnCrossval=False
 	crossval_patt = ['00r1e2', '00r2e2']
 	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
 	if(len(cv_match) == 1):
 		#Need a check in here to print warnings for the r1e2 case
-		print(cv_match)
+		print("crossval match:" + str(cv_match))
+		#if re.search(crossval_patt[0], exp_name) is not None:
+		#	print "This should trigger the cv_match check"
+		#	warnCrossval = True
+		#print cv_match	
 		if cv_match[0] == 0:
-			warnCrossval = True
-		else:	
-			patt2 = 1 - cv_match[0]
-			exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
-			project = re.split("/", expdict['script.base'])
-			project = project[len(project)-1]
-			user = os.environ.get('USER')
-			if (user!='esd'):
-				print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
-			complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
-			print(complement_exp)
-			if (osp.isdir(complement_exp)):
-				isCrossval = True
+			warnCrossval = True	
+		patt2 = 1 - cv_match[0]
+		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
+		project = re.split("/", expdict['script.base'])
+		project = project[len(project)-1]
+		user = os.environ.get('USER')
+		if (user!='esd'):
+			print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
+		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
+		print(complement_exp)
+		if osp.isdir(complement_exp) and not warnCrossval:
+			isCrossval = True
 	loop_count = 0
 	complete=False
 	while(loop_count < nloops and not complete):
@@ -134,4 +139,9 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		                   mailid=mailid, logfiles = logfile_loc, exp_info_file = infile, 
 		                   outfiles = expdict['output.path'])
 		sys.exit(1)                   		                       
-	sys.exit(0)						
+	sys.exit(0)		
+	
+if __name__ == '__main__':
+	print(sys.argv)
+	runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], 
+	             sys.argv[5], sys.argv[6], sys.argv[7])				
