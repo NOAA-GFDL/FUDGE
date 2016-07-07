@@ -187,7 +187,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				notifyUser(mailid,subject,text)
 				sys.exit("Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start))
 			v_print(1, "checker to run on the file ") 
-			retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt)
+			retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt,spath=script_base)
 			if (qc_mask_bool == 'on'):
 				v_print(1, "qc_mask seems to be on, checker to run on qc_mask")
 				outmask = out+"/"+target+"_qcmask"

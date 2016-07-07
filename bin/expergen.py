@@ -619,6 +619,14 @@ def main():
 	#Copy environment config file
 	print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
+	
+	# Create emergency backstop directory for capturing status files when
+	# permissions are an issue
+	statdir = sbase + "/status"
+	try:
+		os.mkdir(statdir)
+	except: 
+		print("Directory " + statdir + " may already exist")
 
 ############### crte ppscript #################
 	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"

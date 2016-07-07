@@ -185,7 +185,11 @@ foreach i (`seq $lon_start 1 $lon_end`)
     end
  endif
  foreach OUTDIR ($outdir)
-        echo "mkdir -p $OUTDIR" >> $runpath
+    echo "mkdir -p $OUTDIR" >> $runpath
+    echo "if ($status != 0) then" >> $runpath
+ 	echo "    echo 'Error in runscript creation of output dir! You may not have write permissions.'" >> $runpath
+ 	echo "    touch $sbasedir/status/.mini.fail" >> $runpath
+ 	echo "endif" >> $runpath
 #Add line to create mask directory
         echo "mkdir -p $OUTDIR/${cmipvar}_qcmask" >> $runpath
         echo "mkdir -p "'$TMPDIR'"$OUTDIR/  ">> $runpath
