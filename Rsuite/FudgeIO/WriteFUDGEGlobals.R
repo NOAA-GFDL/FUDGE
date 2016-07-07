@@ -145,7 +145,7 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   }
   #Missing value handling and recording added 9-30
   if(missval.handling!='na'){
-    missval.string <- paste("Downscaling preformed on x,y,tmask points where,", 
+    missval.string <- paste("Downscaling performed on x,y,tmask points where,", 
                             "after removing missing values in input datasets", 
                             "with the", missval.handling, "missval handing method,", 
                             "input datasets had at least", minval.present, 
