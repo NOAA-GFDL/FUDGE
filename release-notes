@@ -1,3 +1,6 @@
+7-11-16
+- Cross-validated ensemble generation, cleanup and notification working from within integrated FUDGE workflow
+
 7-5-16
 - Metadata updates for qcmasks; metadata updates for title attributes within R code
 

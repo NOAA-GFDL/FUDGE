@@ -43,13 +43,13 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	warnCrossval=False
 	crossval_patt = ['00r1e2', '00r2e2']
 	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
-	print("Cross-validation match:")
-	print(cv_match)
+	#print("Cross-validation match:")
+	#print(cv_match)
 	if(len(cv_match) == 1):
 		#Need a check in here to print warnings for the r1e2 case
 		print("crossval match:" + str(cv_match))
 		if re.search(crossval_patt[0], exp_name) is not None:
-			print "This should trigger the cv_match check"
+			#print "This should trigger the cv_match check"
 			warnCrossval = True
 		#print cv_match	
 		#if cv_match[0] == 0:
