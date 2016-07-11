@@ -68,7 +68,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			isCrossval = True
 	loop_count = 0
 	complete=False
-	while(loop_count < nloops and not complete):
+	while int(loop_count) < int(nloops) and not complete:
 		print("starting loop " + str(loop_count) + " of " + str(nloops))
 		print("Checking " + pp_statdir + " for status files")
 		status_files = [p for p in os.listdir(pp_statdir) if osp.isfile(osp.join(pp_statdir,p))]
