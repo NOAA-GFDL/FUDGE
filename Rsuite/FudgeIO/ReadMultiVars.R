@@ -4,7 +4,7 @@
 #'and writes the files as a single object with variables and dims cloned from the 
 #'first file, and a $clim.in value
 #'that consists of the various components of the 
-ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, dim=NA, 
+ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, dim='none', 
                           add.ens.dim=FALSE, 
                           #check.for.ens = FALSE, ens.member = "",
                           rip.list = list('fake_rip'), rip.suffix = '', 
@@ -90,7 +90,12 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     if(v==1){
       #First time through, you want to grab the dimensions; second time through, that is not neccessary
       force_dim_len = (3 + multi.rip)
-      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_dim = force_dim_len) #previously dim='none'. Whywas this a good idea?
+      #out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_dim = force_dim_len) #previously dim='none'. Whywas this a good idea?
+      print(var)
+      print(dim)
+      print(nc.list[[v]])
+      print(nc.list)
+      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_4_dim = F)
       #out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=(!multi.rip)) #No longer adding ensemble dimension
       #Contents at this point: 
       # 4-dimensional dataset

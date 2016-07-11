@@ -293,8 +293,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
           }
           data <- temp.out
+print(summary(kfold.predict))
+print(summary(kfold.target))
+print(summary(kfold.gen))
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
+                                       verbose=T,
                                        data = data[names(data)!='qc.mask'], 
                                        data.atts= att.table,
                                        hist.pred = kfold.predict, #lapply(kfold.predict, remove.missvals), 

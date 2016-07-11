@@ -198,6 +198,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
 
 remove.missvals <- function(data){
   #Removes missing values from an array (presumed 1-d)
+  print(summary(data))
+  print(names(data))
   return(data[!is.na(data)])
 }
 

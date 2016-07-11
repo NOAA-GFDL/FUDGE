@@ -30,11 +30,10 @@ WriteSelectGlobals <- function(filename, atts, append=TRUE){
   for(i in 1:length(atts)){
     att.name <- names(atts[i])
     att.val <- atts[[i]]
-    print(att.name)
     if(append[i]==TRUE){
       new.str <- ncatt_get(nc.object, 0, att.name)
       if(new.str$hasatt==TRUE){
-        att.val <- paste(new.str$val, att.val, sep=";")
+        att.val <- paste(att.val, new.str$val, sep="; ")
       }
     }
     ncatt_put(nc.object, 0, att.name, att.val)

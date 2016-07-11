@@ -19,7 +19,7 @@ OpenNC <- function(indir, in.filename, ilon=NA,jlat=NA) {
       print("Insufficient options. Please pass xlon and ylat. Program quitting")
       quit("no")
     }
-  filename <- paste0(indir,"/",in.filename,fileid)
+  filename <- paste(indir,in.filename,fileid,sep='')
   print(filename) 
   nc.object = nc_open(filename) 
   return(nc.object)

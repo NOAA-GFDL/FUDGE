@@ -32,6 +32,11 @@ callTailAdjust <- function(test, input, adjusted.output){
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
                                                "[[", 'var')==targ.var]
+    print('summary of input:')
+    print(summary(input))
+    print(fut.pred)
+    print(targ.var)
+    print(lapply(input$data.atts, 'names'))
     ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
@@ -71,6 +76,9 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   cond.data = switch(args$triggertype, 
                      'GfGh' = model.fut, 
                      'OhGh' = ds.fut)
+  print(args$triggertype)
+  print(summary(cond.data))
+  stop('examine results')
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
   model.hist <- remove.missvals(unlist(model.hist))

@@ -185,7 +185,7 @@ if(spat.mask.dir_1!="na"){
   spat.mask.filename <- paste(spat.mask.var,".","I",i.file,"_",file.j.range,".nc",sep='')
   spat.mask.ncobj <- OpenNC(spat.mask.dir_1,spat.mask.filename)
   print('OpenNC spatial mask: success..1')
-  spat.mask <- ReadMaskNC(spat.mask.ncobj, get.bounds.vars=FALSE)#TODO: remove opt for getting the bounds vars from fxn
+  spat.mask <- ReadMaskNC(spat.mask.ncobj) #=FALSE)#TODO: remove opt for getting the bounds vars from fxn
   print('ReadMaskNC spatial mask: success..1')
 }else{
   spat.mask <- NULL
@@ -244,7 +244,7 @@ message("Reading in target data")
 target.filename <- GetMiniFileName(target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                    target.file.start.year_1,target.file.end.year_1,i.file,file.j.range)
 print(target.filename)
-list.target <- ReadNC(OpenNC(target.indir_1, target.filename), var=target.var, dim="spatial", force_dim=3) #no longer adding ens dim
+list.target <- ReadNC(nc_open(paste0(target.indir_1,"/", target.filename)), var=target.var, dim="spatial", force_4_dim = F)
 message("Applying spatial mask to target data")
 #list.target$clim.in <- ApplySpatialMask(list.target$clim.in, spat.mask$masks[[1]])
 if(!is.null(spat.mask)){
