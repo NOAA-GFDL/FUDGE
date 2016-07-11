@@ -29,7 +29,8 @@ from makeCVEns import runMakeCVEns
 import cgitb
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
-	#print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
+	print(str(sleeptime))
+	print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
 	#sys.exit("This should trigger the end of the script")
 	expdict = read_exp_info_file(infile)
 	pp_statdir = osp.join(expdict['script.base'], "postProc/ppStatus")
@@ -42,6 +43,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	warnCrossval=False
 	crossval_patt = ['00r1e2', '00r2e2']
 	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
+	print("Cross-validation match:")
+	print(cv_match)
 	if(len(cv_match) == 1):
 		#Need a check in here to print warnings for the r1e2 case
 		print("crossval match:" + str(cv_match))
@@ -53,12 +56,13 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		#	warnCrossval = True	
 		patt2 = 1 - cv_match[0]
 		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
-		project = re.split("/", expdict['script.base'])
-		project = project[len(project)-1]
+		pdir_split = re.split("/", expdict['script.base'])
+		project = pdir_split[-1]
+		subproj = pdir_split[-2]
 		user = os.environ.get('USER')
 		if (user!='esd'):
 			print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
-		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/SUBPROJECTS/", exp_name2)
+		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/scripts", subproj, exp_name2)
 		print(complement_exp)
 		if osp.isdir(complement_exp) and not warnCrossval:
 			isCrossval = True
@@ -100,6 +104,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			outdir_contents = os.listdir(outdir)	
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
 			outfiles = "\n\t".join(outfiles)
+		print("will cross-valdiation be called?")
+		print(isCrossval)
 		if warnCrossval: 
 			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles.\033[1;m ")	
 		if isCrossval: 
@@ -144,4 +150,4 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 if __name__ == '__main__':
 	print(sys.argv)
 	runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], 
-	             sys.argv[5], sys.argv[6], sys.argv[7])				
+	             float(sys.argv[5]), sys.argv[6], sys.argv[7])				

@@ -63,7 +63,7 @@ def count_suffix(path):
 	#level up. Needed to make sure that a messy cleanup still 
 	#avoids clobbering prior output
 	if not os.path.isdir(path):
-		print("dir does not exit; returning 0")
+		print("dir does not exist; returning 0")
 		return(0)	
 	outdir = re.split("/", path.rstrip("/"))[-1]
 	basename = ("/").join(re.split("/", path.rstrip("/"))[:-1])
@@ -119,9 +119,9 @@ def clean_prior_experiments(xml, basedir, opt):
 			if cv_match[0]==0:
 				cv_warn = True
 	if cv_warn:
-		print("Warning in cleanup_script! The cross-validated ensembles " + 
+		print("\033[1;43mWarning in cleanup_script! The cross-validated ensembles " + 
 		      "generated with this experiment will not be regenerated " + 
-		      "automatically! Run other member of experiment to regenerate.")			
+		      "automatically! Run other member of experiment to regenerate.\033[1;m ")			
 	#if(re.search('anom', targvar) is not None):
 	#	anomaddpaths = get_anomadd_paths(outdirs)
 	#	dirpaths.append(anomaddpaths)
@@ -137,11 +137,9 @@ def clean_prior_experiments(xml, basedir, opt):
 				shutil.rmtree(el) #check on this - does it work for non-empty directories?
 	elif opt=='move':
 		#set suffix to move new paths to: 
-		print([count_suffix(el) for el in dirpaths])
 		suffix = str(max([count_suffix(el) for el in dirpaths]) + 1)
 		for el in dirpaths:
 			if os.path.exists(el):
-				print(el.rstrip("/"))
 				dest = "~".join([el.rstrip("/"), suffix])
 				print "moving " + str(el) + " to " + dest
 				shutil.move(el, dest)

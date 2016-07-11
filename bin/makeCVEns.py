@@ -22,6 +22,7 @@ from fudgeUtils import read_exp_info_file
 from fudgeUtils import send_status_email
 import makeExpEns
 from makeExpEns import runMakeExpEns
+from makeExpEns import ens_namemap
 import cgitb
 
 def makeCVEns():
@@ -42,6 +43,8 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	#Makes the two cross-validated ensemble files for two historical
 	#experiments in the current setup. 
 	
+	#print(" ".join([exp1, exp2, scriptdir1, scriptdir2])) 
+	#sys.exit(1)
 	###Wait on adding the status files/lockfiles for later.
 	#for p, exp in [scriptdir1, scriptdir2],[exp1,exp2]:
 	#	fname = exp + ".lock"
@@ -59,24 +62,31 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	ds_rip1 = [re.search("(r[0-9]*i[0-9]*p[0-9]*)", p).group() for p in expdict1['output.path']] #r1 group
 	ds_rip2 = [re.search("(r[0-9]*i[0-9]*p[0-9]*)", p).group() for p in expdict2['output.path']] #r2 group
 	dsvar = expdict1['target']
+	if re.search("Anom", dsvar) is not None: 
+		isAnom=True
+	else:
+		isAnom=False	
+	print("Is this experiment an anomaly experiment?")
+	print(isAnom)
 	#Do a brief check for anomaly vars in the input files	
 	#There are two distinct classes of file; create each in turn
 	setdict = {'DSDEPh': {'odesc': 'dp', 'dataID':'DSDEPh', 'kfold':'K00', 
 	                      'inDir1': ds_exp1[0], 'inDir2': ds_exp2[1], 
 	                      'f1r' : ds_rip1[0], 'f2r' : ds_rip2[1], 
 	                     'exp1': exp2, 'exp2': exp1,
-	                      'inPath1': ds_exp1[0], 'inPath2' : ds_exp2[1]
-	                      }, 
+	                      'inPath1': ds_exp1[0], 'inPath2' : ds_exp2[1],
+	                      'ktitle': "dep"}, 
 	           'DSCVh': {'odesc': 'cv', 'dataID':'DSCVh', 'kfold':'K02', 
 	                     'inDir1': ds_exp1[1], 'inDir2': ds_exp2[0], 
 	                     'f1r' : ds_rip2[0], 'f2r' : ds_rip1[1], 
 	                     'exp1': exp2, 'exp2': exp1,
-	                     'inPath1': ds_exp2[0], 'inPath2' : ds_exp1[1]
-	                     }
+	                     'inPath1': ds_exp2[0], 'inPath2' : ds_exp1[1],
+	                     'ktitle': 'cv'}
 	}
 	ens_list = []
 	for kty in ['DSDEPh', 'DSCVh']:
 		kdict = setdict[kty]
+		klist = []
 		#for outpaths in [ds_exp1,ds_exp2]:
 		print(kdict['inPath1'])
 		outpaths = [kdict['inPath1'] , kdict['inPath2']]
@@ -94,25 +104,30 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 		for flist in all_outfiles:
 			print(flist)
 			flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
-			outfile = call_cv_ens_creation(flist, dsvar, [kdict['f1r'],kdict['f2r']], \
+			kfiles = call_cv_ens_creation(flist, dsvar, [kdict['f1r'],kdict['f2r']], \
 			",".join([kdict['f1r'],kdict['f2r']]), kty, kdict['odesc'], kdict['kfold'],\
-			[kdict['exp1'], kdict['exp2']], trange_string,isAnom=False,recOnly=False,verbose=False)
-			ens_list.append(outfile)
-			print("output file:" + outfile)
+			[kdict['exp1'], kdict['exp2']], trange_string,isAnom=isAnom,recOnly=False,verbose=False)
+			#ens_list.append(outfile)
+			print("output file(s):" + str(kfiles))
+			klist = klist + kfiles
+		klist = ens_namemap(klist)
+		klist = [kdict['ktitle'] + "." + named_file for named_file in klist]	
+		ens_list = ens_list + klist
 	print("Ensemble files:")
 	for el in ens_list:
 		print el
-	title_list = ["dep.ensemble:", "cv.ensemble:"]
-	ens_title = zip(title_list, ens_list)
-	print(ens_title)	
-	ens_string = "\n" + "#"*80 +"\n" + "\n".join(["".join(el) for el in ens_title])
+	#title_list = ["dep.ensemble:", "cv.ensemble:"]
+	#ens_title = zip(title_list, ens_list)
+	#print(ens_title)	
+	#ens_string = "\n" + "#"*80 +"\n" + "\n".join(["".join(el) for el in ens_title])
+	ens_string = "\n####" + " Downscaled cross-validated ensemble output " + "#"*31 + "\n" + "\n".join(ens_list)
 	print(ens_string)
 	#Okay, now append this to the bottom of all downscaled, ensembled and cross-validated experiment info files
 	scriptdirs = [scriptdir1, scriptdir2]
 	dsdirs = [osp.dirname(osp.dirname(el)) for el in ds_exp1] + [osp.dirname(osp.dirname(el)) for el in ds_exp2]
 	#...and that should be it for now, right? Is there any need to do the experiment ensembles?
 	ds_ensdirs = []
-	print(dsdirs)
+	#print(dsdirs)
 	for el in dsdirs:
 		dirsplit = re.split("/", el)
 		rip = dirsplit[-3]
@@ -120,8 +135,10 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 		dirsplit[-3] = rip
 		ds_ensdirs.append("/".join(dirsplit))
 	#cross-validated script dirs
-	cv_dirs = [osp.dirname(osp.dirname(osp.dirname(el))) for el in ens_list]
-	alldirs = scriptdirs + dsdirs + ds_ensdirs + cv_dirs
+	#Note: these do not have experiment info files
+	#cv_dirs = [osp.dirname(osp.dirname(osp.dirname(el))) for el in ens_list]
+	alldirs = [re.sub(".*:","", el) for el in scriptdirs + dsdirs + ds_ensdirs]
+	alldirs = list(set(alldirs))
 	for el in alldirs:
 		exp_info_file = osp.join(el, "experiment_info.txt")
 		print(exp_info_file)
@@ -133,7 +150,8 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	#for el in scriptdirs + dsdirs + ds_ensdirs + cv_dirs:	
 	#	print el
 	#	gcp(exp_info_file, osp.join(el, "experiment_info.txt"))			
-	return("\n".join(["".join(["\t"] + list(el)) for el in ens_title]))	
+	#return("\n".join(["".join(["\t"] + list(el)) for el in ens_title]))	
+	return("\t" + "\n\t".join(ens_list))	
 	
 def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
                         exp_names,
@@ -160,15 +178,19 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 		supp_strings = ["qcmask","save"]
 		if supp_strings[0] not in vname and supp_strings[1] not in vname:
 			if not recOnly:
-				outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_names,epoch,trange_string,False)
+				outfile_anom = call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				                                    exp_names,trange_string,isAnom=False)
 			else:
 				outfile_anom = []	
 			print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
-			anom_files = [re.sub("Anom","",f) for f in flist]
+			clim_files = [re.sub("Anom","",f) for f in flist]
 			climvar = re.sub("Anom", "", climvar)
 			try:
 			
-				outfile_clim = call_cv_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_names,epoch,trange_string,False)
+				outfile_clim = call_cv_ens_creation(clim_files,climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				                                    exp_names,trange_string,isAnom=False)
+				#print(outfile_clim)
+				#sys.exit(1)
 			except:
 				raise	
 			return(outfile_clim + outfile_anom)
@@ -199,7 +221,7 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 			print(str(err0))
 		gcp(tmp_outfile, outfile, verbose, verbose)
 		print("Copied to " + outfile)
-		return(outfile)
+		return([outfile])
 			
 def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold):
 	#Makes a cross-validated ensemble outpath/filename given a non-cv
