@@ -47,6 +47,8 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
   if(is.null(att_list$climatology)){
     att_list$climatology <- NA
   }
+  att_list <- list(att_list)
+  names(att_list) <- var.name
 
   if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
   clim.in <- ncvar_get(nc.object)            

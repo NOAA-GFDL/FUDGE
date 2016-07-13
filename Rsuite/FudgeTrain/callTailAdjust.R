@@ -32,11 +32,11 @@ callTailAdjust <- function(test, input, adjusted.output){
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
                                                "[[", 'var')==targ.var]
-    print('summary of input:')
-    print(summary(input))
-    print(fut.pred)
-    print(targ.var)
-    print(lapply(input$data.atts, 'names'))
+    #print('summary of input:')
+    #print(summary(input))
+    #print(fut.pred)
+    #print(targ.var)
+    #print(lapply(input$data.atts, 'names'))
     ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
@@ -46,22 +46,6 @@ callTailAdjust <- function(test, input, adjusted.output){
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
       adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
-      
-#       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
-#                        1, 0)
-#       non.missing <- which(qc.tmp==0)
-#       #Getting what look and act like errors in epsilon
-#       #when comparing n=1 with n > 1; 
-#       #adding an epsilon check to see if that solves the issue.
-#       eps = .Machine['double.eps'][[1]]*2
-#       #abs(values_new1 - values2[slope_rank==1]) <= eps
-#       ds.tmp <- ifelse(
-#         abs(ds.correct - as.numeric(adjusted.output$ds.out[[ds.var]]))<=eps,
-#                        1, NA)
-#       qc.tmp[non.missing] <- ds.tmp[non.missing]
-#       print('Total number of points different:')
-#       print(sum((qc.tmp)==1, na.rm=T))
-#       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
       adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
@@ -76,9 +60,9 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   cond.data = switch(args$triggertype, 
                      'GfGh' = model.fut, 
                      'OhGh' = ds.fut)
-  print(args$triggertype)
-  print(summary(cond.data))
-  stop('examine results')
+  #print(args$triggertype)
+  #print(summary(cond.data))
+  #stop('examine results')
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
   model.hist <- remove.missvals(unlist(model.hist))
@@ -101,42 +85,11 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   cond.tmp[cond.tmp] <- (lotail$cond)
   hitail.pts = hitail$cond >= 1
   lotail.pts = lotail$cond >= 1
-  #lotail$cond <- cond.tmp
-#  ds.orig <- ds.fut
-#   save(file="/home/cew/Code/testing/test_out.R", list=c('ds.fut', 'hitail', 'cond.data', 'ds.orig', 
-#                                                         'model.hist', 'obs.hist', 'model.fut'))
-# print(hitail$offset)
-# print(lotail$offset)
+
   ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
   ds.orig[lotail.pts] = cond.data[lotail.pts] + lotail$offset
-#   print(sum(hitail$cond))
-# print(hitail$cond * 2)
-# print(sum(lotail$cond))
-# print(sum(cond.tmp))
-  #print('Total number of points different at this point:')
-  #print(which((ds.fut-ds.orig)==0))
-#   xval = length(model.fut)
-#   yrange <- range(c(ds.fut, ds.orig, model.fut,model.hist))
-#   plot(x=1:length(model.hist), sort(model.hist), col='green')
-#   lines(x=1:length(model.hist), sort(obs.hist), col='black')
-#   plot(x=1:xval, y=model.fut, col='red', lwd=2, main="MF, DS and DS with tail adjust", ylim=yrange)
-#   abline(h=max(model.hist), col='green')
-#   abline(h=max(obs.hist), col='black')
-#   lines(x=1:xval, y=ds.fut, col='black', lwd=2)
-#   lines(x=1:xval, y=remove.missvals(ds.orig), col="blue",lwd=2, lty=2)
-# #   for(i in seq(0, 300, 30)){
-# #     abline(v=i)
-# #   }
-#   legend('bottomright',legend=c('MF','DS','DS /w tailadj'), col=c('red', 'black', 'blue'), lty=c(1,1,2)) 
-#   
-  # mask = (hitail$cond|lotail$cond)
   tmp.mask <- (hitail$cond)*2 + lotail$cond
   tmp.mask[tmp.mask > 4] = 4
-  #print(tmp.mask)
-#   print(hitail$offset)
-#   print(lotail$offset)
-#   print(sum(tmp.mask))
-#   print(sum(ds.fut==ds.orig))
   return(list(ds = ds.orig, mask = (tmp.mask)))
 }
 
@@ -157,9 +110,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
                     lower=(1), 
                     upper=(-1))
   if(args$triggertype=='GfGh'){
-    #print(summary(MF))
-    #print(summary(DS))
-    #print(summary(MH))
     mf.rank = rank(MF)
     MF  = sort(MF)
     DS = sort(DS)

@@ -293,12 +293,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
             save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
           }
           data <- temp.out
-print(summary(kfold.predict))
-print(summary(kfold.target))
-print(summary(kfold.gen))
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
-                                       verbose=T,
                                        data = data[names(data)!='qc.mask'], 
                                        data.atts= att.table,
                                        hist.pred = kfold.predict, #lapply(kfold.predict, remove.missvals), 
@@ -366,13 +362,7 @@ print(summary(kfold.gen))
     }
   }
   #...also? This has the potential to cause issues when we start working with datasets that 
-  #happen to have missing values fo their own - and therefore might use 
-  #print(lapply(qc.masklist, 'summary'))
-#    tmp.list <- list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)
-#   print(summary(tmp.list))
-#    print(lapply(tmp.list$downscaled, 'summary', digits=5))
-#   print(lapply(tmp.list$downscaled, 'unique'))
-  #stop('examine the output')
+  #happen to have missing values of their own - and might use other kinds of missing data.
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
 
