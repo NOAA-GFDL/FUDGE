@@ -58,7 +58,7 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
   }
   #Create vector to store all var values
   all.dim <- c(dim.list[[1]][1:3]) # No longer adding a var/ensemble dimension
-  print(all.dim)
+  #print(all.dim)
   data.array <- array(rep(NA, prod(all.dim)), dim=all.dim)
   #Then, once the dimensions are determined, look over the files and obtain the vars, 
   #slotting them into the relevant bits one by one. 
@@ -93,9 +93,7 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
       #out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_dim = force_dim_len) #previously dim='none'. Whywas this a good idea?
       print(var)
       print(dim)
-      print(nc.list[[v]])
-      print(nc.list)
-      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_4_dim = F)
+      out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_4_dim = multi.rip)
       #out.list <- ReadNC(nc.list[[v]], var=var, dim=dim, force_3_dimensions=(!multi.rip)) #No longer adding ensemble dimension
       #Contents at this point: 
       # 4-dimensional dataset
@@ -127,7 +125,7 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
     }else{
       print('starting on var that is not the first')
       force_dim_len = (3 + multi.rip)
-      temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_dim = force_dim_len)
+      temp.out.list <- ReadNC(nc.list[[v]], var=var, dim='none', force_4_dim = multi.rip)
                               #force_3_dimensions=(!multi.rip))
       if(multi.rip){
         #var.names <- paste0(var, ".", rip.list)
@@ -136,7 +134,8 @@ ReadMultiVars <- function(file.prefix, file.suffix, blank.filename, var.list, di
         names(temp.att.table) <- var.names
         #Mass assignment does not work well. 
         for(i in 1:rip.count){
-          #TODO: come up with a less ideous way of doing this assignment
+          #TODO: come up with a less hideous way of doing this assignment
+          print(dim(temp.out.list$clim.in))
           data.list[[var.names[i]]] <- temp.out.list$clim.in[,,i, , drop=F]
           #Make sure that the xy dimensions are kept, but any other degen dims dropped
           data.dim <- dim(temp.out.list$clim.in[,,i, , drop=F])[-3]

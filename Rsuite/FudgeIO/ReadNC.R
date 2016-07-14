@@ -8,55 +8,55 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
   #'netCDF object
   #'-----Arguments-----
   #'@param nc.object: A NetCDF object returned from nc_open of R's ncdf4 package
-  #'@param var.name: The name of the variable within the NetCDf file
-  #'@param dstart: A vector of indices indicating where to start reading the passed values (begin- ning at 1).
-  #'@param dcount: A vector of integers indicating the count of values to read along the variable (order is X-Y-Z-T).
-  #'@param dim: Which dimensions to include in the netCDF object. Can be one of 'temporal', 
-  #'which queries the dimension associated with the T axis, 'spatial', which queries the dimensions associated with the
-  #'X, Y and Z axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
-  #''temporal' returns all variables that reference the T axis underneath the $vars list of the output, and 
-  #'
-  #'@returns A list containing the following elements: 
-  #'  $clim.in: A 3-dimensional array of the values in the variable with the same dimensions
-  #'      as the input dataset. Returned values will be in ordinary R double precision if the netCDF 
-  #'      variable type is float or double. Has a 'filename' attribute that points to the input file, 
-  #'      which is used for error messages. If dim='temporal', then it also has a calendar attribute.
-  #'  $dim: The dimension(s) queried in the file, of class ncdim4. Very useful for writing to file; 
-  #'  as of 3-10, now REQUIRED for writing to file. 
-  #'  $vars: The variables *not* the variable of interest that use the dimensions queried 
-  #'      (i.e. lat_bnds, j_offset, height).
-  #'  $cfname: The CF-standard name of the variable. Only applies to tasmax, tasmin and pr; for all other
-  #'  vars, the short name is the cfname
-  #'  $long_name: The long name of the variable. Derived from the long_name vale of the netCDF object.
-  #'  $units: The units of the variable of interest. Derived from the units value of the netCDF object.
-  #'
-  #'@include ncdf4, ncdf4.helpers
-
-  att_list <- list('var' = var.name, 
-                   'rip' = "", #Leave a blank space; I think this is one of the things that gets filled in later
-                   'units'=ncatt_get(nc.object, var.name, 'units')$value, 
-                   'standard_name'=ncatt_get(nc.object, var.name, 'standard_name')$value,
-                   'long_name'=ncatt_get(nc.object, var.name, 'long_name')$value,
-                   'prec'=nc.object$var[[var.name]]$prec, 
-                   'climatology' = ncatt_get(nc.object, 0, 'climatology')$value
-  )
-  #Correct prec after the fact
-  if(is.null(att_list$prec)){
-    att_list$prec <- 'float'
-  }
-  if(is.null(att_list$climatology)){
-    att_list$climatology <- NA
-  }
-  att_list <- list(att_list)
-  names(att_list) <- var.name
-
-  if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
-  clim.in <- ncvar_get(nc.object)            
-  }else {
-    if(verbose){ message('obtaining variable slice') }
-  clim.in <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
-    if(verbose) { message('vars obtained') }
-  }
+    #'@param var.name: The name of the variable within the NetCDf file
+    #'@param dstart: A vector of indices indicating where to start reading the passed values (begin- ning at 1).
+    #'@param dcount: A vector of integers indicating the count of values to read along the variable (order is X-Y-Z-T).
+    #'@param dim: Which dimensions to include in the netCDF object. Can be one of 'temporal', 
+    #'which queries the dimension associated with the T axis, 'spatial', which queries the dimensions associated with the
+    #'X, Y and Z axes, and 'none', which makes no query. The dimensions queried also affect the other variables returned;
+    #''temporal' returns all variables that reference the T axis underneath the $vars list of the output, and 
+    #'
+    #'@returns A list containing the following elements: 
+    #'  $clim.in: A 3-dimensional array of the values in the variable with the same dimensions
+    #'      as the input dataset. Returned values will be in ordinary R double precision if the netCDF 
+    #'      variable type is float or double. Has a 'filename' attribute that points to the input file, 
+    #'      which is used for error messages. If dim='temporal', then it also has a calendar attribute.
+    #'  $dim: The dimension(s) queried in the file, of class ncdim4. Very useful for writing to file; 
+    #'  as of 3-10, now REQUIRED for writing to file. 
+    #'  $vars: The variables *not* the variable of interest that use the dimensions queried 
+    #'      (i.e. lat_bnds, j_offset, height).
+    #'  $cfname: The CF-standard name of the variable. Only applies to tasmax, tasmin and pr; for all other
+    #'  vars, the short name is the cfname
+    #'  $long_name: The long name of the variable. Derived from the long_name vale of the netCDF object.
+    #'  $units: The units of the variable of interest. Derived from the units value of the netCDF object.
+    #'
+    #'@include ncdf4, ncdf4.helpers
+    
+    att_list <- list('var' = var.name, 
+                     'rip' = "", #Leave a blank space; I think this is one of the things that gets filled in later
+                     'units'=ncatt_get(nc.object, var.name, 'units')$value, 
+                     'standard_name'=ncatt_get(nc.object, var.name, 'standard_name')$value,
+                     'long_name'=ncatt_get(nc.object, var.name, 'long_name')$value,
+                     'prec'=nc.object$var[[var.name]]$prec, 
+                     'climatology' = ncatt_get(nc.object, 0, 'climatology')$value
+    )
+    #Correct prec after the fact
+    if(is.null(att_list$prec)){
+      att_list$prec <- 'float'
+    }
+    if(is.null(att_list$climatology)){
+      att_list$climatology <- NA
+    }
+    att_list <- list(att_list)
+    names(att_list) <- var.name
+    
+    if((is.na(dstart)) && (is.na(dcount)) && (is.na(var.name))) {
+      clim.in <- ncvar_get(nc.object)            
+    }else {
+      if(verbose){ message('obtaining variable slice') }
+      clim.in <- ncvar_get(nc.object,var.name,dstart,dcount,collapse_degen=FALSE) 
+      if(verbose) { message('vars obtained') }
+    }
     #Fudge currently deals badly with input vectors of more than three dimensions - and the first two
     #have to be spatial. This will collapse any OTHER degenerate dimensions present.
     #In the future, this will NOT apply to ensemble dimensions, but we are not there yet by any means.
@@ -73,34 +73,66 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
           }else{
             return(1)
           }}
+        print(dim(clim.in))
+        print('true dims:')
         true.dims <- as.vector(unlist(sapply(dim.names,'check.dimlen',nc.object)))
         print(true.dims)
         dim(clim.in) <- true.dims
+      }else if (length(dim(clim.in)) > 4){
+        print("More than 4 dimensions present; checking for degenerate plev dim")
+        print(dim(clim.in))
+        print(names(nc.object$dim))
+        if ('plev' %in% names(nc.object$dim)){
+          if (dim(clim.in)[3]==1){
+            print("Degenerate plev dimension found; removing")
+            true.dims <- dim(clim.in)[c(1,2,4,5)]
+            dim(clim.in) <- true.dims
+          }else{
+            stop(paste("Error in ReadNC: input data has five dimensions", 
+                       "and no degenerate plev dim! Please examine input."))
+          }
+        }else{
+          stop(paste("Error in ReadNC: input data has five dimensions", 
+                     "and no expected degenerate dimensions! Please examine input."))
+        }
+        #}else if(add.ens.dim){
+        #  dim.adjust <- c(dim(clim.in)[1:2], 1, dim(clim.in)[3])
+        #  dim(clim.in) <- dim.adjust
+        #}
       }
-    }else if(add.ens.dim){
-      dim.adjust <- c(dim(clim.in)[1:2], 1, dim(clim.in)[3])
-      dim(clim.in) <- dim.adjust
+    }else{
+      #If not 4-dimensional
+      if(length(dim(clim.in)) > 3){
+        print("removing degenerate non-x,y dimensions")
+        true.dim <- dim(clim.in)
+        if (true.dim[3]==1){
+          dim(clim.in) <- true.dim[c(1,2,4)]
+        }else{
+          print(paste("Error in ReadNC: 4-dimensional output found with", 
+                      "force_4_dim=F and no degenerate non-x,y dimensions!"))
+        }
+      }
     }
-  #### get standard name,long name, units if present ####
-  attname = 'standard_name'
-  cfname <- ncatt_get(nc.object, var.name, attname) 
-  attname = 'long_name'
-  long_name <- ncatt_get(nc.object, var.name, attname)
-  attname <- 'units' 
-  units <- ncatt_get(nc.object, var.name, attname)
-  if(units$hasatt==F){
-    units <- list(hastatt=F, value="")
-  }
-  attr(clim.in, "units") <- units
-  prec <- nc.object$var[[var.name]]$prec
-  if(is.null(prec)){
-    #set prec to float if not present in input file
-    prec <- 'float'
-  }
-  attr(clim.in, "prec") <- prec
-  ###Test code for determining what happens for unitless vars
-  #######################################################
-  #Control getting the dimensions and other variables in the output file
+    #### get standard name,long name, units if present ####
+    attname = 'standard_name'
+    cfname <- ncatt_get(nc.object, var.name, attname) 
+    attname = 'long_name'
+    long_name <- ncatt_get(nc.object, var.name, attname)
+    attname <- 'units' 
+    units <- ncatt_get(nc.object, var.name, attname)
+    if(units$hasatt==F){
+      units <- list(hastatt=F, value="")
+    }
+    attr(clim.in, "units") <- units
+    prec <- nc.object$var[[var.name]]$prec
+    if(is.null(prec)){
+      #set prec to float if not present in input file
+      prec <- 'float'
+    }
+    attr(clim.in, "prec") <- prec
+    ###Test code for determining what happens for unitless vars
+    #######################################################
+    #Control getting the dimensions and other variables in the output file
     dim.list <- list(dim=list(), vars=list())
     if(!('none'%in%dim)){
       #Needed to make sure that the dimensions are always
@@ -126,7 +158,7 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
     #print('all checks complete')
     #print(names(dim.list$dim))
     #print(names(dim.list$vars))
-  #######################################################
+    #######################################################
     envout =  new.env(parent = emptyenv())
     envout$clim.in = clim.in
     envout$cfname=cfname
@@ -134,21 +166,21 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
     envout$units=units
     envout$dim=dim.list$dim
     envout$vars=dim.list$vars
-  envout$att_table <- att_list
-  
-#  listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units, 
-#                  "dim"=dim.list$dim, 'vars'=dim.list$vars)
-  
-#   ###Add attributes for later QC checking against each other
-#   attr(listout, "calendar") <- nc.object$dim$time$calendar
-#   attr(listout, "filename") <- nc.object$filename
+    envout$att_table <- att_list
+    
+    #  listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units, 
+    #                  "dim"=dim.list$dim, 'vars'=dim.list$vars)
+    
+    #   ###Add attributes for later QC checking against each other
+    #   attr(listout, "calendar") <- nc.object$dim$time$calendar
+    #   attr(listout, "filename") <- nc.object$filename
     ###Add attributes for later QC checking against each other
     attr(envout, "calendar") <- nc.object$dim$time$calendar
     attr(envout, "filename") <- nc.object$filename
     if(close_nc){
       nc_close(nc.object)
     }
-  return(envout)
+    return(envout)
 }
 
 get.space.vars <- function(nc.object, var, is.dimvar=FALSE, verbose=FALSE){
@@ -257,8 +289,8 @@ get.time.vars <- function(nc.object, var, is.dimvar=FALSE, verbose=FALSE){
     #message("No time axes present for this var")
     message("No time axes present for this var; obtaining dummy dimension")
     dummy.dim <- ObtainTimeAxis(key=1)
-   # print(summary(dummy.dim))
-   # stop('examine output')
+    # print(summary(dummy.dim))
+    # stop('examine output')
     #return(ObtainTimeAxis(key=1))
     return(list("dim"=list('time'=dummy.dim$dim), "vars"=list('time_bnds'=dummy.dim$vars[[1]])))
   }

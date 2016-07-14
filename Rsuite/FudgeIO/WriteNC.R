@@ -105,7 +105,11 @@ WriteNC <-  function(filename,data.array,var.name,
     }
        
     #1-5 alternate structure
-    bnds <- ncdim_def(name="bnds", longname = 'bounds', units='', vals=seq(1:2), create_dimvar=FALSE)
+  #Adding create_dimvar=TRUE 7-13; it doesn't match 
+  #the section 8 tools, but is needed to maintain consistency with earlier versions
+  #Also making it a double b/c that is what it was in earlier versions as well.
+  #and changing the longname to 'bnds'
+    bnds <- ncdim_def(name="bnds", longname = 'bnds', units='', vals=as.double(seq(1:2)), create_dimvar=TRUE)
     
     #the variables associated with the dimensions
     for (v in 1:length(var.data)){
