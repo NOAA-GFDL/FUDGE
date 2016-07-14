@@ -35,8 +35,6 @@ def makeCVEns():
 	parser.add_option("--script2", dest='script2', help="Second script dir. Order does not matter.")
 	parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
 	(options, args) = parser.parse_args()
-	print(options)
-	print("arguments parsed")
 	runMakeCVEns(options.exp1, options.exp2, options.script1, options.script2, options.verbose)
 
 def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
