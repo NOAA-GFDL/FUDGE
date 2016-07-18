@@ -436,7 +436,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			if(mailid is not None):
 				send_status_email("failure", 'postProc - anomAdd', exp_name, \
 				           traceback = "Error in call to AddAnom.R - call for reference: " + r_command,\
-		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir)
 		else:
