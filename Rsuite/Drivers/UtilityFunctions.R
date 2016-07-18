@@ -327,9 +327,16 @@ if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
   emissions_scenario <- switch(atts[['experiment_id']], 
                                'sst2030' = 'RCP 4.5', 
                                'sst2090' = 'RCP 8.5')
-  physics <- switch(as.character(atts[['physics_version']]), 
-                    '1' = 'ESM', 
-                    '2' = 'CM3')
+  if('pyhsics_version'%in%names(atts)){
+    physics <- switch(as.character(atts[['physics_version']]), 
+                      '1' = 'ESM', 
+                      '2' = 'CM3')
+  }else{
+    physvers = grep("[0-9]+p(.*)_", in.file, perl=T)
+    physics <- switch(physvers, 
+                      '1'='ESM', 
+                      '2'='CM3')
+  }
   orig_exp <- paste("GFDL-HIRAM", atts['experiment_id'], 
                     emissions_scenario, physics)
   

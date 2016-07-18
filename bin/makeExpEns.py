@@ -129,7 +129,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	ens_list = ens_namemap(ens_list)
 	#ens_list_ii = [n,ens for e in range(0, len(en_list)) if not None]
 	#append_str = "\n" +"#"*80 + '\n' + 'ensemble.files:' + "\n".join(ens_list)
-	append_str = "\n####" + " Downscaled ensemble output " +"#"*47 +"\n"+"\n".join(ens_list)
+	append_str = "\n####" + " Downscaled ensemble output " +"#"*47 +"\n"+"\n".join(ens_list)+"\n"
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+expdict['xml.path']+" -o "+tmpfile 
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate() 
