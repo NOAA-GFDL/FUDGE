@@ -92,7 +92,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		if(nrips > 1):
 			print("More than one experiment rip is present; calling makeExpEns")
 			print("MakeExpEns command-line arguments:")
-			print("python " + basedir + "bin/makeExpEns.py --input " + infile)
+			print("makeExpEns --input " + infile)
 			outfiles = runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
 			#...check on the error returns from this. There shouldn't be an issue,
 			#since multiple exit points aren't that much of an issue and you
@@ -102,7 +102,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			outdir_contents = os.listdir(outdir)	
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
 			outfiles = "\n\t".join(outfiles)
-		cv_command = "python " + basedir + "bin/makeCVEns.py --exp1 " + exp_name +" --exp2 " + exp_name2 + \
+		cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
 		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp	
 		if warnCrossval: 
 			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")	
