@@ -394,7 +394,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		if( not osp.exists(osp.dirname(clim_anom_file)) ):
 			print 'Making output anom + clim directory'
 			os.makedirs(osp.dirname(clim_anom_file))
-		print(os.environ)
+		#print(os.environ)
 		try:		
 			s8_orig = os.environ.get("S8_PATH")
 		except:
@@ -414,7 +414,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		#s8_orig = os.environ["S8_PATH"]
 		s8_fudge = os.environ["FUDGE_S8_LOC"]
 		os.environ["S8_PATH"] = s8_fudge
-		print(os.environ)
+		#print(os.environ)
 		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(clim_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(clim_anom_var) + " -o " + str(clim_anom_file_out) + " --clone_globals"
 		print "Calling AddAnom.R"
 		try:
