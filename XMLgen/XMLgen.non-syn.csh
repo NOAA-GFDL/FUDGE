@@ -199,15 +199,18 @@
   echo "    You need to pick which Datasets to use for the downscaling experiment."
   echo "    Currently we have 2 distinct resolutions of data available : "
   echo " "
-  echo "    SCCSC0p1 data which is used for the Red River project. All data are"
-  echo "      on a 0.1 x 0.1 grid. Observations available for historical target"
-  echo "      is Livneh. The time range is 1961-2005."
-  echo "      GCMs include MPI-ESM-LR, CCSM4, MIROC5."
+  echo "    SCCSC0p1 data is used for the Red River & 3^5 project. All data are"
+  echo "      on a 0.1 x 0.1 grid. Observation datasets available for 'Historical Target'"
+  echo "      are Livneh, Daymet and PRISM for the periods 1961-2005 or 1981-2005. "
+  echo "      GCMs available for 'Historical Predictors' and 'Future Predictors' are "
+  echo "      MPI-ESM-LR, CCSM4, MIROC5. The future predictor time period covers 2006-2099."
   echo " "
-  echo "    PerfectModel data is the GFDL-HIRAM-C360 and GDFL-HIRAM-C360-COARSENED."
+  echo "    PerfectModel data are all GCM datasets, either hi-res GFDL-HIRAM-C360 for the 'Historical Target'"
+  echo "      and coarsened then regridded versions known as the GFDL-HIRAM-C360-COARSENED for the "
+  echo "      'Historical Predictors' and 'Future Predictors'"
   echo "      'Historical Targets' are the amip r1i1p1 & r2i1p1 for 1979-2008."
   echo "      'Historical Predictors' are the coarsened regridded data for amip epoch."
-  echo "      'Future Predictors' are for sst2090 epoch for years 2086-2095"
+  echo "      'Future Predictors' are for sst2030 epoch for years 2026-2035 or sst2090 epoch for years 2086-2095 ."
   echo " "
   echo "    VERY IMPORTANT"
   echo "    --------------"
@@ -1177,30 +1180,30 @@ EOF
 
 # if pr_opts are being used, and ignore0 or ignore0.delta is on, then set qcmask on. No other qc options allowed.
 
-  set use_qc_adjustment = False
+  set used_qc_adjustment = False
   if ($use_pr_adjustment == True) then
     if ($ignore0Delta == "'on'" || ($ignore0 == "'on'" && $dsMethod != BCQM)) then
        echo "       <qc type="\'qc.train\'" qc_mask="\'on\'" adjust_out="\'off\'"></qc>" > $workDir/QC_XML
        set saveQcMask = "on"
-       set use_qc_adjustment = True
+       set used_qc_adjustment = True
        echo "  "
        echo "   Since ignore0 = $ignore0 and dsMethod != BCQM, FUDGE will output a mask flagging 'ignore0' points. No QC adjustments can be specified."
     endif
   endif
 
-  if ($use_qc_adjustment == "False") then
+  if ($used_qc_adjustment == "False") then
     source $qcAdjustment
   endif
 
-  if ($use_pr_adjustment == True && $use_qc_adjustment == False) then
+  if ($use_pr_adjustment == True && $used_qc_adjustment == False) then
     if ($ignore0 == "'on'") then
        echo "       <qc type="\'qc.train\'" qc_mask="\'on\'" adjust_out="\'off\'"></qc>" > $workDir/QC_XML
-       set use_qc_adjustment = True
+       set used_qc_adjustment = True
        echo "   Since ignore0 = $ignore0 and no other QC adjustments are specified, FUDGE will output a mask flagging 'ignore0' points."
     endif
   endif
 
-  if ($use_qc_adjustment == "True") then
+  if ($used_qc_adjustment == "True") then
     cat $workDir/QC_XML >> $workDir/pp_XML
     \rm $workDir/QC_XML
   endif
@@ -1215,7 +1218,7 @@ EOF
 # If QC Adjustments have been made and pr adjustments have been made, check if want flag_neg
 #
   if ("$use_pr_adjustment" == "True") then
-    if ("$use_qc_adjustment" == "True") then
+    if ("$used_qc_adjustment" == "True") then
       echo ">>  "
       echo ">>  Negative Downscaled Values Adjustment"
       echo ">>  "

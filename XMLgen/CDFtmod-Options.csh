@@ -48,7 +48,7 @@ echo "      training_target   = Length of training target dataset within time wi
 echo "      future_predictor  = Length of future predictor dataset within time window  (will duplicate results with 0 from 10-20-14 to 11-3-14)"
 
 set dinfo = "npas"
-set varvals = (0 100 "Other" "training_target" "future_predictor")
+set varvals = (0 100 "Other" "'training_target'" "'future_predictor'")
 source $QueryVals
 set npas = "$kval"
 echo "$npas" >> $INtxt

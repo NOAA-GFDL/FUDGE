@@ -42,11 +42,11 @@ echo "   Options: "
 echo "      0 = If you want to use maximum # of days per time window - the shorter of the length of the training target or future predictor datasets within a time window."
 echo "      100  = commonly-used value for npas"
 echo "      Other  = You want to enter a value for npas"
-echo "      training_target   = Length of training target dataset within time window  (will duplicate results with 0 from before 10-20-14)"
-echo "      future_predictor  = Length of future predictor dataset within time window  (will duplicate results with 0 from 10-20-14 to 11-3-14)"
+echo "      'training_target'   = Length of training target dataset within time window  (will duplicate results with 0 from before 10-20-14)"
+echo "      'future_predictor'  = Length of future predictor dataset within time window  (will duplicate results with 0 from 10-20-14 to 11-3-14)"
 
 set dinfo = "npas"
-set varvals = (0 100 "Other" "training_target" "future_predictor")
+set varvals = (0 100 "Other" "'training_target'" "'future_predictor'")
 source $QueryVals
 set npas = "$kval"
 echo "$npas" >> $INtxt

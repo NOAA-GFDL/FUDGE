@@ -59,7 +59,7 @@
        echo "        <triggertype>"\'$triggertype\'"</triggertype>" >> $workDir/QC_XML
        echo "        <lastNpts>$lastNpts</lastNpts>" >> $workDir/QC_XML
        echo "        </qc>" >> $workDir/QC_XML
-       set use_qc_adjustment = True
+       set used_qc_adjustment = True
        echo $noTailAdj >> $INtxt
        echo "noTailAdj = $noTailAdj, QC_adjustment.csh" >> $INtxt.key
        echo $lastNpts >> $INtxt
@@ -98,10 +98,10 @@
        exit 1
     endif
 
-# Only set use_qc_adjustment = True if the qc adjustment being done is not flag.neg, since use_qc_adjustment is being used to indicate that some qc adjustment other than flag.neg is being used.
+# Only set used_qc_adjustment = True if the qc adjustment being done is not flag.neg, since used_qc_adjustment is being used to indicate that some qc adjustment other than flag.neg is being used.
 
   if ($qcName != "flag.neg") then
-    set use_qc_adjustment = True
+    set used_qc_adjustment = True
   endif
 
 # Set qc_mask Options
