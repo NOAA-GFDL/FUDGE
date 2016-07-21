@@ -192,13 +192,13 @@ echo "source env"
    if ($status == 0) then
      set outfile = ${prefix}.nc 
      #echo "testing...."
-     echo $PATH
-     module show gcp
-     module list
-     echo "testing..."
-     module avail gcp
-     echo `which gcp`		
-     gcp --version
+     #echo $PATH
+     #module show gcp
+     #module list
+     #echo "testing..."
+     #module avail gcp
+     #echo `which gcp`		
+     #gcp --version
      echo "gcp $outfile $root/$outfile"
      \gcp -v $outfile $root/$outfile
      gcp -v $outfile $root/$outfile

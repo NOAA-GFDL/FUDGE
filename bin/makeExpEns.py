@@ -165,17 +165,17 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	vname = [varnames[v] for v in range(0, len(varnames)) if re.search(climvar,varnames[v]) is not None][0]
 	if isAnom:
 		print("Checking for presence of anomaly var")
-		supp_strings = ["qcmask","save"]
-		if supp_strings[0] not in vname and supp_strings[1] not in vname:
-			if not recOnly:
-				outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
-			else:
-				outfile_anom = []	
-			print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
-			anom_files = [re.sub("Anom","",f) for f in flist]
-			climvar = re.sub("Anom", "", climvar)
-			outfile_clim = call_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
-			return(outfile_clim + outfile_anom)
+		#supp_strings = ["qcmask","save"]
+		#if supp_strings[0] not in vname and supp_strings[1] not in vname:
+		if not recOnly:
+			outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
+		else:
+			outfile_anom = []	
+		print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
+		anom_files = [re.sub("Anom","",f) for f in flist]
+		climvar = re.sub("Anom", "", climvar)
+		outfile_clim = call_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
+		return(outfile_clim + outfile_anom)
 	#Generate output file by doing a series of find-and-replace regexes on outdir
 	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]	
 	outfile = re.sub(current_rip, out_rip, flist[0])
@@ -210,21 +210,28 @@ def ens_namemap(ens_list):
 	#Sorts the esemble files into the order in which they should be written 
 	#to the experiment_info.txt file, since dicts are unordered.
 	ens_loc = copy.copy(ens_list)
-	ens_names = ['qc.ensemble','save.ensemble', 'anom.ensemble', 'ds.ensemble']
-	ens_search = ['qcmask', 'save', 'Anom', '']
-	ens_order = [ens_names[x] for x in [3, 2, 0, 1]]
+	ens_names = ['qc.ensemble','save.ensemble', 'ds.ensemble']
+	anom_ens_names = ['qc.anom.ensemble', 'save.anom.ensemble','ds.anom.ensemble']
+	ens_search = ['Anom_qcmask','Anom_save','Anom','qcmask', 'save', '']
+	all_ens_names = ens_names + anom_ens_names
+	ens_total_order = [all_ens_names[x] for x in [2, 0, 1, 5, 3, 4]]
+	#ens_order = [ens_names[x] for x in [3, 2, 0, 1]]
 	ens_indexed = []
-	for e in range(0,len(ens_names)):
+	for e in range(0,len(ens_search)):
 		match_indices = [x for x in range(0,len(ens_loc)) if re.search(ens_search[e], ens_loc[x]) is not None]
 		matchlen = len(match_indices)
 		if matchlen == 1:
-			appendstr = ens_names[e] + ":" + ens_loc[match_indices[0]]
-			ens_indexed.append(appendstr)
+			if re.search("Anom", ens_loc[match_indices[0]]) is not None:
+				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
+				ens_indexed.append(appendstr)
+			else:
+				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
+				ens_indexed.append(appendstr)	
 			del ens_loc[match_indices[0]]
 		elif matchlen != 0:
-			print("Error in ens_namemap: match in" + str(matchlen)+"locations in " + ",".join(ens_list))
+			print("Error in ens_namemap: match in " + str(matchlen)+" locations in " + ",".join(ens_list))
 			sys.exit(1)	
-	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_order)) if re.search(ens_order[e],x) is not None][0])					
+	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_total_order)) if re.search(ens_total_order[e],x) is not None][0])					
 	return(out)	
 							 
 			 			 
