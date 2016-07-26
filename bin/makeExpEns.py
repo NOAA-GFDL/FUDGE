@@ -189,7 +189,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	#Finally, call the ensemble generation code:	
 	ens_min = basedir + "utils/s7/ens_min.csh"	
 	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles, 'Exp'])
-	#ens_command = " ".join(["tcsh -f ",ens_min, outfile.lstrip("/"), vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, orig_inFiles])
+	#Dev edit - trying to debug the labeling process
 	p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
 	out0,err0 = p.communicate()
 	if (p.returncode != 0):
@@ -213,13 +213,14 @@ def ens_namemap(ens_list):
 	ens_names = ['qc.ensemble','save.ensemble', 'ds.ensemble']
 	anom_ens_names = ['qc.anom.ensemble', 'save.anom.ensemble','ds.anom.ensemble']
 	ens_search = ['Anom_qcmask','Anom_save','Anom','qcmask', 'save', '']
-	all_ens_names = ens_names + anom_ens_names
-	ens_total_order = [all_ens_names[x] for x in [2, 0, 1, 5, 3, 4]]
+	all_ens_names = anom_ens_names + ens_names
+	ens_total_order = [all_ens_names[x] for x in [5, 3, 4, 2, 0, 1]]
 	#ens_order = [ens_names[x] for x in [3, 2, 0, 1]]
 	ens_indexed = []
 	for e in range(0,len(ens_search)):
-		match_indices = [x for x in range(0,len(ens_loc)) if re.search(ens_search[e], ens_loc[x]) is not None]
+		match_indices = [x for x in range(0,len(ens_loc)) if re.search(ens_search[e], osp.basename(ens_loc[x])) is not None]
 		matchlen = len(match_indices)
+		#print(ens_loc[el] for el in match_indices)
 		if matchlen == 1:
 			if re.search("Anom", ens_loc[match_indices[0]]) is not None:
 				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]

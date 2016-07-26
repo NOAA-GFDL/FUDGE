@@ -32,11 +32,6 @@ callTailAdjust <- function(test, input, adjusted.output){
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
                                                "[[", 'var')==targ.var]
-    #print('summary of input:')
-    #print(summary(input))
-    #print(fut.pred)
-    #print(targ.var)
-    #print(lapply(input$data.atts, 'names'))
     ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
@@ -71,9 +66,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   ds.fut <- remove.missvals(unlist(ds.fut))
   #Calculate high and low tails
   print('calling upper')
-  #print(summary(ds.fut))
-  #print(summary(model.fut))
-  #stop('examine output')
   hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
   print('calling lower')
   lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))

@@ -18,9 +18,10 @@ WriteNC <-  function(filename,data.array,var.name,
   #'@param filename: The name under which the data will be written
   #' -----Parameters related to the NetCDF varaible-----
   #'@param data.array: The array containing the values of the variable to 
-  #'be written to file. 
+  #'be written to file. If writelist is set to true, this can be a list of arrays.
   #'@param var.name: The short name of the NetCDF variable being written. In the
-  #'current FUDGE driver, picked up from the input var list.
+  #'current FUDGE driver, picked up from the input var list and compared against.
+  #'If writelist is 
   #'@param units: The units of the NetCDF variable. In the current FUDGE driver, 
   #'obtained by CFChecker
   #'@param lname: The long name of the NetCDF variable being written. In the current 

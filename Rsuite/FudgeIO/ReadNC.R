@@ -1,7 +1,8 @@
 # Aparna Radhakrishnan 08/04/2014
 ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
                    is.dimvar=FALSE,
-                   verbose=FALSE, add.ens.dim=FALSE, force_4_dim=TRUE, 
+                   verbose=FALSE, 
+                   force_4_dim=TRUE, 
                    close_nc=TRUE) {
   #'Reads data from a variable of a netCDF file object
   #'Returns netCDF variable data and, if dim!= 'none', one or more dimensions of that
@@ -59,8 +60,6 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
     }
     #Fudge currently deals badly with input vectors of more than three dimensions - and the first two
     #have to be spatial. This will collapse any OTHER degenerate dimensions present.
-    #In the future, this will NOT apply to ensemble dimensions, but we are not there yet by any means.
-    #if(length(dim(clim.in)) > 3){
     if( force_4_dim){
       if(verbose) { message("Adjusting dimensions to fit the FUDGE framework") }
       if(length(dim(clim.in)) < 4){
@@ -95,10 +94,6 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
           stop(paste("Error in ReadNC: input data has five dimensions", 
                      "and no expected degenerate dimensions! Please examine input."))
         }
-        #}else if(add.ens.dim){
-        #  dim.adjust <- c(dim(clim.in)[1:2], 1, dim(clim.in)[3])
-        #  dim(clim.in) <- dim.adjust
-        #}
       }
     }else{
       #If not 4-dimensional
@@ -167,13 +162,6 @@ ReadNC <- function(nc.object,var.name=NA,dstart=NA,dcount=NA,dim='none',
     envout$dim=dim.list$dim
     envout$vars=dim.list$vars
     envout$att_table <- att_list
-    
-    #  listout <- list("clim.in"=clim.in,"cfname"=cfname,"long_name"=long_name,"units"=units, 
-    #                  "dim"=dim.list$dim, 'vars'=dim.list$vars)
-    
-    #   ###Add attributes for later QC checking against each other
-    #   attr(listout, "calendar") <- nc.object$dim$time$calendar
-    #   attr(listout, "filename") <- nc.object$filename
     ###Add attributes for later QC checking against each other
     attr(envout, "calendar") <- nc.object$dim$time$calendar
     attr(envout, "filename") <- nc.object$filename
