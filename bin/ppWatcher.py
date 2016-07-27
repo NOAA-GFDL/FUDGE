@@ -101,13 +101,15 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			outdir = osp.dirname(expdict['output.path'][0])
 			outdir_contents = os.listdir(outdir)	
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
-			outfiles = "\n\t".join(outfiles)
-		cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
-		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp	
+			outfiles = "\n\t".join(outfiles)	
 		if warnCrossval: 
+			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
+		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
 			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")	
 			print(cv_command)
 		if isCrossval: 
+			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
+		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
 			print("MakeCVEns command-line arguments:")
 			print(cv_command)
 			cv_outfiles = runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
