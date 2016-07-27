@@ -19,7 +19,7 @@ find <PP_STATDIR> | grep <PREFIX> | xargs rm -rf
 	#source /home/Carolyn.Whitlock/Code/ginger_testing/environment/checkout-fudge <FUDGETAG>
 	module load git/2.4.6
 	#eval `/home/esd/bin/checkout-fudge --fudgetag <FUDGETAG>`
-	eval `/home/cew/bin/checkout-fudge-s8 --fudgetag <FUDGETAG>`
+	eval `/home/esd/bin/checkout-fudge-s8 --fudgetag <FUDGETAG>`
 	##################
 source <POSTPROC_CMD>
 if ($status == 0) then
