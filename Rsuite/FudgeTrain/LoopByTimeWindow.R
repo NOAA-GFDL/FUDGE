@@ -81,9 +81,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If there are no masks (so whole time series is used)
     mask.data.by.time.window <- FALSE
     num.masks <- 1
-#     mask.struct <- list(list(masks=rep(1, length(train.predictor[[1]]))), 
-#                         list(masks=rep(1, length(train.target))), 
-#                         list(masks=rep(1, length(esd.gen[[1]]))))
+    #     mask.struct <- list(list(masks=rep(1, length(train.predictor[[1]]))), 
+    #                         list(masks=rep(1, length(train.target))), 
+    #                         list(masks=rep(1, length(esd.gen[[1]]))))
     mask.struct <- list(list(masks=list(rep(1, length(train.predictor[[1]])))), 
                         list(masks=list(rep(1, length(train.target)))), 
                         list(masks=list(rep(1, length(esd.gen[[1]])))))
@@ -120,24 +120,24 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   }
   
   for (window in 1:num.masks){
-  #for (window in 9:9){
+    #for (window in 9:9){
     print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dataset should not have to deal with the awkward pooling of the
-#       if('OH'%in%ds.names){
-#         #...is it enough just to mask the masks in this step? 
-#         window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
-# #         window.predict <- lapply(train.predictor, 'trim.time.mask', mask=downscale.args$delta.mask)
-#         mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]], 
-#                                                            mask=downscale.args$delta.mask)
-# #         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]], 
-# #                                                            mask=downscale.args$delta.mask)
-#         window.target  <- trim.time.mask(data=window.target,    mask=mask.struct[[2]]$masks[[window]])
-#       }else{
-#         window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
-#         #window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
-#       }
+      #       if('OH'%in%ds.names){
+      #         #...is it enough just to mask the masks in this step? 
+      #         window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
+      # #         window.predict <- lapply(train.predictor, 'trim.time.mask', mask=downscale.args$delta.mask)
+      #         mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]], 
+      #                                                            mask=downscale.args$delta.mask)
+      # #         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]], 
+      # #                                                            mask=downscale.args$delta.mask)
+      #         window.target  <- trim.time.mask(data=window.target,    mask=mask.struct[[2]]$masks[[window]])
+      #       }else{
+      #         window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
+      #         #window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
+      #       }
       window.target  <- trim.time.mask(data=train.target,    mask=mask.struct[[2]]$masks[[window]])
       window.predict <- lapply(train.predictor, trim.time.mask, mask=mask.struct[[1]]$masks[[window]])
       window.gen     <- lapply(esd.gen        , trim.time.mask, mask=mask.struct[[3]]$masks[[window]])
@@ -194,104 +194,103 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
       }
       #If there is enough data available in the window to perform downscaling
-#      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
-        #Adjust the values of the downscaled ouptut, if applicable
-        if(s3.adjust){
-          if(test){
-            #Add the save in here
-            save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
-          }
-          temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
-                                       hist.pred = kfold.predict,
-                                       hist.targ = kfold.target,
-                                       fut.pred = kfold.gen,
-                                       att.list=att.table,
-                                       s5.instructions=s5.instructions)
-          s5.instructions.window <- temp.out$s5.list
-#           (print(summary(kfold.target - temp.out$input$hist.targ)))
-          kfold.target <- temp.out$input$hist.targ
-          kfold.predict <- temp.out$input$hist.pred
-          kfold.gen <- temp.out$input$fut.pred
-          remove(temp.out)
-          if(test){
-            #Add the save in here
-            save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
-          }
-        }else{
-          s5.instructions.window <- s5.instructions
+      #      if (sum(!is.na(kfold.predict))!=0 && sum(!is.na(kfold.target))!=0 && sum(!is.na(kfold.gen))!=0){
+      #Adjust the values of the downscaled ouptut, if applicable
+      if(s3.adjust){
+        if(test){
+          #Add the save in here
+          save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
         }
+        temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
+                                     hist.pred = kfold.predict,
+                                     hist.targ = kfold.target,
+                                     fut.pred = kfold.gen,
+                                     att.list=att.table,
+                                     s5.instructions=s5.instructions)
+        s5.instructions.window <- temp.out$s5.list
+        #           (print(summary(kfold.target - temp.out$input$hist.targ)))
+        kfold.target <- temp.out$input$hist.targ
+        kfold.predict <- temp.out$input$hist.pred
+        kfold.gen <- temp.out$input$fut.pred
+        remove(temp.out)
+        if(test){
+          #Add the save in here
+          save(file="/home/cew/Code/testing/transform_tests/rdata/save2.R", list=c('kfold.target'))
+        }
+      }else{
+        s5.instructions.window <- s5.instructions
+      }
       #If a method that uses the OH data is used, perform a final trimming step
       #at this point to make sure that the OH and MF data start with the 
       #same number of leap years
       if('OH'%in%ds.names){
-#         print(summary(mask.struct[[2]]))
-#         print(length(mask.struct[[2]]$masks[[window]]))
-#         print(summary(delta.mask))
-#         print(length(delta.mask))
+        #         print(summary(mask.struct[[2]]))
+        #         print(length(mask.struct[[2]]$masks[[window]]))
+        #         print(summary(delta.mask))
+        #         print(length(delta.mask))
         tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[window]], 
                                            mask=delta.mask, 
                                            dim='temporal')
         tmp.ds.time.mask <- trim.time.mask(data=tmp.ds.time.mask, 
                                            mask= mask.struct[[2]]$masks[[window]])
-#         print(length(tmp.ds.time.mask))
-#         print(length(kfold.target))
+        #         print(length(tmp.ds.time.mask))
+        #         print(length(kfold.target))
         kfold.target.final <- trim.time.mask(data=kfold.target, mask=tmp.ds.time.mask)
-#         print(which(is.na(tmp.ds.time.mask))[1:600])
-#         print(length(kfold.target.final))
-#         stop('examine this output')
+        #         print(which(is.na(tmp.ds.time.mask))[1:600])
+        #         print(length(kfold.target.final))
+        #         stop('examine this output')
       }else{
         kfold.target.final <- kfold.target
       }
-        #perform downscaling on the series and merge into new vector
-        if(create.ds.out){
-          temp.out <- CallDSMethod(ds.method = downscale.fxn,
-                                   train.predict = kfold.predict,
-                                    train.target = kfold.target.final,
-                                         esd.gen = kfold.gen,
-                                   att.table=att.table,
-                                   args=downscale.args, 
-                                   missval.handling=missval.handling, #Global set by SetDSMethodInfo()
-                                   ds.var=ds.var, 
-                                   min.present=min.present, train_qcmask)
-          tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
-          #tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
-          #print(tout.names)
-          for(var.name in tout.names){
-            if(use.time.trim.mask){
-              temp.assign <- ttrim.mask
-              temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
-              downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
-              if(train_qcmask){
-                temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
-                #temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
-                temp.out$qc.mask[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]
-              }
-            }else{
-              #stop('error in assigning to giant messy mask at this point')
-#               print(length(is.na(temp.out[[var.name]])))
-#               print(sum(!is.na(ttrim.mask)))
-              downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
-              #stop('examine output')
-              if(train_qcmask){
-                qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
-              }
+      #perform downscaling on the series and merge into new vector
+      if(create.ds.out){
+        temp.out <- CallDSMethod(ds.method = downscale.fxn,
+                                 train.predict = kfold.predict,
+                                 train.target = kfold.target.final,
+                                 esd.gen = kfold.gen,
+                                 att.table=att.table,
+                                 args=downscale.args, 
+                                 missval.handling=missval.handling, #Global set by SetDSMethodInfo()
+                                 ds.var=ds.var, 
+                                 min.present=min.present, train_qcmask)
+        tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
+        #tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
+        #print(tout.names)
+        for(var.name in tout.names){
+          if(use.time.trim.mask){
+            temp.assign <- ttrim.mask
+            temp.assign[!is.na(temp.assign)] <- temp.out[[var.name]]
+            downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+            if(train_qcmask){
+              temp.assign[!is.na(temp.assign)] <- temp.out$qc.mask[[var.name]]
+              #temp.out$qc.mask[[var.name]] <- trim.time.mask(temp.out$qc.mask[[var.name]],mask=ds.ttrim.mask)
+              temp.out$qc.mask[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]
             }
-          }#end for var in tout.names
-        }#end if create.ds.out
-        #And adjust the downscaled output, if applicable
-        if(length(s5.instructions.window) > 0){
-          if(verbose){message('calling section 5 adjustment')}
-#           if(is.na(kfold.orig)){
-#             #If there is ds data being passed in from outside, it gets checked
-#             data <- temp.out
-#           }else{
-#             #otherwise, use the ds values from the run you have just completed
-#             data <- temp.out[!is.na(temp.out)]
-#           }
-          if(test){
-            #Add the save in here
-            save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
+          }else{
+            downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out[[var.name]])#[!is.na(ttrim.mask)]
+            #stop('examine output')
+            if(train_qcmask){
+              qc.masklist[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$qc.mask[[var.name]])
+            }
           }
+          attributes(downscale.list[[var.name]]) <- attributes(temp.out[[var.name]])
+        }#end for var in tout.names
+      }#end if create.ds.out
+      #And adjust the downscaled output, if applicable
+      if(length(s5.instructions.window) > 0){
+        if(verbose){message('calling section 5 adjustment')}
+        if(train_qcmask){
+          if(any(sapply(temp.out$qc.mask, function(x){sum(is.na(x))})!=0)){
+            train.resize.sample=T
+          }
+          train.resize.sample <- F
+        }else{
+          train.resize.sample <- FALSE
+        }
+        if(test){
+          save(file="/home/cew/Code/testing/transform_tests/rdata/save3.R", list=c('data'))
+        }
+        if(!train.resize.sample){
           data <- temp.out
           temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
@@ -320,25 +319,26 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           }
           for(var.name in names(temp.out$ds.out)){
             if(use.time.trim.mask){
-                temp.assign <- ttrim.mask
-                temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
-                downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
+              temp.assign <- ttrim.mask
+              temp.assign[!is.na(temp.assign)] <- temp.out$ds.out[[var.name]]
+              downscale.list[[var.name]][!is.na(ds.ttrim.mask)] <- as.numeric(temp.assign)[!is.na(ds.ttrim.mask)]#[!is.na(ttrim.mask)]
             }else{
               downscale.list[[var.name]][!is.na(ttrim.mask)] <- as.numeric(temp.out$ds.out[[var.name]])#[!is.na(ttrim.mask)]
             }
           }
         }
-        if(graph){
-          if(masklines){
-            abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
-          }
-          points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.list[!is.na(window.gen)], 
-                 pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
+      }
+      if(graph){
+        if(masklines){
+          abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
         }
-        #Otherwise, you don't need to do anything because that loop should be full of NAs
-#       }else{
-#         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
-#       }
+        points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.list[!is.na(window.gen)], 
+               pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
+      }
+      #Otherwise, you don't need to do anything because that loop should be full of NAs
+      #       }else{
+      #         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
+      #       }
     }
   }
   #stop('examine output')

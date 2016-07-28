@@ -114,7 +114,8 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
                         'CDFtmod' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.method="CDFtmod", ds.var, rip.att.table),
                         #"PARM" = parm.main(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.var, att.table),
                         ReturnDownscaleError(ds.method))
-          out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])    
+          out.tmp[[out.var]] <- add.back.in(out[[1]], esd.index[[rip]])
+          attributes(out.tmp[[out.var]]) <- attributes(out[[1]])
           if(ds.method%in%c('CDFt', "CDFtmod", 'DeltaSD')){
             for(i in 1:length(out)){
               if(!is.null(attr(out[[i]], 'status'))){
@@ -155,6 +156,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         for(o in 1:length(out)){
           out.name <- names(out)[o]
           out.tmp[[out.name]] <- out[[o]]
+          attributes(out.tmp[[out.name]]) <- attributes(out[[o]])
         }
       }else{
         #The qcmask return code goes in here, eventually
@@ -173,6 +175,8 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
       }
       return(out.tmp)  
     }
+    print('attributes of output')
+    print(lapply(out.tmp, 'attributes'))
     return(out.tmp)
   }
 }
@@ -228,12 +232,6 @@ callStep.lm <- function(pred, targ, new, args=NA, ds.var='tasmax', att_table = N
   }else{
     k.val <- 2
   }
-#   if(!is.null(args$direction)){
-#     direc <- args$direction
-#    # save(file="/home/cew/Code/testing/test_out.R", list=c('pred', 'targ', 'new', 'att_table'))
-#   }else{
-#     direc='forward'
-#   }
   direc='forward'
   
   names(pred) <- lapply(att_table$hist.pred, '[[', 'var')

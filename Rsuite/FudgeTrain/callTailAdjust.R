@@ -18,7 +18,7 @@ callTailAdjust <- function(test, input, adjusted.output){
   }else{
     delta_sample = test$qc_args$lastNpts
   }
-  triggertypes <- c('GfGh', 'OhGh')
+  triggertypes <- c('GfGh', 'cdft') # 'OhGh'
   if(!('triggertype')%in%arg.names){
     stop(paste("Error in callTailAdjust: triggertype must be specified!"))
   }else if(!test$qc_args$triggertype%in%triggertypes){
@@ -30,16 +30,31 @@ callTailAdjust <- function(test, input, adjusted.output){
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
+    arg_list = list(delta_sample = delta_sample, 
+                    triggertype = triggertype)
+    #Check for attributes
+    if(triggertype=='cdft'){
+      if(!is.null(attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff'))){
+        high_cutoff=attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff')
+        low_cutoff = attr(adjusted.output$ds.out[[ds.var]], 'low_cutoff')
+        arg_list = c(arg_list, 
+                     list(high_cutoff=high_cutoff, low_cutoff=low_cutoff))
+      }else{
+        stop(paste("Error in callTailAdjust: triggertype of cdft", 
+                   "specified, but high_cutoff attribute not set in ds data!"))
+      }
+    }
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
                                                "[[", 'var')==targ.var]
     ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
                                model.fut = input$fut.pred[[fut.pred]], 
                                ds.fut = adjusted.output$ds.out[[ds.var]], 
-                               args = list(delta_sample = delta_sample, 
-                                           triggertype = triggertype))
+                               args = arg_list)
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
+#       print(summary(adjusted.output$qc.mask))
+#       print(length(ds.correct$mask))
       adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
     }
     if(test$adjust.out=='on'){
@@ -54,35 +69,56 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
   cond.data = switch(args$triggertype, 
                      'GfGh' = model.fut, 
-                     'OhGh' = ds.fut)
-  #print(args$triggertype)
-  #print(summary(cond.data))
-  #stop('examine results')
+                     'OhGh' = ds.fut, 
+                     'cdft' = model.fut)
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
   model.hist <- remove.missvals(unlist(model.hist))
   obs.hist <- remove.missvals(unlist(obs.hist))
   model.fut <- remove.missvals(unlist(model.fut))
-  ds.fut <- remove.missvals(unlist(ds.fut))
-  #Calculate high and low tails
-  print('calling upper')
-  hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-  print('calling lower')
-  lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
-  #Add missing values of condition back into main
-  cond.tmp <- cond.missvals
-  cond.tmp[cond.tmp] <- hitail$cond
-  hitail$cond <- cond.tmp
-  cond.tmp <- cond.missvals
-  cond.tmp[cond.tmp] <- (lotail$cond)
-  hitail.pts = hitail$cond >= 1
-  lotail.pts = lotail$cond >= 1
-
-  ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
-  ds.orig[lotail.pts] = cond.data[lotail.pts] + lotail$offset
-  tmp.mask <- (hitail$cond)*2 + lotail$cond
-  tmp.mask[tmp.mask > 4] = 4
-  return(list(ds = ds.orig, mask = (tmp.mask)))
+   ds.fut <- remove.missvals(unlist(ds.fut))
+#   print(length(model.hist))
+#   print(length(obs.hist))
+#   print(length(model.fut))
+#   print(length(ds.fut))
+  if(any(sapply(list(ds.fut, model.hist, obs.hist), length)==0)){
+    #Bypass for missing data
+    message("Insufficient data for tail adjustment")
+    tmp.mask=rep(0, length(ds.orig))
+    #return(list(ds = ds.orig, mask = rep(NA, length(ds.orig)))
+  }else{
+    #Calculate high and low tails
+    if (args$triggertype=='cdft'){
+      print('calling upper')
+      hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      print('calling lower')
+      lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+    }else{
+      print('calling upper')
+      hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      print('calling lower')
+      lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+    }
+    #Add missing values of condition back into main
+    cond.tmp <- cond.missvals
+    cond.tmp[cond.tmp] <- hitail$cond
+    hitail$cond <- cond.tmp
+    cond.tmp <- cond.missvals
+    cond.tmp[cond.tmp] <- (lotail$cond)
+    lotail$cond <- cond.tmp
+    hitail.pts = hitail$cond >= 1
+    lotail.pts = lotail$cond >= 1
+    
+    ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
+    ds.orig[lotail.pts] = cond.data[lotail.pts] + lotail$offset
+#     print(length(hitail$cond))
+#     print(length(lotail$cond))
+    tmp.mask <- (hitail$cond)*2 + lotail$cond
+    tmp.mask[tmp.mask > 4] = 4
+  }
+# print(length(ds.orig))
+# print(length(tmp.mask))
+return(list(ds = ds.orig, mask = (tmp.mask)))
 }
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
@@ -144,31 +180,32 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       offset=0
       return(list(cond=cond, offset=offset))
     }
-  }else if(args$triggertype=='OhGh'){
-    if (do.call(adjust.cond, list(do.call(trigger.fxn, list(OH)), do.call(trigger.fxn, list(MH))))){
-      oh.prob = ecdf(x=OH)(do.call(trigger.fxn, list(MH)))
-      #Assume that the sort is going to be the same for both datasetes
-      ds.val  = quantile(DS, probs=oh.prob)
-      mf.val = quantile(MF, probs=oh.prob)
-      #Calculate delta
-      MF = sort(MF)
-      ds.rank = rank(DS)
-      DS = sort(DS)
-      ds.cond <- do.call(adjust.cond, list(DS[ds.rank], ds.val))
-      #mf.idx = tail(which(MF <= mf.val),1)
-      #mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
-      mf.points = do.call(select.cond, list(MF, mf.val))
-      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-      #get delta
-      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
-      delta = mean(MF[delta.idx] - DS[delta.idx])
-      #DS[DS < ds.val] = DS[DS < ds.val] - delta
-      return(list(cond=ds.cond, offset=delta))
-    }else{
-      print('no adjust')
-      cond=rep(FALSE, length(DS))
-      offset=0
-      return(list(cond=cond, offset=offset))
-    }
   }
+# else if(args$triggertype=='OhGh'){
+#     if (do.call(adjust.cond, list(do.call(trigger.fxn, list(OH)), do.call(trigger.fxn, list(MH))))){
+#       oh.prob = ecdf(x=OH)(do.call(trigger.fxn, list(MH)))
+#       #Assume that the sort is going to be the same for both datasetes
+#       ds.val  = quantile(DS, probs=oh.prob)
+#       mf.val = quantile(MF, probs=oh.prob)
+#       #Calculate delta
+#       MF = sort(MF)
+#       ds.rank = rank(DS)
+#       DS = sort(DS)
+#       ds.cond <- do.call(adjust.cond, list(DS[ds.rank], ds.val))
+#       #mf.idx = tail(which(MF <= mf.val),1)
+#       #mf.idx = tail(which(do.call(select.cond, list(MF, mf.val))), 1)
+#       mf.points = do.call(select.cond, list(MF, mf.val))
+#       mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+#       #get delta
+#       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+#       delta = mean(MF[delta.idx] - DS[delta.idx])
+#       #DS[DS < ds.val] = DS[DS < ds.val] - delta
+#       return(list(cond=ds.cond, offset=delta))
+#     }else{
+#       print('no adjust')
+#       cond=rep(FALSE, length(DS))
+#       offset=0
+#       return(list(cond=cond, offset=offset))
+#     }
+#   }
 }

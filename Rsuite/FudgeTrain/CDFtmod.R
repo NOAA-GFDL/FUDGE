@@ -77,7 +77,7 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
        temp <-tryCatch({
          do.call(ds.method, c(list(targ, pred, new.data), 
                               list(npas=npas, dev=dev)
-                              ))$DS}, 
+                              ))[c('DS', 'high_cutoff', 'low_cutoff')]}, 
                        error=function(e){
                          is.retry <<- TRUE;
                          loop.try <- FALSE
@@ -92,7 +92,7 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
                            loop.try <- tryCatch(do.call(ds.method, 
                                                         c(list(targ, pred, new.data), 
                                                           list(npas=npas, dev=(dev)
-                                                               )))$DS, 
+                                                               )))[c('DS', 'high_cutoff', 'low_cutoff')], 
                                                 error=function(e){return(FALSE)}
                            )
                          }
@@ -108,19 +108,24 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
                                         "Please retry with different settings", 
                                         "or contact Carolyn Whitlock."))
                            }else if(args$retry=='missing'){
-                             return(rep(NA, length(new.data)))
+                             return(list(DS=rep(NA, length(new.data)), 
+                                         high_cutoff=NA, low_cutoff=NA))
                            }else if(args$retry=='predictor'){
-                             return(new.data)
+                             return(list(DS=new.data, 
+                                         high_cutoff=NA, low_cutoff=NA))
                            }
                          }else{
                            return(do.call(ds.method, 
                                           c(list(targ, pred, new.data), 
                                             list(npas=npas, dev=(dev))
-                                            ))$DS)
+                                            ))[c('DS', 'high_cutoff', 'low_cutoff')])
                          }
                        }, 
                        silent=FALSE)
-     out.list[[out.var.name]] <- as.numeric(temp)
+     out.list[[out.var.name]] <- as.numeric(temp$DS)
+     attributes(out.list[[out.var.name]]) <- c(attributes(out.list[[out.var.name]]), 
+                                               list(high_cutoff=temp$high_cutoff, 
+                                                    low_cutoff=temp$low_cutoff))
      if(is.retry){
        attr(out.list[[out.var.name]], 'status') <- 1
      }
@@ -134,6 +139,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   #'For comparison, please consult the original CDFt code located in the 
   #'CRAN repository.
   #'
+  #save(file='/home/cew/Code/testing/test_out.R', list=c('ObsRp', 'DataGp', 'DataGf', 'npas', 'dev'))
   mO = mean(ObsRp)
   mGp = mean(DataGp)
   DataGp2 = DataGp + (mO - mGp)
@@ -150,6 +156,8 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   FRP = FRp(x)
   FGPm1.FGF = quantile(DataGp2, probs = FGF)
   FRF = FRp(FGPm1.FGF)
+  hitail=NA
+  lotail=NA
   #Low tail correction
   if (FRF[1] > 0) {
     message("Modified low tail adjust performed")
@@ -164,6 +172,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
       j=j+1
     }
     j=j-1 #Added JL 3-29
+    lotail=x[j]
     if( j==(length(x)+1) ){
       stop("In CDFt, dev must be higher for low tail\n")
     }
@@ -188,6 +197,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
       j = j - 1
     }
     j=j+1
+    hitail=x[j]
     if (j == 0) {
       stop("In CDFt, dev must be higher\n")
     }
@@ -205,6 +215,8 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   FGf = ecdf(DataGf)
   FGP = FGp(x)
   FGF = FGf(x)
+  #print(attributes(xx$y))
+  #attributes(xx$y) <- c(attributes(xx$y), list('high_tail'=hitail, 'low_tail'=lotail))
   return(list(x = x, FRp = FRP, FGp = FGP, FGf = FGF, FRf = FRF, 
-              DS = xx$y))
+              DS = xx$y, high_cutoff=hitail, low_cutoff=lotail))
 }
