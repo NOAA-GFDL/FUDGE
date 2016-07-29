@@ -20,10 +20,10 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
   if (do.call(select.cond, list(do.call(trigger.fxn, list(DS)), cutoff)) && !is.na(cutoff)){
     #Assume that the sort is going to be the same for both datasetes
     ds.cond = do.call(select.cond, list(DS, cutoff))
-    MF = sort(MF)
-    ds.rank = rank(DS)
+    ds.order = order(DS)
     DS = sort(DS)
-    print(which(do.call(select.cond, list(DS, cutoff))))
+    MF = MF[ds.order]
+    #print(which(do.call(select.cond, list(DS, cutoff))))
     ds.indices <- which(do.call(select.cond, list(DS, cutoff)))
     if (args$tail=='upper'){
       ds.idx <- ds.indices[1] - 1
@@ -34,7 +34,7 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
     #get delta
     delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
     print(delta.idx)
-    delta = mean(MF[delta.idx] - DS[delta.idx])
+    delta = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
     return(list(cond=ds.cond, offset=delta))
   }else{
     print('no adjust')
