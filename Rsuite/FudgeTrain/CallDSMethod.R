@@ -103,7 +103,7 @@ CallDSMethod <- function(ds.method, train.predict, train.target, esd.gen, args=N
         if(ds.input$status < 200 && sum(lapply(ds.input$MF, length)==0)==0){ 
           #Use 200 to refer to fatal errors; everything else should be recoverable
           out <- switch(ds.method, 
-                        'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.method="CDFt", ds.var, rip.att.table),
+                        'CDFt' = callCDFt(ds.input$MH, ds.input$OH, ds.input$MF, args, ds.method="gfdl_CDFt", ds.var, rip.att.table),
                         'simple.bias.correct' = callSimple.bias.correct(ds.input$MH, ds.input$OH, ds.input$MF, args),
                         "BCQM" = callBCQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
                         "EDQM" = callEDQMv2(ds.input$OH, ds.input$MH, ds.input$MF, args, ds.var, rip.att.table), 
