@@ -125,7 +125,14 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		                  traceback="", \
 		                  mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
 		                  exp_info_file = infile, outfiles = outfiles)
-			
+		#Extra code added 8-8 in order to add the xml ouptut to the end of the 
+		#experiment info files
+		#Make a permanent fix later; this is going to react oddly with the 
+		#cross-validation settings
+		outfile_exp_info = ["/".join(el.split("/")[:-3]) + "/experiment_info.txt" for el in outfiles.split("\n")]
+		outfile_exp_info = [el.split(":")[-1] for el in outfile_exp_info]
+		script_exp_info = [infile]
+		write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')	
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
 		send_status_email("failure", 'ppWatcher', exp_name, \
@@ -133,7 +140,23 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		                   mailid=mailid, logfiles = logfile_loc, exp_info_file = infile, 
 		                   outfiles = expdict['output.path'])
 		sys.exit(1)                   		                       
-	sys.exit(0)		
+	sys.exit(0)
+	
+def write_xml_info(outdirs, xml_dir):
+	#Writes the contents of the experiment xml
+	#to the end of all experiment info files
+	#located in the dirs discussed
+	xml_file = [el for el in os.listdir(xml_dir) if re.search("xml", el) is not None]
+	xml_file = osp.join(xml_dir, xml_file[0])
+	cat_string = ''
+	with open(xml_file, 'r') as infile:
+		for line in infile:
+			cat_string = cat_string + "#" + line.strip() + "\n"
+	for el in outdirs:
+		with open(el, 'a') as outfile:		
+			outfile.write("\n############ Concatenated experiment XML ######################################\n")
+			outfile.write(cat_string)
+				
 	
 if __name__ == '__main__':
 	print(sys.argv)
