@@ -79,7 +79,7 @@ ncdump -h $outFile |grep plev
 
 # the realization attribute is in all CMIP5 and GFDL model metadata, but "gfdl_experiment_name" is only in GFDL's model data. 
 # execute separately so that if either is missing from netCDF files, the other edit is still executed.
-  ncatted -O -h -a realization,global,d,, 
+  ncatted -O -h -a realization,global,d,, $outFile
   ncatted -O -h -a realizations,global,c,c,""$rips"" $outFile
   #changed from deleting this attribute 6-24-16; very useful for some metadata opts in section 8
   #ncatted -O -h -a gfdl_experiment_name,global,c,c, $outFile
