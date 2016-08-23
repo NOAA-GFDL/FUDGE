@@ -53,15 +53,12 @@ callTailAdjust <- function(test, input, adjusted.output){
                                args = arg_list)
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
-#       print(summary(adjusted.output$qc.mask))
-#       print(length(ds.correct$mask))
       adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
     }
     if(test$adjust.out=='on'){
       adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
     }
   }
-#stop('examine output')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
@@ -111,8 +108,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
     
     ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
     ds.orig[lotail.pts] = cond.data[lotail.pts] + lotail$offset
-#     print(length(hitail$cond))
-#     print(length(lotail$cond))
     tmp.mask <- (hitail$cond)*2 + lotail$cond
     tmp.mask[tmp.mask > 4] = 4
   }
