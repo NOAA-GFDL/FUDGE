@@ -21,7 +21,7 @@
   set qclist = `cat $qcOptions_file | cut -d " " -f 1`
   set qclist = ($qclist none)
 
-  if ($dsMethod == "BCQM" || $dsMethod == "PARM" || $dsMethod == "CDFt") then
+  if ($dsMethod == "BCQM" || $dsMethod == "PARM" || $dsMethod =~ "CDFt*") then
     echo ">>   "
     echo ">>   IMPORTANT"
     echo ">>   ========="
@@ -29,8 +29,8 @@
     echo ">>   You selected $dsMethod as your downscaling method."
     echo ">>   "
     echo ">>   'simpletailadj' tail adjustment options are available."
-    if ($dsMethod == "CDFt") then
-       set triggertype = 'OhGh'
+    if ($dsMethod =~ "CDFt*") then
+       set triggertype = 'cdft'
     else
        set triggertype = 'GfGh'
     endif

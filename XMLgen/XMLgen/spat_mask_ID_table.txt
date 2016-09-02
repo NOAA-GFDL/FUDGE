@@ -1,0 +1,5 @@
+ID Spatial_Mask
+-- -------------
+RR red_river_0p1
+SCCSC  sccsc_0p1
+I35Land  I35Land_0p1

@@ -1,0 +1,126 @@
+PROCESS different....so varied. so if select synthetic data, different XMLgen.
+
+1) query for target cmipvar name  (store in "var")
+    table = ~/XMLgen/target_ID_table.txt
+          tasmax tx
+          tasmin tn
+          pr     pr
+          prc    prc
+          rsds   sw
+          psl    psl
+          ta850  t8
+          huss   sh
+          syn    syn
+
+        grep table for target
+	if found, retrieve target_ID
+        if not, query for target_ID and add target and target_ID to table
+
+1.5) query for in_root, presenting default = /archive/esd/PROJECTS/DOWNSCALING
+
+2) query for target dataSource (livneh, GFDL-HIRAM-C360/PM)
+
+   if livneh,  (NOTE: prism and daymet are not yet available)
+   	epoch = historical
+        dataCategory = "OBS_DATA"
+        dataType = "GRIDDED_OBS"
+
+   	dim = OneD
+        region = SCCSC0p1
+            <lons>181</lons>
+            <lone>370</lone>
+            <lats>31</lats>
+            <late>170</late>
+            <file_j_range>"J31-170"</file_j_range>
+     	file time 19610101 20051231
+     	file trange 19610101-20051231
+
+	
+* * * * future choices to go with these that share are GCM_DATA/CMIP5
+   	    epoch = rcp26, rcp45, rcp85
+     	    file time 20060101 20991231
+     	    file trange 20060101-20991231
+
+
+
+   if NCPP, 
+   	epoch = amip
+        dataCategory = "GCM_DATA"
+        dataType = "NCPP"
+
+   	region = US48 / ZeroD / 9pts
+   	dim = OneD / ZeroD / 9pts
+
+   	US48
+            <lons>748</lons>
+            <lone>941</lone>
+            <lats>454</lats>
+            <late>567</late>    
+            <file_j_range>"J454-567"</file_j_range>
+   	ZeroD
+            <lons>$Ipt</lons>
+            <lone>$Ipt</lone>
+            <lats>$Jpt</lats>
+            <late>$Jpt</late>    
+            <file_j_range>"J$Jpt"</file_j_range>
+   	9pts
+            <lons>$Im1</lons>
+            <lone>$Ip1</lone>
+            <lats>$Jm1</lats>
+            <late>$Jp1</late>    
+            <file_j_range>"J${Jm1}-$Jp1"</file_j_range>
+
+	epoch = amip 
+        multiple RIPs
+        file time 19790101 20081231
+        file trange 19790101-20081231
+
+* * * * future choices are GCM_DATA/NCPP
+            epoch = sst2090
+            multiple RIPs
+            file time 20860101 20951231
+            file trange 20860101-20951231
+
+2.5) run_find_dataset_based_on_var.csh 
+     	source find_dataset_based_on_var.csh 
+     	echo $dataSet
+     	set ht_dataSet = $dataSet
+
+
+3) query for historical predictor dataset (depends on target - RR or PM or Synthetic or other)
+
+3.5) run_find_dataset_based_on_var.csh 
+     	source find_dataset_based_on_var.csh 
+     	echo $dataSet
+     	set ht_dataSet = $dataSet
+
+4) query for historical training time window
+
+5) query for future predictor dataset (depends on target - RR or PM or Synthetic or other)
+
+6) query for or set  future training time window
+
+7) query for method
+   CDFt, BCQM, EDQM...other? 
+   look for files named *_Options.csh in XMLgen directory.
+       set methods = ()
+       cd $XMLgenDir
+       foreach f (*_Options.csh)
+       set method = `echo "$f" | cut -d _ -f 1`
+       set methods = ($methods $method)
+       end
+       echo $methods
+
+8)query for project
+    table = $XMLgenDir/project_ID_table.txt
+        grep table for project
+        if found, retrieve project_ID
+        if not, query for project_ID and add project and project_ID to table
+
+9) query for experiment series prefix
+
+construct the out_dir
+
+
+
+=========
