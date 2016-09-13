@@ -55,7 +55,7 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
       dim(clim.bounds) <- c(length(time.edges)-1, 2)
       time.bounds <- aperm(time.bounds, c(2,1))
       clim.bounds <- aperm(clim.bounds, c(2,1))
-     }else if(key=='factor'){
+    }else if(key=='factor'){
       #if there is a factor key, search for the factor var
       #search for factor, time.vals
       if(units!="" && time.factor!="" && time.vals!=""){
@@ -67,7 +67,6 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
         for (level in 1:nlevels(time.factor)){
           loop.fac <- time.factor==levels(time.factor)[level]
           level.select <- time.vals[loop.fac]
-          time.mean <- mean(c(min(level.select), max(level.select)))
           time.bnds.vals[1,level] <- min(time.bnds[1,][loop.fac]) #smallest first val
           if(adapt.end.factors){ #exceeds ncount-specific adjustment
             time.bnds.vals[2,level] <- 2*time.mean - time.bnds.vals[1,level] #avoid overlapping bnds
@@ -75,6 +74,7 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
             time.bnds.vals[2,level] <- max(time.bnds[2,][loop.fac]) #largest second val
           }
           #time.mean <- mean(time.bnds.vals[,level])
+          time.mean <- mean(c(time.bnds.vals[1,level], time.bnds.vals[2,level]))
           time.dim.vals[level] <- time.mean
         }
         #Create var and dimvar; return
@@ -84,41 +84,37 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                               create_dimvar=TRUE, 
                               calendar=calendar, 
                               longname="time")
-        attributes(time.bnds.vals) <- list('units' = units, 
-                                           'dimids' = "bnds,time", 
-                                           'prec' = "double", 
-                                           'longname' = "time axis boundaries")
-        return(list('dim' = time.dim, 'vars' = list('time_bnds' = time.bnds.vals)))
+        time.bnds <- create.fudge.metavar.object('time.bnds', time.bnds.vals, 
+                                                 prec='double', dimnames=c('bnds', 'time'), 
+                                                 longname='time axis boundaries', 
+                                                 units=units)
+        attributes(time.bnds) <- list('units' = units, 
+                                      'dimids' = "bnds,time", 
+                                      'prec' = "double", 
+                                      'longname' = "time axis boundaries")
+        #print(summary(time.bnds))
+        #stop('examine output')
+        return(list('dim' = time.dim, 'vars' = list('time_bnds' = time.bnds)))
       }else{
         stop(paste("Error in ObtainTimeAxis: key was factor, but factor, units and time vals not present!"))
       }
     }else if(key=='365_day'){
-        time.dim <- ncdim_def(name=name, 
-                              vals=seq(from=0.5, by=1, length.out=365), 
-                              unlim=TRUE,
-                              units='days since 0000-01-01', 
-                              create_dimvar=TRUE, 
-                              calendar=calendar, 
-                              longname="time")
-        time.bounds <- c(seq(0, by=1, length.out=365), 
-                         seq(1, by=1, length.out=365))
-        #dim(time.bounds) <- c(2,365)
-        dim(time.bounds) <- c(365,2)
-        time.bounds <- aperm(time.bounds, c(2,1))
-        attr(time.bounds, "dimids") <- "bnds,time"
-        attr(time.bounds, "units") <- time.dim$units
-        attr(time.bounds, "prec") <- "double"
-        attr(time.bounds, "longname") <- "time axis boundaries"
-        attr(time.bounds, "dim") <- dim(time.bounds)
-        #Climatology bounds variable
-        clim.bounds <- c((time.bounds[1,] + time.range[1]), 
-                         time.bounds[2,] + time.range[2])
-        #climatology bounds
-        attr(clim.bounds, "dimids") <- "bnds,time"
-        attr(clim.bounds, "units") <- time.dim$units
-        attr(clim.bounds, "prec") <- "double"
-        attr(clim.bounds, "longname") <- "time axis boundaries"
-        attr(clim.bounds, "dim") <- dim(clim.bounds)
+      time.dim <- ncdim_def(name=name, 
+                            vals=seq(from=0.5, by=1, length.out=365), 
+                            unlim=TRUE,
+                            units='days since 0000-01-01', 
+                            create_dimvar=TRUE, 
+                            calendar=calendar, 
+                            longname="time")
+      time.bounds <- c(seq(0, by=1, length.out=365), 
+                       seq(1, by=1, length.out=365))
+      #dim(time.bounds) <- c(2,365)
+      dim(time.bounds) <- c(365,2)
+      #time bounds variable
+      time.bounds <- aperm(time.bounds, c(2,1))
+      #Climatology bounds variable
+      clim.bounds <- c((time.bounds[1,] + time.range[1]), 
+                       time.bounds[2,] + time.range[2])
     }else if(key=='values'){
       #Keep in mind you have a set of values that are used
       time.dim <- ncdim_def(name=name, 
@@ -130,23 +126,28 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                             longname="time")
       time.bounds <- time.bnds
       clim.bounds=NULL
-      }else{
-        stop(paste("Error in ObtainTimeAxis: please check your key to make sure that it matches one of the allowed strings!"))
-      }
-    print('just before adding attributes')
-    attr(time.bounds, "dimids") <- "bnds,time"
-    attr(time.bounds, "units") <- time.dim$units
-    attr(time.bounds, "prec") <- "double"
-    attr(time.bounds, "longname") <- "time axis boundaries"
-    attr(time.bounds, "dim") <- dim(time.bounds)
+    }else{
+      stop(paste("Error in ObtainTimeAxis: please check your key to make sure that it matches one of the allowed strings!"))
+    }
+    time.bounds <- create.fudge.metavar.object('time.bnds', time.bounds, 
+                                               prec='double', dimnames=c('bnds', 'time'), 
+                                               longname='time axis boundaries', 
+                                               units=time.dim$units)
+    attributes(time.bounds) <- list('units' = time.dim$units, 
+                                    'dimids' = "bnds,time", 
+                                    'prec' = "double", 
+                                    'longname' = "time axis boundaries")
     #These are needed for some cases
     if(!is.null(clim.bounds)){
       #climatology bounds
-      attr(clim.bounds, "dimids") <- "bnds,time"
-      attr(clim.bounds, "units") <- time.dim$units
-      attr(clim.bounds, "prec") <- "double"
-      attr(clim.bounds, "longname") <- "time axis boundaries"
-      attr(clim.bounds, "dim") <- dim(clim.bounds)
+      clim.bounds <- create.fudge.metavar.object('clim.bnds', clim.bounds, 
+                                                 prec='double', dimnames=c('bnds', 'time'), 
+                                                 longname='climatology axis boundaries', 
+                                                 units=time.dim$units)
+      attributes(clim.bounds) <- list('units' = time.dim$units, 
+                                      'dimids' = "bnds,time", 
+                                      'prec' = "double", 
+                                      'longname' = "climatology axis boundaries")
       var.list <- list('time_bnds' = time.bounds, 'climatology_bounds' = clim.bounds)
     }else{
       var.list <- list('time_bnds' = time.bounds)
@@ -171,11 +172,14 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
     }else{
       stop(paste("Error in ObtainTimeAxis: You need either a numeric or character key argument!"))
     }
-    attr(time.bounds, "dimids") <- "bnds,time"
-    attr(time.bounds, "units") <- time.dim$units
-    attr(time.bounds, "prec") <- "double"
-    attr(time.bounds, "longname") <- "time axis boundaries"
-    attr(time.bounds, "dim") <- dim(time.bounds)
+    time.bounds.var <- create.fudge.metavar.object('time.bnds', time.bounds, 
+                                                   prec='double', dimnames=c('bnds', 'time'), 
+                                                   longname='time axis boundaries', 
+                                                   units=time.dim$units)
+    attributes(time.bounds) <- list('units' = time.dim$units, 
+                                    'dimids' = "bnds,time", 
+                                    'prec' = "double", 
+                                    'longname' = "time axis boundaries")
   }
-  return(list(dim=time.dim, vars=list('time_bnds'=time.bounds))) #'climatology_bounds' = clim.bounds
+  return(list(dim=time.dim, vars=list('time_bnds'=time.bounds.var))) #'climatology_bounds' = clim.bounds
 }

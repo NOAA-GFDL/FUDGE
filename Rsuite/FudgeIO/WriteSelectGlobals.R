@@ -9,19 +9,20 @@
 #'@example WriteSelectGlobals(file=newfile.nc, atts=list(history='no history yet', comment='sample file'), append=TRUE)
 #'
 #'Carolyn Whitlock, March 2015
+#'Edited September 2016 to work with the rebooted IO functions
 
-WriteSelectGlobals <- function(filename, atts, append=TRUE){
-  if (file.exists(filename)){
-    nc.object <- nc_open(filename, write=TRUE)
-  }else{
-    stop(paste("Error in WriteSelectGlobals: file", filename, "does not exist!"))
-  }
+WriteSelectGlobals <- function(nc.object, atts, append=TRUE){
+#   if (file.exists(filename)){
+#     nc.object <- nc_open(filename, write=TRUE)
+#   }else{
+#     stop(paste("Error in WriteSelectGlobals: file", filename, "does not exist!"))
+#   }
   #account for single value for append
   if(length(append==1)){
     append <- rep(append, length(atts))
   }else{
     if(length(atts)!=length(append)){
-      nc_close(nc.object)
+      #nc_close(nc.object)
       stop(paste("Error in WriteSelectGlobals: length of atts and append", 
                  "are not the same, and length of append is not 1."))
     }
@@ -38,5 +39,5 @@ WriteSelectGlobals <- function(filename, atts, append=TRUE){
     }
     ncatt_put(nc.object, 0, att.name, att.val)
   }
-  nc_close(nc.object)
+  #nc_close(nc.object)
 }
