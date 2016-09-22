@@ -1,6 +1,8 @@
 9-22-16
 (d1a)
 - Multiplicative (ratio) tail adjustment option to "cdfttailadjust" and "simpletailadjust". Brief metadata update.
+(cew)
+- Merge with branch containing improved postProc workflow
 
 8-23-16
 - Bugfix for cross-validated qc mask pathanmes
