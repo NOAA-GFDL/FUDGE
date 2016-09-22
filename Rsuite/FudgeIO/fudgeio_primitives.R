@@ -59,7 +59,59 @@ obtain.fudge.var.old <- function(obj.nc, nc.var, coords){
   return(test.data)
 }
 
-obtain.fudge.var <- function(obj.nc, nc.var, subset=list()){
+obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
+  #'Grabs a varaible about to be used in FUDGE
+  #'and makes sure that its diemsnions correspond with the 
+  #'dimensions expected for FUDGE use.
+  #var.data <- ncvar_get(obj.nc, nc.var, collapse_degen=F)
+  var.dims <- get.ncdim.names(obj.nc, nc.var)
+  #var.dim.lengths <- get.ncvar.dims(obj.nc, nc.var)
+  get.dim.names()
+  check_subset <- !(is.null(names(subset)))
+  if (any(!(var.dims %in% c(x.dims, y.dims, time.dims, ens.dims, n.dims)))){
+    dims.notlist <- var.dims[which(!(var.dims %in% c(x.dims, y.dims, time.dims, ens.dims, n.dims)))]
+    stop(paste("Error in obtain.fudge.var! Var", nc.var, "uses the dimension(s)", 
+               paste(dims.notlist, collapse=","), 'that are unknown to fudge;', 
+               'please add to classification function!'))
+  }
+  name.list <- list(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)
+  dim.order <- c(0, 0, 0, 0, 0, 0)
+  dim.len   <- c(1, 1, 1, 1, 1, 1)
+  dim.pres  <- c(T, T, T, T, T, T)
+  dim.start <- c()
+  dim.count <- c()
+  for(n in 1:6){
+    dim.loc <- which(var.dims %in% name.list[[n]])
+    if(length(dim.loc) == 0){
+      dim.loc <- 0
+      #var.dim.lengths <- c(var.dim.lengths, 1)
+      dim.pres[n] <- F
+    }
+    dim.order[n] <- dim.loc
+    if (any(names(subset) %in% name.list[[n]])){
+      dim.subset <- subset[[which(names(subset) %in% name.list[[n]])]]
+      print(dim.subset)
+      dim.start <- c(dim.start, dim.subset[1])
+      dim.count <- c(dim.count, diff(dim.subset)+1)
+    }else{
+      dim.start <- c(dim.start, 1)
+      dim.count <- c(dim.count, (-1))
+    }
+  }
+  num.zero <- sum(dim.order==0)
+  dim.order[dim.order==0] <- seq( (7-num.zero), by=1, length.out=num.zero)
+  dim.count <- dim.count[dim.order]
+  dim.start <- dim.start[dim.order]
+  print(dim.start)
+  print(dim.count)
+  var.data <- ncvar_get(obj.nc, nc.var, collapse_degen=F, 
+                        start=dim.start[dim.pres[dim.order]], count=dim.count[dim.pres[dim.order]])
+  dim(var.data) <- c(dim(var.data), dim.len[!dim.pres])
+  test.data <- aperm(var.data, perm=dim.order) #dim.order used to get ordered as well, but that might not be right
+  return(test.data)
+}
+
+obtain.fudge.mask.var <- function(obj.nc, nc.var, subset=list()){
   #'Grabs a varaible about to be used in FUDGE
   #'and makes sure that its diemsnions correspond with the 
   #'dimensions expected for FUDGE use.
@@ -85,7 +137,7 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list()){
       dim.subset <- subset[[which(names(subset) %in% name.list[[n]])]]
       print(dim.subset)
       dim.start <- c(dim.start, dim.subset[1])
-      dim.count <- c(dim.count, diff(dim.subset))
+      dim.count <- c(dim.count, diff(dim.subset)+1)
     }else{
       dim.start <- c(dim.start, 1)
       dim.count <- c(dim.count, (-1))
@@ -97,9 +149,9 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list()){
   dim.start <- dim.start[dim.order]
   var.data <- ncvar_get(obj.nc, nc.var, collapse_degen=F, 
                         start=dim.start[dim.pres[dim.order]], count=dim.count[dim.pres[dim.order]])
-  dim(var.data) <- c(dim(var.data), dim.len[!dim.pres])
-  test.data <- aperm(var.data, perm=dim.order) #dim.order used to get ordered as well, but that might not be right
-  return(test.data)
+  #dim(var.data) <- c(dim(var.data), dim.len[!dim.pres])
+  #test.data <- aperm(var.data, perm=dim.order) #dim.order used to get ordered as well, but that might not be right
+  return(var.data)
 }
 
 get.dim.names <- function(env=parent.frame()){
@@ -192,12 +244,15 @@ obtain.fudge.var.dimensions <- function(nc.obj, nc.var, select=NA, subset=list()
   for (el in names(out)){
     out[[el]]$filename <- nc.obj$filename
   }
-  #If you are specifying a subset, it is neccessary to 
+  #If you are specifying a subset, it is neccessary to remove dims belonging to the subset
   for(n in 1:length(name.list) ){
     if (any(names(subset) %in% name.list[[n]])){
       n.subset <- subset[[which(names(subset) %in% name.list[[n]])]]
       n.outname <- dim.select.names[which(dim.select.names %in% name.list[[n]])]
-      out[[n.outname]]$vals <- out[[n.outname]]$vals[seq(n.subset[1]:n.subset[2])]
+      if (any (dim.select.names %in% name.list[[n]])){
+        out[[n.outname]]$vals <- out[[n.outname]]$vals[n.subset[1]:n.subset[2]]
+        out[[n.outname]]$len <- diff(n.subset) + 1
+      }
     }
   }
   return(out)
@@ -243,7 +298,7 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
     n <- sapply(name.list, function(x,y){any(x%in%y)}, el)
     dim.which <- dim.names %in% unlist(name.list[n])
     var.start[dim.which] <- subset[[el]][1]
-    var.count[dim.which] <- diff(subset[[el]])
+    var.count[dim.which] <- diff(subset[[el]])+1
   }
   var.all <- nc.obj$var[[var.name]]
   print(var.start)
@@ -270,9 +325,11 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   #'of the attribute table from the input 
   #'nc object and variable.
   attnames <- c('standard_name', 'long_name', 'units', 
-                'prec', 'calendar', 'filename', 'rips')
+                'prec', 'calendar', 'filename', 'rips', 
+                'climatology')
   att.defaults <- c('', nc.var, "", 
-                    'float', "", '', "")
+                    'float', "", '', "", 
+                    NA)
   var.att.list <- list()
   print(nc.var)
   for (n in 1:length(attnames)){
@@ -284,7 +341,6 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   }
   names(var.att.list) <- attnames
   #Add backstip for empty rip attribute
-  print(var.att.list)
   if(var.att.list$rips==""){
     var.att.list$rips <- get.rip.data(nc.obj)
   }

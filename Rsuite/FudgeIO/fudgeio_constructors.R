@@ -1,11 +1,28 @@
 build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.indices=NA, 
-                               subset=list(), verbose=F){
+                               subset=list(), dim=NA, verbose=F){
   #'Builds the data structures that we are intersted in
   #'for getting data in a form that's parsable by FUDGE
   
   if (length(filenames) != length(varnames)) {
     stop(paste("Error in build.fudge.object: different numbers of filenames and vars!"))
   }
+  #Enforce common order when getting dimensions in from file
+  #Hint: it's the order that we are going to be writing files in, 
+  #not the order that we are going to be using for calculation.
+  #Possibly. I need to talk to someone about overheads for aperm
+  #in R. Aperm's going to remporarily create another array of the same
+  #length in R - memory's not been a concern yet, but it could be for 
+  #multiple points.
+  if (!is.na(dim[1])){
+    dim.order <- sapply(X=c('spatial', 'space', 
+                            'ensemble', 'ensmem',
+                            'z', 'other',
+                            'time', 'temporal'), grep, dim)
+    dim.order <- unlist(dim.order[sapply(dim.order, 'length') > 0], use.names=F)
+    dim <- dim[dim.order]
+    print(dim)
+  }
+  
   fudge.data <- list()
   fudge.metadata <- list()
   for (v in 1:length(varnames)){
@@ -15,12 +32,13 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
     #We are going to buils separate structures for data and metadata
     
     #data: 
+    print(subset)
     var.data <- obtain.fudge.var(nc.obj, nc.var, subset)
     
     #metadata:
     var.metadata <- obtain.fudge.var.metadata(nc.obj, nc.var)
-    var.metadata[['dim']] <- obtain.fudge.var.dimensions(nc.obj, nc.var, subset=subset)
-    var.metadata[['vars']] <- obtain.fudge.var.metavars(nc.obj, nc.var, subset=subset)
+    var.metadata[['dim']] <- obtain.fudge.var.dimensions(nc.obj, nc.var, subset=subset, select=dim)
+    var.metadata[['vars']] <- obtain.fudge.var.metavars(nc.obj, nc.var, subset=subset, select=dim)
     #...assume that the combining steps can be taken before writing to file?
     #that is, you decide which vars get cloned from at that point?
     nc_close(nc.obj)

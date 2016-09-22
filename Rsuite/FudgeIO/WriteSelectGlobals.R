@@ -12,11 +12,11 @@
 #'Edited September 2016 to work with the rebooted IO functions
 
 WriteSelectGlobals <- function(nc.object, atts, append=TRUE){
-#   if (file.exists(filename)){
-#     nc.object <- nc_open(filename, write=TRUE)
-#   }else{
-#     stop(paste("Error in WriteSelectGlobals: file", filename, "does not exist!"))
-#   }
+  #   if (file.exists(filename)){
+  #     nc.object <- nc_open(filename, write=TRUE)
+  #   }else{
+  #     stop(paste("Error in WriteSelectGlobals: file", filename, "does not exist!"))
+  #   }
   #account for single value for append
   if(length(append==1)){
     append <- rep(append, length(atts))
@@ -31,13 +31,16 @@ WriteSelectGlobals <- function(nc.object, atts, append=TRUE){
   for(i in 1:length(atts)){
     att.name <- names(atts[i])
     att.val <- atts[[i]]
-    if(append[i]==TRUE){
-      new.str <- ncatt_get(nc.object, 0, att.name)
-      if(new.str$hasatt==TRUE){
-        att.val <- paste(att.val, new.str$val, sep="; ")
+    if (!is.na(att.val) && !is.null(att.val)){
+      if(append[i]==TRUE){
+        new.str <- ncatt_get(nc.object, 0, att.name)
+        if(new.str$hasatt==TRUE){
+          att.val <- paste(att.val, new.str$val, sep="; ")
+        }
       }
+      print(att.val)
+      ncatt_put(nc.object, 0, att.name, att.val, prec=NA)
     }
-    ncatt_put(nc.object, 0, att.name, att.val)
   }
   #nc_close(nc.object)
 }

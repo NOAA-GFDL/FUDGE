@@ -1,0 +1,244 @@
+#!/bin/tcsh -f 
+## user input
+if ($#argv < 11) then
+ echo " Please provide 10 arguments: lon_start lon_end xvaltype basedir input_dir_exp1_hires input_dir_exp1_lores input_dir_exp2_hires input_dir_exp2_lores outdir tasmax \n Eg: create_runscript 1 8 30L30 $TMPDIR/ /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H2/amip/mini_files  /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H2/N360_to_M45/mini_files  /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H3/amip/mini_files  /archive/a1r/R_project/v20120801/input/cmip5/c360_hiram_H3/N360_to_M45/mini_files  $TMPDIR/outdir/ tasmax "
+ exit
+endif
+echo "Creating run scripts for downscaling lon slice  $argv[1] to  $argv[2]"
+set lon_start=$argv[1]
+set lon_end=$argv[2]
+set dexper=$argv[3]
+set basedir=$argv[4]
+set varname=$argv[5]
+set cmipvar = $varname
+set method = $argv[6]
+#### include varname in input dir path
+## end of user input
+set counter=1
+set TARGET_DIR=$argv[7]/
+set HIST_PRED_DIR=$argv[8]/
+set FUT_PRED_DIR=$argv[9]/ 
+########## parse OUTDIR ############
+set OUTDIR=$argv[10]
+#### property tag subs ###########
+###### for use in create run script ########
+set cmdout =  `echo "$OUTDIR" | cut -d'#' -f1 `
+set prop =  `echo "$OUTDIR" | cut -d'#' -f2 `
+set rep =  `echo "$OUTDIR" | cut -d'#' -f3 `
+set arr = "`echo $rep | cut -d ","  --output-delimiter=' ' -f 1-`"
+set outdirtmp = ()
+set outdir = $OUTDIR
+ foreach element ($arr)
+ set search = $prop
+ if($rep != "na") then 
+  	set outdir2 = `echo $cmdout| sed "s/$search/$element/g" `
+ else
+        set outdir2 = $cmdout
+ endif
+ set outdirtmp = ( $outdirtmp ${outdir2} )
+ end
+set outdir = "$outdirtmp" 
+###############################################
+##################################
+
+
+####################################
+set dsuffix = $argv[11]
+set tstamp = $argv[12]
+set T_FILE_START_YEAR = $argv[13]
+set T_FILE_END_YEAR = $argv[14]
+set H_FILE_START_YEAR=$argv[15]
+set H_FILE_END_YEAR=$argv[16]
+set F_FILE_START_YEAR=$argv[17]
+set F_FILE_END_YEAR=$argv[18]
+set SPAT_MASK_DIR=$argv[19]
+set SPAT_REGION=$argv[20]
+set AUX_CUSTOM=$argv[21]
+set TAR_TWIN=$argv[22]
+set HIS_TWIN=$argv[23]
+set FUT_TWIN=$argv[24]
+set sbasedir=$argv[25]  
+set idirsuffix=$argv[26] 
+set PREDICTOR=$argv[27]
+## handle multi predictors  ##
+##########################
+set pctr=1
+set predlist = ()
+set cmd =  "`echo "$PREDICTOR" | cut -d',' -f$pctr `"
+#CEW edit to add grep-based bypass for testing
+set list_present = `echo $PREDICTOR | grep ","`
+echo $list_present
+if($list_present != "") then 
+  while($cmd != '')
+    set predlist = ( $predlist ${cmd} )
+    @ pctr = $pctr + 1
+    set cmd =  "`echo "$PREDICTOR" | cut -d',' -f$pctr `"
+  end
+## preds in c list predlist now##
+else
+  set predlist = ($PREDICTOR)
+endif
+###End CEW edit
+###CEW edit 9-13 for adding the 'by' arguments to the R code
+set OH_BY = $argv[28]
+set MH_BY = $argv[29]
+set MF_BY = $argv[30]
+
+set rundir=$sbasedir/runscript
+mkdir -p $rundir
+
+######################################
+set ctr=1
+##########
+set logdir=$sbasedir/log/
+mkdir -p $logdir 
+set joblog = $logdir # /work/$USER/fudge/stdout/
+mkdir -p $joblog
+
+############ dev
+set dev = "off"
+if($dev == "off") then
+ set tstamp = ""
+ set tsuffix = "$tstamp"
+else
+set tsuffix = ".$tstamp"
+endif
+
+
+#############dev
+@ i_idx = 0
+foreach i (`seq $lon_start 1 $lon_end`)
+ set counter=$i
+ @ i_idx += 1
+ set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix""$tsuffix 
+ echo "#\!/bin/tcsh " > $runpath
+ echo "#PBS -S /bin/csh " >> $runpath 
+ echo "#PBS -l nodes=1:ppn=1,walltime=6:00:00 "  >> $runpath 
+ echo "#PBS -j oe "  >> $runpath 
+ echo "#PBS -r y " >> $runpath 
+ echo "#PBS -o ${joblog}/ind."'${MOAB_JOBNAME}.${MOAB_JOBID} ' >> $runpath 
+ echo "#PBS -N fudge_run "  >> $runpath  
+ echo "#PBS -E "  >> $runpath
+ echo "#PBS -q batch "  >> $runpath 
+ #echo "source $basedir/utils/bin/init " >> $runpath 
+ #echo "eval `/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag $FUDGETAG`" >> $runpath
+ #echo "`/home/cew/Code/ginger_testing/environment/checkout.bash --fudgetag $FUDGETAG`" >> $runpath
+ #echo "eval \`/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag $FUDGETAG\`" >> $runpath
+ #echo 'eval `/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag '"${FUDGETAG}"'`' >> $runpath
+ #echo "printenv" >> $runpath
+ #echo "eval '`'/home/cew/Code/ginger_testing/environment/checkout.bash.newest --fudgetag ${FUDGETAG}'`'" >> $runpath
+ #echo "source /home/cew/Code/ginger_testing/environment/fudgesource" >> $runpath
+ echo "mkdir -p "$logdir  >> $runpath
+
+## Add lines to gcp input from /arch to VFTMP for processing
+ if ($SPAT_MASK_DIR != 'na') then
+         echo 'mkdir -p $TMPDIR'$SPAT_MASK_DIR  >> $runpath
+ endif
+ 
+ if ($AUX_CUSTOM != 'na') then
+	 set auxdir = `dirname $AUX_CUSTOM`
+         echo 'mkdir -p $TMPDIR'$auxdir  >> $runpath
+         echo "gcp --sync -cd $AUX_CUSTOM "'$TMPDIR'$auxdir/  >> $runpath
+ endif
+ ## new performance ##
+ if ($TAR_TWIN != 'na') then
+         set tardir = `dirname $TAR_TWIN`
+         echo 'mkdir -p $TMPDIR'$tardir  >> $runpath
+         echo "gcp --sync -cd $TAR_TWIN "'$TMPDIR'$tardir/  >> $runpath
+ endif
+ if ($HIS_TWIN != 'na') then
+         set hisdir = `dirname $HIS_TWIN`
+         echo 'mkdir -p $TMPDIR'$hisdir  >> $runpath
+         echo "gcp --sync -cd $HIS_TWIN "'$TMPDIR'$hisdir/  >> $runpath
+ endif
+ if ($FUT_TWIN != 'na') then
+         set futdir = `dirname $FUT_TWIN`
+         echo 'mkdir -p $TMPDIR'$futdir  >> $runpath
+         echo "gcp --sync -cd $FUT_TWIN "'$TMPDIR'$futdir/  >> $runpath
+ endif
+ ## new ##
+
+ if ($TARGET_DIR != 'NA/') then
+	 echo 'mkdir -p $TMPDIR'$TARGET_DIR  >> $runpath 
+ endif
+
+ if ($HIST_PRED_DIR != 'NA/') then 
+   foreach plist ($predlist)
+ 	echo 'mkdir -p $TMPDIR'$HIST_PRED_DIR$plist$idirsuffix  >> $runpath 
+   end
+ endif
+ if ($FUT_PRED_DIR != 'NA/') then
+   foreach plist ($predlist)
+      echo 'mkdir -p $TMPDIR'$FUT_PRED_DIR$plist$idirsuffix  >> $runpath 
+   end	
+ endif
+# if ($SPAT_MASK_DIR != 'NA/') then
+#        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+ if ($SPAT_MASK_DIR != 'na') then
+        echo "gcp --sync -cd $SPAT_MASK_DIR/*I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+ endif
+ if ($TARGET_DIR != 'NA/') then
+ 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
+ endif
+ if ($HIST_PRED_DIR != 'NA/') then
+    foreach plist ($predlist)
+ 	echo "gcp -cd $HIST_PRED_DIR$plist$idirsuffix/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR$plist$idirsuffix/  >> $runpath 
+    end
+ endif
+ if ($FUT_PRED_DIR != 'NA/') then
+    foreach plist ($predlist)
+ 	echo "gcp -cd $FUT_PRED_DIR$plist$idirsuffix/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR$plist$idirsuffix/  >> $runpath 
+    end
+ endif
+ foreach OUTDIR ($outdir)
+    echo "mkdir -p $OUTDIR" >> $runpath
+    echo "if ($status != 0) then" >> $runpath
+ 	echo "    echo 'Error in runscript creation of output dir! You may not have write permissions.'" >> $runpath
+ 	echo "    touch $sbasedir/status/.mini.fail" >> $runpath
+ 	echo "endif" >> $runpath
+#Add line to create mask directory
+        echo "mkdir -p $OUTDIR/${cmipvar}_qcmask" >> $runpath
+        echo "mkdir -p "'$TMPDIR'"$OUTDIR/  ">> $runpath
+#Add line to create mask directory
+echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
+end
+#echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} |& tee ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
+echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} $OH_BY $MH_BY $MF_BY $i_idx >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath #Redirect stdout/stderr to runpath commented out; duplicates large logfiles in fudge.fudge_master
+#Unfortunately, this also affects my favorite debugging technique. Is there a way to determine whether
+#a runscript is being called from the master vs being called from here?
+echo "#logfile output redirect from $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} to ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix}" >> $runpath
+ echo "wait " >> $runpath 
+# Add lines to gcp output from VFTMP to /arch 
+foreach OUTDIR ($outdir)
+ echo "gcp -cd "'$TMPDIR'"$OUTDIR/*.I$counter"_"$dsuffix.nc $OUTDIR/ " >> $runpath 
+#Add a line to copy the mask dir as well
+#
+echo "set ostat =  "'$?'"" >> $runpath
+set ostat =  $?
+echo " if ( "'$ostat'" == 0 ) then "  >> $runpath
+echo " echo 'success, create ok file "'$ostat'" ' "  >> $runpath
+echo " touch $OUTDIR/.mini.success" >> $runpath
+echo "else "  >> $runpath
+echo "echo failure, "'$ostat'" " >> $runpath
+echo " touch $OUTDIR/.mini.fail" >> $runpath
+echo "endif " >> $runpath
+#
+ echo "gcp -cd "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/*.I$counter"_"$dsuffix.nc $OUTDIR/${cmipvar}_qcmask/ " >> $runpath 
+#
+echo "set ostatmask =  "'$?'"" >> $runpath
+set ostatmask =  $?
+echo " if ( "'$ostatmask'" == 0 ) then "  >> $runpath
+echo " echo 'success, create ok file "'$ostatmask'" ' "  >> $runpath
+echo " touch $OUTDIR/${cmipvar}_qcmask/.mini.success" >> $runpath
+echo "else "  >> $runpath
+echo "echo failure, "'$ostatmask'" " >> $runpath
+echo " touch $OUTDIR/${cmipvar}_qcmask/.mini.fail" >> $runpath
+echo "endif " >> $runpath
+#
+
+end
+
+ echo $runpath
+ chmod u+x  $runpath
+end
+echo "Done."

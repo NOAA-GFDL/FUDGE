@@ -14,7 +14,8 @@
 #''calendar' attribute associated with the timeseries origin. 
 #'@examples
 #'
-ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, dim='none', allmask=FALSE) {
+ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, 
+                       dim='none', allmask=FALSE, subset=list()) {
   if (verbose) { message('Obtaining mask vars') }
   mask.var <- names(mask.nc$var)[which(regexpr(pattern="mask", names(mask.nc$var), 
                                                ignore.case=TRUE) != -1)]
@@ -37,7 +38,9 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE, dim='none', allmask=FA
   for (name in 1:length(mask.var)){
     mask.name <- mask.var[name]
     if(verbose){ message(paste("Obtaining", mask.name, ":mask", name, "of", length(mask.var))) }
-    mask <- ncvar_get(mask.nc,mask.name, collapse_degen=FALSE) #verbose adds too much info
+    mask <- obtain.fudge.mask.var(mask.nc, mask.name, subset=subset)
+    
+    #mask <- ncvar_get(mask.nc,mask.name, collapse_degen=FALSE)
     if(allmask){
       #Allmasks are required to be of 4 dimensions for proper data comparison
       if(verbose) { message("Adjusting dimensions to fit the FUDGE framework") }

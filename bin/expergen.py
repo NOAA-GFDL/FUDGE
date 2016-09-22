@@ -469,6 +469,12 @@ def main():
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
 	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
+	parser.add_option('--OH-by', action='store', dest='oh_by', default=1, 
+	                   help="number of x and y indices to loop by when splitting OH data into y-slices")
+	parser.add_option('--MH-by', action='store', dest='mh_by', default=1, 
+	                   help="number of x and y indices to loop by when splitting MH data into y-slices")
+	parser.add_option('--MF-by', action='store', dest='mf_by', default=1, 
+	                   help="number of x and y indices to loop by when splitting MF data into y-slices")
 	
 	(options, args) = parser.parse_args()
 	#CEW edits 3-3 for clarity (and only haing to search env vars once)
@@ -495,7 +501,15 @@ def main():
 	msubmail = 0
 	if options.msubmail: 
 		msubmail = 1	
-	statmail = options.statmail		
+	statmail = options.statmail	
+	
+	#CEW edit 9-13 for checking OH, MH and MF opts
+	#bys_are_odd = [i for i in [oh_by,mh_by,mf_by] if i%2==0]
+	#if len(bys_are_odd) != 0:
+	if any( x % 2 ==0 for x in [oh_by, mh_by, mf_by]):
+		print("Error in expergen: One or more of --Oh-by, --MH-by or --MF-by were even " + 
+		      "and are required to be odd!")
+		sys.exit()
 			
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
 	system,node,release,version,machine = os.uname()
@@ -506,6 +520,9 @@ def main():
 	else:
 		 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
 		 sys.exit(-5)
+		 
+	if any (x > 1 for x in [oh_by, mh_by, mf_by]): 
+		run_step_job(uinput, msub, msubmail, statmail, oh_by, mh_by, mf_by)		 
 
    
 #########################################################################################      		

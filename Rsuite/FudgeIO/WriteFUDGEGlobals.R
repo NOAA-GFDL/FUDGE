@@ -208,6 +208,14 @@ WriteFUDGEGlobals <- function(filename,kfold,predictand=NA,predictor=NA,
   if (fudgetag != ""){
     ncatt_put(nc.object, 0, 'fudgetag', fudgetag)
   }
-  nc_close(nc.object) 
-  return(filename)
+  overwrite_att_list <- list('title' = make.fudge.title(), 
+                             'history' = make.fudge.history(), 
+                             'institution' = make.fudge.institution(), 
+                             'comment' = make.fudge.comment(), 
+                             'info' = make.fudge.info(), 
+                             'references' = reference, 
+                             'climatology' = climatology, 
+                             'realization' = realization, 
+                             'fudgetag' = fudgetag)
+  return(overwrite_att_list)
 }
