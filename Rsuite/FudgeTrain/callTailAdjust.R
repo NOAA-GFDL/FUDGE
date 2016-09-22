@@ -32,12 +32,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   } else {
     delta_sample <- test$qc_args$lastNpts
   }
-
-
-# SET TRIGGER TYPE
-# 'OhGh' IS NO LONGER APPLICABLE
   triggertypes <- c('GfGh', 'cdft') # 'OhGh'
-  if(is.na(triggertype)){
+  if(!('triggertype')%in%arg.names){
     stop(paste("Error in callTailAdjust: triggertype must be specified!"))
   } else if(!(triggertype %in% triggertypes)) {
     stop(paste("Error in callTailAdjust: triggertype must be one of",
@@ -99,10 +95,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
       adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
     }
   }
-
-
-# RETURN RESULTS
-#stop('examine output')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
@@ -152,15 +144,11 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
       print('calling lower')
       lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     } else {
-# CALL SIMPLE (I.E. BCQM/PARM) TAIL FUNCTION [BELOW:  tail_cutoff]
       print('calling upper')
       hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
       print('calling lower')
       lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     }
-
-
-# RESTORE MISSING VALUES
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
     cond.tmp[cond.tmp] <- hitail$cond
@@ -189,8 +177,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   }
 # print(length(ds.orig))
 # print(length(tmp.mask))
-
-# RETURN WITH RESULTS
 return(list(ds = ds.orig, mask = (tmp.mask)))
 }
 
@@ -305,5 +291,4 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       return(list(cond=cond, offset=offset))
     }
 #   }
-
 }

@@ -2,6 +2,9 @@
 (d1a)
 - Multiplicative (ratio) tail adjustment option to "cdfttailadjust" and "simpletailadjust". Brief metadata update.
 
+8-23-16
+- Bugfix for cross-validated qc mask pathanmes
+
 7-11-16
 - Cross-validated ensemble generation, cleanup and notification working from within integrated FUDGE workflow
 

@@ -192,6 +192,19 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 			except:
 				raise	
 			return(outfile_clim + outfile_anom)
+		else:
+			#For the qcmasks and anomaly files, 
+			print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
+			clim_files = [re.sub("Anom","",f) for f in flist]
+			climvar = re.sub("Anom", "", climvar)
+			try:
+				print("qcmask clim_files: " + str(clim_files))
+				print("qcmask climvar: " + climvar)
+				outfile_clim = call_cv_ens_creation(clim_files,climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				                                    exp_names,trange_string,isAnom=False)
+			except:
+				raise
+			return(outfile_clim)	                                    
 	#Generate output file by doing a series of find-and-replace regexes on outdir
 	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]
 	outfile = make_cv_ens_name(osp.dirname(flist[0]), osp.basename(flist[0]), cv_type, odesc,kfold_string)	
@@ -221,14 +234,22 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 		print("Copied to " + outfile)
 		return([outfile])
 			
-def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold):
+def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold, is_supplement=False):
 	#Makes a cross-validated ensemble outpath/filename given a non-cv
 	#component:
 	#Note that this assumes the US48 directory is the last dir in the pathname
+	#is_supplement tells you whether the output file you are looking at
+	#is a qcmask or a save file - those have a slightly different
+	#filename structure, and need to be parsed differently
 	ds_rip = re.search("(r[0-9]*i[0-9]*p[0-9]*)", orig_path).group()
-	orig_expname = re.split("_", orig_fname)[2]
+	#if is_supplement:
+	orig_expname = re.split("_", orig_fname)[-5]
+	#else:
+	#	orig_expname = re.split("_", orig_fname)[2]
+	print("original experiment name: " + orig_expname)
 	cv_expname = re.sub("A00r[0-9]*e2", "A00"+odesc+"e2", orig_expname)
 	cv_expname = re.sub("K00", kfold, cv_expname)
+	print("New experiment name: " + cv_expname)
 	cv_path = re.sub(orig_expname, cv_expname, orig_path)
 	cv_fname = re.sub(orig_expname, cv_expname, orig_fname)
 	#From this point on, make the changes to the new things instead

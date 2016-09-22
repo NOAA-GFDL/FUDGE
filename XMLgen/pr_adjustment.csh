@@ -203,7 +203,7 @@ EOF
   endif
   echo $transform >> $INtxt
   echo " "
-  echo "transform ? = $transform"
+  echo "    transform ? = $transform"
   echo " "
   echo "transform = $transform, pr_adjustment.csh" >> $INtxt.key
   
@@ -217,7 +217,7 @@ EOF
      endif
      echo "$power" >> $INtxt
      echo " "
-     echo "power = $power" 
+     echo "    power = $power" 
      echo " "
      echo "power = $power , pr_adjustment.csh" >> $INtxt.key
 

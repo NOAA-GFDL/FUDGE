@@ -66,8 +66,8 @@ for property in root.findall("./core/output/property"):
   RIPname = property.get('name')
   Rvalues = property.get('value')
   RIPvalues = Rvalues.split(",")
-  for val in RIPvalues:
-    print ("RIP:"+val)
+# for val in RIPvalues:
+#   print ("RIP:"+val)
 
 outRootDir = root.findtext("./core/output/out_dir")
 scriptRootDir = root.findtext("./core/output/script_root")
@@ -404,8 +404,8 @@ logfile.write('Number_qcmask_____minifiles_found: ' + numqc1DFiles + "\n")
 logfile.write('................................................................' + "\n")
 logfile.close()
 #print file(logFileName).read()
-print ("\n")
-print ("      XMLchecker LogFilename = "+XMLtxt_logFileName+"\n")
+#print ("\n")
+#print ("      XMLchecker LogFilename = "+XMLtxt_logFileName+"\n")
 p99 = subprocess.Popen('cp '+logFileName+' '+XMLtxt_logFileName,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 #gcp1,gcpErr = p99.communicate()
 

@@ -222,9 +222,9 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
 }
 
 
-gfdl_CDFt <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2)
+gfdl_CDFt <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2) 
 {
-  #'Local GFDL modifications to the CDFt method to support
+  #'Local GFDL modifications to the CDFt method to support 
   #'the modified GFDL tail adjustment
   mO = mean(ObsRp)
   mGp = mean(DataGp)
@@ -290,12 +290,12 @@ gfdl_CDFt <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2)
     }
   }
   qntl = FGf(DataGf2)
-  xx = approx(FRF, x, qntl, yleft = x[1], yright = x[length(x)],
+  xx = approx(FRF, x, qntl, yleft = x[1], yright = x[length(x)], 
               ties = "mean")
   FGp = ecdf(DataGp)
   FGf = ecdf(DataGf)
   FGP = FGp(x)
   FGF = FGf(x)
-  return(list(x = x, FRp = FRP, FGp = FGP, FGf = FGF, FRf = FRF,
+  return(list(x = x, FRp = FRP, FGp = FGP, FGf = FGF, FRf = FRF, 
               DS = xx$y, high_cutoff=hitail, low_cutoff=lotail))
 }

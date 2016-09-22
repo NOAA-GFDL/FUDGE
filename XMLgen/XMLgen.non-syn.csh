@@ -1142,7 +1142,22 @@ EOF
     echo "======================="
     echo "  Minimum Sample Size  "
     echo "======================="
-    echo ">>   Set a minimum sample size for which downscaling will be performed."
+    echo ">>   The minimum sample size option, minsamplesize, refers to the minimum number"
+    echo ">>   of observations that must be present at an i, j, time window point in order"
+    echo ">>   for downscaling training to take place. Currently this is only relevant for pr"
+    echo ">>   if ignore0 option is being used. (In the future this could be relevant for"
+    echo ">>   pressure level data with missing values in a time series.)"
+    echo ">>   "
+    echo ">>   How minsamplesize translates to number of observations is dependent on the "
+    echo ">>   ignore0/missing value handling option - either the default used by the method,"
+    echo ">>   or an override passed in via ignore0."
+    echo ">>   "
+    echo ">>   minsamplesize is not required at all. If it is not specified, then a minimum"
+    echo ">>   sample size of 1 sample for the OH, MH, and MF datasets is enforced for "
+    echo ">>   downscaling and training."
+    echo ">>   ------------------------------------------------------------------------------"
+    echo ">>   "
+    echo ">>   Please set a minimum sample size for which downscaling will be performed."
     echo ">>   Hit Return if minimum sample size = 30 is desired, "
     echo ">>     otherwise enter a value >= 0 and < your data's total size per time window. "
     echo -n ">>   If 0 is entered, minsamplesize will NOT be set in the XML. : "
@@ -1153,7 +1168,7 @@ EOF
       set minSample = 30
     else
       @ vtest = $minSample
-      if ($vtest << 0) then
+      if ($vtest < 0) then
         echo "   You set the minimum sample size = $minSample. Value needs to be >= 0." 
         echo "   Exiting."
         exit 1
@@ -1180,14 +1195,20 @@ EOF
 
 # if pr_opts are being used, and ignore0 or ignore0.delta is on, then set qcmask on. No other qc options allowed.
 
+  echo " "
+  echo "=================== "
+  echo "  QC Adjustments  "
+  echo "=================== "
+  echo " "
   set used_qc_adjustment = False
   if ($use_pr_adjustment == True) then
     if ($ignore0Delta == "'on'" || ($ignore0 == "'on'" && $dsMethod != BCQM)) then
        echo "       <qc type="\'qc.train\'" qc_mask="\'on\'" adjust_out="\'off\'"></qc>" > $workDir/QC_XML
        set saveQcMask = "on"
        set used_qc_adjustment = True
-       echo "  "
-       echo "   Since ignore0 = $ignore0 and dsMethod != BCQM, FUDGE will output a mask flagging 'ignore0' points. No QC adjustments can be specified."
+       echo ">>   Since ignore0 = $ignore0 and dsMethod != BCQM, FUDGE will output a mask flagging 'ignore0' points."
+       echo ">>   No QC adjustments can be specified."
+       echo " "
     endif
   endif
 
@@ -1199,7 +1220,8 @@ EOF
     if ($ignore0 == "'on'") then
        echo "       <qc type="\'qc.train\'" qc_mask="\'on\'" adjust_out="\'off\'"></qc>" > $workDir/QC_XML
        set used_qc_adjustment = True
-       echo "   Since ignore0 = $ignore0 and no other QC adjustments are specified, FUDGE will output a mask flagging 'ignore0' points."
+       echo ">>   Since ignore0 = $ignore0 and no other QC adjustments are specified, "
+       echo ">>     FUDGE will output a mask flagging 'ignore0' points."
     endif
   endif
 
@@ -1219,13 +1241,18 @@ EOF
 #
   if ("$use_pr_adjustment" == "True") then
     if ("$used_qc_adjustment" == "True") then
+      echo "  "
+      echo "====================================================  "
+      echo "  $targVar Negative Downscaled Values Adjustment"
+      echo "====================================================  "
       echo ">>  "
-      echo ">>  Negative Downscaled Values Adjustment"
-      echo ">>  "
-      echo ">>  Do you want downscaled values < 0. set = 0 ? "
-      echo ">>   (Because of previous settings, you can't set flag.neg adjustment directly "
-      echo ">>    as a Section 5 QC adjustment. (NOTE: no mask will be created for this.) "
-      echo -n ">> Type y or hit Enter now if set values < 0 equal to zero, otherwise type n. : "
+      echo ">>  Do you want downscaled values of $targVar < 0. set = 0 ? "
+      echo ">>    (In this case you can't set Section 5 QC option flag.neg "
+      echo ">>     adjustment directly. Also, please note that because of FUDGE limitations,"
+      echo ">>     no mask will be created to indicate if/where this adjustment of  "
+      echo ">>    $targVar(downscaled) < 0., then $targVar(downscaled) = 0 occurs."
+      echo ">>    "
+      echo -n ">>  Type y or hit Enter now if set values < 0 equal to zero, otherwise type n. : "
       set ans=$<
       echo " "
       if ($ans == "") then 
@@ -1234,13 +1261,14 @@ EOF
       echo $ans >> $INtxt
       echo "ans = $ans , turn on <flag_neg> in pr_XML, XMLgen.non-syn.csh" >> $INtxt.key
       echo " "
-      echo " flag_neg on ? = $ans"
-      echo " "
       if ($ans != n) then
         echo "           <flag_neg>'on'</flag_neg>" >> $workDir/pr_XML
+        echo "    Negative downscaled values will be set = 0"
       else
         echo "           <flag_neg>'off'</flag_neg>" >> $workDir/pr_XML
+        echo "    Negative downscaled values will not be adjusted."
       endif
+      echo " "
     endif
     echo "        </pr_opts>" >> $workDir/pr_XML
     cat $workDir/pr_XML >> $workDir/core_XML
@@ -1261,10 +1289,7 @@ cat >> $workDir/XMLfile<< EOF
 EOF
 
   echo " "
-  echo " "
-  echo " "
-  echo ">>>  Finalizing $workDir/XMLfile "
-  echo " "
+  echo ">>>  Finalizing $workDir/XMLfile ... "
   echo " "
 
   set xmlDir=$scriptDir/scripts/$projectID/XML
@@ -1294,7 +1319,7 @@ EOF
   echo ">>>  ......................................................................................."
   echo ">>>  "
   echo ">>>  "
-  echo ">>>  Your XML file =  $xmlDir/$expName.xml " 
+  echo ">>>  XML file:  $xmlDir/$expName.xml " 
   echo ">>>  "
   echo ">>>  "
   chmod -xw $xmlDir/$expName.xml 
@@ -1304,25 +1329,24 @@ EOF
   echo ">>>  ......................................................................................."
   echo ">>>  ......................................................................................."
   echo ">>>  "
-  echo ">>>  "
   $xmlGenDir/XMLchecker.py $xmlDir/$expName.xml
   set logfile = `\ls $expName.*log`
   \mv $expName.*log $xmltxtDir
   echo " "
-  echo " ***** PLEASE CHECK XMLchecker output: $xmltxtDir/$logfile "
-  echo " ***** "
-  echo " ***** It will indicate if there are any problems with your inputs."
-  echo " ***** (This could easily happen if you edited an *input.txt file and used "
-  echo " *****  that as input to XMLgen.csh to create a new XML, e.g.  XMLgen.csh < myfile.input.txt "
-  echo " *****  which is NOT recommended unless you know what you are doing.)"
-  echo " "
+  echo ">>>  PLEASE CHECK XMLchecker output: $xmltxtDir/$logfile "
+  echo ">>>    "
+  echo ">>>  It will indicate if there are any problems with your inputs."
+  echo ">>>  (This could easily happen if you edited an keyboard input.txt file"
+  echo ">>>    and used that as input to XMLgen.csh to create a new XML  "
+  echo ">>>    e.g. XMLDIR/XMLgen.csh < path_to_myfile.input.txt "
+  echo ">>>    Do NOT do this unless you REALLY know what you are doing.)"
   echo " "
 
   cd $cDir
   
-  echo "Removing work directory $workDir"
+# echo "Removing work directory $workDir"
   echo " "
-  echo "Done."
+  echo ">>> XMLgen complete."
   echo " "
   sleep 1
   \rm -rf $workDir
