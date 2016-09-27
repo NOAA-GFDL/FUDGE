@@ -43,7 +43,7 @@ multi.lm <- function(OH, MH, MF, args=NA){
     #print('predicting')
     tmp <- suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF.slice)))
     #print(length(tmp))
-    out.data[,,,n,,][notna.index] <- predict.lm(lm.model, newdata=as.data.frame(MF.slice))
+    out.data[,,,n,,][notna.index] <- tmp
   }
   return(list(ds=out.data))
 }
