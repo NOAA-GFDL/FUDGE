@@ -74,7 +74,7 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
                paste(dims.notlist, collapse=","), 'that are unknown to fudge;', 
                'please add to classification function!'))
   }
-  name.list <- list(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)
+  name.list <- list(x.dims, y.dims, z.dims, ens.dims, n.dims, time.dims)
   dim.order <- c(0, 0, 0, 0, 0, 0)
   dim.len   <- c(1, 1, 1, 1, 1, 1)
   dim.pres  <- c(T, T, T, T, T, T)
@@ -84,7 +84,6 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
     dim.loc <- which(var.dims %in% name.list[[n]])
     if(length(dim.loc) == 0){
       dim.loc <- 0
-      #var.dim.lengths <- c(var.dim.lengths, 1)
       dim.pres[n] <- F
     }
     dim.order[n] <- dim.loc
@@ -102,10 +101,15 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
   dim.order[dim.order==0] <- seq( (7-num.zero), by=1, length.out=num.zero)
   dim.count <- dim.count[dim.order]
   dim.start <- dim.start[dim.order]
-  print(dim.start)
-  print(dim.count)
+  #####
+  #What I want to do is return a try/catch from this step - if it fails, 
+  #and if one of the retry opts is enabled, 
+  #add enough missing values to pad the length of the object
+  #to the object itself.
   var.data <- ncvar_get(obj.nc, nc.var, collapse_degen=F, 
-                        start=dim.start[dim.pres[dim.order]], count=dim.count[dim.pres[dim.order]])
+                        start=dim.start[dim.pres[dim.order]], 
+                        count=dim.count[dim.pres[dim.order]])
+  ######
   dim(var.data) <- c(dim(var.data), dim.len[!dim.pres])
   test.data <- aperm(var.data, perm=dim.order) #dim.order used to get ordered as well, but that might not be right
   return(test.data)
@@ -331,7 +335,7 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
                     'float', "", '', "", 
                     NA)
   var.att.list <- list()
-  print(nc.var)
+  #Get var atts
   for (n in 1:length(attnames)){
     tmp.att <- ncatt_get(nc.obj, nc.var, attnames[n])
     if ( !(tmp.att$hasatt)){
@@ -344,8 +348,22 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   if(var.att.list$rips==""){
     var.att.list$rips <- get.rip.data(nc.obj)
   }
+  #Get global atts
+  glob_attnames <- c('frequency')
+  glob.defaults <- c("")
+  glob.att.list <- list()
+  for (n in 1:length(glob_attnames)){
+    tmp.att <- ncatt_get(nc.obj, nc.var, glob_attnames[n])
+    if ( !(tmp.att$hasatt)){
+      tmp.att$value <- glob.defaults[n]
+    }
+    glob.att.list[n] <- tmp.att$value
+  }
+  names(glob.att.list) <- glob_attnames
+  var.att.list <- c(var.att.list, glob.att.list)
   #optional.atts <- c("comments", 'modulo')
   var.att.list['filename'] <- nc.obj$filename
+  var.att.list[['frequency']] <- 
   return(var.att.list)
 }
 

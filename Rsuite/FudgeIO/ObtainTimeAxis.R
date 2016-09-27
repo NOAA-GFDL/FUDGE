@@ -88,12 +88,11 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                                                  prec='double', dimnames=c('bnds', 'time'), 
                                                  longname='time axis boundaries', 
                                                  units=units)
-        attributes(time.bnds) <- list('units' = units, 
+        attributes(time.bnds) <- c(list('units' = units, 
                                       'dimids' = "bnds,time", 
                                       'prec' = "double", 
-                                      'longname' = "time axis boundaries")
-        #print(summary(time.bnds))
-        #stop('examine output')
+                                      'longname' = "time axis boundaries"), 
+                                   attributes(time.bnds))
         return(list('dim' = time.dim, 'vars' = list('time_bnds' = time.bnds)))
       }else{
         stop(paste("Error in ObtainTimeAxis: key was factor, but factor, units and time vals not present!"))
@@ -133,10 +132,11 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                                                prec='double', dimnames=c('bnds', 'time'), 
                                                longname='time axis boundaries', 
                                                units=time.dim$units)
-    attributes(time.bounds) <- list('units' = time.dim$units, 
+    attributes(time.bounds) <- c(list('units' = time.dim$units, 
                                     'dimids' = "bnds,time", 
                                     'prec' = "double", 
-                                    'longname' = "time axis boundaries")
+                                    'longname' = "time axis boundaries"), 
+                                 attributes(time.bounds))
     #These are needed for some cases
     if(!is.null(clim.bounds)){
       #climatology bounds
@@ -144,10 +144,11 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                                                  prec='double', dimnames=c('bnds', 'time'), 
                                                  longname='climatology axis boundaries', 
                                                  units=time.dim$units)
-      attributes(clim.bounds) <- list('units' = time.dim$units, 
+      attributes(clim.bounds) <- c(list('units' = time.dim$units, 
                                       'dimids' = "bnds,time", 
                                       'prec' = "double", 
-                                      'longname' = "climatology axis boundaries")
+                                      'longname' = "climatology axis boundaries"), 
+                                   attributes(clim.bounds))
       var.list <- list('time_bnds' = time.bounds, 'climatology_bounds' = clim.bounds)
     }else{
       var.list <- list('time_bnds' = time.bounds)
@@ -176,10 +177,11 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                                                    prec='double', dimnames=c('bnds', 'time'), 
                                                    longname='time axis boundaries', 
                                                    units=time.dim$units)
-    attributes(time.bounds) <- list('units' = time.dim$units, 
+    attributes(time.bounds) <- c(list('units' = time.dim$units, 
                                     'dimids' = "bnds,time", 
                                     'prec' = "double", 
-                                    'longname' = "time axis boundaries")
+                                    'longname' = "time axis boundaries"), 
+                                 attributes(time.bounds))
   }
   return(list(dim=time.dim, vars=list('time_bnds'=time.bounds.var))) #'climatology_bounds' = clim.bounds
 }

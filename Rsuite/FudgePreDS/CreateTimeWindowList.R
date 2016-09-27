@@ -18,7 +18,9 @@
 #' TODO: Develop better mask comparison when more than one mask is present
 
 
-CreateTimeWindowList <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, method="generic", time.prune.mask=NA){
+CreateTimeWindowList <- function(hist.train.mask, hist.targ.mask, esd.gen.mask, k=0, 
+                                 method="generic", time.prune.mask=NA, 
+                                 train.and.use.same=F){
 
   #This is the list of methods that use all arguments in order to generate the esd
   #equations, and therefore should probably be run without

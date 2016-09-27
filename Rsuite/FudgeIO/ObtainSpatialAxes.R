@@ -34,6 +34,14 @@ ObtainSpatialAxes <- function(key, units = "", verbose=FALSE){
     stop(paste("Error in ObtainTimeAxis: Character key argument required!"))
   }
   #Longitude bounds attributes setting
+  lon.bounds <- create.fudge.metavar.object(lon.bounds, 'lon.bnds', 
+                                            prec='double', dimnames=c('bnds', 'lon'), 
+                                            longname='longitude axis boundaries', 
+                                            units=units)
+  lat.bounds <- create.fudge.metavar.object(lat.bounds, 'lat.bnds', 
+                                            prec='double', dimnames=c('bnds', 'lat'), 
+                                            longname='latitude axis boundaries', 
+                                            units=units)
   attr(lon.bounds, "dimids") <- "bnds,lon"
   attr(lon.bounds, "units") <- lon.dim$units
   attr(lon.bounds, "prec") <- "double"

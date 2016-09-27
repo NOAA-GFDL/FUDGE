@@ -5,7 +5,6 @@ WriteNC <-  function(filename,out.data,var.names,
                      prec='double', missval=1.e20, units="",
                      longname=var.names, 
                      var.data=NA, 
-                     clone_all_vars=FALSE,
                      modulo=NA, modulo.range="", comment=NA,
                      clone_globals=F, clone_all=F, global_clone_file=NA, 
                      clone_exclude=c(), clone_include=c(),
@@ -35,11 +34,11 @@ WriteNC <-  function(filename,out.data,var.names,
   for (loop in 1:length(out.data)){
     if(verbose) { message(paste("defining var", var.names[[loop]])) }
     var.dat[[var.names[loop]]] <- ncvar_def(var.names[loop],
-                                           units=as.character(units[loop]), #needed if units are null
-                                           dim.list,
-                                           missval=missval,
-                                           longname=longname[loop],
-                                           prec=prec)#x,y,t1
+                                            units=as.character(units[loop]), #needed if units are null
+                                            dim.list,
+                                            missval=missval,
+                                            longname=longname[loop],
+                                            prec=prec)#x,y,t1
   }
   
   #create a bounds dimension here, since that does not get used in any of the calculations above
@@ -159,7 +158,7 @@ WriteNC <-  function(filename,out.data,var.names,
 
 ################################################################################
 global_clone_function <- function(env=parent.frame()){
-  if(clone_all){
+  if(env$clone_all){
     #prepare to clone all atts from all variables cloned from input
     clone.var.list <- names(env$var.dat)
   }
@@ -172,16 +171,18 @@ global_clone_function <- function(env=parent.frame()){
                             'table_id', 'tracking_id', 'parent_experiment_rip', 
                             "Institution", 'Institute_id', 'contact'), 
                           as.vector(env$clone_exclude))
-  if(length(clone_include) > 0){
+  if(length(env$clone_include) > 0){
     global.except.list <- global.except.list[!(global.except.list %in% env$clone_include)]
   }
   nc.array <- lapply( env$global_clone_file, nc_open)
   nc.copy.and.combine.atts(nc.array, 0, env$nc.obj, 0, global.except.list, 
                            verbose=FALSE)
-  if(env$clone_all){
-    for(v in clone.var.list){
-      nc.copy.and.combine.atts(nc.array, v, env$nc.obj, v, c("_FillValue", "FillValue", "_missval", 'missing_value', 'units'),
-                               verbose=FALSE)
+  if (!is.null(env$clone_all)){
+    if(env$clone_all){
+      for(v in env$clone.var.list){
+        nc.copy.and.combine.atts(nc.array, v, env$nc.obj, v, c("_FillValue", "FillValue", "_missval", 'missing_value', 'units'),
+                                 verbose=FALSE)
+      }
     }
   }
   return(env)

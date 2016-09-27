@@ -16,7 +16,7 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   if (!is.na(dim[1])){
     dim.order <- sapply(X=c('spatial', 'space', 
                             'ensemble', 'ensmem',
-                            'z', 'other',
+                            'n', 'other',
                             'time', 'temporal'), grep, dim)
     dim.order <- unlist(dim.order[sapply(dim.order, 'length') > 0], use.names=F)
     dim <- dim[dim.order]
