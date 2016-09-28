@@ -106,6 +106,7 @@ LoadLib(ds.method)
 #message("Attempting to break script deliberately")
 #print(fakevar)
 
+fudge.start.time <- proc.time()[3]
 message("Setting downscaling method information")
 SetDSMethodInfo(ds.method, predictor.vars)
 message("Checking downscaling arguments")
@@ -553,3 +554,4 @@ message(paste('Final Downscaled output file location:', convert.list.to.string(o
 message(paste('Target file location:', attr(list.target, 'filename')))
 message(paste('Future Predictor file(s):', attr(list.fut, 'filename')))
 message(paste('Historic Predictor files(s):', attr(list.hist, 'filename')))
+profileFUDGERun()
