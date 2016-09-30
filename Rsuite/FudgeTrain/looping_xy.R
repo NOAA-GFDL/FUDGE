@@ -1,6 +1,9 @@
 combine.over.missvals <- function(x){
   #Combines a vector with a set of values that do not overlap into a 
-  #single vector of data; if missing values overlap, 
+  #single vector of data; if missing values overlap, returns an error.
+  #Not currently used by anything because it isn't working; needs either 
+  #a version of this or the addition that makes all missing values NA for the
+  #full workflow.
   print(x)
   which.notna <- which(!is.na(x))
   if (length(which.notna)==1){
@@ -20,8 +23,8 @@ missing.all.xy <- function(dataset){
   return(as.vector(apply(dataset, c(1,2), 
                          function(x){
                            !any(!is.na(x))
-                           })
-                   ))
+                         })
+  ))
 }
 
 loop.xy.data <- function(){
@@ -53,11 +56,14 @@ loop.xy.data <- function(){
       all.names <- c(ds.names, qc.mask.names)
       OH.dim <- dim(OH.slice[[1]])[1:3]
       MF.dim <- dim(MF.slice[[1]])[4:6]
-      nmasks <- length(tmasks$OH$masks)
+      nmasks <- tmasks$nmasks
+      #nmasks is set by the time mask tools
+      #...how should this interact with the main driver? 
+      #ds as a target is currently being set by the 
       output <- rep(list(array(NA, dim=c(OH.dim, MF.dim, nmasks))), 
                     length(all.names))
       #tmasks <- tmask.list
-      time_mask_overlap = T
+      time_mask_overlap = tmasks$time_mask_overlap
       ds.names <- c('MF')
       names(output) <- all.names
       if ( !any(c( sapply(OH.slice, missing.all.xy), 
@@ -67,9 +73,15 @@ loop.xy.data <- function(){
         for(w in 1:nmasks){
           print(paste("Starting window", w, "of", nmasks))
           qc.out <- NULL
-          OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
-          MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
-          MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])
+          if (tmasks$apply_tmask){
+            OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
+            MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
+            MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])
+          }else{
+            OH.window <- OH.slice
+            MH.window <- MH.slice
+            MF.window <- MF.slice
+          }
           
           #Call section 3 methods; reassign output
           #       tmp.s3 <- callS3Adjustment(s3.instructions, 
@@ -99,15 +111,18 @@ loop.xy.data <- function(){
                                  minsample=0)
           if(time_mask_overlap){
             #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
-            print(summary(tmp.ds))
             ds.out <- list(ds=apply.fudge.tmask(data=tmp.ds$ds, 
                                                 mask=tmasks$trim$masks[[w]]))
+            qc.out <- c(qc.out, 
+                        lapply(tmp.ds[names(tmp.ds)!='ds'], #all non-ds outputs
+                               'apply.fudge.tmask',         #gets same mask applied
+                               mask=tmasks$trim$masks[[w]])
+            )
           }else{
             ds.out <- list(ds=tmp.ds$ds)
+            qc.out <- c(qc.out, tmp.ds$qc)
+            
           }
-          print(summary(ds.out$ds))
-          print(dim(ds.out$ds))
-          qc.out <- c(qc.out, tmp.ds$qc)
           #       #Call section 5 methods
           #       tmp.s5 <- callS5Adjustment(s5.instructions=s5.out,
           #                                  data = ds.out, 
@@ -130,11 +145,7 @@ loop.xy.data <- function(){
           }
         }#Loop by w complete
         for (el in names(output)){
-          #print(summary(output[[el]]))
-          #print(dim(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
-          #print("summary of tmp.out:")
-          #print(summary(tmp.out))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
       } #Check for any missing all vals at an x,y point

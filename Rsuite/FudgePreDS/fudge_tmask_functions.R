@@ -5,10 +5,13 @@
 
 get.fudge.timemask.list <- function(){
   #'Wrapper funciton for the time masking operations; removed to a separate
-  #'funciton for readability in the main driver.
+  #'function for readability in the main driver.
   
   time_mask_overlap = F
   apply_tmasks = T
+  nmasks <- 1
+  tmask.list.names <- c("train.pred", "train.targ", "fut.pred")
+  tmask.list.names <- c("MH", "OH", "MF")
   #Either all data will use a time-windowing mask, or none will use it. 
   if (ds.ref$train_and_use_same){ 
     #Future data used in downscaling will be underneath the fut.time tag
@@ -22,7 +25,8 @@ get.fudge.timemask.list <- function(){
                                            esd.gen.mask = fut.time.window, k=k.fold, 
                                            method=ds.method, 
                                            train.and.use.same = ds.ref$train_and_use_same)
-        names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+        names(tmask.list) <- tmask.list.names
+        nmasks <- length(tmask.list$OH$masks)
       }else{
         #Otherwise, if there were no masks included at all
         message("no time windows included; moving on to next step")
@@ -36,7 +40,8 @@ get.fudge.timemask.list <- function(){
                                          esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
                                          time.prune.mask = fut.time.trim.mask, 
                                          train.and.use.same = ds.ref$train_and_use_same)
-      names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
+      names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
+      nmasks <- length(tmask.list$OH$masks)
     }
   }else{ #Once esd.gen implemented, should be most common use case
     #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
@@ -45,7 +50,8 @@ get.fudge.timemask.list <- function(){
         tmask.list <- CreateTimeWindowList(hist.train.mask = hist.time.window, hist.targ.mask = target.time.window, 
                                            esd.gen.mask = fut.time.window, k=kfold, method=ds.method, 
                                            train.and.use.same = ds.ref$train_and_use_same)
-        names(tmask.list) <- c("train.pred", "train.targ", "fut.pred")
+        names(tmask.list) <- tmask.list.names
+        nmasks <- length(tmask.list$OH$masks)
       }else{
         #Otherwise, if there were no masks included at all
         message("no time windows included; moving on to next step")
@@ -58,9 +64,13 @@ get.fudge.timemask.list <- function(){
                                          esd.gen.mask = fut.time.window, k=k.fold, method=ds.method, 
                                          time.prune.mask = fut.time.trim.mask, 
                                          train.and.use.same = ds.ref$train_and_use_same)
-      names(tmask.list) <- c("train.pred", "train.targ", "fut.pred", "time.trim.mask")
+      names(tmask.list) <- c(tmask.list.names, "trim")
+      nmasks <- length(tmask.list$OH$masks)
     }
   }
+  tmask.list$time_mask_overlap <- time_mask_overlap
+  tmask.list$apply_tmasks <- apply_tmasks
+  tmask.list$nmasks <- nmasks
   return(tmask.list)
 }
 

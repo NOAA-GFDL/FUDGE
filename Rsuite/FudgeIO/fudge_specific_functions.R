@@ -18,7 +18,7 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, input_by, spat.
   #This goes for vars meant to be 1-d (like ENSO)
   if (input_by > 1){
     print('padding subset with missing values')
-    out$data <- lapply(out$data, 'pad.fudge.var.dim', pad.dim='y', pad.by=(input_by-1)/2, 
+    out$data <- lapply(out$data, 'pad.fudge.var.dim', pad.dim='y', pad.by=input_by, #pad.by=(input_by-1)/2, 
                        pad.type=x.pad)
     if (subset$x$olap){
       #And if the subset overlaps the max x indices, pad along the x axis

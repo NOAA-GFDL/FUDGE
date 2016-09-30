@@ -6,7 +6,7 @@
 fudge.start.time <- proc.time()[3]
 ############### Library calls, source necessary functions ###################################################
 #TODO the following sapplys and sourcing should be a library call
-#sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), full.names=TRUE), source);
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), full.names=TRUE), source);
@@ -48,8 +48,8 @@ if (length(console.args) > 0){
   x.pad <- "NA"
 }else{
   oh_by <- 1
-  mh_by <- 3 #3
-  mf_by <- 3 #3
+  mh_by <- 5 #3
+  mf_by <- 5 #3
   i_idx <- 10 #194
   i_max <- 194
   x.pad <- "NA"
@@ -252,6 +252,8 @@ message(paste("Starting at:", Sys.time()))
 start.time <- proc.time()
 
 #args should always exist; it's specified in the runcode
+#as of 9-29 I'm not sure why this is here, but it seems to have been
+#needed in the past. 
 if (args[1]=='na'){
   ds.args=NULL
 }else{
@@ -260,7 +262,7 @@ if (args[1]=='na'){
 
 #For now, make this a global to simplify data being copied
 tmasks <- tmask.list
-names(tmasks) <- c('MH', "OH", "MF", 'trim')
+#names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
 message("FUDGE downscaling ends")
 message(paste("FUDGE downscaling took", proc.time()[1]-start.time[1], "seconds to run"))
@@ -373,13 +375,15 @@ for (rip in fut.pred.rip.list){
       qc.comment <- get.qc.comment(qc.maskopts$qc.method)
       qc.comment.att <- list()
       qc.comment.att[qc.var] <- qc.comment
-      qc.globals <- global.att.list
+      qc.globals <- global_att_list
       qc.globals$info <- ""
       qc.globals$comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
                                                ds.experiment, label.validation, label.training, 
                                                predictor.vars, fut.pred.rip.list, qc.maskopts$qc.method)
       qc.globals$climatology <- NA
-      qc.out.filename  = WriteNC(qc.file, ds$qc.mask, qc.var, 
+      qc.list <- list()
+      qc.list[[qc.var]] <- ds$qc
+      qc.out.filename  = WriteNC(qc.file, qc.list, qc.var, 
                                  dim.list = dimlist, var.data=varlist, 
                                  prec='float', missval=1e20, units="1", 
                                  comment=qc.comment.att, 
@@ -391,6 +395,6 @@ for (rip in fut.pred.rip.list){
 }
 
 #As a final step, print basic profiling information to the logfile
-profileFudgeRun()
+profileFUDGERun()
 #Note: this means the runscript needs to include the call for system memory usage; 
 #or, that can wait for a bit

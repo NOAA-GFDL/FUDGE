@@ -42,8 +42,13 @@ multi.lm <- function(OH, MH, MF, args=NA){
     #MF.slice <- lapply(MF.slice, "remove.missvals")
     #print('predicting')
     tmp <- suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF.slice)))
-    #print(length(tmp))
-    out.data[,,,n,,][notna.index] <- tmp
+#     if (length(tmp) != length(out.data[,,,n,,][notna.index])){
+#       print(length(tmp))
+#       print(length(out.data[,,,n,,][notna.index]))
+#       print(length(tmp[!is.na(tmp)]))
+#       stop('examine output')
+#     }
+    out.data[,,,n,,][notna.index] <- tmp[!is.na(tmp)]
   }
   return(list(ds=out.data))
 }

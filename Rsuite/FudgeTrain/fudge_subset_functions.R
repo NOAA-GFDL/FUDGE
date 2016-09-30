@@ -25,17 +25,21 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
   }else if (pad.dim=='y'){
     #y dim always gets iterated over twice
     y.len <- new.dim[2]
-    new.dim[2] <- new.dim[2] + pad.by * 2 
+    new.dim[2] <- new.dim[2] + (pad.by - 1) # no longer * 2 
   }
   out.data <- array(NA, dim=new.dim)
   if (pad.dim=='x'){
     out.data[pad.seq,,,,,] <- data
   }else if (pad.dim=='y'){
-    print(dim(out.data))
-    print(dim(data))
-    print(paste((1+pad.by), y.len))
-    out.data[,(pad.by:y.len)+1,,,,] <- data
+    print(pad.by)
+    pad.start <- (pad.by-1)/2 #start counting from here
+    #print((((pad.by-1)/2):y.len)+1)
+    #print(length((((pad.by-1)/2):y.len)+1))
+    #print((((pad.by-1)/2):y.len))
+    #print(length((((pad.by-1)/2):y.len)))
+    out.data[,(1:114) + (pad.start-1),,,,] <- data
   }
+  #stop('examine output')
   #if we ever get to this point, pad.type can be set to the 
   #last index in the dimension that it is padding as well
   remove(data)
