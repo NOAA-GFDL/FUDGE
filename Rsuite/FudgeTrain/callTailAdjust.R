@@ -32,7 +32,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   } else {
     delta_sample <- test$qc_args$lastNpts
   }
-  triggertypes <- c('GfGh', 'cdft') # 'OhGh'
+  triggertypes <- c('GfGh', 'cdft', 'cdft_orig') # 'OhGh'
   if(is.na(triggertype)){
     stop(paste("Error in callTailAdjust: triggertype must be specified!"))
   } else if(!(triggertype %in% triggertypes)) {
@@ -59,11 +59,16 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 										adjmethod = adjmethod)
 #   GET LOW & HIGH CUTOFFS
     #Check for attributes
-    if(triggertype == 'cdft'){
+    if(triggertype == 'cdft' || triggertype=='cdft_orig'){
       if(!is.null(attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff'))){
         high_cutoff <- attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff')
         low_cutoff <- attr(adjusted.output$ds.out[[ds.var]], 'low_cutoff')
         arg_list <- c(arg_list, list(high_cutoff=high_cutoff, low_cutoff=low_cutoff) )
+        if (triggertype == 'cdft'){
+          #limited cdft takes new args
+          arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len, 
+                                       trigger = test$qc_args$trigger))
+        }
       }else{
         stop(paste("Error in callTailAdjust: triggertype of cdft",
                    "specified, but high_cutoff attribute not set in ds data!"))
@@ -111,8 +116,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
 # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,
                      'GfGh' = model.fut,
-# 'OhGh' IS NO LONGER APPLICABLE
-#                      'OhGh' = ds.fut,
+                     'cdft_orig' = model.fut,
                      'cdft' = model.fut)
 
 # PREPARE DATA
@@ -122,23 +126,24 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   obs.hist <- remove.missvals(unlist(obs.hist))
   model.fut <- remove.missvals(unlist(model.fut))
   ds.fut <- remove.missvals(unlist(ds.fut))
-#   print(length(model.hist))
-#   print(length(obs.hist))
-#   print(length(model.fut))
-#   print(length(ds.fut))
-
 
 # CHECK IF FEASIBLE -- IF SO CALL APPROPRIATE TAIL SCHEME FUNCTION
   if( any(sapply(list(ds.fut, model.hist, obs.hist), length) == 0) ){
     #Bypass for missing data
     message("Insufficient data for tail adjustment")
     tmp.mask=rep(0, length(ds.orig))
-    #return(list(ds = ds.orig, mask = rep(NA, length(ds.orig)))
   } else {
     #Calculate high and low tails
 
 # CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
     if (args$triggertype == 'cdft'){
+      #print(args)
+      #stop('in cdft call')
+      print('calling upper')
+      hitail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      print('calling lower')
+      lotail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+    }else if (args$triggertype == 'cdft_orig'){
       print('calling upper')
       hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
       print('calling lower')
@@ -235,7 +240,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
 # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
 # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
           if(any(delta.idx < 1)){
-            print(trigger.fxn)
+            #print(trigger.fxn)
             print("Overlap too small of delta_sample; resizing")
             delta.idx <- delta.idx[delta.idx >= 1]
           }
@@ -275,8 +280,8 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
             print("Selecting mean(OH)/mean(MH)")
             offset = mean(OH)/mean(MH)
           }
-          print(mf.tmp)
-          print(adjust.cond)
+          #print(mf.tmp)
+          #print(adjust.cond)
           mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
           mf.cond <- mf.cond * 4
         }

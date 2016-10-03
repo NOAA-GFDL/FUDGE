@@ -57,6 +57,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
 
                   'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh'),
                   'cdfttailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft'),
+                  'cdft_orig_tailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
 
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
