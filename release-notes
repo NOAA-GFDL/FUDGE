@@ -1,3 +1,8 @@
+10-3-16
+(cew)
+- New cdft tail adjustment with new option to limit number of points adjusted; 
+tested for tasmax, pr (ratio) tests are in progress
+
 9-22-16
 (d1a)
 - Multiplicative (ratio) tail adjustment option to "cdfttailadjust" and "simpletailadjust". Brief metadata update.
