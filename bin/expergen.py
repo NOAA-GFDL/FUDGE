@@ -12,6 +12,8 @@ import optparse
 from optparse import OptionParser
 import cleanup_script
 from cleanup_script import clean_prior_experiments
+import get_npts_by
+from get_npts_by import get_npts_by
 
 list_title = []
 dictDS_hi = {}
@@ -469,12 +471,12 @@ def main():
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
 	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
-	parser.add_option('--OH-by', action='store', dest='oh_by', default=1, 
-	                   help="number of x and y indices to loop by when splitting OH data into y-slices")
-	parser.add_option('--MH-by', action='store', dest='mh_by', default=1, 
-	                   help="number of x and y indices to loop by when splitting MH data into y-slices")
-	parser.add_option('--MF-by', action='store', dest='mf_by', default=1, 
-	                   help="number of x and y indices to loop by when splitting MF data into y-slices")
+#	parser.add_option('--OH-by', action='store', dest='oh_by', default=1, 
+#	                   help="number of x and y indices to loop by when splitting OH data into y-slices")
+#	parser.add_option('--MH-by', action='store', dest='mh_by', default=1, 
+#	                   help="number of x and y indices to loop by when splitting MH data into y-slices")
+#	parser.add_option('--MF-by', action='store', dest='mf_by', default=1, 
+#	                   help="number of x and y indices to loop by when splitting MF data into y-slices")
 	
 	(options, args) = parser.parse_args()
 	#CEW edits 3-3 for clarity (and only haing to search env vars once)
@@ -506,10 +508,10 @@ def main():
 	#CEW edit 9-13 for checking OH, MH and MF opts
 	#bys_are_odd = [i for i in [oh_by,mh_by,mf_by] if i%2==0]
 	#if len(bys_are_odd) != 0:
-	if any( x % 2 ==0 for x in [oh_by, mh_by, mf_by]):
-		print("Error in expergen: One or more of --Oh-by, --MH-by or --MF-by were even " + 
-		      "and are required to be odd!")
-		sys.exit()
+#	if any( x % 2 ==0 for x in [oh_by, mh_by, mf_by]):
+#		print("Error in expergen: One or more of --Oh-by, --MH-by or --MF-by were even " + 
+#		      "and are required to be odd!")
+#		sys.exit()
 			
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
 	system,node,release,version,machine = os.uname()
@@ -521,13 +523,21 @@ def main():
 		 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
 		 sys.exit(-5)
 	#CEW 10-2016: bypass most of expergen to run selectively edited version for by parameters	 
-	if any (x > 1 for x in [oh_by, mh_by, mf_by]): 
-		run_step_job(uinput, msub, msubmail, statmail, oh_by, mh_by, mf_by)		 
+#	if any (x > 1 for x in [oh_by, mh_by, mf_by]): 
+#		run_step_job(uinput, msub, msubmail, statmail, oh_by, mh_by, mf_by)		 
 
    
 #########################################################################################      		
 	#########  call listVars() #############################################################
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
+	##CEW edit 10-2016 for the multi-pt ds params
+		#CEW edit 10-2016: check for the presence of the 3 'by' tags in the XML; if 
+	#they are not present, set to 1. These get used in the runcode creation
+	#for setting command-line parameters.
+	by_params = get_npts_by(uinput)
+	mh_by = str(by_params[0]) #OH
+	oh_by = str(by_params[1]) #MH
+	mf_by = str(by_params[2])#MF
 	######### call script creators..  #######################################################
 	############################### 1 ###############################################################
 	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -589,7 +599,7 @@ def main():
 	#target_time_window,hist_time_window,fut_time_window
 	#CEW hasty edits to support single variable case
 	script2Loc = basedir+"/utils/bin/"+"create_runscript"
-	create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"
+	create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"+" '"+oh_by+"' '"+mh_by+"' '"+mf_by+"'"
 	print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
 	#cprint create_runscript_cmd
 	#p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
