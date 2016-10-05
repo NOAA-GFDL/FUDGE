@@ -55,6 +55,7 @@ if (length(console.args) > 0){
   x.pad <- "NA"
 }
 
+fudge.start.time <- proc.time()[3]
 message("Setting downscaling method information")
 ds.ref <- getDSInfo(ds.method)
 

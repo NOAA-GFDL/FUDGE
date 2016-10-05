@@ -5,6 +5,10 @@ profileFUDGERun <- function(){
   message(paste0("profile_npts_OH:", sum(sapply(OH$data, 'length'))))
   message(paste0("profile_npts_MH:", sum(sapply(MH$data, 'length'))))
   message(paste0("profile_npts_MF:", sum(sapply(MF$data, 'length'))))  
+  #message(paste0("profile_npts_OH:", sum(sapply(list.target$clim.in, 'length'))))
+  #message(paste0("profile_npts_MH:", sum(sapply(list.hist$clim.in, 'length'))))
+  #message(paste0("profile_npts_MF:", sum(sapply(list.fut$clim.in, 'length'))))  
+
   message(paste0("profile_timetorun:", proc.time()[3] - fudge.start.time))
   gcmem <- gc()
   #message(paste("profile_ncells:", gcmem[1,6]))

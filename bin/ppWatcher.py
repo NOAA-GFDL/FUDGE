@@ -26,6 +26,8 @@ import makeExpEns
 from makeExpEns import runMakeExpEns
 import makeCVEns
 from makeCVEns import runMakeCVEns
+import profile_FUDGE
+from profile_FUDGE import make_prof_file
 import cgitb
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
@@ -133,6 +135,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		outfile_exp_info = [el.split(":")[-1] for el in outfile_exp_info]
 		script_exp_info = [infile]
 		write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')	
+		##Added 9-28: get profiling info, write to file
+		make_prof_file(expdict['script.base'], expdict['script.base'] + "/log/")
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
 		send_status_email("failure", 'ppWatcher', exp_name, \
