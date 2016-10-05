@@ -48,8 +48,8 @@ if (length(console.args) > 0){
   x.pad <- "NA"
 }else{
   oh_by <- 1
-  mh_by <- 5 #3
-  mf_by <- 5 #3
+  mh_by <- 1 #5 #3
+  mf_by <- 1 #5 #3
   i_idx <- 10 #194
   i_max <- 194
   x.pad <- "NA"
@@ -261,7 +261,7 @@ if (args[1]=='na'){
 }
 
 #For now, make this a global to simplify data being copied
-tmasks <- tmask.list
+tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
 message("FUDGE downscaling ends")

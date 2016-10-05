@@ -4,7 +4,6 @@ combine.over.missvals <- function(x){
   #Not currently used by anything because it isn't working; needs either 
   #a version of this or the addition that makes all missing values NA for the
   #full workflow.
-  print(x)
   which.notna <- which(!is.na(x))
   if (length(which.notna)==1){
     return(which.notna)
@@ -40,8 +39,10 @@ loop.xy.data <- function(){
   names(output.all) <- c("ds")
   for (ival in 1:x.len){
     print(paste("Starting i loop", ival, 'of', x.len))
+    ival <<- ival
     for(jval in 1:y.len){ #y.len
       print(paste("Starting j loop", jval, 'of', y.len))
+      jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
       MF.slice <- get.xy.slice(MF$data, mf.coords, ival, jval)
@@ -72,6 +73,7 @@ loop.xy.data <- function(){
       )){
         for(w in 1:nmasks){
           print(paste("Starting window", w, "of", nmasks))
+          w <<- w
           qc.out <- NULL
           if (tmasks$apply_tmask){
             OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
@@ -108,7 +110,7 @@ loop.xy.data <- function(){
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
                                  missvals="distributional", 
-                                 minsample=0)
+                                 minsample=1)
           if(time_mask_overlap){
             #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
             ds.out <- list(ds=apply.fudge.tmask(data=tmp.ds$ds, 
@@ -136,10 +138,14 @@ loop.xy.data <- function(){
           combine.out <- c(ds.out, qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
-            if (time_mask_overlap){
+            if (tmasks$time_mask_overlap){
               output[[out]][,,,,,,w] <- apply.fudge.tmask(data=combine.out[[out]], 
                                                           mask=tmasks$trim$masks[[w]])
             }else{
+              print(summary(combine.out))
+              print(out)
+              print(summary(combine.out[[out]]))
+              print(dim(combine.out[out[]]))
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }

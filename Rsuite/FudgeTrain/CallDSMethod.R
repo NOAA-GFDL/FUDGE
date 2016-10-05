@@ -29,19 +29,30 @@
 
 callDSMethod <- function(method, OH, MH, MF, args, 
                          missvals="distributional", 
-                         minsample=0){
-  qc.out <- NULL
+                         minsample=1, missval.args=list(), 
+                         train_qcmask=F){
   #Remove missing values
+  missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
+                                       minsample, missval.args, 
+                                       missval.method='distributional', 
+                                       return_qcmask = train_qcmask)
+  OH <- missval.out$OH
+  MH <- missval.out$MH
+  MF <- missval.out$MF
+  #don't bother assigning status for now
   #Call downscaling function
   ds.out <- switch(method, 
-                   'lm'      = callMultiLM(OH, MH, MF, args), 
-                   'lmstep'  = callLMStep(OH, MH, MF, args), 
-                   'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt"), 
-                   'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod"),
+                   'lm'      = callMultiLM(OH, MH, MF, args, train_qcmask), 
+                   'lmstep'  = callLMStep(OH, MH, MF, args, train_qcmask), 
+                   'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask), 
+                   'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask),
                    ReturnDownscaleError(method)
   )
   #Restore missing values to original place now takes place within method
-  print(summary(ds.out))
+  #as a h-release expidency shortcut, combine ds.out and missval qc masks
+  if (train_qcmask){
+    ds.out$qc <- ds.out$qc * missval.out$qcmask # 1 and NA; NAs propagate
+  }
   return(list(ds=ds.out$ds, qc=ds.out$qc))
 }
 
