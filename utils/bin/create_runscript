@@ -15,7 +15,8 @@ set method = $argv[6]
 #### include varname in input dir path
 ## end of user input
 set counter=1
-set TARGET_DIR=$argv[7]/
+#10-2016: adding internal dir relace for target
+set TARGET_DIR=`dirname $argv[7]`/
 set HIST_PRED_DIR=$argv[8]/
 set FUT_PRED_DIR=$argv[9]/ 
 ########## parse OUTDIR ############
@@ -175,22 +176,23 @@ foreach i (`seq $lon_start 1 $lon_end`)
       echo 'mkdir -p $TMPDIR'$FUT_PRED_DIR$plist$idirsuffix  >> $runpath 
    end	
  endif
-# if ($SPAT_MASK_DIR != 'NA/') then
-#        echo "gcp --sync -cd $SPAT_MASK_DIR/*${SPAT_REGION}.I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+#CEW edits 10-2016 - removing fiel suffixes from gcp operations for input data
+#Check spatial mask dire specificaitons - may need to specify entirely different spatial mask
  if ($SPAT_MASK_DIR != 'na') then
-        echo "gcp --sync -cd $SPAT_MASK_DIR/*I$counter"_"$dsuffix.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
+        echo "gcp --sync -cd $SPAT_MASK_DIR/*.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
- 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
+ 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
  endif
  if ($HIST_PRED_DIR != 'NA/') then
     foreach plist ($predlist)
- 	echo "gcp -cd $HIST_PRED_DIR$plist$idirsuffix/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$HIST_PRED_DIR$plist$idirsuffix/  >> $runpath 
+    #$idirsuffix
+ 	echo "gcp -cd $HIST_PRED_DIR$plist$idirsuffix/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.nc "'$TMPDIR'$HIST_PRED_DIR$plist$idirsuffix/  >> $runpath 
     end
  endif
  if ($FUT_PRED_DIR != 'NA/') then
     foreach plist ($predlist)
- 	echo "gcp -cd $FUT_PRED_DIR$plist$idirsuffix/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.I$counter"_"$dsuffix.nc "'$TMPDIR'$FUT_PRED_DIR$plist$idirsuffix/  >> $runpath 
+ 	echo "gcp -cd $FUT_PRED_DIR$plist$idirsuffix/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.nc "'$TMPDIR'$FUT_PRED_DIR$plist$idirsuffix/  >> $runpath 
     end
  endif
  foreach OUTDIR ($outdir)
@@ -208,7 +210,7 @@ end
 #echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} |& tee ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
 #echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
 #CEW edit 10-2016 for passing in new command-line parameters for the R multi-point downscaling
-echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} $OH_by $MH_by $MF_by $i_idx $lon_idx_max >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
+echo "Rscript $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} $OH_by $MH_by $MF_by $i_idx $lon_idx_max >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
 #Redirect stdout/stderr to runpath commented out; duplicates large logfiles in fudge.fudge_master
 #Unfortunately, this also affects my favorite debugging technique. Is there a way to determine whether
 #a runscript is being called from the master vs being called from here?

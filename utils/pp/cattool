@@ -138,15 +138,27 @@ endif
 
 ###############################
 set argpath = "$prepath/${prefix}.I${chead}[$sub1-$sub2]_J${lats}-${late}.nc"
+echo "before argpath sourcing"
+#echoing of argpath only works if its in quotes WTH?
+#echo "$argpath"
+#echo $chead
+#echo $sub1
+#echo $sub2
+#echo $prepath
+#echo $prefix
+#echo $c
+#echo $lats
+#echo $late
 while ( $c <= $cend)
        set argpath = `echo $argpath ${prepath}/${prefix}.I${c}[0-9]_J${lats}-${late}.nc`
        @ c++
 end
 if ( $region == 'global' ) then
- set argpath = `echo $argpath $prepath/${prefix}.115[0-2].nc`
+ set argpath = `echo "$argpath" $prepath/${prefix}.115[0-2].nc`
 else
- set argpath = `echo $argpath $prepath/${prefix}.I${clast}[0-${clastsub1}]_J${lats}-${late}.nc`
-#c echo $argpath
+ set argpath = `echo "$argpath" $prepath/${prefix}.I${clast}[0-${clastsub1}]_J${lats}-${late}.nc`
+#echo "argpath after appending"
+#echo "$argpath"
 
 endif 
 echo "sourcing loadit"

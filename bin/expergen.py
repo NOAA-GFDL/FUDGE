@@ -376,7 +376,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	fut_pred_dir = os.path.abspath(fut_pred_dir)
 	print "future predictor dir",fut_pred_dir
 	global idirsuffix
-	idirsuffix = "/"+output_grid+"/"+dim+"/"
+	idirsuffix = "/"+output_grid+"/" #+dim+"/" CEW edit 10-2016: removing OneD in path specs
 	print "idirsuffix",idirsuffix
 	#### get outdir #####
 	if(out_dir != 'na'):

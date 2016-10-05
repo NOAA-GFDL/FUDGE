@@ -298,7 +298,7 @@ for (rip in fut.pred.rip.list){
   #substitute instances of future predictor rip for the current rip
   loop.out.filename <- sub('r[[:digit:]][[:alpha:]]*[[:digit:]]*i[[:digit:]]p[[:digit:]]', 
                            rip,out.filename, perl = T)
-  
+  loop.out.filename <- sub('$(RIP)', rip, loop.out.filename, fixed = T)
   #Write Global attributes to downscaled netcdf
   label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')

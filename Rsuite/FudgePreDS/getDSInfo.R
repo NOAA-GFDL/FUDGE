@@ -12,7 +12,6 @@ getDSInfo <- function(ds.method){
     
   }
   ds.idx <- which(ds.method %in% method.names)
-  print(input)
   ds.object <- list('method'         = ds.method, 
                     'predictors'     = csplit(input$predictors[ds.idx]), 
                     'target'         = input$target[ds.idx], 
@@ -24,7 +23,6 @@ getDSInfo <- function(ds.method){
                     'reference' = input$reference[ds.idx])
   #Set properties that depend on logic from sheet
   ds.object['train_and_use_same'] = ds.object$target %in% ds.object$predictors
-  print(ds.object)
   #Set delayed assign for getting the target dataset 
   #in the main driver loop and the dimensions of the 
   #target data
