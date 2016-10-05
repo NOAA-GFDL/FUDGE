@@ -520,7 +520,7 @@ def main():
 	else:
 		 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
 		 sys.exit(-5)
-		 
+	#CEW 10-2016: bypass most of expergen to run selectively edited version for by parameters	 
 	if any (x > 1 for x in [oh_by, mh_by, mf_by]): 
 		run_step_job(uinput, msub, msubmail, statmail, oh_by, mh_by, mf_by)		 
 

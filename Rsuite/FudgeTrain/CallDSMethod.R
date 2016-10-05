@@ -32,13 +32,13 @@ callDSMethod <- function(method, OH, MH, MF, args,
                          minsample=1, missval.args=list(), 
                          train_qcmask=F){
   #Remove missing values
-  missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
-                                       minsample, missval.args, 
-                                       missval.method='distributional', 
-                                       return_qcmask = train_qcmask)
-  OH <- missval.out$OH
-  MH <- missval.out$MH
-  MF <- missval.out$MF
+#   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
+#                                        minsample, missval.args, 
+#                                        missval.method='distributional', 
+#                                        return_qcmask = train_qcmask)
+#   OH <- missval.out$OH
+#   MH <- missval.out$MH
+#   MF <- missval.out$MF
   #don't bother assigning status for now
   #Call downscaling function
   ds.out <- switch(method, 

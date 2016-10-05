@@ -80,6 +80,11 @@ else
 endif
 ###End CEW edit
 
+###CEW edit 10-2016 for new parameters for multi-point downscaling
+set OH_by=$argv[28]
+set MH_by=$argv[29]
+set MF_by=$argv[30]
+
 set rundir=$sbasedir/runscript
 mkdir -p $rundir
 
@@ -102,8 +107,12 @@ endif
 
 
 #############dev
+#CEW edits 10-2016 to allow for passing of alt i indices
+@ lon_idx_max = ( $lon_end - $lon_start + 1)
+@ i_idx = 0
 foreach i (`seq $lon_start 1 $lon_end`)
  set counter=$i
+ @ i_idx = ( $i_idx + 1 )
  set runpath=${rundir}/script.${cmipvar}.${method}.I$counter"_"$dsuffix""$tsuffix 
  echo "#\!/bin/tcsh " > $runpath
  echo "#PBS -S /bin/csh " >> $runpath 
@@ -197,7 +206,10 @@ foreach i (`seq $lon_start 1 $lon_end`)
 echo "mkdir -p "'$TMPDIR'"$OUTDIR/${cmipvar}_qcmask/  ">> $runpath
 end
 #echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} |& tee ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
-echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath #Redirect stdout/stderr to runpath commented out; duplicates large logfiles in fudge.fudge_master
+#echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
+#CEW edit 10-2016 for passing in new command-line parameters for the R multi-point downscaling
+echo "R --vanilla < $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} $OH_by $MH_by $MF_by $i_idx $lon_idx_max >>& ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix} &" >> $runpath
+#Redirect stdout/stderr to runpath commented out; duplicates large logfiles in fudge.fudge_master
 #Unfortunately, this also affects my favorite debugging technique. Is there a way to determine whether
 #a runscript is being called from the master vs being called from here?
 echo "#logfile output redirect from $sbasedir/runcode/code.$cmipvar.$dexper.I$counter"_"$dsuffix""${tsuffix} to ${logdir}/out.${dexper}.I$counter"_"$dsuffix""${tsuffix}" >> $runpath
