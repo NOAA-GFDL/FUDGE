@@ -3,7 +3,7 @@ WriteNC <-  function(filename,out.data,var.names,
                      #xlon,ylat,time.index.start=NA, time.index.end=NA, downscale.tseries=NA, downscale.origin=NA,
                      dim.list,
                      prec='double', missval=1.e20, units="",
-                     longname=var.names, 
+                     longname=var.names, standard_name=NA,
                      var.data=NA, 
                      modulo=NA, modulo.range="", comment=NA,
                      clone_globals=F, clone_all=F, global_clone_file=NA, 
@@ -131,10 +131,18 @@ WriteNC <-  function(filename,out.data,var.names,
   #Add a comment for each of the variables present?
   #CEW 9-16: I just know that this is used by one of the section 8 tools.
   #Wait to see what else it interferes with?
+  #It's used by climdex - each var gets a comment
   if(!is.na(comment[[1]])){
     comment.vars <- names(comment)
     for(var in comment.vars){
       ncatt_put(nc.obj, var, "comment", comment[[var]])
+    }
+  }
+  #Standard name
+  #SdWriter, of all things, needs this to be in place
+  if (!is.na(standard_name)){
+    for (v in var.names){
+      ncatt_put(nc.obj, v, 'standard_name', standard_name)
     }
   }
   #Climatology

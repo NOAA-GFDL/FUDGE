@@ -115,11 +115,16 @@ loop.xy.data <- function(){
             #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
             ds.out <- list(ds=apply.fudge.tmask(data=tmp.ds$ds, 
                                                 mask=tmasks$trim$masks[[w]]))
-            qc.out <- c(qc.out, 
-                        lapply(tmp.ds[names(tmp.ds)!='ds'], #all non-ds outputs
-                               'apply.fudge.tmask',         #gets same mask applied
-                               mask=tmasks$trim$masks[[w]])
-            )
+            qc.names <- names(tmp.ds)[names(tmp.ds)!='ds']
+            for (el in qc.names){
+              if(!is.null(tmp.ds[[el]])){
+                qc.out <- c(qc.out, 
+                            lapply(tmp.ds[[el]], #all non-ds outputs
+                                   'apply.fudge.tmask',         #gets same mask applied
+                                   mask=tmasks$trim$masks[[w]])
+                )
+              }
+            }
           }else{
             ds.out <- list(ds=tmp.ds$ds)
             qc.out <- c(qc.out, tmp.ds$qc)
@@ -142,10 +147,6 @@ loop.xy.data <- function(){
               output[[out]][,,,,,,w] <- apply.fudge.tmask(data=combine.out[[out]], 
                                                           mask=tmasks$trim$masks[[w]])
             }else{
-              print(summary(combine.out))
-              print(out)
-              print(summary(combine.out[[out]]))
-              print(dim(combine.out[out[]]))
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }

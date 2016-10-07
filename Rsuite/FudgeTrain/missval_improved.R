@@ -49,8 +49,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #pooling steps can't be used at this point b/c we haven't implemented
   #those yet.
   npts.MF <- unlist(lapply(MF, count.all.present.xy), use.names = F)
-  npts.OH <- unlist(lapply(OH, count.all.present.xy), use.names = T)
-  npts.MH <- unlist(lapply(MH, count.all.present.xy), use.names = T)
+  npts.OH <- unlist(lapply(OH, count.all.present.xy), use.names = F)
+  npts.MH <- unlist(lapply(MH, count.all.present.xy), use.names = F)
   ##Actual missing value synchronization steps need to take place in here
   ## and return exactly the same shape of data
   if(missval.thold < 1){
@@ -61,8 +61,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       pct.MH <- npts.MH/sum(!is.na(tmasks$MH$masks[[w]]))
     }else{
       pct.MF <- npts.MF/dim(MF[[1]])[6]
-      pct.OH <- npts.OH/dim(OH.slice[[1]])[6]
-      pct.MH <- npts.MH/dim(MH.slice[[1]])[6]
+      pct.OH <- npts.OH/dim(OH[[1]])[6]
+      pct.MH <- npts.MH/dim(MH[[1]])[6]
     }
     insufficient.data <- any (c(pct.MF, pct.OH, pct.MH) < missval.thold)
   }else{
@@ -99,8 +99,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
           pct.MH <- npts.MH/sum(!is.na(tmasks$MH$masks[[w]]))
         }else{
           pct.MF <- npts.MF/dim(MF[[1]])[6]
-          pct.OH <- npts.OH/dim(OH.slice[[1]])[6]
-          pct.MH <- npts.MH/dim(MH.slice[[1]])[6]
+          pct.OH <- npts.OH/dim(OH[[1]])[6]
+          pct.MH <- npts.MH/dim(MH[[1]])[6]
         }
         sufficient.data <- any (c(pct.MF, pct.OH, pct.MH) < missval.thold)
       }else{

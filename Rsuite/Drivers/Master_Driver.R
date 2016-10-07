@@ -295,7 +295,8 @@ if(length(post.ds) !=0){
 out.file.list <- rep(list(NA), length(fut.pred.rip.list))
 names(out.file.list) <- unlist(fut.pred.rip.list)
 
-for (rip in fut.pred.rip.list){
+for (r in 1:length(fut.pred.rip.list)){
+  rip = fut.pred.rip.list[r]
   #substitute instances of future predictor rip for the current rip
   loop.out.filename <- sub('r[[:digit:]][[:alpha:]]*[[:digit:]]*i[[:digit:]]p[[:digit:]]', 
                            rip,out.filename, perl = T)
@@ -345,13 +346,14 @@ for (rip in fut.pred.rip.list){
   ##############################################################################
   message(paste("Writing to file", loop.out.filename))
   #tmp.ds <- aperm(ds$ds, c(1,2,3,5,6,4))
-  ds.out.filename = WriteNC(loop.out.filename, ds$ds,
+  ds.out.filename = WriteNC(loop.out.filename, ds$ds[,,,r,, , drop=F],
                             target.var,
                             dim.list=dimlist,
                             var.data=varlist,
                             prec='float', #Swapped from double Dec. 2015
                             units=OH$metadata[[target.var]]$units,
                             longname=paste(OH$metadata[[target.var]]$long_name),
+                            standard_name=paste(OH$metadata[[target.var]]$long_name),
                             global_overwrite=global_att_list,
                             verbose=F
   )
@@ -384,7 +386,7 @@ for (rip in fut.pred.rip.list){
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
-      qc.out.filename  = WriteNC(qc.file, qc.list, qc.var, 
+      qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var, 
                                  dim.list = dimlist, var.data=varlist, 
                                  prec='float', missval=1e20, units="1", 
                                  comment=qc.comment.att, 

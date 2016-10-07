@@ -42,6 +42,7 @@ get.fudge.timemask.list <- function(){
                                          train.and.use.same = ds.ref$train_and_use_same)
       names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
       nmasks <- length(tmask.list$OH$masks)
+      time_mask_overlap <- T
     }
   }else{ #Once esd.gen implemented, should be most common use case
     #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag
@@ -66,6 +67,7 @@ get.fudge.timemask.list <- function(){
                                          train.and.use.same = ds.ref$train_and_use_same)
       names(tmask.list) <- c(tmask.list.names, "trim")
       nmasks <- length(tmask.list$OH$masks)
+      time_mask_overlap <- T
     }
   }
   tmask.list$time_mask_overlap <- time_mask_overlap
