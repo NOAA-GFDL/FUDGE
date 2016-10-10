@@ -182,17 +182,17 @@ foreach i (`seq $lon_start 1 $lon_end`)
         echo "gcp --sync -cd $SPAT_MASK_DIR/*.nc "'$TMPDIR'$SPAT_MASK_DIR/  >> $runpath
  endif
  if ($TARGET_DIR != 'NA/') then
- 	echo "gcp -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
+ 	echo "gcp --sync -cd $TARGET_DIR/*${T_FILE_START_YEAR}-${T_FILE_END_YEAR}.nc "'$TMPDIR'$TARGET_DIR/  >> $runpath 
  endif
  if ($HIST_PRED_DIR != 'NA/') then
     foreach plist ($predlist)
     #$idirsuffix
- 	echo "gcp -cd $HIST_PRED_DIR$plist$idirsuffix/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.nc "'$TMPDIR'$HIST_PRED_DIR$plist$idirsuffix/  >> $runpath 
+ 	echo "gcp --sync -cd $HIST_PRED_DIR$plist$idirsuffix/*${H_FILE_START_YEAR}-${H_FILE_END_YEAR}.nc "'$TMPDIR'$HIST_PRED_DIR$plist$idirsuffix/  >> $runpath 
     end
  endif
  if ($FUT_PRED_DIR != 'NA/') then
     foreach plist ($predlist)
- 	echo "gcp -cd $FUT_PRED_DIR$plist$idirsuffix/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.nc "'$TMPDIR'$FUT_PRED_DIR$plist$idirsuffix/  >> $runpath 
+ 	echo "gcp --sync -cd $FUT_PRED_DIR$plist$idirsuffix/*${F_FILE_START_YEAR}-${F_FILE_END_YEAR}.nc "'$TMPDIR'$FUT_PRED_DIR$plist$idirsuffix/  >> $runpath 
     end
  endif
  foreach OUTDIR ($outdir)
