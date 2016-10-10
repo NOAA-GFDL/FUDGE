@@ -97,9 +97,10 @@ foreach i (`seq $sub_lon_start 1 $sub_lon_end`)
 ########
 
   if ( $i != $sub_lon_end ) then
-echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix"$tsuffix" &" >> ${masterloc}
-set val=`expr $sub_lon_start + 1 \* $cnt16 \+ $cnt16 \- 1`##
-
+	echo "${rundir}/script.${varname}.${method}.I$counter"_"$dsuffix"$tsuffix" &" >> ${masterloc}
+	#CEW edit 10-16 to address possible file copy collisions
+	echo "sleep 10" >> ${masterloc}
+	set val=`expr $sub_lon_start + 1 \* $cnt16 \+ $cnt16 \- 1`##
 ########
     if($i == $val) then
        set cnt16=`expr $cnt16 + 1`
