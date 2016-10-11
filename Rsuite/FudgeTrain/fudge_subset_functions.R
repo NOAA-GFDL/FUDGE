@@ -18,7 +18,7 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
     x.len <- new.dim[1]
     new.dim[1] <- x.len + pad.by
     if(pad.x.loc=='start'){
-      pad.seq = pad.by:x.len
+      pad.seq = (new.dim[1]-x.len+1):new.dim[1]
     }else if(pad.x.loc=='end'){
       pad.seq = 1:x.len
     }
@@ -29,6 +29,9 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
   }
   out.data <- array(NA, dim=new.dim)
   if (pad.dim=='x'){
+    print(dim(out.data))
+    print(dim(data))
+    print(pad.seq)
     out.data[pad.seq,,,,,] <- data
   }else if (pad.dim=='y'){
     print(pad.by)
@@ -37,7 +40,7 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
     #print(length((((pad.by-1)/2):y.len)+1))
     #print((((pad.by-1)/2):y.len))
     #print(length((((pad.by-1)/2):y.len)))
-    out.data[,(1:114) + (pad.start-1),,,,] <- data
+    out.data[,(1:y.len) + (pad.start-1),,,,] <- data
   }
   #stop('examine output')
   #if we ever get to this point, pad.type can be set to the 
@@ -66,7 +69,7 @@ get.FUDGE.subset <- function(by, idx, idx_max){
   olap_loc = 'none'
   if ((start)  < 1){
     olap = T
-    olap_by = start * (-1)
+    olap_by = (start * (-1)) + 1
     olap_loc = 'start'
     start = 1
   }
