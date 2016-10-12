@@ -8,12 +8,16 @@ import pprint,datetime,getopt, os, shutil
 import sys, subprocess, glob
 import fudgeList
 from subprocess import PIPE 
+from os import path as osp
+import re
 import optparse
 from optparse import OptionParser
 import cleanup_script
 from cleanup_script import clean_prior_experiments
 import get_npts_by
 from get_npts_by import get_npts_by
+import create_all_runscripts
+from create_all_runscripts import create_all_runscripts
 
 list_title = []
 dictDS_hi = {}
@@ -560,6 +564,28 @@ def main():
 				clean_prior_experiments(uinput, basedir, preexist_glob)
 	else:
 		print "scriptdir "+sd+" does not exist. Looks like a clean slate "
+		
+	##Create the scripts subdirectories 
+	subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
+	for el in subdirs:
+		subdir = osp.join(sbase,el)
+		if not osp.exists(subdir):
+			os.makedirs(subdir)	
+		
+		
+	#############################################################
+	print "Step 0: Create the unified runcscripts and master runscripts"
+	njobs=8
+	ncpu=2
+	oh_timerange = str(target_file_start_time) + "-" + str(target_file_end_time)
+	mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
+	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
+	predlist = predictor.split(",")
+	create_all_runscripts(lons, lone, njobs, ncpu, fudgetag, sbase, target_dir, hist_pred_dir, fut_pred_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spat_mask, target_time_window, hist_time_window, fut_time_window, auxcustom, outdir, target, method, file_j_range, idirsuffix, oh_by, mh_by, mf_by)
+#	print('examine runscript output')
+#	sys.exit()
+		
+	#############################################################
 	#sys.exit("examine outcome of script")  
 	#print  "hist_freq"+hist_freq
 	##Adding copy of environment source script to expergen 6-8
@@ -598,46 +624,46 @@ def main():
 	############################### 2 ################################################################
 	#target_time_window,hist_time_window,fut_time_window
 	#CEW hasty edits to support single variable case
-	script2Loc = basedir+"/utils/bin/"+"create_runscript"
-	create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"+" '"+oh_by+"' '"+mh_by+"' '"+mf_by+"'"
-	print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
-	#cprint create_runscript_cmd
-	#p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
- 	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-	print "Step 2: Individual runscript  creation.. in progress"
-	output1, errors1 = p1.communicate()
-	#cprint output1,errors1
-	print "2- completed\n"
-	if(p1.returncode != 0):
-	 print "Step2:!!!! FAILED !!!!, please contact developer."
-	 print output1, errors1
-	 sys.exit(0)
+#	script2Loc = basedir+"/utils/bin/"+"create_runscript"
+#	create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"+" '"+oh_by+"' '"+mh_by+"' '"+mf_by+"'"
+#	print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
+#	#cprint create_runscript_cmd
+#	#p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+ #	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+#	print "Step 2: Individual runscript  creation.. in progress"
+#	output1, errors1 = p1.communicate()
+#	#cprint output1,errors1
+#	print "2- completed\n"
+#	if(p1.returncode != 0):
+#	 print "Step2:!!!! FAILED !!!!, please contact developer."
+#	 print output1, errors1
+#	 sys.exit(0)
 	#cprint output1, errors1
 	###################################### 3 ################################################################
-	script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
+#	script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate
-	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)+" "+str(msubmail)
-	print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
-	#CEW edit to diagnose older behavior
+#	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)+" "+str(msubmail)
+#	print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
+#	#CEW edit to diagnose older behavior
+#	#cprint create_master_cmd
+#	p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 	#cprint create_master_cmd
-	p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-	#cprint create_master_cmd
-	print "Create master script .. in progress"
-	output2, errors2 = p2.communicate()
-	#######
-	if(p2.returncode != 0):
-	 print "Step3:!!!! FAILED !!!!, please contact developer."
-	 print output2, errors2
-	 sys.exit(0)
-	print output2, errors2
-	print "3- completed"
+#	print "Create master script .. in progress"
+#	output2, errors2 = p2.communicate()
+#	#######
+#	if(p2.returncode != 0):
+#	 print "Step3:!!!! FAILED !!!!, please contact developer."
+#	 print output2, errors2
+#	 sys.exit(0)
+#	print output2, errors2
+#	print "3- completed"
 	##################################### 4 ############################################
 	# copy xml to configs dir 
 	cdir = sbase+"/config/"
-	try:
-	  os.mkdir(cdir)
-	except:
-	  print "Unable to create dir. Dir may exist already", cdir 
+#	try:
+#	  os.mkdir(cdir)
+#	except:
+#	  print "Unable to create dir. Dir may exist already", cdir 
 	shutil.copy2(uinput, cdir)
 	print "Config XML saved in ",cdir 
 	print "RunScripts will be saved under:",sbase
@@ -649,11 +675,11 @@ def main():
 	
 	# Create emergency backstop directory for capturing status files when
 	# permissions are an issue
-	statdir = sbase + "/status"
-	try:
-		os.mkdir(statdir)
-	except: 
-		print("Directory " + statdir + " may already exist")
+#	statdir = sbase + "/status"
+#	try:
+#		os.mkdir(statdir)
+#	except: 
+#		print("Directory " + statdir + " may already exist")
 
 ############### crte ppscript #################
 	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
@@ -777,7 +803,26 @@ def main():
 		print "Unable to create msubwrapper script for you at this time"
 	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", msubwrap.name 
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
-################ step 5 fudgeList invocation ##############################################
+################ step 5 job submission (if applicable) ##############################################	
+	if msub:
+		if msubmail == 1 and NEMSemail1 != 'none':
+				msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
+		else:
+			msub_string = "msub -d $HOME "	
+		master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
+		msub_cmd = "module load moab; "
+		for el in master_scripts:
+			msub_cmd = msub_cmd + msub_string + el + "; "
+		p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+		output5, errors5 = p5.communicate()
+		#######
+		if(p5.returncode != 0):
+			print "Step5:!!!! FAILED !!!!, please contact developer."
+			print output5, errors5
+			sys.exit(0)
+		print output5, errors5
+		print "5- completed"		
+################ step 6 fudgeList invocation ##############################################
 	slogloc = sbase+"/"+"experiment_info.txt"
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
@@ -791,7 +836,7 @@ def main():
 	if(NEMSemail1 != "none"):
 	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
 	else:
-	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"   
 ####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
