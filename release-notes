@@ -1,3 +1,7 @@
+10-3-16
+(cew)
+- Adding parsing of ncpu,njobs from XML
+
 9-28-16
 (cew)
 - Profiling information per minifile added to experiments

@@ -18,6 +18,7 @@ import get_npts_by
 from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
+from get_pp_specs import get_pp_specs
 
 list_title = []
 dictDS_hi = {}
@@ -526,10 +527,6 @@ def main():
 	else:
 		 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
 		 sys.exit(-5)
-	#CEW 10-2016: bypass most of expergen to run selectively edited version for by parameters	 
-#	if any (x > 1 for x in [oh_by, mh_by, mf_by]): 
-#		run_step_job(uinput, msub, msubmail, statmail, oh_by, mh_by, mf_by)		 
-
    
 #########################################################################################      		
 	#########  call listVars() #############################################################
@@ -542,6 +539,10 @@ def main():
 	mh_by = str(by_params[0]) #OH
 	oh_by = str(by_params[1]) #MH
 	mf_by = str(by_params[2])#MF
+		### As of 10-13, get the ncpus and njobs specifications from the XML
+	specdict = get_pp_specs(uinput)
+	njobs = specdict['njobs']
+	ncpus = specdict['ncpus']
 	######### call script creators..  #######################################################
 	############################### 1 ###############################################################
 	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -575,8 +576,6 @@ def main():
 		
 	#############################################################
 	print "Step 0: Create the unified runcscripts and master runscripts"
-	njobs=8
-	ncpu=2
 	oh_timerange = str(target_file_start_time) + "-" + str(target_file_end_time)
 	mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
@@ -647,6 +646,7 @@ def main():
 #	#CEW edit to diagnose older behavior
 #	#cprint create_master_cmd
 #	p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+
 	#cprint create_master_cmd
 #	print "Create master script .. in progress"
 #	output2, errors2 = p2.communicate()
