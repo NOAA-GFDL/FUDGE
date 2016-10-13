@@ -1,3 +1,6 @@
+10-3-16
+- Adding parsing of ncpu,njobs from XML
+
 8-23-16
 - Bugfix for cross-validated qc mask pathanmes
 
