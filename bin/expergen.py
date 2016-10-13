@@ -12,6 +12,7 @@ import optparse
 from optparse import OptionParser
 import cleanup_script
 from cleanup_script import clean_prior_experiments
+from get_pp_specs import get_pp_specs
 
 list_title = []
 dictDS_hi = {}
@@ -506,7 +507,11 @@ def main():
 	else:
 		 print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
 		 sys.exit(-5)
-
+		 
+	### As of 10-13, get the ncpus and njobs specifications from the XML
+	specdict = get_pp_specs(uinput)
+	njobs = specdict['njobs']
+	ncpus = specdict['ncpus']
    
 #########################################################################################      		
 	#########  call listVars() #############################################################
@@ -589,7 +594,7 @@ def main():
 	###################################### 3 ################################################################
 	script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
 #CEW edit: predictor to target for multivariate
-	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)+" "+str(msubmail)
+	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ncpus)+" "+str(msub)+" "+str(msubmail)+" "+str(njobs)
 	print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
 	#CEW edit to diagnose older behavior
 	#cprint create_master_cmd
