@@ -27,7 +27,6 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                            hist.pred = NA, 
                            hist.targ = NA, 
                            fut.pred = NA, 
-                           create.qc.mask=FALSE, create.adjust.out=FALSE, 
                            verbose=FALSE){
   input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
@@ -35,15 +34,6 @@ callS5Adjustment<-function(s5.instructions=list('na'),
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-    if(verbose){
-      print(paste("on test", test[[1]]))
-      print("MH:")
-      print(lapply(out$input$hist.pred, 'summary'))
-      print("OH:")
-      print(summary(out$input$hist.targ))
-      print("MF:")
-      print(lapply(out$input$fut.pred, 'summary'))
-    }
     out <- switch(test$type, 
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test,  out$input, out$adjusted.output),
@@ -58,15 +48,6 @@ callS5Adjustment<-function(s5.instructions=list('na'),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type, 
                              "is not supported for callS5Adjustment. Please check your input.")))
-    if(verbose){
-      print('test complete')
-      print("MH:")
-      print(lapply(out$input$hist.pred, 'summary'))
-      print("OH:")
-      print(summary(out$input$hist.targ))
-      print("MF:")
-      print(lapply(out$input$fut.pred, 'summary'))
-    }
   }
   return(out$adjusted.output)
 }

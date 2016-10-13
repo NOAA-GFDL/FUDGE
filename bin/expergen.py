@@ -541,8 +541,8 @@ def main():
 	mf_by = str(by_params[2])#MF
 		### As of 10-13, get the ncpus and njobs specifications from the XML
 	specdict = get_pp_specs(uinput)
-	njobs = specdict['njobs']
-	ncpus = specdict['ncpus']
+	njobs = int(specdict['njobs'])
+	ncpus = int(specdict['ncpus'])
 	######### call script creators..  #######################################################
 	############################### 1 ###############################################################
 	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -580,7 +580,7 @@ def main():
 	mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
 	predlist = predictor.split(",")
-	create_all_runscripts(lons, lone, njobs, ncpu, fudgetag, sbase, target_dir, hist_pred_dir, fut_pred_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spat_mask, target_time_window, hist_time_window, fut_time_window, auxcustom, outdir, target, method, file_j_range, idirsuffix, oh_by, mh_by, mf_by)
+	create_all_runscripts(lons, lone, njobs, ncpus, fudgetag, sbase, target_dir, hist_pred_dir, fut_pred_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spat_mask, target_time_window, hist_time_window, fut_time_window, auxcustom, outdir, target, method, file_j_range, idirsuffix, oh_by, mh_by, mf_by)
 #	print('examine runscript output')
 #	sys.exit()
 		

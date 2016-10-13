@@ -43,7 +43,7 @@ callDSMethod <- function(method, OH, MH, MF, args,
   #Call downscaling function
   ds.out <- switch(method, 
                    'lm'      = callMultiLM(OH, MH, MF, args), 
-                   'lmstep'  = callLMStep(OH, MH, MF, args), 
+                   'lmstep'  = callStep.lm(OH, MH, MF, args), 
                    'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask), 
                    'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask),
                    ReturnDownscaleError(method)

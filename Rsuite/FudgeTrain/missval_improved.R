@@ -54,6 +54,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   ##Actual missing value synchronization steps need to take place in here
   ## and return exactly the same shape of data
   if(missval.thold < 1){
+    #The percentage case
     #Not used often, but should be kept in
     if (tmasks$apply_tmask){
       pct.MF <- npts.MF/sum(!is.na(tmasks$MF$masks[[w]]))

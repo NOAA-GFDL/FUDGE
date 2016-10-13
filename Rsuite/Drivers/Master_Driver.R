@@ -226,6 +226,7 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
                   mf.dim[4:6]) #time/ensemble/n vars come from the MF dataset
 ds <- list('ds' = array(NA, dim=output.dim), 
            'qc' = array(NA, dim=output.dim))
+missval.args = list()
 
 message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
@@ -234,8 +235,10 @@ if(length(pre.ds) !=0){
                                   hist.pred = lapply(MH, '[', 'data'),
                                   hist.targ = lapply(OH, '[', 'data'),
                                   fut.pred = lapply(MF, '[', 'data'),
-                                  s5.instructions=post.ds)
-  #Assign output and remove temporary output 
+                                  s5.instructions=post.ds, 
+                                  missval.args = missval.args)
+  #Assign output and remove temporary output
+  missval.args <- temp.output$missval.args
   post.ds <- temp.output$s5.list
   OH$data <- temp.output$OH$data
   MH$data <- temp.output$MH$data

@@ -26,8 +26,8 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   fudge.data <- list()
   fudge.metadata <- list()
   for (v in 1:length(varnames)){
-    filename <- filenames[v]
-    nc.var <- varnames[v]
+    filename <- filenames[[v]]
+    nc.var <- varnames[[v]]
     nc.obj <- nc_open(filename)
     #We are going to buils separate structures for data and metadata
     

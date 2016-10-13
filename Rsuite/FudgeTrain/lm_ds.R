@@ -53,17 +53,22 @@ multi.lm <- function(OH, MH, MF, args=NA){
   return(list(ds=out.data))
 }
 
-callStep.lm <- function(){
+callStep.lm <- function(OH, MH, MF, args){
   OH.data <- compress.xy.data(OH)
   MH.data <- compress.xy.data(MH)
   MF.data <- compress.xy.data(MF)
   #It's not possible to remove missing values at this step due to 
   #multi-ensemble considerations for the MF data.                           
   #Multi ensembles in OH and MH get pooled in the next step 
+#   save(file='/home/cew/Code/testing/test_out.R', list=c('OH.data', 'MH.data', "MF.data", 'args'))
+#   stop('examine data')
   lm.out <- step.lm(OH.data, MH.data, MF.data, args)
   #lm.out contains two components: ds and qc (list of vectors)
   return(lm.out)
 }
+
+# load('/home/cew/Code/testing/test_out.R')
+# step.lm(OH.data, MH.data, MF.data, args)
 
 step.lm <- function(OH, MH, MF, args=NA, ds.var='tasmax', att_table = NULL){
   #'Calls R's lm() function using targ as a function
@@ -80,11 +85,22 @@ step.lm <- function(OH, MH, MF, args=NA, ds.var='tasmax', att_table = NULL){
   direc='forward'
   targ.var = names(OH)
   #Now, create your data frame and make the linear model
-  test.list <- c(list('target'=OH[[1]]), MH)
-  test.prod <- data.frame(test.list)
-  lm.train.model <- step(lm(target~1,data=test.prod), #.^2, 
-                         scope=list(upper=paste0('target~',paste0(names(MH), collapse="+"),sep=""),
-                                    lower=paste0('target~1')),
+#   target = OH[[1]]
+#   print(dim(target))
+#   test.list <- c(list('target'=OH[1]), MH)
+  targ.var <- names(OH)[1]
+  test.list <- c(OH, MH)
+  test.prod <- data.frame(matrix(unlist(test.list), ncol=length(test.list)))
+  names(test.prod) <- c('target', names(MH))
+#   print(list(upper=paste0('target~',paste0(names(MH), collapse="+"),sep=""),
+#              lower=paste0('target~1')))
+#   print(names(test.prod))
+#print(as.formula(paste0(targ.var,"~",paste0(names(MH),collapse="+"))))
+#print(summary(test.prod))
+  lm.train.model <- step(lm(as.formula(paste0('target',"~",paste0(names(MH),collapse="+"))),
+                            data=test.prod, na.action='na.omit'), #.^2, 
+                         scope=list(upper=paste0(targ.var,'~',paste0(names(MH), collapse="+"),sep=""),
+                                    lower=paste0(targ.var,'~1')),
                          scale=0, direction=direc, 
                          trace=0,
                          keep=NULL, steps=(length(names(MH))-1), k=k.val)
@@ -93,8 +109,8 @@ step.lm <- function(OH, MH, MF, args=NA, ds.var='tasmax', att_table = NULL){
   for(n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,,)
     MF.slice <- lapply(MF.slice, 'as.vector')
-    notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, #paste0(targ.var, ".0.0"), 
-                                                      names(MF.slice))])))
+    #notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, #paste0(targ.var, ".0.0"), 
+    #                                                  names(MF.slice))])))
     tmp.out <- suppressWarnings(predict(lm.train.model, newdata=MF.slice))
     if(length(tmp.out)==0){
       warning(paste("Warning in callStep.lm: step eliminated all variables,", 
@@ -102,7 +118,7 @@ step.lm <- function(OH, MH, MF, args=NA, ds.var='tasmax', att_table = NULL){
       out.data[,,,n,,] <- MF.slice[grepl(targ.var, #paste0(targ.var, ".0.0"), 
                                          names(MF.slice))]
     }else{
-      out.data[,,,n,,][notna.index] <- tmp.out
+      out.data[,,,n,,] <- tmp.out
     }
   }
   return(list(ds=out.data))
