@@ -11,7 +11,7 @@
 #'rip in the hist_pred dataset for now. 
 #'
 
-parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, hist.train.data=NA){
+callParm <- function(hist_pred, hist_targ, fut_pred, args){
   #'Control the looping by rip and missval removal from within this function. 
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
@@ -65,31 +65,29 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
   hist.pred.tmp <- unlist(hist_pred) #[!is.na(unlist(hist_pred))]
   hist.targ.tmp <- unlist(hist_targ) #[!is.na(unlist(hist_targ))]
   parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
-                                sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
+                                sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
+                                args)
+  #10-13: The default behavior of sort is to remove NA values.
+  #If that's the case, you might be able to get away with removing
+  #the indexing calls in the call to parm.train
   parm.model <- parm.train.data$ds.model
   parm.targ <- parm.train.data$sta_mon_save
   #should be a list of one element - ds.model
   
-  rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-  rips <- unique(rip.list)  
-  out.list <- list()
-  for(rip in rips){
-    out.var <- paste(ds.var, rip, sep=".")
-    #Get true/false vector to index out the data that you want
-    rip.index <- (rip.list==rip)
-    rip.data <- fut_pred[rip.index]
-    #And to make sure that everything has the same names as
-    #earlier, rename the list in the selected dataset
-    names(rip.data) <- lapply(att_table$fut.pred[rip.index], '[[', 'var')
-    rip.tmp <- unlist(rip.data)
-    rip.len = length(rip.tmp[!is.na(rip.tmp)]) 
-    model_combine_data <- rip.tmp[!is.na(rip.tmp)]
-    rip.rank <- rank(model_combine_data)
-    model_combine_data <- sort(model_combine_data)
+#   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+#   rips <- unique(rip.list)  
+#   out.list <- list()
+  out.data <- array(NA, dim=dim(fut.pred[[1]]))
+  nrips = dim(out.data)
+  for(n in 1:nrips){
+    MF.slice <- fut.pred[[1]][,,,n,,]
+    #model_combine_data <- MF.slice[!is.na(MF.slice)]
+    rip.rank <- rank(MF.slice)
+    model_combine_data <- sort(MF.slice)
     #call downscaling function
     out.tmp <- parm.downscale(model_combine_data, 
                               parm.targ, #maintain orig order and orig placement of missvals
-                              ds.var,
+                              #ds.var,
                               parm.model, args)
     rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
     #round reference: close to line 1180
@@ -98,12 +96,17 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
     #  message('rounding downscaled values')
     #  out.list[[out.var]] <- round(rip.tmp[rip.rank][1:rip.len], digits=args$round)
     #}else{
-      out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
+    #  out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
     #}
+    out.data[,,,n,,] <- rip.tmp[rip.rank]
+    #10-14
+    #The soring step is bothering me - is it really neccessary?
+    #I'm worried that it might scatter the missing values all over the place.
+    #It's not going to change much for the 
   }
   #print(summary(out.list))
   #print(lapply(out.list, 'summary'))
-  return(out.list)
+  return(list(ds=out.data, qc=NULL))
 }
 
 arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
@@ -206,7 +209,7 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
               'bad.slope' = bad.slope.indices))
 }
 
-parm.train <- function(hist_pred, hist_targ, args, ds.var){
+parm.train <- function(hist_pred, hist_targ, args){
   #'Assume for now that the dataset merging is done up in a prior step - 
   #'all that you have to worry about in this step is a single 
   #'vector for each dataset. 
@@ -579,7 +582,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   
 }#end arrm.train
 
-parm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise, 
+parm.downscale <- function(fut_pred, hist_targ, regr_piecewise, 
                             args){
   
   #'Modified version of ARRM step 6, modified to fit into the parm framework

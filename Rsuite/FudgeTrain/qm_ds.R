@@ -13,8 +13,6 @@ callQM <- function(OH, MH, MF, args, type=""){
                   'BCQM' = callBCQMv2(OH[[1]], MH[[1]], MF.slice, args), 
                   'CFQM' = callCFQMv2(OH[[1]], MH[[1]], MF.slice, args), 
                   'EDQM' = callEDQMv2(OH[[1]], MH[[1]], MF.slice, args))
-    print(dim(out.data))
-    print(length(out))
   out.data[,,,n,,] <- out
   }
   return(list(ds=out.data, qc=NULL))
