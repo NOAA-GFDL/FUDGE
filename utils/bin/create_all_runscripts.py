@@ -9,14 +9,8 @@ OH_by, MH_by, MF_by):
 	mini_start = range(int(i_start), int(i_end), njobs)
 	mini_end = [el + njobs for el in mini_start]
 	mini_end = [el if el <= (int(i_end)+1) else (int(i_end)+1) for el in mini_end]
-	print(mini_start)
-	print(mini_end)
 	i_offset = int(i_start) - 1
 	i_max = int(i_end) - i_offset
-	print(i_max)
-	##Make output directories
-	#os.makedirs(osp.join(scriptdir, 'master'))
-	#os.makedirs(osp.join(scriptdir, 'runscript'))
 	#correct j_range
 	j_range = re.sub('"', "", j_range)
 	#One of the goals for this was to get away from using gcp-specific operations
@@ -58,7 +52,6 @@ OH_by, MH_by, MF_by):
 	#OH directory currently described with /OneD/ appended
 	OH_dir = os.path.dirname(OH_dir)
 	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
-	print(oh_files)
 	for f in oh_files:
 		dmget_string = dmget_string + "dmget " + f + "\n"
 	#MH and MF files have an assumption that you can have multiple 
@@ -69,11 +62,7 @@ OH_by, MH_by, MF_by):
 	mh_files = []
 	for pred_var in predlist:
 		mh_dir = osp.join(MH_dir, pred_var) + idirsuffix
-		print(mh_dir)
-		print(os.listdir(mh_dir))
-		print(mf_timerange)
 		mh_file = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
-		print(mh_file)
 		mh_files.append(mh_file)
 		dmget_string = dmget_string + "dmget " + mh_file + " \n"
 	dmget_string = dmget_string + "# Get MF data" + "\n"
@@ -81,7 +70,6 @@ OH_by, MH_by, MF_by):
 	for pred_var in predlist:
 		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
 		mf_file = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None][0]
-		print(mf_file)
 		mf_files.append(mf_file)
 		dmget_string = dmget_string + "dmget " + mf_file + " \n"
 	tmask_files = []	
@@ -119,7 +107,6 @@ OH_by, MH_by, MF_by):
 	
 	#Finally, start opts that need to loop by index available	
 	for s,e in zip(mini_start,mini_end):
-		print('starting mini loop ' + str(s) + " to " + str(e))
 		master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+str(s)+'_'+str(e))
 		#then, for each slice, first create your runscript
 		#and then add the runscript call to the
@@ -144,7 +131,7 @@ OH_by, MH_by, MF_by):
 			f.write(outdir_string)
 			f.write(runscript_calls) 
 			f.write("wait")
-	print('runscript creation completed')		
+	print('master runscript and mini creation completed')		
 			
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
