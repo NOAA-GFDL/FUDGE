@@ -80,7 +80,7 @@ get.fudge.timemask.list <- function(){
 apply.fudge.tmask <- function(data, mask){
   #Fast and dirty adaptation of apply.any.mask
   #for use with 6-dimensional output
-  print('applying tmask')
+  #print('applying tmask')
   data <- aperm(data, c(6,1,2,3,4,5))
   data.dim <- dim(data)
   result <- rep(mask, length.out=length(data)) * as.vector(data)

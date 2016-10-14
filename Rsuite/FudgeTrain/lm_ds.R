@@ -97,7 +97,7 @@ step.lm <- function(OH, MH, MF, args=NA, ds.var='tasmax', att_table = NULL){
 #   print(names(test.prod))
 #print(as.formula(paste0(targ.var,"~",paste0(names(MH),collapse="+"))))
 #print(summary(test.prod))
-  lm.train.model <- step(lm(as.formula(paste0('target',"~",paste0(names(MH),collapse="+"))),
+  lm.train.model <- step(lm(as.formula(paste0('target',"~1")),
                             data=test.prod, na.action='na.omit'), #.^2, 
                          scope=list(upper=paste0(targ.var,'~',paste0(names(MH), collapse="+"),sep=""),
                                     lower=paste0(targ.var,'~1')),

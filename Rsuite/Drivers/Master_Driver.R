@@ -232,9 +232,14 @@ message('Looking for pre-processing functions to apply')
 if(length(pre.ds) !=0){
   message('Applying S3 Adjustment')
   temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
-                                  hist.pred = lapply(MH, '[', 'data'),
-                                  hist.targ = lapply(OH, '[', 'data'),
-                                  fut.pred = lapply(MF, '[', 'data'),
+                                  hist.pred=MH, 
+                                  hist.targ=OH,
+                                  fut.pred=MF,
+#As tempting as it is to just passs the data (it makes some of the metadata)
+#operations simpler), you really do need the units for the pr operations.
+#                                   hist.pred = lapply(MH, '[', 'data'),
+#                                   hist.targ = lapply(OH, '[', 'data'),
+#                                   fut.pred = lapply(MF, '[', 'data'),
                                   s5.instructions=post.ds, 
                                   missval.args = missval.args)
   #Assign output and remove temporary output

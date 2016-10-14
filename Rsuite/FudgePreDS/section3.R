@@ -33,13 +33,15 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                    fut.pred = NA, 
                            att.list=NA,
                    create.qc.mask=FALSE, create.adjust.out=FALSE, 
-                   s5.instructions=list('na')){
+                   s5.instructions=list('na'), 
+                   missval.args = list()){
   #Create list of variables that will not change with iteration
   #input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred)
   #Define data that will change with iteration
-  adjusted.list <- list(input=list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 
+  adjusted.list <- list(input=list('MH' = hist.pred, 'hist.targ' = OH, 'fut.pred' = MF, 
                                    'att.list'=att.list), 
-                        s5.list=s5.instructions)
+                        s5.list=s5.instructions, 
+                        missval.args=missval.args)
   #print(paste("lenght of section 3 instructions:", length(s3.instructions)))
   for(element in 1:length(s3.instructions)){
     test <- s3.instructions[[element]]
@@ -48,8 +50,8 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
     adjusted.list <- switch(test$type,
-                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list),
-                            'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list),
+                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list, adjusted.list$missval.args),
+                            'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list, adjusted.list$missval.args),
                             stop(paste('Adjustment Method Error: method', test$type, 
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }

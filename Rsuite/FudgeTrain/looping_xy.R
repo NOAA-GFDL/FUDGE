@@ -36,6 +36,7 @@ loop.xy.data <- function(){
   MF.all.dim <- dim(MF$data[[1]])[4:6]
   output.all <- rep(list(array(NA, dim=c(OH.all.dim, MF.all.dim))), 
                     length(c("ds")))
+  print(dim(output.all[[1]]))
   names(output.all) <- c("ds")
   for (ival in 1:x.len){
     print(paste("Starting i loop", ival, 'of', x.len))
@@ -86,27 +87,32 @@ loop.xy.data <- function(){
           }
           
           #Call section 3 methods; reassign output
-          #       tmp.s3 <- callS3Adjustment(s3.instructions, 
-          #                                  MH.window, OH.window, MF.window, #These should maybe include metadata?
-          #                                  s5.instructions)
-          #       OH.window <- tmp.s3$OH
-          #       MH.window <- tmp.s3$MH
-          #       MF.window <- tmp.s3$MF
-          #       s5.out <- tmp.s3$s5
-          #       if ('OH' %in% ds.names){
-          #         #Correction to remove leapdays present in OH but not MF
-          #         #This get used for Delta and CFQM
-          #         tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[w]], 
-          #                                            mask=delta.mask, 
-          #                                            dim='temporal')
-          #         kfold.target.final <- apply.any.mask(data=OH.window, mask=tmp.ds.time.mask)
-          #       }
-          #Call the downscaling method
-          #         print(ds.method)
-          #         print(summary(OH.window))
-          #         print(summary(MH.window))
-          #         print(summary(MF.window))
-          #         print(args)
+#           if (s3.inloop){
+#                 tmp.s3 <- callS3Adjustment(s3.instructions, 
+#                                            list(data=MH.window, 
+#                                                 metadata=OH$metdata), 
+#                                            list(data=OH.window, 
+#                                                 metadata=OH$metadata), 
+#                                            list(data=MF.window,
+#                                                 metadata=MF$metadata),
+#                                            s5.instructions, missval.args)
+#                 #s3 functions only return data, not metadata
+#                 #(there's only one function that changes metadata, and it is)
+#                 #dealt with by adding elements to the stack
+#                 OH.window <- tmp.s3$OH
+#                 MH.window <- tmp.s3$MH
+#                 MF.window <- tmp.s3$MF
+#                 s5.out <- tmp.s3$s5
+#                 if ('OH' %in% ds.names){
+#                   #Correction to remove leapdays present in OH but not MF
+#                   #This get used for Delta and CFQM
+#                   tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[w]], 
+#                                                      mask=delta.mask, 
+#                                                      dim='temporal')
+#                   OH.window <- apply.any.mask(data=OH.window, mask=tmp.ds.time.mask)
+#                 }
+#           }      
+          #Call the downsaing method
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
                                  missvals="distributional", 
