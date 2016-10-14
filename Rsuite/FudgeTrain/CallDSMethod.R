@@ -27,13 +27,13 @@ callDSMethod <- function(method, OH, MH, MF, args,
                          minsample=1, missval.args=list(), 
                          train_qcmask=F){
   #Remove missing values
-#   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
-#                                        minsample, missval.args, 
-#                                        missval.method='distributional', 
-#                                        return_qcmask = train_qcmask)
-#   OH <- missval.out$OH
-#   MH <- missval.out$MH
-#   MF <- missval.out$MF
+  missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
+                                       minsample, missval.args, 
+                                       missval.method='distributional', 
+                                       return_qcmask = train_qcmask)
+  OH <- missval.out$OH
+  MH <- missval.out$MH
+  MF <- missval.out$MF
   #don't bother assigning status for now
   #Call downscaling function
   ds.out <- switch(method, 
@@ -43,9 +43,9 @@ callDSMethod <- function(method, OH, MH, MF, args,
                    'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask),
                    'PARM'    = callPARM(OH, MH, MF, args),
                    'BCQM'    = callQM(OH, MH, MF, args, type='BCQM'),
-                   'EDQM'    = callQM(OH, MH, MF, args, type='BCQM'),
-                   'EDQM'    = callQM(OH, MH, MF, args, type='BCQM'),
-                   'DeltaSD' = callDeltaSD(OH, MH, MF, args),
+                   'EDQM'    = callQM(OH, MH, MF, args, type='EDQM'),
+                   'CFQM'    = callQM(OH, MH, MF, args, type='CFQM'),
+                   'DeltaSD' = callDeltaSD(OH, MH, MF, args, train_qcmask),
                    ReturnDownscaleError(method)
   )
   #Restore missing values to original place now takes place within method
