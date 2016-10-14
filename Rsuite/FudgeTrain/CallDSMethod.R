@@ -34,24 +34,40 @@ callDSMethod <- function(method, OH, MH, MF, args,
   OH <- missval.out$OH
   MH <- missval.out$MH
   MF <- missval.out$MF
+  train.qc   <- missval.out$qcmask
+  train.stat <- missval.out$missval.status
+  ds.possible <- missval.out$ds.possible
+  remove(missval.out) #The remove might not be neccessary here, but it doesn't hurt
   #don't bother assigning status for now
   #Call downscaling function
-  ds.out <- switch(method, 
-                   'lm'      = callMultiLM(OH, MH, MF, args), 
-                   'lmstep'  = callStep.lm(OH, MH, MF, args), 
-                   'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask), 
-                   'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask),
-                   'PARM'    = callPARM(OH, MH, MF, args),
-                   'BCQM'    = callQM(OH, MH, MF, args, type='BCQM'),
-                   'EDQM'    = callQM(OH, MH, MF, args, type='EDQM'),
-                   'CFQM'    = callQM(OH, MH, MF, args, type='CFQM'),
-                   'DeltaSD' = callDeltaSD(OH, MH, MF, args, train_qcmask),
-                   ReturnDownscaleError(method)
-  )
-  #Restore missing values to original place now takes place within method
-  #as a h-release expidency shortcut, combine ds.out and missval qc masks
-  if (train_qcmask){
-    ds.out$qc <- ds.out$qc * missval.out$qcmask # 1 and NA; NAs propagate
+  if (ds.possible){
+    ds.out <- switch(method, 
+                     'lm'      = callMultiLM(OH, MH, MF, args), 
+                     'lmstep'  = callStep.lm(OH, MH, MF, args), 
+                     'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask), 
+                     'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask),
+                     'PARM'    = callPARM(OH, MH, MF, args),
+                     'BCQM'    = callQM(OH, MH, MF, args, type='BCQM'),
+                     'EDQM'    = callQM(OH, MH, MF, args, type='EDQM'),
+                     'CFQM'    = callQM(OH, MH, MF, args, type='CFQM'),
+                     'DeltaSD' = callDeltaSD(OH, MH, MF, args, train_qcmask, train.stat),
+                     ReturnDownscaleError(method)
+    )
+    #Restore missing values to original place now takes place within method
+    #as a h-release expidency shortcut, combine ds.out and missval qc masks
+    #note: in planned I, these are going to count as two separate masks
+    if (train_qcmask){
+      ds.out$qc <- ds.out$qc * train.qc # 1 and NA; NAs propagate
+    }
+    #If there are not sufficient points to downscale, return all missing values
+  }else{
+    print('Insufficient values to attempt downscaling; returning NA')
+    if (train_qcmask){
+      ds.out=list(ds=array(NA, dim=dim(MF[[1]])), 
+                  qc = array(NA, dim=dim(MF[[1]])))
+    }else{
+      ds.out=list(ds=array(NA, dim=dim(MF[[1]])), qc=NULL)
+    }
   }
   return(list(ds=ds.out$ds, qc=ds.out$qc))
 }

@@ -2,7 +2,7 @@
 #Main and helper functions for downscaling
 #with DeltaSD
 
-callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=status){
+callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #over a single variable
@@ -16,7 +16,8 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
     #'  the mthod for calculating the delta
     #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
     #'  calculating the delta ('off'), or use only those days for which the delta was greater
-    #'  than zero ('on')
+    #'  than zero ('on'). At this point it's a legacy setting; the main ignore0 setting in 
+    #'  the precipiation options sets 0 to missing 
     #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
     #' a delta that is applied to the LH (observational) data
     #'@return SDF: Downscaled Future (Local)
@@ -24,9 +25,18 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
     #Note: preferred behavior is to truncate vectors
     #rather than randomly sampling iff too short.
     
-    out.var.name <- names(CF)
-    #Unlist data from its input form
-    CH <- unlist(CH)
+    #Use this rather than unlist - unlist removes some dimension data
+    LH = LH[[1]]
+    CH = CH[[1]]
+    CF = CF[[1]]
+    out.data <- array(NA, dim=dim(CF))
+    nrips = dim(out.data)[4]
+    #Are we returning a mask of those points where delta beahved as expected?
+    if (train_qcmask){
+      qc.data <- array(1, dim=dim(CF))
+    }else{
+      qc.data <- NULL
+    }
     # Obtain options
     if(!is.null(args$deltatype)){
       deltatype <- args$deltatype
@@ -43,17 +53,11 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
     }else{
       stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
     }
+    
     #Prepare to loop by RIP
-    out.list <- list()
-    rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-    for(rip in rip.list){
+    for(n in 1:nrips){
       out.status <- 0
-      #Select the future predictor vars that you are interested in
-      out.var.name <- paste0(ds.var, ".", rip)
-      #Unlist the ensemble members
-      rip.index <- (rip.list==rip)
-      CF.data <- CF[rip.index]
-      CF.data <- unlist(CF.data)
+      CF.data <- CF[,,,n,,]
       #Decide how many iterations of the delta method to perform
       #based on the relative lengths of the historical
       #and future data (future should be >= historical) #Switch 1-28 from <  
@@ -67,7 +71,6 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
           if(!is.null(attr(out.temp, 'status'))){
             out.status <- out.status + 1
           }
-          #SDF[SDF!=0] <- out.temp
           SDF[1:length(CF.data)] <- 0
           comp.indices <- which(LH[1:length(CF.data)]!=0)
           SDF[comp.indices] <- out.temp
@@ -86,7 +89,6 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
           comp.indices <- which(LH!=0)
         }
         while(write.len <= out.len){
-          #print('looping on write.len')
           #delta.downscale removes NAs in the output vector
           if((write.len + in.len) <= length(CF.data)){
             tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
@@ -127,22 +129,24 @@ callDeltaSD <- function(LH,CH,CF,args,ds.var='null', att_table=NULL, status=stat
       }
       #Adjusted 11-4 to account for presence of missing value vectors
       #being used to determine how many repetitions are needed for a delta
-      SDF <- SDF[!is.na(SDF)]
-      num.na <- (sum(is.na(SDF)))
-      #       if(num.na > 0){
-      #         print(length(CF.data))
-      #         print(length(LH))
-      #         print(summary(LH))
-      #         print(summary(SDF))
-      #         print(num.na)
-      #         stop("Error in DeltaSD: NAs not in out being introduced from somewhere")
-      #       }
-      out.list[[out.var.name]] <- SDF
+      #Adjusted again 10-14-16 since there is now an assumption that your 
+      #ds methods keep track of missing values in the predictor dataset
+      ########################
+      #SDF <- SDF[!is.na(SDF)]
+      #num.na <- (sum(is.na(SDF)))
+      #######################
+      out.data[,,,n,,] <- SDF
       if(out.status > 0){
-        attr(out.list[[out.var.name]], 'status') <- out.status
+        #As of 10-14-16, replacing status setting with qcmask
+        if (train_qcmask){
+          #the below used to store the status return; for now, to keep 
+          #consistency with the other, more commonly-used training mask
+          #methods, we're replacing that with NA
+          qc.data[,,,n,,] <- NA 
+        }
       }
     }
-    return(out.list)
+    return(list(ds=out.data, qc=qc.data))
 }
 
 delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, 
@@ -161,21 +165,10 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
   delta.targ <- delta.targ[!is.na(delta.targ)]
   delta.hist.temp <- delta.hist[!is.na(delta.hist)]
   if(ignore0.Delta){
-    #     delta.fut.orig.len <- length(delta.fut)
-    #     delta.fut <- delta.fut[!is.na(delta.fut) & delta.fut!=0]
-    #     delta.targ <- delta.targ[!is.na(delta.targ) & delta.targ!=0]
-    #     delta.hist.temp <- delta.hist[!is.na(delta.hist) & delta.hist!=0]
-    #delta.fut.orig.len <- length(delta.fut)
     delta.fut <- delta.fut[delta.fut!=0]
     delta.targ <- delta.targ[delta.targ!=0]
     delta.hist.temp <- delta.hist.temp[delta.hist.temp!=0]
   }
-  #   }else{
-  #     delta.fut.orig.len <- length(delta.fut)
-  #     delta.fut <- delta.fut[!is.na(delta.fut)]
-  #     delta.targ <- delta.targ[!is.na(delta.targ)]
-  #     delta.hist.temp <- delta.hist[!is.na(delta.hist)]
-  #   }
   if(length(delta.hist)==0){
     if(deltaop=='ratio'){
       #Return the OH data
@@ -215,11 +208,6 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
       #Add a value flagging operation at this point
       out <- delta.targ
       attr(out, 'status') <- 1
-      #       print(summary(delta.fut))
-      #       print(summary(delta.hist))
-      #       print(median(delta.fut))
-      #       print(median(delta.hist))
-      #       stop('examine the output that led to this')
       return(out)
     }
     out <- delta.targ*delta 
