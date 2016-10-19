@@ -102,7 +102,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
 #     print(sum(MF.idx))
     #call downscaling function
 save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_ds.R", 
-     list=c('model.combine.data', 'parm.targ', 'parm.model', 'args'))
+     list=c('model_combine_data', 'parm.targ', 'parm.model', 'args'))
     out.tmp <- parm.downscale(model_combine_data, 
                               parm.targ, #maintain orig order and orig placement of missvals
                               parm.model, args)
