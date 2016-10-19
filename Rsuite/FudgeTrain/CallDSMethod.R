@@ -26,6 +26,9 @@ callDSMethod <- function(method, OH, MH, MF, args,
                          missvals="distributional", 
                          minsample=1, missval.args=list(), 
                          train_qcmask=F){
+  save(file="/home/cew/Code/h_testing//ds_debug/save/ds_call.R", 
+       list=c('OH', 'MH', 'MF'))
+  stop('examine output')
   #Remove missing values
   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
                                        minsample, missval.args, 
@@ -46,7 +49,7 @@ callDSMethod <- function(method, OH, MH, MF, args,
                      'lmstep'  = callStep.lm(OH, MH, MF, args), 
                      'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask), 
                      'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask),
-                     'PARM'    = callPARM(OH, MH, MF, args),
+                     'PARM'    = callPARM(MH, OH, MF, args),
                      'BCQM'    = callQM(OH, MH, MF, args, type='BCQM'),
                      'EDQM'    = callQM(OH, MH, MF, args, type='EDQM'),
                      'CFQM'    = callQM(OH, MH, MF, args, type='CFQM'),
