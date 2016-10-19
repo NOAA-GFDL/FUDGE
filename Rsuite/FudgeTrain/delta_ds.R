@@ -30,6 +30,9 @@ callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
     CH = CH[[1]]
     CF = CF[[1]]
     out.data <- array(NA, dim=dim(CF))
+    #Remove missing values 
+    LH <- LH[!is.na(LH)]
+    CH <- CH[!is.na(CH)]
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
@@ -58,6 +61,8 @@ callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
     for(n in 1:nrips){
       out.status <- 0
       CF.data <- CF[,,,n,,]
+      CF.idx <- !is.na(CF.data)
+      CF.data <- CF.data[CF.idx]
       #Decide how many iterations of the delta method to perform
       #based on the relative lengths of the historical
       #and future data (future should be >= historical) #Switch 1-28 from <  
@@ -135,7 +140,12 @@ callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
       #SDF <- SDF[!is.na(SDF)]
       #num.na <- (sum(is.na(SDF)))
       #######################
-      out.data[,,,n,,] <- SDF
+      print(length(out.data[,,,n,,]))
+      print(length(SDF))
+      print(length(CF.data))
+      out <- rep(NA, length(CF.idx))
+      out[CF.idx] <- SDF
+      out.data[,,,n,,] <- out
       if(out.status > 0){
         #As of 10-14-16, replacing status setting with qcmask
         if (train_qcmask){

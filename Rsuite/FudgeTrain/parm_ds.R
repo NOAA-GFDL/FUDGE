@@ -11,7 +11,7 @@
 #'rip in the hist_pred dataset for now. 
 #'
 
-callParm <- function(hist_pred, hist_targ, fut_pred, args){
+callPARM <- function(hist_pred, hist_targ, fut_pred, args){
   #'Control the looping by rip and missval removal from within this function. 
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
@@ -62,8 +62,10 @@ callParm <- function(hist_pred, hist_targ, fut_pred, args){
   #CEW: the missing value removal step might not be neccessary. 
   #Removing on 12-24 to see if it solves the pm2weeks predictor
   #returning output identical to the 
-  hist.pred.tmp <- unlist(hist_pred) #[!is.na(unlist(hist_pred))]
-  hist.targ.tmp <- unlist(hist_targ) #[!is.na(unlist(hist_targ))]
+  hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
+  hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
+  save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_train.R", 
+       list=c('hist.pred.tmp', 'hist.targ.tmp', 'args'))
   parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                 sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
                                 args)
@@ -71,41 +73,54 @@ callParm <- function(hist_pred, hist_targ, fut_pred, args){
   #If that's the case, you might be able to get away with removing
   #the indexing calls in the call to parm.train
   parm.model <- parm.train.data$ds.model
+  #print(summary(parm.model))
   parm.targ <- parm.train.data$sta_mon_save
   #should be a list of one element - ds.model
   
 #   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
 #   rips <- unique(rip.list)  
 #   out.list <- list()
-  out.data <- array(NA, dim=dim(fut.pred[[1]]))
-  nrips = dim(out.data)
+  out.data <- array(NA, dim=dim(fut_pred[[1]]))
+  nrips = dim(out.data)[4]
   for(n in 1:nrips){
-    MF.slice <- fut.pred[[1]][,,,n,,]
+    MF.slice <- fut_pred[[1]][,,,n,,]
+    #print(summary(fut_pred))
+    #print(summary(MF.slice))
+    MF.idx <- !is.na(MF.slice)
+    #print(summary(MF.idx))
+    #print(length(MF.slice))
+    #print(length(MF.idx))
+    MF.slice <- MF.slice[MF.idx]
+    rip.len <- sum(MF.idx)
+    #print(paste("sum of mf.idx:", sum(MF.idx)))
+    #stop('examint out')
     #model_combine_data <- MF.slice[!is.na(MF.slice)]
     rip.rank <- rank(MF.slice)
     model_combine_data <- sort(MF.slice)
+#     print(length(model_combine_data))
+#     print(summary(model_combine_data))
+#     print(sum(MF.idx))
     #call downscaling function
+save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_ds.R", 
+     list=c('model.combine.data', 'parm.targ', 'parm.model', 'args'))
     out.tmp <- parm.downscale(model_combine_data, 
                               parm.targ, #maintain orig order and orig placement of missvals
-                              #ds.var,
                               parm.model, args)
     rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
-    #round reference: close to line 1180
-    #out.list[out.var] <- rip.tmp - look, I don't think that this is making a difference.
-    #if(round.ds){
-    #  message('rounding downscaled values')
-    #  out.list[[out.var]] <- round(rip.tmp[rip.rank][1:rip.len], digits=args$round)
-    #}else{
-    #  out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
-    #}
-    out.data[,,,n,,] <- rip.tmp[rip.rank]
+    #sort(test.vec)[rank(test.vec)] = test.vec
+    #out.data[,,,n,,][,,,,n,,MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+    out <- rep(NA, length(MF.idx))
+out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+out.data[,,,n,,] <- out
+#    out.data[,,,n,,][MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+    #print(summary(out.data[,,,n,,]))
     #10-14
     #The soring step is bothering me - is it really neccessary?
     #I'm worried that it might scatter the missing values all over the place.
     #It's not going to change much for the 
   }
-  #print(summary(out.list))
-  #print(lapply(out.list, 'summary'))
+  print(summary(out.data))
+stop('examine output')
   return(list(ds=out.data, qc=NULL))
 }
 

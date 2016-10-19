@@ -6,15 +6,25 @@
 
 callQM <- function(OH, MH, MF, args, type=""){
   out.data <- array(NA, dim=dim(MF[[1]]))
+  print(dim(out.data))
   nrips <- dim(out.data)[4]
   for (n in 1:nrips){
     MF.slice <- MF[[1]][,,,n,,]
+    print(length(MF.slice))
+    print(summary(MF.slice))
     out <- switch(type, 
                   'BCQM' = callBCQMv2(OH[[1]], MH[[1]], MF.slice, args), 
                   'CFQM' = callCFQMv3(OH[[1]], MH[[1]], MF.slice, args), 
                   'EDQM' = callEDQMv2(OH[[1]], MH[[1]], MF.slice, args))
+    print(summary(out))
+    print(length(out))
+    print(length(out))
+    print(summary(out))
+    print(dim(out))
+    stop('examine output')
   out.data[,,,n,,] <- out
   }
+ # print(summary(out.data))
   return(list(ds=out.data, qc=NULL))
 }
 
@@ -32,12 +42,13 @@ callEDQMv2<-function(LH,CH,CF,args){
     lengthCH<-length(CH)
     lengthLH<-length(LH)
     lengthCF<-length(CF)
+    cf.present <- sum(!is.na(CF))
       
       #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
       maxdim=max(c(lengthCH, lengthCF, lengthLH))
       
       # first define vector with probabilities [0,1]
-      prob<-seq(0.001,0.999,length.out=lengthCF)
+      prob<-seq(0.001,0.999,length.out=cf.present)
       
       # initialize data.frame
       temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
@@ -53,8 +64,8 @@ callEDQMv2<-function(LH,CH,CF,args){
       
       temp.CFsorted<-temp[order(temp$CF),]
       #Combine needed to deal with cases where CH longer than CF
-      if (maxdim-lengthCF > 0){
-        temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (maxdim-lengthCF)))
+      if (maxdim-cf.present > 0){
+        temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (maxdim-cf.present)))
       }else{
         temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
       }
@@ -97,13 +108,20 @@ callCFQMv3<-function(LH,CH,CF, args){
     stop(paste("CFQMv3 Downscaling Error: sort not found in args"))
   }
   #Unlist data from its input form
+  LH <- LH[!is.na(LH)]
+  CH <- CH[!is.na(CH)]
+  MF.idx <- !is.na(CF)
+  out <- rep(NA, length(MF.idx))
+  CF <- CF[MF.idx]
+  
   lengthCH<-length(CH)
   lengthLH<-length(LH)
-    lengthCF<-length(CF)
+  lengthCF<-length(CF)
+  cf.present <- sum(!is.na(CF))
     if(is.null(args$len.out)){
       message(paste("Warning in callCFQMv3: len.out not specified; will be deduced from", 
                     'length of CF data'))
-      len.out <- lengthCF
+      len.out <- cf.present
     }else{
       len.out <- args$len.out
     }
@@ -112,8 +130,8 @@ callCFQMv3<-function(LH,CH,CF, args){
     maxdim=max(c(lengthCH, lengthCF, lengthLH))
     mindim=min(c(lengthCH, lengthCF, lengthLH))
     
-    lengthCFna<-length(which(!is.na(CF))) # count number of obs without NA
-    lengthCHna<-length(which(!is.na(CH)))
+    #lengthCFna<-length(which(!is.na(CF))) # count number of obs without NA
+    #lengthCHna<-length(which(!is.na(CH)))
     
     #if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
     mindim=min(c(sum(!is.na(CF)), sum(!is.na(CH)), sum(!is.na(LH))))
@@ -122,7 +140,8 @@ callCFQMv3<-function(LH,CH,CF, args){
     prob<-seq(0.001,0.999,length.out=len.out) #lengthCF
     
     # initialize data.frame
-    temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
+    temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
+                     LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
     SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim))
     
     SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF
@@ -131,12 +150,12 @@ callCFQMv3<-function(LH,CH,CF, args){
     if (ORDERING=="CF"){
       # CHANGE FACTOR ORDERED BY COARSE FUTURE
       temp.CFsorted2<-temp[order(temp$CF),]
-      #print(summary(quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)))
+      print(summary(quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)))
       temp.CFsorted2$qLH[1:len.out]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
       temp.CFsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
       temp.CFsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
-      print(summary(temp.CFsorted2$index))
-      print(summary(temp.CFsorted2[order(temp.CFsorted2$index),]))
+      #print(summary(temp.CFsorted2$index))
+      #print(summary(temp.CFsorted2[order(temp.CFsorted2$index),]))
       temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),][1:lengthCF,] 
       #By this point, it has successfully ordered the first lengthCF members of the output data
     }
@@ -156,10 +175,9 @@ callCFQMv3<-function(LH,CH,CF, args){
       temp.CHsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
       temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),][1:lengthCH,]
     }
-#    out.list[[out.var.name]][1:len.out]<-temp.CFQM2$qCFecdfCHqLH[!is.na(temp.CFQM2$qCFecdfCHqLH)]
-#  }
-#  return(out.list)
-return(temp.CFQM2)
+  print(summary(temp.CFQM2$qCFecdfCHqLH))
+  out[MF.idx] <- temp.CFQM2$qCFecdfCHqLH[1:len.out]
+return(out)
 }
 
 callBCQMv2<-function(LH,CH,CF,args){
@@ -184,20 +202,32 @@ callBCQMv2<-function(LH,CH,CF,args){
        maxdim=max(c(lengthCH, lengthCF, lengthLH))
        
        # first define vector with probabilities [0,1]
-       prob<-seq(0.001,0.999,length.out=lengthCF)
+#previously, prob was lengthCF
+      cf.present <- sum(!is.na(CF))
+      print(paste('num cf present:', cf.present))
+       prob<-seq(0.001,0.999,length.out=cf.present)
        
        # initialize data.frame
-       temp<-data.frame(index=c(seq(1,lengthCF), rep(NA,maxdim-lengthCF)),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+#index used ot be 1:lengthCF; doing 1:maxdim instead
+#c(seq(1,lengthCF), rep(NA,maxdim-lengthCF))
+       temp<-data.frame(index=1:maxdim,CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                         qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
        temp$CF[1:lengthCF]<-CF
        temp$CH[1:lengthCH]<-CH
        temp$LH[1:lengthLH]<-LH #THIS is the line that's throwing things off
-       
        temp.CFsorted<-temp[order(temp$CF),]
-       temp.CFsorted$qCF[1:lengthCF]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
-       temp.CFsorted$ecdfCHqCF[1:lengthCF]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
-       temp.CFsorted$qLHecdfCHqCF[1:lengthCF]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
+       temp.CFsorted$qCF[1:cf.present]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+       temp.CFsorted$ecdfCHqCF[1:cf.present]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+       temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
+                                                        na.rm =T)
+#print('quantile rle:')
+      print(rle(is.na(temp.CFsorted$qLHecdfCHqCF)))
+# print('cf rle:')
+# print(rle(is.na(temp.CFsorted$CF)))
        temp<-temp.CFsorted[order(temp.CFsorted$index),]
+# print(summary(temp))
+# print(rle(is.na(temp$qLHecdfCHqCF)))
+# print(summary(temp$qLHecdfCHqCF[1:lengthCF]))
   return(temp$qLHecdfCHqCF[1:lengthCF])
 }
 
