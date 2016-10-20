@@ -70,6 +70,8 @@ callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
         #If the future and historical periods are unequal, truncate the vectors
         #That...raises an interesting question: should the CH vector be truncated as well?
         #Technically, it doesn't need to be for the code to work...
+             save(file="/home/cew/Code/h_testing//ds_debug/save/new_delta_train.R", 
+                  list=c('LH', 'CF.data', 'CH', 'deltatype', 'deltaop', 'ignore0.Delta', 'status'))
         if(ignore0.Delta){
           SDF <- LH[1:length(CF.data)]
           out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
@@ -156,6 +158,9 @@ callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
         }
       }
     }
+    save(file="/home/cew/Code/h_testing//ds_debug/save/new_delta_ds.R", 
+         list=c('SDF', 'CF.idx', 'out.data', 'out'))
+    stop('examine output')
     return(list(ds=out.data, qc=qc.data))
 }
 

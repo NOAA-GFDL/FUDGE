@@ -26,9 +26,9 @@ callDSMethod <- function(method, OH, MH, MF, args,
                          missvals="distributional", 
                          minsample=1, missval.args=list(), 
                          train_qcmask=F){
-  save(file="/home/cew/Code/h_testing//ds_debug/save/ds_call.R", 
-       list=c('OH', 'MH', 'MF'))
-  stop('examine output')
+#   save(file="/home/cew/Code/h_testing//ds_debug/save/ds_call.R", 
+#        list=c('OH', 'MH', 'MF'))
+#   stop('examine output')
   #Remove missing values
   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
                                        minsample, missval.args, 

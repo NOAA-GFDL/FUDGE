@@ -50,7 +50,7 @@ if (length(console.args) > 0){
   oh_by <- 1
   mh_by <- 1 #5 #3
   mf_by <- 1 #5 #3
-  i_idx <- 10 #194
+  i_idx <- 53 #194 #10
   i_max <- 194
   x.pad <- "NA"
 }

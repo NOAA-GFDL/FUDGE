@@ -35,8 +35,9 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
     #assume any string argument is false
     if(!is.numeric(args$round)){round.ds<-F}else{round.ds<-T}
   }
+  ds.args <- args
   if(!'reg_sample_method'%in%names(args)){
-    args$reg_sample_method = 'climvar_range'
+    ds.args$reg_sample_method = 'climvar_range'
   }else{
     reg_sample_method_choices <- c('sample_size', 'climvar_range')
     if(!(args$reg_sample_method%in%reg_sample_method_choices)){
@@ -47,28 +48,32 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
   }
   #Add check for the definition of the tails/whether to taper the tails at ends of dist
   if(!'tail_taper_pct'%in%names(args)){
-    args$tail_taper_pct <- 0.1
+    ds.args$tail_taper_pct <- 0.1
   }else{
-    args$tail_taper_pct <- as.numeric(args$tail_taper_pct)/100
+    ds.args$tail_taper_pct <- as.numeric(args$tail_taper_pct)/100
+    print('dividng tail_taper_pct')
+    #prints are added to deal with something that may have been leading to 
+    #tail_taper_pct being divided by 100 repeatedly.
   }
   #Add check for presence of window option
   if(!'subsample_pct'%in%names(args)){
-    args$subsample_pct <- 0.05
+    ds.args$subsample_pct <- 0.05
   }else{
-    args$subsample_pct <- as.numeric(args$subsample_pct)/100
+    ds.args$subsample_pct <- as.numeric(args$subsample_pct)/100
+    print('dividing subsample_pct')
   }
-
+  
   #Now, call the training code
   #CEW: the missing value removal step might not be neccessary. 
   #Removing on 12-24 to see if it solves the pm2weeks predictor
   #returning output identical to the 
   hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
   hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
-  save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_train.R", 
-       list=c('hist.pred.tmp', 'hist.targ.tmp', 'args'))
+#   save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_train.R", 
+#        list=c('hist.pred.tmp', 'hist.targ.tmp', 'ds.args'))
   parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                 sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
-                                args)
+                                ds.args)
   #10-13: The default behavior of sort is to remove NA values.
   #If that's the case, you might be able to get away with removing
   #the indexing calls in the call to parm.train
@@ -77,9 +82,9 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
   parm.targ <- parm.train.data$sta_mon_save
   #should be a list of one element - ds.model
   
-#   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-#   rips <- unique(rip.list)  
-#   out.list <- list()
+  #   rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
+  #   rips <- unique(rip.list)  
+  #   out.list <- list()
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
   nrips = dim(out.data)[4]
   for(n in 1:nrips){
@@ -97,30 +102,30 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
     #model_combine_data <- MF.slice[!is.na(MF.slice)]
     rip.rank <- rank(MF.slice)
     model_combine_data <- sort(MF.slice)
-#     print(length(model_combine_data))
-#     print(summary(model_combine_data))
-#     print(sum(MF.idx))
+    #     print(length(model_combine_data))
+    #     print(summary(model_combine_data))
+    #     print(sum(MF.idx))
     #call downscaling function
-save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_ds.R", 
-     list=c('model_combine_data', 'parm.targ', 'parm.model', 'args'))
+#     save(file="/home/cew/Code/h_testing//ds_debug/save/new_parm_ds.R", 
+#          list=c('model_combine_data', 'parm.targ', 'parm.model', 'ds.args'))
     out.tmp <- parm.downscale(model_combine_data, 
                               parm.targ, #maintain orig order and orig placement of missvals
-                              parm.model, args)
+                              parm.model, ds.args)
     rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
     #sort(test.vec)[rank(test.vec)] = test.vec
     #out.data[,,,n,,][,,,,n,,MF.idx] <- rip.tmp[rip.rank][1:rip.len]
     out <- rep(NA, length(MF.idx))
-out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
-out.data[,,,n,,] <- out
-#    out.data[,,,n,,][MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+    out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+    out.data[,,,n,,] <- out
+    #    out.data[,,,n,,][MF.idx] <- rip.tmp[rip.rank][1:rip.len]
     #print(summary(out.data[,,,n,,]))
     #10-14
     #The soring step is bothering me - is it really neccessary?
     #I'm worried that it might scatter the missing values all over the place.
     #It's not going to change much for the 
   }
-  print(summary(out.data))
-stop('examine output')
+#   print(summary(out.data))
+#   stop('examine output')
   return(list(ds=out.data, qc=NULL))
 }
 
@@ -160,7 +165,7 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
         if ((k.out[j]>=window.index) & (k.out[j]<=(length(r_sq)-window.index))){
           r_indices <- (k.out[j]-window.index):(k.out[j]+window.index)
           r_sq[r_indices] <- NA
-         # print(r_indices)
+          # print(r_indices)
         }
         if (k.out[j]>(length(r_sq)-window.index)){
           r_sq[(k.out[j]-window.index):length(r_sq)] <- NA    #break point is close to end of vector
@@ -261,8 +266,8 @@ parm.train <- function(hist_pred, hist_targ, args){
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
   
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
-#   window1 <- rep(NA, (hist.pred.len-start+1))
-#   window1 <- c(rep(NA,(start-1)),window1)
+  #   window1 <- rep(NA, (hist.pred.len-start+1))
+  #   window1 <- c(rep(NA,(start-1)),window1)
   if(args$reg_sample_method=='sample_size'){
     if(args$tail_taper_pct==0){
       #If not tapering on the tails, however they are defined
@@ -598,7 +603,7 @@ parm.train <- function(hist_pred, hist_targ, args){
 }#end arrm.train
 
 parm.downscale <- function(fut_pred, hist_targ, regr_piecewise, 
-                            args){
+                           args){
   
   #'Modified version of ARRM step 6, modified to fit into the parm framework
   #'(i.e. stripping out everything not related to downscaling.)
