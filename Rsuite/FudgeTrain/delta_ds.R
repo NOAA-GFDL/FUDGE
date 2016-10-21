@@ -2,41 +2,41 @@
 #Main and helper functions for downscaling
 #with DeltaSD
 
-callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
+callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #over a single variable
-    #'@param LH: Local Historical (a.k.a. observations)
-    #'@param CH: Coarse Historical (a.k.a. GCM historical)
-    #'@param CF: Coarse Future (a.k.a GCM future)
+    #'@param OH: Local Historical (a.k.a. observations)
+    #'@param MH: Coarse Historical (a.k.a. GCM historical)
+    #'@param MF: Coarse Future (a.k.a GCM future)
     #'@param args: A list containing three arguments: 
     #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
-    #'  what single value will be used for the difference between the CH and CF
+    #'  what single value will be used for the difference between the MH and MF
     #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
     #'  the mthod for calculating the delta
     #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
     #'  calculating the delta ('off'), or use only those days for which the delta was greater
     #'  than zero ('on'). At this point it's a legacy setting; the main ignore0 setting in 
     #'  the precipiation options sets 0 to missing 
-    #'Uses the difference (ratio or subtraction) between CF and CH means or medians to calculate
-    #' a delta that is applied to the LH (observational) data
+    #'Uses the difference (ratio or subtraction) between MF and MH means or medians to calculate
+    #' a delta that is applied to the OH (observational) data
     #'@return SDF: Downscaled Future (Local)
     ########################################
     #Note: preferred behavior is to truncate vectors
     #rather than randomly sampling iff too short.
     
     #Use this rather than unlist - unlist removes some dimension data
-    LH = LH[[1]]
-    CH = CH[[1]]
-    CF = CF[[1]]
-    out.data <- array(NA, dim=dim(CF))
-    #Remove missing values 
-    LH <- LH[!is.na(LH)]
-    CH <- CH[!is.na(CH)]
+    OH = OH[[1]]
+    MH = MH[[1]]
+    MF = MF[[1]]
+    out.data <- array(NA, dim=dim(MF))
+    #     #Remove missing values 
+    #     OH <- OH[!is.na(OH)]
+    #     MH <- MH[!is.na(MH)]
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
-      qc.data <- array(1, dim=dim(CF))
+      qc.data <- array(1, dim=dim(MF))
     }else{
       qc.data <- NULL
     }
@@ -56,120 +56,145 @@ callDeltaSD <- function(LH,CH,CF,args, train_qcmask, status=0){
     }else{
       stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
     }
-    
-    #Prepare to loop by RIP
-    for(n in 1:nrips){
+    for (n in 1:nrips){
+      #Determine data to use when indexing against OH
       out.status <- 0
-      CF.data <- CF[,,,n,,]
-      CF.idx <- !is.na(CF.data)
-      CF.data <- CF.data[CF.idx]
-      #Decide how many iterations of the delta method to perform
-      #based on the relative lengths of the historical
-      #and future data (future should be >= historical) #Switch 1-28 from <  
-      if(length(LH) >= length(CF.data)){
-        #If the future and historical periods are unequal, truncate the vectors
-        #That...raises an interesting question: should the CH vector be truncated as well?
-        #Technically, it doesn't need to be for the code to work...
-             save(file="/home/cew/Code/h_testing//ds_debug/save/new_delta_train.R", 
-                  list=c('LH', 'CF.data', 'CH', 'deltatype', 'deltaop', 'ignore0.Delta', 'status'))
-        if(ignore0.Delta){
-          SDF <- LH[1:length(CF.data)]
-          out.temp <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop, ignore0.Delta, status=status)
-          if(!is.null(attr(out.temp, 'status'))){
-            out.status <- out.status + 1
-          }
-          SDF[1:length(CF.data)] <- 0
-          comp.indices <- which(LH[1:length(CF.data)]!=0)
-          SDF[comp.indices] <- out.temp
-        }else{
-          SDF <- delta.downscale(LH[1:length(CF.data)], CH, CF.data, deltatype, deltaop,status=status)
-        }
+      MF.data <- MF[,,,n,,]
+      if (length(OH) >= length(MF.data)){
+        OH.idx <- 1:length(MF.data) = ((nrips-1)*length(MF.data))
+        delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
+        ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
+        #ds is now indexed by a subset of the OH timeseries; if using non-noleap
+        #calendars in any dataset, need to adjust the two for concurrent leapdays
+        #note:leapday masks are already in global environment as part of setup
+        ds.out <- reconcile.hist.fut.leapdays(hist_mask, fut_mask, ds.out)
+        out.data[,,,n,,] <- ds.out
       }else{
         #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
-        #where n=length(CF.data)/length(LH)
+        #where n=length(MF.data)/length(OH)
         write.len <- 1
-        out.len <- length(CF.data)
-        in.len <- length(LH)
-        SDF <- rep(NA, out.len)
+        out.len <- length(MF.data)
+        in.len <- length(OH)
         #vector comparisons take a long time relative to other things
-        if(ignore0.Delta){
-          comp.indices <- which(LH!=0)
-        }
         while(write.len <= out.len){
           #delta.downscale removes NAs in the output vector
-          if((write.len + in.len) <= length(CF.data)){
-            tempvec <- delta.downscale(LH, CH, CF.data[write.len:(write.len + in.len)], 
-                                       deltatype, deltaop, ignore0.Delta,status=status)
-            if(!is.null(attr(tempvec, 'status'))){
-              out.status <- out.status + 1
-            }
+          if((write.len + in.len) <= out.len){
+            MF.idx <- write.len:(write.len+in.len)
+            loop.delta <- delta.train(MH, MF.data[MF.idx], 
+                                      deltatype, deltaop, ignore0.Delta, status)
+            #Insert status check here
+            loop.ds <- delta.ds(loop.delta, OH, deltaop, status)
+            #Insert second status check here?
+            out.data[,,,n,,][MF.idx] <- reconcile.hist.fut.leapdays(hist_mask, 
+                                                                    fut_mask[MF.idx], 
+                                                                    loop.ds)
           }else{
-            len.diff <- length(CF.data) - write.len + 1
-            #This needs an elese case for the case where there is *more* LH data
-            #than CF data at a given point.
+            len.diff <- out.len - write.len + 1
+            hist.idx <- 1:len.diff
+            MF.idx <- write.len:out.len
+            #This needs an elese case for the case where there is *more* OH data
+            #than MF data at a given point.
+            #...though maybe not if we are using entire vectors rather than compressed
             in.len <- len.diff
-            tempvec <- delta.downscale(LH[1:len.diff], CH[1:len.diff], 
-                                       CF.data[seq(from=write.len, to=length(CF.data))], 
-                                       deltatype, deltaop, ignore0.Delta,status=status)
-            if(!is.null(attr(tempvec, 'status'))){
-              out.status <- out.status + 1
-            }
+            loop.delta <- delta.train(MH[hist.idx], MF.data[MF.idx], 
+                                      deltatype, deltaop, ignore0.Delta, status)
+            #Insert status check here
+            loop.ds <- delta.ds(loop.delta, OH[hist.idx], deltaop, status)
+            #Insert second status check here?
+            out.data[,,,n,,][MF.idx] <- reconcile.hist.fut.leapdays(hist_mask[hist.idx], 
+                                                                    fut_mask[MF.idx], 
+                                                                    loop.ds)
           }
-          if(ignore0.Delta){
-            SDF[seq(from=write.len, to=(write.len + in.len - 1))] <- 0 #Set all vals to 0 first
-            sd.write.indices <- (write.len-1) + comp.indices
-            #Remove any that might lead to a longer write index
-            sd.write.indices <- sd.write.indices[sd.write.indices <= out.len] 
-            SDF[sd.write.indices] <- tempvec
-          }else{
-            if(length(tempvec) > 0){
-              SDF[seq(from=write.len, to=(write.len +length(tempvec)-1))] <- tempvec # length(tempvec)
-            }else{
-              print(summary(LH))
-              print(summary(CH))
-              print(summary(CF.data[write.len:(write.len + in.len)]))
-              stop(paste("Error in DeltaSD: you should not have reached this point!"))
-            }
-          }
-          write.len <- write.len + in.len
         }
       }
-      #Adjusted 11-4 to account for presence of missing value vectors
-      #being used to determine how many repetitions are needed for a delta
-      #Adjusted again 10-14-16 since there is now an assumption that your 
-      #ds methods keep track of missing values in the predictor dataset
-      ########################
-      #SDF <- SDF[!is.na(SDF)]
-      #num.na <- (sum(is.na(SDF)))
-      #######################
-      print(length(out.data[,,,n,,]))
-      print(length(SDF))
-      print(length(CF.data))
-      out <- rep(NA, length(CF.idx))
-      out[CF.idx] <- SDF
-      out.data[,,,n,,] <- out
-      if(out.status > 0){
-        #As of 10-14-16, replacing status setting with qcmask
-        if (train_qcmask){
-          #the below used to store the status return; for now, to keep 
-          #consistency with the other, more commonly-used training mask
-          #methods, we're replacing that with NA
-          qc.data[,,,n,,] <- NA 
-        }
-      }
+if(out.status > 0){
+  #As of 10-14-16, replacing status setting with qcmask
+  if (train_qcmask){
+    #the below used to store the status return; for now, to keep 
+    #consistency with the other, more commonly-used training mask
+    #methods, we're replacing that with NA
+    qc.data[,,,n,,] <- NA 
+  }
+}
     }
-    save(file="/home/cew/Code/h_testing//ds_debug/save/new_delta_ds.R", 
-         list=c('SDF', 'CF.idx', 'out.data', 'out'))
-    stop('examine output')
-    return(list(ds=out.data, qc=qc.data))
+#     save(file="/home/cew/Code/h_testing//ds_debug/save/new_delta_ds.R", 
+#          list=c('SDF', 'MF.idx', 'out.data', 'out'))
+#     stop('examine output')
+return(list(ds=out.data, qc=qc.data))
 }
 
-delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, 
-                            ignore0.Delta=FALSE, status=0){
+delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, ignore0.Delta){
+  #'Separates out the training step of delta downscaling (calculating deltas)
+  #'As of 2016-10, used to call delta training once per future rip available
+  #'Calls to ignore0.Delta are bing removed, since that option is now included
+  #'as part of the precipitation processing options
+  #'
+  if (all(is.na(delta.hist)) || all(is.na(delta.fut))){
+    print("Insufficient data to calculate a delta at this point; returning OH data")
+    if (deltaop=='add'){
+      return(0)
+    }else{
+      return(1)
+    }
+  }
+  
+  if(deltaop=='add'){
+    #Downscale by difference delta
+    delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
+  }else if(deltaop=='ratio'){
+    #Downscale by percentage delta (never negative, but occasionally NaN)
+    delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
+    #Loud warning message for divide-by-0 case
+    if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
+      message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
+                    "is either NaN or Inf and cannot be processed normally.",
+                    "Returning delta of 1 for the calculation."))
+      #Add a value flagging operation at this point
+      delta <- 1
+      #       out <- delta.targ
+      #       attr(out, 'status') <- 1
+      #       return(out)
+    }
+  }
+  return(delta)
+}
+
+delta.downscale <- function(delta, delta.targ, deltaop, status){
+  #Separates out the downscaling function for the delta method.
+  #Adds or multiples targ by delta; passed-in status have separate 
+  #effects.
+  if (deltaop=='add'){
+    ds = delta.targ + delta
+  }else if (deltaop=='ratio'){
+    ds = delta.targ*delta
+  }
+  return(ds)
+}
+
+add.hist.to.future <- function(hist_mask, fut_mask, data){
+  #Using pre-calcualted masks of Febrary 29ths, 
+  #adds historical data to the same calendar pattern
+  #as the future data, removing leapdays in hist when they
+  #do ot synMH and doubling Feb. 28 when there are leapdays
+  #in future not present in hist
+  #Assumes that missing values have not been removed from vectors
+  #and that your historic and future datasets can be resolved to the
+  #same length
+  out <- rep(NA, length(fut_data))
+  hist_leapdays <- which(!is.na(hist_mask))
+  fut_leapdays <- which(!is.na(fut_mask))
+  out[!(fut_leapdays)] <- hist_data[!(hist_leapdays)]
+  #Repeat Feb.28 for Feb. 29
+  out[fut_leapdays] <- out[(fut_leapdays-1)]
+  return(out)
+}
+
+delta.downscale.old <- function(delta.targ, delta.hist, delta.fut, deltatype, deltaop, 
+                                ignore0.Delta=FALSE, status=0){
   #Calculates a delta after removing NAs and applies it to a target vector.
   #Helper method for callDeltaSD, but might be used elsewhere.
   if(status > 0){
-    if(status==120){ #Check remove.delta.missvals for this value
+    if(status==120){ #check remove.delta.missvals for this value
       message('returning OH data without delta')
       return(delta.targ[1:length(delta.fut)])
     }
@@ -205,13 +230,13 @@ delta.downscale <- function(delta.targ, delta.hist, delta.fut, deltatype, deltao
     #message("Adding ignore0.Delta correction for the MF data: zero returned as MF for delta calculation")
     delta.fut <- 0
   }
-  #The na.rms are important in this step - it's possible, if there are more LH than CH samples in the case
+  #The na.rms are important in this step - it's possible, if there are more OH than MH samples in the case
   #where the future time period is longer than the historical time period, for missing values to get passed
-  #into the CH dataset. 
+  #into the MH dataset. 
   if(deltaop=='add'){
     #Downscale by difference delta
     delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
-    out <- delta.targ + delta #CHANGED FROM delta.fut
+    out <- delta.targ + delta #MHANGED FROM delta.fut
   }else if(deltaop=='ratio'){
     #Downscale by percentage delta (never negative, but occasionally NaN)
     delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
