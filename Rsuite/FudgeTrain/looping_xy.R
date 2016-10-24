@@ -101,7 +101,7 @@ loop.xy.data <- function(){
           remove(temp.output)
         }       
         #Loop by time window
-        for(w in 12:nmasks){
+        for(w in 1:nmasks){
           print(paste("Starting window", w, "of", nmasks))
           w <<- w
           qc.out <- NULL
@@ -209,10 +209,19 @@ loop.xy.data <- function(){
           remove(temp.postproc)
         }
         print(summary(as.vector(output.all$ds)))
-        stop('examine output')
+        print(dim(output.all$ds))
+#         print(summary(output.all$ds[1,1,,1,,]))
+#         print(summary(output.all$ds[1,1,,2,,]))
+#         print(summary(output.all$ds[1,1,,3,,]))
+#         stop('examine output')
       } 
     }#loop by y
   }#loop by x
+# print(summary(as.vector(output.all$ds[1,,,1,,])))
+# print(summary(as.vector(output.all$ds[1,,,2,,])))
+# print(summary(as.vector(output.all$ds[1,,,3,,])))
+# print(summary(as.vector(output.all$ds)))
+# stop('examine output')
   return(output.all)
 }
 

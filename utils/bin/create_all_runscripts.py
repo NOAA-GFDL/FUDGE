@@ -3,7 +3,7 @@ import os, stat
 from os import path as osp
 
 def create_all_runscripts(i_start, i_end, njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, 
-OH_by, MH_by, MF_by):
+OH_by, MH_by, MF_by, copy_leapmasks):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	mini_start = range(int(i_start), int(i_end), njobs)
@@ -85,9 +85,26 @@ OH_by, MH_by, MF_by):
 			tmask_files.append(trim_tmask)
 			dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"	
 			dmget_string = dmget_string + "dmget " + trim_tmask + "\n" 
+		if copy_leapmasks:	
+			#Need a historic and a future leapday mask file
+			leapmask_base = "/archive/esd//PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_missingleapdays_"
+			#Unfortunately, oh_timerange and mf_timerange can have '_ensmbl' tacked onto the end.
+			#That is never going to be present in the leapday masks.
+			#...I don't have to worry about _NOLEAP speficications at this point, 
+			#but that might be something to keep in mind for the future.
+			oh_leap_trange = re.sub("_ensmbl", "", oh_timerange)
+			mf_leap_trange = re.sub("_ensmbl", "", mf_timerange)
+			hist_leapmask = leapmask_base + oh_leap_trange + ".nc"
+			fut_leapmask  = leapmask_base + mf_leap_trange + ".nc"
+			leapmask_files = [hist_leapmask, fut_leapmask]
+			dmget_string = dmget_string + "# Get leapday masks" + "\n"
+			dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
+			dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
+		else:
+			leapmask_files = []
 	#do all of your gcps next
 	gcp_string = "# Copy all input files to $TMPDIR (-cd option creates input directories) " + "\n"
-	file_list = spatmask_files + tmask_files + oh_files + mh_files + mf_files
+	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files
 	for f in file_list:
 		gcp_string = gcp_string + "mkdir -p $TMPDIR/" + os.path.dirname(f) + " \n"
 		gcp_string = gcp_string + "gcp --sync " + f + " $TMPDIR/" + f + " \n"

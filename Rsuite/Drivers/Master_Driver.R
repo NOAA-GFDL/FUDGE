@@ -261,6 +261,8 @@ if (args[1]=='na'){
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
+print('summary of ds:')
+print(summary(ds))
 message("FUDGE downscaling ends")
 message(paste("FUDGE downscaling took", proc.time()[1]-start.time[1], "seconds to run"))
 

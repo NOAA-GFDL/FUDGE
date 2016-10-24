@@ -31,8 +31,9 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
     MF = MF[[1]]
     out.data <- array(NA, dim=dim(MF))
     #     #Remove missing values 
-    #     OH <- OH[!is.na(OH)]
-    #     MH <- MH[!is.na(MH)]
+        OH.data <- OH[!is.na(OH)]
+        MH.data <- MH[!is.na(MH)]
+        loop.hist.leapmask <- hist.leapday.mask[!is.na(OH)]
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
@@ -60,10 +61,13 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
       #Determine data to use when indexing against OH
       out.status <- 0
       MF.data <- MF[,,,n,,]
+      MF.idx <- !is.na(MF.data)
+      loop.fut.leapmask <- fut.leapday.mask[MF.idx]
+      MF.data <- MF.data[MF.idx]
       if (length(OH) >= length(MF.data)){
         OH.idx <- 1:length(MF.data) + ((n-1)*length(MF.data))
-        delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
-        ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
+        delta <- delta.train(MH.data, MF.data, deltatype, deltaop, ignore0.delta, status)
+        ds.out <- delta.downscale(delta, OH.data[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
@@ -75,13 +79,16 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
 #         print(sum(is.na(OH[OH.idx])))
 #         print(summary(ds.out))
 #         stop('examine data input')
-        ds.out <- reconcile.hist.fut.leapdays(hist.leapday.mask[OH.idx], 
-                                              fut.leapday.mask, 
+        ds.out <- reconcile.hist.fut.leapdays(#hist.leapday.mask[OH.idx], 
+                                              #fut.leapday.mask,
+                                              loop.hist.leapmask[OH.idx], 
+                                              loop.fut.leapmask,
                                               ds.out, 
                                               MF.data)
-        print('summary of ds.out')
-        print(summary(ds.out))
-        out.data[,,,n,,] <- ds.out
+        out.data[,,,n,,][MF.idx] <- ds.out
+# print('summary of ds.out')
+# print(summary(ds.out))
+# print(summary(out.data))
       }else{
         #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
         #where n=length(MF.data)/length(OH)
@@ -204,24 +211,35 @@ reconcile.hist.fut.leapdays <- function(hist_mask, fut_mask, hist_data, fut_data
   fut_days <- (!is.na(fut_mask) & !is.na(fut_data))
   #select elapdays in future
   fut_leapdays <- which(is.na(fut_mask))
-  print('before summary calls:')
-  print(summary(hist_data))
-  print(summary(hist_days))
-  print('hist days selection:')
-  save(file="/home/cew/Code/testing/test_out.R", 
-       list=c('hist_data', 'fut_data','hist_mask', 'fut_mask', 'hist_days', 'fut_days'))
-  print(summary(hist_data[hist_days]))
-  print(length(hist_days))
-  print(length(fut_days))
+#   print('before summary calls:')
+#   print(summary(hist_data))
+#   print(summary(hist_days))
+#   print('hist days selection:')
+#   save(file="/home/cew/Code/testing/test_out.R", 
+#        list=c('hist_data', 'fut_data','hist_mask', 'fut_mask', 'hist_days', 'fut_days'))
+#   print(summary(hist_data[hist_days]))
+#   print(length(hist_days))
+#   print(length(fut_days))
+  day_diff = sum(hist_days) - sum(fut_days)
+  if (day_diff!=0){
+    #If there are uneven numbers of leap days in the sample
+    if (day_diff < 0){
+      #if there are more nonleap days in future, repeat last sample in historical
+      hist_data <- c(hist_data, tail(hist_data, abs(day_diff)))
+    }else{
+      #If there are fewer nonleap days in future, remove last sample in historical
+      hist_data <- hist_data[1:(length(hist_data)-day_diff)]
+    }
+  }
   out[fut_days] <- hist_data[hist_days]
   #Repeat Feb.28 for Feb. 29
 #   print(length(fut_leapdays))
 #   print(length(out[fut_leapdays]))
 #   print(length(out[(fut_leapdays-1)]))
-print(summary(out))
-  out[fut_leapdays] <- out[(fut_leapdays-1)]
-print(summary(out))
-stop('examine out')
+# print(summary(out))
+   out[fut_leapdays] <- out[(fut_leapdays-1)]
+# print(summary(out))
+# stop('examine out')
   return(out)
 }
 

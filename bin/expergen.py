@@ -19,6 +19,8 @@ from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
 from get_pp_specs import get_pp_specs
+import get_ds_info
+from get_ds_info import get_ds_info
 
 list_title = []
 dictDS_hi = {}
@@ -576,13 +578,19 @@ def main():
 		
 	#############################################################
 	print "Step 0: Create the unified runcscripts and master runscripts"
+	#First check to see whether the leapday masks need to be copied...
+	copy_leapmasks = get_ds_info(method, basedir)
+	#print(copy_leapmasks)
+	#print('examine runscript output')
+	#sys.exit()
+	#Then, make the runscripts
 	oh_timerange = str(target_file_start_time) + "-" + str(target_file_end_time)
 	mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
 	predlist = predictor.split(",")
-	create_all_runscripts(lons, lone, njobs, ncpus, fudgetag, sbase, target_dir, hist_pred_dir, fut_pred_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spat_mask, target_time_window, hist_time_window, fut_time_window, auxcustom, outdir, target, method, file_j_range, idirsuffix, oh_by, mh_by, mf_by)
-#	print('examine runscript output')
-#	sys.exit()
+	create_all_runscripts(lons, lone, njobs, ncpus, fudgetag, sbase, target_dir, hist_pred_dir, fut_pred_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spat_mask, target_time_window, hist_time_window, fut_time_window, auxcustom, outdir, target, method, file_j_range, idirsuffix, oh_by, mh_by, mf_by, copy_leapmasks)
+	print('examine runscript output')
+	sys.exit()
 		
 	#############################################################
 	#sys.exit("examine outcome of script")  
