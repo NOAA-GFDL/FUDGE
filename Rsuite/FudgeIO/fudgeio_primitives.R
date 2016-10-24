@@ -329,10 +329,10 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   #'of the attribute table from the input 
   #'nc object and variable.
   attnames <- c('standard_name', 'long_name', 'units', 
-                'prec', 'calendar', 'filename', 'rips', 
+                'prec', 'filename', 'rips', 
                 'climatology')
   att.defaults <- c('', nc.var, "", 
-                    'float', "", '', "", 
+                    'float', '', "", 
                     NA)
   var.att.list <- list()
   #Get var atts
@@ -344,6 +344,17 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
     var.att.list[n] <- tmp.att$value
   }
   names(var.att.list) <- attnames
+  #Do the same thing for time atts (mostly jsut calendar)
+  time.attnames <- c('calendar')
+  for (n in 1:length(time.attnames)){
+    tmp.att <- ncatt_get(nc.obj, 'time', time.attnames[n])
+    if ( !(tmp.att$hasatt)){
+      tmp.att$value <- att.defaults[n]
+    }
+    var.att.list[time.attnames[n]] <- tmp.att$value
+  }
+  #...and the same thing for climatology.
+  
   #Add backstip for empty rip attribute
   if(var.att.list$rips==""){
     var.att.list$rips <- get.rip.data(nc.obj)

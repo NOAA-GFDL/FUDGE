@@ -1,10 +1,10 @@
-method_name,predictor_datasets,target_dataset,missval_method,multipt_method,oh_dimlist,mh_dimlist,mf_dimlist,reference
-lmstep,"MH, MF",OH,synchronous,squish,spatial,,temporal,
-lm,"MH, MF",OH,synchronous,squish,spatial,,temporal,
-CDFt,"OH, MH, MF",OH,distributional,squish,spatial,,temporal,
-CDFtmod,"OH, MH, MF",OH,distributional,squish,spatial,,temporal,
-DeltaSD,"OH, MH",MF,distributional,squish,,,"spatial,ensemble,temporal",
-BCQM,"OH, MH",MF,distributional,squish,spatial,,temporal,
-EDQM,"OH, MH, MF",OH,distributional,squish,spatial,,temporal,
-CFQM,"OH, MH",MF,distributional,squish,,,"spatial,ensemble,temporal",
-PARM,"MH, MF",OH,synchronous,squish,spatial,,temporal,
+"method_name","predictor_datasets","target_dataset","downscale_oh","missval_method","multipt_method","oh_dimlist","mh_dimlist","mf_dimlist","reference"
+"lmstep","MH, MF","OH",FALSE,"synchronous","squish","spatial",,"temporal",
+"lm","MH, MF","OH",FALSE,"synchronous","squish","spatial",,"temporal",
+"CDFt","OH, MH, MF","OH",FALSE,"distributional","squish","spatial",,"temporal","https://cran.r-project.org/web/packages/CDFt/index.html"
+"CDFtmod","OH, MH, MF","OH",FALSE,"distributional","squish","spatial",,"temporal","https://cran.r-project.org/web/packages/CDFt/index.html"
+"DeltaSD","OH, MH","MF",TRUE,"distributional","squish",,,"spatial,ensemble,temporal",
+"BCQM","MH, MF","OH",FALSE,"distributional","squish","spatial",,"temporal",
+"EDQM","OH, MH, MF","OH",FALSE,"distributional","squish","spatial",,"temporal","Li et.al. 2010"
+"CFQM","OH, MH","MF",TRUE,"distributional","squish",,,"spatial,ensemble,temporal",
+"PARM","MH, MF","OH",FALSE,"synchronous","squish","spatial",,"temporal","Stoner et.al. 2007"

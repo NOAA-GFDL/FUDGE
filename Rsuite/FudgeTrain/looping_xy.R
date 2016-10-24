@@ -68,11 +68,40 @@ loop.xy.data <- function(){
       time_mask_overlap = tmasks$time_mask_overlap
       ds.names <- c('MF')
       names(output) <- all.names
+      
       if ( !any(c( sapply(OH.slice, missing.all.xy), 
                    sapply(MH.slice, missing.all.xy), 
                    sapply(MF.slice, missing.all.xy))
       )){
-        for(w in 1:nmasks){
+        
+        #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
+        #looping by time window
+        message('Looking for pre-processing functions to apply')
+        if(length(pre.ds) !=0){
+          message('Applying S3 Adjustment')
+          temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
+                                          hist.pred=MH.slice, 
+                                          hist.targ=OH.slice,
+                                          fut.pred=MF.slice,
+                                          #this really needs a metadata call of some sort.
+                                          #how to pass it in? Pointer in global environment?
+                                          s5.instructions=post.ds, 
+                                          missval.args = missval.args)
+          #Assign output and remove temporary output
+          missval.args <- temp.output$missval.args
+          post.ds <- temp.output$s5.list
+          OH.slice <- temp.output$OH
+          MH.slice <- temp.output$MH
+          MF.slice <- temp.output$MF
+          if (!is.null(temp.output$qc)){
+            for (el in names(temp.output$qc)){
+              ds[[el]] <- temp.output$qc[[el]]
+            }
+          }
+          remove(temp.output)
+        }       
+        #Loop by time window
+        for(w in 12:nmasks){
           print(paste("Starting window", w, "of", nmasks))
           w <<- w
           qc.out <- NULL
@@ -87,31 +116,31 @@ loop.xy.data <- function(){
           }
           
           #Call section 3 methods; reassign output
-#           if (s3.inloop){
-#                 tmp.s3 <- callS3Adjustment(s3.instructions, 
-#                                            list(data=MH.window, 
-#                                                 metadata=OH$metdata), 
-#                                            list(data=OH.window, 
-#                                                 metadata=OH$metadata), 
-#                                            list(data=MF.window,
-#                                                 metadata=MF$metadata),
-#                                            s5.instructions, missval.args)
-#                 #s3 functions only return data, not metadata
-#                 #(there's only one function that changes metadata, and it is)
-#                 #dealt with by adding elements to the stack
-#                 OH.window <- tmp.s3$OH
-#                 MH.window <- tmp.s3$MH
-#                 MF.window <- tmp.s3$MF
-#                 s5.out <- tmp.s3$s5
-#                 if ('OH' %in% ds.names){
-#                   #Correction to remove leapdays present in OH but not MF
-#                   #This get used for Delta and CFQM
-#                   tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[w]], 
-#                                                      mask=delta.mask, 
-#                                                      dim='temporal')
-#                   OH.window <- apply.any.mask(data=OH.window, mask=tmp.ds.time.mask)
-#                 }
-#           }      
+          #           if (s3.inloop){
+          #                 tmp.s3 <- callS3Adjustment(s3.instructions, 
+          #                                            list(data=MH.window, 
+          #                                                 metadata=OH$metdata), 
+          #                                            list(data=OH.window, 
+          #                                                 metadata=OH$metadata), 
+          #                                            list(data=MF.window,
+          #                                                 metadata=MF$metadata),
+          #                                            s5.instructions, missval.args)
+          #                 #s3 functions only return data, not metadata
+          #                 #(there's only one function that changes metadata, and it is)
+          #                 #dealt with by adding elements to the stack
+          #                 OH.window <- tmp.s3$OH
+          #                 MH.window <- tmp.s3$MH
+          #                 MF.window <- tmp.s3$MF
+          #                 s5.out <- tmp.s3$s5
+          #                 if ('OH' %in% ds.names){
+          #                   #Correction to remove leapdays present in OH but not MF
+          #                   #This get used for Delta and CFQM
+          #                   tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[w]], 
+          #                                                      mask=delta.mask, 
+          #                                                      dim='temporal')
+          #                   OH.window <- apply.any.mask(data=OH.window, mask=tmp.ds.time.mask)
+          #                 }
+          #           }      
           #Call the downsaing method
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
@@ -157,11 +186,31 @@ loop.xy.data <- function(){
             }
           }
         }#Loop by w complete
+        ##bring together all time levels
         for (el in names(output)){
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
-      } #Check for any missing all vals at an x,y point
+        #Once looping by w complete, do the last s5 adjustment
+        #Call the Section 5 Adjustments to be applied to post-downscaled output
+        message("Calling Section 5 Adjustments")
+        if(length(post.ds) !=0){
+          temp.postproc <- callS5Adjustment(post.ds,
+                                            data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,],
+                                            hist.pred = MH.window,
+                                            hist.targ = OH.window,
+                                            fut.pred = MF.window)
+          #Your return should include a list of two elements - modified ds out, 
+          #and a list of qc masks
+          output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
+          if(qc.maskopts$qc.outloop){
+            output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
+          }
+          remove(temp.postproc)
+        }
+        print(summary(as.vector(output.all$ds)))
+        stop('examine output')
+      } 
     }#loop by y
   }#loop by x
   return(output.all)

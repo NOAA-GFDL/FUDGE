@@ -195,24 +195,38 @@ targ.dim <- switch(ds.ref$target,
                       'OH' = oh.dim, 
                       'MH' = mh.dim, 
                       'MF' = mf.dim)
+
+
+if (ds.ref$downscale_oh){
+  #Create global reference vectors for where leapdays are in the input
+  #historical and future datasets
+  hist.leapday.mask <<- get.leapday.mask(paste0(target.file.start.year_1, "-", 
+                                               target.file.end.year_1), 
+                                        OH$metadata[[1]]$calendar)
+  fut.leapday.mask <<- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
+                                              fut.file.end.year_1), 
+                                       MH$metadata[[1]]$calendar)
+}
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######
 ######################################################
 ###Hasty DeltaSD adjustment for asynchronous leap years
-delta.string <- ""
-if('OH'%in% ds.ref$predictors){
-  h.time.len <- oh.dim[6]
-  delta.adj.index <- correct.hist.leapdays(oh.dim[6],
-                                           mf.dim[6],
-                                           hist.file.start.year_1, hist.file.end.year_1,
-                                           fut.file.start.year_1, fut.file.end.year_1)
-  delta.mask <<- c(rep(NA, delta.adj.index[1]), 
-                   rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
-                   c(rep(NA, delta.adj.index[2])))
-  print(summary(delta.mask))
-  delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
-                        "to", delta.adj.index[4], "for the downscaling step")
-}
+###Hasty adjustment tentaively no longer needed as of 2016-20-21; 
+###now relying on internal DeltaSd call to adjust the leap days
+# delta.string <- ""
+# if('OH'%in% ds.ref$predictors){
+#   h.time.len <- oh.dim[6]
+#   delta.adj.index <- correct.hist.leapdays(oh.dim[6],
+#                                            mf.dim[6],
+#                                            hist.file.start.year_1, hist.file.end.year_1,
+#                                            fut.file.start.year_1, fut.file.end.year_1)
+#   delta.mask <<- c(rep(NA, delta.adj.index[1]), 
+#                    rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
+#                    c(rep(NA, delta.adj.index[2])))
+#   print(summary(delta.mask))
+#   delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
+#                         "to", delta.adj.index[4], "for the downscaling step")
+# }
 ######################################################
 
 ####Now that you have your input data, initialize your outputs.
@@ -228,33 +242,7 @@ ds <- list('ds' = array(NA, dim=output.dim),
            'qc' = array(NA, dim=output.dim))
 missval.args = list()
 
-message('Looking for pre-processing functions to apply')
-if(length(pre.ds) !=0){
-  message('Applying S3 Adjustment')
-  temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
-                                  hist.pred=MH, 
-                                  hist.targ=OH,
-                                  fut.pred=MF,
-#As tempting as it is to just passs the data (it makes some of the metadata)
-#operations simpler), you really do need the units for the pr operations.
-#                                   hist.pred = lapply(MH, '[', 'data'),
-#                                   hist.targ = lapply(OH, '[', 'data'),
-#                                   fut.pred = lapply(MF, '[', 'data'),
-                                  s5.instructions=post.ds, 
-                                  missval.args = missval.args)
-  #Assign output and remove temporary output
-  missval.args <- temp.output$missval.args
-  post.ds <- temp.output$s5.list
-  OH$data <- temp.output$OH$data
-  MH$data <- temp.output$MH$data
-  MF$data <- temp.output$MF$data
-  if (!is.null(temp.output$qc)){
-    for (el in names(temp.output$qc)){
-      ds[[el]] <- temp.output$qc[[el]]
-    }
-  }
-  remove(temp.output)
-}
+##s3 call formerly here
 
 message("FUDGE training begins...")
 message(paste("Starting at:", Sys.time()))
@@ -276,23 +264,7 @@ ds <- loop.xy.data()
 message("FUDGE downscaling ends")
 message(paste("FUDGE downscaling took", proc.time()[1]-start.time[1], "seconds to run"))
 
-#Call the Section 5 Adjustments to be applied to post-downscaled output
-message("Calling Section 5 Adjustments")
-if(length(post.ds) !=0){
-  temp.postproc <- callS5Adjustment(post.ds,
-                                    data = ds$ds,
-                                    hist.pred = lapply(MH, '[', 'data'),
-                                    hist.targ = lapply(OH, '[', 'data'),
-                                    fut.pred = lapply(MF, '[', 'data'))
-  #Your return should include a list of two elements - modified ds out, 
-  #and a list of qc masks
-  ds$ds <- temp.postproc$ds.out
-  if(qc.maskopts$qc.outloop){
-    ds$qc <- temp.postproc$qc.mask
-  }
-  remove(temp.postproc)
-}
-
+#s5 call used to go in here
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
 # rip.list <- lapply(att_table, '[[', 'rip')

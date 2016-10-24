@@ -5,14 +5,18 @@ getDSInfo <- function(ds.method){
 #  ds_sheet = "/home/cew/Code/h_testing//FudgeIO_reboot//ds_sheet//ds_att_sheet.csv"
   ds_sheet = "/home/cew/Code/fudge/Rsuite/aux/ds_att_sheet.csv"
   input <- read.csv(ds_sheet, header=T, stringsAsFactors=F)
+  print(input)
   method.names <- input$method_name
   if (! ds.method %in% method.names){
     stop(paste("Error in getDSInfo: method", ds.method, 
                "was not found in the metadata spreadshet!"))
     
   }
-  ds.idx <- which(ds.method %in% method.names)
+  ds.idx <- which(ds.method == method.names)
+  print(method.names)
+  print(ds.idx)
   ds.object <- list('method'         = ds.method, 
+                    'downscale_oh'   = eval(parse(text=input$downscale_oh[ds.idx])),
                     'predictors'     = csplit(input$predictors[ds.idx]), 
                     'target'         = input$target[ds.idx], 
                     'missval_method' = input$missval_method[ds.idx], 
