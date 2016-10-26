@@ -589,8 +589,8 @@ def main():
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
 	predlist = predictor.split(",")
 	create_all_runscripts(lons, lone, njobs, ncpus, fudgetag, sbase, target_dir, hist_pred_dir, fut_pred_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spat_mask, target_time_window, hist_time_window, fut_time_window, auxcustom, outdir, target, method, file_j_range, idirsuffix, oh_by, mh_by, mf_by, copy_leapmasks)
-	print('examine runscript output')
-	sys.exit()
+#	print('examine runscript output')
+#	sys.exit()
 		
 	#############################################################
 	#sys.exit("examine outcome of script")  

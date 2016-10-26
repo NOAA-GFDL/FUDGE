@@ -69,6 +69,8 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	mf_files = []
 	for pred_var in predlist:
 		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
+		print(os.listdir(mf_dir))
+		print(mf_timerange)
 		mf_file = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None][0]
 		mf_files.append(mf_file)
 		dmget_string = dmget_string + "dmget " + mf_file + " \n"

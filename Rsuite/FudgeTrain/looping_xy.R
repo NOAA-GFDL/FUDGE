@@ -145,26 +145,27 @@ loop.xy.data <- function(){
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
                                  missvals="distributional", 
-                                 minsample=1)
-          if(time_mask_overlap){
-            #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
-            ds.out <- list(ds=apply.fudge.tmask(data=tmp.ds$ds, 
-                                                mask=tmasks$trim$masks[[w]]))
-            qc.names <- names(tmp.ds)[names(tmp.ds)!='ds']
-            for (el in qc.names){
-              if(!is.null(tmp.ds[[el]])){
-                qc.out <- c(qc.out, 
-                            lapply(tmp.ds[[el]], #all non-ds outputs
-                                   'apply.fudge.tmask',         #gets same mask applied
-                                   mask=tmasks$trim$masks[[w]])
-                )
-              }
-            }
-          }else{
+                                 minsample=1, 
+                                 tmasks=tmasks)
+#           if(time_mask_overlap){
+#             #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
+#             ds.out <- list(ds=apply.fudge.tmask(data=tmp.ds$ds, 
+#                                                 mask=tmasks$trim$masks[[w]]))
+#             qc.names <- names(tmp.ds)[names(tmp.ds)!='ds']
+#             for (el in qc.names){
+#               if(!is.null(tmp.ds[[el]])){
+#                 qc.out <- c(qc.out, 
+#                             lapply(tmp.ds[[el]], #all non-ds outputs
+#                                    'apply.fudge.tmask',         #gets same mask applied
+#                                    mask=tmasks$trim$masks[[w]])
+#                 )
+#               }
+#             }
+#          }else{
             ds.out <- list(ds=tmp.ds$ds)
             qc.out <- c(qc.out, tmp.ds$qc)
             
-          }
+#          }
           #       #Call section 5 methods
           #       tmp.s5 <- callS5Adjustment(s5.instructions=s5.out,
           #                                  data = ds.out, 

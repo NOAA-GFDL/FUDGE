@@ -2,7 +2,7 @@
 #Main and helper functions for downscaling
 #with DeltaSD
 
-callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
+callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #over a single variable
@@ -30,10 +30,6 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
     MH = MH[[1]]
     MF = MF[[1]]
     out.data <- array(NA, dim=dim(MF))
-    #     #Remove missing values 
-        OH.data <- OH[!is.na(OH)]
-        MH.data <- MH[!is.na(MH)]
-        loop.hist.leapmask <- hist.leapday.mask[!is.na(OH)]
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
@@ -57,57 +53,55 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
     }else{
       stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
     }
+    start <- 1
+    oh_longer <- length(MF[,,,1,,]) < length(OH)
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
       MF.data <- MF[,,,n,,]
-      MF.idx <- !is.na(MF.data)
-      loop.fut.leapmask <- fut.leapday.mask[MF.idx]
-      MF.data <- MF.data[MF.idx]
-      if (length(OH) >= length(MF.data)){
-        OH.idx <- 1:length(MF.data) + ((n-1)*length(MF.data))
-        delta <- delta.train(MH.data, MF.data, deltatype, deltaop, ignore0.delta, status)
-        ds.out <- delta.downscale(delta, OH.data[OH.idx], deltaop, status)
+      if (oh_longer){
+        #Speciciations for this were created in main driver script when delta ds is used
+        MF.idx <- 1:length(MF)
+        if ((hist.year.div[nyears_fut*n]) <= hist.year.div[length(hist.year.div)]){
+          print(nyears_fut)
+          end <- start + nyears_fut - 1
+          OH.idx <- start:hist.year.div[nyears_fut * (n)]
+          start <- 1 + hist.year.div[nyears_fut * (n)]
+        }else{
+          #You have an odd modulo; wrap around to the beginning of OH
+          #...try to find a case that checks this logic.
+#           print('the weird case is triggered')
+#           print(n)
+#           print(start)
+#           print(start + hist.year.div[nyears_fut * n])
+          year_diff = nyears_hist - start
+          OH.idx <- c(hist.year.div[1]:hist.year.div[year_diff], 
+                      hist.year.div[start]:hist.year.div[length(hist.year.div)])
+        }
+        delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
+        ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
-#         print(length(MF.data))
-#         print(OH.idx[1:100])
-#         print(summary(OH[OH.idx]))
-#         print(length(OH[OH.idx]))
-#         print(summary(OH[OH.idx][!is.na(OH[OH.idx])]))
-#         print(sum(is.na(OH[OH.idx])))
-#         print(summary(ds.out))
-#         stop('examine data input')
-        ds.out <- reconcile.hist.fut.leapdays(#hist.leapday.mask[OH.idx], 
-                                              #fut.leapday.mask,
-                                              loop.hist.leapmask[OH.idx], 
-                                              loop.fut.leapmask,
-                                              ds.out, 
-                                              MF.data)
-        out.data[,,,n,,][MF.idx] <- ds.out
-# print('summary of ds.out')
-# print(summary(ds.out))
-# print(summary(out.data))
       }else{
         #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
         #where n=length(MF.data)/length(OH)
         write.len <- 1
         out.len <- length(MF.data)
         in.len <- length(OH)
+        OH.idx <- c()
+        ds.out <- c()
         #vector comparisons take a long time relative to other things
         while(write.len <= out.len){
-          #delta.downscale removes NAs in the output vector
           if((write.len + in.len) <= out.len){
             MF.idx <- write.len:(write.len+in.len)
             loop.delta <- delta.train(MH, MF.data[MF.idx], 
                                       deltatype, deltaop, ignore0.Delta, status)
             #Insert status check here
-            loop.ds <- delta.ds(loop.delta, OH, deltaop, status)
+            loop.ds <- delta.downscale(loop.delta, OH, deltaop, status)
+            OH.idx <- c(OH.idx, 1:length(OH))
+            ds.out <- c(ds.out, loop.ds)
             #Insert second status check here?
-            out.data[,,,n,,][MF.idx] <- reconcile.hist.fut.leapdays(hist.leapday.mask, 
-                                                                    fut.leapday.mask[MF.idx], 
-                                                                    loop.ds)
           }else{
             len.diff <- out.len - write.len + 1
             hist.idx <- 1:len.diff
@@ -119,29 +113,27 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0){
             loop.delta <- delta.train(MH[hist.idx], MF.data[MF.idx], 
                                       deltatype, deltaop, ignore0.Delta, status)
             #Insert status check here
-            loop.ds <- delta.ds(loop.delta, OH[hist.idx], deltaop, status)
+            loop.ds <- delta.downscale(loop.delta, OH[hist.idx], deltaop, status)
+            OH.idx <- c(OH.idx, hist.idx)
+            ds.out <- c(ds.out, loop.ds)
             #Insert second status check here?
-            out.data[,,,n,,][MF.idx] <- reconcile.hist.fut.leapdays(hist.leapday.mask[hist.idx], 
-                                                                    fut.leapday.mask[MF.idx], 
-                                                                    loop.ds)
           }
         }
       }
-if(out.status > 0){
-  #As of 10-14-16, replacing status setting with qcmask
-  if (train_qcmask){
-    #the below used to store the status return; for now, to keep 
-    #consistency with the other, more commonly-used training mask
-    #methods, we're replacing that with NA
-    qc.data[,,,n,,] <- NA 
-  }
-}
+      out.data[,,,n,,] <- index.delta(tmasks,OH.idx,
+                                      ds.out) 
+                                      #MF.data)
+      if(out.status > 0){
+        #As of 10-14-16, replacing status setting with qcmask
+        if (train_qcmask){
+          #the below used to store the status return; for now, to keep 
+          #consistency with the other, more commonly-used training mask
+          #methods, we're replacing that with NA
+          qc.data[,,,n,,] <- NA 
+        }
+      }
     }
-#     save(file="/home/cew/Code/h_testing//ds_debug/save/new_delta_ds.R", 
-#          list=c('SDF', 'MF.idx', 'out.data', 'out'))
-#     stop('examine output')
-print(summary(as.vector(out.data)))
-return(list(ds=out.data, qc=qc.data))
+    return(list(ds=out.data, qc=qc.data))
 }
 
 delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, ignore0.Delta, status){
@@ -211,18 +203,29 @@ reconcile.hist.fut.leapdays <- function(hist_mask, fut_mask, hist_data, fut_data
   fut_days <- (!is.na(fut_mask) & !is.na(fut_data))
   #select elapdays in future
   fut_leapdays <- which(is.na(fut_mask))
-#   print('before summary calls:')
-#   print(summary(hist_data))
-#   print(summary(hist_days))
-#   print('hist days selection:')
-#   save(file="/home/cew/Code/testing/test_out.R", 
-#        list=c('hist_data', 'fut_data','hist_mask', 'fut_mask', 'hist_days', 'fut_days'))
-#   print(summary(hist_data[hist_days]))
-#   print(length(hist_days))
-#   print(length(fut_days))
+  #   print('before summary calls:')
+  #   print(summary(hist_data))
+  #   print(summary(hist_days))
+  #   print('hist days selection:')
+  #   save(file="/home/cew/Code/testing/test_out.R", 
+  #        list=c('hist_data', 'fut_data','hist_mask', 'fut_mask', 'hist_days', 'fut_days'))
+  print(summary(hist_data[hist_days]))
+  print(sum(!is.na(hist_data)))
+  print(sum(!is.na(fut_data)))
+  print('length of hist days and fut days:')
+  print(rle(as.numeric(hist_days))$lengths)
+  print(rle(as.numeric(fut_days))$lengths)
+  print(length(hist_days))
+  print(length(fut_days))
   day_diff = sum(hist_days) - sum(fut_days)
   if (day_diff!=0){
     #If there are uneven numbers of leap days in the sample
+    print(sum(hist_days))
+    print(sum(fut_days))
+    print(mode(hist_days))
+    print(mode(fut_days))
+    print(day_diff)
+    stop('examine current output!')
     if (day_diff < 0){
       #if there are more nonleap days in future, repeat last sample in historical
       hist_data <- c(hist_data, tail(hist_data, abs(day_diff)))
@@ -233,13 +236,13 @@ reconcile.hist.fut.leapdays <- function(hist_mask, fut_mask, hist_data, fut_data
   }
   out[fut_days] <- hist_data[hist_days]
   #Repeat Feb.28 for Feb. 29
-#   print(length(fut_leapdays))
-#   print(length(out[fut_leapdays]))
-#   print(length(out[(fut_leapdays-1)]))
-# print(summary(out))
-   out[fut_leapdays] <- out[(fut_leapdays-1)]
-# print(summary(out))
-# stop('examine out')
+  print(length(fut_leapdays))
+  print(length(out[fut_leapdays]))
+  print(length(out[(fut_leapdays-1)]))
+  # print(summary(out))
+  out[fut_leapdays] <- out[(fut_leapdays-1)]
+  # print(summary(out))
+  # stop('examine out')
   return(out)
 }
 

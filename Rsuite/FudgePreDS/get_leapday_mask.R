@@ -35,3 +35,39 @@ gcp.tmpdir <- function(file, verbose=F){
   ret <- system2("gcp", c("-cd", file, gcp.file), stdout=T, stderr=T)
   return(gcp.file)
 }
+
+get.year.divisions <- function(start_string, end_string, calendar='julian'){
+  #Gets the location of all Januray 1sts in an input dataset
+  #based off of start and end strings
+  #i.e. 20951231
+  start_date <- paste(substr(start_string, 1, 4), 
+                      substr(start_string, 5, 6), 
+                      substr(start_string, 7, 8), sep="-")
+  end_date <- paste(substr(end_string, 1, 4), 
+                    substr(end_string, 5, 6), 
+                    substr(end_string, 7, 8), sep="-")
+  time_span <- as.numeric((get.PCICt.time.series(end_date, 0, calendar) - 
+                             get.PCICt.time.series(start_date, 0, calendar))/86400)
+  time.vals <- 0:(time_span)
+  time.dates <- get.PCICt.time.series(start_date, time.vals, calendar)
+#   print(time_span)
+#   print(time.dates[1:100])
+#   print(format(time.dates, '%m-%d')[1:100])
+  jan.dates <- which(format(time.dates, '%m-%d')=='12-31') #was 01-01
+  return(jan.dates)
+}
+
+get.PCICt.time.series <- function(origin, time.data, calendar){
+  #Returns a fast and dirty date conversion into the PCICt time
+  #series format, whcih contains noleap data
+  julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 'proleptic_gregorian')
+  if(calendar%in%julian.strings){
+    calendar <- 'gregorian'
+  }
+  seconds.per.day <- 86400
+  origin <- sub("days since ", "", origin)
+  origin <- sub(" 00:00:00", "", origin)
+  print(origin)
+  origin.pcict <- as.PCICt(origin, calendar)
+  return(origin.pcict + (time.data * seconds.per.day))
+}

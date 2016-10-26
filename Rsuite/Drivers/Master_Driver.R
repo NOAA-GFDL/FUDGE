@@ -205,7 +205,15 @@ if (ds.ref$downscale_oh){
                                         OH$metadata[[1]]$calendar)
   fut.leapday.mask <<- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
                                               fut.file.end.year_1), 
-                                       MH$metadata[[1]]$calendar)
+                                       MF$metadata[[1]]$calendar)
+  hist.year.div <<- get.year.divisions(target.file.start.year_1, 
+                                       target.file.end.year_1, 
+                                       OH$metadata[[1]]$calendar)
+  fut.year.div <<- get.year.divisions(fut.file.start.year_1, 
+                                      fut.file.end.year_1, 
+                                      MF$metadata[[1]]$calendar)
+  nyears_hist <<- length(unique(cut(1:oh.dim[6], breaks=hist.year.div)))
+  nyears_fut <<- length(unique(cut(1:mf.dim[6], breaks=fut.year.div)))
 }
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######

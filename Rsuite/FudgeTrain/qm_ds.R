@@ -4,27 +4,26 @@
 #(BCQM, CFQM, EDQM)
 #CFQMv2 is kept for reference purposes - it's been repalced by v3
 
-callQM <- function(OH, MH, MF, args, type=""){
+callQM <- function(OH, MH, MF, args, type="", tmasks=list()){
   out.data <- array(NA, dim=dim(MF[[1]]))
-  print(dim(out.data))
   nrips <- dim(out.data)[4]
+  #Prepare indexing mask
+  print(summary(tmasks))
+  if (tmasks$time_mask_overlap){
+    index.mask <- tmasks$trim$masks[[w]]
+    olap=T
+  }else{
+    index.mask <- tmasks$MF$masks[[w]]
+    olap=F
+  }
   for (n in 1:nrips){
     MF.slice <- MF[[1]][,,,n,,]
-    print(length(MF.slice))
-    print(summary(MF.slice))
     out <- switch(type, 
                   'BCQM' = callBCQMv2(OH[[1]], MH[[1]], MF.slice, args), 
                   'CFQM' = callCFQMv3(OH[[1]], MH[[1]], MF.slice, args), 
                   'EDQM' = callEDQMv2(OH[[1]], MH[[1]], MF.slice, args))
-    print(summary(out))
-    print(length(out))
-    print(length(out))
-    print(summary(out))
-    print(dim(out))
-    stop('examine output')
-  out.data[,,,n,,] <- out
+  out.data[,,,n,,] <- index.qm(index.mask, out, olap)
   }
- # print(summary(out.data))
   return(list(ds=out.data, qc=NULL))
 }
 
@@ -220,14 +219,7 @@ callBCQMv2<-function(LH,CH,CF,args){
        temp.CFsorted$ecdfCHqCF[1:cf.present]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
        temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
                                                         na.rm =T)
-#print('quantile rle:')
-      print(rle(is.na(temp.CFsorted$qLHecdfCHqCF)))
-# print('cf rle:')
-# print(rle(is.na(temp.CFsorted$CF)))
        temp<-temp.CFsorted[order(temp.CFsorted$index),]
-# print(summary(temp))
-# print(rle(is.na(temp$qLHecdfCHqCF)))
-# print(summary(temp$qLHecdfCHqCF[1:lengthCF]))
   return(temp$qLHecdfCHqCF[1:lengthCF])
 }
 
