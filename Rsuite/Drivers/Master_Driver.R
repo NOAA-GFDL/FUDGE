@@ -128,16 +128,12 @@ QCAdjustArguments(pre_ds, post_ds,
 # # spatial mask read check
 message("Checking for spatial masks vars")
 if(spat.mask.dir_1!="na"){
-  spat.mask.nc <- nc_open(file.path(spat.mask.dir_1, 
+  spat.mask.nc <- nc_open(file.path(dirname(spat.mask.dir_1), 
                                     paste0(spat.mask.var, ".nc")))
 }else{
   spat.mask.nc <- NULL
   message("no spatial mask included; skipping to next step")
 }
-
-#Create list of time masks for application
-message("Reading in and checking time windowing masks")
-tmask.list <- get.fudge.timemask.list()
 
 ### Now, access input data sets
 message("Reading in target data")
@@ -188,6 +184,11 @@ out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario
                                 fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
 out.filename <- file.path(output.dir, out.filename)
 
+#close spatial mask nc, if using
+if (!is.null(spat.mask.nc)){
+  nc_close(spat.mask.nc)
+}
+
 ###### Set target dataset for blind reference at a later point
 ###### (note: the clever delayed evaluation in getDSInfo() is not working)
 delayedAssign('TARG', eval(parse(text=ds.ref$target)))
@@ -196,25 +197,14 @@ targ.dim <- switch(ds.ref$target,
                       'MH' = mh.dim, 
                       'MF' = mf.dim)
 
+#Create list of time masks for application
+message("Reading in and checking time windowing masks")
+tmask.list <- get.fudge.timemask.list()
 
-if (ds.ref$downscale_oh){
-  #Create global reference vectors for where leapdays are in the input
-  #historical and future datasets
-  hist.leapday.mask <<- get.leapday.mask(paste0(target.file.start.year_1, "-", 
-                                               target.file.end.year_1), 
-                                        OH$metadata[[1]]$calendar)
-  fut.leapday.mask <<- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
-                                              fut.file.end.year_1), 
-                                       MF$metadata[[1]]$calendar)
-  hist.year.div <<- get.year.divisions(target.file.start.year_1, 
-                                       target.file.end.year_1, 
-                                       OH$metadata[[1]]$calendar)
-  fut.year.div <<- get.year.divisions(fut.file.start.year_1, 
-                                      fut.file.end.year_1, 
-                                      MF$metadata[[1]]$calendar)
-  nyears_hist <<- length(unique(cut(1:oh.dim[6], breaks=hist.year.div)))
-  nyears_fut <<- length(unique(cut(1:mf.dim[6], breaks=fut.year.div)))
-}
+message("Obtaining metadata for section 3 and 5 adjustments")
+adjust.metadata <- get.adjust.metadata(OH, MH, MF)
+missval.args <- list()
+
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######
 ######################################################

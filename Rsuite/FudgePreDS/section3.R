@@ -19,27 +19,27 @@
 #'@param var: The variable being downscaled. 
 #'------Parameters required for SBiasCorr-------
 #'#'@param data: The data undergoing a qc check/adjustment steps
-#'@param hist.pred: The historic predictor(s) of a downscaling run
-#'@param hist.targ: The historic target of a downscaling fun
-#'@param fut.pred: The future predcictor(s) of a downscaling run
+#'@param MH: The historic predictor(s) of a downscaling run
+#'@param OH: The historic target of a downscaling fun
+#'@param MF: The future predcictor(s) of a downscaling run
 #'------Parameters related to time windowing----
 #'
 #'@returns A vector of values for the time series at the individual x,y, point
 #'with 0 for all values that did not pass the test and 1 for all values that did.
 
 callS3Adjustment<-function(s3.instructions=list('na'),
-                   hist.pred = NA, 
-                   hist.targ = NA, 
-                   fut.pred = NA, 
-                           att.list=NA,
+                   MH = NA, 
+                   OH = NA, 
+                   MF = NA, 
+                   adjust.metadata=list(),
                    create.qc.mask=FALSE, create.adjust.out=FALSE, 
                    s5.instructions=list('na'), 
                    missval.args = list()){
   #Create list of variables that will not change with iteration
-  #input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred)
+  #input<- list('MH' = MH, 'OH' = OH, 'MF' = MF)
   #Define data that will change with iteration
-  adjusted.list <- list(input=list('MH' = hist.pred, 'hist.targ' = OH, 'fut.pred' = MF, 
-                                   'att.list'=att.list), 
+  adjusted.list <- list(input=list('MH' = MH, 'OH' = OH, 'MF' = MF, 
+                                   'att.list'=adjust.metadata), 
                         s5.list=s5.instructions, 
                         missval.args=missval.args)
   #print(paste("lenght of section 3 instructions:", length(s3.instructions)))
@@ -59,14 +59,14 @@ callS3Adjustment<-function(s3.instructions=list('na'),
   return(adjusted.list)
 }
 
-callPRPreproc <- function(test, input, postproc.output){
+callPRPreproc <- function(test, input, postproc.output, missval.args){
   #Outputs a set of adjusted input datasets
   #as output by the precipitation adjustment
   #functions
   #Note: you get truly SPECTACULAR fatal errors if one of the units values
   #passed to the function is null.
   ##Revising 4-14 for the 
-  #att_table in input$att.list, and is further organized by hist.pred, hist.targ and fut.pred
+  #att_table in input$att.list, and is further organized by MH, OH and MF
   
   pr.names <- (names(test$pp.args))
   #Obtain function args
@@ -87,51 +87,46 @@ callPRPreproc <- function(test, input, postproc.output){
     apply.0.mask=FALSE
   }
   #Select the variables of interest, and put them through the pr pre_processing function
-  var <- names(input$att.list$hist.targ)
-  #Insert looping by RIP in this section
-  rip.list <- lapply(input$att.list$fut.pred, '[[', 'rip')
-  rips <- unique(rip.list)
-  for (rip in rips){
-    #at the end, instructions are unchanged
-    fut.pred.var <- paste0(var, ".", rip)
-    if(is.null(input$att.list$fut.pred[[fut.pred.var]]$units)){
-      stop(paste("Error in callPRPreproc: one of the required units attributes was null!"))
-    }
-    #     save(file="~/Code/testing/test_out.R", list=c('input'))
-    #     stop('examine input and adjust the error message')
-    temp.out <- AdjustWetdays(ref.data=input$hist.targ,            ref.units=input$att.list$hist.targ[[var]]$units, 
-                              adjust.data=input$hist.pred[[1]],  adjust.units=input$att.list$hist.pred[[1]]$units, #temporarily hard-coded; will work for next 3 mons.
-                              #Looping by rip makes future predictor more complicated, but not anything else (yet)
-                              adjust.future=input$fut.pred[[fut.pred.var]], 
-                              adjust.future.units=input$att.list$fut.pred[[fut.pred.var]]$units,
+  pr_target <- input$att.list$pr_oh
+  nrips <- dim(input$MF[[pr_target]])[4]
+  print(pr_target)
+  print(nrips)
+  print(dim(input$MF[[pr_target]]))
+  print(summary(input$MF[[pr_target]]))
+  print(input$att.list)
+  for (n in 1:nrips){
+    MF.slice <- input$MF[[pr_target]][,,n,,,]
+    temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],            ref.units=input$att.list$pr_oh_units, 
+                              adjust.data=input$MH[[pr_target]],    adjust.units=input$att.list$pr_mh_units[pr_target],
+                              adjust.future=MF.slice, 
+                              adjust.future.units=input$att.list$pr_mf_units[pr_target],
                               opt.wetday=threshold, 
                               lopt.drizzle=lopt.drizzle, 
                               lopt.conserve=lopt.conserve, 
                               zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now
-    #Add back into the original structure
-    if(rip==rip.list[length(rip.list)]){
-      #Added 10-27: only adjust in place if on the last rip being used! adds extra wet days to subsequent data
-      input$hist.targ        <- temp.out$ref$data   #only a single target variable
-      input$hist.pred[[1]]   <- temp.out$adjust$data
+    if (n==nrips){
+      input$OH        <- temp.out$ref$data   #only a single target variable
+      input$MH[[1]]   <- temp.out$adjust$data
       if(apply.0.mask){
         tmp.ref <- temp.out$ref$pr_mask
         tmp.adj <- temp.out$adjust$pr_mask
         tmp.ref[tmp.ref==0] <- NA
         tmp.adj[tmp.adj==0] <- NA
-        input$hist.targ        <- (temp.out$ref$data   * tmp.ref)
-        input$hist.pred <- lapply(input$hist.pred, "*", tmp.adj)
+        input$OH        <- (temp.out$ref$data   * tmp.ref)
+        input$MH <- lapply(input$MH, "*", tmp.adj)
       }
-    }    
+    }
+  }  
     missval.args <- list(OH=temp.out$ref$pr_mask, 
                          MH=temp.out$adjust$pr_mask, 
                          MF=temp.out$future$pr_mask)
-    input$fut.pred[[fut.pred.var]]  <- temp.out$future$data
+    input$MF[[MF.var]]  <- temp.out$future$data
     if(apply.0.mask){
       #This should make sure that when extra missing values are added, all datasets
       #in the predictor datasets will have the missing values added back in
       tmp.fut <- temp.out$future$pr_mask
       tmp.fut[tmp.fut==0] <- NA
-      input$fut.pred [[fut.pred.var]] <- input$fut.pred[[fut.pred.var]] * tmp.fut
+      input$MF [[MF.var]] <- input$MF[[MF.var]] * tmp.fut
       #Save future pr mask fo application in section 5;
       #note that it is the presence of this mask that 
       #leads to the adjustment being performed.
@@ -149,10 +144,9 @@ callPRPreproc <- function(test, input, postproc.output){
     if(apply.0.mask){
       postproc.output$propts <- pr_mod
     }
-  }
-  # print(lapply(input$hist.pred, 'summary'))
-  # print(summary(input$hist.targ))
-  # print(lapply(input$fut.pred, 'summary'))
+  # print(lapply(input$MH, 'summary'))
+  # print(summary(input$OH))
+  # print(lapply(input$MF, 'summary'))
 #   print(summary(pr_mod$qc_args$targ.prmask))
 #   print(dim((pr_mod$qc_args$targ.prmask)))
 #   print(summary(as.vector(pr_mod$qc_args$targ.prmask[,,c(seq(1:3652))])))
@@ -168,7 +162,7 @@ callPRTransform <- function(test, input, postproc.output){
   
   #Insert check for presence of transfrom in here at a later point
   tform <- test$pp.args$transform
-  ds.var <- names(input$att.list$hist.targ)
+  ds.var <- names(input$att.list$OH)
   transform.vars <- test$pp.args$vars
   
   #Do a basic check for the presence of the variables you want to check  

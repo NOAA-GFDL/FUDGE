@@ -85,7 +85,7 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE,
     listout$dim <- dim.list$dim
     listout$vars <- dim.list$vars
   }
-  nc_close(mask.nc)
+  #nc_close(mask.nc)
   return(listout)
 }
 

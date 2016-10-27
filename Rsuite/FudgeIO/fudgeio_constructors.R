@@ -1,5 +1,6 @@
 build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.indices=NA, 
-                               subset=list(), dim=NA, verbose=F){
+                               subset=list(), dim=NA, 
+                               var_classification=F, verbose=F){
   #'Builds the data structures that we are intersted in
   #'for getting data in a form that's parsable by FUDGE
   
@@ -32,7 +33,6 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
     #We are going to buils separate structures for data and metadata
     
     #data: 
-    print(subset)
     var.data <- obtain.fudge.var(nc.obj, nc.var, subset)
     
     #metadata:
@@ -82,6 +82,35 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   }
   #In the main FUDGE workflow, we are ALWAYS going to want a pointer to the
   #metadata object - it has the potential to get large and messy
+  
+  #Add metadata propertioes of var based off of lookup table
+  if (var_classification){
+    print('var clasification added')
+    var.table <- paste0(FUDGEROOT, "Rsuite/aux/var_att_sheet.csv")
+    if (! file.exists(var.table)){
+      stop(paste("Error in build.fudge.object: var_slassification was true, but", 
+                 var.table, "was not found!"))
+    }else{
+      #open table
+      input <- read.csv(var.table, header=T, stringsAsFactors=F)
+      table_varnames <- input$var_name
+      properties <- c('is_precip')
+      defaults <- list(is_precip = F)
+      for (var in varnames){
+        if (! var %in% table_varnames){
+          print(paste(var, 'not found in lookup table; using defaults'))
+          for (el in properties){
+            fudge.metadata[[var]][[el]] <- defaults[[el]]
+          }
+        }else{
+          var.idx <- which(table_varnames==var)
+          for (el in properties){
+            fudge.metadata[[var]][[el]] <- input[[el]][[var.idx]]
+          }
+        }
+      }
+    }
+  }
   return(list(data=fudge.data, metadata=fudge.metadata))
 }
 

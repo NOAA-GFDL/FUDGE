@@ -10,7 +10,7 @@ get.fudge.timemask.list <- function(){
   time_mask_overlap = F
   apply_tmasks = T
   nmasks <- 1
-  tmask.list.names <- c("train.pred", "train.targ", "fut.pred")
+  #tmask.list.names <- c("train.pred", "train.targ", "fut.pred")
   tmask.list.names <- c("MH", "OH", "MF")
   #Either all data will use a time-windowing mask, or none will use it. 
   if (ds.ref$train_and_use_same){ 
@@ -86,8 +86,8 @@ get.fudge.timemask.list <- function(){
     tmask.list$fut.year.div <- get.year.divisions(fut.file.start.year_1, 
                                         fut.file.end.year_1, 
                                         MF$metadata[[1]]$calendar)
-    tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=hist.year.div)))
-    tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=fut.year.div)))
+    tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
+    tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
   }
   ###Set booleans for handy access
   tmask.list$time_mask_overlap <- time_mask_overlap

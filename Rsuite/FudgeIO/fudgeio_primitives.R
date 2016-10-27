@@ -89,9 +89,8 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
     dim.order[n] <- dim.loc
     if (any(names(subset) %in% name.list[[n]])){
       dim.subset <- subset[[which(names(subset) %in% name.list[[n]])]]
-      print(dim.subset)
-      dim.start <- c(dim.start, dim.subset[1])
-      dim.count <- c(dim.count, diff(dim.subset)+1)
+      dim.start <- c(dim.start, dim.subset[[1]])
+      dim.count <- c(dim.count, (dim.subset[[2]]-dim.subset[[1]])+1)
     }else{
       dim.start <- c(dim.start, 1)
       dim.count <- c(dim.count, (-1))
@@ -139,9 +138,8 @@ obtain.fudge.mask.var <- function(obj.nc, nc.var, subset=list()){
     dim.order[n] <- dim.loc
     if (any(names(subset) %in% name.list[[n]])){
       dim.subset <- subset[[which(names(subset) %in% name.list[[n]])]]
-      print(dim.subset)
       dim.start <- c(dim.start, dim.subset[1])
-      dim.count <- c(dim.count, diff(dim.subset)+1)
+      dim.count <- c(dim.count, (dim.subset[2] - dim.subset[1])+1)
     }else{
       dim.start <- c(dim.start, 1)
       dim.count <- c(dim.count, (-1))

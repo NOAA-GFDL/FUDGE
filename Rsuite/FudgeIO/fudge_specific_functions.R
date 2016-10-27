@@ -6,13 +6,16 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, input_by, spat.
   #Wrapper function for reading in and verifying input data.
   #calls build.fudge.object (general io constructor)
   #and then pads the result with chosen pad, if the subset overlaps the end of the dataset
-  print(summary(subset))
-  print(lapply(subset, '[[', 'subset'))
-  out <- build.fudge.object(data.path, var=varlist, subset=lapply(subset, '[[', 'subset'), dim=dim)
-  message("Applying spatial mask to dataset")
+  out <- build.fudge.object(data.path, var=varlist, subset=lapply(subset, '[[', 'subset'), dim=dim, 
+                            var_classification=T)
   if(!is.null(spat.mask.nc)){
-    out.spatmask <- ReadMaskNC(spat.mask.nc, subset=lapply(subset, '[', 'subset'))
-    out <- apply.fudge.spatmask(data=out, mask=out.spatmask$masks[[1]])
+    message("Applying spatial mask to dataset")
+    print(spat.mask.nc)
+    out.spatmask <- ReadMaskNC(spat.mask.nc, subset=lapply(subset, '[[', 'subset'))
+    for (el in names(out$data)){
+      out$data[[el]] <- apply.any.mask(data=out$data[[el]], mask=out.spatmask$masks[[1]], dim='spatial')
+    }
+    #out <- apply.any.mask(data=out, mask=out.spatmask$masks[[1]], dim='spatial')
   }
   #If by > 1, always pad each var along the y axis
   #This goes for vars meant to be 1-d (like ENSO)

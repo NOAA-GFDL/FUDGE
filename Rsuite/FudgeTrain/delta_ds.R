@@ -53,8 +53,13 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
     }else{
       stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
     }
+    if(!tmasks$time_mask_overlap){
+      index.mask <- tmasks$MF$masks[[w]]
+    }else{
+      index.mask <- tmasks$trim$masks[[w]]
+    }
     start <- 1
-    oh_longer <- length(MF[,,,1,,]) < length(OH)
+    oh_longer <- length(MF[,,,1,,]) <= length(OH)
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
@@ -62,11 +67,11 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
         MF.idx <- 1:length(MF)
-        if ((hist.year.div[nyears_fut*n]) <= hist.year.div[length(hist.year.div)]){
-          print(nyears_fut)
-          end <- start + nyears_fut - 1
-          OH.idx <- start:hist.year.div[nyears_fut * (n)]
-          start <- 1 + hist.year.div[nyears_fut * (n)]
+        if ((tmasks$hist.year.div[tmasks$nyears_fut*n]) <= tmasks$hist.year.div[length(tmasks$hist.year.div)]){
+          print(tmasks$nyears_fut)
+          end <- start + tmasks$nyears_fut - 1
+          OH.idx <- start:tmasks$hist.year.div[tmasks$nyears_fut * (n)]
+          start <- 1 + tmasks$hist.year.div[tmasks$nyears_fut * (n)]
         }else{
           #You have an odd modulo; wrap around to the beginning of OH
           #...try to find a case that checks this logic.
@@ -74,9 +79,9 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
 #           print(n)
 #           print(start)
 #           print(start + hist.year.div[nyears_fut * n])
-          year_diff = nyears_hist - start
-          OH.idx <- c(hist.year.div[1]:hist.year.div[year_diff], 
-                      hist.year.div[start]:hist.year.div[length(hist.year.div)])
+          year_diff = tmasks$nyears_hist - start
+          OH.idx <- c(tmasks$hist.year.div[1]:tmasks$hist.year.div[year_diff], 
+                      tmasks$hist.year.div[start]:tmasks$hist.year.div[length(tmasks$hist.year.div)])
         }
         delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
         ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
@@ -120,7 +125,10 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
           }
         }
       }
-      out.data[,,,n,,] <- index.delta(tmasks,OH.idx,
+      out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
+                                      tmasks$fut.leapmask, 
+                                      tmasks$OH$masks[[w]][OH.idx],
+                                      index.mask,
                                       ds.out) 
                                       #MF.data)
       if(out.status > 0){

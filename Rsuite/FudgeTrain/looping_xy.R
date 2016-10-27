@@ -80,11 +80,12 @@ loop.xy.data <- function(){
         if(length(pre.ds) !=0){
           message('Applying S3 Adjustment')
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
-                                          hist.pred=MH.slice, 
-                                          hist.targ=OH.slice,
-                                          fut.pred=MF.slice,
+                                          MH=MH.slice, 
+                                          OH=OH.slice,
+                                          MF=MF.slice,
                                           #this really needs a metadata call of some sort.
                                           #how to pass it in? Pointer in global environment?
+                                          adjust.metadata,
                                           s5.instructions=post.ds, 
                                           missval.args = missval.args)
           #Assign output and remove temporary output
@@ -142,6 +143,7 @@ loop.xy.data <- function(){
           #                 }
           #           }      
           #Call the downsaing method
+          print('calling ds')
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
                                  missvals="distributional", 

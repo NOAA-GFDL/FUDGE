@@ -5,7 +5,6 @@ getDSInfo <- function(ds.method){
 #  ds_sheet = "/home/cew/Code/h_testing//FudgeIO_reboot//ds_sheet//ds_att_sheet.csv"
   ds_sheet = "/home/cew/Code/fudge/Rsuite/aux/ds_att_sheet.csv"
   input <- read.csv(ds_sheet, header=T, stringsAsFactors=F)
-  print(input)
   method.names <- input$method_name
   if (! ds.method %in% method.names){
     stop(paste("Error in getDSInfo: method", ds.method, 
