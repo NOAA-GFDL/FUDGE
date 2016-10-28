@@ -1,30 +1,5 @@
-combine.over.missvals <- function(x){
-  #Combines a vector with a set of values that do not overlap into a 
-  #single vector of data; if missing values overlap, returns an error.
-  #Not currently used by anything because it isn't working; needs either 
-  #a version of this or the addition that makes all missing values NA for the
-  #full workflow.
-  which.notna <- which(!is.na(x))
-  if (length(which.notna)==1){
-    return(which.notna)
-  }else if (length(which.notna)==0){
-    return(NA)
-  }else{
-    stop(paste("Error in combine.over.missvals: more than one val was not missing!"))
-  }
-}
-
-missing.all.xy <- function(dataset){
-  #Convenience function for checking whether there are any 
-  #non-missing values at each x,y point to downscale over.
-  #Missing all values at any point is enough to disqualify
-  #the x,y loop from downscaling.
-  return(as.vector(apply(dataset, c(1,2), 
-                         function(x){
-                           !any(!is.na(x))
-                         })
-  ))
-}
+#Driver function for looping over x,y,tmask points
+#Currently called from global environment in master driver
 
 loop.xy.data <- function(){
   #This is with the new downscaling object structure
@@ -39,10 +14,10 @@ loop.xy.data <- function(){
   print(dim(output.all[[1]]))
   names(output.all) <- c("ds")
   for (ival in 1:x.len){
-    print(paste("Starting i loop", ival, 'of', x.len))
+    message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
-    for(jval in 1:y.len){ #y.len
-      print(paste("Starting j loop", jval, 'of', y.len))
+    for(jval in 57:57){ #1:y.len
+      message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
@@ -88,19 +63,24 @@ loop.xy.data <- function(){
                                           adjust.metadata,
                                           s5.instructions=post.ds, 
                                           missval.args = missval.args)
+#           print(summary(temp.output))
+#           print(lapply(temp.output, summary))
           #Assign output and remove temporary output
           missval.args <- temp.output$missval.args
           post.ds <- temp.output$s5.list
-          OH.slice <- temp.output$OH
-          MH.slice <- temp.output$MH
-          MF.slice <- temp.output$MF
-          if (!is.null(temp.output$qc)){
+          OH.slice <- temp.output$input$OH
+          MH.slice <- temp.output$input$MH
+          MF.slice <- temp.output$input$MF
+          if (!is.null(temp.output$input$qc)){
             for (el in names(temp.output$qc)){
               ds[[el]] <- temp.output$qc[[el]]
             }
           }
           remove(temp.output)
-        }       
+        }
+#         print(summary(OH.slice))
+#         print(summary(MH.slice))
+#         print(summary(MF.slice))
         #Loop by time window
         for(w in 1:nmasks){
           print(paste("Starting window", w, "of", nmasks))
@@ -146,8 +126,9 @@ loop.xy.data <- function(){
           print('calling ds')
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
-                                 missvals="distributional", 
+                                 missvals=ds.ref$missval_method, 
                                  minsample=1, 
+                                 missval.args=missval.args,
                                  tmasks=tmasks)
 #           if(time_mask_overlap){
 #             #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
@@ -226,6 +207,34 @@ loop.xy.data <- function(){
 # print(summary(as.vector(output.all$ds)))
 # stop('examine output')
   return(output.all)
+}
+
+combine.over.missvals <- function(x){
+  #Combines a vector with a set of values that do not overlap into a 
+  #single vector of data; if missing values overlap, returns an error.
+  #Not currently used by anything because it isn't working; needs either 
+  #a version of this or the addition that makes all missing values NA for the
+  #full workflow.
+  which.notna <- which(!is.na(x))
+  if (length(which.notna)==1){
+    return(which.notna)
+  }else if (length(which.notna)==0){
+    return(NA)
+  }else{
+    stop(paste("Error in combine.over.missvals: more than one val was not missing!"))
+  }
+}
+
+missing.all.xy <- function(dataset){
+  #Convenience function for checking whether there are any 
+  #non-missing values at each x,y point to downscale over.
+  #Missing all values at any point is enough to disqualify
+  #the x,y loop from downscaling.
+  return(as.vector(apply(dataset, c(1,2), 
+                         function(x){
+                           !any(!is.na(x))
+                         })
+  ))
 }
 
 

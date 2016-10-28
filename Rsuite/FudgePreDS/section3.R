@@ -55,6 +55,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                             stop(paste('Adjustment Method Error: method', test$type, 
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }
+  print(lapply(adjusted.list, 'summary'))
   #stop('examine this output')
   return(adjusted.list)
 }
@@ -94,53 +95,58 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
   print(dim(input$MF[[pr_target]]))
   print(summary(input$MF[[pr_target]]))
   print(input$att.list)
-  for (n in 1:nrips){
-    MF.slice <- input$MF[[pr_target]][,,n,,,]
-    temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],            ref.units=input$att.list$pr_oh_units, 
-                              adjust.data=input$MH[[pr_target]],    adjust.units=input$att.list$pr_mh_units[pr_target],
-                              adjust.future=MF.slice, 
-                              adjust.future.units=input$att.list$pr_mf_units[pr_target],
+#   for (n in 1:nrips){
+#    MF.slice <- input$MF[[pr_target]][,,n,,,]
+    temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],   ref.units=input$att.list$pr_oh_units, 
+                              adjust.data=input$MH[[pr_target]],adjust.units=input$att.list$pr_mh_units[pr_target],
+                              future.data=input$MF[[pr_target]],future.units=input$att.list$pr_mf_units[pr_target],
                               opt.wetday=threshold, 
                               lopt.drizzle=lopt.drizzle, 
                               lopt.conserve=lopt.conserve, 
                               zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now
-    if (n==nrips){
-      input$OH        <- temp.out$ref$data   #only a single target variable
-      input$MH[[1]]   <- temp.out$adjust$data
+#     if (n==nrips){
+print(summary(temp.out))
+print(lapply(temp.out, summary))
+      input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
+      input$MH[[pr_target]] <- temp.out$adjust$data
+      input$MF[[pr_target]] <- temp.out$future$data
       if(apply.0.mask){
         tmp.ref <- temp.out$ref$pr_mask
         tmp.adj <- temp.out$adjust$pr_mask
         tmp.ref[tmp.ref==0] <- NA
         tmp.adj[tmp.adj==0] <- NA
-        input$OH        <- (temp.out$ref$data   * tmp.ref)
-        input$MH <- lapply(input$MH, "*", tmp.adj)
-      }
-    }
-  }  
-    missval.args <- list(OH=temp.out$ref$pr_mask, 
+        print(summary(input$OH[[pr_target]]))
+        print(summary(tmp.ref))
+        input$OH[[pr_target]] <- (input$OH[[pr_target]]   * tmp.ref)
+        for (el in input$att.list$pr_mh){
+          input$MH[[el]] <- input$MH[[el]] * tmp.adj
+        }
+        #This should make sure that when extra missing values are added, all datasets
+        #in the predictor datasets will have the missing values added back in
+        tmp.fut <- temp.out$future$pr_mask
+        tmp.fut[tmp.fut==0] <- NA
+        for (el in input$att.list$pr_mf){
+          input$MF [[el]] <- input$MF[[el]] * tmp.fut
+        }
+        #Save future pr mask fo application in section 5;
+        #note that it is the presence of this mask that 
+        #leads to the adjustment being performed.
+        if(!(ds.ref$downscale_oh)){
+          print(paste('adding future prmask'))
+          fut.prmask <- temp.out$future$pr_mask
+          pr_mod$qc_args$fut.prmask <- fut.prmask
+        }else{
+          #Assume that you are downsciang on the OH dataset instead; store accordingly
+          print(paste('adding target prmask'))
+          pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
+        }
+      } 
+    missval.args$pr <-list(OH=temp.out$ref$pr_mask, 
                          MH=temp.out$adjust$pr_mask, 
-                         MF=temp.out$future$pr_mask)
-    input$MF[[MF.var]]  <- temp.out$future$data
-    if(apply.0.mask){
-      #This should make sure that when extra missing values are added, all datasets
-      #in the predictor datasets will have the missing values added back in
-      tmp.fut <- temp.out$future$pr_mask
-      tmp.fut[tmp.fut==0] <- NA
-      input$MF [[MF.var]] <- input$MF[[MF.var]] * tmp.fut
-      #Save future pr mask fo application in section 5;
-      #note that it is the presence of this mask that 
-      #leads to the adjustment being performed.
-      if(sum(grepl('MF', ds.names)) > 0){
-        print(paste('adding future prmask for rip', rip))
-        fut.prmask <- temp.out$future$pr_mask
-        pr_mod$qc_args$fut.prmask[[rip]] <- fut.prmask
-      }else{
-        #Assume that you are downsciang on the OH dataset instead; store accordingly
-        print(paste('adding target pr mask for rip', rip))
-        #targ.prmask <-  temp.out$ref$pr_mask
-        pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
-      }
-    }
+                         MF=temp.out$future$pr_mask, 
+                         pr_oh = input$att.list$pr_oh, 
+                         pr_mh = input$att.list$pr_mh, 
+                         pr_mf = input$att.list$pr_mf)
     if(apply.0.mask){
       postproc.output$propts <- pr_mod
     }

@@ -1,4 +1,4 @@
-callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F){
+callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list()){
   #At least this one doesn't have to deal with multiple points - 
   # everything is going to be vectors of length 1.
   #' Calls the GFDL-specific modified CDFt (Vrac et. al 2009) on a single variable
@@ -28,12 +28,23 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F){
      #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
      
      ### Remove missing values and be prepared to return a ds QC mask
+     print(lapply(OH, 'summary'))
+     print(lapply(MH, 'summary'))
+     print(lapply(MF, 'summary'))
      nrips <- dim(MF[[1]])[4]
      out.data <- array(NA, dim=dim(MF[[1]]))
      if (train_qcmask){
        qc <- array(1, dim=dim(out.data))
      }else{
        qc <- NULL
+     }
+     #Check for overlapping time windows
+     if (tmasks$time_mask_overlap){
+       index.mask <- tmasks$trim$masks[[w]]
+       olap=T
+     }else{
+       index.mask <- tmasks$MF$masks[[w]]
+       olap=F
      }
      #unlist input data for easier reference
      print(lapply(MF, 'dim'))
@@ -65,6 +76,7 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F){
      
      for(n in 1:nrips){
        MF.slice <- MF[,,,n,,]
+       tmp.out <- rep(NA, length(MF.slice))
        MF.slice <- MF.slice[!is.na(MF.slice)]
        #Yes the following bit is long, but all of it's needed for the retry function
        if(!is.null(args$npas)){
@@ -138,15 +150,24 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F){
            }
          }, 
          silent=FALSE)
-       out.data[,,,n,,][notna.idx[,n]] <- as.numeric(temp$DS)
+       #out.data[,,,n,,][notna.idx[,n]] <- as.numeric(temp$DS)
+       #Index output back to a non-overlapping future time series, 
+       #if needed
+#        print(length(temp$DS))
+#        print(summary(index.qm(index.mask, temp$DS, olap)))
+#        print(length(index.qm(index.mask, temp$DS, olap)))
+       tmp.out[notna.idx[,n]] <- temp$DS
+       out.data[,,,n,,] <- index.qm(index.mask, tmp.out, olap)
        high_cutoffs = c(high_cutoffs, temp$high_cutoff)
        low_cutoffs = c(low_cutoffs, temp$low_cutoffs)
        if(is.retry && train_qcmask){
          #This used to be a status setting; replacing with a qcmask creation
          #attr(out.list[[out.var.name]], 'status') <- 1
-         qc[,,,n,,][notna.idx[,n]] <- NA
+         qc[,,,n,,] <- NA
        }
      }
+     #Add attributes to output data for possible use in the 
+     #tail adjustment functions
      attributes(out.data) <- c(attributes(out.data), 
                                list(high_cutoff=high_cutoffs, 
                                     low_cutoff=low_cutoffs))

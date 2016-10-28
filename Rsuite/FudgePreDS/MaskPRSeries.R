@@ -2,10 +2,10 @@
 #'Function for setting all values of precip
 #'less than a threshold to NA
 #'------Parameters related to the data being masked-------
-#'@param ref.data, adjust.data, adjust.future: The precipitation data
+#'@param ref.data, adjust.data, future.data: The precipitation data
 #'for the target and predictor (ref and adjust), as well as an optional
 #'future dataset (adjust.fufutre, currently used for CDFt)
-#'@param ref.units, adjust.unts, adjust.future.units: The units of 
+#'@param ref.units, adjust.unts, future.units: The units of 
 #'precipitation. Defaults to kg m-2 s-1 for all pr units. 
 #'
 #'------Parameters related to the internal masking options-----
@@ -33,7 +33,7 @@
 
 AdjustWetdays <- function(ref.data, ref.units=NULL, 
                           adjust.data=NA, adjust.units=NULL, 
-                          adjust.future=NA, adjust.future.units=NULL,
+                          future.data=NA, future.units=NULL,
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE,
                           zero.to.na=FALSE,
                           lopt.graphics=FALSE, verbose=FALSE){
@@ -46,10 +46,10 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   if(verbose){print('Initializing reference vectors')}
   ###hastily commented out 9-24 to examine the data in more detail
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
-  future.wetdays <- MaskPRSeries(adjust.future, adjust.future.units, opt.wetday)
+  future.wetdays <- MaskPRSeries(future.data, future.units, opt.wetday)
   
   #   adjust.wetdays <- adjust.data > wetday.convert
-  #   future.wetdays <- adjust.future > wetday.convert
+  #   future.wetdays <- future.data > wetday.convert
   
   ##Loop over all lat/lon points available in the input datasets
   if(verbose){print(paste('Looping over data of dimensions', paste(dim(ref.data), collapse=" ")))}
@@ -58,53 +58,56 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #    for (j in 1:dim(ref.data)[2]){ 
   ##Okay, try this based off of reference indexes instead - 
   #no explict gather step
-  ref.idx <- as.vector(!is.na(ref.data))
-  adj.idx <- as.vector(!is.na(adjust.data))
+  ref.idx <- !is.na(ref.data)
+  adj.idx <- !is.na(adjust.data)
+  fut.idx <- !is.na(future.data)
   loop.ref <- ref.data[ref.idx]
-  loop.adj <- adj.data[ref.idx]
-#  nrips <- dim(fut.data)[4]
-#   fut.idx <- array(NA, dim=c(nrips, prod(dim(fut.data)[-4])))
-#   for(n in 1:nrips){
-#     fut.idx[n,] <- as.vector(!is.na(fut.data[,,n,,,]))
-#     loop.fut[[n]] <- fut.data[,,n,,,]fut.idx[n,]
-#   }
-#...you don't even need to do that, do you. You can just convert everything to a 
-#vector, since none of the training equations get based off of the future data in the first place.
-fut.idx <- as.vector(!is.na(fut.data))
-loop.fut <- fut.data[fut.idx]
+  loop.adj <- adjust.data[ref.idx]
+  loop.fut <- future.data[fut.idx]
+  loop.ref.wetdays <- ref.wetdays[ref.idx]
+  loop.adj.wetdays <- adjust.wetdays[adj.idx]
+  loop.fut.wetdays <- future.wetdays[fut.idx]
   #...honestly, looking at the rest of the code the vector compression steps might be worth it
   #I think there is a high likelihood that you need to do the mask looping in here; 
   #the altered pr wetday behavior in the missing value functions might require it
   
   
-  if (lopt.drizzle == TRUE){
-    if (any(ref.idx)){ #Avoid running if all NA values present
-      fraction.wet.ref <- sum(loop.ref) / sum(ref.idx)
-      fraction.wet.adj <- sum(loop.adj) / sum(adj.idx)
-      
-      # Perform the following calculations and adjustments to the GCM time series
-      # only if the user has asked for the drizzle adjusment to be applied 
-      if (fraction.wet.adj > fraction.wet.ref) {
-        #Find the threshold for a drizzle adjustment
-        first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)  
-        small.fraction <- 1.0/sum(ref.idx)
-        last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
-        num.zero.in.adjusted <- ((1.0-fraction.wet.ref)*sum(adj.idx)) - 1
-        threshold.wetday.adj <- quantile(loop.adj, names = FALSE,
-                                         probs=(num.zero.in.adjusted/sum(adj.idx)), 
-                                         na.rm=TRUE)
-        if(verbose){print(paste("threshold:", threshold.wetday.adj))}
-        #If it would result in changed results, apply
-        loop.adj.wetdays <- adjust.data[adj.idx] > threshold.wetday.adj
-        ###loop.fut.wetdays <- array(NA, dim=c(nrips, prod(dim(fut.data)[-4])))
-        ###since you only use adjust and future for reference, all future calls can 
-        ###be made in the same way
-        loop.fut.wetdays <- fut.data[fut.idx] > threshold.wetday.adj
-      }
+  if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values present
+    fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
+    fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
+    
+    print(paste("fraction.wet.ref:", fraction.wet.ref))
+    print(paste('fraction.wet.adj:', fraction.wet.adj))
+    print(summary(loop.ref))
+    hist(loop.ref)
+    print(summary(loop.adj))
+    hist(loop.adj)
+    print(summary(loop.fut))
+    hist(loop.fut)
+    
+    # Perform the following calculations and adjustments to the GCM time series
+    # only if the user has asked for the drizzle adjusment to be applied 
+    if (fraction.wet.adj > fraction.wet.ref) {
+      #Find the threshold for a drizzle adjustment
+      first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)
+      print(first.above.threshold)
+      small.fraction <- 1.0/sum(ref.idx)
+      last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
+      num.zero.in.adjusted <- ((1.0-fraction.wet.ref)*sum(adj.idx)) - 1
+      threshold.wetday.adj <- quantile(loop.adj, names = FALSE,
+                                       probs=(num.zero.in.adjusted/sum(adj.idx)), 
+                                       na.rm=TRUE)
+      if(verbose){print(paste("threshold:", threshold.wetday.adj))}
+      #If it would result in changed results, apply
+      loop.adj.wetdays <- adjust.data[adj.idx] > threshold.wetday.adj
+      ###loop.fut.wetdays <- array(NA, dim=c(nrips, prod(dim(future.data)[-4])))
+      ###since you only use adjust and future for reference, all future calls can 
+      ###be made in the same way
+      loop.fut.wetdays <- future.data[fut.idx] > threshold.wetday.adj
     }
   } else {
     loop.adj.wetdays <- adjust.data[adj.idx] > wetday.convert
-    loop.fut.wetdays <-    fut.data[fut.idx] > wetday.convert
+    loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
   }
   ###Now consider the conserve option
   if(lopt.conserve==TRUE){
@@ -116,21 +119,18 @@ loop.fut <- fut.data[fut.idx]
   # loop.ref.wetdays never gets modified 
   adjust.data[adj.idx] <- loop.adj 
   adjust.wetdays[adj.idx] <- loop.adj.wetdays 
-  adjust.future[fut.idx] <- loop.fut
+  future.data[fut.idx] <- loop.fut
   future.wetdays[fut.idx] <- loop.fut.wetdays
   
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
-                   "future" = list("data" = as.numeric(future.wetdays)*adjust.future, "pr_mask" = future.wetdays))
+                   "future" = list("data" = as.numeric(future.wetdays)*future.data, "pr_mask" = future.wetdays))
   if(zero.to.na){
     #All 0 values in the data should be NA values instead (needed to avoid calculations in )
     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
     out.list$adjust$data[out.list$adjust$pr_mask==0] <- NA
     out.list$future$data[out.list$future$pr_mask==0] <- NA
-    #out.list$ref$pr_mask[out.list$ref$pr_mask==0] <- NA
-    #out.list$adjust$pr_mask[out.list$adjust$pr_mask==0] <- NA
-    #out.list$future$pr_mask[out.list$future$pr_mask==0] <- NA
   }
   return(out.list)
 }

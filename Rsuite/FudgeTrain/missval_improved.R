@@ -1,4 +1,4 @@
-
+ 
 count.all.present.xy <- function(dataset){
   #Returns the number of non-missng values at each x,y,ens point
   return(as.vector(apply(dataset, c(1,2,4), 
@@ -73,25 +73,29 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
+    print(summary(missval.args))
+    print(length(missval.args$pr))
     if (length(missval.args$pr) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
-      
-      pr.OH.vars <- length(missval.args$pr$OH)
-      OH <- segment.missval.vars(pr.OH.vars, OH, missval.args$pr$OH, 
-                                 oh.coords, ival, jval, 
-                                 tmasks$apply_tmask, tmasks$OH, w)
-      pr.MH.vars <- length(missval.args$pr$MH)
-      MH <- segment.missval.vars(pr.MH.vars, MH, missval.args$pr$MH, 
-                                 mh.coords, ival, jval, 
-                                 tmasks$apply_tmask, tmasks$MH, w)
-      pr.MF.vars <- length(missval.args$pr$MF)
-      MF <- segment.missval.vars(pr.MF.vars, MF, missval.args$pr$MF, 
-                                 oh.coords, ival, jval, 
-                                 tmasks$apply_tmask, tmasks$MF, w)
+      message('retrying sample size wiht precipiation added in')
+      print("npts counts before:")
+      print(npts.OH)
+      print(npts.MH)
+      print(npts.MF)
+      OH <- retry.with.pr.present(OH, missval.args$pr$OH, missval.args$pr$pr_oh, 
+                          tmasks$apply_tmasks, tmasks$OH$masks[[w]])
+      MH <- retry.with.pr.present(MH, missval.args$pr$MH, missval.args$pr$pr_mh, 
+                          tmasks$apply_tmasks, tmasks$MH$masks[[w]])
+      MF <- retry.with.pr.present(MF, missval.args$pr$MF, missval.args$pr$pr_mf, 
+                          tmasks$apply_tmasks, tmasks$MF$masks[[w]])
       npts.MF <- lapply(MF, count.all.present.xy)
       npts.OH <- lapply(OH, count.all.present.xy)
       npts.MH <- lapply(MH, count.all.present.xy)
+      print("npts counts:")
+      print(npts.OH)
+      print(npts.MH)
+      print(npts.MF)
       if(missval.thold < 1){
         #Not used often, but should be kept in
         if (tmasks$apply_tmask){
@@ -103,15 +107,16 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
           pct.OH <- npts.OH/dim(OH[[1]])[6]
           pct.MH <- npts.MH/dim(MH[[1]])[6]
         }
-        sufficient.data <- any (c(pct.MF, pct.OH, pct.MH) < missval.thold)
+        sufficient.data <- all (c(pct.MF, pct.OH, pct.MH) >= missval.thold)
       }else{
         #This is the most common case
-        sufficient.data <- any(c(npts.MF, npts.OH, npts.MH) < missval.thold)
+        sufficient.data <- all(c(npts.MF, npts.OH, npts.MH) >= missval.thold)
       }
+      print(sufficient.data)
       if (sufficient.data){
-        ds.possible <- F
+        ds.possible <- T
       }
-      ds.possible <- T
+      ds.possible <- F
     }else{
       #If there are no pr missing values, don't downscale the point
       ds.possible <- F
@@ -140,16 +145,45 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
               missval.status=missval.status))
 }
 
+retry.with.pr.present <- function(data.list, pr.mask, var.list, 
+                                  apply_tmask, data.tmask){
+  #'For each var in var.list, finds a corresponding el in 
+  #'#data.list and makes all places where pr.mask was T
+  #'(i.e all places where pr was set to NA, indicating dry day)
+  #'to 0 instead of NA. This undoes some of the trace pr 
+  #'correction for small sample sizes, resulting in enough data to 
+  #'downscale.
+  #'If apply_tmasks, a time windowing mask is first applied
+  #'to the pr.mask in order to avoid setting values to 0 
+  #'that would not have been included in the sample.
+  #...this is going to be so nasty when we get vaugely pr-like vars
+  #as fixed sptaial grids it is going to be the worst
+  if (apply_tmask){
+    pr.mask <- apply.fudge.tmask(pr.mask, data.tmask)
+    pr.mask[is.na(pr.mask)] <- F
+  }
+  for (el in var.list){
+    data.list[[el]][pr.mask] <- 0
+  }
+  return(data.list)
+}
+
 segment.missval.vars <- function(varnames, data, masks, data.coords, ival, jval, 
                                  apply_tmask, tmasks, w){
   #Drills down from the full x,y components of a mask to the bits that apply to
   # the region that we are downscaling
   
   #get xy region
-  data.masks <- get.xy.slice(masks[varnames], data.coords, ival, jval)
+  #data.masks <- get.xy.slice(masks[varnames], data.coords, ival, jval)
+  #No longer needed; looping on i and j before call to pr missvals
+  data.masks <- masks
+  print(summary(data.masks))
+  print(dim(data.masks))
+  print(mode(data.masks))
+  print(summary(tmasks))
   #Apply tmask
   if (apply_tmask){
-    data.masks <- lapply(data.masks, "apply.fudge.tmask", tmasks$masks[[w]])
+    data.masks <- apply.fudge.tmask(data.masks, tmasks$masks[[w]]) #lapply(data=data.masks, "apply.fudge.tmask", tmasks$masks[[w]])
   }
   #apply mask to data, setting from missing to other as required
   for (var in varnames){

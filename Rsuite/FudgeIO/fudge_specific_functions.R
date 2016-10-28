@@ -10,7 +10,6 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, input_by, spat.
                             var_classification=T)
   if(!is.null(spat.mask.nc)){
     message("Applying spatial mask to dataset")
-    print(spat.mask.nc)
     out.spatmask <- ReadMaskNC(spat.mask.nc, subset=lapply(subset, '[[', 'subset'))
     for (el in names(out$data)){
       out$data[[el]] <- apply.any.mask(data=out$data[[el]], mask=out.spatmask$masks[[1]], dim='spatial')
