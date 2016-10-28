@@ -43,9 +43,13 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	#odds are some of the files we want are on the same tapes
 	dmget_string = ""
 	if spatmask_present:
-		spatmask_files = [spatmask]
+		#Need the file located at one level up from the spatmask dir - 
+		#spatmask itself points only to the OneD dir
+		spatmask_dir = osp.dirname(spatmask)
+		spatmask_file = [osp.join(spatmask_dir, el) for el in os.listdir(spatmask_dir) if re.search('masks', el) is not None][0]
 		dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
-		dmget_string = dmget_string + "dmget " + spatmask + " \n" 
+		spatmask_files = [spatmask_file]
+		dmget_string = dmget_string + "dmget " + spatmask_file + " \n" 
 	else:
 		spatmask_files = []	
 	dmget_string = dmget_string + "# Get OH data" + "\n"
