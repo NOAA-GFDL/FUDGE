@@ -45,7 +45,10 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	if spatmask_present:
 		#Need the file located at one level up from the spatmask dir - 
 		#spatmask itself points only to the OneD dir
-		spatmask_dir = osp.dirname(spatmask)
+		spatmask_dir = osp.dirname(osp.abspath(spatmask))
+		#print(spatmask)
+		#print(spatmask_dir)
+		#sys.exit()
 		spatmask_file = [osp.join(spatmask_dir, el) for el in os.listdir(spatmask_dir) if re.search('masks', el) is not None][0]
 		dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
 		spatmask_files = [spatmask_file]
@@ -54,7 +57,7 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 		spatmask_files = []	
 	dmget_string = dmget_string + "# Get OH data" + "\n"
 	#OH directory currently described with /OneD/ appended
-	OH_dir = os.path.dirname(OH_dir)
+	OH_dir = os.path.dirname(osp.abspath(OH_dir))
 	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
 	for f in oh_files:
 		dmget_string = dmget_string + "dmget " + f + "\n"
@@ -73,8 +76,6 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	mf_files = []
 	for pred_var in predlist:
 		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
-		print(os.listdir(mf_dir))
-		print(mf_timerange)
 		mf_file = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None][0]
 		mf_files.append(mf_file)
 		dmget_string = dmget_string + "dmget " + mf_file + " \n"

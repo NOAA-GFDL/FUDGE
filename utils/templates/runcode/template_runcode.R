@@ -104,8 +104,8 @@ if(fut.indir_1 != 'na'){
 if((grepl('^/archive',fut.indir_1)) | (grepl('^/work',fut.indir_1))){
 fut.indir_1 <- paste(TMPDIR,fut.indir_1,sep='')
 }}
-if(hist.indir_1 != 'na'){
-if((grepl('^/archive',hist.indir_1)) | (grepl('^/work',hist.indir_1))){
+if(target.indir_1 != 'na'){
+if((grepl('^/archive',target.indir_1)) | (grepl('^/work',target.indir_1))){
 target.indir_1 <- paste(TMPDIR,target.indir_1,sep='')
 }}
 if(target.time.window != 'na'){
