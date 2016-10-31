@@ -1,7 +1,7 @@
 #' driver_a1rv2.r
-#' phase 1 of driver script implementation for FUDGE: CDFt train driver 
+#' phase 1 of driver script implementation for FUDGE: CDFt train driver
 #' originally created: a1r,08/2014
-#' Modified heavily by 4-6-2015 
+#' Modified heavily by 4-6-2015
 
 fudge.start.time <- proc.time()[3]
 ############### Library calls, source necessary functions ###################################################
@@ -29,7 +29,7 @@ source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
 # #previously traceback
 # options(error=error.handler.function, warn = 1, showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
-###after this point. Probably not a component of a --vanilla run. 
+###after this point. Probably not a component of a --vanilla run.
 ###But it unquestionably simplifies debugging.
 
 #------- Add libraries -------------
@@ -60,8 +60,8 @@ message("Setting downscaling method information")
 ds.ref <- getDSInfo(ds.method)
 
 message("Checking downscaling arguments")
-QCDSArguments(k=k.fold, ds.method = ds.method, args=args, 
-              is.multivar=(length(predictor.vars) > 1), 
+QCDSArguments(k=k.fold, ds.method = ds.method, args=args,
+              is.multivar=(length(predictor.vars) > 1),
               is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 ##Call the code that converts the instructions for section 3 and section 5
@@ -77,7 +77,7 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
   train_qcmask <- pp.out$train_qcmask
 }
 
-##Make sure that you have the experiment rip ready to apply to 
+##Make sure that you have the experiment rip ready to apply to
 ##other code (i.e. the actual rip experiment is being run under)
 experiment.rip <- gsub("(.*_)", "", fut.scenario_1)
 ##Extra code added for compatibility with the darkchocolte-style
@@ -104,7 +104,7 @@ post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'
 post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
 
 
-#Adapt some of the parameters being set by the f-to-g bridge code 
+#Adapt some of the parameters being set by the f-to-g bridge code
 if(!exists('pr_opts')){
   f.list <- override.f.defaults(args)
 }else{
@@ -113,12 +113,12 @@ if(!exists('pr_opts')){
 min.present <- f.list$threshold
 args <- f.list$args
 
-#Then, check that the s3 and s5 adjustments you are performing make sense in 
+#Then, check that the s3 and s5 adjustments you are performing make sense in
 #this context
-QCAdjustArguments(pre_ds, post_ds, 
-                  is.multivar=(length(predictor.vars) > 1), 
-                  is.multi.ens=(length(fut.pred.rip.list) > 1), 
-                  target.in.predictors = (target.var%in%predictor.vars), 
+QCAdjustArguments(pre_ds, post_ds,
+                  is.multivar=(length(predictor.vars) > 1),
+                  is.multi.ens=(length(fut.pred.rip.list) > 1),
+                  target.in.predictors = (target.var%in%predictor.vars),
                   predictor.vars, target.var)
 
 #### Then, read in spatial and temporal masks. Those will be used

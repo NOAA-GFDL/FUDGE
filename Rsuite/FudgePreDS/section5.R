@@ -1,34 +1,34 @@
 #'section5.R
 #'
 #'Calls post-downscaling adjustments on the downcsaled data, in keeping with section
-#'5 of the FUDGE schematic. 
+#'5 of the FUDGE schematic.
 #'
 #'------Parameters related to instructions -------
 #'@param s5.instructions: A list of commands controlling which adjustment steps
 #'are preformed, and in what order, as well as whether ar QC mask is to be calculated
 #'at any point. Consists of a list of lists with elements of the form
 #'list(type='SBiasCorr', qc.mask='on', adjust.out='off', args=list('na'))
-#'@param var: The variable being downscaled. 
+#'@param var: The variable being downscaled.
 #'------Parameters related to datasets -------
 #'@param data: The downscaled data undergoing the qc and adjustment steps
 #'@param hist.pred: The historic predictor used to generate the downscaled data
 #'@param hist.targ: The historic target used to generate the downscaled data
 #'@param fut.pred:  The future predictor used to generate the downscaled data
 #'
-#'@returns a list containing two components: 
+#'@returns a list containing two components:
 #'ds.out: An array of the same dimensions as the input downscaled data, adjusted by the section
 #'5 functions. Is equal to the input downscaled data if no adjustments took place in section 5.
-#'qc.mask: A mask of the same dimensions of the input downscaled data, in which every 1 represents 
-#'an unflagged value, and every NA represents a value flagged as suspicious. Is NULL if no qc mask 
-#'is generated from section 5. 
-callS5Adjustment<-function(s5.instructions=list('na'),
+#'qc.mask: A mask of the same dimensions of the input downscaled data, in which every 1 represents
+#'an unflagged value, and every NA represents a value flagged as suspicious. Is NULL if no qc mask
+#'is generated from section 5.
+callS5Adjustment <- function(s5.instructions = list('na'),
                            data = NA, #downscaled data - from this run or another
                            data.atts = NA,
                            hist.pred = NA, 
                            hist.targ = NA, 
                            fut.pred = NA, 
                            verbose=FALSE){
-  input<- list('hist.pred' = hist.pred, 'hist.targ' = hist.targ, 'fut.pred' = fut.pred, 'data.atts'=data.atts)
+  input<- list('hist.pred'=hist.pred, 'hist.targ'=hist.targ, 'fut.pred'=fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
@@ -36,17 +36,21 @@ callS5Adjustment<-function(s5.instructions=list('na'),
     test <- s5.instructions[[element]]
     out <- switch(test$type, 
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
-                  'sdev2' = callSdev2(test,  out$input, out$adjusted.output),
-                  'SBiasCorr' = callSBCorr(test,  out$input, out$adjusted.output),
+                  'sdev2' = callSdev2(test, out$input, out$adjusted.output),
+                  'SBiasCorr' = callSBCorr(test, out$input, out$adjusted.output),
                   'flag.neg' = callFlagNegativeValues(test, out$input, out$adjusted.output),
                   'PR' = callPRPostproc(test, out$input, out$adjusted.output),
                   'Nothing' = callNoMethod(test, out$input, out$adjusted.output),
-                  'add.one' = callAddOne(test, out$input, out$adjusted.output), 
-                  'add.five' = callAddFive(test, out$input, out$adjusted.output), 
+                  'add.one' = callAddOne(test, out$input, out$adjusted.output),
+                  'add.five' = callAddFive(test, out$input, out$adjusted.output),
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
-                  'simpletailadj' = callTailAdjust(test,  out$input, out$adjusted.output),
+
+                  'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh'),
+                  'cdfttailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft'),
+                  'cdft_orig_tailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
+
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
-                  stop(paste('Adjustment Method Error: method', test$type, 
+                  stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
   }
   return(out$adjusted.output)
@@ -60,16 +64,16 @@ callSdev <- function(test, input, adjusted.output){
   out.sdev <- sd(adjusted.output$ds.out)
   out.comp <- out.sedev*2
   out.mean <- mean(adjusted.output$ds.out)
-  mask.vec <- ifelse( (out.comp <= abs(adjusted.output$ds.out-mean)), 
+  mask.vec <- ifelse( (out.comp <= abs(adjusted.output$ds.out-mean)),
                       yes=1, no=NA)
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
   if(test$qc.mask=='on'){
     out.list$qc.mask <- mask.vec
   }
   if(test$adjust.out=='on'){
-    adjust.vec <- ifelse( (is.na(mask.vec)), 
-                          yes=ifelse( (1==sign(out.mean-adjusted.output$ds.out)), 
-                                      out.mean-out.comp, out.mean+out.comp ), 
+    adjust.vec <- ifelse( (is.na(mask.vec)),
+                          yes=ifelse( (1==sign(out.mean-adjusted.output$ds.out)),
+                                      out.mean-out.comp, out.mean+out.comp ),
                           no=adjusted.output$ds.out)
     out.list$ds.out <- adjust.vec
   }
@@ -77,11 +81,11 @@ callSdev <- function(test, input, adjusted.output){
 }
 
 callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
-  #Outputs a mask where NA values show flagged data and 
+  #Outputs a mask where NA values show flagged data and
   #1's show good data
   #'Assumes one predictor variable and one target variable
   #'But multiple ensemble members are supported
-  
+
   if(verbose){print("entering simple bias correction function")}
   if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
     toplim <- test$qc_args$toplim
@@ -91,7 +95,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   }
   target.var <- unlist(lapply(input$data.atts$hist.targ, "[[", 'var'))
   ds.vars <- names(adjusted.output$ds.out)
-  #Unlist the historic predictors 
+  #Unlist the historic predictors
   hist.select <- c(lapply(input$data.atts$hist.pred, "[[", 'var')==target.var)
   hist.pred <- unlist(input$hist.pred[hist.select])
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
@@ -102,8 +106,8 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     hist.bias <- mean(hist.pred-input$hist.targ, na.rm=TRUE)
     fut.targ <- fut.pred-hist.bias
     tmp.diff <- as.numeric(adjusted.output$ds.out[[ds.var]]) - fut.targ
-    mask.vec <- ifelse( (botlim <= (tmp.diff) & 
-                           (tmp.diff) < toplim), 
+    mask.vec <- ifelse( (botlim <= (tmp.diff) &
+                           (tmp.diff) < toplim),
                         yes=1, no=NA)
     if(test$qc.mask=='on'){
       out.list$qc.mask[[ds.var]] <- mask.vec
@@ -118,7 +122,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
 
 callFlagNegativeValues <- function(test, input, adjusted.output){
   #Flags negative values in the downscaled output with NA
-  #with the expectation that they may get adjusted later. 
+  #with the expectation that they may get adjusted later.
   #You don't actually need the RIPs; just the variable names for ds data
   #Initialize output structure
   out.list <- adjusted.output
@@ -197,7 +201,7 @@ callPRPostproc <- function(test, input, adjusted.output){
   if(test$qc.mask=='on'){
     adjusted.output$qc.mask <- get.xy.center(adjusted.output$qc.mask)
   }
-  return(list('input' = input, 'adjusted.output' = adjusted.output))          
+  return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
 
@@ -238,10 +242,10 @@ callAddOne <- function(test, input, adjusted.output){
       adjusted.output$ds.out[[ds.var]] <- (adjusted.output$ds.out[[ds.var]] + 1)
     }
     if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
+      adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
   }
-  return(list('input' = input, 'adjusted.output' = adjusted.output)) 
+  return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
 callAddFive <- function(test, input, adjusted.output){
@@ -259,15 +263,15 @@ callAddFive <- function(test, input, adjusted.output){
       adjusted.output$ds.out[[ds.var]] <- (adjusted.output$ds.out[[ds.var]] + 5)
     }
     if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
+      adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
   }
-  return(list('input' = input, 'adjusted.output' = adjusted.output)) 
+  return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
 callBCSDCorrect <- function(test, input, adjusted.output){
   #'Calls a BCSD-style adjustment on quantile-mapped code
-  #'based off of the limits to the adjustment of the 
+  #'based off of the limits to the adjustment of the
   #'MH and MF datasets
   rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   targ.var <- names(input$data.atts$hist.targ)
@@ -288,17 +292,17 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   for(rip in rips){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
-    hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
-                                               "[[", 'var')==targ.var]
+    hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred,
+                                         "[[", 'var')==targ.var]
     #print(summary(as.vector(adjusted.output$ds.out[[ds.var]])))
-    ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]], 
-                               obs.hist = input$hist.targ, 
-                               model.fut = input$fut.pred[[fut.pred]], 
-                               obs.fut = adjusted.output$ds.out[[ds.var]], 
+    ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]],
+                               obs.hist = input$hist.targ,
+                               model.fut = input$fut.pred[[fut.pred]],
+                               obs.fut = adjusted.output$ds.out[[ds.var]],
                                sample_size = sample_size)
     #print(summary(as.vector(ds.correct)))
     if(test$qc.mask=='on'){
-      qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])), 
+      qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out[[ds.var]])),
                        1, 0)
       #print(summary(as.vector(qc.tmp)))
       non.missing <- which(qc.tmp==0)
@@ -386,6 +390,6 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
 }
 
 round.negative <- function(num){
-  #assumes no 0 values are passed 
+  #assumes no 0 values are passed
   return(ifelse(num > 0, 1, -1))
 }
