@@ -26,8 +26,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
   #' @citation P.-A. Michelangeli, M. Vrac, H. Loukos. "Probabilistic downscaling approaches:
      #' @citation Application to wind cumulative distribution functions",
      #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
-<<<<<<< HEAD
-     
      ### Remove missing values and be prepared to return a ds QC mask
      nrips <- dim(MF[[1]])[4]
      out.data <- array(NA, dim=dim(MF[[1]]))
@@ -52,10 +50,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
      notna.idx = apply(MF , c(4), function(x){!is.na(x)}) #one index per rip present
      OH <- OH[!is.na(OH)] #both of these should only
      MH <- MH[!is.na(MH)] #ever have one point in them
- 
-=======
-
->>>>>>> g_limtailadj
      ###Obtain required arguments (and throw errors if not specified)
      if(!is.null(args$dev)){
        dev <- args$dev
@@ -70,7 +64,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
      }else{
        maxdev <- args$maxdevretry
      }
-<<<<<<< HEAD
      
      #be ready to append high and low cutoffs for later use
      high_cutoffs = c()
@@ -81,20 +74,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
        tmp.out <- rep(NA, length(MF.slice))
        MF.slice <- MF.slice[!is.na(MF.slice)]
        #Yes the following bit is long, but all of it's needed for the retry function
-=======
-
-     out.list <- list()
-     pred <- unlist(pred)  #No need to reference the historic predictor names
-     rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
-     for(rip in rip.list){
-       #Select the future predictor vars that you are interested in
-       out.var.name <- paste0(ds.var, ".", rip)
-       #Unlist the ensemble members
-       rip.index <- (rip.list==rip)
-       new.data <- new[rip.index]
-       new.data <- unlist(new.data)
-
->>>>>>> g_limtailadj
        if(!is.null(args$npas)){
          npas <- args$npas
          if(npas=='default' || npas==0){
@@ -119,7 +98,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
        #args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
        is.retry <- FALSE
        temp <-tryCatch({
-<<<<<<< HEAD
          do.call(ds.method, c(list(OH, MH, MF.slice), 
                               list(npas=npas, dev=dev)
          ))[c('DS', 'high_cutoff', 'low_cutoff')]}, 
@@ -182,61 +160,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
          #attr(out.list[[out.var.name]], 'status') <- 1
          qc[,,,n,,] <- NA
        }
-=======
-         do.call(ds.method, c(list(targ, pred, new.data),
-                              list(npas=npas, dev=dev)
-                              ))[c('DS', 'high_cutoff', 'low_cutoff')]},
-                       error=function(e){
-                         is.retry <<- TRUE;
-                         loop.try <- FALSE
-                         i=1;
-                         while(dev <= maxdev && loop.try==FALSE){
-                           message(paste0("Error caught from ", ds.method, " with dev=",
-                                          dev," and npas=",npas,
-                                          "; retrying with dev=dev+",1))
-                           loop.try <- TRUE
-                           dev=dev+1
-                           i=i+1
-                           loop.try <- tryCatch(do.call(ds.method,
-                                                        c(list(targ, pred, new.data),
-                                                          list(npas=npas, dev=(dev)
-                                                               )))[c('DS', 'high_cutoff', 'low_cutoff')],
-                                                error=function(e){return(FALSE)}
-                           )
-                         }
-                         if(dev > maxdev){
-                           #This has not come up yet in testing, but it might.
-                           if(args$retry=='stop'){
-                             stop(paste("Error in callCDFt: In the process of retrying",
-                                        ds.method, "downscaling at this point",
-                                        "dev grew to >", maxdev,
-                                        "without the", ds.method, "function",
-                                        "being able to complete",
-                                        'while retry was set to "stop".',
-                                        "Please retry with different settings",
-                                        "or contact Carolyn Whitlock."))
-                           }else if(args$retry=='missing'){
-                             return(list(DS=rep(NA, length(new.data)),
-                                         high_cutoff=NA, low_cutoff=NA))
-                           }else if(args$retry=='predictor'){
-                             return(list(DS=new.data,
-                                         high_cutoff=NA, low_cutoff=NA))
-                           }
-                         }else{
-                           return(do.call(ds.method,
-                                          c(list(targ, pred, new.data),
-                                            list(npas=npas, dev=(dev))
-                                            ))[c('DS', 'high_cutoff', 'low_cutoff')])
-                         }
-                       },
-                       silent=FALSE)
-     out.list[[out.var.name]] <- as.numeric(temp$DS)
-     attributes(out.list[[out.var.name]]) <- c(attributes(out.list[[out.var.name]]),
-                                               list(high_cutoff=temp$high_cutoff,
-                                                    low_cutoff=temp$low_cutoff))
-     if(is.retry){
-       attr(out.list[[out.var.name]], 'status') <- 1
->>>>>>> g_limtailadj
      }
      #Add attributes to output data for possible use in the 
      #tail adjustment functions

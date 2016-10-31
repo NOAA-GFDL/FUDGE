@@ -63,8 +63,8 @@ loop.xy.data <- function(){
                                           adjust.metadata,
                                           s5.instructions=post.ds, 
                                           missval.args = missval.args)
-#           print(summary(temp.output))
-#           print(lapply(temp.output, summary))
+          #           print(summary(temp.output))
+          #           print(lapply(temp.output, summary))
           #Assign output and remove temporary output
           missval.args <- temp.output$missval.args
           post.ds <- temp.output$s5.list
@@ -91,34 +91,21 @@ loop.xy.data <- function(){
             OH.window <- OH.slice
             MH.window <- MH.slice
             MF.window <- MF.slice
-          }
-          
+          }          
           #Call section 3 methods; reassign output
-          #           if (s3.inloop){
-          #                 tmp.s3 <- callS3Adjustment(s3.instructions, 
-          #                                            list(data=MH.window, 
-          #                                                 metadata=OH$metdata), 
-          #                                            list(data=OH.window, 
-          #                                                 metadata=OH$metadata), 
-          #                                            list(data=MF.window,
-          #                                                 metadata=MF$metadata),
-          #                                            s5.instructions, missval.args)
-          #                 #s3 functions only return data, not metadata
-          #                 #(there's only one function that changes metadata, and it is)
-          #                 #dealt with by adding elements to the stack
-          #                 OH.window <- tmp.s3$OH
-          #                 MH.window <- tmp.s3$MH
-          #                 MF.window <- tmp.s3$MF
-          #                 s5.out <- tmp.s3$s5
-          #                 if ('OH' %in% ds.names){
-          #                   #Correction to remove leapdays present in OH but not MF
-          #                   #This get used for Delta and CFQM
-          #                   tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[w]], 
-          #                                                      mask=delta.mask, 
-          #                                                      dim='temporal')
-          #                   OH.window <- apply.any.mask(data=OH.window, mask=tmp.ds.time.mask)
-          #                 }
-          #           }      
+          if (s3.inloop){
+            tmp.s3 <- callS3Adjustment(pre.ds.train, 
+                                       MH.slice, OH.slice, MF.slice,
+                                       adjust.metadata,
+                                       post_ds_inloop, missval.args)
+            #s3 functions only return data, not metadata
+            #(there's only one function that changes metadata, and it is)
+            #dealt with by adding elements to the stack
+            OH.window <- tmp.s3$input$OH
+            MH.window <- tmp.s3$input$MH
+            MF.window <- tmp.s3$input$MF
+            post_ds_inloop <- tmp.s3$s5.list
+          }      
           #Call the downsaing method
           print('calling ds')
           tmp.ds <- callDSMethod(ds.method, 
@@ -127,35 +114,20 @@ loop.xy.data <- function(){
                                  minsample=1, 
                                  missval.args=missval.args,
                                  tmasks=tmasks)
-#           if(time_mask_overlap){
-#             #ds.out <- apply.any.mask(tmp.ds$ds, trim.time.mask$masks[[w]])
-#             ds.out <- list(ds=apply.fudge.tmask(data=tmp.ds$ds, 
-#                                                 mask=tmasks$trim$masks[[w]]))
-#             qc.names <- names(tmp.ds)[names(tmp.ds)!='ds']
-#             for (el in qc.names){
-#               if(!is.null(tmp.ds[[el]])){
-#                 qc.out <- c(qc.out, 
-#                             lapply(tmp.ds[[el]], #all non-ds outputs
-#                                    'apply.fudge.tmask',         #gets same mask applied
-#                                    mask=tmasks$trim$masks[[w]])
-#                 )
-#               }
-#             }
-#          }else{
-            ds.out <- list(ds=tmp.ds$ds)
-            qc.out <- c(qc.out, tmp.ds$qc)
-            
-#          }
+          ds.out <- list(ds=tmp.ds$ds)
+          qc.out <- c(qc.out, tmp.ds$qc)
+          
+          #          }
           #       #Call section 5 methods
-          #       tmp.s5 <- callS5Adjustment(s5.instructions=s5.out,
-          #                                  data = ds.out, 
-          #                                  hist.targ = OH.window,
-          #                                  hist.pred = MH.window, 
-          #                                  fut.pred  = MF.window)
-          #       ds.out <- tmp.s5$ds
-          #       qc.out <- c(qc.out, tmp.s5$qc)
-          #       #...hm. Is it possible to adapt that OU code that included window
-          #       #as an extra dimension and include it for multiple qc masks?
+          tmp.s5 <- callS5Adjustment(s5.instructions=post_ds_inloop,
+                                     data = ds.out, 
+                                     hist.targ = OH.window,
+                                     hist.pred = MH.window, 
+                                     fut.pred  = MF.window)
+          ds.out <- tmp.s5$ds
+          qc.out <- c(qc.out, tmp.s5$qc)
+          #...hm. Is it possible to adapt that OU code that included window
+          #as an extra dimension and include it for multiple qc masks?
           combine.out <- c(ds.out, qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
@@ -174,7 +146,7 @@ loop.xy.data <- function(){
         }
         #Once looping by w complete, do the last s5 adjustment
         #Call the Section 5 Adjustments to be applied to post-downscaled output
-        message("Calling Section 5 Adjustments")
+        message("Calling outloop Section 5 Adjustments")
         if(length(post.ds) !=0){
           temp.postproc <- callS5Adjustment(post.ds,
                                             data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,],
@@ -186,9 +158,9 @@ loop.xy.data <- function(){
           #stop('examine output')
           #Your return should include a list of two elements - modified ds out, 
           #and a list of qc masks
-#           print(summary(as.vector(temp.postproc$ds.out)))
-#           print(length(temp.postproc$ds.out))
-#           print(paste(ds.x.start, ds.x.end, ds.y.start, ds.y.end))
+          #           print(summary(as.vector(temp.postproc$ds.out)))
+          #           print(length(temp.postproc$ds.out))
+          #           print(paste(ds.x.start, ds.x.end, ds.y.start, ds.y.end))
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
           if(qc.maskopts$qc.outloop){
             print(dim(output.all$qc))
@@ -197,19 +169,19 @@ loop.xy.data <- function(){
           remove(temp.postproc)
         }
         print(summary(as.vector(output.all$ds)))
-#stop('examint output - unless ds method punted, there should be no missing here')
-#         print(summary(output.all$ds[1,1,,1,,]))
-#         print(summary(output.all$ds[1,1,,2,,]))
-#         print(summary(output.all$ds[1,1,,3,,]))
-#         stop('examine output')
+        #stop('examint output - unless ds method punted, there should be no missing here')
+        #         print(summary(output.all$ds[1,1,,1,,]))
+        #         print(summary(output.all$ds[1,1,,2,,]))
+        #         print(summary(output.all$ds[1,1,,3,,]))
+        #         stop('examine output')
       } 
     }#loop by y
   }#loop by x
-# print(summary(as.vector(output.all$ds[1,,,1,,])))
-# print(summary(as.vector(output.all$ds[1,,,2,,])))
-# print(summary(as.vector(output.all$ds[1,,,3,,])))
-# print(summary(as.vector(output.all$ds)))
-# stop('examine output')
+  # print(summary(as.vector(output.all$ds[1,,,1,,])))
+  # print(summary(as.vector(output.all$ds[1,,,2,,])))
+  # print(summary(as.vector(output.all$ds[1,,,3,,])))
+  # print(summary(as.vector(output.all$ds)))
+  # stop('examine output')
   return(output.all)
 }
 

@@ -102,6 +102,12 @@ post_ds_adj_tmp <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
 post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
 post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
 post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
+##Initialize a few globals for looping in loop.xy()
+s3.outloop <- length(pre.ds) > 0
+s3.inloop <- length(pre.ds.train) > 0
+#training qc makss are their own thing
+s5.inloop <- length(post_ds_inloop) > 0
+s5.outloop <- length(post_ds_outloop) > 0
 
 
 #Adapt some of the parameters being set by the f-to-g bridge code
@@ -374,6 +380,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                  prec='float', missval=1e20, units="1", 
                                  comment=qc.comment.att, 
                                  longname="QC Mask",
+                                 standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }

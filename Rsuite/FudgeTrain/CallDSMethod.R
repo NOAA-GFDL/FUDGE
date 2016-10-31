@@ -43,6 +43,9 @@ callDSMethod <- function(method, OH, MH, MF, args,
   remove(missval.out) #The remove might not be neccessary here, but it doesn't hurt
   #don't bother assigning status for now
   #Call downscaling function
+  print(summary(MF))
+  print(lapply(MF, summary))
+  print(dim(MF))
   if (ds.possible){
     ds.out <- switch(method, 
                      'lm'      = callMultiLM_new(OH, MH, MF, args), 

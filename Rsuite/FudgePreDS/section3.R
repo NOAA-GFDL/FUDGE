@@ -162,13 +162,13 @@ print(lapply(temp.out, summary))
               'missval.args'=missval.args))
 }
 
-callPRTransform <- function(test, input, postproc.output){
+callPRTransform <- function(test, input, postproc.output, missval.args){
   #Transforms non-gaussian data present in the OH, MH and MF
   #data into a more gaussian form
   
   #Insert check for presence of transfrom in here at a later point
   tform <- test$pp.args$transform
-  ds.var <- names(input$att.list$OH)
+  ds.var <- names(input$OH)
   transform.vars <- test$pp.args$vars
   
   #Do a basic check for the presence of the variables you want to check  
@@ -192,29 +192,20 @@ callPRTransform <- function(test, input, postproc.output){
                                    vars=""))
   postproc.output <- c(list(backtform), postproc.output)
   
-  #...you know, for more readable metadata, it might be with it to do cubrt and 
+  #...you know, for more readable metadata, it might be worth it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
-  for(i in 1:3){
-    #Calculate the regex in here
-    if(i!=2){
-      data.names <- names(input[[i]])
-      data.index <- unlist(lapply(transform.vars, 'grep', data.names, fixed=TRUE))
-      if(length(data.index) > 0){
-        for (index in data.index){
-          # save(file='/home/cew/Code/testing/test_out.R', list=c('index', 't.fxn', 'input', 'i'))
-          if(!is.null(t.fxn[[2]])){
-            input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]], t.fxn[[2]]))
-          }else{
-            input[[i]][[index]] <- do.call(t.fxn[[1]], list(input[[i]][[index]]))
-          }
-        }
-      }
-    }else{
-      if(ds.var%in%transform.vars){
+  for (datatype in names(input)){
+    for (varname in names(input[[datatype]])){
+      if (var %in% transform.vars){
+        #if var is one of the vars receiving a transform
         if(!is.null(t.fxn[[2]])){
-          input[[2]] <- do.call(t.fxn[[1]], list(input[[2]], t.fxn[[2]]))
+          #If arguments to the transform, use them
+          input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
+                                              list(input[[datatype]][[var]], t.fxn[[2]]))
         }else{
-          input[[2]] <- do.call(t.fxn[[1]], list(input[[2]]))
+          #Otherwise, call without arguments
+          input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
+                                         list(input[[datatype]][[var]]))
         }
       }
     }

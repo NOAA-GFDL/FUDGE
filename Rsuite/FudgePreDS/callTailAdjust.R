@@ -21,6 +21,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   }else{
     ignore0 <-  FALSE
   }
+  
+  print(test)
 
 
 # SET SIZE FOR DELTA SAMPLE
@@ -73,6 +75,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     }
   }
   print(summary(adjusted.output))
+stop('examine this result')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
