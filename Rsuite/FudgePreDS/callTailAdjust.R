@@ -2,9 +2,12 @@ callTailAdjust <- function(test, input, adjusted.output){
   #'Calls a BCSD-style adjustment on quantile-mapped code
   #'based off of the limits to the adjustment of the 
   #'MH and MF datasets
-  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
-  targ.var <- names(input$data.atts$hist.targ)
+  targ.var <- names(adjusted.output$hist.targ)
   arg.names <- names(test$qc_args)
+  nrips <- dim(adjusted.output$ds.out)[4]
+  if (adjusted.output$qc.mask=='on'){
+    adjusted.output$qc.mask <- list(array(NA, dim=dim(adjusted.output$ds.out)))
+  }
   if('ignore0'%in%arg.names){
     #Hasty adjustment to set missing values to 0 in bcsd correction
     ignore0 <- (test$qc_args$ignore0=='on')
@@ -27,11 +30,13 @@ callTailAdjust <- function(test, input, adjusted.output){
   }else{
     triggertype = test$qc_args$triggertype
   }
-  for(rip in rips){
-    ds.var <- paste0(targ.var, ".", rip)
-    fut.pred <- ds.var
     arg_list = list(delta_sample = delta_sample, 
                     triggertype = triggertype)
+  MH <- adjusted.output$hist.pred[[targ.var]]
+  OH <- adjusted.output$hist.targ[[targ.var]]
+  for(n in 1:nrips){
+    MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
+    DS.slice <- adjusted.output$ds.out[,,,n,,]
     #Check for attributes
     if(triggertype=='cdft'){
       if(!is.null(attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff'))){
@@ -39,26 +44,27 @@ callTailAdjust <- function(test, input, adjusted.output){
         low_cutoff = attr(adjusted.output$ds.out[[ds.var]], 'low_cutoff')
         arg_list = c(arg_list, 
                      list(high_cutoff=high_cutoff, low_cutoff=low_cutoff))
+        print(arg_list)
+        stop('examine output')
       }else{
         stop(paste("Error in callTailAdjust: triggertype of cdft", 
                    "specified, but high_cutoff attribute not set in ds data!"))
       }
     }
-    hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
-                                               "[[", 'var')==targ.var]
-    ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]], 
-                               obs.hist = input$hist.targ, 
-                               model.fut = input$fut.pred[[fut.pred]], 
+    ds.correct <- tail.correct(model.hist = MH, 
+                               obs.hist = OH, 
+                               model.fut = MF.slice, 
                                ds.fut = adjusted.output$ds.out[[ds.var]], 
                                args = arg_list)
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
-      adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
+      adjusted.output$qc.mask[,,,n,,] <- ds.correct$mask
     }
     if(test$adjust.out=='on'){
-      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
+      adjusted.output$ds.out[,,,n,,] <- as.numeric(ds.correct$ds)
     }
   }
+  print(summary(adjusted.output))
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 

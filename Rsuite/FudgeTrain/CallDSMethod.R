@@ -64,7 +64,11 @@ callDSMethod <- function(method, OH, MH, MF, args,
     #as a h-release expidency shortcut, combine ds.out and missval qc masks
     #note: in planned I, these are going to count as two separate masks
     if (train_qcmask){
-      ds.out$qc <- ds.out$qc * train.qc # 1 and NA; NAs propagate
+      if (!is.null(ds.out$qc)){
+        ds.out$qc <- ds.out$qc * train.qc # 1 and NA; NAs propagate
+      }else{
+        ds.out$qc <- train.qc
+      }
     }
     #If there are not sufficient points to downscale, return all missing values
   }else{

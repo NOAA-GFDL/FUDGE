@@ -211,7 +211,7 @@ def create_runscript_copy_ops(outdir, ival, j_range, target_var):
 	outstr.append("\t touch " + outdir + "/.mini.fail")
 	outstr.append('endif')
 	#Now do the same for the qc mask file
-	out_mask_dir = outdir + "/" + target_var + "_qcmask"
+	out_mask_dir = outdir + "/" + target_var + "_qcmask/"
 	outstr.append("gcp $TMPDIR/" + out_mask_dir + "*.I"+ival+"_"+j_range + ".nc " + out_mask_dir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")

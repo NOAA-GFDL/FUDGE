@@ -76,14 +76,14 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
     fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
     
-    print(paste("fraction.wet.ref:", fraction.wet.ref))
-    print(paste('fraction.wet.adj:', fraction.wet.adj))
-    print(summary(loop.ref))
-    hist(loop.ref)
-    print(summary(loop.adj))
-    hist(loop.adj)
-    print(summary(loop.fut))
-    hist(loop.fut)
+#     print(paste("fraction.wet.ref:", fraction.wet.ref))
+#     print(paste('fraction.wet.adj:', fraction.wet.adj))
+#     print(summary(loop.ref))
+#     hist(loop.ref)
+#     print(summary(loop.adj))
+#     hist(loop.adj)
+#     print(summary(loop.fut))
+#     hist(loop.fut)
     
     # Perform the following calculations and adjustments to the GCM time series
     # only if the user has asked for the drizzle adjusment to be applied 

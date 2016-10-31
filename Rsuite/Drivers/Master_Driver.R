@@ -346,7 +346,7 @@ for (r in 1:length(fut.pred.rip.list)){
       #Sunstitute to get mask output directory
       #There are two setps - one to add _qcmask to the output directory after OneD; 
       #the next, to correct the filename
-      qc.file <- sub('OneD/', paste0('OneD/', qc.var, '/'), qc.file)
+      qc.file <- sub('OneD/', paste0('OneD/', qc.var, '/'), loop.out.filename)
       qc.filename <- sub(var, qc.var, basename(qc.file))
       qc.file <- file.path(dirname(qc.file), qc.filename)
       

@@ -10,9 +10,9 @@ loop.xy.data <- function(){
   OH.all.dim <- dim(OH$data[[1]])[1:3]
   MF.all.dim <- dim(MF$data[[1]])[4:6]
   output.all <- rep(list(array(NA, dim=c(OH.all.dim, MF.all.dim))), 
-                    length(c("ds")))
+                    length(c("ds", "qc")))
   print(dim(output.all[[1]]))
-  names(output.all) <- c("ds")
+  names(output.all) <- c("ds", "qc")
   for (ival in 1:x.len){
     message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
@@ -182,6 +182,8 @@ loop.xy.data <- function(){
                                             hist.targ = OH.window,
                                             fut.pred = MF.window, 
                                             data.atts = adjust.metadata)
+          print(summary(temp.postproc))
+          #stop('examine output')
           #Your return should include a list of two elements - modified ds out, 
           #and a list of qc masks
 #           print(summary(as.vector(temp.postproc$ds.out)))
@@ -189,6 +191,7 @@ loop.xy.data <- function(){
 #           print(paste(ds.x.start, ds.x.end, ds.y.start, ds.y.end))
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
           if(qc.maskopts$qc.outloop){
+            print(dim(output.all$qc))
             output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
           }
           remove(temp.postproc)

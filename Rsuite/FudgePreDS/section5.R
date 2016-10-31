@@ -113,36 +113,25 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
       out.list$ds.out[[ds.var]] <- adjust.vec
     }
   }
-    return(list('input' = input, 'adjusted.output' = out.list))
+  return(list('input' = input, 'adjusted.output' = out.list))
 }
 
 callFlagNegativeValues <- function(test, input, adjusted.output){
   #Flags negative values in the downscaled output with NA
   #with the expectation that they may get adjusted later. 
-  
-  #Set up ds vars to index by 
-#   rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
-#   rips <- unique(rip.list)
-#   ds.vars <- paste0(input$data.atts$hist.targ$var, ".", rip.list)
-#   print(ds.vars)
   #You don't actually need the RIPs; just the variable names for ds data
-  ds.vars <- names(adjusted.output$ds.out)
   #Initialize output structure
   out.list <- adjusted.output
-  for(ds.var in ds.vars){
-#     is.missing  <- ifelse(is.na(adjusted.output$ds.out[[ds.var]]), 0, 1)
-#     mask.vec <- is.missing
-    mask.vec <- ifelse(adjusted.output$ds.out[[ds.var]] >= 0, yes=1, no=0)
+    mask.vec <- ifelse(adjusted.output$ds.out >= 0, yes=1, no=0)
     if(test$qc.mask=='on'){
-      out.list$qc.mask[[ds.var]] <- mask.vec
-      out.list$qc.mask[[ds.var]][mask.vec==0] <- NA
+      print('adding qc mask in flag.neg')
+      out.list$qc.mask <- mask.vec
+      out.list$qc.mask[mask.vec==0] <- NA
     }
     if(test$adjust.out=='on'){
-      adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out[[ds.var]])
-      #adjust.vec[is.missing==0] <- NA
-      out.list$ds.out[[ds.var]] <- adjust.vec
+      adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out)
+      out.list$ds.out <- adjust.vec
     }
-  }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
@@ -206,7 +195,7 @@ callPRPostproc <- function(test, input, adjusted.output){
                              pr.conserve = (test$qc_args$conserve=='on'))
   adjusted.output$ds.out <- adjusted.pr$ds.out
   if(test$qc.mask=='on'){
-    adjusted.output$qc.mask <- adjusted.output$qc.mask
+    adjusted.output$qc.mask <- get.xy.center(adjusted.output$qc.mask)
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))          
 }
@@ -246,7 +235,7 @@ callAddOne <- function(test, input, adjusted.output){
     #Find arguments to pre-processing function
     #There are no arguments to be applied
     if(test$adjust.out=='on'){
-    adjusted.output$ds.out[[ds.var]] <- (adjusted.output$ds.out[[ds.var]] + 1)
+      adjusted.output$ds.out[[ds.var]] <- (adjusted.output$ds.out[[ds.var]] + 1)
     }
     if(test$qc.mask=='on'){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for 
@@ -300,7 +289,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
-                                         "[[", 'var')==targ.var]
+                                               "[[", 'var')==targ.var]
     #print(summary(as.vector(adjusted.output$ds.out[[ds.var]])))
     ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]], 
                                obs.hist = input$hist.targ, 
@@ -314,7 +303,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
       #print(summary(as.vector(qc.tmp)))
       non.missing <- which(qc.tmp==0)
       ds.tmp <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out[[ds.var]]),
-                                    1, NA)
+                       1, NA)
       qc.tmp[non.missing] <- ds.tmp[non.missing]
       #print(summary(as.vector(qc.tmp)))
       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
@@ -365,59 +354,34 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #Note: this adjusts data only; there is never going to be
   #a qc mask provided from this data (at least for now)
   #ds.vars <- names(adjusted.output$ds.out)
-  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
-  targ.var <- names(input$data.atts$hist.targ)
+  
+  ds.var <- names(input$ds.out)
   out.list <- adjusted.output
-  #print(rips)
-#   print('pre_transform:')
-#     print(lapply(input$hist.pred, 'summary'))
-#     print(summary(input$hist.targ))
-#     print(lapply(input$fut.pred, 'summary'))
-  for(rip in rips){
-    #print(rip)
-    ds.var <- paste0(targ.var, ".", rip)
-    if(sum(sapply(test$qc_args$vars,'grepl',ds.var))==1){ #ds.vars? I changed from ds.vars to ds.var 10-22
-      if(!is.null(test$qc_args$arg)){
-        #print(summary(out.list$ds.out[[ds.var]]))
-        #save(file='/home/cew/Code/testing/test_out.R', list=c('test', 'out.list', 'ds.var'))
-        #print(sumamry(out.list$ds.out[[ds.var]]))
-        out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                             args=list(as.numeric(out.list$ds.out[[ds.var]]), 
-                                                       test$qc_args$arg))
-        #print(sumamry(out.list$ds.out[[ds.var]]))
-        input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                            args=list(as.numeric(input$fut.pred[[ds.var]]), 
-                                                      test$qc_args$arg))
-      }else{
-        out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                             args=list(out.list$ds.out[[ds.var]]))
-        input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                            args=list(input$fut.pred[[ds.var]]))
-      }
-    }
-  }
-  hist.pred.var <- names(input$hist.pred)[lapply(input$data.atts$hist.pred, 
-                                                 "[[", 'var')==targ.var]
   if(!is.null(test$qc_args$arg)){
-    #Get whichever input rip corresponds to the hist pred
-    #Adjust the target
-    input$hist.pred[[hist.pred.var]] <- do.call(test$qc_args$fxn, 
-                                                args=list(as.numeric(input$hist.pred[[hist.pred.var]]), 
-                                                          test$qc_args$arg))
-    input$hist.targ <- do.call(test$qc_args$fxn, 
-                               args=list(as.numeric(input$hist.targ), 
-                                         test$qc_args$arg))
+    #If there are arguments to the transform, make the call with the args
+    out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                           args=list(as.numeric(out.list$ds.out[[ds.var]]), 
+                                                     test$qc_args$arg))
+    out.list$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                           args=list(as.numeric(input$fut.pred[[ds.var]]), 
+                                                     test$qc_args$arg))
+    out.list$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                            args=list(as.numeric(input$hist.pred[[ds.var]]), 
+                                                      test$qc_args$arg))
+    out.list$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                            args=list(as.numeric(input$hist.targ[[ds.var]]), 
+                                                      test$qc_args$arg))
   }else{
-    input$hist.pred[[hist.pred.var]] <- do.call(test$qc_args$fxn, 
-                                               args=list(as.numeric(input$hist.pred[[hist.pred.var]])))
-    input$hist.targ <- do.call(test$qc_args$fxn, 
-                               args=list(input$hist.targ))
+    #If there are no arguments to the transform, you make the call differently
+    out.list$ds.out[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                           args=list(as.numeric(out.list$ds.out[[ds.var]])))
+    out.list$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                           args=list(as.numeric(input$fut.pred[[ds.var]])))
+    out.list$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                            args=list(as.numeric(input$hist.pred[[ds.var]])))
+    out.list$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                            args=list(as.numeric(input$hist.targ[[ds.var]])))
   }
-#   print('post_transform:')
-#   print(lapply(input$hist.pred, 'summary'))
-#   print(summary(input$hist.targ))
-#   print(lapply(input$fut.pred, 'summary'))
-  #stop('examine at this point')
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
