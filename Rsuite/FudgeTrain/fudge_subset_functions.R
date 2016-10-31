@@ -168,3 +168,12 @@ get.xy.slice <- function(data, coords, i, j){
   return(lapply(data, subset.xy,
                 x1, x2, y1, y2, n=names(data)))
 }
+
+get.xy.center <- function(dataset){
+  #'Returns the x,y center coordinate of the input dataset
+  #'assuming dims are in FUDGE-specific order
+  spat.dims <- dim(dataset)[1:2]
+  x.mid <- floor(mean(1, spat.dims[1]))
+  y.mid <- floor(mean(1, spat.dims[2]))
+  return(dataset[x.mid,y.mid,,,, ,drop=F])
+}

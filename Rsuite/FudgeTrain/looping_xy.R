@@ -16,7 +16,7 @@ loop.xy.data <- function(){
   for (ival in 1:x.len){
     message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
-    for(jval in 57:57){ #1:y.len
+    for(jval in 1:y.len){ #1:y.len #57:57 for pr
       message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
@@ -78,9 +78,6 @@ loop.xy.data <- function(){
           }
           remove(temp.output)
         }
-#         print(summary(OH.slice))
-#         print(summary(MH.slice))
-#         print(summary(MF.slice))
         #Loop by time window
         for(w in 1:nmasks){
           print(paste("Starting window", w, "of", nmasks))
@@ -183,9 +180,13 @@ loop.xy.data <- function(){
                                             data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,],
                                             hist.pred = MH.window,
                                             hist.targ = OH.window,
-                                            fut.pred = MF.window)
+                                            fut.pred = MF.window, 
+                                            data.atts = adjust.metadata)
           #Your return should include a list of two elements - modified ds out, 
           #and a list of qc masks
+#           print(summary(as.vector(temp.postproc$ds.out)))
+#           print(length(temp.postproc$ds.out))
+#           print(paste(ds.x.start, ds.x.end, ds.y.start, ds.y.end))
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
           if(qc.maskopts$qc.outloop){
             output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
@@ -193,7 +194,7 @@ loop.xy.data <- function(){
           remove(temp.postproc)
         }
         print(summary(as.vector(output.all$ds)))
-        print(dim(output.all$ds))
+#stop('examint output - unless ds method punted, there should be no missing here')
 #         print(summary(output.all$ds[1,1,,1,,]))
 #         print(summary(output.all$ds[1,1,,2,,]))
 #         print(summary(output.all$ds[1,1,,3,,]))

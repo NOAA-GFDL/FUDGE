@@ -344,8 +344,11 @@ for (r in 1:length(fut.pred.rip.list)){
       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
       #Sunstitute to get mask output directory
-      qc.file <- sub(target.var, qc.var, loop.out.filename)
+      #There are two setps - one to add _qcmask to the output directory after OneD; 
+      #the next, to correct the filename
       qc.file <- sub('OneD/', paste0('OneD/', qc.var, '/'), qc.file)
+      qc.filename <- sub(var, qc.var, basename(qc.file))
+      qc.file <- file.path(dirname(qc.file), qc.filename)
       
       ###Check to make sure that it is possible to create the qc file; create dirs if not
       message("Attempting creation of QC file")

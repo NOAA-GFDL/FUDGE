@@ -28,9 +28,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
      #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
      
      ### Remove missing values and be prepared to return a ds QC mask
-     print(lapply(OH, 'summary'))
-     print(lapply(MH, 'summary'))
-     print(lapply(MF, 'summary'))
      nrips <- dim(MF[[1]])[4]
      out.data <- array(NA, dim=dim(MF[[1]]))
      if (train_qcmask){

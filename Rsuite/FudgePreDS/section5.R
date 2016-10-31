@@ -150,98 +150,67 @@ callPRPostproc <- function(test, input, adjusted.output){
   #Performs the adjustments needed for post-downscaling precipitation
   #on the downscaled ouput, including a threshold adjustment for drizzle
   #bias and conservation of the total precipitation per time range
-  #Edited 5-13 for initial try at adding looping by RIP to the scheme invoked
-  rip.list <- lapply(input$data.atts$fut.pred, '[[', 'rip')
-  rips <- unique(unlist(rip.list, use.names=FALSE))
-  if(length(rips) == 0){
-    stop(paste("Error in callPRPostproc: list of rips is of length 0!"))
-  }
+  
   arg.names <- names(test$qc_args)
   #This code is not getting used anywhere else, and I can't remmber why it was supposed to be important
   if(!('thold'%in%arg.names) || !('conserve'%in%arg.names)){
     stop("Error in PR post-processing: One or more of thold or conserve not present in arguments to function")
   }
-  #Loop by rip - remember, s3 and s5, and ds.out all get indexed by var.rip
-  for (r in 1:length(rips)){
-    rip = rips[r]
-    #create sppropriate variable name
-    target.var <- names(input$data.atts$hist.targ)
-    ds.var <- paste0(target.var, ".", rip)
-    #Apply the 0 mask, if needed
-    if(test$qc_args$ignore0=='on'){
-      message(paste('Applying wetday mask for rip', rip,
-                    '. Output will have at least as many days without precip as the data used to downscale.'))
-      temp.adjust <- adjusted.output$ds.out[[ds.var]]
-      #temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
-      #If you downscaled on the future dataset, the adjustment is straightforward
-      if(sum(grepl('MF', ds.names)) > 0){
-        print("Downscaling took place on the MF dataset")
-        temp.adjust[test$qc_args$fut.prmask[[rip]]==0] <- 0
-        adjusted.output$ds.out[[ds.var]] <- temp.adjust
-        test$qc_args$fut.prmask[[rip]] <- 'calculated from the input pr data' #I have no memory of why this was included here
-      }else{
-        print("Downscaling took place on the OH dataset; adjusting OH pr mask to fit")
-        #delta-specific adjustment for the leapyear indices: 
-        print(summary(delta.mask))
-#         temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, 
-#                                                    mask=delta.mask)
-        print(dim(test$qc_args$targ.prmask))
-        #temp.prmask <- test$qc_args$targ.prmask[,,c(which(!is.na(delta.mask))), drop=FALSE]
-        temp.prmask <- trim.time.mask(data=test$qc_args$targ.prmask, mask=delta.mask)
-        print(dim(temp.prmask))
-        #Note: you can't modify this in-place if you are working with the multi rip case!
-        targ.mask <- array(NA, dim=c(dim(temp.adjust)))
-        targ.timelen <- dim(temp.prmask)[3]
-        fut.timelen <- dim(temp.adjust)[3]
-#         print(summary(test$qc_args$targ.prmask))
-#         print(dim(test$qc_args$targ.prmask))
-#         print(paste('targ.timelen:', targ.timelen))
-#         print(paste('fut.timelen:', fut.timelen))
-        for(t in seq(from=1, to=fut.timelen, by=targ.timelen)){
-          if((t + targ.timelen - 1) > fut.timelen){
-            #Final case of the fut.timelen > hist.timelen case:
-            t.stop <- fut.timelen
-            #t.ref <- fut.timelen #(t + targ.timelen - 1)%%fut.timelen
-            t.ref <- fut.timelen - t + 1
-          }else{
-            t.stop <- t + targ.timelen - 1
-            t.ref <- targ.timelen
-          }
-#            print(paste("t:", t))
-#            print(t.stop)
-#            print(t.ref)
-#           print('counts of days without pr in each:')
-#            print(sum(is.na(adjusted.output$ds.out[[ds.var]][,,c(seq(from=t, to=t.stop, by=1))])))
-#            print(sum(temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]==0))
-          targ.mask[,,c(seq(from=t, to=t.stop))] <- temp.prmask[,,c(seq(from=1, to=t.ref, by=1))]
-        }
-#         print('summary of target mask:')
-#         print(summary(targ.mask))
-#         print('summary of downscaled output:')
-#         print(summary(as.vector(temp.adjust)))
-#         print('entire prmask output:')
-#         print(dim(test$qc_args$targ.prmask))
-        #Correction 11-4 for pr masks of 0, 1, and NA
-        temp.adjust[targ.mask==0] <- 0
-        print('summary of temp.adjust after mask application:')
-        print(summary(temp.adjust))
-        adjusted.output$ds.out[[ds.var]] <- temp.adjust
-      }
+  if (test$qc_args$ignore0=='on'){
+    message(paste('Applying wetday mask to ds output'))
+    if (!ds.ref$downscale_oh){
+      #non-OH downscaling is straightforward:
+      #get center of possible 9-point mask and apply to ds output
+      fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
+      adjusted.output$ds.out[!fut.prmask] <- 0
     }else{
-      message('Not applying wetday mask. Output may have fewer days without precipitation than expected.')
+      #Oh downscaling is more complicated, especially when leapdays get involved
+      obs.prmask <- get.xy.center(test$qc_args$targ.prmask)
+      oh.timelen <- dim(input$adjusted.output$hist_targ)[6]
+      mf.timelen <- dim(input$adjusted.output$fut_pred)[6]
+      nrips <- dim(adjusted.output$ds.out)[4]
+      start <- 1
+      #For better or worse, OH gets adjusted by nrips present
+      for(n in 1:nrips){
+        if (oh_timelen >= mf_timelen){
+          #If more samples in OH, index by nyears present
+          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+                                   tmasks$hist.year.div, tmasks$fut.year.div, 
+                                   start_year=start)
+          OH.idx <- idx$index
+          start <- idx$end
+        }else{
+          #If more samples in MF, repeat mask until it matches length of MF sample;
+          #repeat for each ensemble
+          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+                                   tmasks$hist.year.div, tmasks$fut.year.div, 
+                                   start_year=1)
+          OH.idx <- idx$index         
+        }
+        #After either step is complete, index the mask to the future timseries
+        #using index.delta
+        loop.ds.prmask <- index.delta(tmasks$hist.leapmask[OH.idx], 
+                                      tmasks$fut.leapmask, 
+                                      rep(1, oh.timelen), 
+                                      rep(1, mf.timelen), 
+                                      obs.prmask[,,,n,,])
+        adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- adjusted.output$ds.out[,,n,,]
+      }
     }
-    adjusted.pr <- pr.postproc(pr.data  = adjusted.output$ds.out[[ds.var]], 
-                               pr.units = input$data.atts$hist.targ[[target.var]]$units, 
-                               pr.index = test$qc_args$thold, 
-                               pr.conserve = (test$qc_args$conserve=='on'))
-    adjusted.output$ds.out[[ds.var]] <- adjusted.pr$ds.out
-    if(test$qc.mask=='on'){
-      adjusted.output$qc.mask[[ds.var]] <- adjusted.output$qc.mask
-    }
-    #return(list('input' = input, 'adjusted.output' = adjusted.output))
+  }else{
+    message("Not applying wetday mask. Output may have more days without pr than expected.")
+  }
+  adjusted.pr <- pr.postproc(pr.data  = adjusted.output$ds.out, 
+                             pr.units = input$data.atts$pr_oh_units, 
+                             pr.index = test$qc_args$thold, 
+                             pr.conserve = (test$qc_args$conserve=='on'))
+  adjusted.output$ds.out <- adjusted.pr$ds.out
+  if(test$qc.mask=='on'){
+    adjusted.output$qc.mask <- adjusted.output$qc.mask
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))          
 }
+
 
 pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
   #Internal helper function for reading the pr post-processing function
@@ -251,11 +220,13 @@ pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
     pr.dim <- dim(pr.data)
     for(i in 1:pr.dim[1]){
       for(j in 1:pr.dim[2]){
-        data.vec <- pr.data[i,j,]
-        mask.vec <- out.mask[i,j,]
-        data.vec[!is.na(data.vec)] <- conserve.prseries(data=data.vec[!is.na(data.vec)], 
-                                                        mask=mask.vec[!is.na(mask.vec)])
-        pr.data[i,j,] <- data.vec
+        for (n in 1:pr.dim[4]){
+          data.vec <- pr.data[i,j,,n,,]
+          mask.vec <- out.mask[i,j,,n,,]
+          data.vec[!is.na(data.vec)] <- conserve.prseries(data=data.vec[!is.na(data.vec)], 
+                                                          mask=mask.vec[!is.na(mask.vec)])
+          pr.data[i,j,,n,,] <- data.vec
+        }
       }
     }
   }

@@ -40,7 +40,8 @@ index.delta <- function(hist_leapdays, fut_leapdays, hist_mask, fut_mask, data){
     print(sum(fut_days))
     print(rle(as.numeric(hist_days)))
     print(rle(as.numeric(fut_days)))
-    stop('examine output of index.delta')
+    stop(paste('Error in index.delta! number of present days in future and historical samples', 
+               'did not match!'))
   }
   out[fut_days] <- data[hist_days]
   #Repeat Feb.28 for Feb. 29

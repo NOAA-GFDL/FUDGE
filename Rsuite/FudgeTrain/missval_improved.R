@@ -148,7 +148,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
 retry.with.pr.present <- function(data.list, pr.mask, var.list, 
                                   apply_tmask, data.tmask){
   #'For each var in var.list, finds a corresponding el in 
-  #'#data.list and makes all places where pr.mask was T
+  #'#data.list and makes all places where pr.mask was F
   #'(i.e all places where pr was set to NA, indicating dry day)
   #'to 0 instead of NA. This undoes some of the trace pr 
   #'correction for small sample sizes, resulting in enough data to 
@@ -160,10 +160,10 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   #as fixed sptaial grids it is going to be the worst
   if (apply_tmask){
     pr.mask <- apply.fudge.tmask(pr.mask, data.tmask)
-    pr.mask[is.na(pr.mask)] <- F
+    pr.mask[is.na(pr.mask)] <- T
   }
   for (el in var.list){
-    data.list[[el]][pr.mask] <- 0
+    data.list[[el]][!pr.mask] <- 0
   }
   return(data.list)
 }
