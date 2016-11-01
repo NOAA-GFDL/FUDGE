@@ -114,6 +114,10 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
       inside.tails <- seq(inside.start, opp.idx)
       mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
       mult.vec <- DS[delta.idx]/MF[delta.idx]
+      ##Adding missval removal 11-1-2016 - 
+      ##not sure why NaN are present in the first place, but they 
+      ##are being generated now
+      mult.vec <- mult.vec[!is.na(mult.vec)]
       if (any(mult.vec > mult.ifzero)) {
         print("Some calculated multipliers were too large, replacing with max inside tails.")
         mult.vec[mult.vec > mult.ifzero] <- mult.ifzero

@@ -22,18 +22,20 @@
 #'an unflagged value, and every NA represents a value flagged as suspicious. Is NULL if no qc mask
 #'is generated from section 5.
 callS5Adjustment <- function(s5.instructions = list('na'),
-                           data = NA, #downscaled data - from this run or another
-                           data.atts = NA,
-                           hist.pred = NA, 
-                           hist.targ = NA, 
-                           fut.pred = NA, 
-                           verbose=FALSE){
+                             data = NA, #downscaled data - from this run or another
+                             data.atts = NA,
+                             hist.pred = NA, 
+                             hist.targ = NA, 
+                             fut.pred = NA,
+                             ds.atts = ds.atts,
+                             verbose=FALSE){
   input<- list('hist.pred'=hist.pred, 'hist.targ'=hist.targ, 'fut.pred'=fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
+    print(paste('starting s5', test$type))
     out <- switch(test$type, 
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
@@ -44,14 +46,25 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
-
-                  'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh'),
-                  'cdfttailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft'),
+                  'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh', cutoffs=ds.atts),
+                  'cdfttailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft', cutoffs=ds.atts),
                   'cdft_orig_tailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
-
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
+    print('summary of adjusted output:')
+    print(summary(as.vector(out$adjusted.output$ds.out)))
+    #Make sure no dimension information gets lost
+    for(el in names(out$input)){
+      for(var in names(out$input[[el]])){
+        dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
+      }
+    }
+    for(el in names(out$adjusted.output)){
+      #for(var in names(out$adjusted.output[[el]])){
+        dim(out$adjusted.output[[el]]) <- dim(adjusted.output[[el]])
+      #}
+    }
   }
   return(out$adjusted.output)
 }
@@ -85,7 +98,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   #1's show good data
   #'Assumes one predictor variable and one target variable
   #'But multiple ensemble members are supported
-
+  
   if(verbose){print("entering simple bias correction function")}
   if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
     toplim <- test$qc_args$toplim
@@ -126,16 +139,18 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   #You don't actually need the RIPs; just the variable names for ds data
   #Initialize output structure
   out.list <- adjusted.output
-    mask.vec <- ifelse(adjusted.output$ds.out >= 0, yes=1, no=0)
-    if(test$qc.mask=='on'){
-      print('adding qc mask in flag.neg')
-      out.list$qc.mask <- mask.vec
-      out.list$qc.mask[mask.vec==0] <- NA
-    }
-    if(test$adjust.out=='on'){
-      adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out)
-      out.list$ds.out <- adjust.vec
-    }
+  mask.vec <- ifelse(adjusted.output$ds.out >= 0, yes=1, no=0)
+  if(test$qc.mask=='on'){
+    print('adding qc mask in flag.neg')
+    out.list$qc.mask <- mask.vec
+    dim(out.list$qc.mask) <- dim(adjusted.output$ds.out)
+    out.list$qc.mask[mask.vec==0] <- NA
+  }
+  if(test$adjust.out=='on'){
+    adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out)
+    dim(adjust.vec) <- dim(adjusted.output$ds.out)
+    out.list$ds.out <- adjust.vec
+  }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
@@ -155,6 +170,12 @@ callPRPostproc <- function(test, input, adjusted.output){
       #non-OH downscaling is straightforward:
       #get center of possible 9-point mask and apply to ds output
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
+      print(summary(fut.prmask))
+      print('summary of masked output:')
+      dim(fut.prmask)
+      dim(adjusted.output$ds.out)
+      print(summary(as.vector(adjusted.output$ds.out[!fut.prmask])))
+      print(summary(as.vector(adjusted.output$ds.out[fut.prmask])))
       adjusted.output$ds.out[!fut.prmask] <- 0
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
@@ -187,7 +208,7 @@ callPRPostproc <- function(test, input, adjusted.output){
                                       rep(1, oh.timelen), 
                                       rep(1, mf.timelen), 
                                       obs.prmask[,,,n,,])
-        adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- adjusted.output$ds.out[,,n,,]
+        adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
       }
     }
   }else{
@@ -293,7 +314,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     ds.var <- paste0(targ.var, ".", rip)
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred,
-                                         "[[", 'var')==targ.var]
+                                               "[[", 'var')==targ.var]
     #print(summary(as.vector(adjusted.output$ds.out)))
     ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]],
                                obs.hist = input$hist.targ,
@@ -359,33 +380,41 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #a qc mask provided from this data (at least for now)
   #ds.vars <- names(adjusted.output$ds.out)
   
-  ds.var <- names(input$ds.out)
+  ds.var <- names(input$hist.targ)
   out.list <- adjusted.output
+  print('sumamry of input:')
+  print(lapply(input, summary))
+  print(lapply(lapply(input, '[[', 1), summary))
+  print(summary(out.list$ds.out))
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args
     out.list$ds.out <- do.call(test$qc_args$fxn, 
-                                           args=list(as.numeric(out.list$ds.out), 
-                                                     test$qc_args$arg))
-    out.list$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                  args=list(as.numeric(out.list$ds.out), 
+                                            test$qc_args$arg))
+    input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
                                            args=list(as.numeric(input$fut.pred[[ds.var]]), 
                                                      test$qc_args$arg))
-    out.list$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+    input$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$hist.pred[[ds.var]]), 
                                                       test$qc_args$arg))
-    out.list$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
+    input$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$hist.targ[[ds.var]]), 
                                                       test$qc_args$arg))
   }else{
     #If there are no arguments to the transform, you make the call differently
     out.list$ds.out <- do.call(test$qc_args$fxn, 
-                                           args=list(as.numeric(out.list$ds.out)))
-    out.list$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+                                  args=list(as.numeric(out.list$ds.out)))
+    input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
                                            args=list(as.numeric(input$fut.pred[[ds.var]])))
-    out.list$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
+    input$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$hist.pred[[ds.var]])))
-    out.list$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
+    input$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$hist.targ[[ds.var]])))
   }
+  print('sumamry of input:')
+  print(lapply(lapply(input, '[[', 1), summary))
+  print(summary(out.list$ds.out))
+  stop('examine output')
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 

@@ -55,7 +55,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                             stop(paste('Adjustment Method Error: method', test$type, 
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }
-  print(lapply(adjusted.list, 'summary'))
+  #print(lapply(adjusted.list, 'summary'))
   #stop('examine this output')
   return(adjusted.list)
 }
@@ -90,11 +90,6 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-  print(pr_target)
-  print(nrips)
-  print(dim(input$MF[[pr_target]]))
-  print(summary(input$MF[[pr_target]]))
-  print(input$att.list)
 #   for (n in 1:nrips){
 #    MF.slice <- input$MF[[pr_target]][,,n,,,]
     temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],   ref.units=input$att.list$pr_oh_units, 
@@ -103,10 +98,7 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
                               opt.wetday=threshold, 
                               lopt.drizzle=lopt.drizzle, 
                               lopt.conserve=lopt.conserve, 
-                              zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now
-#     if (n==nrips){
-print(summary(temp.out))
-print(lapply(temp.out, summary))
+                              zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
       input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
       input$MH[[pr_target]] <- temp.out$adjust$data
       input$MF[[pr_target]] <- temp.out$future$data
@@ -150,13 +142,6 @@ print(lapply(temp.out, summary))
     if(apply.0.mask){
       postproc.output$propts <- pr_mod
     }
-  # print(lapply(input$MH, 'summary'))
-  # print(summary(input$OH))
-  # print(lapply(input$MF, 'summary'))
-#   print(summary(pr_mod$qc_args$targ.prmask))
-#   print(dim((pr_mod$qc_args$targ.prmask)))
-#   print(summary(as.vector(pr_mod$qc_args$targ.prmask[,,c(seq(1:3652))])))
-#   stop('examine output')
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))
@@ -191,7 +176,8 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
                                    arg=t.fxn[[4]], 
                                    vars=""))
   postproc.output <- c(list(backtform), postproc.output)
-  
+  print('sumamry of input:')
+  print(lapply(lapply(input, '[[', 'pr'), summary))
   #...you know, for more readable metadata, it might be worth it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
   for (datatype in names(input)){
@@ -210,6 +196,8 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
       }
     }
   }
+  print('sumamry of input:')
+  print(lapply(lapply(input, '[[', 'pr'), summary))
   return(list('input'=input,
               's5.list'=postproc.output))
 }

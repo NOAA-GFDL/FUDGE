@@ -5,15 +5,16 @@
 # THIS DOES PRELIMINARY SETUP, LOOPS OVER RIPS & CALLS GENERAL TAIL SCHEME
 # FUNCTION (BELOW)
 
-callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_){
+callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_, 
+                           cutoffs=list()){
   #'Calls a BCSD-style adjustment on quantile-mapped code
   #'based off of the limits to the adjustment of the
   #'MH and MF datasets
-  targ.var <- names(adjusted.output$hist.targ)
+  targ.var <- names(input$hist.targ)
   arg.names <- names(test$qc_args)
   nrips <- dim(adjusted.output$ds.out)[4]
-  if (adjusted.output$qc.mask=='on'){
-    adjusted.output$qc.mask <- list(array(NA, dim=dim(adjusted.output$ds.out)))
+  if (test$qc.mask=='on'){
+    adjusted.output$qc.mask <- array(NA, dim=dim(adjusted.output$ds.out))
   }
   if('ignore0'%in%arg.names){
     #Hasty adjustment to set missing values to 0 in bcsd correction
@@ -21,9 +22,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   }else{
     ignore0 <-  FALSE
   }
-  
-  print(test)
-
 
 # SET SIZE FOR DELTA SAMPLE
   if(!('lastNpts' %in% arg.names)){
@@ -40,31 +38,44 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     stop(paste("Error in callTailAdjust: triggertype must be one of",
                paste(triggertypes, collapse=", ")))
   }
+adjmethods <- c('add', 'mult')
+if(!('adjmethod' %in% arg.names)){
+  stop(paste("Error in callTailAdjust: adjmethod must be specified!"))
+} else if(!test$qc_args$adjmethod %in% adjmethods) {
+  stop(paste("Error in callTailAdjust: adjmethod must be one of",
+             paste(adjmethods, collapse=",")))
+} else {
+  adjmethod <- test$qc_args$adjmethod
+}
     arg_list = list(delta_sample = delta_sample, 
-                    triggertype = triggertype)
-  MH <- adjusted.output$hist.pred[[targ.var]]
-  OH <- adjusted.output$hist.targ[[targ.var]]
+                    triggertype = triggertype, 
+                    adjmethod = adjmethod)
+  MH <- input$hist.pred[[targ.var]]
+  OH <- input$hist.targ[[targ.var]]
   for(n in 1:nrips){
     MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
     DS.slice <- adjusted.output$ds.out[,,,n,,]
     #Check for attributes
     if(triggertype == 'cdft' || triggertype=='cdft_orig'){
-      if(!is.null(attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff'))){
-        high_cutoff=attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff')
-        low_cutoff = attr(adjusted.output$ds.out[[ds.var]], 'low_cutoff')
-        arg_list = c(arg_list, 
-                     list(high_cutoff=high_cutoff, low_cutoff=low_cutoff))
-        print(arg_list)
-        stop('examine output')
+      if(all(c('high_cutoff', 'low_cutoff') %in% names(cutoffs))){
+        #cutoffs should be a list containing two named vectors:
+        #high_cutoff and low_cutoff
+        arg_list = c(arg_list, list(high_cutoff = cutoffs$high_cutoff[n], 
+                                    low_cutoff  = cutoffs$low_cutoff[n]))
+        if (triggertype == 'cdft'){
+          #limited cdft takes new args
+          arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len, 
+                                       trigger = test$qc_args$trigger))
+        }
       }else{
         stop(paste("Error in callTailAdjust: triggertype of cdft",
-                   "specified, but high_cutoff attribute not set in ds data!"))
+                   "specified, but high_cutoff attribute not set in cutoffs!"))
       }
     }
     ds.correct <- tail.correct(model.hist = MH, 
                                obs.hist = OH, 
                                model.fut = MF.slice, 
-                               ds.fut = adjusted.output$ds.out[[ds.var]], 
+                               ds.fut = DS.slice, 
                                args = arg_list)
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
@@ -74,8 +85,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
       adjusted.output$ds.out[,,,n,,] <- as.numeric(ds.correct$ds)
     }
   }
-  print(summary(adjusted.output))
-stop('examine this result')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 

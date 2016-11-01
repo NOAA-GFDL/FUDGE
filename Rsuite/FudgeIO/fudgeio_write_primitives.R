@@ -135,7 +135,7 @@ WriteNC <-  function(filename,out.data,var.names,
   if(!is.na(comment[[1]])){
     comment.vars <- names(comment)
     for(var in comment.vars){
-      ncatt_put(nc.obj, var, "comment", comment[[var]])
+      ncatt_put(nc.obj, var, "comments", comment[[var]])
     }
   }
   #Standard name

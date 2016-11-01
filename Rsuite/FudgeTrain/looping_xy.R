@@ -63,8 +63,6 @@ loop.xy.data <- function(){
                                           adjust.metadata,
                                           s5.instructions=post.ds, 
                                           missval.args = missval.args)
-          #           print(summary(temp.output))
-          #           print(lapply(temp.output, summary))
           #Assign output and remove temporary output
           missval.args <- temp.output$missval.args
           post.ds <- temp.output$s5.list
@@ -97,14 +95,17 @@ loop.xy.data <- function(){
             tmp.s3 <- callS3Adjustment(pre.ds.train, 
                                        MH.slice, OH.slice, MF.slice,
                                        adjust.metadata,
-                                       post_ds_inloop, missval.args)
+                                       s5.instructions=post_ds_inloop, 
+                                       missval.args=missval.args)
             #s3 functions only return data, not metadata
             #(there's only one function that changes metadata, and it is)
             #dealt with by adding elements to the stack
             OH.window <- tmp.s3$input$OH
             MH.window <- tmp.s3$input$MH
             MF.window <- tmp.s3$input$MF
-            post_ds_inloop <- tmp.s3$s5.list
+            window.post_ds_inloop <- tmp.s3$s5.list
+          }else{
+            window.post_ds_inloop <- post_ds_inloop
           }      
           #Call the downsaing method
           print('calling ds')
@@ -116,32 +117,43 @@ loop.xy.data <- function(){
                                  tmasks=tmasks)
           ds.out <- list(ds=tmp.ds$ds)
           qc.out <- c(qc.out, tmp.ds$qc)
-          
-          #          }
+          ds.atts <- tmp.ds$ds.atts
+          ##TALK TO DENNIS ABOUT THIS OTHER ARGUMENT THAT GETS RETURNED SOMETIMES
+          ##...it's better than the atts, but it's going to mean revisions elsewhere
           #       #Call section 5 methods
-          tmp.s5 <- callS5Adjustment(s5.instructions=post_ds_inloop,
-                                     data = ds.out, 
+          tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
+                                     data = ds.out$ds, 
                                      hist.targ = OH.window,
                                      hist.pred = MH.window, 
-                                     fut.pred  = MF.window)
-          ds.out <- tmp.s5$ds
+                                     fut.pred  = MF.window, 
+                                     ds.atts = ds.atts)
+          print(summary(tmp.s5))
+          ds.out <- tmp.s5$ds.out
+          print('summary of output from s5:')
+          print(summary(tmp.s5$ds.out))
           qc.out <- c(qc.out, tmp.s5$qc)
           #...hm. Is it possible to adapt that OU code that included window
           #as an extra dimension and include it for multiple qc masks?
-          combine.out <- c(ds.out, qc.out)
+          combine.out <- list(ds=ds.out, qc=qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
             if (tmasks$time_mask_overlap){
               output[[out]][,,,,,,w] <- apply.fudge.tmask(data=combine.out[[out]], 
                                                           mask=tmasks$trim$masks[[w]])
             }else{
+              print('sumamry of out before adding to the vector')
+              print(summary(combine.out[[out]]))
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }
         }#Loop by w complete
         ##bring together all time levels
         for (el in names(output)){
+          print(summary(as.vector(output[[el]])))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
+          print('tmp.out of:')
+          print(el)
+          print(summary(as.vector(tmp.out)))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
         #Once looping by w complete, do the last s5 adjustment
@@ -154,13 +166,10 @@ loop.xy.data <- function(){
                                             hist.targ = OH.window,
                                             fut.pred = MF.window, 
                                             data.atts = adjust.metadata)
-          print(summary(temp.postproc))
-          #stop('examine output')
           #Your return should include a list of two elements - modified ds out, 
           #and a list of qc masks
-          #           print(summary(as.vector(temp.postproc$ds.out)))
-          #           print(length(temp.postproc$ds.out))
-          #           print(paste(ds.x.start, ds.x.end, ds.y.start, ds.y.end))
+          #Or rather, once you get a list of qc masks, you return them - 
+          #ATM, only one process at a time should be returning a qc mask
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
           if(qc.maskopts$qc.outloop){
             print(dim(output.all$qc))
@@ -168,7 +177,7 @@ loop.xy.data <- function(){
           }
           remove(temp.postproc)
         }
-        print(summary(as.vector(output.all$ds)))
+        #print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
         #stop('examint output - unless ds method punted, there should be no missing here')
         #         print(summary(output.all$ds[1,1,,1,,]))
         #         print(summary(output.all$ds[1,1,,2,,]))

@@ -154,7 +154,7 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
        tmp.out[notna.idx[,n]] <- temp$DS
        out.data[,,,n,,] <- index.qm(index.mask, tmp.out, olap)
        high_cutoffs = c(high_cutoffs, temp$high_cutoff)
-       low_cutoffs = c(low_cutoffs, temp$low_cutoffs)
+       low_cutoffs = c(low_cutoffs, temp$low_cutoff)
        if(is.retry && train_qcmask){
          #This used to be a status setting; replacing with a qcmask creation
          #attr(out.list[[out.var.name]], 'status') <- 1
@@ -166,7 +166,8 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
      attributes(out.data) <- c(attributes(out.data), 
                                list(high_cutoff=high_cutoffs, 
                                     low_cutoff=low_cutoffs))
-     return(list(ds=out.data, qc = qc))
+     return(list(ds=out.data, qc = qc, ds.atts = list(high_cutoff=high_cutoffs, 
+                                                      low_cutoff=low_cutoffs)))
 }
 
 CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){

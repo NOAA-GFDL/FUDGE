@@ -78,13 +78,15 @@ callDSMethod <- function(method, OH, MH, MF, args,
     print('Insufficient values to attempt downscaling; returning NA')
     if (train_qcmask){
       ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
-                  qc = array(NA, dim=dim(MF[[1]])))
+                  qc = array(NA, dim=dim(MF[[1]])), 
+                  ds.atts = NULL)
     }else{
       ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
-                  qc = NULL)
+                  qc = NULL, 
+                  ds.atts = NULL)
     }
   }
-  return(list(ds=ds.out$ds, qc=ds.out$qc))
+  return(list(ds=ds.out$ds, qc=ds.out$qc, ds.atts=ds.out$ds.atts))
 }
 
 ReturnDownscaleError <- function(ds.method){

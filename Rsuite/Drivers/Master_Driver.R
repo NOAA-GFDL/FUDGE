@@ -369,7 +369,7 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.comment.att[qc.var] <- qc.comment
       qc.globals <- global_att_list
       qc.globals$info <- ""
-      qc.globals$comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
+      qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
                                                ds.experiment, label.validation, label.training, 
                                                predictor.vars, fut.pred.rip.list, qc.maskopts$qc.method)
       qc.globals$climatology <- NA
