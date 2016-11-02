@@ -1,3 +1,8 @@
+11-2-16
+- Revised behavior for DeltaSD; calculates deltas based off of nyears_present
+rather than total sample size; indexes results by checking on presence/absence
+of leapdays on historical and future time periods
+
 10-3-16
 (cew)
 - Adding parsing of ncpu,njobs from XML
