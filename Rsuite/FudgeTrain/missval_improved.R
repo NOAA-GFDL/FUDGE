@@ -96,6 +96,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       print(npts.OH)
       print(npts.MH)
       print(npts.MF)
+      print(missval.thold)
       if(missval.thold < 1){
         #Not used often, but should be kept in
         if (tmasks$apply_tmask){
@@ -110,7 +111,9 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         sufficient.data <- all (c(pct.MF, pct.OH, pct.MH) >= missval.thold)
       }else{
         #This is the most common case
-        sufficient.data <- all(c(npts.MF, npts.OH, npts.MH) >= missval.thold)
+        print('common case')
+        sufficient.data <- all(unlist(c(npts.MF, npts.OH, npts.MH), use.names = F) >= missval.thold )
+        print('sufficient data')
       }
       print(sufficient.data)
       if (sufficient.data){
@@ -139,6 +142,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Because this treats a failure in any ensemble as cause to retry absolutely 
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
+  print('before return')
   return(list(OH=OH, MH=MH, MF=MF, 
               qc=qcmask, 
               mv.retry=mv.retry, ds.possible=ds.possible, 

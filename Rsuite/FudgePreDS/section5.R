@@ -382,10 +382,10 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   
   ds.var <- names(input$hist.targ)
   out.list <- adjusted.output
-  print('sumamry of input:')
-  print(lapply(input, summary))
-  print(lapply(lapply(input, '[[', 1), summary))
-  print(summary(out.list$ds.out))
+#   print('sumamry of input:')
+#   print(lapply(input, summary))
+#   print(lapply(lapply(input, '[[', 1), summary))
+#   print(summary(out.list$ds.out))
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args
     out.list$ds.out <- do.call(test$qc_args$fxn, 
@@ -411,10 +411,10 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
     input$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$hist.targ[[ds.var]])))
   }
-  print('sumamry of input:')
-  print(lapply(lapply(input, '[[', 1), summary))
-  print(summary(out.list$ds.out))
-  stop('examine output')
+#   print('sumamry of input:')
+#   print(lapply(lapply(input, '[[', 1), summary))
+#   print(summary(out.list$ds.out))
+#   stop('examine output')
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 

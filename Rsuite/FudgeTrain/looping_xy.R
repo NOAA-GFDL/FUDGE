@@ -52,7 +52,7 @@ loop.xy.data <- function(){
         #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
         #looping by time window
         message('Looking for pre-processing functions to apply')
-        if(length(pre.ds) !=0){
+        if(s3.outloop){
           message('Applying S3 Adjustment')
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
@@ -93,7 +93,7 @@ loop.xy.data <- function(){
           #Call section 3 methods; reassign output
           if (s3.inloop){
             tmp.s3 <- callS3Adjustment(pre.ds.train, 
-                                       MH.slice, OH.slice, MF.slice,
+                                       MH.window, OH.window, MF.window,
                                        adjust.metadata,
                                        s5.instructions=post_ds_inloop, 
                                        missval.args=missval.args)
@@ -121,20 +121,23 @@ loop.xy.data <- function(){
           ##TALK TO DENNIS ABOUT THIS OTHER ARGUMENT THAT GETS RETURNED SOMETIMES
           ##...it's better than the atts, but it's going to mean revisions elsewhere
           #       #Call section 5 methods
-          tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
-                                     data = ds.out$ds, 
-                                     hist.targ = OH.window,
-                                     hist.pred = MH.window, 
-                                     fut.pred  = MF.window, 
-                                     ds.atts = ds.atts)
-          print(summary(tmp.s5))
-          ds.out <- tmp.s5$ds.out
-          print('summary of output from s5:')
-          print(summary(tmp.s5$ds.out))
-          qc.out <- c(qc.out, tmp.s5$qc)
+          if(s5.inloop){
+            tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
+                                       data = ds.out$ds, 
+                                       hist.targ = OH.window,
+                                       hist.pred = MH.window, 
+                                       fut.pred  = MF.window, 
+                                       ds.atts = ds.atts)
+            print(summary(tmp.s5))
+            ds.out <- tmp.s5$ds.out
+            print('summary of output from s5:')
+            print(summary(tmp.s5$ds.out))
+            qc.out <- c(qc.out, tmp.s5$qc)
+          }
           #...hm. Is it possible to adapt that OU code that included window
           #as an extra dimension and include it for multiple qc masks?
-          combine.out <- list(ds=ds.out, qc=qc.out)
+          print(summary(ds.out))
+          combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
             if (tmasks$time_mask_overlap){
@@ -159,7 +162,7 @@ loop.xy.data <- function(){
         #Once looping by w complete, do the last s5 adjustment
         #Call the Section 5 Adjustments to be applied to post-downscaled output
         message("Calling outloop Section 5 Adjustments")
-        if(length(post.ds) !=0){
+        if(s5.outloop){
           temp.postproc <- callS5Adjustment(post.ds,
                                             data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,],
                                             hist.pred = MH.window,

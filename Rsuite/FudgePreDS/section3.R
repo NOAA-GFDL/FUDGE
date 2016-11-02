@@ -176,8 +176,8 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
                                    arg=t.fxn[[4]], 
                                    vars=""))
   postproc.output <- c(list(backtform), postproc.output)
-  print('sumamry of input:')
-  print(lapply(lapply(input, '[[', 'pr'), summary))
+#   print('sumamry of input:')
+#   print(lapply(lapply(input, '[[', 'pr'), summary))
   #...you know, for more readable metadata, it might be worth it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
   for (datatype in names(input)){
@@ -196,8 +196,8 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
       }
     }
   }
-  print('sumamry of input:')
-  print(lapply(lapply(input, '[[', 'pr'), summary))
+#   print('sumamry of input:')
+#   print(lapply(lapply(input, '[[', 'pr'), summary))
   return(list('input'=input,
               's5.list'=postproc.output))
 }
