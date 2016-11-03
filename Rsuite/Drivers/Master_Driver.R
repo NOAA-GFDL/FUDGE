@@ -50,7 +50,7 @@ if (length(console.args) > 0){
   oh_by <- 1
   mh_by <- 1 #5 #3
   mf_by <- 1 #5 #3
-  i_idx <- 53 #194 #10
+  i_idx <- 37 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
   x.pad <- "NA"
 }
@@ -108,7 +108,8 @@ s3.inloop <- length(pre.ds.train) > 0
 #training qc makss are their own thing
 s5.inloop <- length(post_ds_inloop) > 0
 s5.outloop <- length(post_ds_outloop) > 0
-
+#And finally, check to see if a training (minsamplesize) qc mask
+train_qcmask <- 'qc.train' %in% sapply(mask.list, '[[', 'type')
 
 #Adapt some of the parameters being set by the f-to-g bridge code
 if(!exists('pr_opts')){
@@ -209,7 +210,9 @@ tmask.list <- get.fudge.timemask.list()
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 adjust.metadata <- get.adjust.metadata(OH, MH, MF)
-missval.args <- list()
+
+message("Checking the missing value arguments")
+missval.args <- getMissvalArgs(args)
 
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######
@@ -244,7 +247,6 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
                   mf.dim[4:6]) #time/ensemble/n vars come from the MF dataset
 ds <- list('ds' = array(NA, dim=output.dim), 
            'qc' = array(NA, dim=output.dim))
-missval.args = list()
 
 ##s3 call formerly here
 

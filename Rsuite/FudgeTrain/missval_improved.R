@@ -1,5 +1,5 @@
  
-count.all.present.xy <- function(dataset){
+count.all.present.xyn <- function(dataset){
   #Returns the number of non-missng values at each x,y,ens point
   return(as.vector(apply(dataset, c(1,2,4), 
                          function(x){
@@ -37,6 +37,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Okay, so this should not technically remove missing values - 
   #you still need the extra missvals in place in order to index
   #your output vectors.
+  print(missval.thold)
+  print(summary(missval.args))
   missval.status <- 0
   #Evaluate back in the current environment (delta can affect status)
   switch(missval.method, 
@@ -48,9 +50,9 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Technically, this needs to loop by ensemble member - 
   #pooling steps can't be used at this point b/c we haven't implemented
   #those yet.
-  npts.MF <- unlist(lapply(MF, count.all.present.xy), use.names = F)
-  npts.OH <- unlist(lapply(OH, count.all.present.xy), use.names = F)
-  npts.MH <- unlist(lapply(MH, count.all.present.xy), use.names = F)
+  npts.MF <- unlist(lapply(MF, count.all.present.xyn), use.names = F)
+  npts.OH <- unlist(lapply(OH, count.all.present.xyn), use.names = F)
+  npts.MH <- unlist(lapply(MH, count.all.present.xyn), use.names = F)
   ##Actual missing value synchronization steps need to take place in here
   ## and return exactly the same shape of data
   if(missval.thold < 1){
@@ -79,19 +81,19 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
       message('retrying sample size wiht precipiation added in')
-      print("npts counts before:")
-      print(npts.OH)
-      print(npts.MH)
-      print(npts.MF)
+      print("*npts counts before:")
+      print(paste("*OH:", npts.OH))
+      print(paste("*MH:", npts.MH))
+      print(paste("*MF:", paste(npts.MF)))
+      MF <- retry.with.pr.present(MF, missval.args$pr$MF, missval.args$pr$pr_mf, 
+                                  tmasks$apply_tmasks, tmasks$MF$masks[[w]])
       OH <- retry.with.pr.present(OH, missval.args$pr$OH, missval.args$pr$pr_oh, 
                           tmasks$apply_tmasks, tmasks$OH$masks[[w]])
       MH <- retry.with.pr.present(MH, missval.args$pr$MH, missval.args$pr$pr_mh, 
                           tmasks$apply_tmasks, tmasks$MH$masks[[w]])
-      MF <- retry.with.pr.present(MF, missval.args$pr$MF, missval.args$pr$pr_mf, 
-                          tmasks$apply_tmasks, tmasks$MF$masks[[w]])
-      npts.MF <- lapply(MF, count.all.present.xy)
-      npts.OH <- lapply(OH, count.all.present.xy)
-      npts.MH <- lapply(MH, count.all.present.xy)
+      npts.MF <- lapply(MF, count.all.present.xyn)
+      npts.OH <- lapply(OH, count.all.present.xyn)
+      npts.MH <- lapply(MH, count.all.present.xyn)
       print("npts counts:")
       print(npts.OH)
       print(npts.MH)
@@ -114,12 +116,14 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         print('common case')
         sufficient.data <- all(unlist(c(npts.MF, npts.OH, npts.MH), use.names = F) >= missval.thold )
         print('sufficient data')
+        print(sufficient.data)
       }
-      print(sufficient.data)
+      #print(sufficient.data)
+      #stop('retry happened successfully')
       if (sufficient.data){
         ds.possible <- T
       }
-      ds.possible <- F
+#       ds.possible <- F
     }else{
       #If there are no pr missing values, don't downscale the point
       ds.possible <- F
@@ -163,11 +167,23 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   #...this is going to be so nasty when we get vaugely pr-like vars
   #as fixed sptaial grids it is going to be the worst
   if (apply_tmask){
+#    print(rle(apply(pr.mask, c(6), 'sum', na.rm=T)))
     pr.mask <- apply.fudge.tmask(pr.mask, data.tmask)
+#     print(dim(pr.mask))
+#     print(rle(apply(pr.mask, c(6), 'sum', na.rm=T)))
+#     print(lapply(data.list, 'dim'))
     pr.mask[is.na(pr.mask)] <- T
+    #...okay, I can see why thishould be T.
+    #You don't want to apply this when the 
+    #data is not present.
+#    stop('examine output')
   }
   for (el in var.list){
     data.list[[el]][!pr.mask] <- 0
+    ##Retrying with the old, wrong behavior.
+#     data.tmp <- data.list[[el]][!is.na(data.tmask)]
+#     data.tmp[is.na(data.tmp)] <- 0
+#     data.list[[el]][!is.na(data.tmask)] <- data.tmp
   }
   return(data.list)
 }

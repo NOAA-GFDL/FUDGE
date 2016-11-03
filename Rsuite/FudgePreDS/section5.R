@@ -170,13 +170,17 @@ callPRPostproc <- function(test, input, adjusted.output){
       #non-OH downscaling is straightforward:
       #get center of possible 9-point mask and apply to ds output
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
-      print(summary(fut.prmask))
-      print('summary of masked output:')
-      dim(fut.prmask)
-      dim(adjusted.output$ds.out)
-      print(summary(as.vector(adjusted.output$ds.out[!fut.prmask])))
-      print(summary(as.vector(adjusted.output$ds.out[fut.prmask])))
       adjusted.output$ds.out[!fut.prmask] <- 0
+      #Testing 11-2-16: check on whether the no longer simple and wrong pr fix
+      #behaves as expected
+#       print(summary(as.vector(adjusted.output$ds.out)))
+#       adj.tmp <- adjusted.output$ds.out[!is.na(tmasks$MF$masks[[w]])]
+#       adj.tmp[is.na(adj.tmp)]  <- 0
+#       adjusted.output$ds.out[!is.na(tmasks$MF$masks[[w]])] <- adj.tmp
+# #       print(summary(as.vector(adjusted.output$ds.out)))
+# #       print(length(adjusted.output$ds.out))
+# #       stop('examine utput')
+      #adjusted.output$ds.out[!is.na(tmasks$MF$masks[[w]])][is.na(adjusted.output$ds.out)] <- 0
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
       obs.prmask <- get.xy.center(test$qc_args$targ.prmask)

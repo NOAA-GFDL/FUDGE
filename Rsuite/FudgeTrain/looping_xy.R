@@ -112,8 +112,8 @@ loop.xy.data <- function(){
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
                                  missvals=ds.ref$missval_method, 
-                                 minsample=1, 
                                  missval.args=missval.args,
+                                 train_qcmask=train_qcmask,
                                  tmasks=tmasks)
           ds.out <- list(ds=tmp.ds$ds)
           qc.out <- c(qc.out, tmp.ds$qc)
@@ -128,10 +128,10 @@ loop.xy.data <- function(){
                                        hist.pred = MH.window, 
                                        fut.pred  = MF.window, 
                                        ds.atts = ds.atts)
-            print(summary(tmp.s5))
+#             print(summary(tmp.s5))
+#             print('summary of output from s5:')
+#             print(summary(tmp.s5$ds.out))
             ds.out <- tmp.s5$ds.out
-            print('summary of output from s5:')
-            print(summary(tmp.s5$ds.out))
             qc.out <- c(qc.out, tmp.s5$qc)
           }
           #...hm. Is it possible to adapt that OU code that included window
@@ -140,12 +140,11 @@ loop.xy.data <- function(){
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
-            if (tmasks$time_mask_overlap){
-              output[[out]][,,,,,,w] <- apply.fudge.tmask(data=combine.out[[out]], 
-                                                          mask=tmasks$trim$masks[[w]])
-            }else{
-              print('sumamry of out before adding to the vector')
+              print('summary of out before adding to the vector')
               print(summary(combine.out[[out]]))
+              print(dim(output[[out]]))
+              print(length(output[[out]]))
+            if (!is.null(combine.out[[out]])){
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }
@@ -153,7 +152,8 @@ loop.xy.data <- function(){
         ##bring together all time levels
         for (el in names(output)){
           print(summary(as.vector(output[[el]])))
-          tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
+          #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
+          tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
           print('tmp.out of:')
           print(el)
           print(summary(as.vector(tmp.out)))
@@ -225,4 +225,12 @@ missing.all.xy <- function(dataset){
   ))
 }
 
+na.sum <- function(x){
+  #Helper function for getting right behavior from sum
+  if (all(is.na(x))){
+    return(NA)
+  }else{
+    return(sum(x, na.rm=T))
+  }
+}
 

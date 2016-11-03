@@ -28,13 +28,13 @@
 #'with 0 for all values that did not pass the test and 1 for all values that did.
 
 callS3Adjustment<-function(s3.instructions=list('na'),
-                   MH = NA, 
-                   OH = NA, 
-                   MF = NA, 
-                   adjust.metadata=list(),
-                   create.qc.mask=FALSE, create.adjust.out=FALSE, 
-                   s5.instructions=list('na'), 
-                   missval.args = list()){
+                           MH = NA, 
+                           OH = NA, 
+                           MF = NA, 
+                           adjust.metadata=list(),
+                           create.qc.mask=FALSE, create.adjust.out=FALSE, 
+                           s5.instructions=list('na'), 
+                           missval.args = list()){
   #Create list of variables that will not change with iteration
   #input<- list('MH' = MH, 'OH' = OH, 'MF' = MF)
   #Define data that will change with iteration
@@ -90,58 +90,58 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-#   for (n in 1:nrips){
-#    MF.slice <- input$MF[[pr_target]][,,n,,,]
-    temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],   ref.units=input$att.list$pr_oh_units, 
-                              adjust.data=input$MH[[pr_target]],adjust.units=input$att.list$pr_mh_units[pr_target],
-                              future.data=input$MF[[pr_target]],future.units=input$att.list$pr_mf_units[pr_target],
-                              opt.wetday=threshold, 
-                              lopt.drizzle=lopt.drizzle, 
-                              lopt.conserve=lopt.conserve, 
-                              zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
-      input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
-      input$MH[[pr_target]] <- temp.out$adjust$data
-      input$MF[[pr_target]] <- temp.out$future$data
-      if(apply.0.mask){
-        tmp.ref <- temp.out$ref$pr_mask
-        tmp.adj <- temp.out$adjust$pr_mask
-        tmp.ref[tmp.ref==0] <- NA
-        tmp.adj[tmp.adj==0] <- NA
-        print(summary(input$OH[[pr_target]]))
-        print(summary(tmp.ref))
-        input$OH[[pr_target]] <- (input$OH[[pr_target]]   * tmp.ref)
-        for (el in input$att.list$pr_mh){
-          input$MH[[el]] <- input$MH[[el]] * tmp.adj
-        }
-        #This should make sure that when extra missing values are added, all datasets
-        #in the predictor datasets will have the missing values added back in
-        tmp.fut <- temp.out$future$pr_mask
-        tmp.fut[tmp.fut==0] <- NA
-        for (el in input$att.list$pr_mf){
-          input$MF [[el]] <- input$MF[[el]] * tmp.fut
-        }
-        #Save future pr mask fo application in section 5;
-        #note that it is the presence of this mask that 
-        #leads to the adjustment being performed.
-        if(!(ds.ref$downscale_oh)){
-          print(paste('adding future prmask'))
-          fut.prmask <- temp.out$future$pr_mask
-          pr_mod$qc_args$fut.prmask <- fut.prmask
-        }else{
-          #Assume that you are downsciang on the OH dataset instead; store accordingly
-          print(paste('adding target prmask'))
-          pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
-        }
-      } 
-    missval.args$pr <-list(OH=temp.out$ref$pr_mask, 
-                         MH=temp.out$adjust$pr_mask, 
-                         MF=temp.out$future$pr_mask, 
-                         pr_oh = input$att.list$pr_oh, 
-                         pr_mh = input$att.list$pr_mh, 
-                         pr_mf = input$att.list$pr_mf)
-    if(apply.0.mask){
-      postproc.output$propts <- pr_mod
+  #   for (n in 1:nrips){
+  #    MF.slice <- input$MF[[pr_target]][,,n,,,]
+  temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],   ref.units=input$att.list$pr_oh_units, 
+                            adjust.data=input$MH[[pr_target]],adjust.units=input$att.list$pr_mh_units[[pr_target]],
+                            future.data=input$MF[[pr_target]],future.units=input$att.list$pr_mf_units[[pr_target]],
+                            opt.wetday=threshold, 
+                            lopt.drizzle=lopt.drizzle, 
+                            lopt.conserve=lopt.conserve, 
+                            zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
+  input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
+  input$MH[[pr_target]] <- temp.out$adjust$data
+  input$MF[[pr_target]] <- temp.out$future$data
+  if(apply.0.mask){
+    tmp.ref <- temp.out$ref$pr_mask
+    tmp.adj <- temp.out$adjust$pr_mask
+    tmp.ref[tmp.ref==0] <- NA
+    tmp.adj[tmp.adj==0] <- NA
+    print(summary(input$OH[[pr_target]]))
+    print(summary(tmp.ref))
+    input$OH[[pr_target]] <- (input$OH[[pr_target]]   * tmp.ref)
+    for (el in input$att.list$pr_mh){
+      input$MH[[el]] <- input$MH[[el]] * tmp.adj
     }
+    #This should make sure that when extra missing values are added, all datasets
+    #in the predictor datasets will have the missing values added back in
+    tmp.fut <- temp.out$future$pr_mask
+    tmp.fut[tmp.fut==0] <- NA
+    for (el in input$att.list$pr_mf){
+      input$MF[[el]] <- input$MF[[el]] * tmp.fut
+    }
+    #Save future pr mask fo application in section 5;
+    #note that it is the presence of this mask that 
+    #leads to the adjustment being performed.
+    if(!(ds.ref$downscale_oh)){
+      print(paste('adding future prmask'))
+      fut.prmask <- temp.out$future$pr_mask
+      pr_mod$qc_args$fut.prmask <- fut.prmask
+    }else{
+      #Assume that you are downsciang on the OH dataset instead; store accordingly
+      print(paste('adding target prmask'))
+      pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
+    }
+  } 
+  missval.args$pr <-list(OH=temp.out$ref$pr_mask, 
+                           MH=temp.out$adjust$pr_mask, 
+                           MF=temp.out$future$pr_mask, 
+                           pr_oh = input$att.list$pr_oh, 
+                           pr_mh = input$att.list$pr_mh, 
+                           pr_mf = input$att.list$pr_mf)
+  if(apply.0.mask){
+    postproc.output$propts <- pr_mod
+  }
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))
@@ -158,26 +158,26 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   
   #Do a basic check for the presence of the variables you want to check  
   t.fxn <- switch(tform,
-                    'log base e' = list('log', NULL, 'exp', NULL), 
-                    'log base 10' = list('log10', NULL, 'exp10', NULL), 
-                    'power' = list('^', test$pp.args$arg, '^', (1/test$pp.args$arg)), 
-                    stop(paste("Error in callPRTransform: transform", tform, 
-                               "was not one of the allowed options!")))
-    #Insert saving of t.fxn in the section 5 list in this bit
-    #note that the adjustment gets added to the TOP of the stack
-    backtform <- list(type='backtransform',
-                      adjust.out='on',
-                      qc.mask='off',
-                      loc='present', #shouldn't need to be set; 
-                      #should be added to the current s5 list and executed
-                      #accordingly; check to see whether this needs new entries
-                      #in the metadata
-                      qc_args=list(fxn=t.fxn[[3]], 
-                                   arg=t.fxn[[4]], 
-                                   vars=""))
+                  'log base e' = list('log', NULL, 'exp', NULL), 
+                  'log base 10' = list('log10', NULL, 'exp10', NULL), 
+                  'power' = list('^', test$pp.args$arg, '^', (1/test$pp.args$arg)), 
+                  stop(paste("Error in callPRTransform: transform", tform, 
+                             "was not one of the allowed options!")))
+  #Insert saving of t.fxn in the section 5 list in this bit
+  #note that the adjustment gets added to the TOP of the stack
+  backtform <- list(type='backtransform',
+                    adjust.out='on',
+                    qc.mask='off',
+                    loc='present', #shouldn't need to be set; 
+                    #should be added to the current s5 list and executed
+                    #accordingly; check to see whether this needs new entries
+                    #in the metadata
+                    qc_args=list(fxn=t.fxn[[3]], 
+                                 arg=t.fxn[[4]], 
+                                 vars=""))
   postproc.output <- c(list(backtform), postproc.output)
-#   print('sumamry of input:')
-#   print(lapply(lapply(input, '[[', 'pr'), summary))
+  #   print('sumamry of input:')
+  #   print(lapply(lapply(input, '[[', 'pr'), summary))
   #...you know, for more readable metadata, it might be worth it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
   for (datatype in names(input)){
@@ -191,13 +191,13 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
         }else{
           #Otherwise, call without arguments
           input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
-                                         list(input[[datatype]][[var]]))
+                                              list(input[[datatype]][[var]]))
         }
       }
     }
   }
-#   print('sumamry of input:')
-#   print(lapply(lapply(input, '[[', 'pr'), summary))
+  #   print('sumamry of input:')
+  #   print(lapply(lapply(input, '[[', 'pr'), summary))
   return(list('input'=input,
               's5.list'=postproc.output))
 }

@@ -38,6 +38,11 @@ callEDQMv2<-function(LH,CH,CF,args){
     
     #Unlist data from its input form
     #CH <- unlist(CH)
+    CH <- CH[!is.na(CH)]
+    LH <- LH[!is.na(LH)]
+    CF.idx <- !is.na(CF)
+    CF <- CF[!is.na(CF)]
+    
     lengthCH<-length(CH)
     lengthLH<-length(LH)
     lengthCF<-length(CF)
@@ -78,7 +83,9 @@ callEDQMv2<-function(LH,CH,CF,args){
 #    }
 #    return(out.list)
 #    #return(temp$EquiDistant[!is.na(temp$EquiDistant)])
-  return(temp$EquiDistant[1:lengthCF])
+  ds.out <- rep(NA, length(CF.idx))
+  ds.out[CF.idx] <- temp$EquiDistant[1:lengthCF]
+  return(ds.out)
 }
 
 callCFQMv3<-function(LH,CH,CF, args){

@@ -24,14 +24,14 @@
 
 callDSMethod <- function(method, OH, MH, MF, args, 
                          missvals="distributional", 
-                         minsample=1, missval.args=list(), 
+                         missval.args=list(minsamplesize=1), 
                          train_qcmask=F, tmasks=list()){
 #   save(file="/home/cew/Code/h_testing//ds_debug/save/ds_call.R", 
 #        list=c('OH', 'MH', 'MF'))
 #   stop('examine output')
   #Remove missing values
   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
-                                       minsample, missval.args, 
+                                       missval.args$minsamplesize, missval.args, 
                                        missval.method='distributional', 
                                        return_qcmask = train_qcmask)
   OH <- missval.out$OH
@@ -43,9 +43,9 @@ callDSMethod <- function(method, OH, MH, MF, args,
   remove(missval.out) #The remove might not be neccessary here, but it doesn't hurt
   #don't bother assigning status for now
   #Call downscaling function
-  print(summary(MF))
-  print(lapply(MF, summary))
-  print(dim(MF))
+  if (!ds.possible){
+    stop('examine coordinates; this should not be possible with current settings')
+  }
   if (ds.possible){
     ds.out <- switch(method, 
                      'lm'      = callMultiLM_new(OH, MH, MF, args), 
