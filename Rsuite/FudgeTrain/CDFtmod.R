@@ -153,7 +153,6 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
        low_cutoffs = c(low_cutoffs, temp$low_cutoff)
        if(is.retry && train_qcmask){
          #This used to be a status setting; replacing with a qcmask creation
-         #attr(out.list[[out.var.name]], 'status') <- 1
          qc[,,,n,,] <- NA
        }
      }

@@ -2,19 +2,6 @@
 #Both functions are designed to work on multivar datasets,
 #and handle multiple points by decomposing into separate vars.
 
-callMultiLM <- function(OH, MH, MF, args){
-  #Pre-processing step to compress vectors into multivariate form
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
-  #It's not possible to remove missing values at this step due to 
-  #multi-ensemble considerations for the MF data.                           
-  #Multi ensembles in OH and MH get pooled in the next step\
-  lm.out <- multi.lm(OH.data, MH.data, MF.data, args)
-  #lm.out has two components: ds and qc
-  return(lm.out)
-}
-
 callLMAll <- function(OH, MH, MF, args, ds.method='lm', 
                       missval.args, tmasks, train_qcmask=F){
   #'Setup operations for methods that behave a lot like lm
@@ -57,6 +44,12 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       )
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
       out.data[,,,n,,][notna.index] <- ds.out
+      #If train_qcmask, check for whether function had to retry
+      if(missval.out$mv.retry && train_qcmask){
+        #Double-check on pr settings for this - are there different settings
+        #for retry and insufficient points?
+        out.data[,,,n,,] <- NA 
+      }
     }
   }else{
     #If there is not enough data to downscale, the 
@@ -67,28 +60,6 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   return(list(ds=out.data, qc=qc))
 }
 
-
-
-callMultiLM_new <- function(OH, MH, MF, args){
-  #Pre-processing step to compress vectors into multivariate/multi-point form
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
-  targ.var <- names(OH.data)
-  nrips <- dim(MF[[1]])[4]
-  #It's not possible to remove missing values at this step due to 
-  #multi-ensemble considerations for the MF data.                           
-  #Multi ensembles in OH and MH get pooled in the next step
-  lm.model <- lm.train(OH.data, MH.data)
-  for (n in 1:nrips){
-    MF.slice <- lapply(MF, '[', ,,,n,,)
-    MF.slice <- lapply(MF.slice, 'as.vector')
-    ds.out <- lm.downscale(lm.model, MF.slice)
-    notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-    out.data[,,,n,,][notna.index] <- ds.out
-  }
-  return(list(ds=out.data, qc=NULL))
-}
 
 lm.train <- function(OH, MH){
   #OH and MH are named lists of vectors returned by compress.xy.data
@@ -192,8 +163,6 @@ callStep.lm <- function(OH, MH, MF, args){
   #It's not possible to remove missing values at this step due to 
   #multi-ensemble considerations for the MF data.                           
   #Multi ensembles in OH and MH get pooled in the next step 
-#   save(file='/home/cew/Code/testing/test_out.R', list=c('OH.data', 'MH.data', "MF.data", 'args'))
-#   stop('examine data')
   lm.out <- step.lm(OH.data, MH.data, MF.data, args)
   #lm.out contains two components: ds and qc (list of vectors)
   return(lm.out)
@@ -210,6 +179,43 @@ callStep.lm_new <- function(OH, MH, MF, args){
   #multi-ensemble considerations for the MF data.                           
   #Multi ensembles in OH and MH get pooled in the next step
   lm.model <- lmstep.train(OH.data, MH.data, c(args, list(targ.var=targ.var)))
+  for (n in 1:nrips){
+    MF.slice <- lapply(MF, '[', ,,,n,,)
+    MF.slice <- lapply(MF.slice, 'as.vector')
+    ds.out <- lm.downscale(lm.model, MF.slice)
+    notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
+    out.data[,,,n,,][notna.index] <- ds.out
+  }
+  return(list(ds=out.data, qc=NULL))
+}
+
+callMultiLM <- function(OH, MH, MF, args){
+  #Pre-processing step to compress vectors into multivariate form
+  OH.data <- compress.xy.data(OH)
+  MH.data <- compress.xy.data(MH)
+  MF.data <- compress.xy.data(MF)
+  #It's not possible to remove missing values at this step due to 
+  #multi-ensemble considerations for the MF data.                           
+  #Multi ensembles in OH and MH get pooled in the next step\
+  lm.out <- multi.lm(OH.data, MH.data, MF.data, args)
+  #lm.out has two components: ds and qc
+  return(lm.out)
+}
+
+
+
+
+callMultiLM_new <- function(OH, MH, MF, args){
+  #Pre-processing step to compress vectors into multivariate/multi-point form
+  OH.data <- compress.xy.data(OH)
+  MH.data <- compress.xy.data(MH)
+  MF.data <- compress.xy.data(MF)
+  targ.var <- names(OH.data)
+  nrips <- dim(MF[[1]])[4]
+  #It's not possible to remove missing values at this step due to 
+  #multi-ensemble considerations for the MF data.                           
+  #Multi ensembles in OH and MH get pooled in the next step
+  lm.model <- lm.train(OH.data, MH.data)
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,,)
     MF.slice <- lapply(MF.slice, 'as.vector')
