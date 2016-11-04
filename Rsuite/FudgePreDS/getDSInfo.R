@@ -16,7 +16,7 @@ getDSInfo <- function(ds.method){
   print(ds.idx)
   ds.object <- list('method'         = ds.method, 
                     'downscale_oh'   = eval(parse(text=input$downscale_oh[ds.idx])),
-                    'predictors'     = csplit(input$predictors[ds.idx]), 
+                    'predictors'     = csplit(input$predictor_datasets[ds.idx]), 
                     'target'         = input$target[ds.idx], 
                     'missval_method' = input$missval_method[ds.idx], 
                     'multipt_method' = input$multipt_method[ds.idx], 

@@ -4,7 +4,13 @@
 #(BCQM, CFQM, EDQM)
 #CFQMv2 is kept for reference purposes - it's been repalced by v3
 
-callQM <- function(OH, MH, MF, args, type="", tmasks=list()){
+callQM <- function(OH, MH, MF, args, type="", tmasks=list(), 
+                   missval.args=list(minsamplesize=1)){
+  
+  
+#   OH <- OH
+#   MH <- MH
+  
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
   #Prepare indexing mask
@@ -16,13 +22,32 @@ callQM <- function(OH, MH, MF, args, type="", tmasks=list()){
     index.mask <- tmasks$MF$masks[[w]]
     olap=F
   }
+  MF_mask <- missval.args$pr$MF
   for (n in 1:nrips){
-    MF.slice <- MF[[1]][,,,n,,]
+    MF.slice <- lapply(MF, '[', ,,,n,, , drop=F) #[,,,n,,]
+    #print(lapply(MF.slice, 'dim'))
+    missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
+      missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
+                                           30, 
+                                           #missval.args$minsamplesize, 
+                                           missval.args, 
+                                           missval.method='distributional', 
+                                           return_qcmask = F) #train_qcmask)
+      OH.slice <- missval.out$OH[[1]]
+      MH.slice <- missval.out$MH[[1]]
+      MF.slice <- missval.out$MF[[1]]
+      #train.qc   <- missval.out$qcmask
+      train.stat <- missval.out$missval.status
+      ds.possible <- missval.out$ds.possible
+    if(ds.possible){
     out <- switch(type, 
                   'BCQM' = callBCQMv2(OH[[1]], MH[[1]], MF.slice, args), 
                   'CFQM' = callCFQMv3(OH[[1]], MH[[1]], MF.slice, args), 
-                  'EDQM' = callEDQMv2(OH[[1]], MH[[1]], MF.slice, args))
+                  'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
   out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+    }else{
+      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+    }
   }
   return(list(ds=out.data, qc=NULL))
 }

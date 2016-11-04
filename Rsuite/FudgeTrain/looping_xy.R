@@ -16,7 +16,7 @@ loop.xy.data <- function(){
   for (ival in 1:x.len){
     message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
-    for(jval in 1:y.len){ #1:y.len #57:57 for pr
+    for(jval in 1:y.len){ #1:y.len #57:57 for pr, 25:25 for pr diffs
       message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
@@ -189,11 +189,11 @@ loop.xy.data <- function(){
       } 
     }#loop by y
   }#loop by x
-  # print(summary(as.vector(output.all$ds[1,,,1,,])))
-  # print(summary(as.vector(output.all$ds[1,,,2,,])))
-  # print(summary(as.vector(output.all$ds[1,,,3,,])))
-  # print(summary(as.vector(output.all$ds)))
-  # stop('examine output')
+  print(summary(as.vector(output.all$ds[1,,,1,,])))
+  print(summary(as.vector(output.all$ds[1,,,2,,])))
+  print(summary(as.vector(output.all$ds[1,,,3,,])))
+  print(summary(as.vector(output.all$ds)))
+ #  stop('examine output')
   return(output.all)
 }
 

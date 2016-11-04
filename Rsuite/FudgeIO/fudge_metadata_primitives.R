@@ -26,10 +26,24 @@ make.fudge.comment <- function(ds.method, ds.var, mask.region, grid.region, kfol
   return(paste(string.start, string.main))
 }
 make.fudge.info <- function(){
+#make.fudge.info <- function(tmask.filenames, pre_ds, post_ds, missval.args){
   #'The info attribute in the output file stores a summary of all args that would
   #'go into a downscaling experiment, with little comcern about being human-readable.
   #'This makes some bits trickier, since it has to do a lot more parsing to figure out
   #'what pieces are going to be present.
+#   info = paste("Path to time mask files:  ", 
+#                "train.pred:/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_byseason_19790101-20081231.nc, ", 
+#                "train.targ:/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_byseason_19790101-20081231.nc, ", 
+#                "fut.pred:/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_byseason_20260101-20351231.nc", 
+#                "Arguments used in adjustment functions before downscaling: PR:(thold = us_trace, freqadj = on, conserve = off, ignore0 = on)", 
+#                "and after downscaling: PR:(thold = us_trace, conserve = off, ignore0 = on),flag.neg:(on) ;", 
+#                "Downscaling performed on x,y,tmask points where, after", 
+#                "removing missing values in input datasets with the distributional",
+#                "missval handing method, input datasets had at least 30 non-missing value(s).; FUDGE:  hazelnut_20161013")
+#   tmask.filenames <- sub(TMPDIR, "", tmask.filenames)
+#   tmask.string <- paste("Path to time mask files:", tmask.filenames)
+#   missval.string <- paste("after removing missing values with the", missval.args$method, "method", 
+#                           "inputs had at least", missval.args$minsamplesize, "non-missing value(s);")
   return("Adding info attributes later; this is going to take a while to track")
 }
 get.fudge.climatology <- function(){

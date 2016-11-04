@@ -145,12 +145,8 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
            }
          }, 
          silent=FALSE)
-       #out.data[,,,n,,][notna.idx[,n]] <- as.numeric(temp$DS)
        #Index output back to a non-overlapping future time series, 
        #if needed
-#        print(length(temp$DS))
-#        print(summary(index.qm(index.mask, temp$DS, olap)))
-#        print(length(index.qm(index.mask, temp$DS, olap)))
        tmp.out[notna.idx[,n]] <- temp$DS
        out.data[,,,n,,] <- index.qm(index.mask, tmp.out, olap)
        high_cutoffs = c(high_cutoffs, temp$high_cutoff)

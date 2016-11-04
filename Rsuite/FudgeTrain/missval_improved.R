@@ -55,6 +55,25 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   npts.MH <- unlist(lapply(MH, count.all.present.xyn), use.names = F)
   ##Actual missing value synchronization steps need to take place in here
   ## and return exactly the same shape of data
+  print("*npts counts before:")
+  print(paste("*OH:", npts.OH))
+  print(paste("*MH:", npts.MH))
+  print(paste("*MF:", paste(npts.MF)))
+  #...you need an indexing step in here - only the predictor vars have a 
+  #sample size requirment
+  #First, create an index vector of the datasets that each var belongs to
+  train.index <- unlist(mapply(rep, c('OH', 'MH', 'MF'), 
+                               c(length(npts.OH), 
+                                 length(npts.MH), 
+                                 length(npts.MF))), 
+                        use.names=F)
+  #now check to see which datastes get counted in predictor datasets
+#  train.index <- rowSums(sapply(ds.ref$predictors, grepl, train.index)) > 0 #Check on vs off
+  train.index <- rowSums(sapply(ds.ref$predictors, grepl, train.index))
+  train.index[train.index==1] <- 2
+  print('train.index:')
+  print(train.index)
+  #stop('examine output')
   if(missval.thold < 1){
     #The percentage case
     #Not used often, but should be kept in
@@ -67,10 +86,13 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       pct.OH <- npts.OH/dim(OH[[1]])[6]
       pct.MH <- npts.MH/dim(MH[[1]])[6]
     }
-    insufficient.data <- any (c(pct.MF, pct.OH, pct.MH) < missval.thold)
+    insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] < missval.thold)
   }else{
     #This is the most common case
-    insufficient.data <- any(c(npts.MF, npts.OH, npts.MH) < missval.thold)
+    print(c(npts.OH, npts.MH, npts.MF)[train.index])
+    print(missval.thold)
+    print(c(npts.OH, npts.MH, npts.MF)[train.index] <= missval.thold)
+    insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
   if (insufficient.data){
     #Retry with pr missings set to 0
@@ -110,13 +132,14 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
           pct.OH <- npts.OH/dim(OH[[1]])[6]
           pct.MH <- npts.MH/dim(MH[[1]])[6]
         }
-        sufficient.data <- all (c(pct.MF, pct.OH, pct.MH) >= missval.thold)
+        sufficient.data <- all (c(pct.OH, pct.MH, pct.MF)[train.index] >= missval.thold)
       }else{
         #This is the most common case
         print('common case')
-        sufficient.data <- all(unlist(c(npts.MF, npts.OH, npts.MH), use.names = F) >= missval.thold )
+        sufficient.data <- all(unlist(c(npts.OH, npts.MH, npts.MF), use.names = F)[train.index] >= missval.thold )
         print('sufficient data')
         print(sufficient.data)
+#        stop('examine output')
       }
       #print(sufficient.data)
       #stop('retry happened successfully')
@@ -147,6 +170,12 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
   print('before return')
+print('*#summary of OH:')
+print(summary(OH[[1]]))
+print('*#summary of MH:')
+print(summary(MH[[1]]))
+print('*#summary of MF:')
+print(summary(MF[[1]]))
   return(list(OH=OH, MH=MH, MF=MF, 
               qc=qcmask, 
               mv.retry=mv.retry, ds.possible=ds.possible, 
@@ -167,11 +196,7 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   #...this is going to be so nasty when we get vaugely pr-like vars
   #as fixed sptaial grids it is going to be the worst
   if (apply_tmask){
-#    print(rle(apply(pr.mask, c(6), 'sum', na.rm=T)))
     pr.mask <- apply.fudge.tmask(pr.mask, data.tmask)
-#     print(dim(pr.mask))
-#     print(rle(apply(pr.mask, c(6), 'sum', na.rm=T)))
-#     print(lapply(data.list, 'dim'))
     pr.mask[is.na(pr.mask)] <- T
     #...okay, I can see why thishould be T.
     #You don't want to apply this when the 
@@ -181,9 +206,6 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   for (el in var.list){
     data.list[[el]][!pr.mask] <- 0
     ##Retrying with the old, wrong behavior.
-#     data.tmp <- data.list[[el]][!is.na(data.tmask)]
-#     data.tmp[is.na(data.tmp)] <- 0
-#     data.list[[el]][!is.na(data.tmask)] <- data.tmp
   }
   return(data.list)
 }
@@ -244,7 +266,7 @@ place.delta.missvals <- function(OH, MH, MF, args, threshold,
   status <- 0
   #If there are no non-missing vals in MF, replace pr missvals
   #in MF AND MF ONLY
-  if (any(count.all.present.xy(MF) == 0 )){
+  if (any(count.all.present.xyn(MF) == 0 )){
     pr.MF.vars <- length(missval.args$pr$MF)
     MF <- segment.missval.vars(pr.MF.vars, MF, missval.args$pr$MF, 
                                oh.coords, ival, jval, 
@@ -255,7 +277,7 @@ place.delta.missvals <- function(OH, MH, MF, args, threshold,
   }
   #If all vals in MH are 0 or missing, you have two options:
   #(though both involve passing statuses to the Delta code)
-  if (any(count.all.preseny.xy(MH.tmp) == 0)){
+  if (any(count.all.preseny.xyn(MH.tmp) == 0)){
     if (args$deltaop=='ratio'){
       #If 'ratio', return status=120 (Delta returns OH data)
       message(paste("Warning in remove.delta.missvals: one or more MH datasets", 

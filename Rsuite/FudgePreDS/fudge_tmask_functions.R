@@ -12,6 +12,7 @@ get.fudge.timemask.list <- function(){
   nmasks <- 1
   #tmask.list.names <- c("train.pred", "train.targ", "fut.pred")
   tmask.list.names <- c("MH", "OH", "MF")
+  tmask.filenames <- list("OH" = target.time.window, "MH" = hist.time.window, "MF" = fut.time.window)
   #Either all data will use a time-windowing mask, or none will use it. 
   if (ds.ref$train_and_use_same){ 
     #Future data used in downscaling will be underneath the fut.time tag
@@ -41,6 +42,7 @@ get.fudge.timemask.list <- function(){
                                          time.prune.mask = fut.time.trim.mask, 
                                          train.and.use.same = ds.ref$train_and_use_same)
       names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
+      tmask.filenames <- c(tmask.filenames, list('trim' = fut.time.trim.mask))
       nmasks <- length(tmask.list$OH$masks)
       time_mask_overlap <- T
     }
@@ -66,6 +68,7 @@ get.fudge.timemask.list <- function(){
                                          time.prune.mask = fut.time.trim.mask, 
                                          train.and.use.same = ds.ref$train_and_use_same)
       names(tmask.list) <- c(tmask.list.names, "trim")
+      tmask.filenames <- c(tmask.filenames, list('trim' = fut.time.trim.mask))
       nmasks <- length(tmask.list$OH$masks)
       time_mask_overlap <- T
     }
@@ -93,6 +96,7 @@ get.fudge.timemask.list <- function(){
   tmask.list$time_mask_overlap <- time_mask_overlap
   tmask.list$apply_tmasks <- apply_tmasks
   tmask.list$nmasks <- nmasks
+  tmask.list$filenames <- tmask.filenames
   return(tmask.list)
 }
 

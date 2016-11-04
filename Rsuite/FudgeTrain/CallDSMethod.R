@@ -30,17 +30,23 @@ callDSMethod <- function(method, OH, MH, MF, args,
 #        list=c('OH', 'MH', 'MF'))
 #   stop('examine output')
   #Remove missing values
-  missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
-                                       missval.args$minsamplesize, missval.args, 
-                                       missval.method='distributional', 
-                                       return_qcmask = train_qcmask)
-  OH <- missval.out$OH
-  MH <- missval.out$MH
-  MF <- missval.out$MF
-  train.qc   <- missval.out$qcmask
-  train.stat <- missval.out$missval.status
-  ds.possible <- missval.out$ds.possible
-  remove(missval.out) #The remove might not be neccessary here, but it doesn't hurt
+#   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
+#                                        missval.args$minsamplesize, missval.args, 
+#                                        missval.method='distributional', 
+#                                        return_qcmask = train_qcmask)
+#   OH <- missval.out$OH
+#   MH <- missval.out$MH
+#   MF <- missval.out$MF
+#   train.qc   <- missval.out$qcmask
+#   train.stat <- missval.out$missval.status
+#   ds.possible <- missval.out$ds.possible
+#   remove(missval.out) #The remove might not be neccessary here, but it doesn't hurt
+#   
+#   
+#   print(summary(OH))
+#   print(summary(MH))
+#   print(summary(MF))
+   ds.possible <- T
   #don't bother assigning status for now
   #Call downscaling function
   if (!ds.possible){
@@ -48,13 +54,13 @@ callDSMethod <- function(method, OH, MH, MF, args,
   }
   if (ds.possible){
     ds.out <- switch(method, 
-                     'lm'      = callMultiLM_new(OH, MH, MF, args), 
-                     'lmstep'  = callStep.lm_new(OH, MH, MF, args), 
+                     'lm'      = callLMAll(OH, MH, MF, args, ds.method='lm', missval.args, tmasks, train_qcmask), 
+                     'lmstep'  = callLMAll(OH, MH, MF, args, ds.method='lmstep', missval.args, tmasks, train_qcmask), 
                      'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask, tmasks), 
                      'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask, tmasks),
                      'PARM'    = callPARM(MH, OH, MF, args),
                      'BCQM'    = callQM(OH, MH, MF, args, type='BCQM', tmasks),
-                     'EDQM'    = callQM(OH, MH, MF, args, type='EDQM', tmasks),
+                     'EDQM'    = callQM(OH, MH, MF, args, type='EDQM', tmasks, missval.args),
                      'CFQM'    = callQM(OH, MH, MF, args, type='CFQM', tmasks),
                      'DeltaSD' = callDeltaSD(OH, MH, MF, args, train_qcmask, train.stat, tmasks),
                      ReturnDownscaleError(method)
@@ -66,13 +72,13 @@ callDSMethod <- function(method, OH, MH, MF, args,
     ##back to indexing internal to ds methods again
     #as a h-release expidency shortcut, combine ds.out and missval qc masks
     #note: in planned I, these are going to count as two separate masks
-    if (train_qcmask){
-      if (!is.null(ds.out$qc)){
-        ds.out$qc <- ds.out$qc * train.qc # 1 and NA; NAs propagate
-      }else{
-        ds.out$qc <- train.qc
-      }
-    }
+#     if (train_qcmask){
+#       if (!is.null(ds.out$qc)){
+#         ds.out$qc <- ds.out$qc * train.qc # 1 and NA; NAs propagate
+#       }else{
+#         ds.out$qc <- train.qc
+#       }
+#     }
     #If there are not sufficient points to downscale, return all missing values
   }else{
     print('Insufficient values to attempt downscaling; returning NA')
