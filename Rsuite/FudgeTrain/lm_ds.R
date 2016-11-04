@@ -48,7 +48,7 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        out.data[,,,n,,] <- NA 
+        qc[,,,n,,] <- NA 
       }
     }
   }else{

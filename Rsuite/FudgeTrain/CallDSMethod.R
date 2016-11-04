@@ -26,34 +26,9 @@ callDSMethod <- function(method, OH, MH, MF, args,
                          missvals="distributional", 
                          missval.args=list(minsamplesize=1), 
                          train_qcmask=F, tmasks=list()){
-#   save(file="/home/cew/Code/h_testing//ds_debug/save/ds_call.R", 
-#        list=c('OH', 'MH', 'MF'))
-#   stop('examine output')
-  #Remove missing values
-#   missval.out <- remove.FUDGE.missvals(OH, MH, MF, 
-#                                        missval.args$minsamplesize, missval.args, 
-#                                        missval.method='distributional', 
-#                                        return_qcmask = train_qcmask)
-#   OH <- missval.out$OH
-#   MH <- missval.out$MH
-#   MF <- missval.out$MF
-#   train.qc   <- missval.out$qcmask
-#   train.stat <- missval.out$missval.status
-#   ds.possible <- missval.out$ds.possible
-#   remove(missval.out) #The remove might not be neccessary here, but it doesn't hurt
-#   
-#   
-#   print(summary(OH))
-#   print(summary(MH))
-#   print(summary(MF))
-   ds.possible <- T
-  #don't bother assigning status for now
-  #Call downscaling function
-  if (!ds.possible){
-    stop('examine coordinates; this should not be possible with current settings')
-  }
-  if (ds.possible){
-    ds.out <- switch(method, 
+  #Missing value removal now takes place within the ds method wrappers
+  #called by CallDSMethod
+  ds.out <- switch(method, 
                      'lm'      = callLMAll(OH, MH, MF, args, ds.method='lm', missval.args, tmasks, train_qcmask), 
                      'lmstep'  = callLMAll(OH, MH, MF, args, ds.method='lmstep', missval.args, tmasks, train_qcmask), 
                      'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask, tmasks), 
@@ -68,30 +43,19 @@ callDSMethod <- function(method, OH, MH, MF, args,
     #Restore missing values to original place now takes place within method
     #No longer taking place within method as of 10-15; now adding as formal indexing
     #step based off of downscaling method classification
-    #ds.out <- method$index_method(tmasks, time_mask_overlap, ds.out)
-    ##back to indexing internal to ds methods again
-    #as a h-release expidency shortcut, combine ds.out and missval qc masks
-    #note: in planned I, these are going to count as two separate masks
+  #########
+#   }else{
+#     print('Insufficient values to attempt downscaling; returning NA')
 #     if (train_qcmask){
-#       if (!is.null(ds.out$qc)){
-#         ds.out$qc <- ds.out$qc * train.qc # 1 and NA; NAs propagate
-#       }else{
-#         ds.out$qc <- train.qc
-#       }
+#       ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
+#                   qc = array(NA, dim=dim(MF[[1]])), 
+#                   ds.atts = NULL)
+#     }else{
+#       ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
+#                   qc = NULL, 
+#                   ds.atts = NULL)
 #     }
-    #If there are not sufficient points to downscale, return all missing values
-  }else{
-    print('Insufficient values to attempt downscaling; returning NA')
-    if (train_qcmask){
-      ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
-                  qc = array(NA, dim=dim(MF[[1]])), 
-                  ds.atts = NULL)
-    }else{
-      ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
-                  qc = NULL, 
-                  ds.atts = NULL)
-    }
-  }
+#   }
   return(list(ds=ds.out$ds, qc=ds.out$qc, ds.atts=ds.out$ds.atts))
 }
 

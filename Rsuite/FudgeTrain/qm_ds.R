@@ -6,7 +6,8 @@
 
 callQM <- function(OH, MH, MF, args, type="", tmasks=list(), 
                    missval.args=list(minsamplesize=1)){
-  #'Wrapper for the quantile mapping downscaling methods, 
+  #'Wrapper for the single-var, single-point 
+  #'quantile mapping downscaling methods, 
   #'which share a lot of DNA with each other.
   #'For now, even methods that can do the training once
   #'all do training within looping by ensemble.
@@ -14,8 +15,12 @@ callQM <- function(OH, MH, MF, args, type="", tmasks=list(),
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
+  if(train_qcmask){
+    qc <- array(1, dim(out.data))
+  }else{
+    qc <- NULL
+  }
   #Prepare indexing mask
-  print(summary(tmasks))
   if (tmasks$time_mask_overlap){
     index.mask <- tmasks$trim$masks[[w]]
     olap=T
@@ -52,11 +57,11 @@ callQM <- function(OH, MH, MF, args, type="", tmasks=list(),
     }else{
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
-        out.data[,,,n,,] <- NA 
+        qc[,,,n,,] <- NA 
       }
     }
   }
-  return(list(ds=out.data, qc=NULL))
+  return(list(ds=out.data, qc=qc))
 }
 
 callEDQMv2<-function(LH,CH,CF,args){ 
@@ -260,108 +265,4 @@ callBCQMv2<-function(LH,CH,CF,args){
                                                         na.rm =T)
      temp<-temp.CFsorted[order(temp.CFsorted$index),]
      return(temp$qLHecdfCHqCF[1:lengthCF])
-}
-
-###CG DS method
-callCFQMv2<-function(LH,CH,CF,args){
-  #'Performs an change-factor correction adjustment on a single variable
-  #'over the historical period, in order to generate downscaled data.
-  #' @param LH: Local Historical (a.k.a. observations)
-     #' @param CH: Coarse Historical (a.k.a. GCM historical)
-     #' @param CF: Coarse Future (a.k.a GCM future)
-     #' Contains no other arguments in the args parameter.
-     #'2-27-2015 edit: added an argument in args, sort, for determining
-     #'whether data is sorted by the CH ('historical'), CF ('future'), 
-     #'or LH ('target') vectors.
-     
-     # Obtain options
-     if(!is.null(args$sort)){
-       #can be one of 'future' or 'historical'
-       sort.opt <- args$sort
-       if(sort.opt=='future'){
-         sort.opt <- 'CF'
-       }else if(sort.opt=='historical'){
-         sort.opt <- 'CH'
-       }else if(sort.opt=='target'){
-         sort.opt <- 'LH'
-       }else{
-         stop(paste("CFQM_DF Downscaling Error: arg sort was", sort.opt, "not 'future', 'historical', or 'target'"))
-       }
-     }else{
-       stop(paste("CFQM_DF Downscaling Error: sort not found in args"))
-     }
-     #Save output var name for later
-     out.var.name <- names(CF)
-     
-     #Unlist data from its input form
-     CF <- unlist(CF)
-     CH <- unlist(CH)
-     
-     lengthCF<-length(CF)
-     lengthCH<-length(CH)
-     lengthLH<-length(LH) 
-     
-     if (lengthCF>lengthCH){
-       maxdim=lengthCF
-       longest.dim <- 'F'
-     }else{
-       maxdim=lengthCH
-       longest.dim <- 'H'
-     }
-     
-     # first define vector with probabilities [0,1]
-     prob<-seq(0.001,0.999,length.out=lengthCF)
-     
-     # initialize data.frame
-     temp<-data.frame(index=seq(1:maxdim),
-                      #index=c(seq(1,lengthCF), rep(NA, maxdim-lengthCF)), #making changes to index to make sure that they make sense
-                      CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                      qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
-     temp$CF[1:lengthCF]<-CF
-     temp$CH[1:lengthCH]<-CH
-     temp$LH[1:lengthLH]<-LH
-     
-     if (regexpr(longest.dim, sort.opt) < 0){ #If maxdim is not of the same time period as the sort vector
-       print(paste(longest.dim, sort.opt, sep=" : "))
-       #sort.vec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
-       temp$sortVec <- rep(as.vector(temp[[sort.opt]]), length.out=maxdim)
-       sort.opt <- 'sortVec'
-     }
-     #If the longest dim is used, sorting is straightforward
-     print('sorting')
-     temp.opt.sorted<-temp[order(temp[[sort.opt]]),] #sorts by sort.opt
-     #      save(file="~/Code/testing/test_out.R", list=c('temp.opt.sorted', 'temp', 'prob'))
-     #      stop("see where this is throwing an error")
-     #i.e. all temp.LHsorted to temp.CFsorted
-     print('quantile calculating')
-     temp.opt.sorted$qLH<-quantile(temp.opt.sorted$LH,prob,na.rm =TRUE) #removed all 1:lengthCF #previously with TRUE on all na.rm
-     print('prob distribution')
-     temp.opt.sorted$ecdfCHqLH<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
-     temp.opt.sorted$qCFecdfCHqLH<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Added parenthesis befpre ecdf
-     #temp<-temp.opt.sorted[order(temp.opt.sorted$index, na.last=TRUE),] # previous version, tested against cinnamon
-     temp[1:lengthCF]<-temp.opt.sorted[order(temp.opt.sorted$index, na.last=TRUE),] #, na.last=FALSE #removed order #temp.opt.sorted$index
-     
-     #SDF<-temp$qCFecdfCHqLH #This is the version that got tested for regression against cinnamon, and that we passed out
-     #print(summary(temp.opt.sorted))
-     print(lengthCF)
-     SDF<-temp$qCFecdfCHqLH[1:lengthCF] #This is the version that is getting tested as of 5-18
-     #save(file="~/Code/testing/test_out.R", list=c('SDF'))
-     #  print(length(SDF[!is.na(SDF)]))
-     #  cor.vector <- c("temp$CH", "temp$LH", "temp$CF")
-     #   for (j in 1:length(cor.vector)){
-     #     cor.var <- cor.vector[j]
-     #     cor.out <- eval(parse(text=cor.var))
-     #     if(length(cor.out) > length(SDF)){
-     #       out.cor <- cor(as.vector(SDF), as.vector(cor.out)[1:length(SDF)], use='pairwise.complete.obs')
-     #     }else{
-     #       out.cor <- cor(as.vector(SDF)[1:length(cor.out)], as.vector(cor.out), use='pairwise.complete.obs')
-     #     }
-     #     print(paste("temp.out", ",", cor.var, "):", out.cor, sep=""))
-     #   }
-     out.list <- list()
-     #out.list[[out.var.name]] <- SDF[!is.na(SDF)]
-     out.list[[out.var.name]] <- SDF[1:lengthCF]
-     print(paste('lengthCF:', lengthCF))
-     #return(SDF[!is.na(SDF)])
-     return(out.list)
 }

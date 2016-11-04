@@ -62,13 +62,22 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
     ds.args$subsample_pct <- as.numeric(args$subsample_pct)/100
     print('dividing subsample_pct')
   }
+  #Pre-initialize output
+  out.data <- array(NA, dim=dim(fut_pred[[1]]))
+  if(train_qcmask){
+    qc <- array(1, dim=dim(out.data)) 
+  }else{
+    qc <- NULL
+  }
   #Synchronize missing values across OH and MH datasets
-  
-  if (ds.possible){
+  missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
+                                       missval.args$minsamplesize, 
+                                       missval.args, 
+                                       missval.method = 'synchronous')
+  if (missval.out$ds.possible){
+    hist_pred = missval.out$OH
+    fut_pred = missval.out$MH
     #Now, call the training code
-    #CEW: the missing value removal step might not be neccessary. 
-    #Removing on 12-24 to see if it solves the pm2weeks predictor
-    #returning output identical to the 
     hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
     hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
     parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
@@ -80,7 +89,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
     parm.model <- parm.train.data$ds.model
     parm.targ <- parm.train.data$sta_mon_save
     #should be a list of one element - ds.model
-    out.data <- array(NA, dim=dim(fut_pred[[1]]))
     nrips = dim(out.data)[4]
     for(n in 1:nrips){
       MF.slice <- fut_pred[[1]][,,,n,,]
@@ -96,9 +104,18 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
       out <- rep(NA, length(MF.idx))
       out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
       out.data[,,,n,,] <- out
+      #qcmask
+      if(missval.out$mv.retry && train_qcmask){
+          qc[,,,n,,] <- NA 
+      }
+    }
+  }else{
+    if(train_qcmask){
+      #out.data is already set; qc needs to be replaced
+      qc <- array(NA, dim(out.data))
     }
   }
-  return(list(ds=out.data, qc=NULL))
+  return(list(ds=out.data, qc=qc))
 }
 
 arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
