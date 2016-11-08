@@ -22,8 +22,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   }else{
     ignore0 <-  FALSE
   }
-
-# SET SIZE FOR DELTA SAMPLE
+  
+  # SET SIZE FOR DELTA SAMPLE
   if(!('lastNpts' %in% arg.names)){
     delta_sample <- 1
   } else if(test$qc_args$lastNpts == 0) {
@@ -38,18 +38,18 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     stop(paste("Error in callTailAdjust: triggertype must be one of",
                paste(triggertypes, collapse=", ")))
   }
-adjmethods <- c('add', 'mult')
-if(!('adjmethod' %in% arg.names)){
-  stop(paste("Error in callTailAdjust: adjmethod must be specified!"))
-} else if(!test$qc_args$adjmethod %in% adjmethods) {
-  stop(paste("Error in callTailAdjust: adjmethod must be one of",
-             paste(adjmethods, collapse=",")))
-} else {
-  adjmethod <- test$qc_args$adjmethod
-}
-    arg_list = list(delta_sample = delta_sample, 
-                    triggertype = triggertype, 
-                    adjmethod = adjmethod)
+  adjmethods <- c('add', 'mult')
+  if(!('adjmethod' %in% arg.names)){
+    stop(paste("Error in callTailAdjust: adjmethod must be specified!"))
+  } else if(!test$qc_args$adjmethod %in% adjmethods) {
+    stop(paste("Error in callTailAdjust: adjmethod must be one of",
+               paste(adjmethods, collapse=",")))
+  } else {
+    adjmethod <- test$qc_args$adjmethod
+  }
+  arg_list = list(delta_sample = delta_sample, 
+                  triggertype = triggertype, 
+                  adjmethod = adjmethod)
   MH <- input$hist.pred[[targ.var]]
   OH <- input$hist.targ[[targ.var]]
   for(n in 1:nrips){
@@ -72,6 +72,7 @@ if(!('adjmethod' %in% arg.names)){
                    "specified, but high_cutoff attribute not set in cutoffs!"))
       }
     }
+    print(arg_list)
     ds.correct <- tail.correct(model.hist = MH, 
                                obs.hist = OH, 
                                model.fut = MF.slice, 
@@ -97,30 +98,32 @@ if(!('adjmethod' %in% arg.names)){
 
 tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
   #Fast wrapper for the more complicated tail_cutoff function
-
-# CHOSE BETWEEN TYPES OF SCHEMES
+  
+  # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,
                      'GfGh' = model.fut,
                      'cdft_orig' = model.fut,
                      'cdft' = model.fut)
-
-# PREPARE DATA
+  
+  # PREPARE DATA
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
   model.hist <- remove.missvals(unlist(model.hist))
   obs.hist <- remove.missvals(unlist(obs.hist))
   model.fut <- remove.missvals(unlist(model.fut))
   ds.fut <- remove.missvals(unlist(ds.fut))
-
-# CHECK IF FEASIBLE -- IF SO CALL APPROPRIATE TAIL SCHEME FUNCTION
+  
+  # CHECK IF FEASIBLE -- IF SO CALL APPROPRIATE TAIL SCHEME FUNCTION
   if( any(sapply(list(ds.fut, model.hist, obs.hist), length) == 0) ){
     #Bypass for missing data
     message("Insufficient data for tail adjustment")
     tmp.mask=rep(0, length(ds.orig))
   } else {
     #Calculate high and low tails
-
-# CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
+    
+    # CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
+    print('args before triggertype')
+    print(args)
     if (args$triggertype == 'cdft'){
       #print(args)
       #stop('in cdft call')
@@ -148,9 +151,9 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
     lotail$cond <- cond.tmp
     hitail.pts = hitail$cond >= 1
     lotail.pts = lotail$cond >= 1
-
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## PERFORM ADJUSTMENT BY ADDING OFFSET TO POINTS REQUIRING ADJUSTMENT
+    
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ## PERFORM ADJUSTMENT BY ADDING OFFSET TO POINTS REQUIRING ADJUSTMENT
     if (args$adjmethod == 'add'){
       ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
       ds.orig[lotail.pts] = cond.data[lotail.pts] + lotail$offset
@@ -158,16 +161,16 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
       ds.orig[hitail.pts] = cond.data[hitail.pts]*hitail$offset
       ds.orig[lotail.pts] = cond.data[lotail.pts]*lotail$offset
     } else {
-			stop("something has gone terribly WRONG with the supplied adjmethod!!")
-		}
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED?
+      stop("something has gone terribly WRONG with the supplied adjmethod!!")
+    }
+    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED?
     tmp.mask <- (hitail$cond)*2 + lotail$cond
     tmp.mask[tmp.mask > 4] = 4
   }
-# print(length(ds.orig))
-# print(length(tmp.mask))
-return(list(ds = ds.orig, mask = (tmp.mask)))
+  # print(length(ds.orig))
+  # print(length(tmp.mask))
+  return(list(ds = ds.orig, mask = (tmp.mask)))
 }
 
 
@@ -182,8 +185,8 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   #'Function for switching from one tail adjustment to another
   #'Currently accepts the arguments 'GfGh' and 'OhGh'  # 'OhGh' NO LONGER USED
   trigger.fxn = switch(args$tail,
-                         lower='min',
-                         upper='max')
+                       lower='min',
+                       upper='max')
   select.cond = switch(args$tail,
                        lower = '>=',
                        upper = '<=')
@@ -194,91 +197,88 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   delta.by = switch(args$tail,
                     lower=(1),
                     upper=(-1))
-
-
-# CHECKS FOR TYPE OF TAIL SCHEME -- SEEMS LIKE THIS IS NOT NECESSARY SINCE THIS
-# FUNCTION ONLY PERTAINS TO THE SIMPLE TYPE -- SHOULD NEVER GET HERE OTHERWISE
-#   if(args$triggertype=='GfGh'){
-    mf.rank = rank(MF)
-    MF  = sort(MF)
-    DS = sort(DS)
-    #mf.idx = tail(which(MF <= max(MH)), 1)
-
-# CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED?
-    mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
-#     trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)),
-#                                              do.call(trigger.fxn, list(MH))))
-
-
-    mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
-    #print(trigger.cond)
-# CHECKS IF CONDITIONS ARE MET FOR ADJUSTMENT
-    if(any(mf.points==TRUE, na.rm=T)){
-# DETERMINE POINTS THAT NEED TO BE ADJUSTED
-        mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-        #Check on behavior when Max(MH) == max(MF)
-        #do.call(trigger.fxn, list(MH))
-        mf.tmp = MF[mf.idx]
-        ##get delta
-        if(mf.overlap){
-          delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
-# NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
-# MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
-          if(any(delta.idx < 1)){
-            #print(trigger.fxn)
-            print("Overlap too small of delta_sample; resizing")
-            delta.idx <- delta.idx[delta.idx >= 1]
-          }
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
-				adjmethod <- args$adjmethod
-				print(paste0("Adjusting tail with ", adjmethod))
-       ## check arg for delta or mult
-       if (adjmethod == 'add') {
-          offset <- mean(DS[delta.idx] - MF[delta.idx])
-       } else if (args$adjmethod == 'mult'){ # adjmethod is "mult"
-					## Check for division by zero or very small number, replace with "largest seen" ratio
-					mult.ifzero <- max(DS[-delta.idx]/MF[-delta.idx])
-					mult.vec <- DS[delta.idx]/MF[delta.idx]
-					if (any(mult.vec > mult.ifzero)) {
-						print("Some calculated multipliers were too large, replacing with max inside tails.")
-						mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
-					}
-					offset <- mean(mult.vec)
-				} else {
-					stop("something is wrong with adjmethod supplied")
-				}
-## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          #print(paste("Delta:", delta))
-          ##get selection
-          mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
-
-# UNABLE TO PERFORM TAIL ADJUSTMENT -- INSTEAD USING SIMPLE BIAS CORRECTION
-# THIS ARISES WHEN THE DIFFERENCE IN MEANS BETWEENGCMh & GCMf SI SO LARGE THAT
-# THE DISTRIUBTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
-# WHERE THE VARIANCE IS ESPECIALLY SMALL
-        } else {
-          if (adjmethod == 'add') {
-            print("Selecting mean(OH) - mean(MH)")
-            offset = mean(OH) - mean(MH)
-          } else { # alternative correction in "mult" land
-            print("Selecting mean(OH)/mean(MH)")
-            offset = mean(OH)/mean(MH)
-          }
-          #print(mf.tmp)
-          #print(adjust.cond)
-          mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
-          mf.cond <- mf.cond * 4
+  
+  
+  # CHECKS FOR TYPE OF TAIL SCHEME -- SEEMS LIKE THIS IS NOT NECESSARY SINCE THIS
+  # FUNCTION ONLY PERTAINS TO THE SIMPLE TYPE -- SHOULD NEVER GET HERE OTHERWISE
+  #   if(args$triggertype=='GfGh'){
+  mf.rank = rank(MF)
+  MF  = sort(MF)
+  DS = sort(DS)
+  #mf.idx = tail(which(MF <= max(MH)), 1)
+  
+  # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED?
+  mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+  #     trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)),
+  #                                              do.call(trigger.fxn, list(MH))))
+  
+  
+  mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
+  #print(trigger.cond)
+  # CHECKS IF CONDITIONS ARE MET FOR ADJUSTMENT
+  if(any(mf.points==TRUE, na.rm=T)){
+    # DETERMINE POINTS THAT NEED TO BE ADJUSTED
+    mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+    #Check on behavior when Max(MH) == max(MF)
+    #do.call(trigger.fxn, list(MH))
+    mf.tmp = MF[mf.idx]
+    ##get delta
+    if(mf.overlap){
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+      # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
+      # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
+      if(any(delta.idx < 1)){
+        #print(trigger.fxn)
+        print("Overlap too small of delta_sample; resizing")
+        delta.idx <- delta.idx[delta.idx >= 1]
+      }
+      ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
+      adjmethod <- args$adjmethod
+      print(paste0("Adjusting tail with ", adjmethod))
+      ## check arg for delta or mult
+      if (adjmethod == 'add') {
+        offset <- mean(DS[delta.idx] - MF[delta.idx])
+      } else if (args$adjmethod == 'mult'){ # adjmethod is "mult"
+        ## Check for division by zero or very small number, replace with "largest seen" ratio
+        mult.ifzero <- max(DS[-delta.idx]/MF[-delta.idx])
+        mult.vec <- DS[delta.idx]/MF[delta.idx]
+        if (any(mult.vec > mult.ifzero)) {
+          print("Some calculated multipliers were too large, replacing with max inside tails.")
+          mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
         }
-      #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
-      return(list(cond=mf.cond, offset=offset))
-
-
-    }else{
-      print("No adjust")
-      cond=rep(FALSE, length(MF))
-      offset=0
-      return(list(cond=cond, offset=offset))
+        offset <- mean(mult.vec)
+      } else {
+        stop("something is wrong with adjmethod supplied")
+      }
+      ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      #print(paste("Delta:", delta))
+      ##get selection
+      mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+      
+      # UNABLE TO PERFORM TAIL ADJUSTMENT -- INSTEAD USING SIMPLE BIAS CORRECTION
+      # THIS ARISES WHEN THE DIFFERENCE IN MEANS BETWEENGCMh & GCMf SI SO LARGE THAT
+      # THE DISTRIUBTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
+      # WHERE THE VARIANCE IS ESPECIALLY SMALL
+    } else {
+      if (args$adjmethod == 'add') {
+        print("Selecting mean(OH) - mean(MH)")
+        offset = mean(OH) - mean(MH)
+      } else { # alternative correction in "mult" land
+        print("Selecting mean(OH)/mean(MH)")
+        offset = mean(OH)/mean(MH)
+      }
+      #print(mf.tmp)
+      #print(adjust.cond)
+      mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
+      mf.cond <- mf.cond * 4
     }
-#   }
+    #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
+    return(list(cond=mf.cond, offset=offset))
+  }else{
+    print("No adjust")
+    cond=rep(FALSE, length(MF))
+    offset=0
+    return(list(cond=cond, offset=offset))
+  }
 }
