@@ -50,7 +50,7 @@ if (length(console.args) > 0){
   oh_by <- 1
   mh_by <- 1 #5 #3
   mf_by <- 1 #5 #3
-  i_idx <- 57 #pr_diff = 37 i800 = 53 #194 #10
+  i_idx <- 43 #167 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
   x.pad <- "NA"
 }
@@ -63,6 +63,13 @@ message("Checking downscaling arguments")
 QCDSArguments(k=k.fold, ds.method = ds.method, args=args,
               is.multivar=(length(predictor.vars) > 1),
               is.multi_ens=(length(fut.pred.rip.list) > 1))
+
+message("Checking the missing value arguments")
+missval.args <- getMissvalArgs(args)
+
+if (mask.list=='na'){
+  mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
+}
 
 ##Call the code that converts the instructions for section 3 and section 5
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
@@ -210,9 +217,6 @@ tmask.list <- get.fudge.timemask.list()
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 adjust.metadata <- get.adjust.metadata(OH, MH, MF)
-
-message("Checking the missing value arguments")
-missval.args <- getMissvalArgs(args)
 
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######

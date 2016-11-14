@@ -26,37 +26,46 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
                                        missval.args$minsamplesize, 
                                        missval.args, 
                                        missval.method = 'synchronous')
+# save(file="/work/cew/testing/h_pr_2.R", list=c('missval.out', 'missval.args'))
+#  print('ds.possible:')
+#  print(missval.out$ds.possible)
   if (missval.out$ds.possible){
     #If there is enough data to downscale
     #Multi ensembles in OH and MH get pooled in the next step
     OH.data <- missval.out$OH
     MH.data <- missval.out$MH
+    MF.data <- missval.out$MF #added 11-8-16; might be responsible for lm diffs
     lm.model <- switch(ds.method, 
-                       'lm' = lm.train(OH.data, MH.data), 
+                       'lm' = lm.train(OH.data, 
+                                       MH.data), 
                        'lmstep' = lmstep.train(OH.data, MH.data, args)
     )
     for (n in 1:nrips){
-      MF.slice <- lapply(MF, '[', ,,,n,,)
+      MF.slice <- lapply(MF.data, '[', ,,,n,,)
       MF.slice <- lapply(MF.slice, 'as.vector')
+      print(summary(MF.slice))
+      print('before ds')
       ds.out <- switch(ds.method, 
                        'lm' = lm.downscale(lm.model, MF.slice), 
                        'lmstep' = lmstep.downscale(lm.model, MF.slice, targ.var)
       )
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-      out.data[,,,n,,][notna.index] <- ds.out
+      out.data[,,,n,,] <- ds.out #[notna.index]
       #If train_qcmask, check for whether function had to retry
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,] <- NA 
+        qc[,,,n,,] <- NA #[notna.index]
       }
     }
   }else{
     #If there is not enough data to downscale, the 
     if(train_qcmask){
-      qc = rep(NA, dim(MF[[1]]))
+      qc = array(NA, dim=dim(MF.data[[1]]))
     }
   }
+#  save(file="/work/cew/testing/h_pr_3.R", list=c('out.data'))
+#   stop('examine output')
   return(list(ds=out.data, qc=qc))
 }
 
@@ -74,7 +83,7 @@ lm.train <- function(OH, MH){
 
 lm.downscale <- function(lm.model, MF){
   #MF is a named list of vectors returned from compress.xy.data
-  return(suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF.slice))))
+  return(suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF))))
 }
 
 lmstep.train <- function(OH,MH,args){

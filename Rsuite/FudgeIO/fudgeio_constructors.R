@@ -88,7 +88,7 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
     print('var clasification added')
     var.table <- paste0(FUDGEROOT, "Rsuite/aux/var_att_sheet.csv")
     if (! file.exists(var.table)){
-      stop(paste("Error in build.fudge.object: var_slassification was true, but", 
+      stop(paste("Error in build.fudge.object: var_classification was true, but", 
                  var.table, "was not found!"))
     }else{
       #open table

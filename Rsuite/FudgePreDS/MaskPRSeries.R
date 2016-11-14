@@ -41,6 +41,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #Convert the threshold and create the reference mask
   wetday.convert <- convert.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
+  print(ref.wetdays[7890:7896])
+  print(ref.data[7890:7896])
   
   #Initialize the adjusted reference vectors
   if(verbose){print('Initializing reference vectors')}
@@ -65,8 +67,14 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   loop.adj <- adjust.data[ref.idx]
   loop.fut <- future.data[fut.idx]
   loop.ref.wetdays <- ref.wetdays[ref.idx]
+  print(loop.ref.wetdays[7890:7896])
+  print(loop.ref[7890:7896])
   loop.adj.wetdays <- adjust.wetdays[adj.idx]
   loop.fut.wetdays <- future.wetdays[fut.idx]
+  print(length(loop.ref))
+  print(length(ref.idx))
+  print(summary(ref.idx))
+  print(sum(ref.idx))
   #...honestly, looking at the rest of the code the vector compression steps might be worth it
   #I think there is a high likelihood that you need to do the mask looping in here; 
   #the altered pr wetday behavior in the missing value functions might require it
@@ -75,15 +83,6 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values present
     fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
     fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
-    
-#     print(paste("fraction.wet.ref:", fraction.wet.ref))
-#     print(paste('fraction.wet.adj:', fraction.wet.adj))
-#     print(summary(loop.ref))
-#     hist(loop.ref)
-#     print(summary(loop.adj))
-#     hist(loop.adj)
-#     print(summary(loop.fut))
-#     hist(loop.fut)
     
     # Perform the following calculations and adjustments to the GCM time series
     # only if the user has asked for the drizzle adjusment to be applied 
@@ -94,19 +93,19 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
       small.fraction <- 1.0/sum(ref.idx)
       last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
       num.zero.in.adjusted <- ((1.0-fraction.wet.ref)*sum(adj.idx)) - 1
+      print(num.zero.in.adjusted)
       threshold.wetday.adj <- quantile(loop.adj, names = FALSE,
                                        probs=(num.zero.in.adjusted/sum(adj.idx)), 
                                        na.rm=TRUE)
       if(verbose){print(paste("threshold:", threshold.wetday.adj))}
       #If it would result in changed results, apply
       loop.adj.wetdays <- adjust.data[adj.idx] > threshold.wetday.adj
-      ###loop.fut.wetdays <- array(NA, dim=c(nrips, prod(dim(future.data)[-4])))
-      ###since you only use adjust and future for reference, all future calls can 
-      ###be made in the same way
       loop.fut.wetdays <- future.data[fut.idx] > threshold.wetday.adj
     }
   } else {
-    loop.adj.wetdays <- adjust.data[adj.idx] > wetday.convert
+    print('wetday convert:')
+    print(wetday.convert)
+    loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
     loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
   }
   ###Now consider the conserve option
@@ -116,12 +115,14 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     loop.fut <- conserve.prseries(loop.fut, loop.fut.wetdays)
   } 
   ref.data[ref.idx] <- loop.ref
+  print(ref.data[7890:7896])
+  print(ref.wetdays[7890:7896])
+  print((as.numeric(ref.wetdays)*ref.data)[7890:7896])
   # loop.ref.wetdays never gets modified 
   adjust.data[adj.idx] <- loop.adj 
   adjust.wetdays[adj.idx] <- loop.adj.wetdays 
   future.data[fut.idx] <- loop.fut
   future.wetdays[fut.idx] <- loop.fut.wetdays
-  
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 

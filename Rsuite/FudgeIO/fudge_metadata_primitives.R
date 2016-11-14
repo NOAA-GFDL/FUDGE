@@ -44,6 +44,30 @@ make.fudge.info <- function(){
 #   tmask.string <- paste("Path to time mask files:", tmask.filenames)
 #   missval.string <- paste("after removing missing values with the", missval.args$method, "method", 
 #                           "inputs had at least", missval.args$minsamplesize, "non-missing value(s);")
+  
+#   ds.method <- "lm"
+#   ds.argstring <- ""
+#   info_ds <- paste0(ds.method, " : (", paste(ds.argstring), ")")
+#   #Info_tmasks
+#   tmask_str<- tmasks$filenames
+#   tmask_list <- mapply(paste, names(tmask_str), sapply(tmask_str, sub, pattern=TMPDIR, replacement="", fixed=T))
+#   info_tmask <- paste(tmask_list, collapse=",")
+#   #info pre_ds
+#   generate_s3s5_arglist <- function(arglist, argname='pp.args'){
+#     #Creates formatted list of args for keeping track of metadata attributes
+#     info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
+#                                 paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
+#                                 sep=":"), 
+#                          collapse=";")
+#     info <- gsub('\"', "", info)
+#     info <- gsub('list', "", info)
+#     info <- gsub('na', "", info)
+#     return(info)
+#   }
+#   info_pre_ds <- generate_s3s5_arglist(pre_ds, 'pp.args')
+#   info_post_ds <- generate_s3s5_arglist(post_ds, 'qc_args')
+  #flag.neg needs to be adjusted to NOT have it only arg be 'on'
+  #info post_ds
   return("Adding info attributes later; this is going to take a while to track")
 }
 get.fudge.climatology <- function(){

@@ -148,7 +148,7 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
   }
   flag.negvar <- FALSE
   qc.maskvar <- FALSE
-  if(mask.list[1]!='na'){
+  if(mask.list[[1]]$type!='na'){
     i.index <- length(post_ds)
     for(i in 1:length(mask.list)){
       if(mask.list[[i]]$type!='qc.train'){

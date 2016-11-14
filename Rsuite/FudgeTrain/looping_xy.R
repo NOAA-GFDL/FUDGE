@@ -13,10 +13,10 @@ loop.xy.data <- function(){
                     length(c("ds", "qc")))
   print(dim(output.all[[1]]))
   names(output.all) <- c("ds", "qc")
-  for (ival in 1:x.len){
+  for (ival in 1:x.len){ #1:x.len
     message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
-    for(jval in 1:y.len){ #1:y.len #57:57 for pr, 25:25 for pr diffs
+    for(jval in 1:y.len){ #26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
       message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
@@ -28,7 +28,10 @@ loop.xy.data <- function(){
       ds.y.start <- oh.coords$y.start[jval]
       ds.y.end   <- oh.coords$y.end[jval]
       ds.names <- "ds"
-      qc.mask.names <- c()
+      qc.mask.names <- qc.maskopts$qc.method
+      if(!is.null(qc.mask.names)){
+        qc.mask.names <- 'qc'
+      }
       #qc.mask.names <- c('tasmax_qcmask_train', 'tasmax_qcmask_tailadj')
       all.names <- c(ds.names, qc.mask.names)
       OH.dim <- dim(OH.slice[[1]])[1:3]
@@ -54,6 +57,7 @@ loop.xy.data <- function(){
         message('Looking for pre-processing functions to apply')
         if(s3.outloop){
           message('Applying S3 Adjustment')
+        #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
                                           OH=OH.slice,
@@ -78,7 +82,8 @@ loop.xy.data <- function(){
         }
         #Loop by time window
         for(w in 1:nmasks){
-          print(paste("Starting window", w, "of", nmasks))
+        #  for(w in 3:3){
+          message(paste("Starting window", w, "of", nmasks))
           w <<- w
           qc.out <- NULL
           if (tmasks$apply_tmask){
@@ -104,10 +109,15 @@ loop.xy.data <- function(){
             MH.window <- tmp.s3$input$MH
             MF.window <- tmp.s3$input$MF
             window.post_ds_inloop <- tmp.s3$s5.list
+            if (length(window.post_ds_inloop) > 0){
+              s5.inloop <- TRUE
+            }
           }else{
             window.post_ds_inloop <- post_ds_inloop
           }      
           #Call the downsaing method
+          print(OH.window$pr[7890:7896])
+          print(missval.args$pr$OH[7890:7896])
           print('calling ds')
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
@@ -121,6 +131,7 @@ loop.xy.data <- function(){
           ##TALK TO DENNIS ABOUT THIS OTHER ARGUMENT THAT GETS RETURNED SOMETIMES
           ##...it's better than the atts, but it's going to mean revisions elsewhere
           #       #Call section 5 methods
+          print(window.post_ds_inloop)
           if(s5.inloop){
             tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
                                        data = ds.out$ds, 
@@ -128,22 +139,29 @@ loop.xy.data <- function(){
                                        hist.pred = MH.window, 
                                        fut.pred  = MF.window, 
                                        ds.atts = ds.atts)
-#             print(summary(tmp.s5))
+            #             print(summary(tmp.s5))
+#             print('pre-s5 output:')
+#             print(summary(ds.out$ds))
 #             print('summary of output from s5:')
 #             print(summary(tmp.s5$ds.out))
-            ds.out <- tmp.s5$ds.out
+#             if(any(tmp.s5$ds.out > 0.005, na.rm=T)){
+#               stop('examine the downscaled vals in more detail')
+#             }
+            ds.out$ds <- tmp.s5$ds.out
             qc.out <- c(qc.out, tmp.s5$qc)
           }
           #...hm. Is it possible to adapt that OU code that included window
           #as an extra dimension and include it for multiple qc masks?
-          print(summary(ds.out))
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
               print('summary of out before adding to the vector')
               print(summary(combine.out[[out]]))
-              print(dim(output[[out]]))
-              print(length(output[[out]]))
+            #Commented out below; it is LEGIT POSSIBLE to get all NA back from the downscaling function
+#               if (out=='ds' && all(is.na(combine.out[[out]]))){
+#                 print(summary(ds.out$ds))
+#                 stop('this particular loop is all NA and an issue')
+#               }
             if (!is.null(combine.out[[out]])){
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
@@ -154,9 +172,6 @@ loop.xy.data <- function(){
           print(summary(as.vector(output[[el]])))
           #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
-          print('tmp.out of:')
-          print(el)
-          print(summary(as.vector(tmp.out)))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
         #Once looping by w complete, do the last s5 adjustment
@@ -174,6 +189,9 @@ loop.xy.data <- function(){
           #Or rather, once you get a list of qc masks, you return them - 
           #ATM, only one process at a time should be returning a qc mask
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
+#           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
+#             stop('examine the coords - this is leading to issues')
+#           }
           if(qc.maskopts$qc.outloop){
             print(dim(output.all$qc))
             output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
@@ -182,18 +200,11 @@ loop.xy.data <- function(){
         }
         #print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
         #stop('examint output - unless ds method punted, there should be no missing here')
-        #         print(summary(output.all$ds[1,1,,1,,]))
-        #         print(summary(output.all$ds[1,1,,2,,]))
-        #         print(summary(output.all$ds[1,1,,3,,]))
-        #         stop('examine output')
       } 
     }#loop by y
   }#loop by x
-  print(summary(as.vector(output.all$ds[1,,,1,,])))
-  print(summary(as.vector(output.all$ds[1,,,2,,])))
-  print(summary(as.vector(output.all$ds[1,,,3,,])))
-  print(summary(as.vector(output.all$ds)))
- #  stop('examine output')
+#   print(summary(as.vector(output.all$ds)))
+ # stop('examine output from calls')
   return(output.all)
 }
 

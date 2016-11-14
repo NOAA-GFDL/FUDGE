@@ -92,6 +92,8 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
   nrips <- dim(input$MF[[pr_target]])[4]
   #   for (n in 1:nrips){
   #    MF.slice <- input$MF[[pr_target]][,,n,,,]
+  #save(file='/work/cew/pre_adjust_pr.R', list=c('input', 'lopt.drizzle', 'lopt.conserve', 'threshold'))
+  #stop('examine this pre output')
   temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],   ref.units=input$att.list$pr_oh_units, 
                             adjust.data=input$MH[[pr_target]],adjust.units=input$att.list$pr_mh_units[[pr_target]],
                             future.data=input$MF[[pr_target]],future.units=input$att.list$pr_mf_units[[pr_target]],
@@ -99,6 +101,8 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 
                             zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
+  print('returned from call')
+  print(temp.out$ref$data[7890:7896])
   input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
   input$MH[[pr_target]] <- temp.out$adjust$data
   input$MF[[pr_target]] <- temp.out$future$data
@@ -107,7 +111,7 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
     tmp.adj <- temp.out$adjust$pr_mask
     tmp.ref[tmp.ref==0] <- NA
     tmp.adj[tmp.adj==0] <- NA
-    print(summary(input$OH[[pr_target]]))
+    print(input$OH[[pr_target]][7890:7896])
     print(summary(tmp.ref))
     input$OH[[pr_target]] <- (input$OH[[pr_target]]   * tmp.ref)
     for (el in input$att.list$pr_mh){
@@ -132,7 +136,9 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
       print(paste('adding target prmask'))
       pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
     }
-  } 
+  }
+  print(input$OH$pr[7890:7896])
+  print(temp.out$ref$pr_mask[7890:7896])
   missval.args$pr <-list(OH=temp.out$ref$pr_mask, 
                            MH=temp.out$adjust$pr_mask, 
                            MF=temp.out$future$pr_mask, 

@@ -11,7 +11,8 @@
 #'rip in the hist_pred dataset for now. 
 #'
 
-callPARM <- function(hist_pred, hist_targ, fut_pred, args){
+callPARM <- function(hist_pred, hist_targ, fut_pred, args, 
+                     missval.args, tmasks, train_qcmask=F){
   #'Control the looping by rip and missval removal from within this function. 
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
@@ -75,8 +76,9 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args){
                                        missval.args, 
                                        missval.method = 'synchronous')
   if (missval.out$ds.possible){
-    hist_pred = missval.out$OH
-    fut_pred = missval.out$MH
+    hist_pred = missval.out$MH
+    fut_pred  = missval.out$MF
+    hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
     #Now, call the training code
     hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
     hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]

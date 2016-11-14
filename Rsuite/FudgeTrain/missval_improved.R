@@ -37,10 +37,15 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Okay, so this should not technically remove missing values - 
   #you still need the extra missvals in place in order to index
   #your output vectors.
-  print(missval.thold)
-  print(summary(missval.args))
   missval.status <- 0
+  ds.thold <- 1 #At least this many points needed to downscale
   #Evaluate back in the current environment (delta can affect status)
+  orig <- list()
+  orig$OH <- OH
+  orig$MH <- MH
+  orig$MF <- MF
+  #print(summary(MF[[1]]))
+  #stop('examine this output')
   switch(missval.method, 
          'distributional' = place.dist.missvals(OH, MH, MF), 
          'synchronous' = place.synch.missvals(OH, MH, MF), 
@@ -68,12 +73,15 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
                                  length(npts.MF))), 
                         use.names=F)
   #now check to see which datastes get counted in predictor datasets
-#  train.index <- rowSums(sapply(ds.ref$predictors, grepl, train.index)) > 0 #Check on vs off
-  train.index <- rowSums(sapply(ds.ref$predictors, grepl, train.index))
-  train.index[train.index==1] <- 2
-  print('train.index:')
-  print(train.index)
-  #stop('examine output')
+  print(sapply(ds.ref$training, grepl, train.index))
+  print(rowSums(sapply(ds.ref$training, grepl, train.index)))
+  #Note: this really needs to be > 0; otherwise, 
+  #you index by an array of 1s and 0s rather than by a vector of T/F
+  #and that means only one datset gets checked for minsamplesize
+  train.index <- rowSums(sapply(ds.ref$training, grepl, train.index)) > 0 #Check on vs off
+  ds.index <- rowSums(sapply(ds.ref$downscaling, grepl, train.index)) > 0
+print(train.index)
+#  stop('examine output')
   if(missval.thold < 1){
     #The percentage case
     #Not used often, but should be kept in
@@ -86,19 +94,15 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       pct.OH <- npts.OH/dim(OH[[1]])[6]
       pct.MH <- npts.MH/dim(MH[[1]])[6]
     }
-    insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] < missval.thold)
+    insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] <= missval.thold)
   }else{
     #This is the most common case
-    print(c(npts.OH, npts.MH, npts.MF)[train.index])
-    print(missval.thold)
-    print(c(npts.OH, npts.MH, npts.MF)[train.index] <= missval.thold)
-    insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
+    insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] <= missval.thold)
   }
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
-    print(summary(missval.args))
-    print(length(missval.args$pr))
+    ds.possible <- F
     if (length(missval.args$pr) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
@@ -107,20 +111,23 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       print(paste("*OH:", npts.OH))
       print(paste("*MH:", npts.MH))
       print(paste("*MF:", paste(npts.MF)))
-      MF <- retry.with.pr.present(MF, missval.args$pr$MF, missval.args$pr$pr_mf, 
-                                  tmasks$apply_tmasks, tmasks$MF$masks[[w]])
-      OH <- retry.with.pr.present(OH, missval.args$pr$OH, missval.args$pr$pr_oh, 
-                          tmasks$apply_tmasks, tmasks$OH$masks[[w]])
-      MH <- retry.with.pr.present(MH, missval.args$pr$MH, missval.args$pr$pr_mh, 
-                          tmasks$apply_tmasks, tmasks$MH$masks[[w]])
+      pr_vars <- list(OH='pr_oh', MH='pr_mh', MF='pr_mf')
+      print(summary(MF[[1]]))
+      #env=parent.frame(n=0)
+      for(el in c('OH', 'MH', 'MF')[train.index]){
+        #Note: this needs to take place with elements of orig; 
+        #if you do not use it, the synchronous missing values step 
+        #removes samples in OH and MH that never get added back in
+        var.idx <- pr_vars[[el]]
+        assign(el, retry.with.pr.present(orig[[el]], 
+                                     missval.args$pr[[el]],  
+                                     missval.args$pr[[var.idx]],
+                                     tmasks$apply_tmasks, 
+                                     tmasks[[el]]$masks[[w]]))
+      }
       npts.MF <- lapply(MF, count.all.present.xyn)
       npts.OH <- lapply(OH, count.all.present.xyn)
       npts.MH <- lapply(MH, count.all.present.xyn)
-      print("npts counts:")
-      print(npts.OH)
-      print(npts.MH)
-      print(npts.MF)
-      print(missval.thold)
       if(missval.thold < 1){
         #Not used often, but should be kept in
         if (tmasks$apply_tmask){
@@ -139,18 +146,15 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         sufficient.data <- all(unlist(c(npts.OH, npts.MH, npts.MF), use.names = F)[train.index] >= missval.thold )
         print('sufficient data')
         print(sufficient.data)
-#        stop('examine output')
       }
-      #print(sufficient.data)
-      #stop('retry happened successfully')
       if (sufficient.data){
         ds.possible <- T
       }
-#       ds.possible <- F
     }else{
       #If there are no pr missing values, don't downscale the point
       ds.possible <- F
     }
+#stop('examine the output from the retry; there are too many missing values being written here')
   }else{
     #In the event that everything is above the threshold, all is good.
     mv.retry <- F
@@ -196,19 +200,48 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   #...this is going to be so nasty when we get vaugely pr-like vars
   #as fixed sptaial grids it is going to be the worst
   if (apply_tmask){
-    pr.mask <- apply.fudge.tmask(pr.mask, data.tmask)
-    pr.mask[is.na(pr.mask)] <- T
-    #...okay, I can see why thishould be T.
-    #You don't want to apply this when the 
-    #data is not present.
-#    stop('examine output')
+  #switching from appy_fudge_tmask to apply.any.mask; maybe fixes problem?
+    pr.mask <- apply.any.mask(data=pr.mask, mask=data.tmask, dim='temporal')
+    #pr.mask[is.na(pr.mask)] <- T
   }
-  for (el in var.list){
-    data.list[[el]][!pr.mask] <- 0
+  #Thanks to var collapsing, extra step needed to check for matches
+  match.vars <- c()
+  data.names <- names(data.list)
+  for (v in var.list){
+    match.index <- c(grep(paste0(v, "$"), data.names), 
+                     grep(paste0(v, "\\."), data.names))
+    match.vars <- c(match.vars, data.names[match.index])
+  }
+  print(match.vars)
+  for (el in match.vars){
+    #print(summary(pr.mask==0))
+    tmp.pr <- data.list[[el]]
+    #dim(pr.mask) <- dim(tmp.pr)
+    data.list[[el]] <- as.numeric(pr.mask)
+    data.list[[el]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
+    dim(data.list[[el]]) <- dim(tmp.pr)
+    data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal')
+    print(summary(data.list[[el]]))
+    #commenting out simple soliton below 
+    #data.list[[el]][pr.mask==0] <- 0
+    #...the above is not working. Am I using the wrong masks?
     ##Retrying with the old, wrong behavior.
+#    data.list[[el]][is.na(data.list[[el]])] <- 0
+#    data.list[[el]] <- apply.any.mask(data.list[[el]], data.tmask, dim='temporal')
+
+#     print(dim(data.list[[el]]))
+#     if(any(tmask.na != as.vector(is.na(data.list[[el]])))){
+#       stop('examine the above output')
+#     }
+#....okay, it's looking unlikeky that JUST the retry step is at fault here
+    
   }
   return(data.list)
 }
+
+# retryWithPR <- function(id, pr_vars, env=parent.frame()){
+# 
+# }
 
 segment.missval.vars <- function(varnames, data, masks, data.coords, ival, jval, 
                                  apply_tmask, tmasks, w){
@@ -234,11 +267,11 @@ segment.missval.vars <- function(varnames, data, masks, data.coords, ival, jval,
   return(data)
 }
 
-place.dist.missvals <- function(OH, MH, MF, env=parent.env()){
+place.dist.missvals <- function(OH, MH, MF, env=parent.frame()){
   #Does absolutely nothing; here to make code easier to read
 }
 
-place.synch.missvals <- function(OH, MH, MF, env=parent.env()){
+place.synch.missvals <- function(OH, MH, MF, env=parent.frame()){
   #synchronizes missing values between OH and MH, placing vals back
   #in the calling environment.
   #Assumes that OH vars and MH vars have the same time dimension
@@ -249,6 +282,15 @@ place.synch.missvals <- function(OH, MH, MF, env=parent.env()){
   all.missing[all.missing == 0] <- 1
   OH <- lapply(OH, apply.fudge.tmask, all.missing)
   MH <- lapply(MH, apply.fudge.tmask, all.missing)
+  #Added 11-10: Apparently, I was doing this for the synch lm masks, WTH.
+#   MF.missvals <- lapply(MF, function(x){apply(x, c(1,2,3,5,6), 'sum')})
+#   for (el in names(MF)){
+#     missval.mask <- as.numeric(!is.na(MF.missvals[[el]]))
+#     missval.mask[missval.mask==0] <- NA
+#     MF[[el]] <- MF[[el]] *  missval.mask 
+#   }
+#   env$MF <- MF
+  #Definetly keep these
   env$OH <- OH
   env$MH <- MH
 }

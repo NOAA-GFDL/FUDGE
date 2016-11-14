@@ -1,10 +1,10 @@
-"method_name","predictor_datasets","target_dataset","downscale_oh","is_qm","missval_method","index_method","multipt_method","oh_dimlist","mh_dimlist","mf_dimlist","reference"
-"lmstep","MH, MF","OH",FALSE,FALSE,"synchronous","simple","squish","spatial",,"temporal",
-"lm","MH, MF","OH",FALSE,FALSE,"synchronous","simple","squish","spatial",,"temporal",
-"CDFt","OH, MH, MF","OH",FALSE,TRUE,"distributional","qm","squish","spatial",,"temporal","https://cran.r-project.org/web/packages/CDFt/index.html"
-"CDFtmod","OH, MH, MF","OH",FALSE,TRUE,"distributional","qm","squish","spatial",,"temporal","https://cran.r-project.org/web/packages/CDFt/index.html"
-"DeltaSD","OH, MH","MF",TRUE,FALSE,"distributional","delta","squish",,,"spatial,temporal",
-"BCQM","MH, MF","OH",FALSE,TRUE,"distributional","qm","squish","spatial",,"temporal",
-"EDQM","OH, MH, MF","OH",FALSE,TRUE,"distributional","qm","squish","spatial",,"temporal","Li et.al. 2010"
-"CFQM","OH, MH","MF",TRUE,TRUE,"distributional","qm","squish",,,"spatial,temporal",
-"PARM","MH, MF","OH",FALSE,TRUE,"synchronous","qm","squish","spatial",,"temporal","Stoner et.al. 2007"
+method_name,predictor_datasets,train_datasets,target_dataset,downscale_dataset,downscale_oh,is_qm,missval_method,index_method,multipt_method,oh_dimlist,mh_dimlist,mf_dimlist,reference
+lmstep,"MH, MF","OH,MH",OH,MF,FALSE,FALSE,synchronous,simple,squish,spatial,,temporal,
+lm,"MH, MF","OH,MH",OH,MF,FALSE,FALSE,synchronous,simple,squish,spatial,,temporal,
+CDFt,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,https://cran.r-project.org/web/packages/CDFt/index.html
+CDFtmod,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,https://cran.r-project.org/web/packages/CDFt/index.html
+DeltaSD,"OH, MH","MH,MF",MF,,TRUE,FALSE,distributional,delta,squish,,,"spatial,temporal",
+BCQM,"MH, MF","OH,MH",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,
+EDQM,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,"Li et.al. 2010"
+CFQM,"OH, MH","MH,MF",MF,OH,TRUE,TRUE,distributional,qm,squish,,,"spatial,temporal",
+PARM,"MH, MF","OH,MH",OH,MF,FALSE,TRUE,synchronous,qm,squish,spatial,,temporal,"Stoner et.al. 2007"

@@ -4,8 +4,8 @@
 #(BCQM, CFQM, EDQM)
 #CFQMv2 is kept for reference purposes - it's been repalced by v3
 
-callQM <- function(OH, MH, MF, args, type="", tmasks=list(), 
-                   missval.args=list(minsamplesize=1)){
+callQM <- function(OH, MH, MF, args, type="",
+                   missval.args, tmasks, train_qcmask=F){
   #'Wrapper for the single-var, single-point 
   #'quantile mapping downscaling methods, 
   #'which share a lot of DNA with each other.
@@ -43,16 +43,27 @@ callQM <- function(OH, MH, MF, args, type="", tmasks=list(),
       OH.slice <- missval.out$OH[[1]]
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
+      mf.missing <- sum(is.na(MF.slice))
       train.stat <- missval.out$missval.status
       out <- switch(type, 
                     'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args), 
                     'CFQM' = callCFQMv3(OH.slice, MH.slice, MF.slice, args), 
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
+      print('sumamry of un-indexed ds out:')
+      print(summary(out))
+      if (sum(is.na(out)) > mf.missing){
+        stop('examine where the missvals come from')
+      }
+#       if(all(is.na(out))){
+#         stop('print saves before this point; this should never be all missing')
+#       }
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+      print('summary of indexed out:')
+      print(summary(out.data[,,,n,,]))
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        out.data[,,,n,,] <- NA 
+        qc[,,,n,,] <- NA 
       }
     }else{
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
@@ -78,12 +89,13 @@ callEDQMv2<-function(LH,CH,CF,args){
     CH <- CH[!is.na(CH)]
     LH <- LH[!is.na(LH)]
     CF.idx <- !is.na(CF)
+    cf.present <- sum(!is.na(CF))
     CF <- CF[!is.na(CF)]
     
     lengthCH<-length(CH)
     lengthLH<-length(LH)
     lengthCF<-length(CF)
-    cf.present <- sum(!is.na(CF))
+
     
     #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
     maxdim=max(c(lengthCH, lengthCF, lengthLH))
@@ -116,10 +128,6 @@ callEDQMv2<-function(LH,CH,CF,args){
     # EQUIDISTANT CDF (Li et al. 2010)
     temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
     temp<-temp.CFsorted[order(temp.CFsorted$index),]
-    #      out.list[[out.var.name]] <- temp$EquiDistant[!is.na(temp$EquiDistant)]
-    #    }
-    #    return(out.list)
-    #    #return(temp$EquiDistant[!is.na(temp$EquiDistant)])
     ds.out <- rep(NA, length(CF.idx))
     ds.out[CF.idx] <- temp$EquiDistant[1:lengthCF]
     return(ds.out)
@@ -247,12 +255,12 @@ callBCQMv2<-function(LH,CH,CF,args){
      # first define vector with probabilities [0,1]
      #previously, prob was lengthCF
      cf.present <- sum(!is.na(CF))
-     print(paste('num cf present:', cf.present))
      prob<-seq(0.001,0.999,length.out=cf.present)
      
      # initialize data.frame
      #index used ot be 1:lengthCF; doing 1:maxdim instead
      #c(seq(1,lengthCF), rep(NA,maxdim-lengthCF))
+     if(cf.present != 0){
      temp<-data.frame(index=1:maxdim,CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                       qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
      temp$CF[1:lengthCF]<-CF
@@ -264,5 +272,9 @@ callBCQMv2<-function(LH,CH,CF,args){
      temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
                                                         na.rm =T)
      temp<-temp.CFsorted[order(temp.CFsorted$index),]
-     return(temp$qLHecdfCHqCF[1:lengthCF])
+       return(temp$qLHecdfCHqCF[1:lengthCF])
+     }else{
+       print("No present values in CF; returning all NA")
+       return(NA)
+     }
 }

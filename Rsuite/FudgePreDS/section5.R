@@ -171,16 +171,6 @@ callPRPostproc <- function(test, input, adjusted.output){
       #get center of possible 9-point mask and apply to ds output
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
       adjusted.output$ds.out[!fut.prmask] <- 0
-      #Testing 11-2-16: check on whether the no longer simple and wrong pr fix
-      #behaves as expected
-#       print(summary(as.vector(adjusted.output$ds.out)))
-#       adj.tmp <- adjusted.output$ds.out[!is.na(tmasks$MF$masks[[w]])]
-#       adj.tmp[is.na(adj.tmp)]  <- 0
-#       adjusted.output$ds.out[!is.na(tmasks$MF$masks[[w]])] <- adj.tmp
-# #       print(summary(as.vector(adjusted.output$ds.out)))
-# #       print(length(adjusted.output$ds.out))
-# #       stop('examine utput')
-      #adjusted.output$ds.out[!is.na(tmasks$MF$masks[[w]])][is.na(adjusted.output$ds.out)] <- 0
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
       obs.prmask <- get.xy.center(test$qc_args$targ.prmask)
@@ -386,10 +376,6 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   
   ds.var <- names(input$hist.targ)
   out.list <- adjusted.output
-#   print('sumamry of input:')
-#   print(lapply(input, summary))
-#   print(lapply(lapply(input, '[[', 1), summary))
-#   print(summary(out.list$ds.out))
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args
     out.list$ds.out <- do.call(test$qc_args$fxn, 
@@ -415,10 +401,6 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
     input$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
                                             args=list(as.numeric(input$hist.targ[[ds.var]])))
   }
-#   print('sumamry of input:')
-#   print(lapply(lapply(input, '[[', 1), summary))
-#   print(summary(out.list$ds.out))
-#   stop('examine output')
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 

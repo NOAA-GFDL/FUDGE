@@ -28,11 +28,13 @@ callDSMethod <- function(method, OH, MH, MF, args,
                          train_qcmask=F, tmasks=list()){
   #Missing value removal now takes place within the ds method wrappers
   #called by CallDSMethod
+#   print(summary(missval.args))
+#   stop('examine output')
   ds.out <- switch(method, 
-                     'lm'      = callLMAll(OH, MH, MF, args, ds.method='lm', missval.args, tmasks, train_qcmask), 
+                     'lm'      = callLMAll(OH, MH, MF, args, ds.method='lm',    missval.args, tmasks, train_qcmask), 
                      'lmstep'  = callLMAll(OH, MH, MF, args, ds.method='lmstep', missval.args, tmasks, train_qcmask), 
-                     'CDFt'    = callCDFt(OH, MH, MF, args, ds.method="CDFt", train_qcmask, tmasks), 
-                     'CDFtmod' = callCDFt(OH, MH, MF, args, ds.method="CDFtmod", train_qcmask, tmasks),
+                     'CDFt'    = callCDFt(OH, MH, MF, args,  ds.method="CDFt",   missval.args, tmasks, train_qcmask), 
+                     'CDFtmod' = callCDFt(OH, MH, MF, args,  ds.method="CDFtmod", missval.args, tmasks, train_qcmask),
                      'PARM'    = callPARM(MH, OH, MF, args, missval.args, tmasks, train_qcmask),
                      'BCQM'    = callQM(OH, MH, MF, args, type='BCQM', missval.args, tmasks, train_qcmask),
                      'EDQM'    = callQM(OH, MH, MF, args, type='EDQM', missval.args, tmasks, train_qcmask),

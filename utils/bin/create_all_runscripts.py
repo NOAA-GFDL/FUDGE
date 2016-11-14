@@ -36,6 +36,7 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	#(no more minifiles=all files are the same for each job slice)
 	#first, checking for the presence of the optional files
 	spatmask_present = (spatmask != 'na')
+	print(OH_tmask)
 	tmask_present = (OH_tmask != 'na')
 	trim_time_mask_present = (trim_tmask != 'na')
 	#do all of your dmgets (requests for files on tape) in the script at once
@@ -76,10 +77,13 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	mf_files = []
 	for pred_var in predlist:
 		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
+		print(mf_dir)
+		print(mf_timerange)
 		mf_file = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None][0]
 		mf_files.append(mf_file)
 		dmget_string = dmget_string + "dmget " + mf_file + " \n"
-	tmask_files = []	
+	tmask_files = []
+	leapmask_files = []
 	if tmask_present:
 		tmask_files = [OH_tmask, MH_tmask, MF_tmask]
 		dmget_string = dmget_string + "# Get OH tmask " + "\n"
@@ -107,8 +111,6 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 			dmget_string = dmget_string + "# Get leapday masks" + "\n"
 			dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
 			dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
-		else:
-			leapmask_files = []
 	#do all of your gcps next
 	gcp_string = "# Copy all input files to $TMPDIR (-cd option creates input directories) " + "\n"
 	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files

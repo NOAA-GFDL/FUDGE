@@ -1,4 +1,5 @@
-callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list()){
+callCDFt <- function(OH, MH, MF, args, ds.method, 
+                     missval.args, tmasks, train_qcmask=F){
   #At least this one doesn't have to deal with multiple points - 
   # everything is going to be vectors of length 1.
   #' Calls the GFDL-specific modified CDFt (Vrac et. al 2009) on a single variable
@@ -49,7 +50,7 @@ callCDFt <- function(OH, MH, MF, args, ds.method, train_qcmask=F, tmasks=list())
      MF <- MF[[1]]
      notna.idx = apply(MF , c(4), function(x){!is.na(x)}) #one index per rip present
      OH <- OH[!is.na(OH)] #both of these should only
-     MH <- MH[!is.na(MH)] #ever have one point in them
+     MH <- MH[!is.na(MH)] #ever have one spatial point in them
      ###Obtain required arguments (and throw errors if not specified)
      if(!is.null(args$dev)){
        dev <- args$dev
