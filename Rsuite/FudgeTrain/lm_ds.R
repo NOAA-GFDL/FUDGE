@@ -18,7 +18,7 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   nrips <- dim(MF[[1]])[4]
   out.data <- array(NA, dim=dim(MF[[1]]))
   if(train_qcmask){
-    qc = array(1, dim=dim(MF[[1]]))
+    qc = ifelse(is.na(MF[[1]]), NA, 1)
   }else{
     qc = NULL
   }
@@ -43,8 +43,6 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
     for (n in 1:nrips){
       MF.slice <- lapply(MF.data, '[', ,,,n,,)
       MF.slice <- lapply(MF.slice, 'as.vector')
-      print(summary(MF.slice))
-      print('before ds')
       ds.out <- switch(ds.method, 
                        'lm' = lm.downscale(lm.model, MF.slice), 
                        'lmstep' = lmstep.downscale(lm.model, MF.slice, targ.var)
@@ -55,7 +53,7 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,] <- NA #[notna.index]
+        qc[,,,n,,][notna.index] <- NA #[notna.index]
       }
     }
   }else{

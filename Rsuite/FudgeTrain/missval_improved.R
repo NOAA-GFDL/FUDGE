@@ -94,10 +94,10 @@ print(train.index)
       pct.OH <- npts.OH/dim(OH[[1]])[6]
       pct.MH <- npts.MH/dim(MH[[1]])[6]
     }
-    insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] <= missval.thold)
+    insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] < missval.thold)
   }else{
     #This is the most common case
-    insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] <= missval.thold)
+    insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
   if (insufficient.data){
     #Retry with pr missings set to 0

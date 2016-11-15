@@ -11,12 +11,11 @@ loop.xy.data <- function(){
   MF.all.dim <- dim(MF$data[[1]])[4:6]
   output.all <- rep(list(array(NA, dim=c(OH.all.dim, MF.all.dim))), 
                     length(c("ds", "qc")))
-  print(dim(output.all[[1]]))
   names(output.all) <- c("ds", "qc")
   for (ival in 1:x.len){ #1:x.len
     message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
-    for(jval in 1:y.len){ #26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
+    for(jval in 1:y.len){ # 31:31 26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
       message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
@@ -116,9 +115,6 @@ loop.xy.data <- function(){
             window.post_ds_inloop <- post_ds_inloop
           }      
           #Call the downsaing method
-          print(OH.window$pr[7890:7896])
-          print(missval.args$pr$OH[7890:7896])
-          print('calling ds')
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 
                                  missvals=ds.ref$missval_method, 
@@ -128,10 +124,7 @@ loop.xy.data <- function(){
           ds.out <- list(ds=tmp.ds$ds)
           qc.out <- c(qc.out, tmp.ds$qc)
           ds.atts <- tmp.ds$ds.atts
-          ##TALK TO DENNIS ABOUT THIS OTHER ARGUMENT THAT GETS RETURNED SOMETIMES
-          ##...it's better than the atts, but it's going to mean revisions elsewhere
-          #       #Call section 5 methods
-          print(window.post_ds_inloop)
+          #ds.atts makes the PARM tail adjustment simpler, when we get to it
           if(s5.inloop){
             tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
                                        data = ds.out$ds, 
@@ -139,14 +132,6 @@ loop.xy.data <- function(){
                                        hist.pred = MH.window, 
                                        fut.pred  = MF.window, 
                                        ds.atts = ds.atts)
-            #             print(summary(tmp.s5))
-#             print('pre-s5 output:')
-#             print(summary(ds.out$ds))
-#             print('summary of output from s5:')
-#             print(summary(tmp.s5$ds.out))
-#             if(any(tmp.s5$ds.out > 0.005, na.rm=T)){
-#               stop('examine the downscaled vals in more detail')
-#             }
             ds.out$ds <- tmp.s5$ds.out
             qc.out <- c(qc.out, tmp.s5$qc)
           }

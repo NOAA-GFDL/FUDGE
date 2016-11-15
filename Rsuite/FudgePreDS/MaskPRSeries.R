@@ -136,11 +136,19 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   return(out.list)
 }
 
-conserve.prseries <- function(data, mask){
+conserve.prseries <- function(data, mask, pool_ens=F){
   #Conserves total mass of precipitation for a timeseries
   #by summing all precipitation below the trace threshold
   #and dividing the result over all days for which pr was
   #greater than the threshold.
+  #Edited 11-14-2016 to account for multi-ensemble data - 
+  #unless we are doing something interesting with pooling, 
+  #conserve opts should not conserve over ensembles.
+  print(dim(data))
+  print(dim(mask))
+  print(length(data))
+  print(length(mask))
+  stop('examine this output')
   total.trace.pr <- sum(data[mask==FALSE])
   if(total.trace.pr > 0){
     pr.adjust <- total.trace.pr/sum(mask)

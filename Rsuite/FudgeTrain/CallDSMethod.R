@@ -45,19 +45,6 @@ callDSMethod <- function(method, OH, MH, MF, args,
     #Restore missing values to original place now takes place within method
     #No longer taking place within method as of 10-15; now adding as formal indexing
     #step based off of downscaling method classification
-  #########
-#   }else{
-#     print('Insufficient values to attempt downscaling; returning NA')
-#     if (train_qcmask){
-#       ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
-#                   qc = array(NA, dim=dim(MF[[1]])), 
-#                   ds.atts = NULL)
-#     }else{
-#       ds.out=list(ds = array(NA, dim=dim(MF[[1]])), 
-#                   qc = NULL, 
-#                   ds.atts = NULL)
-#     }
-#   }
   return(list(ds=ds.out$ds, qc=ds.out$qc, ds.atts=ds.out$ds.atts))
 }
 

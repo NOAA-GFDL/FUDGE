@@ -31,7 +31,7 @@ callCDFt <- function(OH, MH, MF, args, ds.method,
      nrips <- dim(MF[[1]])[4]
      out.data <- array(NA, dim=dim(MF[[1]]))
      if (train_qcmask){
-       qc <- array(1, dim=dim(out.data))
+       qc <- ifelse(is.na(MF[[1]]), NA, 1)
      }else{
        qc <- NULL
      }

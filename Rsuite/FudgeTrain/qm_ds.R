@@ -35,10 +35,16 @@ callQM <- function(OH, MH, MF, args, type="",
     if (!is.null(missval.args$pr)){
       missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
     }
+    #save(file="/work/cew/testing/h_EDQM_pr_1.R", list=c('OH', 'MH', 'MF.slice'))
+    # print('ds.possible:')
+    # print(missval.out$ds.possible)
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
+  #  save(file="/work/cew/testing/h_EDQM_pr_2.R", list=c('missval.out', 'missval.args'))
+  #   print('ds.possible:')
+  #   print(missval.out$ds.possible)
     if(missval.out$ds.possible){
       OH.slice <- missval.out$OH[[1]]
       MH.slice <- missval.out$MH[[1]]
@@ -49,29 +55,21 @@ callQM <- function(OH, MH, MF, args, type="",
                     'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args), 
                     'CFQM' = callCFQMv3(OH.slice, MH.slice, MF.slice, args), 
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
-      print('sumamry of un-indexed ds out:')
-      print(summary(out))
-      if (sum(is.na(out)) > mf.missing){
-        stop('examine where the missvals come from')
-      }
-#       if(all(is.na(out))){
-#         stop('print saves before this point; this should never be all missing')
-#       }
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
-      print('summary of indexed out:')
-      print(summary(out.data[,,,n,,]))
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,] <- NA 
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(out)), olap) 
       }
     }else{
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
-        qc[,,,n,,] <- NA 
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask), olap))
       }
     }
   }
+  #  save(file="/work/cew/testing/h_EDQM_pr_3.R", list=c('out.data'))
+  #  stop('examine output')
   return(list(ds=out.data, qc=qc))
 }
 
