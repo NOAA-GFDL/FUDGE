@@ -110,7 +110,7 @@ make.fudge.info <- function(tmask.filenames,
       info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
                                   paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
                                   sep=":"), 
-                    collapse=";")
+                    collapse="; ")
       info <- gsub('\"', "", info)
       info <- gsub('list', "", info)
       info <- gsub('na', "", info)

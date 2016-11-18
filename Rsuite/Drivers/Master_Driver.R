@@ -554,6 +554,8 @@ for (rip in fut.pred.rip.list){
 #                         fut.pred.rip = rip, 
 #                         missval.handling=missval.handling, minval.present=min.present)
       WriteSelectGlobals(qc.out.filename, atts=list('comment'=qc.encoding), append=T)
+      #Don't use WriteSelectGlobals; needs to go under the var attribute
+      #test.nc <- nc_open(qc.out.filename
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }
