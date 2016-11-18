@@ -3,12 +3,12 @@ make.fudge.globals <- function(){
   #available functions in one place to keep them
   #from mucking up the workflow any.
   fudge.title <- sub("  ", " ", 
-                     get_orig_experiment(attributes(list.fut)$filename),
+                     paste(get_orig_experiment(attributes(list.fut)$filename),
                      #paste(get_orig_experiment(MF$metadata[[target.var]]$filename),
                      #Yes, it's MF above - that's what it was originally.
                      #Talk about this with someone else when you do metdata revisions.
                      "downscaled by FUDGE", FUDGETAG,
-                     ds.experiment)
+                     ds.experiment))
 fudge.reference <- NA
 fudge.institution <- paste("NOAA/GFDL", "(201 Forrestal Rd, Princeton, NJ, 08540)")
 fudge.insitute.id <- paste("NOAA/GFDL")
@@ -30,18 +30,19 @@ if (!grepl("/NCPP/GFDL-HIRAM-C360", attributes(list.fut)$filename, fixed=T)){
 }else{
   atts.all <- fudge.info.atts
 }
-fudge.climatology <- MF$metadata[[target.var]]$climatology
+#Okay, climatology is going to need to be handled differently.
+#fudge.climatology <- MF$metadata[[target.var]]$climatology
 ##############################################################################
 global_att_list <- c(list('title' = fudge.title, 
                           'history' = fudge.history, 
                           'institution' = fudge.institution,
                           "institute_id" = fudge.insitute.id,
                           'comment' = fudge.comment, 
-                          'references' = fudge.reference, 
-                          'climatology' = fudge.climatology, 
+                          #'references' = fudge.reference, 
+                          #'climatology' = fudge.climatology, 
                           'realizations' = paste(fut.pred.rip.list, collapse=","), 
                           'fudgetag' = fudgetag, 
-                          'ds_downscaling_method' = ds.ref$method), 
+                          'ds_downscaling_method' = ds.method), 
                      atts.all)
 return(global_att_list)
 }
