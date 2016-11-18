@@ -15,11 +15,6 @@ callQM <- function(OH, MH, MF, args, type="",
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
-  if(train_qcmask){
-    qc <- array(1, dim(out.data))
-  }else{
-    qc <- NULL
-  }
   #Prepare indexing mask
   if (tmasks$time_mask_overlap){
     index.mask <- tmasks$trim$masks[[w]]
@@ -27,6 +22,12 @@ callQM <- function(OH, MH, MF, args, type="",
   }else{
     index.mask <- tmasks$MF$masks[[w]]
     olap=F
+  }
+  if(train_qcmask){
+    qc <- mapply(rep, index.mask, nrips)
+    dim(qc) <- dim(out.data)
+  }else{
+    qc <- NULL
   }
   MF_mask <- missval.args$pr$MF
   for (n in 1:nrips){

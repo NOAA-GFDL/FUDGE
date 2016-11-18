@@ -133,7 +133,7 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	
 	#Finally, start opts that need to loop by index available	
 	for s,e in zip(mini_start,mini_end):
-		master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+str(s)+'_'+str(e))
+		master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+str(s)+'_'+str(e-1))
 		#then, for each slice, first create your runscript
 		#and then add the runscript call to the
 		runscript_files = []

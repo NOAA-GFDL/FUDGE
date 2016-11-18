@@ -65,8 +65,11 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   }
   #Pre-initialize output
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
+  nrips = dim(out.data)[4]
   if(train_qcmask){
-    qc <- ifelse(is.na(fut_pred[[1]]), NA, 1) 
+  #  qc <- ifelse(is.na(fut_pred[[1]]), NA, 1) 
+    qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+    dim(qc) <- dim(out.data)
   }else{
     qc <- NULL
   }
@@ -91,7 +94,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     parm.model <- parm.train.data$ds.model
     parm.targ <- parm.train.data$sta_mon_save
     #should be a list of one element - ds.model
-    nrips = dim(out.data)[4]
     for(n in 1:nrips){
       MF.slice <- fut_pred[[1]][,,,n,,]
       MF.idx <- !is.na(MF.slice)

@@ -13,6 +13,9 @@ get.fudge.timemask.list <- function(){
   #tmask.list.names <- c("train.pred", "train.targ", "fut.pred")
   tmask.list.names <- c("MH", "OH", "MF")
   tmask.filenames <- list("OH" = target.time.window, "MH" = hist.time.window, "MF" = fut.time.window)
+  if (all(tmask.filenames=='na')){
+    tmask.filenames <- list()
+  }
   #Either all data will use a time-windowing mask, or none will use it. 
   if (ds.ref$train_and_use_same){ 
     #Future data used in downscaling will be underneath the fut.time tag

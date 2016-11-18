@@ -101,8 +101,6 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 
                             zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
-  print('returned from call')
-  print(temp.out$ref$data[7890:7896])
   input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
   input$MH[[pr_target]] <- temp.out$adjust$data
   input$MF[[pr_target]] <- temp.out$future$data
@@ -111,8 +109,6 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
     tmp.adj <- temp.out$adjust$pr_mask
     tmp.ref[tmp.ref==0] <- NA
     tmp.adj[tmp.adj==0] <- NA
-    print(input$OH[[pr_target]][7890:7896])
-    print(summary(tmp.ref))
     input$OH[[pr_target]] <- (input$OH[[pr_target]]   * tmp.ref)
     for (el in input$att.list$pr_mh){
       input$MH[[el]] <- input$MH[[el]] * tmp.adj
@@ -137,8 +133,6 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
       pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
     }
   }
-  print(input$OH$pr[7890:7896])
-  print(temp.out$ref$pr_mask[7890:7896])
   missval.args$pr <-list(OH=temp.out$ref$pr_mask, 
                            MH=temp.out$adjust$pr_mask, 
                            MF=temp.out$future$pr_mask, 

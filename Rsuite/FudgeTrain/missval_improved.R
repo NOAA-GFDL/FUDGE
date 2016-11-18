@@ -39,13 +39,11 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #your output vectors.
   missval.status <- 0
   ds.thold <- 1 #At least this many points needed to downscale
-  #Evaluate back in the current environment (delta can affect status)
   orig <- list()
   orig$OH <- OH
   orig$MH <- MH
   orig$MF <- MF
-  #print(summary(MF[[1]]))
-  #stop('examine this output')
+  #place modified OH, MH and MF (plus status, as appropriate) back into current env
   switch(missval.method, 
          'distributional' = place.dist.missvals(OH, MH, MF), 
          'synchronous' = place.synch.missvals(OH, MH, MF), 
@@ -58,14 +56,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   npts.MF <- unlist(lapply(MF, count.all.present.xyn), use.names = F)
   npts.OH <- unlist(lapply(OH, count.all.present.xyn), use.names = F)
   npts.MH <- unlist(lapply(MH, count.all.present.xyn), use.names = F)
-  ##Actual missing value synchronization steps need to take place in here
-  ## and return exactly the same shape of data
-  print("*npts counts before:")
-  print(paste("*OH:", npts.OH))
-  print(paste("*MH:", npts.MH))
-  print(paste("*MF:", paste(npts.MF)))
-  #...you need an indexing step in here - only the predictor vars have a 
-  #sample size requirment
   #First, create an index vector of the datasets that each var belongs to
   train.index <- unlist(mapply(rep, c('OH', 'MH', 'MF'), 
                                c(length(npts.OH), 
@@ -73,15 +63,12 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
                                  length(npts.MF))), 
                         use.names=F)
   #now check to see which datastes get counted in predictor datasets
-  print(sapply(ds.ref$training, grepl, train.index))
-  print(rowSums(sapply(ds.ref$training, grepl, train.index)))
+  #since only teh predictor datasets have a minsample requirment
   #Note: this really needs to be > 0; otherwise, 
   #you index by an array of 1s and 0s rather than by a vector of T/F
   #and that means only one datset gets checked for minsamplesize
   train.index <- rowSums(sapply(ds.ref$training, grepl, train.index)) > 0 #Check on vs off
   ds.index <- rowSums(sapply(ds.ref$downscaling, grepl, train.index)) > 0
-print(train.index)
-#  stop('examine output')
   if(missval.thold < 1){
     #The percentage case
     #Not used often, but should be kept in
@@ -106,15 +93,16 @@ print(train.index)
     if (length(missval.args$pr) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
-      message('retrying sample size wiht precipiation added in')
-      print("*npts counts before:")
-      print(paste("*OH:", npts.OH))
-      print(paste("*MH:", npts.MH))
-      print(paste("*MF:", paste(npts.MF)))
+      message('retrying sample size with precipiation added in')
       pr_vars <- list(OH='pr_oh', MH='pr_mh', MF='pr_mf')
-      print(summary(MF[[1]]))
       #env=parent.frame(n=0)
-      for(el in c('OH', 'MH', 'MF')[train.index]){
+#       print('is there something wrong with teh indexing?')
+#       print(train.index)
+#       print(c('OH', 'MH', "MF")[train.index])
+      #Datset.index only has 3 elements - important for multivar pr
+      dataset.index <- rowSums(sapply(ds.ref$training, 
+                                      grepl, c("OH", "MH", "MF"))) > 0
+      for(el in c('OH', 'MH', 'MF')[dataset.index]){
         #Note: this needs to take place with elements of orig; 
         #if you do not use it, the synchronous missing values step 
         #removes samples in OH and MH that never get added back in
@@ -142,10 +130,7 @@ print(train.index)
         sufficient.data <- all (c(pct.OH, pct.MH, pct.MF)[train.index] >= missval.thold)
       }else{
         #This is the most common case
-        print('common case')
         sufficient.data <- all(unlist(c(npts.OH, npts.MH, npts.MF), use.names = F)[train.index] >= missval.thold )
-        print('sufficient data')
-        print(sufficient.data)
       }
       if (sufficient.data){
         ds.possible <- T
@@ -173,13 +158,6 @@ print(train.index)
   #Because this treats a failure in any ensemble as cause to retry absolutely 
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
-  print('before return')
-print('*#summary of OH:')
-print(summary(OH[[1]]))
-print('*#summary of MH:')
-print(summary(MH[[1]]))
-print('*#summary of MF:')
-print(summary(MF[[1]]))
   return(list(OH=OH, MH=MH, MF=MF, 
               qc=qcmask, 
               mv.retry=mv.retry, ds.possible=ds.possible, 
@@ -212,7 +190,6 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
                      grep(paste0(v, "\\."), data.names))
     match.vars <- c(match.vars, data.names[match.index])
   }
-  print(match.vars)
   for (el in match.vars){
     #print(summary(pr.mask==0))
     tmp.pr <- data.list[[el]]
@@ -220,28 +197,10 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
     data.list[[el]] <- as.numeric(pr.mask)
     data.list[[el]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
     dim(data.list[[el]]) <- dim(tmp.pr)
-    data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal')
-    print(summary(data.list[[el]]))
-    #commenting out simple soliton below 
-    #data.list[[el]][pr.mask==0] <- 0
-    #...the above is not working. Am I using the wrong masks?
-    ##Retrying with the old, wrong behavior.
-#    data.list[[el]][is.na(data.list[[el]])] <- 0
-#    data.list[[el]] <- apply.any.mask(data.list[[el]], data.tmask, dim='temporal')
-
-#     print(dim(data.list[[el]]))
-#     if(any(tmask.na != as.vector(is.na(data.list[[el]])))){
-#       stop('examine the above output')
-#     }
-#....okay, it's looking unlikeky that JUST the retry step is at fault here
-    
+    data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal')    
   }
   return(data.list)
 }
-
-# retryWithPR <- function(id, pr_vars, env=parent.frame()){
-# 
-# }
 
 segment.missval.vars <- function(varnames, data, masks, data.coords, ival, jval, 
                                  apply_tmask, tmasks, w){

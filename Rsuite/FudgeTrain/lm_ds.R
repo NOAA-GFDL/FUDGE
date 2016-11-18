@@ -18,7 +18,9 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   nrips <- dim(MF[[1]])[4]
   out.data <- array(NA, dim=dim(MF[[1]]))
   if(train_qcmask){
-    qc = ifelse(is.na(MF[[1]]), NA, 1)
+  #  qc = ifelse(is.na(MF[[1]]), NA, 1)
+    qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+    dim(qc) <- dim(out.data)
   }else{
     qc = NULL
   }
@@ -113,11 +115,12 @@ lmstep.train <- function(OH,MH,args){
 
 lmstep.downscale <- function(lm.train.model, MF, targ.var){
   #'Calls downscaling function on lmstep 
-  tmp.out <- suppressWarnings(predict(lm.train.model, newdata=MF.slice))
+  tmp.out <- suppressWarnings(predict(lm.train.model, newdata=MF))
   if(length(tmp.out)==0){
     warning(paste("Warning in callStep.lm: step eliminated all variables,", 
                   "resulting in output of length 0! Returning the MF data for now"))
-    return(MF.slice[grepl(targ.var, names(MF.slice))])
+    MF.idx <- which(grepl(targ.var, names(MF)))
+    return(MF[[MF.idx]])
   }else{
     return(tmp.out)
   }

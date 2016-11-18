@@ -65,7 +65,7 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args,
               is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 message("Checking the missing value arguments")
-missval.args <- getMissvalArgs(args)
+missval.args <- getMissvalArgs(args, ds.ref$missval_method)
 
 if (mask.list=='na'){
   mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
@@ -298,30 +298,45 @@ for (r in 1:length(fut.pred.rip.list)){
   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
   
   message('writing global attributes')
-  fudge.title <- paste(get_orig_experiment(MF$metadata[[target.var]]$filename),
-                       #Yes, it's MF above - that's what it was originally.
-                       #Talk about this with someone else when you do metdata revisions.
-                       "downscaled by FUDGE", FUDGETAG,
-                       ds.experiment)
-  fudge.reference <- NA
-  fudge.institution <- paste("NOAA/GFDL", "(201 Forrestal Rd, Princeton, NJ, 08540)")
-  fudgetag = FUDGETAG
-  fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG)
-  fudge.comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold, 
-                                      ds.experiment, label.validation, label.training, 
-                                      predictor.vars, fut.pred.rip.list)
-  fudge.info <- make.fudge.info()
-  fudge.climatology <- MF$metadata[[target.var]]$climatology
-  ##############################################################################
-  global_att_list <- list('title' = fudge.title, 
-                          'history' = fudge.history, 
-                          'institution' = fudge.institution, 
-                          'comment' = fudge.comment, 
-                          'info' = fudge.info, 
-                          'references' = fudge.reference, 
-                          'climatology' = fudge.climatology, 
-                          'realizations' = paste(fut.pred.rip.list, collapse=","), 
-                          'fudgetag' = fudgetag)
+#   fudge.title <- sub("  ", " ", paste(get_orig_experiment(MF$metadata[[target.var]]$filename),
+#                        #Yes, it's MF above - that's what it was originally.
+#                        #Talk about this with someone else when you do metdata revisions.
+#                        "downscaled by FUDGE", FUDGETAG,
+#                        ds.experiment))
+#   fudge.reference <- NA
+#   fudge.institution <- paste("NOAA/GFDL", "(201 Forrestal Rd, Princeton, NJ, 08540)")
+#   fudge.insitute.id <- paste("NOAA/GFDL")
+#   fudgetag = FUDGETAG
+#   fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG)
+#   fudge.comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold, 
+#                                       ds.experiment, label.validation, label.training, 
+#                                       predictor.vars, fut.pred.rip.list)
+#   if(args[[1]]=='na'){
+#     fudge.argstring <- "default settings"
+#   }else{
+#     fudge.argstring <- paste(mapply(names(args), args, sep="="), collapse=",")
+#   }
+#   fudge.info.atts <- make.fudge.info(tmasks$filenames,
+#                                 missval.args, 
+#                                 ds.method, fudge.argstring, 
+#                                 pre_ds, post_ds)
+#   fudge.OH.atts <- get.OH.experiment.atts(OH$metadata[[1]]$filename)
+#   fudge.MF.atts <- get.MF.experiment.atts(MF$metadata[[1]]$filename)
+#   atts.all <- c(fudge.info.atts, fudge.OH.atts, fudge.MF.atts)
+#   fudge.climatology <- MF$metadata[[target.var]]$climatology
+#   ##############################################################################
+#   global_att_list <- c(list('title' = fudge.title, 
+#                           'history' = fudge.history, 
+#                           'institution' = fudge.institution,
+#                           "institute_id" = fudge.insitute.id,
+#                           'comment' = fudge.comment, 
+#                           'references' = fudge.reference, 
+#                           'climatology' = fudge.climatology, 
+#                           'realizations' = paste(fut.pred.rip.list, collapse=","), 
+#                           'fudgetag' = fudgetag, 
+#                          'ds_downscaling_method' = ds.ref$method), 
+#                        atts.all)
+global_att_list <- make.fudge.globals()
   ##For now, assume that we are sticking with LM-style training; 
   ##spatial coords from OH, time/ensemble coords from MH
   ##...man, this is going to take close to forever - you also need 
@@ -372,9 +387,9 @@ for (r in 1:length(fut.pred.rip.list)){
       message(paste('attempting to write to', qc.file))
       qc.comment <- get.qc.comment(qc.maskopts$qc.method)
       qc.comment.att <- list()
-      qc.comment.att[qc.var] <- qc.comment
+      qc.comment.att[[qc.var]] <- qc.comment
       qc.globals <- global_att_list
-      qc.globals$info <- ""
+      #qc.globals$info <- ""
       qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
                                                ds.experiment, label.validation, label.training, 
                                                predictor.vars, fut.pred.rip.list, qc.maskopts$qc.method)

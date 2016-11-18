@@ -63,18 +63,15 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   ref.idx <- !is.na(ref.data)
   adj.idx <- !is.na(adjust.data)
   fut.idx <- !is.na(future.data)
+  #also need to get roughly where ensembles are located in future
+#   fut.which.idx <- array(1:length(future.data), dim=dim(future.data))
+#   fut.which.idx <- apply()
   loop.ref <- ref.data[ref.idx]
   loop.adj <- adjust.data[ref.idx]
   loop.fut <- future.data[fut.idx]
   loop.ref.wetdays <- ref.wetdays[ref.idx]
-  print(loop.ref.wetdays[7890:7896])
-  print(loop.ref[7890:7896])
   loop.adj.wetdays <- adjust.wetdays[adj.idx]
   loop.fut.wetdays <- future.wetdays[fut.idx]
-  print(length(loop.ref))
-  print(length(ref.idx))
-  print(summary(ref.idx))
-  print(sum(ref.idx))
   #...honestly, looking at the rest of the code the vector compression steps might be worth it
   #I think there is a high likelihood that you need to do the mask looping in here; 
   #the altered pr wetday behavior in the missing value functions might require it
@@ -89,11 +86,9 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     if (fraction.wet.adj > fraction.wet.ref) {
       #Find the threshold for a drizzle adjustment
       first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)
-      print(first.above.threshold)
       small.fraction <- 1.0/sum(ref.idx)
       last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
       num.zero.in.adjusted <- ((1.0-fraction.wet.ref)*sum(adj.idx)) - 1
-      print(num.zero.in.adjusted)
       threshold.wetday.adj <- quantile(loop.adj, names = FALSE,
                                        probs=(num.zero.in.adjusted/sum(adj.idx)), 
                                        na.rm=TRUE)
@@ -108,21 +103,32 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
     loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
   }
-  ###Now consider the conserve option
-  if(lopt.conserve==TRUE){
-    loop.ref <- conserve.prseries(loop.ref, loop.ref.wetdays) 
-    loop.adj <- conserve.prseries(loop.adj, loop.adj.wetdays)
-    loop.fut <- conserve.prseries(loop.fut, loop.fut.wetdays)
-  } 
+#   ###Now consider the conserve option
+#   if(lopt.conserve==TRUE){
+#     loop.ref <- conserve.prseries(loop.ref, loop.ref.wetdays, pool_ens=T) 
+#     loop.adj <- conserve.prseries(loop.adj, loop.adj.wetdays, pool_ens=T)
+#     loop.fut <- conserve.prseries(loop.fut, loop.fut.wetdays, pool_ens=T)
+#   } 
   ref.data[ref.idx] <- loop.ref
-  print(ref.data[7890:7896])
-  print(ref.wetdays[7890:7896])
-  print((as.numeric(ref.wetdays)*ref.data)[7890:7896])
   # loop.ref.wetdays never gets modified 
   adjust.data[adj.idx] <- loop.adj 
   adjust.wetdays[adj.idx] <- loop.adj.wetdays 
   future.data[fut.idx] <- loop.fut
   future.wetdays[fut.idx] <- loop.fut.wetdays
+  ###Now consider the conserve option
+  if(lopt.conserve==TRUE){
+    ref.data <- conserve.prseries(ref.data, ref.wetdays, pool_ens=T) 
+    adjust.data <- conserve.prseries(adjust.data, adjust.wetdays, pool_ens=T)
+    if(!is.null(dim(future.data))){
+      nrips <- dim(future.data)[4]
+      for(n in 1:nrips){
+        future.data[,,,n,,] <- conserve.prseries(future.data[,,,n,,],
+                                                 future.wetdays[,,,n,,], pool_ens=T)
+      }
+    }else{
+      future.data <- conserve.prseries(future.data, future.wetdays, pool_ens=T)
+    }
+  } 
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
@@ -144,17 +150,33 @@ conserve.prseries <- function(data, mask, pool_ens=F){
   #Edited 11-14-2016 to account for multi-ensemble data - 
   #unless we are doing something interesting with pooling, 
   #conserve opts should not conserve over ensembles.
-  print(dim(data))
-  print(dim(mask))
-  print(length(data))
-  print(length(mask))
-  stop('examine this output')
-  total.trace.pr <- sum(data[mask==FALSE])
-  if(total.trace.pr > 0){
-    pr.adjust <- total.trace.pr/sum(mask)
-    data[mask==TRUE]  <- data[mask==TRUE] + pr.adjust
+  if(is.null(dim(data))){
+    total.trace.pr <- sum(data[mask==FALSE], na.rm=T)
+    if(total.trace.pr > 0){
+      pr.adjust <- total.trace.pr/sum(mask, na.rm=T)
+      data[mask==TRUE]  <- data[mask==TRUE] + pr.adjust
+    }else{
+      #Do nothing (justified by a few papers that should be cited later)
+    }
   }else{
-    #Do nothing (justified by a few papers that should be cited later)
+    #If dims are not null, assume 6-d input structure
+    #in which case, conserving over nonspatial points is probably a 
+    #bad idea
+    data.dim <- dim(data)
+    for(x in 1:data.dim[1]){
+      for(y in 1:data.dim[2]){
+        loop.data <- data[x,y,,,,]
+        loop.mask <- mask[x,y,,,,]
+        total.trace.pr <- sum(loop.data[loop.mask==FALSE], na.rm=T)
+        if(total.trace.pr > 0){
+          pr.adjust <- total.trace.pr/sum(loop.mask, na.rm=T)
+          loop.data[loop.mask==TRUE]  <- loop.data[loop.mask==TRUE] + pr.adjust
+        }else{
+          #Do nothing (justified by a few papers that should be cited later)
+        }
+        data[x,y,,,,] <- loop.data
+      }
+    }
   }
   return(data)
 }

@@ -140,8 +140,8 @@ loop.xy.data <- function(){
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
             print(paste("looping by out with", out))
-              print('summary of out before adding to the vector')
-              print(summary(combine.out[[out]]))
+#               print('summary of out before adding to the vector')
+#               print(summary(combine.out[[out]]))
             #Commented out below; it is LEGIT POSSIBLE to get all NA back from the downscaling function
 #               if (out=='ds' && all(is.na(combine.out[[out]]))){
 #                 print(summary(ds.out$ds))
@@ -154,7 +154,6 @@ loop.xy.data <- function(){
         }#Loop by w complete
         ##bring together all time levels
         for (el in names(output)){
-          print(summary(as.vector(output[[el]])))
           #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
@@ -178,7 +177,6 @@ loop.xy.data <- function(){
 #             stop('examine the coords - this is leading to issues')
 #           }
           if(qc.maskopts$qc.outloop){
-            print(dim(output.all$qc))
             output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
           }
           remove(temp.postproc)

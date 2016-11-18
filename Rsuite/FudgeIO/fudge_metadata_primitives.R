@@ -25,67 +25,76 @@ make.fudge.comment <- function(ds.method, ds.var, mask.region, grid.region, kfol
                        "future predictor rip used:", paste(fut.pred.rips, collapse=","))
   return(paste(string.start, string.main))
 }
-make.fudge.info <- function(){
-#make.fudge.info <- function(tmask.filenames, pre_ds, post_ds, missval.args){
-  #'The info attribute in the output file stores a summary of all args that would
-  #'go into a downscaling experiment, with little comcern about being human-readable.
-  #'This makes some bits trickier, since it has to do a lot more parsing to figure out
-  #'what pieces are going to be present.
-#   info = paste("Path to time mask files:  ", 
-#                "train.pred:/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_byseason_19790101-20081231.nc, ", 
-#                "train.targ:/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_byseason_19790101-20081231.nc, ", 
-#                "fut.pred:/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_byseason_20260101-20351231.nc", 
-#                "Arguments used in adjustment functions before downscaling: PR:(thold = us_trace, freqadj = on, conserve = off, ignore0 = on)", 
-#                "and after downscaling: PR:(thold = us_trace, conserve = off, ignore0 = on),flag.neg:(on) ;", 
-#                "Downscaling performed on x,y,tmask points where, after", 
-#                "removing missing values in input datasets with the distributional",
-#                "missval handing method, input datasets had at least 30 non-missing value(s).; FUDGE:  hazelnut_20161013")
-#   tmask.filenames <- sub(TMPDIR, "", tmask.filenames)
-#   tmask.string <- paste("Path to time mask files:", tmask.filenames)
-#   missval.string <- paste("after removing missing values with the", missval.args$method, "method", 
-#                           "inputs had at least", missval.args$minsamplesize, "non-missing value(s);")
+
+make.fudge.info <- function(tmask.filenames, missval.args, 
+                            ds.method, ds.args, 
+                            pres_ds, post_ds){
+  #'Makes several attribute that, when put together, produce the info
+  #'attributes - the description of the settings that get put into 
+  #'a FUDGE run.
+  missval.string <- paste("After removing missing values with the", 
+                          missval.args$missval_method, "method,", 
+                          "inputs had at least", missval.args$minsamplesize, 
+                          "non-missing value(s);")
+  #Downscaling method
+  if(ds.args[[1]]=='na'){
+    fudge.argstring <- "default settings"
+  }else{
+    fudge.argstring <- paste(mapply(names(ds.args), ds.args, sep="="), collapse=",")
+  }
+  info_ds <- paste0(ds.method, " : (", paste(fudge.argstring), ")")
   
-#   ds.method <- "lm"
-#   ds.argstring <- ""
-#   info_ds <- paste0(ds.method, " : (", paste(ds.argstring), ")")
-#   #Info_tmasks
-#   tmask_str<- tmasks$filenames
-#   tmask_list <- mapply(paste, names(tmask_str), sapply(tmask_str, sub, pattern=TMPDIR, replacement="", fixed=T))
-#   info_tmask <- paste(tmask_list, collapse=",")
-#   #info pre_ds
-#   generate_s3s5_arglist <- function(arglist, argname='pp.args'){
-#     #Creates formatted list of args for keeping track of metadata attributes
-#     info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
-#                                 paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
-#                                 sep=":"), 
-#                          collapse=";")
-#     info <- gsub('\"', "", info)
-#     info <- gsub('list', "", info)
-#     info <- gsub('na', "", info)
-#     return(info)
-#   }
-#   info_pre_ds <- generate_s3s5_arglist(pre_ds, 'pp.args')
-#   info_post_ds <- generate_s3s5_arglist(post_ds, 'qc_args')
-  #flag.neg needs to be adjusted to NOT have it only arg be 'on'
-  #info post_ds
-  return("Adding info attributes later; this is going to take a while to track")
+  #Info_tmasks
+  if (length(tmask.filenames) != 0){
+  tmask_list <- mapply(paste, names(tmask.filenames), 
+                       #sapply(tmask_str, sub, pattern=TMPDIR, replacement="", fixed=T))
+                       sapply(tmask.filenames, basename), sep="=")
+  info_tmask <- paste(tmask_list, collapse=",")
+  }else{
+    info_tmask <- 'none_used'
+  }
+  #info pre_ds
+  generate_s3s5_arglist <- function(arglist, argname='pp.args'){
+    #Creates formatted list of args for keeping track of metadata attributes
+    if (length(arglist)!=0){
+    info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
+                                paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
+                                sep=":"), 
+                         collapse=";")
+    info <- gsub('\"', "", info)
+    info <- gsub('list', "", info)
+    info <- gsub('na', "", info)
+    }else{
+      info <- "none specified"
+    }
+    return(info)
+  }
+  #Okay - this bit right here is sort of horribly ad-hoc.
+  #but it looks like it will work to get the 3^5 experiments out.
+    info_pre_ds <- generate_s3s5_arglist(pre_ds, 'pp.args')
+    info_post_ds <- generate_s3s5_arglist(post_ds, 'qc_args')
+  return(list(info_ds = info_ds, 
+              info_pre_ds = info_pre_ds, 
+              info_post_ds = info_post_ds, 
+              info_tmask = info_tmask, 
+              info_missval = missval.string))
 }
 get.fudge.climatology <- function(){
   return("Why isn't the climatology being picked up as one of the returned atts?")
 }
 
 get.qc.comment <- function(qc.method){
-  #'When we get mor einto the mask revisions, use qc_maskvar instead
+  #'When we get more into the mask revisions, use qc_maskvar instead
   basedir = Sys.getenv("BASEDIR")
   if(basedir==""){basedir='/home/cew/Code/fudge/'}
   qc.metatable <- file.path(basedir, '/Rsuite/aux/qcmask_metadata.csv')
-  qc.metadata <- read.csv(qc.metatable)
+  qc.metadata <- read.csv(qc.metatable, stringsAsFactors=F)
   qc.methodlist <- qc.metadata[,2]
   qc.match <- which(qc.methodlist==qc.method)
   if (length(qc.match)==0){
     qc.comment <- "1 = unadjusted; NA = adjusted"
   }else{
-    qc.comment <- qc.metadata[qc.match,3] 
+    qc.comment <- as.character(qc.metadata[qc.match,3]) 
   }
   return(qc.comment)
 }
