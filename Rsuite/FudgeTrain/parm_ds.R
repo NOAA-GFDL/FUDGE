@@ -63,12 +63,28 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     ds.args$subsample_pct <- as.numeric(args$subsample_pct)/100
     print('dividing subsample_pct')
   }
+  pr_jitter <- F
+  if('jitter' %in% names(args)){
+    if(args$jitter=='on'){
+      pr_jitter <- T
+      pr_jitter_fxn <- function(x){
+        return((x*1000) + 100)
+      }
+      pr_unjitter_fxn <- function(x){
+        x <- x-100
+        return(x/1000)
+      }
+    }
+  }
   #Pre-initialize output
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
   nrips = dim(out.data)[4]
   if(train_qcmask){
-  #  qc <- ifelse(is.na(fut_pred[[1]]), NA, 1) 
-    qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+    if(tmasks$apply_tmasks){
+      qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+    }else{
+      qc <- rep(1, dim(MF[[1]]))
+    }
     dim(qc) <- dim(out.data)
   }else{
     qc <- NULL
@@ -82,6 +98,11 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     hist_pred = missval.out$MH
     fut_pred  = missval.out$MF
     hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
+    if(pr_jitter){
+      hist_pred <- pr_jitter_fxn(hist.pred)
+      fut_pred <- pr_jitter_fxn(fut_pred)
+      hist_targ <- pr_jitter_fxn(hist_targ)
+    }
     #Now, call the training code
     hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
     hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
@@ -107,6 +128,9 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
       rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
       out <- rep(NA, length(MF.idx))
       out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+      if (pr_jitter){
+        out <- pr_unjitter_fxn(out)
+      }
       out.data[,,,n,,] <- out
       #qcmask
       if(missval.out$mv.retry && train_qcmask){

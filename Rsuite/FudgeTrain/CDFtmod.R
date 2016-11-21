@@ -31,7 +31,11 @@ callCDFt <- function(OH, MH, MF, args, ds.method,
      nrips <- dim(MF[[1]])[4]
      out.data <- array(NA, dim=dim(MF[[1]]))
      if (train_qcmask){
-       qc <- ifelse(is.na(MF[[1]]), NA, 1)
+       if(tmasks$apply_tmasks){
+         qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+       }else{
+         qc <- rep(1, dim(MF[[1]]))
+       }
      }else{
        qc <- NULL
      }

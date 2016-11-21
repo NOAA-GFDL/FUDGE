@@ -33,7 +33,12 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
-      qc.data <- array(1, dim=dim(MF))
+      if(tmasks$apply_tmasks){
+        #This is going to have to be revised for use in the workflow
+        qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+      }else{
+        qc <- rep(1, dim(MF[[1]]))
+      }
     }else{
       qc.data <- NULL
     }

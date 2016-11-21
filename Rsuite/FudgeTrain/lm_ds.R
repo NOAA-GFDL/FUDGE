@@ -18,8 +18,11 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   nrips <- dim(MF[[1]])[4]
   out.data <- array(NA, dim=dim(MF[[1]]))
   if(train_qcmask){
-  #  qc = ifelse(is.na(MF[[1]]), NA, 1)
-    qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+    if(tmasks$apply_tmasks){
+      qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+    }else{
+      qc <- rep(1, dim(MF[[1]]))
+    }
     dim(qc) <- dim(out.data)
   }else{
     qc = NULL

@@ -24,7 +24,11 @@ callQM <- function(OH, MH, MF, args, type="",
     olap=F
   }
   if(train_qcmask){
-    qc <- mapply(rep, index.mask, nrips)
+    if(tmasks$apply_tmasks){
+      qc <- mapply(rep, index.mask, nrips)
+    }else{
+      qc <- rep(1, dim(MF[[1]]))
+    }
     dim(qc) <- dim(out.data)
   }else{
     qc <- NULL
@@ -57,18 +61,21 @@ callQM <- function(OH, MH, MF, args, type="",
                     'CFQM' = callCFQMv3(OH.slice, MH.slice, MF.slice, args), 
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
-      if(missval.out$mv.retry && train_qcmask){
+      if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(out)), olap) 
       }
     }else{
-      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
       if(train_qcmask){
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask), olap))
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
       }
     }
   }
+#   if(train_qcmask & missval.out$mv.retry){
+#     qc[,,,n,,] <- index.qm(index.mask, rep(NA, array(NA, dim=dim(out)), olap))
+#   }
   #  save(file="/work/cew/testing/h_EDQM_pr_3.R", list=c('out.data'))
   #  stop('examine output')
   return(list(ds=out.data, qc=qc))

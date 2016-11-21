@@ -3,7 +3,7 @@ make.fudge.history <- function(inst,ver){
         'using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, using version:', 
         ver,'on', date())
 }
-make.fudge.comment <- function(ds.method, ds.var, mask.region, grid.region, kfold, 
+make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfold, 
                                experiment.name, experiment.config, training.data, 
                                predictor.vars, fut.pred.rips, qc.method=NA){
   #'The comment attribute stores a human-readable description of the experiment
