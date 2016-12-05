@@ -72,7 +72,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
                    "specified, but high_cutoff attribute not set in cutoffs!"))
       }
     }
-    print(arg_list)
+    #print(arg_list)
     ds.correct <- tail.correct(model.hist = MH, 
                                obs.hist = OH, 
                                model.fut = MF.slice, 
@@ -122,8 +122,8 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
     #Calculate high and low tails
     
     # CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
-    print('args before triggertype')
-    print(args)
+#     print('args before triggertype')
+#     print(args)
     if (args$triggertype == 'cdft'){
       #print(args)
       #stop('in cdft call')
@@ -243,7 +243,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         ## Check for division by zero or very small number, replace with "largest seen" ratio
         mult.ifzero <- max(DS[-delta.idx]/MF[-delta.idx])
         mult.vec <- DS[delta.idx]/MF[delta.idx]
-        if (any(mult.vec > mult.ifzero)) {
+        if (any(mult.vec > mult.ifzero, na.rm=T)) {
           print("Some calculated multipliers were too large, replacing with max inside tails.")
           mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
         }

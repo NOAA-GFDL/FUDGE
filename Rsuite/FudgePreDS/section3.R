@@ -158,8 +158,8 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   
   #Do a basic check for the presence of the variables you want to check  
   t.fxn <- switch(tform,
-                  'log base e' = list('log', NULL, 'exp', NULL), 
-                  'log base 10' = list('log10', NULL, 'exp10', NULL), 
+                  'log' = list('log', NULL, 'exp', NULL), #log base e 
+                  'log10' = list('log10', NULL, 'exp10', NULL), #log base 10
                   'power' = list('^', test$pp.args$arg, '^', (1/test$pp.args$arg)), 
                   stop(paste("Error in callPRTransform: transform", tform, 
                              "was not one of the allowed options!")))
@@ -184,6 +184,9 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
     for (varname in names(input[[datatype]])){
       if (var %in% transform.vars){
         #if var is one of the vars receiving a transform
+#         print(summary(t.fxn))
+#         print(is.null(t.fxn[[2]]))
+#         stop('examine output')
         if(!is.null(t.fxn[[2]])){
           #If arguments to the transform, use them
           input[[datatype]][[var]] <- do.call(t.fxn[[1]], 

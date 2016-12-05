@@ -155,6 +155,9 @@ loop.xy.data <- function(){
         ##bring together all time levels
         for (el in names(output)){
           #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
+        #  print('adding over temporary output')
+        #  print(dim(output[[el]]))
+        #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
@@ -181,13 +184,13 @@ loop.xy.data <- function(){
           }
           remove(temp.postproc)
         }
-        #print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-        #stop('examint output - unless ds method punted, there should be no missing here')
+      #  print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+      #  stop('examint output - unless ds method punted, there should be no missing here')
       } 
     }#loop by y
   }#loop by x
-#   print(summary(as.vector(output.all$ds)))
- # stop('examine output from calls')
+  # print(summary(as.vector(output.all$ds)))
+  #stop('examine output from calls')
   return(output.all)
 }
 

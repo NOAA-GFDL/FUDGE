@@ -63,19 +63,29 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     ds.args$subsample_pct <- as.numeric(args$subsample_pct)/100
     print('dividing subsample_pct')
   }
-  pr_jitter <- F
-  if('jitter' %in% names(args)){
-    if(args$jitter=='on'){
-      pr_jitter <- T
-      pr_jitter_fxn <- function(x){
-        return((x*1000) + 100)
-      }
-      pr_unjitter_fxn <- function(x){
-        x <- x-100
-        return(x/1000)
-      }
+  
+  #Added as a precipitation adjustment
+  jitter.names <- c('scale_factor', 'offset_factor')
+  if (all(jitter.names %in% names(args))){
+    jitter <- T
+    scale_factor <- args$scale_factor
+    offset_factor <- args$offset_factor
+    print(scale_factor)
+    print(offset_factor)
+    pr_jitter_fxn <- function(x){
+      x <- x * scale_factor
+      x <- x + offset_factor 
+      return(x)
     }
+    pr_unjitter_fxn <- function(x){
+      x <- x - offset_factor
+      x <- x/scale_factor
+      return(x)
+    }
+  }else{
+    jitter <- F
   }
+  
   #Pre-initialize output
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
   nrips = dim(out.data)[4]
@@ -98,14 +108,13 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     hist_pred = missval.out$MH
     fut_pred  = missval.out$MF
     hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
-    if(pr_jitter){
-      hist_pred <- pr_jitter_fxn(hist.pred)
-      fut_pred <- pr_jitter_fxn(fut_pred)
-      hist_targ <- pr_jitter_fxn(hist_targ)
-    }
     #Now, call the training code
     hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
     hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
+    if(jitter){
+      hist.pred.tmp <- pr_jitter_fxn(hist.pred.tmp)
+      hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
+    }
     parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                   sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
                                   ds.args)
@@ -119,22 +128,29 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
       MF.slice <- fut_pred[[1]][,,,n,,]
       MF.idx <- !is.na(MF.slice)
       MF.slice <- MF.slice[MF.idx]
-      rip.len <- sum(MF.idx)
-      rip.rank <- rank(MF.slice)
-      model_combine_data <- sort(MF.slice)
-      out.tmp <- parm.downscale(model_combine_data, 
-                                parm.targ, #maintain orig order and orig placement of missvals
-                                parm.model, ds.args)
-      rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
-      out <- rep(NA, length(MF.idx))
-      out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
-      if (pr_jitter){
-        out <- pr_unjitter_fxn(out)
-      }
-      out.data[,,,n,,] <- out
+      if( length(MF.slice) != 0){
+        rip.len <- sum(MF.idx)
+        rip.rank <- rank(MF.slice)
+        model_combine_data <- sort(MF.slice)
+        if (jitter){
+          model_combine_data <- pr_jitter_fxn(model_combine_data)
+        }
+        out.tmp <- parm.downscale(model_combine_data, 
+                                  parm.targ, #maintain orig order and orig placement of missvals
+                                  parm.model, ds.args)
+        rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
+        out <- rep(NA, length(MF.idx))
+        out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+        #print("summary of PARM output:")
+        #print(summary(as.vector(out)))
+        if (jitter){
+          out <- pr_unjitter_fxn(out)
+        }
+        out.data[,,,n,,] <- out
+      } #Don't need to do anything otherwise - just return all missing
       #qcmask
       if(missval.out$mv.retry && train_qcmask){
-          qc[,,,n,,] <- NA 
+        qc[,,,n,,] <- NA 
       }
     }
   }else{
@@ -160,11 +176,21 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
     found.min=F
     for (j in 1:length(r_sq)){
       if(sum(is.na(r_sq))!=length(r_sq)){
+        #         print(na.vec)
+        #         print(r_sq)
+        #         print(na.vec[j])
+        #         print(r_sq[j])
+        #         print(min(r_sq, na.rm=T))
+        #         print(mean_rsq)
+        #         print(sdev_rsq)
         if(!na.vec[j] & r_sq[j]==min(r_sq, na.rm=T) & 
-             (r_sq[j] <= (mean_rsq-0*sdev_rsq))){
+             #(r_sq[j] <= (mean_rsq-0*sdev_rsq))){
+             (r_sq[j] <= (mean_rsq))){
           #The above criteria match at most one point in the vector. However,
           #that one point is about to get removed as part of the next step 
           #carried out. 
+          #The above was edited 11-23-16, to account for the fact that sdev_rsq
+          #is sometimes NA when other parts of the vector AREN'T.
           k.out[k.i] <- j
           break
         }
@@ -217,28 +243,43 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
   bad.break.indices <- rep(F, length(slopes))
   bad.slope.indices <- rep(F, length(slopes))
   if(run){
+    print("Printing slopes and values")
+    print(slopes)
+    print(length(slopes))
     for(j in 1:length(slopes)){
-      if(slopes[j]<=0.1 & j==1){
+      if (is.na(slopes[j])){
+        #First, check for missing values. 
+        #This can legit happen with pr values, 
+        #if you do not include an offset factor.
         bad.value.indices[j] <- T
         bad.break.indices[j] <- T
         bad.slope.indices[j] <- T
-      }
-      if(slopes[j]<=0.1 & j==length(slopes)){
-        bad.value.indices[j-1] <- T
-        bad.break.indices[j-1] <- T
-        bad.slope.indices[j] <- T
-      }
-      if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
-         & ((xvals[j+1]-xvals[j])>5)){
-        bad.value.indices[j-1] <- T
-        bad.break.indices[j-1] <- T
-        bad.slope.indices[j] <- T
-      }
-      if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
-         & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
-        bad.value.indices[j] <- T
-        bad.break.indices[j] <- T
-        bad.slope.indices[j] <- T
+      }else{
+        if(slopes[j]<=0.1 & j==1){
+          bad.value.indices[j] <- T
+          bad.break.indices[j] <- T
+          bad.slope.indices[j] <- T
+        }
+        if(slopes[j]<=0.1 & j==length(slopes)){
+          bad.value.indices[j-1] <- T
+          bad.break.indices[j-1] <- T
+          bad.slope.indices[j] <- T
+        }
+        #Okay, this is the specific line that's leading
+        #ot an issue in the main code when working with pr
+        #without an offset in addition to the jitter function
+        if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
+           & ((xvals[j+1]-xvals[j])>5)){
+          bad.value.indices[j-1] <- T
+          bad.break.indices[j-1] <- T
+          bad.slope.indices[j] <- T
+        }
+        if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
+           & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
+          bad.value.indices[j] <- T
+          bad.break.indices[j] <- T
+          bad.slope.indices[j] <- T
+        }
       }
     }
   }
@@ -329,6 +370,7 @@ parm.train <- function(hist_pred, hist_targ, args){
         q <- which( hist_pred > (val-window_delta) )[1]-1
         window2[(hist.pred.len-j)+1] <- (j-q)
       }
+      print(var.range)
     }else{
       #If controlling the taper of the tails
       window_temp <- fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T))
@@ -522,12 +564,17 @@ parm.train <- function(hist_pred, hist_targ, args){
   mod=hist_pred
   sta=hist_targ
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
-  if(!is.na(breakpoints[1])){
+  #CEW code added 11-22-2016 for the pr case; returns a lot of identical breakpoints
+  #values <- unique(values)
+  print(values)
+  print(length(unique(values)))
+  if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
     regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1,Boundary.knots=c(-999,999)),data=ds)
   }else{
-    print("No breakpoints found; activating simple lm prediction")
+    print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
     regr_piecewise <- lm(sta ~ mod, data=ds)
+    breakpoints <- NA
   }
   
   #AARM 6: Go through the model and remove slopes close to 0
@@ -581,7 +628,12 @@ parm.train <- function(hist_pred, hist_targ, args){
       if(!is.na(breakpoints[1])){
         print("Beginning piecewise linear regression")
         regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,
-                                       Boundary.knots=c(-999,999)),data=ds)
+                                       #Boundary_knots has been set for our PARM analysis, 
+                                       #but it might be leading to weird settings for precip.
+                                       #Like, 10000-inches-per-day weird.
+                                       Boundary.knots=c(-999,999)),
+                              # ),
+                              data=ds)
       }else{
         print("No breakpoints found; activating simple lm prediction")
         regr_piecewise2 <- lm(sta ~ mod, data=ds)
@@ -632,7 +684,14 @@ parm.downscale <- function(fut_pred, hist_targ, regr_piecewise,
   
   message('Starting PARM step 7: predicting future observations')
   #points(seq(1:length(fut_pred)), fut_pred, col='red')
-  fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
+#   print(summary(regr_piecewise))
+#   print(summary(as.vector(fut_pred)))
+#   print(length(fut_pred))
+  if (length(fut_pred) > 0){
+    fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
+  }else{
+    fut_obs <- c()
+  }
   regr <- regr_piecewise
   model_future_fit <- fut_obs
   return(list(fut_obs=fut_obs, fit=NULL))

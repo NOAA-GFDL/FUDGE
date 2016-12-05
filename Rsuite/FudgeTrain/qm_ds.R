@@ -54,22 +54,27 @@ callQM <- function(OH, MH, MF, args, type="",
       OH.slice <- missval.out$OH[[1]]
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
+#       print(length(OH.slice))
+#       print(length(MH.slice))
+#       print(length(MF.slice))
       mf.missing <- sum(is.na(MF.slice))
       train.stat <- missval.out$missval.status
       out <- switch(type, 
                     'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args), 
                     'CFQM' = callCFQMv3(OH.slice, MH.slice, MF.slice, args), 
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
+     # print(length(out))
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(out)), olap) 
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }else{
-      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
+      print('downscaling not possible at this point')
+      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
   }
@@ -281,6 +286,6 @@ callBCQMv2<-function(LH,CH,CF,args){
        return(temp$qLHecdfCHqCF[1:lengthCF])
      }else{
        print("No present values in CF; returning all NA")
-       return(NA)
+       return(CF)
      }
 }

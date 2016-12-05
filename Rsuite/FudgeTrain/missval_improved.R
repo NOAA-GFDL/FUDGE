@@ -84,6 +84,9 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] < missval.thold)
   }else{
     #This is the most common case
+#     print(npts.OH)
+#     print(npts.MH)
+#     print(npts.MF)
     insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
   if (insufficient.data){

@@ -11,7 +11,7 @@ index.qm <- function(index.mask, data, olap=T){
   #downscaling on an overlapping mask, which needs to be trimmed
   #back down to size.
   if (olap){
-    data <- apply.any.mask(data=data, mask=index.mask)
+    data <- apply.any.mask(data, index.mask, dim='time')
   }
   return(data)
 }
