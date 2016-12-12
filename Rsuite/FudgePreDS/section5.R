@@ -28,6 +28,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                              hist.targ = NA, 
                              fut.pred = NA,
                              ds.atts = ds.atts,
+                             tmasks=list(time_mask_overlap=F),
                              verbose=FALSE){
   input<- list('hist.pred'=hist.pred, 'hist.targ'=hist.targ, 'fut.pred'=fut.pred, 'data.atts'=data.atts)
   qc.mask <- NULL  #If no mask generated, will keep being null forever
@@ -46,7 +47,8 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
-                  'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh', cutoffs=ds.atts),
+                  'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, 
+                                                   triggertype='GfGh', cutoffs=ds.atts, tmasks),
                   'cdfttailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft', cutoffs=ds.atts),
                   'cdft_orig_tailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),

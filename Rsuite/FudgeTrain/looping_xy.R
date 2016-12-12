@@ -131,7 +131,8 @@ loop.xy.data <- function(){
                                        hist.targ = OH.window,
                                        hist.pred = MH.window, 
                                        fut.pred  = MF.window, 
-                                       ds.atts = ds.atts)
+                                       ds.atts = ds.atts, 
+                                       tmasks = tmasks)
             ds.out$ds <- tmp.s5$ds.out
             qc.out <- c(qc.out, tmp.s5$qc)
           }
@@ -184,8 +185,8 @@ loop.xy.data <- function(){
           }
           remove(temp.postproc)
         }
-      #  print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-      #  stop('examint output - unless ds method punted, there should be no missing here')
+       # print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+      #  stop('examine output - the tail adjust is giving weird and wonky values')
       } 
     }#loop by y
   }#loop by x

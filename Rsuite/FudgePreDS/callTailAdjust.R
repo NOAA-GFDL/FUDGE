@@ -6,7 +6,7 @@
 # FUNCTION (BELOW)
 
 callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_, 
-                           cutoffs=list()){
+                           cutoffs=list(), tmasks=list(time_mask_overlap=F)){
   #'Calls a BCSD-style adjustment on quantile-mapped code
   #'based off of the limits to the adjustment of the
   #'MH and MF datasets
@@ -77,7 +77,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
                                obs.hist = OH, 
                                model.fut = MF.slice, 
                                ds.fut = DS.slice, 
-                               args = arg_list)
+                               args = arg_list, tmasks=tmasks)
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
       adjusted.output$qc.mask[,,,n,,] <- ds.correct$mask
@@ -96,8 +96,16 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 # GENERAL TAIL SCHEME FUNCTION THAT CALLS EITHER SIMPLE (I.E. BCQM/PARM)
 # SCHEME OR CDFT SPECIFIC SCHEME AND PERFORMS THE ADJUSTMENTS
 
-tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
+tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks){
   #Fast wrapper for the more complicated tail_cutoff function
+  
+  #Added 12-9-16
+  #If you are going to be using overlapping masks, 
+  #you need to trim your samples for this method
+  if (tmasks$time_mask_overlap){
+    #print(summary(tmasks))
+    model.fut <- apply.any.mask(tmasks$trim$masks[[w]], model.fut, dim='time')
+  }
   
   # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,

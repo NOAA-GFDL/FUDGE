@@ -37,15 +37,17 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     if(!is.numeric(args$round)){round.ds<-F}else{round.ds<-T}
   }
   ds.args <- args
-  if(!'reg_sample_method'%in%names(args)){
+  if(!'regression_subsample_method'%in%names(args)){
+    stop(paste("Error in PARM: reg_sample_method not included"))
     ds.args$reg_sample_method = 'climvar_range'
   }else{
-    reg_sample_method_choices <- c('sample_size', 'climvar_range')
-    if(!(args$reg_sample_method%in%reg_sample_method_choices)){
+    reg_sample_method_choices <- c('sample_size', 'climate_variable_range')
+    if(!(args$regression_subsample_method%in%reg_sample_method_choices)){
       stop(paste("Error in PARM: reg_sample_method must be one of",
                  paste(reg_sample_method_choices, collapse=","),
-                 "but was", args$reg_sample_method))
+                 "but was", args$regression_subsample_method))
     }
+    #print(reg_sample_method)
   }
   #Add check for the definition of the tails/whether to taper the tails at ends of dist
   if(!'tail_taper_pct'%in%names(args)){
@@ -89,6 +91,16 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   #Pre-initialize output
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
   nrips = dim(out.data)[4]
+  #Attempting switch to index masking data 
+  #on 12-15-16; this is the way we used to do it, 
+  #but I thought there was a clever way around it.
+  if (tmasks$time_mask_overlap){
+    index.mask <- tmasks$trim$masks[[w]]
+    olap=T
+  }else{
+    index.mask <- tmasks$MF$masks[[w]]
+    olap=F
+  }
   if(train_qcmask){
     if(tmasks$apply_tmasks){
       qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
@@ -146,11 +158,12 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
         if (jitter){
           out <- pr_unjitter_fxn(out)
         }
-        out.data[,,,n,,] <- out
+        # previously ouyt
+        out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       } #Don't need to do anything otherwise - just return all missing
       #qcmask
       if(missval.out$mv.retry && train_qcmask){
-        qc[,,,n,,] <- NA 
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap) 
       }
     }
   }else{
@@ -326,7 +339,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
   #   window1 <- rep(NA, (hist.pred.len-start+1))
   #   window1 <- c(rep(NA,(start-1)),window1)
-  if(args$reg_sample_method=='sample_size'){
+  if(args$regression_subsample_method=='sample_size'){
     if(args$tail_taper_pct==0){
       #If not tapering on the tails, however they are defined
       window_len = hist.pred.len * fixed_window_width
@@ -349,7 +362,7 @@ parm.train <- function(hist_pred, hist_targ, args){
       window1 <- window_samples
       window2 <- window_samples
     }
-  }else if(args$reg_sample_method=='climvar_range'){
+  }else if(args$regression_subsample_method=='climate_variable_range'){
     if(args$tail_taper_pct==0){
       #If allowing the range to taper naturally on the tails
       var.range = range(hist_pred)
@@ -570,7 +583,8 @@ parm.train <- function(hist_pred, hist_targ, args){
   print(length(unique(values)))
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
-    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1,Boundary.knots=c(-999,999)),data=ds)
+    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1#,Boundary.knots=c(-999,999)
+                                  ),data=ds)
   }else{
     print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
     regr_piecewise <- lm(sta ~ mod, data=ds)
@@ -631,8 +645,8 @@ parm.train <- function(hist_pred, hist_targ, args){
                                        #Boundary_knots has been set for our PARM analysis, 
                                        #but it might be leading to weird settings for precip.
                                        #Like, 10000-inches-per-day weird.
-                                       Boundary.knots=c(-999,999)),
-                              # ),
+                                      # Boundary.knots=c(-999,999)),
+                               ),
                               data=ds)
       }else{
         print("No breakpoints found; activating simple lm prediction")
