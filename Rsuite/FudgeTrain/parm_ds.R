@@ -151,10 +151,13 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
     for (j in 1:length(r_sq)){
       if(sum(is.na(r_sq))!=length(r_sq)){
         if(!na.vec[j] & r_sq[j]==min(r_sq, na.rm=T) & 
-             (r_sq[j] <= (mean_rsq-0*sdev_rsq))){
+             #(r_sq[j] <= (mean_rsq-0*sdev_rsq))){
+             (r_sq[j] <= (mean_rsq))){
           #The above criteria match at most one point in the vector. However,
           #that one point is about to get removed as part of the next step 
           #carried out. 
+          #The above was edited 11-23-16, to account for the fact that sdev_rsq
+          #is sometimes NA when other parts of the vector AREN'T.
           k.out[k.i] <- j
           break
         }
@@ -172,7 +175,7 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
         if ((k.out[j]>=window.index) & (k.out[j]<=(length(r_sq)-window.index))){
           r_indices <- (k.out[j]-window.index):(k.out[j]+window.index)
           r_sq[r_indices] <- NA
-         # print(r_indices)
+          # print(r_indices)
         }
         if (k.out[j]>(length(r_sq)-window.index)){
           r_sq[(k.out[j]-window.index):length(r_sq)] <- NA    #break point is close to end of vector
@@ -207,28 +210,43 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
   bad.break.indices <- rep(F, length(slopes))
   bad.slope.indices <- rep(F, length(slopes))
   if(run){
+    print("Printing slopes and values")
+    print(slopes)
+    print(length(slopes))
     for(j in 1:length(slopes)){
-      if(slopes[j]<=0.1 & j==1){
+      if (is.na(slopes[j])){
+        #First, check for missing values. 
+        #This can legit happen with pr values, 
+        #if you do not include an offset factor.
         bad.value.indices[j] <- T
         bad.break.indices[j] <- T
         bad.slope.indices[j] <- T
-      }
-      if(slopes[j]<=0.1 & j==length(slopes)){
-        bad.value.indices[j-1] <- T
-        bad.break.indices[j-1] <- T
-        bad.slope.indices[j] <- T
-      }
-      if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
-         & ((xvals[j+1]-xvals[j])>5)){
-        bad.value.indices[j-1] <- T
-        bad.break.indices[j-1] <- T
-        bad.slope.indices[j] <- T
-      }
-      if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
-         & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
-        bad.value.indices[j] <- T
-        bad.break.indices[j] <- T
-        bad.slope.indices[j] <- T
+      }else{
+        if(slopes[j]<=0.1 & j==1){
+          bad.value.indices[j] <- T
+          bad.break.indices[j] <- T
+          bad.slope.indices[j] <- T
+        }
+        if(slopes[j]<=0.1 & j==length(slopes)){
+          bad.value.indices[j-1] <- T
+          bad.break.indices[j-1] <- T
+          bad.slope.indices[j] <- T
+        }
+        #Okay, this is the specific line that's leading
+        #ot an issue in the main code when working with pr
+        #without an offset in addition to the jitter function
+        if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
+           & ((xvals[j+1]-xvals[j])>5)){
+          bad.value.indices[j-1] <- T
+          bad.break.indices[j-1] <- T
+          bad.slope.indices[j] <- T
+        }
+        if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
+           & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
+          bad.value.indices[j] <- T
+          bad.break.indices[j] <- T
+          bad.slope.indices[j] <- T
+        }
       }
     }
   }
@@ -236,7 +254,7 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
               'bad.slope' = bad.slope.indices))
 }
 
-parm.train <- function(hist_pred, hist_targ, args, ds.var){
+parm.train <- function(hist_pred, hist_targ, args){
   #'Assume for now that the dataset merging is done up in a prior step - 
   #'all that you have to worry about in this step is a single 
   #'vector for each dataset. 
@@ -273,9 +291,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
   
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
-#   window1 <- rep(NA, (hist.pred.len-start+1))
-#   window1 <- c(rep(NA,(start-1)),window1)
-  if(args$reg_sample_method=='sample_size'){
+  if(args$regression_subsample_method=='sample_size'){
     if(args$tail_taper_pct==0){
       #If not tapering on the tails, however they are defined
       window_len = hist.pred.len * fixed_window_width
@@ -298,7 +314,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
       window1 <- window_samples
       window2 <- window_samples
     }
-  }else if(args$reg_sample_method=='climvar_range'){
+  }else if(args$regression_subsample_method=='climate_variable_range'){
     if(args$tail_taper_pct==0){
       #If allowing the range to taper naturally on the tails
       var.range = range(hist_pred)
@@ -319,6 +335,7 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
         q <- which( hist_pred > (val-window_delta) )[1]-1
         window2[(hist.pred.len-j)+1] <- (j-q)
       }
+      print(var.range)
     }else{
       #If controlling the taper of the tails
       window_temp <- fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T))
@@ -387,11 +404,8 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   }
   r_sq1_save <- r_sq1
   
-  ###Modification 12-18 to make sure that precisely the same
+  ###Modification 12-18-15 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
-  #print('finding breakpoints')
-  #   print('summary of r_sq1')
-  #   print(summary(r_sq1))
   bp.1 <- arrm.find.breakpoints(r_sq1, window1, start)
   k <- bp.1$breakpoints
   r_sq1 <- bp.1$r_sq
@@ -422,7 +436,6 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
     print('setting second start based on hist.pred.len')
     start2 <- hist.pred.len
   }
-  #print(paste('k2 starts from', start2))
   
   #calculate r squared of linear regressions the length of 'window2'
   r_sq2 <- rep(NA, start2)
@@ -447,8 +460,6 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   window2 <- rev(window2)
   #remove values around the first break point found in part 1
   r_sq2[( length(r_sq2)-round(0.5*window2[start2]) ):length(r_sq2)] <- NA
-  #print(bp.1)
-  #print(r_sq2)
   
   ###Modification 12-18 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
@@ -487,8 +498,6 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   }
   
   breakpoints <- sort(breakpoints0, na.last=T)
-  #print('summary of breakpoints:')
-  #print(breakpoints)
   if(length(breakpoints)==6){
     print('there is at least one case where you get all 6 breakpoints')
   }
@@ -512,12 +521,18 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   mod=hist_pred
   sta=hist_targ
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
-  if(!is.na(breakpoints[1])){
+  #CEW code added 11-22-2016 for the pr case; returns a lot of identical breakpoints
+  #values <- unique(values)
+  print(values)
+  print(length(unique(values)))
+  if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
-    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1,Boundary.knots=c(-999,999)),data=ds)
+    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1#,Boundary.knots=c(-999,999)
+    ),data=ds)
   }else{
-    print("No breakpoints found; activating simple lm prediction")
+    print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
     regr_piecewise <- lm(sta ~ mod, data=ds)
+    breakpoints <- NA
   }
   
   #AARM 6: Go through the model and remove slopes close to 0
@@ -571,7 +586,12 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
       if(!is.na(breakpoints[1])){
         print("Beginning piecewise linear regression")
         regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,
-                                       Boundary.knots=c(-999,999)),data=ds)
+                                       #Boundary_knots has been set for our PARM analysis, 
+                                       #but it might be leading to weird settings for precip.
+                                       #Like, 10000-inches-per-day weird.
+                                       # Boundary.knots=c(-999,999)),
+        ),
+        data=ds)
       }else{
         print("No breakpoints found; activating simple lm prediction")
         regr_piecewise2 <- lm(sta ~ mod, data=ds)
@@ -609,8 +629,8 @@ parm.train <- function(hist_pred, hist_targ, args, ds.var){
   
 }#end arrm.train
 
-parm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise, 
-                            args){
+parm.downscale <- function(fut_pred, hist_targ, regr_piecewise, 
+                           args){
   
   #'Modified version of ARRM step 6, modified to fit into the parm framework
   #'(i.e. stripping out everything not related to downscaling.)
@@ -622,7 +642,14 @@ parm.downscale <- function(fut_pred, hist_targ, ds.var, regr_piecewise,
   
   message('Starting PARM step 7: predicting future observations')
   #points(seq(1:length(fut_pred)), fut_pred, col='red')
-  fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
+  #   print(summary(regr_piecewise))
+  #   print(summary(as.vector(fut_pred)))
+  #   print(length(fut_pred))
+  if (length(fut_pred) > 0){
+    fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
+  }else{
+    fut_obs <- c()
+  }
   regr <- regr_piecewise
   model_future_fit <- fut_obs
   return(list(fut_obs=fut_obs, fit=NULL))
