@@ -36,6 +36,8 @@ WriteSelectGlobals <- function(filename, atts, append=TRUE){
         att.val <- paste(att.val, new.str$val, sep="; ")
       }
     }
+#     print(att.name)
+#     print(att.val)
     ncatt_put(nc.object, 0, att.name, att.val)
   }
   nc_close(nc.object)

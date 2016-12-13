@@ -23,6 +23,8 @@ set ppn = $argv[9]
 set msub = $argv[10]
 set msubmail=$argv[11]
 #new ends
+#CEW new option 10-13 to allow specification of number of jobs per CPU
+set njobs=$argv[12]
 set dev = "off" #if dev option is off then tstamp unique does not kick in
 if($dev == "off") then
  set tstamp = ""
@@ -37,11 +39,12 @@ endif
 mkdir -p $basedir 
 mkdir -p $rundir
 set cnt16=1
+@ njobs_lt = ( $njobs + 1 )
 while ( $lon_start <= $lon_end ) 
  set inc=1
  set sub_lon_end=`expr $lon_start`
  set sub_lon_start=`expr $lon_start`
- while ( ( $sub_lon_end <= $lon_end ) && ( $inc < 9 ) )
+ while ( ( $sub_lon_end <= $lon_end ) && ( $inc < $njobs_lt ) )
 	 set sub_lon_end=`expr $lon_start + $inc`
 #         echo $sub_lon_end 
          set inc=`expr $inc + 1`

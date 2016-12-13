@@ -25,7 +25,7 @@ assess.missvals <- function(OH, MH, MF,
     MH.kount <- unlist(lapply(ds.list$MH, length))
     OH.kount <- length(ds.list$OH)
     MF.kount <- unlist(lapply(ds.list$MF, length))
-    train.index <- colSums(sapply(c('MH', 'OH', 'MF'), 'grepl', train.names))
+    train.index <- colSums(sapply(c('MH', 'OH', 'MF'), 'grepl', train.names)) > 0
     if(threshold >= 1){ #sample size threshold
       #ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
       #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold))

@@ -357,10 +357,14 @@ ${TMPCMIPNAME}@units = ${AARMVAR}@units;
 EOF
 
 #CEW edit 7-5
-if ( "$AARMVAR" =~ *"mask"* ) then
-	echo "${TMPCMIPNAME}@comments = ${AARMVAR}@comments;" >> refine.nco 
-endif
-#cat refine.nco
+#CEW WANTS to make an edit 11-1-2016 to change comments to comment here and in line 386;
+#however, that should probably be done after checks iwht existing metadata. Do s8 tools use comments or comment?
+#CEW edit 11-18-2016 for use in the ginger 3tt5 branch; this is causing errors given the 
+#old structure; commenting out in both.
+#if ( "$AARMVAR" =~ *"mask"* ) then
+#	echo "${TMPCMIPNAME}@comments = ${AARMVAR}@comments;" >> refine.nco 
+#endif
+##cat refine.nco
 
 # prepare new dimension variables
 ncap2 -hv -S refine.nco $IFILE refine.nc
@@ -380,12 +384,11 @@ ${MASKNAME}[\$time,\$lat,\$lon] = 0.f;
 
 ${MASKNAME} = ${MASKVAR};
 
-
-${MASKNAME}@comments = ${MASKVAR}@comments;
 ${MASKNAME}@missing_value = ${MASKVAR}@missing_value;
 ${MASKNAME}@long_name = ${MASKVAR}@long_name;
 
 EOF
+#previously included above: ${MASKNAME}@comments = ${MASKVAR}@comments;
 set echo
 ncks -A -h -v ${MASKVAR} $IFILE refine.nc 
 #uncomment endif
@@ -432,8 +435,8 @@ endif
 # writing globals
 set today = `date`
 ncatted -O -h -a Contact,global,a,c,"http://nomads.gfdl.noaa.gov/contacts.html" $OFILE
-ncatted -O -h -a Institute_id,global,a,c,"${instituteid}" $OFILE 
-ncatted -O -h -a institution,global,o,c,"NOAA GFDL (201 Forrestal Rd, Princeton, NJ, 08540)" $OFILE
+#ncatted -O -h -a Institute_id,global,a,c,"${instituteid}" $OFILE 
+#ncatted -O -h -a institution,global,o,c,"NOAA GFDL (201 Forrestal Rd, Princeton, NJ, 08540)" $OFILE
 ncatted -O -h -a conventions,global,a,c,"CF-1.4" $OFILE
 if ( (${METHOD} == "GFDL-deltav1") | ( ${METHOD} == "GFDL-deltav2" )) then
 ncatted -O -h -a history,global,a,c,"File processed at NOAA/GFDL using R statistical downscaling suite of tools, version v20130622 on Mon Jul  15 17:03:03 2013" $OFILE

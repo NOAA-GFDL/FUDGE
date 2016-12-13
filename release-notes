@@ -1,3 +1,7 @@
+12-13-16
+(cew)
+- Minsamplesize requirments for tail adjust added in 
+
 10-3-16
 (cew)
 - New cdft tail adjustment with new option to limit number of points adjusted; 
@@ -8,6 +12,7 @@ tested for tasmax, pr (ratio) tests are in progress
 - Multiplicative (ratio) tail adjustment option to "cdfttailadjust" and "simpletailadjust". Brief metadata update.
 (cew)
 - Merge with branch containing improved postProc workflow
+- Adding parsing of ncpu,njobs from XML
 
 8-23-16
 - Bugfix for cross-validated qc mask pathanmes
