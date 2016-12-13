@@ -57,6 +57,33 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
   }else{
     args$subsample_pct <- as.numeric(args$subsample_pct)/100
   }
+  
+  #Added as a precipitation adjustment
+  jitter.names <- c('scale_factor', 'offset_factor')
+  if (any(jitter.names %in% names(args))){
+    jitter <- T
+    scale_factor <- 1
+    offset_factor <- 0
+    if ('scale_factor' %in% names(args)){
+      scale_factor <- args$scale_factor
+    }
+    if ('offset_factor' %in% names(args)){
+      offset_factor <- args$offset_factor
+    }
+    pr_jitter_fxn <- function(x){
+      x <- x * scale_factor
+      x <- x + offset_factor 
+      return(x)
+    }
+    pr_unjitter_fxn <- function(x){
+      x <- x - offset_factor
+      x <- x/scale_factor
+      return(x)
+    }
+  }else{
+    jitter <- F
+  }
+  
 
   #Now, call the training code
   #CEW: the missing value removal step might not be neccessary. 
@@ -64,6 +91,10 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
   #returning output identical to the 
   hist.pred.tmp <- unlist(hist_pred) #[!is.na(unlist(hist_pred))]
   hist.targ.tmp <- unlist(hist_targ) #[!is.na(unlist(hist_targ))]
+  if(jitter){
+    hist.pred.tmp <- pr_jitter_fxn(hist.pred.tmp)
+    hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
+  }
   parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                 sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
   parm.model <- parm.train.data$ds.model
@@ -84,6 +115,9 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
     rip.tmp <- unlist(rip.data)
     rip.len = length(rip.tmp[!is.na(rip.tmp)]) 
     model_combine_data <- rip.tmp[!is.na(rip.tmp)]
+    if (jitter){
+      model_combine_data <- pr_jitter_fxn(model_combine_data)
+    }
     rip.rank <- rank(model_combine_data)
     model_combine_data <- sort(model_combine_data)
     #call downscaling function
@@ -92,14 +126,10 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
                               ds.var,
                               parm.model, args)
     rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
-    #round reference: close to line 1180
-    #out.list[out.var] <- rip.tmp - look, I don't think that this is making a difference.
-    #if(round.ds){
-    #  message('rounding downscaled values')
-    #  out.list[[out.var]] <- round(rip.tmp[rip.rank][1:rip.len], digits=args$round)
-    #}else{
+    if (jitter){
+      rip.tmp <- pr_unjitter_fxn(rip.tmp)
+    }
       out.list[[out.var]] <- rip.tmp[rip.rank][1:rip.len]
-    #}
   }
   #print(summary(out.list))
   #print(lapply(out.list, 'summary'))
