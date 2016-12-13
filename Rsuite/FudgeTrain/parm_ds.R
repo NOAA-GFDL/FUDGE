@@ -193,13 +193,6 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
     found.min=F
     for (j in 1:length(r_sq)){
       if(sum(is.na(r_sq))!=length(r_sq)){
-        #         print(na.vec)
-        #         print(r_sq)
-        #         print(na.vec[j])
-        #         print(r_sq[j])
-        #         print(min(r_sq, na.rm=T))
-        #         print(mean_rsq)
-        #         print(sdev_rsq)
         if(!na.vec[j] & r_sq[j]==min(r_sq, na.rm=T) & 
              #(r_sq[j] <= (mean_rsq-0*sdev_rsq))){
              (r_sq[j] <= (mean_rsq))){
@@ -341,8 +334,6 @@ parm.train <- function(hist_pred, hist_targ, args){
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
   
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
-  #   window1 <- rep(NA, (hist.pred.len-start+1))
-  #   window1 <- c(rep(NA,(start-1)),window1)
   if(args$regression_subsample_method=='sample_size'){
     if(args$tail_taper_pct==0){
       #If not tapering on the tails, however they are defined
@@ -456,11 +447,8 @@ parm.train <- function(hist_pred, hist_targ, args){
   }
   r_sq1_save <- r_sq1
   
-  ###Modification 12-18 to make sure that precisely the same
+  ###Modification 12-18-15 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
-  #print('finding breakpoints')
-  #   print('summary of r_sq1')
-  #   print(summary(r_sq1))
   bp.1 <- arrm.find.breakpoints(r_sq1, window1, start)
   k <- bp.1$breakpoints
   r_sq1 <- bp.1$r_sq
@@ -491,7 +479,6 @@ parm.train <- function(hist_pred, hist_targ, args){
     print('setting second start based on hist.pred.len')
     start2 <- hist.pred.len
   }
-  #print(paste('k2 starts from', start2))
   
   #calculate r squared of linear regressions the length of 'window2'
   r_sq2 <- rep(NA, start2)
@@ -516,8 +503,6 @@ parm.train <- function(hist_pred, hist_targ, args){
   window2 <- rev(window2)
   #remove values around the first break point found in part 1
   r_sq2[( length(r_sq2)-round(0.5*window2[start2]) ):length(r_sq2)] <- NA
-  #print(bp.1)
-  #print(r_sq2)
   
   ###Modification 12-18 to make sure that precisely the same
   ###code is being used for both breakpoint calculations
@@ -556,8 +541,6 @@ parm.train <- function(hist_pred, hist_targ, args){
   }
   
   breakpoints <- sort(breakpoints0, na.last=T)
-  #print('summary of breakpoints:')
-  #print(breakpoints)
   if(length(breakpoints)==6){
     print('there is at least one case where you get all 6 breakpoints')
   }
