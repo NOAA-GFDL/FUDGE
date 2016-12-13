@@ -68,12 +68,16 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   
   #Added as a precipitation adjustment
   jitter.names <- c('scale_factor', 'offset_factor')
-  if (all(jitter.names %in% names(args))){
+  if (any(jitter.names %in% names(args))){
     jitter <- T
-    scale_factor <- args$scale_factor
-    offset_factor <- args$offset_factor
-    print(scale_factor)
-    print(offset_factor)
+    scale_factor <- 1
+    offset_factor <- 0
+    if ('scale_factor' %in% names(args)){
+      scale_factor <- args$scale_factor
+    }
+    if ('offset_factor' %in% names(args)){
+      offset_factor <- args$offset_factor
+    }
     pr_jitter_fxn <- function(x){
       x <- x * scale_factor
       x <- x + offset_factor 
