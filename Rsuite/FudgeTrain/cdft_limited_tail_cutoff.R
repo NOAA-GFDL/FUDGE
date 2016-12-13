@@ -26,116 +26,128 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   MF = MF[ds.order]
   apply_adjust = T
   #Determine if any points will need adjustment
-  if (args$trigger=='all'){
-    if (args$tail=='lower'){
+  print(length(DS))
+  print(args$tail_len)
+  if (length(DS) <= args$tail_len){
+    print('Not enough points for required tail length; no tail adjustment')
+    apply_adjust <- F
+  }
+  if (length(DS) > 1 && apply_adjust){
+    #Need at least 2 points to adjust
+    if (args$trigger=='all'){
+      if (args$tail=='lower'){
         ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
         ds.cond <- ds.cond[ds.rank]
         ds.idx <- args$tail_len + 1
         args$low_cutoff <- DS[ds.idx]
-    }else if (args$tail=='upper'){
+      }else if (args$tail=='upper'){
         ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
-      ds.cond <- ds.cond[ds.rank]
+        ds.cond <- ds.cond[ds.rank]
         ds.idx <- length(DS) - args$tail_len
         args$high_cutoff <- DS[ds.idx]
-    }
-  }else{
-    cdft_adjusted=F
-    if (do.call(select.cond, list(do.call(trigger.fxn, list(DS)), cutoff)) && !is.na(cutoff)){
-      cdft_adjusted = T
-    }
-    if(args$trigger=='cdft_tailadj' && cdft_adjusted){
-      ds.idx <- find_delta_adj(select.cond, DS, MF, cutoff, args)
-      if (args$tail=='lower'){
-        if ((ds.idx+1) > args$tail_len){
-          ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
-          ds.cond <- ds.cond[ds.rank]
-          ds.idx <- args$tail_len + 1
-          args$low_cutoff <- DS[ds.idx]
-        }
-      }else if (args$tail=='upper'){
-        if ((ds.idx-1) < (length(DS) - args$tail_len)){
-          ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
-          ds.cond <- ds.cond[ds.rank]
-          ds.idx <- length(DS) - args$tail_len
-          args$high_cutoff <- DS[ds.idx]
-        }
-      }
-    }else if (args$trigger == 'notailadj' && !cdft_adjusted){
-      #No need to check cutoff - there isn't any
-      if (args$tail=='lower'){
-          ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
-          ds.cond <- ds.cond[ds.rank]
-          ds.idx <- args$tail_len + 1
-          args$low_cutoff <- DS[ds.idx]
-      }else if (args$tail=='upper'){
-          ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
-          ds.cond <- ds.cond[ds.rank]
-          ds.idx <- length(DS) - args$tail_len
-          args$high_cutoff <- DS[ds.idx]
       }
     }else{
-      apply_adjust = F
+      cdft_adjusted=F
+      if (do.call(select.cond, list(do.call(trigger.fxn, list(DS)), cutoff)) && !is.na(cutoff)){
+        cdft_adjusted = T
+      }
+      if(args$trigger=='cdft_tailadj' && cdft_adjusted){
+        ds.idx <- find_delta_adj(select.cond, DS, MF, cutoff, args)
+        if (args$tail=='lower'){
+          if ((ds.idx+1) > args$tail_len){
+            ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
+            ds.cond <- ds.cond[ds.rank]
+            ds.idx <- args$tail_len + 1
+            args$low_cutoff <- DS[ds.idx]
+          }
+        }else if (args$tail=='upper'){
+          if ((ds.idx-1) < (length(DS) - args$tail_len)){
+            ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
+            ds.cond <- ds.cond[ds.rank]
+            ds.idx <- length(DS) - args$tail_len
+            args$high_cutoff <- DS[ds.idx]
+          }
+        }
+      }else if (args$trigger == 'notailadj' && !cdft_adjusted){
+        #No need to check cutoff - there isn't any
+        if (args$tail=='lower'){
+          ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
+          ds.cond <- ds.cond[ds.rank]
+          ds.idx <- args$tail_len + 1
+          args$low_cutoff <- DS[ds.idx]
+        }else if (args$tail=='upper'){
+          ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
+          ds.cond <- ds.cond[ds.rank]
+          ds.idx <- length(DS) - args$tail_len
+          args$high_cutoff <- DS[ds.idx]
+        }
+      }else{
+        apply_adjust = F
+      }
     }
+  }else{
+    print("Insufficient data to adjust")
+    apply_adjust <- F
   }
-  # Now, determine from more complex trigger whether still applies
+# Now, determine from more complex trigger whether still applies
 #  print('after adjust')
 #  print(apply_adjust)
 #  print(ds.idx)
-  if (apply_adjust){
-    delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
-    if (args$adjmethod == 'add'){
-      offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
-    } else if (args$adjmethod == 'mult') {
-      ## Check for division by zero or very small number, replace with "largest seen" ratio
-      opp.tail.cut = switch(args$tail,
-                            upper=args$low_cutoff,
-                            lower=args$high_cutoff)
-      opp.trigger.fxn = switch(args$tail,
-                               upper='min',
-                               lower='max')
-      opp.cond = switch(args$tail,
-                        upper = '<=',
-                        lower = '>=')
-      if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && !is.na(opp.tail.cut)) {
-        opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
-        if (args$tail=='upper'){
-          opp.idx <- opp.indices[length(opp.indices)] + 1
-        }else if (args$tail=='lower'){
-          opp.idx <- opp.indices[1] - 1
-        }
-      } else {
-        if (args$tail=='upper'){
-          opp.idx <- 1
-        }else if (args$tail=='lower'){
-          opp.idx <- length(DS)
-        }
+if (apply_adjust){
+  delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
+  if (args$adjmethod == 'add'){
+    offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
+  } else if (args$adjmethod == 'mult') {
+    ## Check for division by zero or very small number, replace with "largest seen" ratio
+    opp.tail.cut = switch(args$tail,
+                          upper=args$low_cutoff,
+                          lower=args$high_cutoff)
+    opp.trigger.fxn = switch(args$tail,
+                             upper='min',
+                             lower='max')
+    opp.cond = switch(args$tail,
+                      upper = '<=',
+                      lower = '>=')
+    if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && !is.na(opp.tail.cut)) {
+      opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
+      if (args$tail=='upper'){
+        opp.idx <- opp.indices[length(opp.indices)] + 1
+      }else if (args$tail=='lower'){
+        opp.idx <- opp.indices[1] - 1
       }
-      inside.start <- ds.idx + delta.by*delta_sample
-      inside.tails <- seq(inside.start, opp.idx)
-      mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
-      mult.vec <- DS[delta.idx]/MF[delta.idx]
-      if (any(mult.vec > mult.ifzero)) {
-        print("Some calculated multipliers were too large, replacing with max inside tails.")
-        mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
-      }
-      offset <- mean(mult.vec)
     } else {
-      stop("Something has gone terribly wrong with supplied ADJMETHOD!")
+      if (args$tail=='upper'){
+        opp.idx <- 1
+      }else if (args$tail=='lower'){
+        opp.idx <- length(DS)
+      }
     }
-    return(list(cond=ds.cond, offset=offset))
-  }else{
-    print('no adjust')
-    cond = rep(FALSE, length(DS))
-    offset = 0
-    return(list(cond=cond, offset=offset))
+    inside.start <- ds.idx + delta.by*delta_sample
+    inside.tails <- seq(inside.start, opp.idx)
+    mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
+    mult.vec <- DS[delta.idx]/MF[delta.idx]
+    if (any(mult.vec > mult.ifzero)) {
+      print("Some calculated multipliers were too large, replacing with max inside tails.")
+      mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
+    }
+    offset <- mean(mult.vec)
+  } else {
+    stop("Something has gone terribly wrong with supplied ADJMETHOD!")
   }
+  return(list(cond=ds.cond, offset=offset))
+}else{
+  print('no adjust')
+  cond = rep(FALSE, length(DS))
+  offset = 0
+  return(list(cond=cond, offset=offset))
+}
 }
 
 find_delta_adj <- function(select.cond, DS, MF, cutoff, args){
   #Finds the points that need adjustment on the high tail using the 
   #method that the cdftmod tail adjust originally used.
   #Assume that the sort is going to be the same for both datasetes
-
+  
   ds.indices <- which(do.call(select.cond, list(DS, cutoff)))
   if (args$tail=='upper'){
     ds.idx <- ds.indices[1] - 1

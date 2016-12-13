@@ -35,15 +35,20 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-    if(verbose){
-      print(paste("on test", test[[1]]))
-      print("MH:")
-      print(lapply(out$input$hist.pred, 'summary'))
-      print("OH:")
-      print(summary(out$input$hist.targ))
-      print("MF:")
-      print(lapply(out$input$fut.pred, 'summary'))
-    }
+   # if(verbose){
+   if (test$type=='cdfttailadj'){
+     print(paste("on test", test[[1]]))
+     print("MH:")
+     print(lapply(out$input$hist.pred, 'length'))
+     print("OH:")
+     print(summary(out$input$hist.targ))
+     print("MF:")
+     print(lapply(out$input$fut.pred, 'length'))
+     print("DS:")
+     print(lapply(out$adjusted.output$ds, 'length'))
+     save(file="/home/cew/Code/testing/test_out.R", list=c('out'))
+     stop('examine output')
+   }
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
@@ -443,7 +448,11 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
                                                       test$qc_args$arg))
 				for (el in names(ds.attr)) {
 					if(is.numeric(ds.attr[[el]]) & (el %in% c("high_cutoff", "low_cutoff"))) {
+            print(el)
+            print(ds.attr[[el]])
+            print('transforming attributes')
 						ds.attr[[el]] <- do.call(test$qc_args$fxn, args=list(ds.attr[[el]], test$qc_args$arg))
+            print(ds.attr[[el]])
 					}
 				}
       } else {
@@ -457,6 +466,7 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
 					}
 				}
       }
+        print(ds.attr)
 			attributes(out.list$ds.out[[ds.var]]) <- ds.attr
     }
   }

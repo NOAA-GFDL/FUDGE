@@ -30,11 +30,11 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
     }else if (args$tail=='lower'){
       ds.idx <- ds.indices[length(ds.indices)] + 1
     }
-#     print(ds.idx)
+    #     print(ds.idx)
     #get delta
     delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
-#     print(delta.idx)
-
+    #     print(delta.idx)
+    
     if (args$adjmethod == 'add'){
       offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
     } else if (args$adjmethod == 'mult') {
@@ -66,8 +66,30 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
       inside.tails <- seq(inside.start, opp.idx)
       print(delta.idx)
       print(inside.tails)
+      #CEW added 12-12-16; needed to remove negative/0 subscripts
+      if (any(inside.tails < 1)){
+        inside.tails <- inside.tails[inside.tails > 0]
+        if (length(inside.tails) == 0){
+          stop("Error in cdft_tail_cutoff: At least one inside index should be greater than 0!")
+        }
+      }
       mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
       mult.vec <- DS[delta.idx]/MF[delta.idx]
+      #CEW added 12-12-16; mult.vec can, in fact, be NA sometimes
+      print(mult.ifzero)
+      print(mult.vec)
+      if (length(mult.vec) == 0){
+        if (length(mult.ifzero) > 0){
+        mult.vec <- mult.ifzero
+        }else{
+          print('Some calculated multiples were NA; returning 1')
+          mult.vec <- 1
+          mult.ifzero <- 1
+        }
+      }
+      if (is.na(mult.vec)){
+        mult.vec <- 9999
+      }
       if (any(mult.vec > mult.ifzero)) {
         print("Some calculated multipliers were too large, replacing with max inside tails.")
         mult.vec[mult.vec > mult.ifzero] <- mult.ifzero

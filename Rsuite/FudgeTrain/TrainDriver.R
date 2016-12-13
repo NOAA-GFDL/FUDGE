@@ -83,8 +83,8 @@ TrainDriver <- function(target.masked.in, hist.masked.in, fut.masked.in, ds.var=
      #time masks. You're just doing a compression step immediately after one but not the other.
      
      for(i.index in 1:targ.dim[1]){  #Most of the time, this will be 1
-       for(j.index in 1:targ.dim[2]){ #
-       #for(j.index in 10:10){ #65 and 78
+      # for(j.index in 1:targ.dim[2]){ #
+       for(j.index in 54:54){ #65 and 78
          if(sum(!is.na(target.masked.in[i.index,j.index,]))!=0 &&
               sum(!is.na(hist.masked.in[[1]][i.index,j.index,]))!=0 &&
               sum(!is.na(fut.masked.in[[1]][i.index,j.index,]))!=0){ #For predictors, use first entry as a proxy for NAs across the board

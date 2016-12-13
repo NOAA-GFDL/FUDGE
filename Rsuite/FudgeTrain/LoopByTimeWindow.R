@@ -119,8 +119,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     plot(seq(1:length(train.target)), train.target, type = "l", lwd = 3, main=paste("Mask and lines of best fit for time windowing"))
   }
 
-  for (window in 1:num.masks){
-    #for (window in 9:9){
+  #for (window in 1:num.masks){
+    for (window in 7:7){
     print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
