@@ -110,6 +110,7 @@ fudge.start.time <- proc.time()[3]
 message("Setting downscaling method information")
 SetDSMethodInfo(ds.method, predictor.vars)
 message("Checking downscaling arguments")
+ds.args <<- args
 QCDSArguments(k=k.fold, ds.method = ds.method, args=args,
               is.multivar=(length(predictor.vars) > 1),
               is.multi_ens=(length(fut.pred.rip.list) > 1))

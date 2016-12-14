@@ -90,7 +90,7 @@ make.fudge.info <- function(tmask.filenames,
   if(ds.args[[1]]=='na'){
     fudge.argstring <- "default settings"
   }else{
-    fudge.argstring <- paste(mapply(names(ds.args), ds.args, sep="="), collapse=",")
+    fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
   }
   info_ds <- paste0(ds.method, " : (", paste(fudge.argstring), ")")
   
