@@ -96,7 +96,7 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
     hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
   }
   parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
-                                sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args, ds.var)
+                                sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), args)
   parm.model <- parm.train.data$ds.model
   parm.targ <- parm.train.data$sta_mon_save
   #should be a list of one element - ds.model
@@ -123,7 +123,7 @@ parm.main <- function(hist_pred, hist_targ, fut_pred, args, ds.var, att_table, h
     #call downscaling function
     out.tmp <- parm.downscale(model_combine_data, 
                               parm.targ, #maintain orig order and orig placement of missvals
-                              ds.var,
+                              #ds.var,
                               parm.model, args)
     rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
     if (jitter){
