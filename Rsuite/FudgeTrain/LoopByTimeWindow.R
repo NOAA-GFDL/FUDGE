@@ -253,6 +253,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                  missval.handling=missval.handling, #Global set by SetDSMethodInfo()
                                  ds.var=ds.var, 
                                  min.present=min.present, train_qcmask)
+        temp.out2 <- temp.out
         tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
         #tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
         #print(tout.names)
@@ -276,6 +277,8 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           attributes(downscale.list[[var.name]]) <- attributes(temp.out[[var.name]])
         }#end for var in tout.names
       }#end if create.ds.out
+      print('values of ds out, trimmed')
+      print(lapply(downscale.list, 'summary'))
       #And adjust the downscaled output, if applicable
       if(length(s5.instructions.window) > 0){
         if(verbose){message('calling section 5 adjustment')}
@@ -339,6 +342,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       #       }else{
       #         print(paste("Too many NAs in loop", (window*length(kfold.mask))+kmask, "of", num.masks*length(kfold.mask), "; passing loop without downscaling"))
       #       }
+#       if (any(sapply(downscale.list, 'min') < 0, na.rm=T)){
+#         print(lapply(downscale.list, 'summary'))
+#         print(lapply(temp.out2, 'summary'))
+#         stop('examine this output')
+#       }
     }
   }
   #stop('examine output')
