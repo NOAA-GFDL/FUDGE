@@ -44,6 +44,12 @@ global_att_list <- c(list('title' = fudge.title,
                           'fudgetag' = fudgetag, 
                           'ds_downscaling_method' = ds.method), 
                      atts.all)
+clim.nc <- nc_open(attributes(list.fut)$filename)
+clim.att <- ncatt_get(clim.nc, 0, 'climatology')
+nc_close(clim.nc)
+if (clim.att$hasatt){
+  global_att_list$climatology <- clim.att$value
+}
 return(global_att_list)
 }
 
