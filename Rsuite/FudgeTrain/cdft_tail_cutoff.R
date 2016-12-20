@@ -64,8 +64,8 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       inside.start <- ds.idx + delta.by*delta_sample
       inside.tails <- seq(inside.start, opp.idx)
-      print(delta.idx)
-      print(inside.tails)
+      #print(delta.idx)
+      #print(inside.tails)
       #CEW added 12-12-16; needed to remove negative/0 subscripts
       if (any(inside.tails < 1)){
         inside.tails <- inside.tails[inside.tails > 0]

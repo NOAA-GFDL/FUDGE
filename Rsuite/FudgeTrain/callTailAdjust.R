@@ -136,7 +136,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
     
     # CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
     if (args$triggertype == 'cdft'){
-      print(args)
+      #print(args)
       #stop('in cdft call')
       print('calling upper')
       hitail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))

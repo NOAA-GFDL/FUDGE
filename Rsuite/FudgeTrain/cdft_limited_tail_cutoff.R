@@ -26,9 +26,8 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   MF = MF[ds.order]
   apply_adjust = T
   #Determine if any points will need adjustment
-  print(length(DS))
-  print(args$tail_len)
-  if (length(DS) <= args$tail_len){
+  minsample <- max(c((2*args$tail_len + 1), (args$tail_len + args$lastNpts + 1)))
+  if (length(DS) < minsample){
     print('Not enough points for required tail length; no tail adjustment')
     apply_adjust <- F
   }
@@ -52,21 +51,23 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
         cdft_adjusted = T
       }
       if(args$trigger=='cdft_tailadj' && cdft_adjusted){
-        ds.idx <- find_delta_adj(select.cond, DS, MF, cutoff, args)
+        #ds.idx <- find_delta_adj(select.cond, DS, MF, cutoff, args)
+        #As of 12-19-16, always adjusting a fixed number of points on the tail
+        #for this type.
         if (args$tail=='lower'){
-          if ((ds.idx+1) > args$tail_len){
+          #if ((ds.idx+1) > args$tail_len){
             ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
             ds.cond <- ds.cond[ds.rank]
             ds.idx <- args$tail_len + 1
             args$low_cutoff <- DS[ds.idx]
-          }
+          #}
         }else if (args$tail=='upper'){
-          if ((ds.idx-1) < (length(DS) - args$tail_len)){
+          #if ((ds.idx-1) < (length(DS) - args$tail_len)){
             ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
             ds.cond <- ds.cond[ds.rank]
             ds.idx <- length(DS) - args$tail_len
             args$high_cutoff <- DS[ds.idx]
-          }
+          #}
         }
       }else if (args$trigger == 'notailadj' && !cdft_adjusted){
         #No need to check cutoff - there isn't any
