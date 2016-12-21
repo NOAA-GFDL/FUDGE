@@ -2,29 +2,29 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
   #' Calls the GFDL-specific modified CDFt (Vrac et. al 2009) on a single variable
   #' predictor and target, returning the downscaled (DS) output.
   #' Takes as an argument
-  #' npas:    The number of quantiles to split the input dataset into. 
+  #' npas:    The number of quantiles to split the input dataset into.
   #'  If dev is 0 or 'default', uses the number of observations in either the
   #'  future or historical datasets, depending upon which has fewer observations.
-  #' dev :   Parameter controlling the maximum range of the downscaled future data. 
-  #'  Maximum range will be  min(OH, MH, MF) - dev * (abs( mean(OH) - mean(MH) ) 
+  #' dev :   Parameter controlling the maximum range of the downscaled future data.
+  #'  Maximum range will be  min(OH, MH, MF) - dev * (abs( mean(OH) - mean(MH) )
   #'  to max(OH, MH, MF) + dev * (abs( mean(OH) - mean(MH) )
-  #' low_tail: the method for handling the low tail in the distribution. 
-  #'  Can be one of the following (defaluting to 'original' if not specified): 
+  #' low_tail: the method for handling the low tail in the distribution.
+  #'  Can be one of the following (defaluting to 'original' if not specified):
   #'  'original':   Use the method always used by the CDft method. The method used
   #'    if the downscaling method is 'CDFt'
   #'  'modified':   Use the modified tail adjustment - the original CDFt high tail
-  #'    adjustment reversed and applied to the low tail. 
+  #'    adjustment reversed and applied to the low tail.
   #'  'none':   No low tail adjustment will be performed
-  #' maxdevretry:    If in a low-precipitation situation with uneven input lengths, 
-  #' 
-  #' retry:   Behavior upon reaching maxdev. Can be one of the following: 
+  #' maxdevretry:    If in a low-precipitation situation with uneven input lengths,
+  #'
+  #' retry:   Behavior upon reaching maxdev. Can be one of the following:
   #'  'missing':   return all missing values if maxdev is exceeded while retrying
   #'  'predictor': return the future predictor (MF) values if maxdev is exceeded
   #'  'stop':      stop with a large and helpful error message.
-  #' @citation P.-A. Michelangeli, M. Vrac, H. Loukos. "Probabilistic downscaling approaches: 
-     #' @citation Application to wind cumulative distribution functions", 
+  #' @citation P.-A. Michelangeli, M. Vrac, H. Loukos. "Probabilistic downscaling approaches:
+     #' @citation Application to wind cumulative distribution functions",
      #' @citation Geophys. Res. Lett., doi:10.1029/2009GL038401, 2009)
-     
+
      ###Obtain required arguments (and throw errors if not specified)
      if(!is.null(args$dev)){
        dev <- args$dev
@@ -39,7 +39,7 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
      }else{
        maxdev <- args$maxdevretry
      }
-     
+
      out.list <- list()
      pred <- unlist(pred)  #No need to reference the historic predictor names
      rip.list <- lapply(att_table$fut.pred, '[[', 'rip')
@@ -50,7 +50,7 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
        rip.index <- (rip.list==rip)
        new.data <- new[rip.index]
        new.data <- unlist(new.data)
-       
+
        if(!is.null(args$npas)){
          npas <- args$npas
          if(npas=='default' || npas==0){
@@ -63,21 +63,21 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
            npas=length(new.data)
          }
          if(npas <= dev){
-           stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was", 
+           stop(paste("Error in callCDFt: npas shouuld be greater than dev, but npas was",
                       npas, "and dev was", dev))
          }
        }else{
          stop(paste("CDFt Method Error: parameter npas was missing from the args list"))
        }
-       ##Note: if any of the input data parameters are named, CDFt will 
+       ##Note: if any of the input data parameters are named, CDFt will
        ## fail to run with an 'unused arguments' error, without any decent
        ## explanation as to why. This way works.
        #args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
        is.retry <- FALSE
        temp <-tryCatch({
-         do.call(ds.method, c(list(targ, pred, new.data), 
+         do.call(ds.method, c(list(targ, pred, new.data),
                               list(npas=npas, dev=dev)
-                              ))[c('DS', 'high_cutoff', 'low_cutoff')]}, 
+                              ))[c('DS', 'high_cutoff', 'low_cutoff')]},
                        error=function(e){
                          is.retry <<- TRUE;
                          loop.try <- FALSE
@@ -89,42 +89,42 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
                            loop.try <- TRUE
                            dev=dev+1
                            i=i+1
-                           loop.try <- tryCatch(do.call(ds.method, 
-                                                        c(list(targ, pred, new.data), 
+                           loop.try <- tryCatch(do.call(ds.method,
+                                                        c(list(targ, pred, new.data),
                                                           list(npas=npas, dev=(dev)
-                                                               )))[c('DS', 'high_cutoff', 'low_cutoff')], 
+                                                               )))[c('DS', 'high_cutoff', 'low_cutoff')],
                                                 error=function(e){return(FALSE)}
                            )
                          }
                          if(dev > maxdev){
                            #This has not come up yet in testing, but it might.
                            if(args$retry=='stop'){
-                             stop(paste("Error in callCDFt: In the process of retrying", 
+                             stop(paste("Error in callCDFt: In the process of retrying",
                                         ds.method, "downscaling at this point",
                                         "dev grew to >", maxdev,
                                         "without the", ds.method, "function",
-                                        "being able to complete", 
-                                        'while retry was set to "stop".', 
-                                        "Please retry with different settings", 
+                                        "being able to complete",
+                                        'while retry was set to "stop".',
+                                        "Please retry with different settings",
                                         "or contact Carolyn Whitlock."))
                            }else if(args$retry=='missing'){
-                             return(list(DS=rep(NA, length(new.data)), 
+                             return(list(DS=rep(NA, length(new.data)),
                                          high_cutoff=NA, low_cutoff=NA))
                            }else if(args$retry=='predictor'){
-                             return(list(DS=new.data, 
+                             return(list(DS=new.data,
                                          high_cutoff=NA, low_cutoff=NA))
                            }
                          }else{
-                           return(do.call(ds.method, 
-                                          c(list(targ, pred, new.data), 
+                           return(do.call(ds.method,
+                                          c(list(targ, pred, new.data),
                                             list(npas=npas, dev=(dev))
                                             ))[c('DS', 'high_cutoff', 'low_cutoff')])
                          }
-                       }, 
+                       },
                        silent=FALSE)
      out.list[[out.var.name]] <- as.numeric(temp$DS)
-     attributes(out.list[[out.var.name]]) <- c(attributes(out.list[[out.var.name]]), 
-                                               list(high_cutoff=temp$high_cutoff, 
+     attributes(out.list[[out.var.name]]) <- c(attributes(out.list[[out.var.name]]),
+                                               list(high_cutoff=temp$high_cutoff,
                                                     low_cutoff=temp$low_cutoff))
      if(is.retry){
        attr(out.list[[out.var.name]], 'status') <- 1
@@ -135,8 +135,8 @@ callCDFt <- function (pred, targ, new, args, ds.method="CDFt", ds.var='null', at
 
 CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   #'GFDL-specific modifications to the CDFt method
-  #'mostly related to the low and high tail adjustments. 
-  #'For comparison, please consult the original CDFt code located in the 
+  #'mostly related to the low and high tail adjustments.
+  #'For comparison, please consult the original CDFt code located in the
   #'CRAN repository.
   #'
   #save(file='/home/cew/Code/testing/test_out.R', list=c('ObsRp', 'DataGp', 'DataGf', 'npas', 'dev'))
@@ -209,7 +209,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
     }
   }
   qntl = FGf(DataGf2)
-  xx = approx(FRF, x, qntl, yleft = x[1], yright = x[length(x)], 
+  xx = approx(FRF, x, qntl, yleft = x[1], yright = x[length(x)],
               ties = "mean")
   FGp = ecdf(DataGp)
   FGf = ecdf(DataGf)
@@ -217,7 +217,7 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   FGF = FGf(x)
   #print(attributes(xx$y))
   #attributes(xx$y) <- c(attributes(xx$y), list('high_tail'=hitail, 'low_tail'=lotail))
-  return(list(x = x, FRp = FRP, FGp = FGP, FGf = FGF, FRf = FRF, 
+  return(list(x = x, FRp = FRP, FGp = FGP, FGf = FGF, FRf = FRF,
               DS = xx$y, high_cutoff=hitail, low_cutoff=lotail))
 }
 

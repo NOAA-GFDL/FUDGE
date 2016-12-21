@@ -9,17 +9,17 @@
 #'####Arguments related to downscaling data:
 #'@param train.predictor
 #'@param train.target
-#'@param esd.gen: a single file or a list of files pointing to the data to which masks should be applied. Currently, 
+#'@param esd.gen: a single file or a list of files pointing to the data to which masks should be applied. Currently,
 #'only a single esd.gen vector is supported.
 #'
 #'####Arguments related to the CrossValidate call:
 #'@param kfold: the k-fold cross-validation. Note that *ONLY* if k=0 will downscaling
 #'equations be called on the esd.gen dataset(s).
 #'@param downscale.fxn: A string referring to the downscaling function to be called.
-#'@param downscale.args: A list of the arguments to the downscaling function. 
+#'@param downscale.args: A list of the arguments to the downscaling function.
 #'
 #'####Arguments related to the masking function:
-#'@param masklist: a list of pathnames pointing to the files which contain masks to apply. If none are provided, 
+#'@param masklist: a list of pathnames pointing to the files which contain masks to apply. If none are provided,
 #'defaults to running all datasets without temporal masks of any sort.
 #'Currently, the code assumes that all maskfiles will have the same number of masks within them
 #'to apply; this assumption needs to be talked about at some point.
@@ -30,16 +30,16 @@
 #' sample_t_predict <- seq(1:365)
 #' sample_t_target <- sin(sample_t_predict*0.05)
 #' sample_esd_gen <- seq(1:365)
-#' mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
-#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc", 
+#' mask_list <- list("/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc",
+#'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_pm2weeks_clim_noleap.nc",
 #'                   "/net3/kd/PROJECTS/DOWNSCALING/DATA/WORK_IN_PROGRESS/GFDL-HIRAM-C360/masks/time_masks/maskdays_bymonth_clim_noleap.nc")
-#'                   d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-#' esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake", 
+#'                   d_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target,
+#' esd.gen = sample_esd_gen, kfold = 0, downscale.fxn = "ESD.Train.totally.fake",
 #' downscale.args=NULL,
 #' masklist = mask_list)
 #' lines(seq(1:365), d_data, col="cyan")
-#' d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target, 
-#'                                  esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake", 
+#' d2_data <- DownscaleByTimeWindow(train.predictor = sample_t_predict, train.target = sample_t_target,
+#'                                  esd.gen = sample_esd_gen, kfold = 2, downscale.fxn = "ESD.Train.totally.fake",
 #'                                  downscale.args=NULL,
 #'                                  masklist = alt_mask_list)
 #' lines(seq(1:365), d2_data, col="magenta")
@@ -57,12 +57,12 @@
 #' migth make sense; it's something to discuss once the driver script is working.
 #' TODO: will it always be a valid assumption to assume that the downscaling fxn returns one value
 #' for every value passed into it?
-#' RESOLVED: For this stage, yes - you want oen value for every value of 
+#' RESOLVED: For this stage, yes - you want oen value for every value of
 
-LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct, 
-                             create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL, 
+LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, mask.struct,
+                             create.ds.out=TRUE, downscale.fxn=NULL, downscale.args = NULL, kfold=0, kfold.mask=NULL,
                              att.table=NA,
-                             graph=FALSE, masklines=FALSE, 
+                             graph=FALSE, masklines=FALSE,
                              ds.orig=NULL, ds.var='tasmax',
                              s3.instructions='na', s3.adjust=FALSE,
                              s5.instructions='na', s5.adjust=FALSE,
@@ -81,11 +81,11 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     #If there are no masks (so whole time series is used)
     mask.data.by.time.window <- FALSE
     num.masks <- 1
-    #     mask.struct <- list(list(masks=rep(1, length(train.predictor[[1]]))), 
-    #                         list(masks=rep(1, length(train.target))), 
+    #     mask.struct <- list(list(masks=rep(1, length(train.predictor[[1]]))),
+    #                         list(masks=rep(1, length(train.target))),
     #                         list(masks=rep(1, length(esd.gen[[1]]))))
-    mask.struct <- list(list(masks=list(rep(1, length(train.predictor[[1]])))), 
-                        list(masks=list(rep(1, length(train.target)))), 
+    mask.struct <- list(list(masks=list(rep(1, length(train.predictor[[1]])))),
+                        list(masks=list(rep(1, length(train.target)))),
                         list(masks=list(rep(1, length(esd.gen[[1]])))))
   }
   downscale.length <- length(esd.gen[[1]]) #Will always have at least one entry
@@ -118,20 +118,20 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     fit.cols = rainbow(num.masks*kfold)
     plot(seq(1:length(train.target)), train.target, type = "l", lwd = 3, main=paste("Mask and lines of best fit for time windowing"))
   }
-  
+
   for (window in 1:num.masks){
-    #for (window in 9:9){
+  #  for (window in 7:7){
     print(paste('on window', window, 'of', num.masks))
     if(mask.data.by.time.window){
       #This should not produce any errors - at present, the only dataset that shoudl have missvals that are *not*
       #due to a mask would be the observational dataset, and that dataset should not have to deal with the awkward pooling of the
       #       if('OH'%in%ds.names){
-      #         #...is it enough just to mask the masks in this step? 
+      #         #...is it enough just to mask the masks in this step?
       #         window.target <- trim.time.mask(data=train.target, mask=downscale.args$delta.mask)
       # #         window.predict <- lapply(train.predictor, 'trim.time.mask', mask=downscale.args$delta.mask)
-      #         mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]], 
+      #         mask.struct[[2]]$masks[[window]] <- trim.time.mask(data = mask.struct[[2]]$masks[[window]],
       #                                                            mask=downscale.args$delta.mask)
-      # #         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]], 
+      # #         mask.struct[[1]]$masks[[window]] <- trim.time.mask(data = mask.struct[[1]]$masks[[window]],
       # #                                                            mask=downscale.args$delta.mask)
       #         window.target  <- trim.time.mask(data=window.target,    mask=mask.struct[[2]]$masks[[window]])
       #       }else{
@@ -152,7 +152,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
     }else{
       window.orig <- NA
     }
-    
+
     #If no cross-validation is being performed:
     for(kmask in 1:length(kfold.mask)){
       if (kfold > 1){
@@ -201,7 +201,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
           #Add the save in here
           save(file="/home/cew/Code/testing/transform_tests/rdata/save1.R", list=c('kfold.target'))
         }
-        temp.out <- callS3Adjustment(s3.instructions=s3.instructions, 
+        temp.out <- callS3Adjustment(s3.instructions=s3.instructions,
                                      hist.pred = kfold.predict,
                                      hist.targ = kfold.target,
                                      fut.pred = kfold.gen,
@@ -221,17 +221,17 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         s5.instructions.window <- s5.instructions
       }
       #If a method that uses the OH data is used, perform a final trimming step
-      #at this point to make sure that the OH and MF data start with the 
+      #at this point to make sure that the OH and MF data start with the
       #same number of leap years
       if('OH'%in%ds.names){
         #         print(summary(mask.struct[[2]]))
         #         print(length(mask.struct[[2]]$masks[[window]]))
         #         print(summary(delta.mask))
         #         print(length(delta.mask))
-        tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[window]], 
-                                           mask=delta.mask, 
+        tmp.ds.time.mask <- apply.any.mask(data = mask.struct[[2]]$masks[[window]],
+                                           mask=delta.mask,
                                            dim='temporal')
-        tmp.ds.time.mask <- trim.time.mask(data=tmp.ds.time.mask, 
+        tmp.ds.time.mask <- trim.time.mask(data=tmp.ds.time.mask,
                                            mask= mask.struct[[2]]$masks[[window]])
         #         print(length(tmp.ds.time.mask))
         #         print(length(kfold.target))
@@ -249,9 +249,9 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
                                  train.target = kfold.target.final,
                                  esd.gen = kfold.gen,
                                  att.table=att.table,
-                                 args=downscale.args, 
+                                 args=downscale.args,
                                  missval.handling=missval.handling, #Global set by SetDSMethodInfo()
-                                 ds.var=ds.var, 
+                                 ds.var=ds.var,
                                  min.present=min.present, train_qcmask)
         temp.out2 <- temp.out
         tout.names <- names(temp.out)[!names(temp.out)%in%c('qc.mask')]
@@ -295,12 +295,12 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         }
         if(!train.resize.sample){
           data <- temp.out
-          temp.out <- callS5Adjustment(s5.instructions=s5.instructions.window,
+          temp.out <- callS5Adjustment(s5.instructions = s5.instructions.window,
                                        #s5.method=s5.method,s5.args=s5.args,
-                                       data = data[names(data)!='qc.mask'], 
+                                       data = data[names(data)!='qc.mask'],
                                        data.atts= att.table,
-                                       hist.pred = kfold.predict, #lapply(kfold.predict, remove.missvals), 
-                                       hist.targ = kfold.target, #kfold.target[!is.na(kfold.target)], 
+                                       hist.pred = kfold.predict, #lapply(kfold.predict, remove.missvals),
+                                       hist.targ = kfold.target, #kfold.target[!is.na(kfold.target)],
                                        fut.pred = kfold.gen) #lapply(kfold.gen, remove.missvals))
           if(test){
             #Add the save in here
@@ -335,7 +335,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
         if(masklines){
           abline(v=which(!is.na(window.gen))[1])      #Option for plotting start of masks as | lines
         }
-        points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.list[!is.na(window.gen)], 
+        points(seq(1:length(window.gen))[!is.na(window.gen)], downscale.list[!is.na(window.gen)],
                pch = (window-1), lwd = 1, col=mask.cols[window]) #ty = window, lwd = 4,
       }
       #Otherwise, you don't need to do anything because that loop should be full of NAs
@@ -354,7 +354,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
   #print(lapply(downscale.list, summary))
   #print(summary(downscale.list$pr.r1i1p1))
   #However, if cross-validation is being performed
-  #   } else { 
+  #   } else {
   #     stop(paste("Cross validation not supported in FUDGE at this time; please run with k < 2"))
   #     #Remember to duplicate most of the structure from above; you're just adding a few new checks
   #   }
@@ -369,7 +369,7 @@ LoopByTimeWindow <- function(train.predictor=NULL, train.target=NULL, esd.gen, m
       qc.masklist[[n]][qc.masklist[[n]]==0] <- NA
     }
   }
-  #...also? This has the potential to cause issues when we start working with datasets that 
+  #...also? This has the potential to cause issues when we start working with datasets that
   #happen to have missing values of their own - and might use other kinds of missing data.
   return(list('downscaled'=downscale.list, 'qc.mask'=qc.masklist)) #'postproc.out'=postproc.out))
 }
