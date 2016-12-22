@@ -5,25 +5,23 @@
 # THIS DOES PRELIMINARY SETUP, LOOPS OVER RIPS & CALLS GENERAL TAIL SCHEME
 # FUNCTION (BELOW)
 
-callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_){
+callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_, 
+                           cutoffs=list(), tmasks=list(time_mask_overlap=F)){
   #'Calls a BCSD-style adjustment on quantile-mapped code
   #'based off of the limits to the adjustment of the
   #'MH and MF datasets
-  
-  print(summary(input))
-  print(input$data.atts)
-  rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
-  targ.var <- names(input$data.atts$hist.targ)
+  targ.var <- names(input$hist.targ)
   arg.names <- names(test$qc_args)
-  
-  
+  nrips <- dim(adjusted.output$ds.out)[4]
+  if (test$qc.mask=='on'){
+    adjusted.output$qc.mask <- array(NA, dim=dim(adjusted.output$ds.out))
+  }
   if('ignore0'%in%arg.names){
     #Hasty adjustment to set missing values to 0 in bcsd correction
     ignore0 <- (test$qc_args$ignore0=='on')
   }else{
     ignore0 <-  FALSE
   }
-  
   
   # SET SIZE FOR DELTA SAMPLE
   if(!('lastNpts' %in% arg.names)){
@@ -40,7 +38,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     stop(paste("Error in callTailAdjust: triggertype must be one of",
                paste(triggertypes, collapse=", ")))
   }
-  
   adjmethods <- c('add', 'mult')
   if(!('adjmethod' %in% arg.names)){
     stop(paste("Error in callTailAdjust: adjmethod must be specified!"))
@@ -50,21 +47,21 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   } else {
     adjmethod <- test$qc_args$adjmethod
   }
-  
-  # LOOP OVER RIP'S
-  for(rip in rips){
-    ds.var <- paste0(targ.var, ".", rip)
-    fut.pred <- ds.var
-    arg_list <- list(delta_sample = delta_sample,
-                     triggertype = triggertype,
-                     adjmethod = adjmethod)
-    #   GET LOW & HIGH CUTOFFS
+  arg_list = list(delta_sample = delta_sample, 
+                  triggertype = triggertype, 
+                  adjmethod = adjmethod)
+  MH <- input$hist.pred[[targ.var]]
+  OH <- input$hist.targ[[targ.var]]
+  for(n in 1:nrips){
+    MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
+    DS.slice <- adjusted.output$ds.out[,,,n,,]
     #Check for attributes
     if(triggertype == 'cdft' || triggertype=='cdft_orig'){
-      if(!is.null(attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff'))){
-        high_cutoff <- attr(adjusted.output$ds.out[[ds.var]], 'high_cutoff')
-        low_cutoff <- attr(adjusted.output$ds.out[[ds.var]], 'low_cutoff')
-        arg_list <- c(arg_list, list(high_cutoff=high_cutoff, low_cutoff=low_cutoff) )
+      if(all(c('high_cutoff', 'low_cutoff') %in% names(cutoffs))){
+        #cutoffs should be a list containing two named vectors:
+        #high_cutoff and low_cutoff
+        arg_list = c(arg_list, list(high_cutoff = cutoffs$high_cutoff[n], 
+                                    low_cutoff  = cutoffs$low_cutoff[n]))
         if (triggertype == 'cdft'){
           #limited cdft takes new args
           arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len, 
@@ -72,31 +69,21 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
         }
       }else{
         stop(paste("Error in callTailAdjust: triggertype of cdft",
-                   "specified, but high_cutoff attribute not set in ds data!"))
+                   "specified, but high_cutoff attribute not set in cutoffs!"))
       }
     }
-    
-    print(input$data.atts)
-    hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred,
-                                               "[[", 'var')==targ.var]
-    #CALL (GENERAL) TAIL CORRECT FUNCTION (BELOW)
-      ds.correct <- tail.correct(model.hist = input$hist.pred[[hist.pred]],
-                                 obs.hist = input$hist.targ,
-                                 model.fut = input$fut.pred[[fut.pred]],
-                                 ds.fut = adjusted.output$ds.out[[ds.var]],
-                                 args = arg_list)
-#     print('just after correct')
-#     stop('examine output')
-    #   DO SOMETHING WITH MASKS
-    if(test$qc.mask == 'on'){
-      ds.correct$mask[ds.correct$mask == 0] <- NA
-      #       print(summary(adjusted.output$qc.mask))
-      #       print(length(ds.correct$mask))
-      adjusted.output$qc.mask[[ds.var]] <- ds.correct$mask
+    #print(arg_list)
+    ds.correct <- tail.correct(model.hist = MH, 
+                               obs.hist = OH, 
+                               model.fut = MF.slice, 
+                               ds.fut = DS.slice, 
+                               args = arg_list, tmasks=tmasks)
+    if(test$qc.mask=='on'){
+      ds.correct$mask[ds.correct$mask==0] <- NA
+      adjusted.output$qc.mask[,,,n,,] <- ds.correct$mask
     }
-    #   SET UP ADJUSTED OUTPUT
-    if(test$adjust.out == 'on'){
-      adjusted.output$ds.out[[ds.var]] <- as.numeric(ds.correct$ds)
+    if(test$adjust.out=='on'){
+      adjusted.output$ds.out[,,,n,,] <- as.numeric(ds.correct$ds)
     }
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))
@@ -109,8 +96,16 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 # GENERAL TAIL SCHEME FUNCTION THAT CALLS EITHER SIMPLE (I.E. BCQM/PARM)
 # SCHEME OR CDFT SPECIFIC SCHEME AND PERFORMS THE ADJUSTMENTS
 
-tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
+tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks){
   #Fast wrapper for the more complicated tail_cutoff function
+  
+  #Added 12-9-16
+  #If you are going to be using overlapping masks, 
+  #you need to trim your samples for this method
+  if (tmasks$time_mask_overlap){
+    #print(summary(tmasks))
+    model.fut <- apply.any.mask(tmasks$trim$masks[[w]], model.fut, dim='time')
+  }
   
   # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,
@@ -136,6 +131,8 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
     #Calculate high and low tails
     
     # CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
+    #     print('args before triggertype')
+    #     print(args)
     if (args$triggertype == 'cdft'){
       #print(args)
       #stop('in cdft call')
@@ -163,6 +160,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args){
     lotail$cond <- cond.tmp
     hitail.pts = hitail$cond >= 1
     lotail.pts = lotail$cond >= 1
+    
     ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## PERFORM ADJUSTMENT BY ADDING OFFSET TO POINTS REQUIRING ADJUSTMENT
     if (args$adjmethod == 'add'){
@@ -208,6 +206,8 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   delta.by = switch(args$tail,
                     lower=(1),
                     upper=(-1))
+  
+  
   # CHECKS FOR TYPE OF TAIL SCHEME -- SEEMS LIKE THIS IS NOT NECESSARY SINCE THIS
   # FUNCTION ONLY PERTAINS TO THE SIMPLE TYPE -- SHOULD NEVER GET HERE OTHERWISE
   #   if(args$triggertype=='GfGh'){
@@ -252,7 +252,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         ## Check for division by zero or very small number, replace with "largest seen" ratio
         mult.ifzero <- max(DS[-delta.idx]/MF[-delta.idx])
         mult.vec <- DS[delta.idx]/MF[delta.idx]
-        if (any(mult.vec > mult.ifzero)) {
+        if (any(mult.vec > mult.ifzero, na.rm=T)) {
           print("Some calculated multipliers were too large, replacing with max inside tails.")
           mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
         }
@@ -270,7 +270,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # THE DISTRIUBTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
       # WHERE THE VARIANCE IS ESPECIALLY SMALL
     } else {
-      if (adjmethod == 'add') {
+      if (args$adjmethod == 'add') {
         print("Selecting mean(OH) - mean(MH)")
         offset = mean(OH) - mean(MH)
       } else { # alternative correction in "mult" land
@@ -284,8 +284,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     }
     #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
     return(list(cond=mf.cond, offset=offset))
-    
-    
   }else{
     print("No adjust")
     cond=rep(FALSE, length(MF))
@@ -293,3 +291,4 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     return(list(cond=cond, offset=offset))
   }
 }
+

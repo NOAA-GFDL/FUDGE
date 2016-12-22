@@ -2,7 +2,7 @@
 #Versions of the anomaly copying scripts for the 
 #trend/detrend workflow
 
-def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
+def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
 	#Copies output to anom+clim output directory and changes the var name
 	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
 	out_files = [f for f in out_files if re.search(var, f) is not None]
@@ -11,21 +11,21 @@ def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, s
 		sys.exit(1)
 	#Get modified file path
 	fpath  = osp.join(final_out_dir, out_files[0])
-	climanom_var = re.sub("Anom", "", var)
-	#climanom_fpath = re.sub(var, climanom_var, fpath)
-	climanom_fpath = re.sub("Anom", "", fpath)
-	print("Copying supplementary anomaly files to new location!")
+	trendetr_var = re.sub("Detr", "", var)
+	#trendetr_fpath = re.sub(var, trendetr_var, fpath)
+	trendetr_fpath = re.sub("Detr", "", fpath)
+	print("Copying supplementary detrended files to new location!")
 	print(fpath)
-	print(climanom_fpath)
-	gcp(fpath, climanom_fpath)
-	nco_command = "ncrename -v " +var+","+climanom_var +" "+climanom_fpath
+	print(trendetr_fpath)
+	gcp(fpath, trendetr_fpath)
+	nco_command = "ncrename -v " +var+","+trendetr_var +" "+trendetr_fpath
 	try:
 		p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	except: 
-		print("Error in subprocess call of callCopyToAnomClim! Please examine call in more detail.")
+		print("Error in subprocess call of callCopyToTrendDetr! Please examine call in more detail.")
 		print(nco_command)
 		if(mailid is not None):
-			send_status_email("failure", 'postProc - copy to anom+clim', exp_name, \
+			send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
 			           traceback = "Error in call to ncrename - call for reference: " + nco_command,\
 		               mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		               outfiles = final_out_dir)
@@ -38,13 +38,13 @@ def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, s
 		print ("Error in renaming! There was an " + err_message)
 		print(r_command)
 		if(mailid is not None):
-			send_status_email("failure", 'postProc - copy to anom+clim', exp_name, \
+			send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
 			           traceback = "Error in call to ncrename - call for reference: " + nco_command,\
 	                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 	                   outfiles = final_out_dir)
 	else:
 		print "gcp and rename successful"
-	return(climanom_fpath)		
+	return(trendetr_fpath)		
 		
 		
 	
@@ -52,20 +52,20 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 	#Figure out the final output in the output dir:
 	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
 	#If there is more that one file present, select the one with the shortest name
-	anom_file = min(out_files, key=len)
-	anom_file = osp.join(final_out_dir, anom_file)
-	#Find the location for the clim + anom file
-	clim_anom_file = re.sub('Anom','',anom_file)
-	clim_anom_var = re.sub('Anom',"",var)
-	with Dataset(anom_file, 'r') as nc_obj:
+	detr_file = min(out_files, key=len)
+	detr_file = osp.join(final_out_dir, detr_file)
+	#Find the location for the trend + detr file
+	trend_anom_file = re.sub('Detr','',detr_file)
+	trend_detr_var = re.sub('Detr',"",var)
+	with Dataset(detr_file, 'r') as nc_obj:
 		try:
-			clim = nc_obj.__dict__['climatology']
+			trend = nc_obj.__dict__['trend']
 		except KeyError:
-			clim_error = 'Climatology not found in input file ' + anom_file
-			print("Error in anomaly addition! " + clim_error + " ;exiting")
+			trend_error = 'Trend not found in input file ' + detr_file
+			print("Error in trend addition! " + trend_error + " ;exiting")
 			if( mailid is not None):
 				send_status_email("failure", 'callAddAnom', total_exp_name, \
-							traceback = clim_error,\
+							traceback = trend_error,\
 		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir, xml = uinput)	
@@ -73,32 +73,32 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			
 	#Remove temporary directories from beginning of pathname, 
 	#going as far as needed to complete
-	clim_split = clim.split("/")
+	trend_split = trend.split("/")
 	s_idx = 0
-	clim_exists = False
-	while(s_idx < len(clim_split)):
-		if(osp.exists("/".join(clim_split[s_idx:len(clim_split)]))):
-			clim_exists = True
-			clim_file = "/".join(clim_split[s_idx:len(clim_split)])
+	trend_exists = False
+	while(s_idx < len(trend_split)):
+		if(osp.exists("/".join(trend_split[s_idx:len(trend_split)]))):
+			trend_exists = True
+			trend_file = "/".join(trend_split[s_idx:len(trend_split)])
 			break
 		else:
 			s_idx += 1		
-	if(not clim_exists):
-		clim_error = "Climatology file " + clim + ' not found on system'
-		print ("Error in anomaly addition!" + clim_error + " ; exiting")
+	if(not trend_exists):
+		trend_error = "trendatology file " + trend + ' not found on system'
+		print ("Error in anomaly addition!" + trend_error + " ; exiting")
 		if( mailid is not None):
-			#send_anom_message('failure', clim_error, exp_name,mailid,
-			#						anom_file,clim,"None",clim_err,"")
+			#send_anom_message('failure', trend_error, exp_name,mailid,
+			#						anom_file,trend,"None",trend_err,"")
 			send_status_email("failure", 'postProc', total_exp_name, \
-			               traceback = "Climatology file " + clim + "not found on system",\
+			               traceback = "trendatology file " + trend + "not found on system",\
 		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir)						
 		exit(1)
 	else:
-		if( not osp.exists(osp.dirname(clim_anom_file)) ):
-			print 'Making output anom + clim directory'
-			os.makedirs(osp.dirname(clim_anom_file))
+		if( not osp.exists(osp.dirname(trend_anom_file)) ):
+			print 'Making output anom + trend directory'
+			os.makedirs(osp.dirname(trend_anom_file))
 		#print(os.environ)
 		try:		
 			s8_orig = os.environ.get("S8_PATH")
@@ -111,16 +111,16 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			print("resetting to empty string")
 			s8_orig=""
 		tdir = os.environ.get("TMPDIR")
-		clim_anom_file_out = osp.join(tdir, clim_anom_file.lstrip("/"))
-		if not osp.exists(osp.dirname(clim_anom_file_out)):
-			os.makedirs(osp.dirname(clim_anom_file_out))
-		clim_file_out = gcp(clim_file, 'TMPDIR')	
+		trend_anom_file_out = osp.join(tdir, trend_anom_file.lstrip("/"))
+		if not osp.exists(osp.dirname(trend_anom_file_out)):
+			os.makedirs(osp.dirname(trend_anom_file_out))
+		trend_file_out = gcp(trend_file, 'TMPDIR')	
 		anom_file_out = gcp(anom_file,'TMPDIR')	
 		#s8_orig = os.environ["S8_PATH"]
 		s8_fudge = os.environ["FUDGE_S8_LOC"]
 		os.environ["S8_PATH"] = s8_fudge
 		#print(os.environ)
-		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(clim_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(clim_anom_var) + " -o " + str(clim_anom_file_out) + " --clone_globals"
+		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(trend_anom_var) + " -o " + str(trend_anom_file_out) + " --clone_globals --type 'trend'"
 		print "Calling AddAnom.R"
 		try:
 			p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
@@ -150,24 +150,10 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir)
 		else:
-			print "Anomaly addition successful"
-			##Replacing due to overly-thourough clone from climatology files
-			#height_vars = ['tasmax', 'tasmin']
-			#if (clim_anom_var in height_vars):
-			#	print ("Adding height for " + clim_anom_var)
-			#	print("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out)
-			#	p = subprocess.Popen("ncks -A -h -v height "+clim_file_out + " " +clim_anom_file_out,
-			#			shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			#	p_out,p_err = p.communicate()
-			#	print(p_out)
-			#	print(p_err)		
+			print "Trend addition successful"
 			print "Copying to final location"			
-			gcp(clim_anom_file_out, clim_anom_file)						
-			#if(mailid is not None):
-			#	send_anomadd_message('success',exp_name,mailid,
-			#						anom_file,clim_file,clim_anom_file,
-			#						err_message="",aux=r_command)						
-	return clim_anom_file	
+			gcp(trend_anom_file_out, trend_anom_file)											
+	return trend_anom_file	
 
 def send_anomadd_message(status,exp_name,mailid,
 						anom_file,clim_file,clim_anom_file,
