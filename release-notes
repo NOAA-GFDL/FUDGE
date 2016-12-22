@@ -1,3 +1,7 @@
+12-21-16
+- Updating names of tail adjusts
+- Bugfix for cross-validated experiment name creation
+
 12-16-16
 - major bugfix in PARM related to closely-spaced breakpoints giving slopes of 0
 and thus wildly negative temperatures
