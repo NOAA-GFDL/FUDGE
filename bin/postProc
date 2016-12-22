@@ -336,15 +336,23 @@ def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone
 		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir, xml = uinput)
 	supp_strings = ['qcmask', 'save']
+	add_strings  = ["Anom", 'Detr']
 	if ("Anom" in var):
-		#supp_match = [ for r in range(0, len(supp_string) if re.match() not None]
 		if (supp_strings[0] not in var and supp_strings[1] not in var):
 			print "Calling the anomaly addition script"
 			anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
 		else:
 			#Copy the supplementary file to the anomaly file directory
 			#and rename the variable to match
-			copy_file = callCopyToAnomClim(final_out_dir, total_exp_name, var, send_to, sbase, uinput)				
+			copy_file = callCopyToAnomClim(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+	else if ("Detr" in var):
+		if (supp_strings[0] not in var and supp_strings[1] not in var):
+			print "Calling the trend addition script"
+			anom_file = callAddTrend(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+		else:
+			#Copy the supplementary file to the anomaly file directory
+			#and rename the variable to match
+			copy_file = callCopyToTrendDetr(final_out_dir, total_exp_name, var, send_to, sbase, uinput)							
 	return p.returncode
 	
 def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):

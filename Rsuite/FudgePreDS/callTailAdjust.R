@@ -10,7 +10,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   #'based off of the limits to the adjustment of the
   #'MH and MF datasets
   
-  
+  print(summary(input))
+  print(input$data.atts)
   rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   targ.var <- names(input$data.atts$hist.targ)
   arg.names <- names(test$qc_args)
@@ -75,7 +76,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
       }
     }
     
-    
+    print(input$data.atts)
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred,
                                                "[[", 'var')==targ.var]
     #CALL (GENERAL) TAIL CORRECT FUNCTION (BELOW)
