@@ -3,6 +3,7 @@ ${var}_qcmask_pr,pr_s3,"1 = model future preciptiation data greater than 0 after
 ${var}_qcmask_pr,pr_s5,
 ${var}_qcmask_missval,qc.train,"1 = sufficient data to downscale without adjustment; NA = insufficient data to downscale without converting missing pr values to 0"
 ${var}_qcmask_ds_method,ds_method,"1 = able to downscale at this point; NA = not able to downscale at this point; please see ds method documentation for more information"
-${var}_qcmask_cdfttailaj,cdfttailadj,"NA = no adjust;1 = cdfttailadj applied to lower tail;2 = cdfttailadj applied to upper tail;3 = adjust applied to upper and lower tail;4 = cdfttailadj for non-overlapping MH and MF distributions used"
+${var}_qcmask_cdfttailaj,cdft_simpletailadj,"NA = No adjust;1 = cdft_simpletailadj applied to lower tail;2 = cdft_simpletailadj applied to upper tail"
 ${var}_qcmask_simpletailadj,simpletailadj,"NA = no adjust;1 = simpletailadj applied to lower tail;2 = simpletailadj applied to upper tail;3 = adjust applied to upper and lower tail;4 = simpletailadj for non-overlapping MH and MF distributions used"
 ${var}_qcmask_flag_neg,flag.neg,"1 = downscaled values greater than 0 before adjustment; NA = downscaled values negative before adjustment"
+${var}_qcmask_cdfttailaj,cdft_limtailadj,"NA = No adjust;1 = cdft_limtailadj applied to lower tail;2 = cdft_limtailadj applied to upper tail"
