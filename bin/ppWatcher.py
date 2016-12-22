@@ -150,9 +150,9 @@ def write_xml_info(outdirs, xml_dir):
 	#Writes the contents of the experiment xml
 	#to the end of all experiment info files
 	#located in the dirs discussed
-	#First, replace /t in the outdirs
+	#First, replace tabs in string
 	outdirs = [re.sub("\t", "", el) for el in outdirs]
-	#The, get the xml file
+	#Then, get the xml file
 	xml_file = [el for el in os.listdir(xml_dir) if re.search("xml", el) is not None]
 	xml_file = osp.join(xml_dir, xml_file[0])
 	cat_string = ''

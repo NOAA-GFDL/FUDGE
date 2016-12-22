@@ -60,8 +60,9 @@ message("Setting downscaling method information")
 ds.ref <- getDSInfo(ds.method)
 
 message("Checking downscaling arguments")
-QCDSArguments(k=k.fold, ds.method = ds.method, args=args,
-              is.multivar=(length(predictor.vars) > 1),
+ds.args <<- args
+QCDSArguments(k=k.fold, ds.method = ds.method, args=args, 
+              is.multivar=(length(predictor.vars) > 1), 
               is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 message("Checking the missing value arguments")

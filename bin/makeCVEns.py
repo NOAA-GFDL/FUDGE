@@ -247,7 +247,11 @@ def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold, is_supplemen
 	#else:
 	#	orig_expname = re.split("_", orig_fname)[2]
 	print("original experiment name: " + orig_expname)
-	cv_expname = re.sub("A00r[0-9]*e2", "A00"+odesc+"e2", orig_expname)
+	exp_design = re.split("-", orig_fname)[2]
+	#Okay, you want the single-letter component before 00
+	exp_re = re.compile('([A-Z]*)00')
+	exp_string = re.search(exp_re, exp_design).group()
+	cv_expname = re.sub("[A-Z]00r[0-9]*e2", exp_string + odesc + "e2", orig_expname)
 	cv_expname = re.sub("K00", kfold, cv_expname)
 	print("New experiment name: " + cv_expname)
 	cv_path = re.sub(orig_expname, cv_expname, orig_path)

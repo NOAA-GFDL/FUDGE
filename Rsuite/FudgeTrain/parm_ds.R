@@ -91,7 +91,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   }else{
     jitter <- F
   }
-  
   #Pre-initialize output
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
   nrips = dim(out.data)[4]
@@ -549,6 +548,10 @@ parm.train <- function(hist_pred, hist_targ, args){
   if(length(breakpoints) > 0){
     #print('current breakpoints:')
     #print(breakpoints)
+    #CEW edit 12-14-16:
+    #making sure breakpoitns are unique
+    #because that seems to have been leading to squirrely PARM results
+    breakpoints <- unique(breakpoints)
     values <- hist_pred[breakpoints]
   }else{
     print("No breakpoints found")
@@ -568,10 +571,11 @@ parm.train <- function(hist_pred, hist_targ, args){
   #values <- unique(values)
   print(values)
   print(length(unique(values)))
+  print(breakpoints)
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
-    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1#,Boundary.knots=c(-999,999)
-                                  ),data=ds)
+    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=c(-999,999)
+    ),data=ds)
   }else{
     print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
     regr_piecewise <- lm(sta ~ mod, data=ds)
@@ -602,7 +606,8 @@ parm.train <- function(hist_pred, hist_targ, args){
   #CEW: replacing with list of indices corresponding to points to get booted, one for 
   #each of the quantities listed above.
   
-  bad.indices <- arrm.find.bad.slopes(values, slopes, xvals, 
+  #CEW 12-14-16: replacing xvals (which had been values + range) with which(hist_pred %in% values)
+  bad.indices <- arrm.find.bad.slopes(values, slopes, c(1,breakpoints,hist.pred.len), #xvals, 
                                       run=!is.na(breakpoints[1]))
   # slope_rank is the rank of bad slopes, so the lowest can be removed first
   slope_rank <- rank(slopes[bad.indices$bad.slopes], ties='first') #lowest bad slope
@@ -633,8 +638,9 @@ parm.train <- function(hist_pred, hist_targ, args){
                                        #but it might be leading to weird settings for precip.
                                        #Like, 10000-inches-per-day weird.
                                       # Boundary.knots=c(-999,999)),
-                               ),
-                              data=ds)
+                                       Boundary.knots=c(-999,999)),
+        #),
+        data=ds)
       }else{
         print("No breakpoints found; activating simple lm prediction")
         regr_piecewise2 <- lm(sta ~ mod, data=ds)
@@ -655,7 +661,7 @@ parm.train <- function(hist_pred, hist_targ, args){
       for(j in 1:(length(xvals2)-1)){
         slopes[j] <- (yvals2[j+1]-yvals2[j])/(xvals2[j+1]-xvals2[j]+0.0001)
       }
-      bad.indices <- arrm.find.bad.slopes(values, slopes, xvals, 
+      bad.indices <- arrm.find.bad.slopes(values, slopes, c(1,breakpoints,hist.pred.len), #xvals 
                                           run=!is.na(breakpoints[1]))
       if(sum(bad.indices$bad.slopes) >= 1){
         slope_rank <- rank(slopes[bad.indices$bad.slopes], ties='first')
@@ -684,10 +690,6 @@ parm.downscale <- function(fut_pred, hist_targ, regr_piecewise,
   #ref: line 1030, more or less
   
   message('Starting PARM step 7: predicting future observations')
-  #points(seq(1:length(fut_pred)), fut_pred, col='red')
-#   print(summary(regr_piecewise))
-#   print(summary(as.vector(fut_pred)))
-#   print(length(fut_pred))
   if (length(fut_pred) > 0){
     fut_obs <- predict(regr_piecewise, data.frame(mod=fut_pred))
   }else{

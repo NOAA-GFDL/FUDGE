@@ -1,3 +1,17 @@
+
+12-21-16
+- Updating names of tail adjusts
+- Bugfix for cross-validated experiment name creation
+
+12-16-16
+- major bugfix in PARM related to closely-spaced breakpoints giving slopes of 0
+and thus wildly negative temperatures
+- bugfix for climatology att in make.fudge.globals
+
+12-13-16
+(cew)
+- Minsamplesize requirments for tail adjust added in 
+
 11-2-16
 - Revised behavior for DeltaSD; calculates deltas based off of nyears_present
 rather than total sample size; indexes results by checking on presence/absence
@@ -18,6 +32,10 @@ tested for tasmax, pr (ratio) tests are in progress
 - Multiplicative (ratio) tail adjustment option to "cdfttailadjust" and "simpletailadjust". Brief metadata update.
 (cew)
 - Merge with branch containing improved postProc workflow
+<<<<<<< HEAD
+=======
+- Adding parsing of ncpu,njobs from XML
+>>>>>>> g_final
 
 8-23-16
 - Bugfix for cross-validated qc mask pathanmes
