@@ -59,10 +59,9 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
-
                   'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh'),
-                  'cdfttailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft'),
-                  'cdft_orig_tailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
+                  'cdft_limtailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft'),
+                  'cdft_simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
 
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
@@ -448,11 +447,7 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
                                                       test$qc_args$arg))
 				for (el in names(ds.attr)) {
 					if(is.numeric(ds.attr[[el]]) & (el %in% c("high_cutoff", "low_cutoff"))) {
-            print(el)
-            print(ds.attr[[el]])
-            print('transforming attributes')
 						ds.attr[[el]] <- do.call(test$qc_args$fxn, args=list(ds.attr[[el]], test$qc_args$arg))
-            print(ds.attr[[el]])
 					}
 				}
       } else {
