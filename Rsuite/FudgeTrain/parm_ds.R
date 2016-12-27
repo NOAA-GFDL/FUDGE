@@ -41,7 +41,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     stop(paste("Error in PARM: reg_sample_method not included"))
     ds.args$reg_sample_method = 'climvar_range'
   }else{
-    reg_sample_method_choices <- c('sample_size', 'climate_variable_range')
+    reg_sample_method_choices <- c('full_sample_size', 'climate_variable_range')
     if(!(args$regression_subsample_method%in%reg_sample_method_choices)){
       stop(paste("Error in PARM: reg_sample_method must be one of",
                  paste(reg_sample_method_choices, collapse=","),
@@ -338,7 +338,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   #window_temp <- (0.05*(max(hist_pred) - min(hist_pred)))
   
   #Cutting out about 100 lines of code related to finding the temeprature-based windows
-  if(args$regression_subsample_method=='sample_size'){
+  if(args$regression_subsample_method=='full_sample_size'){
     if(args$tail_taper_pct==0){
       #If not tapering on the tails, however they are defined
       window_len = hist.pred.len * fixed_window_width

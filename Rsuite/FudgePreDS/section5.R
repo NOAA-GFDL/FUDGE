@@ -36,20 +36,20 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-#    # if(verbose){
-#    if (test$type=='cdfttailadj'){
-#      print(paste("on test", test[[1]]))
-#      print("MH:")
-#      print(lapply(out$input$hist.pred, 'length'))
-#      print("OH:")
-#      print(summary(out$input$hist.targ))
-#      print("MF:")
-#      print(lapply(out$input$fut.pred, 'length'))
-#      print("DS:")
-#      print(lapply(out$adjusted.output$ds, 'length'))
-#      save(file="/home/cew/Code/testing/test_out.R", list=c('out'))
-#      stop('examine output')
-#    }
+    #    # if(verbose){
+    #    if (test$type=='cdfttailadj'){
+    #      print(paste("on test", test[[1]]))
+    #      print("MH:")
+    #      print(lapply(out$input$hist.pred, 'length'))
+    #      print("OH:")
+    #      print(summary(out$input$hist.targ))
+    #      print("MF:")
+    #      print(lapply(out$input$fut.pred, 'length'))
+    #      print("DS:")
+    #      print(lapply(out$adjusted.output$ds, 'length'))
+    #      save(file="/home/cew/Code/testing/test_out.R", list=c('out'))
+    #      stop('examine output')
+    #    }
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
@@ -70,14 +70,19 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     print(summary(as.vector(out$adjusted.output$ds.out)))
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
+      print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
       }
     }
+    out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
+    #For the moment, asusme that all data is either of output
+    #dims or NULL; this should fail spectacularly 
+    #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
-      #for(var in names(out$adjusted.output[[el]])){
-        dim(out$adjusted.output[[el]]) <- dim(adjusted.output[[el]])
-      #}
+      if (is.null(dim(adjusted.output[[el]]))){
+        dim(out$adjusted.output[[el]]) <- out.dim
+      }
     }
   }
   return(out$adjusted.output)
@@ -393,27 +398,27 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args
     out.list$ds.out <- do.call(test$qc_args$fxn, 
-                                  args=list(as.numeric(out.list$ds.out), 
-                                            test$qc_args$arg))
+                               args=list(as.numeric(out.list$ds.out), 
+                                         test$qc_args$arg))
     input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                           args=list(as.numeric(input$fut.pred[[ds.var]]), 
-                                                     test$qc_args$arg))
+                                        args=list(as.numeric(input$fut.pred[[ds.var]]), 
+                                                  test$qc_args$arg))
     input$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                            args=list(as.numeric(input$hist.pred[[ds.var]]), 
-                                                      test$qc_args$arg))
+                                         args=list(as.numeric(input$hist.pred[[ds.var]]), 
+                                                   test$qc_args$arg))
     input$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                            args=list(as.numeric(input$hist.targ[[ds.var]]), 
-                                                      test$qc_args$arg))
+                                         args=list(as.numeric(input$hist.targ[[ds.var]]), 
+                                                   test$qc_args$arg))
   }else{
     #If there are no arguments to the transform, you make the call differently
     out.list$ds.out <- do.call(test$qc_args$fxn, 
-                                  args=list(as.numeric(out.list$ds.out)))
+                               args=list(as.numeric(out.list$ds.out)))
     input$fut.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                           args=list(as.numeric(input$fut.pred[[ds.var]])))
+                                        args=list(as.numeric(input$fut.pred[[ds.var]])))
     input$hist.pred[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                            args=list(as.numeric(input$hist.pred[[ds.var]])))
+                                         args=list(as.numeric(input$hist.pred[[ds.var]])))
     input$hist.targ[[ds.var]] <- do.call(test$qc_args$fxn, 
-                                            args=list(as.numeric(input$hist.targ[[ds.var]])))
+                                         args=list(as.numeric(input$hist.targ[[ds.var]])))
   }
   return(list('input' = input, 'adjusted.output' = out.list))
 }

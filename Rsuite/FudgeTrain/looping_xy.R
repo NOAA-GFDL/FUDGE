@@ -134,7 +134,12 @@ loop.xy.data <- function(){
                                        ds.atts = ds.atts, 
                                        tmasks = tmasks)
             ds.out$ds <- tmp.s5$ds.out
-            qc.out <- c(qc.out, tmp.s5$qc)
+            # qc.out <- c(qc.out, tmp.s5$qc)
+            #qc.out more complicated; trying to preserve dim information
+            #in with the edits on 12-17-16
+            if (!is.null(tmp.s5$qc)){
+              qc.out <- tmp.s5$qc
+            }
           }
           #...hm. Is it possible to adapt that OU code that included window
           #as an extra dimension and include it for multiple qc masks?
@@ -153,8 +158,8 @@ loop.xy.data <- function(){
               #outside of the s3/s5 adjusts because of backwards compatability
               if (tmasks$time_mask_overlap){
                 combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
-                                                     mask=tmasks$trim$masks[[w]], 
-                                                     dim='time')
+                                                     mask=tmasks$trim$masks[[w]],
+                                                    dim='time')
               }
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
