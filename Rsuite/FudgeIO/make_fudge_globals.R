@@ -41,7 +41,7 @@ make.fudge.globals <- function(){
   #climatology and trend
   clim.nc <- nc_open(MF$metadata[[1]]$filename)
   clim.att <- ncatt_get(clim.nc, 0, 'climatology')
-  trend.att <- ncatt_get(clim.nc, 0, 'climatology')
+  trend.att <- ncatt_get(clim.nc, 0, 'trend')
   nc_close(clim.nc)
   if (clim.att$hasatt){
     global_att_list$climatology <- clim.att$value

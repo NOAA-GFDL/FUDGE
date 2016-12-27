@@ -1,0 +1,156 @@
+#!/bin/python
+#Versions of the anomaly copying scripts for the 
+#trend/detrend workflow
+
+def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
+	#Copies output to anom+clim output directory and changes the var name
+	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+	out_files = [f for f in out_files if re.search(var, f) is not None]
+	if len(out_files) > 1:
+		print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
+		sys.exit(1)
+	#Get modified file path
+	fpath  = osp.join(final_out_dir, out_files[0])
+	trendetr_var = re.sub("Detr", "", var)
+	#trendetr_fpath = re.sub(var, trendetr_var, fpath)
+	trendetr_fpath = re.sub("Detr", "", fpath)
+	print("Copying supplementary detrended files to new location!")
+	print(fpath)
+	print(trendetr_fpath)
+	gcp(fpath, trendetr_fpath)
+	nco_command = "ncrename -v " +var+","+trendetr_var +" "+trendetr_fpath
+	try:
+		p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	except: 
+		print("Error in subprocess call of callCopyToTrendDetr! Please examine call in more detail.")
+		print(nco_command)
+		if(mailid is not None):
+			send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
+			           traceback = "Error in call to ncrename - call for reference: " + nco_command,\
+		               mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+		               outfiles = final_out_dir)
+		sys.exit(1)	
+	error,output = p.communicate()
+	print(error)
+	print(output)
+	if(p.returncode != 0):
+		err_message = "error in call to ncrename"
+		print ("Error in renaming! There was an " + err_message)
+		print(r_command)
+		if(mailid is not None):
+			send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
+			           traceback = "Error in call to ncrename - call for reference: " + nco_command,\
+	                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+	                   outfiles = final_out_dir)
+	else:
+		print "gcp and rename successful"
+	return(trendetr_fpath)		
+		
+		
+	
+def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
+	#Figure out the final output in the output dir:
+	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+	#If there is more that one file present, select the one with the shortest name
+	detr_file = min(out_files, key=len)
+	detr_file = osp.join(final_out_dir, detr_file)
+	#Find the location for the trend + detr file
+	trend_detr_file = re.sub('Detr','',detr_file)
+	trend_detr_var = re.sub('Detr',"",var)
+	with Dataset(detr_file, 'r') as nc_obj:
+		try:
+			trend = nc_obj.__dict__['trend']
+		except KeyError:
+			trend_error = 'Trend not found in input file ' + detr_file
+			print("Error in trend addition! " + trend_error + " ;exiting")
+			if( mailid is not None):
+				send_status_email("failure", 'callAddAnom', total_exp_name, \
+							traceback = trend_error,\
+		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir, xml = uinput)	
+			exit(1)
+			
+	#Remove temporary directories from beginning of pathname, 
+	#going as far as needed to complete
+	trend_split = trend.split("/")
+	s_idx = 0
+	trend_exists = False
+	while(s_idx < len(trend_split)):
+		if(osp.exists("/".join(trend_split[s_idx:len(trend_split)]))):
+			trend_exists = True
+			trend_file = "/".join(trend_split[s_idx:len(trend_split)])
+			break
+		else:
+			s_idx += 1		
+	if(not trend_exists):
+		trend_error = "trend file " + trend + ' not found on system'
+		print ("Error in trend addition!" + trend_error + " ; exiting")
+		if( mailid is not None):
+			#send_anom_message('failure', trend_error, exp_name,mailid,
+			#						anom_file,trend,"None",trend_err,"")
+			send_status_email("failure", 'postProc', total_exp_name, \
+			               traceback = "trend file " + trend + "not found on system",\
+		                   mailid=send_to, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir)						
+		exit(1)
+	else:
+		if( not osp.exists(osp.dirname(trend_detr_file)) ):
+			print 'Making output detr + trend directory'
+			os.makedirs(osp.dirname(trend_detr_file))
+		#print(os.environ)
+		try:		
+			s8_orig = os.environ.get("S8_PATH")
+		except:
+			s8_orig=""
+		#s8_path = "/home/cew/Code/section_8_tools/"
+		#os.putenv("S8_PATH", s8_path)
+		if (s8_orig is None):
+			print("Warning in trend addition: $S8_PATH not set.")
+			print("resetting to empty string")
+			s8_orig=""
+		tdir = os.environ.get("TMPDIR")
+		trend_detr_file_out = osp.join(tdir, trend_detr_file.lstrip("/"))
+		if not osp.exists(osp.dirname(trend_detr_file_out)):
+			os.makedirs(osp.dirname(trend_detr_file_out))
+		trend_file_out = gcp(trend_file, 'TMPDIR')	
+		detr_file_out = gcp(detr_file,'TMPDIR')	
+		#s8_orig = os.environ["S8_PATH"]
+		s8_fudge = os.environ["FUDGE_S8_LOC"]
+		os.environ["S8_PATH"] = s8_fudge
+		#print(os.environ)
+		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(trend_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --type 'trend'"
+		print "Calling AddAnom.R"
+		try:
+			p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+		except: 
+			print("Error in subprocess call of callAddAnom! Please examine call in more detail.")
+			print(r_command)
+			os.environ["S8_PATH"] = s8_orig
+			sys.exit(1)	
+			if(mailid is not None):
+				send_status_email("failure", 'postProc - trendAdd', exp_name, \
+				           traceback = "Error in call to AddAnom.R - call for reference: " + r_command,\
+		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   outfiles = final_out_dir)
+		error,output = p.communicate()
+		os.environ["S8_PATH"] = s8_orig
+		#Check on what this returns with an R error
+		print(error)
+		print(output)
+		if(p.returncode != 0):
+			err_message = "error in call to AddAnom.R"
+			print ("Error in trend addition! There was an " + err_message)
+			print(r_command)
+			if(mailid is not None):
+				send_status_email("failure", 'postProc - trendAdd', exp_name, \
+				           traceback = "Error in call to AddAnom.R - call for reference: " + r_command,\
+		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
+		                   outfiles = final_out_dir)
+		else:
+			print "Trend addition successful"
+			print "Copying to final location"			
+			gcp(trend_detr_file_out, trend_detr_file)											
+	return trend_detr_file	
