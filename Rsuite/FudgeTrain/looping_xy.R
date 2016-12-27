@@ -140,7 +140,7 @@ loop.xy.data <- function(){
           #as an extra dimension and include it for multiple qc masks?
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
-            print(paste("looping by out with", out))
+#            print(paste("looping by out with", out))
 #               print('summary of out before adding to the vector')
 #               print(summary(combine.out[[out]]))
             #Commented out below; it is LEGIT POSSIBLE to get all NA back from the downscaling function
@@ -149,6 +149,13 @@ loop.xy.data <- function(){
 #                 stop('this particular loop is all NA and an issue')
 #               }
             if (!is.null(combine.out[[out]])){
+              #Added 12-17-16 - some indexing needs to take place
+              #outside of the s3/s5 adjusts because of backwards compatability
+              if (tmasks$time_mask_overlap){
+                combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
+                                                     mask=tmasks$trim$masks[[w]], 
+                                                     dim='time')
+              }
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }

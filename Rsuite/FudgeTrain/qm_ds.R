@@ -16,13 +16,20 @@ callQM <- function(OH, MH, MF, args, type="",
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
   #Prepare indexing mask
-  if (tmasks$time_mask_overlap){
-    index.mask <- tmasks$trim$masks[[w]]
-    olap=T
-  }else{
-    index.mask <- tmasks$MF$masks[[w]]
-    olap=F
-  }
+#   if (tmasks$time_mask_overlap){
+#     index.mask <- tmasks$trim$masks[[w]]
+#     olap=T
+#   }else{
+#     index.mask <- tmasks$MF$masks[[w]]
+#     olap=F
+#   }
+  #Trying a workaround for the quantile mapping workflow issue - 
+  #The new indexing works on non-overlap cases, but the s5 examples really
+  #need the overlapped data in order to reproduce past results. 
+  #Deleting the more complicated indexing in here and moving that indexing step to just
+  #before the addition step *should* solve that particular issue.
+  index.mask <- tmasks$MF$masks[[w]]
+  olap <- F
   if(train_qcmask){
     if(tmasks$apply_tmasks){
       qc <- mapply(rep, index.mask, nrips)
@@ -40,23 +47,14 @@ callQM <- function(OH, MH, MF, args, type="",
     if (!is.null(missval.args$pr)){
       missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
     }
-    #save(file="/work/cew/testing/h_EDQM_pr_1.R", list=c('OH', 'MH', 'MF.slice'))
-    # print('ds.possible:')
-    # print(missval.out$ds.possible)
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
-  #  save(file="/work/cew/testing/h_EDQM_pr_2.R", list=c('missval.out', 'missval.args'))
-  #   print('ds.possible:')
-  #   print(missval.out$ds.possible)
     if(missval.out$ds.possible){
       OH.slice <- missval.out$OH[[1]]
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
-#       print(length(OH.slice))
-#       print(length(MH.slice))
-#       print(length(MF.slice))
       mf.missing <- sum(is.na(MF.slice))
       train.stat <- missval.out$missval.status
       out <- switch(type, 
@@ -78,11 +76,6 @@ callQM <- function(OH, MH, MF, args, type="",
       }
     }
   }
-#   if(train_qcmask & missval.out$mv.retry){
-#     qc[,,,n,,] <- index.qm(index.mask, rep(NA, array(NA, dim=dim(out)), olap))
-#   }
-  #  save(file="/work/cew/testing/h_EDQM_pr_3.R", list=c('out.data'))
-  #  stop('examine output')
   return(list(ds=out.data, qc=qc))
 }
 

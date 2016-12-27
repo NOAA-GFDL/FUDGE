@@ -97,13 +97,18 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   #Attempting switch to index masking data 
   #on 12-15-16; this is the way we used to do it, 
   #but I thought there was a clever way around it.
-  if (tmasks$time_mask_overlap){
-    index.mask <- tmasks$trim$masks[[w]]
-    olap=T
-  }else{
-    index.mask <- tmasks$MF$masks[[w]]
-    olap=F
-  }
+#   if (tmasks$time_mask_overlap){
+#     index.mask <- tmasks$trim$masks[[w]]
+#     olap=T
+#   }else{
+#     index.mask <- tmasks$MF$masks[[w]]
+#     olap=F
+#   }
+  #Revising above on 12-17-16. We need to undo the trimming/qm indexing
+  #at this step in order to use the full data in the s3/s5 adjustments.
+  index.mask <- tmasks$MF$masks[[w]]
+  olap <- F
+  
   if(train_qcmask){
     if(tmasks$apply_tmasks){
       qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
