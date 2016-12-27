@@ -232,6 +232,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     #do.call(trigger.fxn, list(MH))
     mf.tmp = MF[mf.idx]
     ##get delta
+    adjmethod <- args$adjmethod
     if(mf.overlap){
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
@@ -243,7 +244,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
-      adjmethod <- args$adjmethod
       print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
       if (adjmethod == 'add') {
