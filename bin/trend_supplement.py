@@ -1,6 +1,20 @@
 #!/bin/python
 #Versions of the anomaly copying scripts for the 
 #trend/detrend workflow
+import os,sys,subprocess,shutil
+from os import path as osp
+from subprocess import PIPE
+import argparse
+import shlex
+import fudgeList
+import checker
+import smtplib
+import re
+import netCDF4
+from netCDF4 import Dataset
+import fudgeUtils
+from fudgeUtils import send_status_email
+from fudgeUtils import gcp
 
 def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
 	#Copies output to anom+clim output directory and changes the var name
@@ -115,7 +129,7 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		if not osp.exists(osp.dirname(trend_anom_file_out)):
 			os.makedirs(osp.dirname(trend_anom_file_out))
 		trend_file_out = gcp(trend_file, 'TMPDIR')	
-		anom_file_out = gcp(anom_file,'TMPDIR')	
+		trend_anom_file_out = gcp(trend_anom_file,'TMPDIR')	
 		#s8_orig = os.environ["S8_PATH"]
 		s8_fudge = os.environ["FUDGE_S8_LOC"]
 		os.environ["S8_PATH"] = s8_fudge
