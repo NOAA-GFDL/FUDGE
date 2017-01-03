@@ -167,34 +167,38 @@ source ${auxfiledir}/loadit
 #cecho "ncecat  $argpath $OFILE"
 ############if spat mask is na ############
 if ($grid == 'na') then
-set ctr = 0 
-#cset tmpfile = "tmp_${OFILE}_$ctr.nc"
-set tmpfile = ""
-foreach argh ($argpath)
-ncpdq -D 0 -A -a lon,lat,time $argh tmp_${OFILE}_$ctr.nc > & /dev/null 
-set tmpfile = `echo $tmpfile tmp_${OFILE}_$ctr.nc`
-@ ctr = $ctr + 1
-end
-ncrcat -h $tmpfile out_$OFILE.nc 
-ncpdq -a time,lat,lon out_$OFILE.nc $OFILE 
-foreach tmp ($tmpfile)
-rm -f $tmp
-rm -f out_$OFILE.nc
-end
-exit
+	set ctr = 0 
+	#cset tmpfile = "tmp_${OFILE}_$ctr.nc"
+	set tmpfile = ""
+	foreach argh ($argpath)
+		ncpdq -D 0 -A -a lon,lat,time $argh tmp_${OFILE}_$ctr.nc > & /dev/null 
+		set tmpfile = `echo $tmpfile tmp_${OFILE}_$ctr.nc`
+		@ ctr = $ctr + 1
+	end
+	ncrcat -h $tmpfile out_$OFILE.nc 
+	ncpdq -a time,lat,lon out_$OFILE.nc $OFILE
+	#Adding 12-17-16 - try to clone all global attributes from one of the minifiles?
+	ncks -A -x -h $argpath[1] $OFILE
+	foreach tmp ($tmpfile)
+		rm -f $tmp
+		rm -f out_$OFILE.nc
+	end
+	exit
 endif
 ############################################
 ############if spat mask is not na ############
 if ($grid != 'na') then
-ncecat -v ${varname} -h $argpath $OFILE
-echo "catting ..done"
-echo "record arrangement in progress.."
-ncpdq -O -h -v ${varname} -a time,lat,lon,record $OFILE $OFILE
-#add lat lon bounds info
-ncrename -h  -v lon,lon1 $OFILE 
-ncrename -h -d lon,lon1 $OFILE
-ncks -A -h -v lat,lat_bnds,lon,lon_bnds $grid $OFILE 
-#### take time_bnds,i_offset,j_offset from the first minifile
-ncks -A -h -v time_bnds,i_offset,j_offset "$prepath/${prefix}.I${lons}_J${lats}-${late}.nc" $OFILE
+	ncecat -v ${varname} -h $argpath $OFILE
+	echo "catting ..done"
+	echo "record arrangement in progress.."
+	ncpdq -O -h -v ${varname} -a time,lat,lon,record $OFILE $OFILE
+	#add lat lon bounds info
+	ncrename -h  -v lon,lon1 $OFILE 
+	ncrename -h -d lon,lon1 $OFILE
+	ncks -A -h -v lat,lat_bnds,lon,lon_bnds $grid $OFILE 
+	#### take time_bnds,i_offset,j_offset from the first minifile
+	ncks -A -h -v time_bnds,i_offset,j_offset "$prepath/${prefix}.I${lons}_J${lats}-${late}.nc" $OFILE
+	#Adding 12-17-16 - try to clone all global attributes from one of the minifiles?
+	ncks -A -x -h "$prepath/${prefix}.I${lons}_J${lats}-${late}.nc" $OFILE
 endif
 
