@@ -69,8 +69,14 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 	detr_file = min(out_files, key=len)
 	detr_file = osp.join(final_out_dir, detr_file)
 	#Find the location for the trend + detr file
-	trend_anom_file = re.sub('Detr','',detr_file)
-	trend_detr_var = re.sub('Detr',"",var)
+	#note: need to remove 'Detr' AND the method afterwards
+	trend_detr_var = var.split('Detr')[0]
+	trend_detr_file = re.sub(var,trend_detr_var,detr_file)
+	print(final_out_dir)
+	print(exp_name)
+	print(var)
+	print(trend_detr_var)
+	print(trend_detr_file)
 	with Dataset(detr_file, 'r') as nc_obj:
 		try:
 			trend = nc_obj.__dict__['trend']
@@ -98,7 +104,7 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		else:
 			s_idx += 1		
 	if(not trend_exists):
-		trend_error = "trendatology file " + trend + ' not found on system'
+		trend_error = "trend file " + trend + ' not found on system'
 		print ("Error in anomaly addition!" + trend_error + " ; exiting")
 		if( mailid is not None):
 			#send_anom_message('failure', trend_error, exp_name,mailid,
@@ -110,9 +116,9 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		                   outfiles = final_out_dir)						
 		exit(1)
 	else:
-		if( not osp.exists(osp.dirname(trend_anom_file)) ):
+		if( not osp.exists(osp.dirname(trend_detr_file)) ):
 			print 'Making output anom + trend directory'
-			os.makedirs(osp.dirname(trend_anom_file))
+			os.makedirs(osp.dirname(trend_detr_file))
 		#print(os.environ)
 		try:		
 			s8_orig = os.environ.get("S8_PATH")
@@ -125,17 +131,20 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			print("resetting to empty string")
 			s8_orig=""
 		tdir = os.environ.get("TMPDIR")
-		trend_anom_file_out = osp.join(tdir, trend_anom_file.lstrip("/"))
-		if not osp.exists(osp.dirname(trend_anom_file_out)):
-			os.makedirs(osp.dirname(trend_anom_file_out))
-		trend_file_out = gcp(trend_file, 'TMPDIR')	
-		trend_anom_file_out = gcp(trend_anom_file,'TMPDIR')	
+		trend_detr_file_out = osp.join(tdir, trend_detr_file.lstrip("/"))
+		if not osp.exists(osp.dirname(trend_detr_file_out)):
+			os.makedirs(osp.dirname(trend_detr_file_out))
+		print(trend_file)
+		trend_file_out = gcp(trend_file, 'TMPDIR')
+		print(trend_detr_file)	
+		trend_detr_file_out = gcp(trend_detr_file,'TMPDIR')	
 		#s8_orig = os.environ["S8_PATH"]
 		s8_fudge = os.environ["FUDGE_S8_LOC"]
 		os.environ["S8_PATH"] = s8_fudge
 		#print(os.environ)
-		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(trend_anom_var) + " -o " + str(trend_anom_file_out) + " --clone_globals --type 'trend'"
+		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --type 'trend'"
 		print "Calling AddAnom.R"
+		print(r_command)
 		try:
 			p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 		except: 
@@ -166,8 +175,8 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		else:
 			print "Trend addition successful"
 			print "Copying to final location"			
-			gcp(trend_anom_file_out, trend_anom_file)											
-	return trend_anom_file	
+			gcp(trend_detr_file_out, trend_detr_file)											
+	return trend_detr_file	
 
 def send_anomadd_message(status,exp_name,mailid,
 						anom_file,clim_file,clim_anom_file,
