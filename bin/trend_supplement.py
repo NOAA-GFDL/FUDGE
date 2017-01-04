@@ -136,13 +136,13 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			os.makedirs(osp.dirname(trend_detr_file_out))
 		print(trend_file)
 		trend_file_out = gcp(trend_file, 'TMPDIR')
-		print(trend_detr_file)	
-		trend_detr_file_out = gcp(trend_detr_file,'TMPDIR')	
+		#print(trend_detr_file)	
+		detr_file_out = gcp(detr_file,'TMPDIR')	
 		#s8_orig = os.environ["S8_PATH"]
 		s8_fudge = os.environ["FUDGE_S8_LOC"]
 		os.environ["S8_PATH"] = s8_fudge
 		#print(os.environ)
-		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(anom_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --type 'trend'"
+		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(detr_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --type 'trend'"
 		print "Calling AddAnom.R"
 		print(r_command)
 		try:
