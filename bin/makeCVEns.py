@@ -64,8 +64,14 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 		isAnom=True
 	else:
 		isAnom=False	
+	if re.search("Detr", dsvar) is not None: 
+		isTrend=True
+	else:
+		isTrend=False		
 	print("Is this experiment an anomaly experiment?")
 	print(isAnom)
+	print("Is this experiment a detrended experiment experiment?")
+	print(isAnom)	
 	#Do a brief check for anomaly vars in the input files	
 	#There are two distinct classes of file; create each in turn
 	setdict = {'DSDEPh': {'odesc': 'dp', 'dataID':'DSDEPh', 'kfold':'K00', 
@@ -104,7 +110,8 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 			flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 			kfiles = call_cv_ens_creation(flist, dsvar, [kdict['f1r'],kdict['f2r']], \
 			",".join([kdict['f1r'],kdict['f2r']]), kty, kdict['odesc'], kdict['kfold'],\
-			[kdict['exp1'], kdict['exp2']], trange_string,isAnom=isAnom,recOnly=False,verbose=False)
+			[kdict['exp1'], kdict['exp2']], trange_string,\
+			isAnom=isAnom,isTrend=isTrend,recOnly=False,verbose=False)
 			#ens_list.append(outfile)
 			print("output file(s):" + str(kfiles))
 			klist = klist + kfiles
@@ -152,8 +159,8 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	return("\t" + "\n\t".join(ens_list))	
 	
 def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
-                        exp_names,
-						trange_string,isAnom=False, recOnly=False,verbose=False):	
+                        exp_names,trange_string,
+                        isAnom=False,isTrend=False,recOnly=False,verbose=False):	
 	#Given a list of files and some handy metadata information, 
 	#calls a simple anomaly addition script to generate the 
 	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
@@ -171,9 +178,9 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 	with Dataset(flist[0], 'r') as nc_obj:
 		varnames = nc_obj.variables.keys()
 	vname = [varnames[v] for v in range(0, len(varnames)) if re.search(climvar,varnames[v]) is not None][0]
+	supp_strings = ["qcmask","save"]
 	if isAnom:
 		print("Checking for presence of anomaly var")
-		supp_strings = ["qcmask","save"]
 		if supp_strings[0] not in vname and supp_strings[1] not in vname:
 			if not recOnly:
 				outfile_anom = call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
@@ -184,11 +191,8 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 			clim_files = [re.sub("Anom","",f) for f in flist]
 			climvar = re.sub("Anom", "", climvar)
 			try:
-			
 				outfile_clim = call_cv_ens_creation(clim_files,climvar,rips,rip_string,cv_type,odesc,kfold_string,
 				                                    exp_names,trange_string,isAnom=False)
-				#print(outfile_clim)
-				#sys.exit(1)
 			except:
 				raise	
 			return(outfile_clim + outfile_anom)
@@ -204,7 +208,39 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 				                                    exp_names,trange_string,isAnom=False)
 			except:
 				raise
-			return(outfile_clim)	                                    
+			return(outfile_clim)
+	elif isTrend:
+		print("Checking for presence of detrended var")
+		if supp_strings[0] not in vname and supp_strings[1] not in vname:
+			if not recOnly:
+				outfile_anom = call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				                                    exp_names,trange_string,isTrend=False)
+			else:
+				outfile_anom = []	
+			print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
+			trend_method = vname.split("Detr")[-1]
+			orig_climvar = re.sub("Detr"+trend_method, "", vname)	
+			clim_files = [re.sub(climvar,orig_climvar,f) for f in flist]
+			try:
+				outfile_clim = call_cv_ens_creation(clim_files,orig_climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				                                    exp_names,trange_string,isTrend=False)
+			except:
+				raise	
+			return(outfile_clim + outfile_anom)
+		else:
+			#For the qcmasks and anomaly files, 
+			print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
+			trend_method = vname.split("Detr")[-1]
+			orig_climvar = re.sub("Detr"+trend_method, "", vname)	
+			clim_files = [re.sub(climvar,orig_climvar,f) for f in flist]
+			try:
+				print("qcmask trend_files: " + str(clim_files))
+				print("qcmask trendvar: " + orig_climvar)
+				outfile_clim = call_cv_ens_creation(clim_files,orig_climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				                                    exp_names,trange_string,isAnom=False)
+			except:
+				raise
+			return(outfile_clim)			                                    
 	#Generate output file by doing a series of find-and-replace regexes on outdir
 	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]
 	outfile = make_cv_ens_name(osp.dirname(flist[0]), osp.basename(flist[0]), cv_type, odesc,kfold_string)	

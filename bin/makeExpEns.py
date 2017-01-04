@@ -95,6 +95,12 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 			print("however, since anom_only_ens is set, the anom + clim data will not be searched for")
 		else:	
 			isAnom=True
+	if ("Detr" in climvar):
+		print("This var may be a detrended var")
+		if(anom_only_ens):
+			print("however, since anom_only_ens is set, the trend and detrended data will not be searched for")
+		else:	
+			isTrend=True		
 	rip_suffix = rips[1][-4:]				
 	out_rip = "r1to" + str(len(expdict['output.path'])) + rip_suffix
 	#Create ensembles of the data from this experiment:	
@@ -112,7 +118,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	for flist in all_outfiles:
 		flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 		outfile = call_ens_creation(flist,climvar,rips,rip_string,out_rip,\
-				exp_name,epoch,trange_string,isAnom,rec_only_ens,verbose, sev)
+				exp_name,epoch,trange_string,isAnom,isTrend,rec_only_ens,verbose, sev)
 		ens_list = ens_list + outfile		
 	#When everything is over, add the list of output ensemble files to the experiment_info.txt files
 	#in all locations.
@@ -142,7 +148,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	return("\n\t".join(ens_list))							
 	
 def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
-						trange_string,isAnom=False, recOnly=False,verbose=False, sev=1):	
+						trange_string,isAnom=False, isTrend=False,recOnly=False,verbose=False, sev=1):	
 	#Given a list of files and some handy metadata information, 
 	#calls a simple anomaly addition script to generate the 
 	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
@@ -176,6 +182,19 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		climvar = re.sub("Anom", "", climvar)
 		outfile_clim = call_ens_creation(anom_files,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
 		return(outfile_clim + outfile_anom)
+	if isTrend:
+		print("Checking for presence of detrended var")
+		if not recOnly:
+			outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
+		else:
+			outfile_anom = []	
+		print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
+		#check on climvar/vname distinction
+		trend_method = climvar.split("Detr")[-1]
+		orig_var = re.sub("Detr"+trend_method, "", vname)
+		anom_files = [re.sub(vname,orig_var,f) for f in flist]
+		outfile_clim = call_ens_creation(anom_files,orig_var,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
+		return(outfile_clim + outfile_anom)		
 	#Generate output file by doing a series of find-and-replace regexes on outdir
 	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]	
 	outfile = re.sub(current_rip, out_rip, flist[0])
@@ -212,9 +231,10 @@ def ens_namemap(ens_list):
 	ens_loc = copy.copy(ens_list)
 	ens_names = ['qc.ensemble','save.ensemble', 'ds.ensemble']
 	anom_ens_names = ['qc.anom.ensemble', 'save.anom.ensemble','ds.anom.ensemble']
-	ens_search = ['Anom_qcmask','Anom_save','Anom','qcmask', 'save', '']
-	all_ens_names = anom_ens_names + ens_names
-	ens_total_order = [all_ens_names[x] for x in [5, 3, 4, 2, 0, 1]]
+	trend.ens.names = ['qc.trend.ensemble', 'save.trend.ensemble', 'ds.trend.ensemble']
+	ens_search = ['Anom_qcmask','Anom_save','Anom','Trend.*_qcmask','Trend.*_save','Trend','qcmask', 'save', '']
+	all_ens_names = anom_ens_names + trend_ens_names + ens_names
+	ens_total_order = [all_ens_names[x] for x in [8, 6, 7, 5, 3, 4, 2, 0, 1]]
 	#ens_order = [ens_names[x] for x in [3, 2, 0, 1]]
 	ens_indexed = []
 	for e in range(0,len(ens_search)):
