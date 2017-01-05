@@ -62,7 +62,7 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
 		
 		
 	
-def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
+def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 	#Figure out the final output in the output dir:
 	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
 	#If there is more that one file present, select the one with the shortest name
@@ -84,7 +84,7 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 			trend_error = 'Trend not found in input file ' + detr_file
 			print("Error in trend addition! " + trend_error + " ;exiting")
 			if( mailid is not None):
-				send_status_email("failure", 'callAddAnom', total_exp_name, \
+				send_status_email("failure", 'callAddResid', total_exp_name, \
 							traceback = trend_error,\
 		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
@@ -142,36 +142,38 @@ def callAddTrend(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
 		s8_fudge = os.environ["FUDGE_S8_LOC"]
 		os.environ["S8_PATH"] = s8_fudge
 		#print(os.environ)
-		r_command = "Rscript " + s8_fudge + "/AddAnom.R --clim " + str(trend_file_out) + " --anom " + str(detr_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --type 'trend'"
-		print "Calling AddAnom.R"
+		r_command = "Rscript " + s8_fudge + "/AddResid.R --trend " + str(trend_file_out) + " --resid " + str(detr_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals"
+		print "Calling AddResid.R"
 		print(r_command)
 		try:
 			p = subprocess.Popen(r_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
 		except: 
-			print("Error in subprocess call of callAddAnom! Please examine call in more detail.")
+			print("Error in subprocess call of callAddResid! Please examine call in more detail.")
 			print(r_command)
 			os.environ["S8_PATH"] = s8_orig
 			sys.exit(1)	
 			if(mailid is not None):
-				send_status_email("failure", 'postProc - anomAdd', exp_name, \
-				           traceback = "Error in call to AddAnom.R - call for reference: " + r_command,\
+				send_status_email("failure", 'postProc - residAdd', exp_name, \
+				           traceback = "Error in call to AddResid.R - call for reference: " + r_command,\
 		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   outfiles = final_out_dir)
+			sys.exit(1)                
 		error,output = p.communicate()
 		os.environ["S8_PATH"] = s8_orig
 		#Check on what this returns with an R error
 		print(error)
 		print(output)
 		if(p.returncode != 0):
-			err_message = "error in call to AddAnom.R"
-			print ("Error in anomaly addition! There was an " + err_message)
+			err_message = "error in call to AddResid.R"
+			print ("Error in trend addition! There was an " + err_message)
 			print(r_command)
 			if(mailid is not None):
-				send_status_email("failure", 'postProc - anomAdd', exp_name, \
-				           traceback = "Error in call to AddAnom.R - call for reference: " + r_command,\
+				send_status_email("failure", 'postProc - residAdd', exp_name, \
+				           traceback = "Error in call to AddResid.R - call for reference: " + r_command,\
 		                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
 		                   #exp_info_file = os.path.join(sbase, 'experiment_info.txt'), \
 		                   outfiles = final_out_dir)
+			sys.exit(1)                
 		else:
 			print "Trend addition successful"
 			print "Copying to final location"			
