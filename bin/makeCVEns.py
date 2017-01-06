@@ -218,11 +218,12 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 			else:
 				outfile_anom = []	
 			print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
-			trend_method = vname.split("Detr")[-1]
-			orig_climvar = re.sub("Detr"+trend_method, "", vname)	
-			clim_files = [re.sub(climvar,orig_climvar,f) for f in flist]
+			trend_method = climvar.split("Detr")[-1]
+			orig_var = re.sub("Detr"+trend_method, "", vname)
+			orig_clim = re.sub("Detr"+trend_method, "", climvar)
+			clim_files = [re.sub(climvar,orig_clim,f) for f in flist]
 			try:
-				outfile_clim = call_cv_ens_creation(clim_files,orig_climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				outfile_clim = call_cv_ens_creation(clim_files,orig_clim,rips,rip_string,cv_type,odesc,kfold_string,
 				                                    exp_names,trange_string,isTrend=False)
 			except:
 				raise	
@@ -230,13 +231,14 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
 		else:
 			#For the qcmasks and anomaly files, 
 			print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
-			trend_method = vname.split("Detr")[-1]
-			orig_climvar = re.sub("Detr"+trend_method, "", vname)	
-			clim_files = [re.sub(climvar,orig_climvar,f) for f in flist]
+			trend_method = climvar.split("Detr")[-1]
+			orig_var = re.sub("Detr"+trend_method, "", vname)
+			orig_clim = re.sub("Detr"+trend_method, "", climvar)
+			clim_files = [re.sub(climvar,orig_clim,f) for f in flist]
 			try:
 				print("qcmask trend_files: " + str(clim_files))
-				print("qcmask trendvar: " + orig_climvar)
-				outfile_clim = call_cv_ens_creation(clim_files,orig_climvar,rips,rip_string,cv_type,odesc,kfold_string,
+				print("qcmask trendvar: " + orig_clim)
+				outfile_clim = call_cv_ens_creation(clim_files,orig_clim,rips,rip_string,cv_type,odesc,kfold_string,
 				                                    exp_names,trange_string,isAnom=False)
 			except:
 				raise

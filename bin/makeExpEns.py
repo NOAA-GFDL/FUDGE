@@ -189,10 +189,16 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		else:
 			outfile_anom = []	
 		print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
+		print(climvar)
+		print(vname)
 		#check on climvar/vname distinction
 		trend_method = climvar.split("Detr")[-1]
 		orig_var = re.sub("Detr"+trend_method, "", vname)
-		anom_files = [re.sub(vname,orig_var,f) for f in flist]
+		orig_clim = re.sub("Detr"+trend_method, "", climvar)
+		anom_files = [re.sub(climvar,orig_clim,f) for f in flist]
+		print(orig_var)
+		print(orig_clim)
+		print(anom_files)
 		outfile_clim = call_ens_creation(anom_files,orig_var,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
 		return(outfile_clim + outfile_anom)		
 	#Generate output file by doing a series of find-and-replace regexes on outdir
@@ -231,24 +237,30 @@ def ens_namemap(ens_list):
 	ens_loc = copy.copy(ens_list)
 	ens_names = ['qc.ensemble','save.ensemble', 'ds.ensemble']
 	anom_ens_names = ['qc.anom.ensemble', 'save.anom.ensemble','ds.anom.ensemble']
-	trend.ens.names = ['qc.trend.ensemble', 'save.trend.ensemble', 'ds.trend.ensemble']
-	ens_search = ['Anom_qcmask','Anom_save','Anom','Trend.*_qcmask','Trend.*_save','Trend','qcmask', 'save', '']
+	trend_ens_names = ['qc.detr.ensemble', 'save.detr.ensemble', 'ds.detr.ensemble']
+	ens_search = ['Anom_qcmask','Anom_save','Anom','Detr.*_qcmask','Detr.*_save','Detr','qcmask', 'save', '']
 	all_ens_names = anom_ens_names + trend_ens_names + ens_names
 	ens_total_order = [all_ens_names[x] for x in [8, 6, 7, 5, 3, 4, 2, 0, 1]]
 	#ens_order = [ens_names[x] for x in [3, 2, 0, 1]]
 	ens_indexed = []
 	for e in range(0,len(ens_search)):
+		print(str(e))
 		match_indices = [x for x in range(0,len(ens_loc)) if re.search(ens_search[e], osp.basename(ens_loc[x])) is not None]
 		matchlen = len(match_indices)
-		#print(ens_loc[el] for el in match_indices)
+		#print([ens_loc[el] for el in match_indices])
+		#print(str(ens_loc[match_indices[0]]))
 		if matchlen == 1:
 			if re.search("Anom", ens_loc[match_indices[0]]) is not None:
 				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
 				ens_indexed.append(appendstr)
+			elif re.search("Detr", ens_loc[match_indices[0]]) is not None:
+				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
+				ens_indexed.append(appendstr)				
 			else:
 				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
 				ens_indexed.append(appendstr)	
 			del ens_loc[match_indices[0]]
+			print(ens_indexed)
 		elif matchlen != 0:
 			print("Error in ens_namemap: match in " + str(matchlen)+" locations in " + ",".join(ens_list))
 			sys.exit(1)	

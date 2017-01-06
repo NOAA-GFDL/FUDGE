@@ -17,7 +17,8 @@ from fudgeUtils import send_status_email
 from fudgeUtils import gcp
 
 def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
-	#Copies output to anom+clim output directory and changes the var name
+	#Copies output to trend+resid output directory and changes the var name
+	#Mostly expected for suppementary files (_qcmask, _save)
 	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
 	out_files = [f for f in out_files if re.search(var, f) is not None]
 	if len(out_files) > 1:
@@ -25,9 +26,18 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
 		sys.exit(1)
 	#Get modified file path
 	fpath  = osp.join(final_out_dir, out_files[0])
-	trendetr_var = re.sub("Detr", "", var)
-	#trendetr_fpath = re.sub(var, trendetr_var, fpath)
-	trendetr_fpath = re.sub("Detr", "", fpath)
+	#orig_var = var.split('Detr')[0]
+	#trendetr_var = re.sub("Detr", "", var)
+	try:
+		detr_method = re.match('.*?(Detr.*?)_', var).group(1)
+	except:
+		print("Error in callCopyToTrendDetr! Regular expression failed to find" + \
+		      " _ in expression!")
+		sys.exit(1)      	
+	#trendetr_var = re.sub('Detr.+?_', '_', var)
+	#trendetr_climvar = var.split('Detr')[0]
+	trendetr_var = re.sub(detr_method, "", var)
+	trendetr_fpath = re.sub(detr_method, "", fpath)
 	print("Copying supplementary detrended files to new location!")
 	print(fpath)
 	print(trendetr_fpath)
