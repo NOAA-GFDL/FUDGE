@@ -68,6 +68,9 @@ QCDSArguments(k=k.fold, ds.method = ds.method, args=args,
 message("Checking the missing value arguments")
 missval.args <- getMissvalArgs(args, ds.ref$missval_method)
 
+message("Checking input predictor var order")
+predictor.vars <- fix.var.order(predictor.vars, target.var)
+
 if (mask.list=='na'){
   mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
 }
@@ -152,13 +155,34 @@ if(spat.mask.dir_1!="na"){
 
 ### Now, access input data sets
 message("Reading in target data")
-OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
-                              target.file.start.year_1,target.file.end.year_1, 
-                              target.suffix, is_OH = T)
+
 oh_x_subset <- get.FUDGE.subset(oh_by, i_idx, i_max)
-OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset), 
-                          dim=ds.ref$oh_dimlist, 
-                          oh_by, spat.mask.nc)
+if (ds.ref$multivar_target){
+  #Right now, only applies to MBC
+  OH.files <- c()
+  target.indir_1 <- dirname(dirname(dirname(target.indir_1)))
+  for (var in predictor.vars){
+    print(hist.indir_1)
+    print(target.indir_1)
+    print(paste("reading target var", var))
+    OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1, 
+                                                    var,target.freq_1,target.model_1,
+                                                    target.scenario_1,grid,
+                                                    target.file.start.year_1,target.file.end.year_1, 
+                                                    target.suffix, is_OH = F))
+  }
+  print(OH.files)
+  OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset), 
+                            dim=ds.ref$oh_dimlist, 
+                            oh_by, spat.mask.nc)
+}else{
+  OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
+                                target.file.start.year_1,target.file.end.year_1, 
+                                target.suffix, is_OH = T)
+  OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset), 
+                            dim=ds.ref$oh_dimlist, 
+                            oh_by, spat.mask.nc)
+}
 oh.dim <- dim(OH$data[[1]])
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], oh_by)
 
@@ -217,7 +241,8 @@ message("Reading in and checking time windowing masks")
 tmask.list <- get.fudge.timemask.list()
 
 message("Obtaining metadata for section 3 and 5 adjustments")
-adjust.metadata <- get.adjust.metadata(OH, MH, MF)
+#making global to faclilitate trace pr calls in the MBC function
+adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######
@@ -299,45 +324,7 @@ for (r in 1:length(fut.pred.rip.list)){
   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
   
   message('writing global attributes')
-#   fudge.title <- sub("  ", " ", paste(get_orig_experiment(MF$metadata[[target.var]]$filename),
-#                        #Yes, it's MF above - that's what it was originally.
-#                        #Talk about this with someone else when you do metdata revisions.
-#                        "downscaled by FUDGE", FUDGETAG,
-#                        ds.experiment))
-#   fudge.reference <- NA
-#   fudge.institution <- paste("NOAA/GFDL", "(201 Forrestal Rd, Princeton, NJ, 08540)")
-#   fudge.insitute.id <- paste("NOAA/GFDL")
-#   fudgetag = FUDGETAG
-#   fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG)
-#   fudge.comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold, 
-#                                       ds.experiment, label.validation, label.training, 
-#                                       predictor.vars, fut.pred.rip.list)
-#   if(args[[1]]=='na'){
-#     fudge.argstring <- "default settings"
-#   }else{
-#     fudge.argstring <- paste(mapply(names(args), args, sep="="), collapse=",")
-#   }
-#   fudge.info.atts <- make.fudge.info(tmasks$filenames,
-#                                 missval.args, 
-#                                 ds.method, fudge.argstring, 
-#                                 pre_ds, post_ds)
-#   fudge.OH.atts <- get.OH.experiment.atts(OH$metadata[[1]]$filename)
-#   fudge.MF.atts <- get.MF.experiment.atts(MF$metadata[[1]]$filename)
-#   atts.all <- c(fudge.info.atts, fudge.OH.atts, fudge.MF.atts)
-#   fudge.climatology <- MF$metadata[[target.var]]$climatology
-#   ##############################################################################
-#   global_att_list <- c(list('title' = fudge.title, 
-#                           'history' = fudge.history, 
-#                           'institution' = fudge.institution,
-#                           "institute_id" = fudge.insitute.id,
-#                           'comment' = fudge.comment, 
-#                           'references' = fudge.reference, 
-#                           'climatology' = fudge.climatology, 
-#                           'realizations' = paste(fut.pred.rip.list, collapse=","), 
-#                           'fudgetag' = fudgetag, 
-#                          'ds_downscaling_method' = ds.ref$method), 
-#                        atts.all)
-global_att_list <- make.fudge.globals()
+  global_att_list <- make.fudge.globals()
   ##For now, assume that we are sticking with LM-style training; 
   ##spatial coords from OH, time/ensemble coords from MH
   ##...man, this is going to take close to forever - you also need 

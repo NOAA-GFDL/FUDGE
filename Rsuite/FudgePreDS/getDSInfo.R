@@ -22,6 +22,7 @@ getDSInfo <- function(ds.method){
                     'downscaling'    = input$downscale_dataset[ds.idx],
                     'missval_method' = input$missval_method[ds.idx], 
                     'multipt_method' = input$multipt_method[ds.idx], 
+                    'multivar_target'= input$multivar_target[ds.idx],
                     'oh_dimlist' = csplit(input$oh_dimlist[ds.idx]), 
                     'mh_dimlist' = csplit(input$mh_dimlist[ds.idx]), 
                     'mf_dimlist' = csplit(input$mf_dimlist[ds.idx]), 

@@ -47,7 +47,9 @@ get.fudge.timemask.list <- function(){
       names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
       tmask.filenames <- c(tmask.filenames, list('trim' = fut.time.trim.mask))
       nmasks <- length(tmask.list$OH$masks)
-      time_mask_overlap <- T
+      if (grepl("olap.nc", tmask.filenames$MF, fixed=T)){
+        time_mask_overlap <- T
+      }
     }
   }else{ #Once esd.gen implemented, should be most common use case
     #Data used in downscaling (as opposed to training ) will be underneath the esdgen tag

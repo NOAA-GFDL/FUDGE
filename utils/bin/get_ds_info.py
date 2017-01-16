@@ -17,11 +17,11 @@ def get_ds_info(ds_method, FUDGEROOT):
 		for row in reader:
 			if row['method_name'] == ds_method:
 				ds_match = True
-				#print(row['downscale_oh'])
 				downscale_oh = (row['downscale_oh']=='TRUE')
+				multivar_target = (row['multivar_target']=='TRUE')
 	if ds_match is False:
 		print("Error in get_ds_info: Method " + ds_method + " not found in ds_att_sheet.csv!")
 		sys.exit(1)
 	else:
-		return(downscale_oh)			
+		return({'copy_leapmasks':downscale_oh, 'multivar_target':multivar_target})			
 			

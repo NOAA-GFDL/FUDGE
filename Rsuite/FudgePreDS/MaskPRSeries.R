@@ -39,7 +39,7 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
                           lopt.graphics=FALSE, verbose=FALSE){
   
   #Convert the threshold and create the reference mask
-  wetday.convert <- convert.threshold(opt.wetday, ref.units)
+  wetday.convert <- convert.pr.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
   print(ref.wetdays[7890:7896])
   print(ref.data[7890:7896])
@@ -209,7 +209,7 @@ MaskPRSeries <- function(data, units, index){
   #It is assumed that you know the units  
 }
 
-convert.threshold <- function(index, units){
+convert.pr.threshold <- function(index, units){
   #'Converts a threshold to the units of the input
   #'dataset. 
   #'Requires the Udunits2 package to work. 

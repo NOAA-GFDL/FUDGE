@@ -68,7 +68,7 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
   #var.dim.lengths <- get.ncvar.dims(obj.nc, nc.var)
   get.dim.names()
   check_subset <- !(is.null(names(subset)))
-  if (any(!(var.dims %in% c(x.dims, y.dims, time.dims, ens.dims, n.dims)))){
+  if (any(!(var.dims %in% c(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)))){
     dims.notlist <- var.dims[which(!(var.dims %in% c(x.dims, y.dims, time.dims, ens.dims, n.dims)))]
     stop(paste("Error in obtain.fudge.var! Var", nc.var, "uses the dimension(s)", 
                paste(dims.notlist, collapse=","), 'that are unknown to fudge;', 

@@ -80,8 +80,11 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
-      if (is.null(dim(adjusted.output[[el]]))){
-        dim(out$adjusted.output[[el]]) <- out.dim
+      print(el)
+      if (!is.null(adjusted.output[[el]])){
+        if (is.null(dim(adjusted.output[[el]]))){
+          dim(out$adjusted.output[[el]]) <- out.dim
+        }
       }
     }
   }

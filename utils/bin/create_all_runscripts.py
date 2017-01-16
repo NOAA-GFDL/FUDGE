@@ -3,7 +3,7 @@ import os, stat
 from os import path as osp
 
 def create_all_runscripts(i_start, i_end, njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, 
-OH_by, MH_by, MF_by, copy_leapmasks):
+OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	mini_start = range(int(i_start), int(i_end), njobs)
@@ -60,8 +60,22 @@ OH_by, MH_by, MF_by, copy_leapmasks):
 	#OH directory currently described with /OneD/ appended
 	OH_dir = os.path.dirname(osp.abspath(OH_dir))
 	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
-	for f in oh_files:
-		dmget_string = dmget_string + "dmget " + f + "\n"
+	if not multivar_target: 
+		for f in oh_files:
+			dmget_string = dmget_string + "dmget " + f + "\n"
+	else:
+		prefix_loc = len(MH_dir.split("/"))
+		oh_prefix = "/".join(OH_dir.split("/")[0:prefix_loc])
+		oh_suffix = idirsuffix
+		for pred_var in predlist:
+			#Do a series of replaces on the predictor var dir
+			oh_dir = osp.join(oh_prefix, pred_var) + oh_suffix
+			print(mh_timerange)
+			print(oh_dir)
+			print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
+			oh_file = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
+			oh_files.append(oh_file)
+			dmget_string = dmget_string + "dmget " + oh_file + " \n"		
 	#MH and MF files have an assumption that you can have multiple 
 	#predictor vars present. At some point, var classification checks
 	#(such is is_spaceless for ENSO data) should go in here	.

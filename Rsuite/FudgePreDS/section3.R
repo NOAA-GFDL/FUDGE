@@ -157,12 +157,7 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   transform.vars <- test$pp.args$vars
   
   #Do a basic check for the presence of the variables you want to check  
-  t.fxn <- switch(tform,
-                  'log' = list('log', NULL, 'exp', NULL), #log base e 
-                  'log10' = list('log10', NULL, 'exp10', NULL), #log base 10
-                  'power' = list('^', test$pp.args$arg, '^', (1/test$pp.args$arg)), 
-                  stop(paste("Error in callPRTransform: transform", tform, 
-                             "was not one of the allowed options!")))
+  t.fxn <- return.t.fxn(tform, test$pp.args$arg) 
   #Insert saving of t.fxn in the section 5 list in this bit
   #note that the adjustment gets added to the TOP of the stack
   backtform <- list(type='backtransform',
@@ -176,6 +171,7 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
                                  arg=t.fxn[[4]], 
                                  vars=""))
   postproc.output <- c(list(backtform), postproc.output)
+  #print(backtform)
   #   print('sumamry of input:')
   #   print(lapply(lapply(input, '[[', 'pr'), summary))
   #...you know, for more readable metadata, it might be worth it to do cubrt and 
@@ -184,9 +180,7 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
     for (varname in names(input[[datatype]])){
       if (var %in% transform.vars){
         #if var is one of the vars receiving a transform
-#         print(summary(t.fxn))
-#         print(is.null(t.fxn[[2]]))
-#         stop('examine output')
+         print(summary(t.fxn))
         if(!is.null(t.fxn[[2]])){
           #If arguments to the transform, use them
           input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
@@ -203,6 +197,18 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   #   print(lapply(lapply(input, '[[', 'pr'), summary))
   return(list('input'=input,
               's5.list'=postproc.output))
+}
+
+return.t.fxn <- function(tform, arg){
+  #'Helper function for returning a transform from a transform
+  #'arg - now gets used by pr transforms AND MBC
+  out <- switch(tform,
+         'log' = list('log', NULL, 'exp', NULL), #log base e 
+         'log10' = list('log10', NULL, 'exp10', NULL), #log base 10
+         'power' = list('^', arg, '^', 1/arg), 
+         stop(paste("Error in return.t.fxn: transform", tform, 
+                    "was not one of the allowed options!")))
+  return(out)
 }
 
 exp10 <- function(x){

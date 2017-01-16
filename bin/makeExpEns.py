@@ -89,6 +89,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	climvar = expdict['target']
 	exp_name = expdict["ds.experiment"]
 	isAnom=False
+	isTrend=False
 	if ("Anom" in climvar):
 		print("This var may be an anomaly var")
 		if(anom_only_ens):
