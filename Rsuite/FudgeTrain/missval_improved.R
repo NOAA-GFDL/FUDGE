@@ -84,9 +84,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     insufficient.data <- any (c(pct.OH, pct.MH, pct.MF)[train.index] < missval.thold)
   }else{
     #This is the most common case
-#     print(npts.OH)
-#     print(npts.MH)
-#     print(npts.MF)
     insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
   if (insufficient.data){
@@ -161,10 +158,13 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Because this treats a failure in any ensemble as cause to retry absolutely 
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
+  complete.hist <- complete.cases(c(OH,MH))
+  complete.fut <- complete.cases(MF)
   return(list(OH=OH, MH=MH, MF=MF, 
               qc=qcmask, 
               mv.retry=mv.retry, ds.possible=ds.possible, 
-              missval.status=missval.status))
+              missval.status=missval.status, 
+              complete.hist=complete.hist, complete.fut=complete.fut))
 }
 
 retry.with.pr.present <- function(data.list, pr.mask, var.list, 
