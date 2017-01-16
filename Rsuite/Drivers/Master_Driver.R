@@ -47,9 +47,9 @@ if (length(console.args) > 0){
   i_max <- as.numeric(console.args[5])
   x.pad <- "NA"
 }else{
-  oh_by <- 1
-  mh_by <- 1 #5 #3
-  mf_by <- 1 #5 #3
+  oh_by <- 3
+  mh_by <- 3 #5 #3
+  mf_by <- 3 #5 #3
   i_idx <- 41 #167 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
   x.pad <- "NA"

@@ -26,9 +26,16 @@ compress.xy.var <- function(data, varname){
   for(x in 1:dim.x){
     for(y in 1:dim.y){
       loop.varname <- paste(varname,x.indices[x],y.indices[y], sep=".")
-      out[[loop.varname]] <- data[x,y,,,, ,drop=F]
+      if (!all(is.na(data[x,y,,,, ,drop=F]))){
+        out[[loop.varname]] <- data[x,y,,,, ,drop=F]
+      }else{
+        message(paste("All missing in", x, y, "; dropping"))
+      }
     }
   }
+  #Relatively simple way to make sure 0.0 is first var. Position of other vars
+  #may be up for discussion later.
+  out <- out[sort(names(out))]
   return(out)
 }
 

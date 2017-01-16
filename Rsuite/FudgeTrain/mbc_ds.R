@@ -3,6 +3,10 @@
 callMBC <- function(OH, MH, MF, args, ds.method="",
                    tmasks, train_qcmask=F){
   library(MBC)
+  OH <- compress.xy.data(OH)
+  MH <- compress.xy.data(MH)
+  MF <- compress.xy.data(MF)
+  #Create output data
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
   index.mask <- tmasks$MF$masks[[w]]
