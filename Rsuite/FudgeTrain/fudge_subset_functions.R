@@ -89,7 +89,8 @@ get.FUDGE.subset <- function(by, idx, idx_max){
               olap_loc=olap_loc))
 }
 
-get.loop.indices <- function(x.len, y.len, by, by.min=1, 
+get.loop.indices <- function(x.len, y.len, x.by, y.by=x.by, 
+                             by.min=1, 
                              allow_partial=F){
   #Get.loop.indices deals with two cases: 
   #' 1) You are looping by exactly as many points as there are 
@@ -103,22 +104,24 @@ get.loop.indices <- function(x.len, y.len, by, by.min=1,
   #' indices in x or y with missing values to fill the dataset. Need to return
   #' fewer looping coords as a result.
   if (allow_partial){
-    delt <- (by-1)/2
+    x.delt <- (x.by-1)/2
+    y.delt <- (y.by-1)/2    
   }else{
-    delt <- by
+    x.delt <- x.by
+    y.delt <- x.by    
   }
-  if (x.len==by){
+  if (x.len==x.by){
     x.start <- 1
-    x.end <- by
+    x.end <- x.by
   }else{
-    out <- loop.seq(x.len, delt)
+    out <- loop.seq(x.len, x.delt)
     x.start <- out$start; x.end <- out$end
   }
-  if(y.len==by){
+  if(y.len==y.by){
     y.start <- 1
-    y.end <- by
+    y.end <- y.by
   }else{
-    out <- loop.seq(y.len, delt)
+    out <- loop.seq(y.len, y.delt)
     y.start <- out$start; y.end <- out$end
   }
   return(list(x.start = x.start, x.end = x.end, 

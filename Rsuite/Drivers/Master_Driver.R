@@ -40,24 +40,25 @@ console.args <- commandArgs(TRUE)
 print(console.args)
 # i is longitude index in the netCDF file, j is latitude
 if (length(console.args) > 0){
-  oh_by <- as.numeric(console.args[1])
-  mh_by <- as.numeric(console.args[2])
-  mf_by <- as.numeric(console.args[3])
-  i_idx <- as.numeric(console.args[4])
-  i_max <- as.numeric(console.args[5])
+  i_idx <- as.numeric(console.args[1])
+  i_max <- as.numeric(console.args[2])
+  auxfile <- console.args[3]
+  copy_from_tmp = console.args[4]
   x.pad <- "NA"
 }else{
-  oh_by <- 3
-  mh_by <- 3 #5 #3
-  mf_by <- 3 #5 #3
   i_idx <- 41 #167 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
+  auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_01.json"
+  copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
   x.pad <- "NA"
 }
 
 fudge.start.time <- proc.time()[3]
 message("Setting downscaling method information")
 ds.ref <- getDSInfo(ds.method)
+
+message("Getting info from aux file")
+aux.ref <- get_aux_params(auxfile, copy_from_tmpdir)
 
 message("Checking downscaling arguments")
 ds.args <<- args
@@ -156,7 +157,7 @@ if(spat.mask.dir_1!="na"){
 ### Now, access input data sets
 message("Reading in target data")
 
-oh_x_subset <- get.FUDGE.subset(oh_by, i_idx, i_max)
+oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max)
 if (ds.ref$multivar_target){
   #Right now, only applies to MBC
   OH.files <- c()
@@ -171,7 +172,6 @@ if (ds.ref$multivar_target){
                                                     target.file.start.year_1,target.file.end.year_1, 
                                                     target.suffix, is_OH = F))
   }
-  print(OH.files)
   OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset), 
                             dim=ds.ref$oh_dimlist, 
                             oh_by, spat.mask.nc)
@@ -184,7 +184,9 @@ if (ds.ref$multivar_target){
                             oh_by, spat.mask.nc)
 }
 oh.dim <- dim(OH$data[[1]])
-oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], oh_by)
+oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], 
+                              x.by=aux.ref$OH$idim, y.by=aux.ref$OH$jdim, ,
+                              allow_partial=(aux.ref$ds_handle_missing=='continue'))
 
 message("Reading in historical predictor data")
 MH.files <- c()
@@ -195,12 +197,14 @@ for (var in predictor.vars){
                                                   hist.file.start.year_1,hist.file.end.year_1, 
                                                   hist.pred.suffix))
 }
-mh_x_subset <- get.FUDGE.subset(mh_by, i_idx, i_max)
+mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max)
 MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset), 
                           dim=ds.ref$mh_dimlist, 
                           mh_by, spat.mask.nc)
 mh.dim <- dim(MH$data[[1]])
-mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], mh_by)
+mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
+                              x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim, 
+                              allow_partial=(aux.ref$ds_handle_missing=='continue'))
 
 message("Reading in future predictor data")
 MF.files <- c()
@@ -211,13 +215,15 @@ for (var in predictor.vars){
                                                   fut.file.start.year_1,fut.file.end.year_1, 
                                                   fut.pred.suffix))
 }
-mf_x_subset <- get.FUDGE.subset(mf_by, i_idx, i_max)
+mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max)
 MF <- build.FUDGE.dataset(MF.files, predictor.vars, 
                           subset=list(x=mh_x_subset), 
                           dim=ds.ref$mf_dimlist, 
                           mf_by, spat.mask.nc)
 mf.dim <- dim(MF$data[[1]])
-mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2], mf_by)
+mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2]
+                              x.by=aux.ref$MF$idim, y.by=aux.ref$MF$jdim, ,
+                              allow_partial=(aux.ref$ds_handle_missing=='continue'))
 
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
                                 fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
@@ -244,27 +250,6 @@ message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
 adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 
-#delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
-######
-######################################################
-###Hasty DeltaSD adjustment for asynchronous leap years
-###Hasty adjustment tentaively no longer needed as of 2016-20-21; 
-###now relying on internal DeltaSd call to adjust the leap days
-# delta.string <- ""
-# if('OH'%in% ds.ref$predictors){
-#   h.time.len <- oh.dim[6]
-#   delta.adj.index <- correct.hist.leapdays(oh.dim[6],
-#                                            mf.dim[6],
-#                                            hist.file.start.year_1, hist.file.end.year_1,
-#                                            fut.file.start.year_1, fut.file.end.year_1)
-#   delta.mask <<- c(rep(NA, delta.adj.index[1]), 
-#                    rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
-#                    c(rep(NA, delta.adj.index[2])))
-#   print(summary(delta.mask))
-#   delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
-#                         "to", delta.adj.index[4], "for the downscaling step")
-# }
-######################################################
 
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.
@@ -295,7 +280,6 @@ if (args[1]=='na'){
 
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
-#names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
 print('summary of ds:')
 print(summary(ds))
