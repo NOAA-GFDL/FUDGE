@@ -20,6 +20,7 @@ import fudgeUtils
 from fudgeUtils import send_status_email
 import ppWatcher
 from ppWatcher import runPPWatcher
+from fudgeUtils import read_exp_info_file
 
 def parserWatcher():
 	verbose = False #default
@@ -52,6 +53,7 @@ def parserWatcher():
 	parser.add_option('--traceback',action="store_true",default=False,help="print traceback INFO,typically more info than debug")
 	parser.add_option('--quiet',action="store_true",default=False,help="silent run, except for error reporting (True by default)" )
 	(options, args) = parser.parse_args()
+	expdict = read_exp_info_file(options.uinput)
 	for opts,vals in options.__dict__.items():
 		if(opts == 'uinput'):
 			uinput = vals
@@ -106,7 +108,7 @@ def parserWatcher():
 	v_print(1,"experiment_info.txt: "+uinput)
 
 	v_print(1,"Default timeout to quit"+ (str)(timeout)+" minute")
-	runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev)
+	runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev, expdict)
 
 def asciiParser(uinput):
 	op = False #not yet spotted output_path
@@ -150,7 +152,7 @@ def asciiParser(uinput):
 		sys.exit(-18)
 	return minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask,ds_exp
 
-def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
+def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 	postProc_call = True
 	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
 	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask,exp_name = asciiParser(uinput)
@@ -162,7 +164,12 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	exp_cnt = int(minifile_i_end) - int(minifile_i_start) + 1 
 	v_print(2,"INFO: Expected count "+ (str)(exp_cnt))
 	dirs_output = output_path.split(':')[1]
-	list_output = dirs_output.split(',')	
+	list_output = dirs_output.split(',')
+	list_output = expdict['output.path']
+	#print(output_path)
+	#print(dirs_output)
+	#print(expdict['output.path'])
+	#sys.exit('examine this out - is there more than one el?')	
 	qc_mask_bool = qc_mask.split(':')[1]
 	target = target.split(':')[1]
 	exp_name = exp_name.split(':')[1]
