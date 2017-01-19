@@ -2,8 +2,7 @@ import re
 import os, stat
 from os import path as osp
 
-def create_all_runscripts(i_start, i_end, njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, 
-OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
+def create_all_runscripts(i_start, i_end, njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, copy_leapmasks, multivar_target, auxfile, aux_file_list, wallclocktime):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	mini_start = range(int(i_start), int(i_end), njobs)
@@ -14,9 +13,11 @@ OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 	#correct j_range
 	j_range = re.sub('"', "", j_range)
 	#One of the goals for this was to get away from using gcp-specific operations
+	#As of 1-19-17, wallclocktime defaults to 12 hrs; we can set it higher or lower
+	#in the aux file
 	moab_header = "\n".join(["#!/bin/tcsh ", 
 	                        "#PBS -S /bin/tcsh ", 
-	                        "#PBS -l nodes=1:ppn="+str(ncpu)+",walltime=12:00:00", 
+	                        "#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime, 
 	                        "#PBS -r y ", 
 	                        '#PBS -j oe ', 
 	                        '#PBS -N fudge_master ', 
@@ -36,7 +37,6 @@ OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 	#(no more minifiles=all files are the same for each job slice)
 	#first, checking for the presence of the optional files
 	spatmask_present = (spatmask != 'na')
-	print(OH_tmask)
 	tmask_present = (OH_tmask != 'na')
 	trim_time_mask_present = (trim_tmask != 'na')
 	#do all of your dmgets (requests for files on tape) in the script at once
@@ -60,6 +60,9 @@ OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 	#OH directory currently described with /OneD/ appended
 	OH_dir = os.path.dirname(osp.abspath(OH_dir))
 	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
+	#multivar_target is a hack for getting around alternate  var specifications. 
+	#currently, it's only triggered by MBC; depending on what methods we add, 
+	#that may change.
 	if not multivar_target: 
 		for f in oh_files:
 			dmget_string = dmget_string + "dmget " + f + "\n"
@@ -70,8 +73,6 @@ OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 		for pred_var in predlist:
 			#Do a series of replaces on the predictor var dir
 			oh_dir = osp.join(oh_prefix, pred_var) + oh_suffix
-			print(mh_timerange)
-			print(oh_dir)
 			print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
 			oh_file = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
 			oh_files.append(oh_file)
@@ -125,9 +126,16 @@ OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 			dmget_string = dmget_string + "# Get leapday masks" + "\n"
 			dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
 			dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
+	#And finally, add the files that the aux file specifies
+	print(aux_file_list)
+	if len(aux_file_list) > 0:
+		aux_strlist = ["#Copy files from aux specification"]
+		for el in aux_file_list:
+			aux_strlist.append("dmget " + el)
+		dmget_string = "\n".join(aux_strlist)			
 	#do all of your gcps next
 	gcp_string = "# Copy all input files to $TMPDIR (-cd option creates input directories) " + "\n"
-	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files
+	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files + aux_file_list
 	for f in file_list:
 		gcp_string = gcp_string + "mkdir -p $TMPDIR/" + os.path.dirname(f) + " \n"
 		gcp_string = gcp_string + "gcp --sync " + f + " $TMPDIR/" + f + " \n"
@@ -154,7 +162,7 @@ OH_by, MH_by, MF_by, copy_leapmasks, multivar_target):
 		runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
 		for i in range(s,e):
 			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+".I"+str(i)+"_"+j_range)
-			runscript_code = create_slice_runscript(i, j_range, scriptdir, OH_by, MH_by, MF_by, i-i_offset, i_max, target_var,outdirs)
+			runscript_code = create_slice_runscript(i, j_range, scriptdir, i-i_offset, i_max, auxfile, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable
@@ -188,7 +196,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 		outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
 	return(outdir_string)
 	
-def create_slice_runscript(i, j_range, scriptdir, OH_by, MH_by, MF_by, i_idx, i_max, target_var, outdirs):
+def create_slice_runscript(i, j_range, scriptdir, i_idx, i_max, auxfile, target_var, outdirs):
 	#Creates the runscript code specific to a slice of the grid downscaled 
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
@@ -208,7 +216,7 @@ def create_slice_runscript(i, j_range, scriptdir, OH_by, MH_by, MF_by, i_idx, i_
 		exp_name = scriptdir.split("/")[-2]
 	runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + ".I"+ str(i) + "_" +j_range
 	logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+".I" + str(i) + "_" +j_range
-	r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [OH_by, MH_by, MF_by, i_idx, i_max]]) + " >>& " + logfile #+ " &"
+	r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile #+ " &"
 	runscript = runscript_header + r_command + "\n" + "wait \n"
 	for outdir in outdirs:
 		runscript = runscript + create_runscript_copy_ops(outdir, str(i), j_range, target_var)

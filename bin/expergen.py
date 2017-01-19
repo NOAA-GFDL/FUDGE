@@ -21,6 +21,7 @@ from create_all_runscripts import create_all_runscripts
 from get_pp_specs import get_pp_specs
 import get_ds_info
 from get_ds_info import get_ds_info
+from get_ds_info import parse_aux_info
 
 list_title = []
 dictDS_hi = {}
@@ -473,7 +474,7 @@ def main():
 	parser = OptionParser(usage=help)
 	parser.add_option("-i", "--file", dest="uinput",
 	help="pass location of XML template", metavar="FILE")
-      #since we now have an XML tag  parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE")
+	parser.add_option("-a", "--aux", dest="auxinput", help="pass location of auxilary JSON input for stencil, mask specifications")
 	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
@@ -505,6 +506,16 @@ def main():
 		print "XML input " + options.uinput + "not found!"
 		print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
 		sys.exit()
+	#1-19-17: aux input
+	if(os.path.exists(options.auxinput)):
+		auxinput = os.path.abspath(options.auxinput)
+		print "JSON input: " + auxinput
+	else:
+		print "JSON input " + options.auxinput + "not found!"
+		print "Please pass a valid input JSON filename with the -i argument and try again. See -h for syntax. Quitting now.."
+		sys.exit()
+		
+	#Similar edits for the 	
 		
 	#CEW edits 6-30 for msub mail verbosity settings
 	msubmail = 0
@@ -512,14 +523,7 @@ def main():
 		msubmail = 1	
 	statmail = options.statmail	
 	
-	#CEW edit 9-13 for checking OH, MH and MF opts
-	#bys_are_odd = [i for i in [oh_by,mh_by,mf_by] if i%2==0]
-	#if len(bys_are_odd) != 0:
-#	if any( x % 2 ==0 for x in [oh_by, mh_by, mf_by]):
-#		print("Error in expergen: One or more of --Oh-by, --MH-by or --MF-by were even " + 
-#		      "and are required to be odd!")
-#		sys.exit()
-			
+	
 #########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
 	system,node,release,version,machine = os.uname()
 	if(node.startswith('pp')):
@@ -537,14 +541,18 @@ def main():
 		#CEW edit 10-2016: check for the presence of the 3 'by' tags in the XML; if 
 	#they are not present, set to 1. These get used in the runcode creation
 	#for setting command-line parameters.
-	by_params = get_npts_by(uinput)
-	mh_by = str(by_params[0]) #OH
-	oh_by = str(by_params[1]) #MH
-	mf_by = str(by_params[2])#MF
+	#by_params = get_npts_by(uinput)
+	#mh_by = str(by_params[0]) #OH
+	#oh_by = str(by_params[1]) #MH
+	#mf_by = str(by_params[2])#MF
 		### As of 10-13, get the ncpus and njobs specifications from the XML
 	specdict = get_pp_specs(uinput)
 	njobs = int(specdict['njobs'])
 	ncpus = int(specdict['ncpus'])
+	#And as of 1-19-17, get the aux file specifications from the options
+	#You don't need to parse any of these, but you do need to get a list of the 
+	#copy-able files (and possibly a wallclock time parameter)
+	auxinfo = parse_aux_info(auxinput)
 	######### call script creators..  #######################################################
 	############################### 1 ###############################################################
 	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
@@ -595,8 +603,9 @@ def main():
 	                      oh_timerange, mh_timerange, mf_timerange, predlist, \
 	                      spat_mask, target_time_window, hist_time_window, \
 	                      fut_time_window, auxcustom, outdir, target, method, \
-	                      file_j_range, idirsuffix, oh_by, mh_by, mf_by, \
-	                      ds_info['copy_leapmasks'], ds_info['multivar_target'])
+	                      file_j_range, idirsuffix, \
+	                      ds_info['copy_leapmasks'], ds_info['multivar_target'], 
+	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'])
 #	print('examine runscript output')
 #	sys.exit()
 		
@@ -637,42 +646,6 @@ def main():
 	print "1- completed\n"
 	#print "debug............msub turned ",msub
 	############################### 2 ################################################################
-	#target_time_window,hist_time_window,fut_time_window
-	#CEW hasty edits to support single variable case
-#	script2Loc = basedir+"/utils/bin/"+"create_runscript"
-#	create_runscript_cmd = script2Loc+" "+str(lons)+" "+str(lone)+" "+str(expconfig)+" "+str(basedir)+" "+target+" "+method+" "+target_dir+" "+hist_pred_dir+" "+fut_pred_dir+" '"+outdir+"' "+str(file_j_range)+" "+tstamp+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(hist_file_start_time)+" "+str(hist_file_end_time)+" "+str(fut_file_start_time)+" "+str(fut_file_end_time)+" "+str(spat_mask)+" "+str(region)+" "+auxcustom+" "+target_time_window+" "+hist_time_window+" "+fut_time_window+" "+sbase+" "+idirsuffix+" "+"'"+str(predictor)+"'"+" '"+oh_by+"' '"+mh_by+"' '"+mf_by+"'"
-#	print "Step 2: Individual Runscript generation: \n"+create_runscript_cmd
-#	#cprint create_runscript_cmd
-#	#p1 = subprocess.Popen('tcsh -c "'+create_runscript_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
- #	p1 = subprocess.Popen(create_runscript_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-#	print "Step 2: Individual runscript  creation.. in progress"
-#	output1, errors1 = p1.communicate()
-#	#cprint output1,errors1
-#	print "2- completed\n"
-#	if(p1.returncode != 0):
-#	 print "Step2:!!!! FAILED !!!!, please contact developer."
-#	 print output1, errors1
-#	 sys.exit(0)
-	#cprint output1, errors1
-	###################################### 3 ################################################################
-#	script3Loc = basedir+"/utils/bin/"+"create_master_runscript"
-#CEW edit: predictor to target for multivariate
-#	create_master_cmd= script3Loc+" "+str(lons)+" "+str(lone)+" "+str(target)+" "+method+" "+sbase+" "+expconfig+" "+file_j_range+" "+tstamp+" "+str(ppn)+" "+str(msub)+" "+str(msubmail)
-#	print "Step 3: --------------MASTER SCRIPT GENERATION-----------------------"#+create_master_cmd
-#	#CEW edit to diagnose older behavior
-#	#cprint create_master_cmd
-#	p2 = subprocess.Popen('tcsh -c "'+create_master_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-
-	#cprint create_master_cmd
-#	print "Create master script .. in progress"
-#	output2, errors2 = p2.communicate()
-#	#######
-#	if(p2.returncode != 0):
-#	 print "Step3:!!!! FAILED !!!!, please contact developer."
-#	 print output2, errors2
-#	 sys.exit(0)
-#	print output2, errors2
-#	print "3- completed"
 	##################################### 4 ############################################
 	# copy xml to configs dir 
 	cdir = sbase+"/config/"
@@ -681,7 +654,8 @@ def main():
 #	except:
 #	  print "Unable to create dir. Dir may exist already", cdir 
 	shutil.copy2(uinput, cdir)
-	print "Config XML saved in ",cdir 
+	shutil.copy2(auxinput, cdir)
+	print "Config XML and aux file saved in ",cdir 
 	print "RunScripts will be saved under:",sbase
 	print "----See readMe in fudge2014 directory for the next steps----"
 	print "Use submit_job to submit scripts"
