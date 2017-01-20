@@ -46,17 +46,71 @@ loop.xy.data <- function(){
       ds.names <- c('MF')
       names(output) <- all.names
       
-      if ( !any(c( sapply(OH.slice, missing.all.xy), 
-                   sapply(MH.slice, missing.all.xy), 
-                   sapply(MF.slice, missing.all.xy))
-      )){
+      
+      #Stenciling takes place before the checks for whether it's posisble to
+      #downscale.
+      #Current looping settings imply that we're never going to use an 
+      #incomplete grid (because padding); thus, we don't have to worry about
+      #taking slices of the stencil for application.
+    #  print("Before applying stencils:")
+    #  print(oh.coords)
+    print("Oh before stencil:")
+      print(summary(OH.slice$tasmin))
+    #  stop('examine this out')
+      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil)
+    print("OH after sencil:")
+    print(summary(OH.slice$tasmin))
+      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil)
+      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil)
+      
+      #Make decision to downscale. Can take one of several forms: 
+      #'1) Are any of the datasets missing all timelevels at a given x,y?
+      #'2) Are any of the values in the spatial mask we use for the ds data
+      #'missing at a given x,y?
+      #'The below returns a function to test this at any given x,y point, 
+      #'switching on teh method passed in from the supplement file.
+      ds.check.xy.missing.fxn <- function(...){
+        any.missing.xy <- any(c( sapply(OH.slice, missing.all.xy), 
+                                 sapply(MH.slice, missing.all.xy), 
+                                 sapply(MF.slice, missing.all.xy))
+        )
+        return(!any.missing.xy)
+      }
+      #####
+      ds.check.mask.present.fxn <- function(...){
+        is.missing <- is.na(ds.mask[i,j])
+        return(!is.missing)
+      }
+      #####
+      ds.attempt.anyway.fxn <- function(...){
+        #Checks for only the two conditions that absolutely disqualify a
+        #dataset: any of OH, MH or MF missing all available data
+        #(i.e. no vars that aren't all missing)
+        print(summary(OH.slice))
+        print(summary(MH.slice))
+        print(summary(MF.slice))
+        any.dset.missing.all <- any(c( all(sapply(OH.slice, missing.all.xy)), 
+                                       all(sapply(MH.slice, missing.all.xy)), 
+                                       all(sapply(MF.slice, missing.all.xy)))
+        )
+        return(!(any.dset.missing.all))
+      }
+      #####
+      sample_incomplete="missing"
+      is.ds.happening.fxn <- switch(aux.ref$ds_handle_missing, 
+                                    'avoid' = ds.check.xy.missing.fxn, 
+                                    'continue' = ds.attempt.anyway.fxn)
+      ######
+      if (is.ds.happening.fxn(i=i,j=j,
+                              OH.slice=OH.slice, MH.slice=MH.slice, 
+                              MF.slice=MF.slice)){
         
         #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
         #looping by time window
         message('Looking for pre-processing functions to apply')
         if(s3.outloop){
           message('Applying S3 Adjustment')
-        #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
+          #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
                                           OH=OH.slice,
@@ -81,7 +135,7 @@ loop.xy.data <- function(){
         }
         #Loop by time window
         for(w in 1:nmasks){
-        #  for(w in 3:3){
+          #  for(w in 3:3){
           message(paste("Starting window", w, "of", nmasks))
           w <<- w
           qc.out <- NULL
@@ -145,22 +199,25 @@ loop.xy.data <- function(){
           #as an extra dimension and include it for multiple qc masks?
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
-#            print(paste("looping by out with", out))
-#               print('summary of out before adding to the vector')
-#               print(summary(combine.out[[out]]))
+            #            print(paste("looping by out with", out))
+            #               print('summary of out before adding to the vector')
+            #               print(summary(combine.out[[out]]))
             #Commented out below; it is LEGIT POSSIBLE to get all NA back from the downscaling function
-#               if (out=='ds' && all(is.na(combine.out[[out]]))){
-#                 print(summary(ds.out$ds))
-#                 stop('this particular loop is all NA and an issue')
-#               }
+            #               if (out=='ds' && all(is.na(combine.out[[out]]))){
+            #                 print(summary(ds.out$ds))
+            #                 stop('this particular loop is all NA and an issue')
+            #               }
             if (!is.null(combine.out[[out]])){
               #Added 12-17-16 - some indexing needs to take place
               #outside of the s3/s5 adjusts because of backwards compatability
               if (tmasks$time_mask_overlap){
                 combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
                                                      mask=tmasks$trim$masks[[w]],
-                                                    dim='time')
+                                                     dim='time')
               }
+              print("Leading to issues on the stencil specs?")
+              print(dim(combine.out[[out]]))
+              print(dim(output[[out]]))
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }
@@ -168,9 +225,9 @@ loop.xy.data <- function(){
         ##bring together all time levels
         for (el in names(output)){
           #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
-        #  print('adding over temporary output')
-        #  print(dim(output[[el]]))
-        #  print(summary(output[[el]]))
+          #  print('adding over temporary output')
+          #  print(dim(output[[el]]))
+          #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
@@ -189,16 +246,16 @@ loop.xy.data <- function(){
           #Or rather, once you get a list of qc masks, you return them - 
           #ATM, only one process at a time should be returning a qc mask
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
-#           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
-#             stop('examine the coords - this is leading to issues')
-#           }
+          #           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
+          #             stop('examine the coords - this is leading to issues')
+          #           }
           if(qc.maskopts$qc.outloop){
             output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
           }
           remove(temp.postproc)
         }
-       # print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-      #  stop('examine output - the tail adjust is giving weird and wonky values')
+        # print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+        #  stop('examine output - the tail adjust is giving weird and wonky values')
       } 
     }#loop by y
   }#loop by x
@@ -228,6 +285,9 @@ missing.all.xy <- function(dataset){
   #non-missing values at each x,y point to downscale over.
   #Missing all values at any point is enough to disqualify
   #the x,y loop from downscaling.
+  print(paste("length of dataset:", length(dataset)))
+  print(paste("Dimensions of dataset:", paste(dim(dataset), collapse=",")))
+  print(summary(dataset))
   return(as.vector(apply(dataset, c(1,2), 
                          function(x){
                            !any(!is.na(x))

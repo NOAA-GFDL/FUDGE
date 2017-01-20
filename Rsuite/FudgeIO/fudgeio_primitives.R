@@ -295,7 +295,7 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
   name.list <-  list(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)
   var.start <- rep(1, length(dim.names))
   var.count <- rep((-1), length(dim.names))
-  print(names(subset))
+#  print(names(subset))
   for(el in names(subset)){
     n <- sapply(name.list, function(x,y){any(x%in%y)}, el)
     dim.which <- dim.names %in% unlist(name.list[n])
@@ -303,8 +303,8 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
     var.count[dim.which] <- diff(subset[[el]])+1
   }
   var.all <- nc.obj$var[[var.name]]
-  print(var.start)
-  print(var.count)
+#  print(var.start)
+#  print(var.count)
   var.data <- ncvar_get(nc.obj, var.name, collapse_degen=F, 
                         start=var.start, count=var.count)
   if (var.all$prec=='int'){

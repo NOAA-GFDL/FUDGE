@@ -15,8 +15,8 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   MH.data <- compress.xy.data(MH)
   MF.data <- compress.xy.data(MF)
   targ.var <- names(OH.data)
-  nrips <- dim(MF[[1]])[4]
-  out.data <- array(NA, dim=dim(MF[[1]]))
+  nrips <- dim(MF.data[[1]])[4]
+  out.data <- array(NA, dim=dim(MF.data[[1]]))
   if(train_qcmask){
     if(tmasks$apply_tmasks){
       qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)

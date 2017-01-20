@@ -46,9 +46,9 @@ if (length(console.args) > 0){
   copy_from_tmp = console.args[4]
   x.pad <- "NA"
 }else{
-  i_idx <- 41 #167 #pr_diff = 37 i800 = 53 #194 #10
+  i_idx <- 100 #167 #pr_diff = 37 i800 = 53 #194 #10 #47 is ocean, I think
   i_max <- 194
-  auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_01.json"
+  auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_02.json" #01 has spatial masks
   copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
   x.pad <- "NA"
 }
@@ -158,14 +158,13 @@ if(spat.mask.dir_1!="na"){
 message("Reading in target data")
 
 oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max)
+#Note: we get ALL AVAILABLE Y dims for the moment. No subset neccessary.
+#oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max)
 if (ds.ref$multivar_target){
   #Right now, only applies to MBC
   OH.files <- c()
   target.indir_1 <- dirname(dirname(dirname(target.indir_1)))
   for (var in predictor.vars){
-    print(hist.indir_1)
-    print(target.indir_1)
-    print(paste("reading target var", var))
     OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1, 
                                                     var,target.freq_1,target.model_1,
                                                     target.scenario_1,grid,
@@ -174,14 +173,16 @@ if (ds.ref$multivar_target){
   }
   OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset), 
                             dim=ds.ref$oh_dimlist, 
-                            oh_by, spat.mask.nc)
+                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
+                            aux.ref$OH$geomask)
 }else{
   OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                 target.file.start.year_1,target.file.end.year_1, 
                                 target.suffix, is_OH = T)
   OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset), 
                             dim=ds.ref$oh_dimlist, 
-                            oh_by, spat.mask.nc)
+                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
+                            aux.ref$OH$geomask)
 }
 oh.dim <- dim(OH$data[[1]])
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], 
@@ -200,7 +201,8 @@ for (var in predictor.vars){
 mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max)
 MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset), 
                           dim=ds.ref$mh_dimlist, 
-                          mh_by, spat.mask.nc)
+                          x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
+                          aux.ref$MH$geomask)
 mh.dim <- dim(MH$data[[1]])
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
                               x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim, 
@@ -219,10 +221,11 @@ mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max)
 MF <- build.FUDGE.dataset(MF.files, predictor.vars, 
                           subset=list(x=mh_x_subset), 
                           dim=ds.ref$mf_dimlist, 
-                          mf_by, spat.mask.nc)
+                          x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim, 
+                          aux.ref$MF$geomask)
 mf.dim <- dim(MF$data[[1]])
-mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2]
-                              x.by=aux.ref$MF$idim, y.by=aux.ref$MF$jdim, ,
+mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
+                              x.by=aux.ref$MF$idim, y.by=aux.ref$MF$jdim,
                               allow_partial=F)
 
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,

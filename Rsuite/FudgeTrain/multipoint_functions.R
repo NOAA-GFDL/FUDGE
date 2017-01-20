@@ -29,6 +29,7 @@ compress.xy.var <- function(data, varname){
       if (!all(is.na(data[x,y,,,, ,drop=F]))){
         out[[loop.varname]] <- data[x,y,,,, ,drop=F]
       }else{
+        #...this print so many messages guys. so many.
         message(paste("All missing in", x, y, "; dropping"))
       }
     }
