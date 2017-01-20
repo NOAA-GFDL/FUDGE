@@ -26,7 +26,7 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
   return(paste(string.start, string.main))
 }
 
-make.fudge.info <- function(tmask.filenames, missval.args, 
+make.fudge.info <- function(tmask.filenames, aux.ref, missval.args, 
                             ds.method, ds.args, 
                             pres_ds, post_ds){
   #'Makes several attribute that, when put together, produce the info
@@ -43,6 +43,16 @@ make.fudge.info <- function(tmask.filenames, missval.args,
     fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
   }
   info_ds <- paste0(ds.method, " : (", paste(fudge.argstring), ")")
+  
+  #info_stencils and info_geomasks
+  #For now, you can assume one per dataset class
+  data.class.names <- c("OH", "MH", "MF")
+  info_stencils <- paste(paste0(data.class.names, ":", sapply(data.class.names, 
+                                                       function(x,struct){struct[[x]]$stencil_name}, 
+                                                       aux.ref)), collapse=",")
+  
+  #Information on how to handle incomplete x,y data used for ds:
+  info_ds_xy_incomplete = aux.ref$ds_handle_missing
   
   #Info_tmasks
   if (length(tmask.filenames) != 0){
@@ -77,7 +87,9 @@ make.fudge.info <- function(tmask.filenames, missval.args,
               info_pre_ds = info_pre_ds, 
               info_post_ds = info_post_ds, 
               info_tmask = info_tmask, 
-              info_missval = missval.string))
+              info_missval = missval.string, 
+              info_stencils=info_stencils, 
+              info_ds_xy_incomplete = info_ds_xy_incomplete))
 }
 get.fudge.climatology <- function(){
   return("Why isn't the climatology being picked up as one of the returned atts?")

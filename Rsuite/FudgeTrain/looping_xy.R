@@ -199,14 +199,7 @@ loop.xy.data <- function(){
           #as an extra dimension and include it for multiple qc masks?
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
           for (out in names(combine.out)){
-            #            print(paste("looping by out with", out))
-            #               print('summary of out before adding to the vector')
-            #               print(summary(combine.out[[out]]))
-            #Commented out below; it is LEGIT POSSIBLE to get all NA back from the downscaling function
-            #               if (out=='ds' && all(is.na(combine.out[[out]]))){
-            #                 print(summary(ds.out$ds))
-            #                 stop('this particular loop is all NA and an issue')
-            #               }
+            #it is LEGIT POSSIBLE to get all NA back from the downscaling function
             if (!is.null(combine.out[[out]])){
               #Added 12-17-16 - some indexing needs to take place
               #outside of the s3/s5 adjusts because of backwards compatability

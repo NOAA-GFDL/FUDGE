@@ -16,7 +16,7 @@ make.fudge.globals <- function(){
                                       ds.experiment, label.validation, label.training, 
                                       predictor.vars, fut.pred.rip.list)
   
-  fudge.info.atts <- make.fudge.info(tmasks$filenames,
+  fudge.info.atts <- make.fudge.info(tmasks$filenames, aux.ref,
                                      missval.args,
                                      ds.method, args, 
                                      pre_ds, post_ds)
