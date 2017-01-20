@@ -186,7 +186,7 @@ if (ds.ref$multivar_target){
 oh.dim <- dim(OH$data[[1]])
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], 
                               x.by=aux.ref$OH$idim, y.by=aux.ref$OH$jdim, ,
-                              allow_partial=(aux.ref$ds_handle_missing=='continue'))
+                              allow_partial=F)
 
 message("Reading in historical predictor data")
 MH.files <- c()
@@ -204,7 +204,7 @@ MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset),
 mh.dim <- dim(MH$data[[1]])
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
                               x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim, 
-                              allow_partial=(aux.ref$ds_handle_missing=='continue'))
+                              allow_partial=F)#(aux.ref$ds_handle_missing=='continue'))
 
 message("Reading in future predictor data")
 MF.files <- c()
@@ -223,7 +223,7 @@ MF <- build.FUDGE.dataset(MF.files, predictor.vars,
 mf.dim <- dim(MF$data[[1]])
 mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2]
                               x.by=aux.ref$MF$idim, y.by=aux.ref$MF$jdim, ,
-                              allow_partial=(aux.ref$ds_handle_missing=='continue'))
+                              allow_partial=F)
 
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
                                 fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)

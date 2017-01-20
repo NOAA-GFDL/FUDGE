@@ -2,20 +2,35 @@
 #grouping of functions that are only going to be used by FUDGE;
 #includes padding subset data into larger chunks for looping
 
-build.FUDGE.dataset <- function(data.path, varlist, subset, dim, input_by, spat.mask.nc, x.pad='NA'){
+build.FUDGE.dataset <- function(data.path, varlist, subset, dim, input_by, geomasks=c(), x.pad='NA'){
   #Wrapper function for reading in and verifying input data.
   #calls build.fudge.object (general io constructor)
   #and then pads the result with chosen pad, if the subset overlaps the end of the dataset
   out <- build.fudge.object(data.path, var=varlist, subset=lapply(subset, '[[', 'subset'), dim=dim, 
                             var_classification=T)
-  if(!is.null(spat.mask.nc)){
-    message("Applying spatial mask to dataset")
-    out.spatmask <- ReadMaskNC(spat.mask.nc, subset=lapply(subset, '[[', 'subset'))
-    for (el in names(out$data)){
-      out$data[[el]] <- apply.any.mask(data=out$data[[el]], mask=out.spatmask$masks[[1]], dim='spatial')
+  
+  #Sptaial masks get more complicated - stepping stone towards having multiple
+  #spatial masks for multiple vars
+  if (length(geomasks) > 0){
+    apply_geomasks=T
+    if (length(geomasks)==1 && length(varlist) > 1){
+      message("Repeating geomask for all vars in dataset")
+      geomasks <- rep(geomasks[[1]], length(varlist))
     }
-    #out <- apply.any.mask(data=out, mask=out.spatmask$masks[[1]], dim='spatial')
+  }else{
+    apply_geomasks=F
   }
+  if (apply_geomasks){
+    for (v in 1:length(varlist)){
+      vname <- varnames[v]
+      if (geomasks[[v]] != 'none'){
+        geomask <- ReadMaskNC(geomasks[[v]], subset=lapply(subset, '[[', 'subset')) 
+        out$data[[vname]] <- apply.any.mask(data=out.data[[vname]], 
+                                            mask=geomask$masks[[1]], dim='spatial')
+      }
+    }
+  }
+  
   #If by > 1, always pad each var along the y axis
   #This goes for vars meant to be 1-d (like ENSO)
   if (input_by > 1){

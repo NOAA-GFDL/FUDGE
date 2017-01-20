@@ -7,6 +7,7 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   if (length(filenames) != length(varnames)) {
     stop(paste("Error in build.fudge.object: different numbers of filenames and vars!"))
   }
+
   #Enforce common order when getting dimensions in from file
   #Hint: it's the order that we are going to be writing files in, 
   #not the order that we are going to be using for calculation.

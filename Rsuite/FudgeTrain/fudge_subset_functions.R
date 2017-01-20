@@ -12,8 +12,6 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
   #Strong assumption that the 6-dimensional structure is enforced
   #pad.dim can be one of 'x' or 'y'
   new.dim <- dim(data)
-  print(new.dim)
-  print(pad.by)
   if (pad.dim=='x'){
     x.len <- new.dim[1]
     new.dim[1] <- x.len + pad.by
@@ -29,17 +27,9 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
   }
   out.data <- array(NA, dim=new.dim)
   if (pad.dim=='x'){
-    print(dim(out.data))
-    print(dim(data))
-    print(pad.seq)
     out.data[pad.seq,,,,,] <- data
   }else if (pad.dim=='y'){
-    print(pad.by)
     pad.start <- (pad.by-1)/2 #start counting from here
-    #print((((pad.by-1)/2):y.len)+1)
-    #print(length((((pad.by-1)/2):y.len)+1))
-    #print((((pad.by-1)/2):y.len))
-    #print(length((((pad.by-1)/2):y.len)))
     out.data[,(1:y.len) + (pad.start-1),,,,] <- data
   }
   #stop('examine output')
@@ -91,7 +81,7 @@ get.FUDGE.subset <- function(by, idx, idx_max){
 
 get.loop.indices <- function(x.len, y.len, x.by, y.by=x.by, 
                              by.min=1, 
-                             allow_partial=F){
+                             allow_partial=F, fixed_edge=F){
   #Get.loop.indices deals with two cases: 
   #' 1) You are looping by exactly as many points as there are 
   #' in the given dimension. In this case, don't try to loop; 
@@ -108,36 +98,50 @@ get.loop.indices <- function(x.len, y.len, x.by, y.by=x.by,
     y.delt <- (y.by-1)/2    
   }else{
     x.delt <- x.by
-    y.delt <- x.by    
+    y.delt <- y.by    
   }
   if (x.len==x.by){
     x.start <- 1
     x.end <- x.by
   }else{
-    out <- loop.seq(x.len, x.delt)
+    out <- loop.seq(x.len, x.delt, allow_partial, fixed_edge)
     x.start <- out$start; x.end <- out$end
   }
   if(y.len==y.by){
     y.start <- 1
     y.end <- y.by
   }else{
-    out <- loop.seq(y.len, y.delt)
+    out <- loop.seq(y.len, y.delt, allow_partial, fixed_edge)
     y.start <- out$start; y.end <- out$end
   }
-  return(list(x.start = x.start, x.end = x.end, 
-              y.start  = y.start, y.end=y.end))
+  #When we do grids with more than one X strip, this is going to require
+  #that the x and y coordinates get combined with each other.
+  return(list(x.start = x.start, x.end = x.end, #x.olap=x.olap,
+              y.start  = y.start, y.end=y.end)) #y.olap=y.olap))
 }
 
-loop.seq <- function(len, delt, allow_partial=F){
+loop.seq <- function(len, delt, allow_partial=F, fixed_edge=T){
   #Creates a sequence of start and end values to loop over 
   #delt = (by-1)/2
   ###These two lines get used if we ever turn on downscaling
   ###over incomplete datasets again
   if (allow_partial){
+    #incomplete datasets on edges
     base.seq <- 1:(len-delt)
     start.seq <- c(rep(1, delt),   base.seq)
     end.seq <- c(base.seq+delt, rep(len, delt))
+  }else if (fixed_edge){
+    #Fixed grid on edges (move target, predictors don't move)
+    base.seq <- 1:(len - (delt-1) )
+    start.seq <- base.seq
+    end.seq <- base.seq + (delt-1)
+    pad <- (delt-1)/2
+    start.seq <- c(rep(start.seq[1], pad), 
+                   start.seq, rep(start.seq[length(start.seq)], pad))
+    end.seq <- c(rep(end.seq[1], pad), 
+                   end.seq, rep(end.seq[length(end.seq)], pad))
   }else{
+    #complete datasets on edges
     base.seq <- 1:(len - (delt-1) )
     start.seq <- base.seq
     end.seq <- base.seq + (delt-1)
