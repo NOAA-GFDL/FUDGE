@@ -30,7 +30,10 @@ compress.xy.var <- function(data, varname){
         out[[loop.varname]] <- data[x,y,,,, ,drop=F]
       }else{
         #...this print so many messages guys. so many.
-        message(paste("All missing in", x, y, "; dropping"))
+        #message(paste("All missing in", x, y, "; dropping"))
+        #Note that if  we get to the point where we write out more than
+        #one point at a time, this is also going to need to return which
+        #indices got dropped.
       }
     }
   }

@@ -54,14 +54,12 @@ loop.xy.data <- function(){
       #taking slices of the stencil for application.
     #  print("Before applying stencils:")
     #  print(oh.coords)
-    print("Oh before stencil:")
-      print(summary(OH.slice$tasmin))
-    #  stop('examine this out')
-      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil)
-    print("OH after sencil:")
-    print(summary(OH.slice$tasmin))
-      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil)
-      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil)
+      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
+                         aux.ref$OH$stencil_name)
+      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
+                         aux.ref$MH$stencil_name)
+      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil, 
+                         aux.ref$MF$stencil_name)
       
       #Make decision to downscale. Can take one of several forms: 
       #'1) Are any of the datasets missing all timelevels at a given x,y?
@@ -86,9 +84,6 @@ loop.xy.data <- function(){
         #Checks for only the two conditions that absolutely disqualify a
         #dataset: any of OH, MH or MF missing all available data
         #(i.e. no vars that aren't all missing)
-        print(summary(OH.slice))
-        print(summary(MH.slice))
-        print(summary(MF.slice))
         any.dset.missing.all <- any(c( all(sapply(OH.slice, missing.all.xy)), 
                                        all(sapply(MH.slice, missing.all.xy)), 
                                        all(sapply(MF.slice, missing.all.xy)))
