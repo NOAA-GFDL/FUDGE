@@ -139,6 +139,8 @@ def create_all_runscripts(i_start, i_end, njobs, ncpu, fudgetag, scriptdir, OH_d
 	for f in file_list:
 		gcp_string = gcp_string + "mkdir -p $TMPDIR/" + os.path.dirname(f) + " \n"
 		gcp_string = gcp_string + "gcp --sync " + f + " $TMPDIR/" + f + " \n"
+	gcp_string = gcp_string + "echo 'Copy operations complete.' \n"	
+	gcp_string = gcp_string + "sleep 20 \n"
 		
 	#Add code for creating common output directories 
 	#(copy opts for each minifile/slice take place within runscript
