@@ -123,118 +123,13 @@ lmstep.downscale <- function(lm.train.model, MF, targ.var){
     warning(paste("Warning in callStep.lm: step eliminated all variables,", 
                   "resulting in output of length 0! Returning the MF data for now"))
     MF.idx <- which(grepl(targ.var, names(MF)))
-    return(MF[[MF.idx]])
+    if (length(MF.idx) > 0){
+      return(MF[[MF.idx]])
+    }else{
+      #In some cases, target is not present in predictors.
+      return(MF[[1]])
+    }
   }else{
     return(tmp.out)
   }
-}
-
-
-
-multi.lm <- function(OH, MH, MF, args=NA){
-  #New assumption of 6-dimensional data
-  targ.var <- names(OH)
-  OH <- lapply(OH, as.vector)
-  MH <- lapply(MH, as.vector)
-  #Synchronize missing values between the two datasets
-  #train.out <- remove.ds.missvals('synchronous', 
-  #                                OH=OH, MH=MH)
-  test.list <- c(list('target'=OH[[1]]), MH)
-  #Trying this again, based on the output from the missing value removal
-  #function
-  #test.list <- c(list('target'=train.out$OH[[1]], train.out$MH))
-  test.prod <- data.frame(test.list)
-  lm.model <- lm(data=test.prod, na.action='na.omit') #na.omit='donit include incompletes'
-  nrips = dim(MF[[1]])[4]
-  out.data <- array(NA, dim=dim(MF[[1]]))
-  #print('dimensions of out.data:')
-  #print(dim(out.data))
-  for (n in 1:nrips){
-    MF.slice <- lapply(MF, '[', ,,,n,,)
-    MF.slice <- lapply(MF.slice, 'as.vector')
-    notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, #paste0(targ.var,".0.0"), 
-                                                      names(MF.slice))])))
-    #print(paste("length of notna.index:", length(notna.index)))
-    #MF.slice <- lapply(MF.slice, "remove.missvals")
-    #print('predicting')
-    tmp <- suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF.slice)))
-#     if (length(tmp) != length(out.data[,,,n,,][notna.index])){
-#       print(length(tmp))
-#       print(length(out.data[,,,n,,][notna.index]))
-#       print(length(tmp[!is.na(tmp)]))
-#       stop('examine output')
-#     }
-    out.data[,,,n,,][notna.index] <- tmp[!is.na(tmp)]
-  }
-  return(list(ds=out.data))
-}
-
-callStep.lm <- function(OH, MH, MF, args){
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
-  #It's not possible to remove missing values at this step due to 
-  #multi-ensemble considerations for the MF data.                           
-  #Multi ensembles in OH and MH get pooled in the next step 
-  lm.out <- step.lm(OH.data, MH.data, MF.data, args)
-  #lm.out contains two components: ds and qc (list of vectors)
-  return(lm.out)
-}
-
-callStep.lm_new <- function(OH, MH, MF, args){
-  #Pre-processing step to compress vectors into multivariate/multi-point form
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
-  targ.var <- names(OH.data)[1]
-  nrips <- dim(MF[[1]])[4]
-  #It's not possible to remove missing values at this step due to 
-  #multi-ensemble considerations for the MF data.                           
-  #Multi ensembles in OH and MH get pooled in the next step
-  lm.model <- lmstep.train(OH.data, MH.data, c(args, list(targ.var=targ.var)))
-  for (n in 1:nrips){
-    MF.slice <- lapply(MF, '[', ,,,n,,)
-    MF.slice <- lapply(MF.slice, 'as.vector')
-    ds.out <- lm.downscale(lm.model, MF.slice)
-    notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-    out.data[,,,n,,][notna.index] <- ds.out
-  }
-  return(list(ds=out.data, qc=NULL))
-}
-
-callMultiLM <- function(OH, MH, MF, args){
-  #Pre-processing step to compress vectors into multivariate form
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
-  #It's not possible to remove missing values at this step due to 
-  #multi-ensemble considerations for the MF data.                           
-  #Multi ensembles in OH and MH get pooled in the next step\
-  lm.out <- multi.lm(OH.data, MH.data, MF.data, args)
-  #lm.out has two components: ds and qc
-  return(lm.out)
-}
-
-
-
-
-callMultiLM_new <- function(OH, MH, MF, args){
-  #Pre-processing step to compress vectors into multivariate/multi-point form
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
-  targ.var <- names(OH.data)
-  nrips <- dim(MF[[1]])[4]
-  #It's not possible to remove missing values at this step due to 
-  #multi-ensemble considerations for the MF data.                           
-  #Multi ensembles in OH and MH get pooled in the next step
-  lm.model <- lm.train(OH.data, MH.data)
-  for (n in 1:nrips){
-    MF.slice <- lapply(MF, '[', ,,,n,,)
-    MF.slice <- lapply(MF.slice, 'as.vector')
-    ds.out <- lm.downscale(lm.model, MF.slice)
-    notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-    out.data[,,,n,,][notna.index] <- ds.out
-  }
-  return(list(ds=out.data, qc=NULL))
 }

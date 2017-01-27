@@ -2,7 +2,6 @@
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
                    tmasks, train_qcmask=F){
-  library(MBC)
   OH <- compress.xy.data(OH)
   MH <- compress.xy.data(MH)
   MF <- compress.xy.data(MF)
@@ -51,8 +50,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      print(summary(missval.out$complete.fut))
-      print(length(out))
       out.data[,,,n,,][missval.out$complete.fut] <- out
       if(missval.out$mv.retry & train_qcmask){
         out.data[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out$mhat.p))
@@ -109,6 +106,7 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #...also need to do more advanced checking of missing values. 
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
+  print(summary(tmp$mhat.p))
   return(tmp$mhat.p[,1])
 }
 

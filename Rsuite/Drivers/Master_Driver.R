@@ -46,9 +46,9 @@ if (length(console.args) > 0){
   copy_from_tmp = console.args[4]
   x.pad <- "NA"
 }else{
-  i_idx <- 100 #167 #pr_diff = 37 i800 = 53 #194 #10 #47 is ocean, I think
+  i_idx <- 1 #167 #pr_diff = 37 i800 = 53 #194 #10 #47 is ocean, I think
   i_max <- 194
-  auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_02.json" #01 has spatial masks
+  auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" #01 has spatial masks; 05_offset has asymmetric grid
   copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
   x.pad <- "NA"
 }
@@ -58,7 +58,15 @@ message("Setting downscaling method information")
 ds.ref <- getDSInfo(ds.method)
 
 message("Getting info from aux file")
-aux.ref <- get_aux_params(auxfile, copy_from_tmpdir)
+aux.ref <- get_aux_params(auxfile, copy_from_tmp)
+print(summary(aux.ref))
+print(aux.ref)
+#1-23-17 adding bypass to see if the 'to the left' works
+#Note: this is going to be a bad idea to use on anything but the 
+#
+if ("multivar_target" %in% aux.ref){
+  ds.ref$multivar_target <- aux.ref$multivar_target
+}
 
 message("Checking downscaling arguments")
 ds.args <<- args
@@ -184,9 +192,14 @@ if (ds.ref$multivar_target){
                             x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
                             aux.ref$OH$geomask)
 }
+#Now that we can read in stencils, the below is not
+#going to work anymore. Some of the fixes are down just before
+#the s3-4-5 call; the mroe flexible ones are scattered about.
+#oh.dim <- dim(OH$data[[1]])
+oh.orig.dim <- OH$orig_dims[[1]]
 oh.dim <- dim(OH$data[[1]])
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], 
-                              x.by=aux.ref$OH$idim, y.by=aux.ref$OH$jdim, ,
+                              x.by=aux.ref$OH$idim, y.by=aux.ref$OH$jdim,
                               allow_partial=F)
 
 message("Reading in historical predictor data")
@@ -199,11 +212,15 @@ for (var in predictor.vars){
                                                   hist.pred.suffix))
 }
 mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max)
+print(mh_x_subset)
 MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset), 
                           dim=ds.ref$mh_dimlist, 
                           x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
                           aux.ref$MH$geomask)
+mh.orig.dim <- MH$orig_dims[[1]]
 mh.dim <- dim(MH$data[[1]])
+print(MH$orig_dims)
+print(mh.orig.dim)
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
                               x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim, 
                               allow_partial=F)#(aux.ref$ds_handle_missing=='continue'))
@@ -219,10 +236,11 @@ for (var in predictor.vars){
 }
 mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max)
 MF <- build.FUDGE.dataset(MF.files, predictor.vars, 
-                          subset=list(x=mh_x_subset), 
+                          subset=list(x=mf_x_subset), 
                           dim=ds.ref$mf_dimlist, 
                           x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim, 
                           aux.ref$MF$geomask)
+mf.orig.dim <- MF$orig_dims[[1]]
 mf.dim <- dim(MF$data[[1]])
 mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
                               x.by=aux.ref$MF$idim, y.by=aux.ref$MF$jdim,
@@ -239,11 +257,32 @@ if (!is.null(spat.mask.nc)){
 
 ###### Set target dataset for blind reference at a later point
 ###### (note: the clever delayed evaluation in getDSInfo() is not working)
+message("Setting target dimensions")
 delayedAssign('TARG', eval(parse(text=ds.ref$target)))
-targ.dim <- switch(ds.ref$target, 
-                      'OH' = oh.dim, 
-                      'MH' = mh.dim, 
-                      'MF' = mf.dim)
+if (!ds.ref$multivar_target){
+  targ.dim <- switch(ds.ref$target, 
+                     'OH' = oh.orig.dim, 
+                     'MH' = mh.orig.dim, 
+                     'MF' = mf.orig.dim)
+  if (ds.ref$target=='OH'){
+    ds.coords <- oh.coords
+  }else if (ds.ref$target=='MF'){
+    ds.coords <- mf.coords
+  }
+}else{
+  #This is a special bypass for the MBC; we can't count on OH
+  #being all 1, and some of the other workflow assumes that
+  targ.dim <- c(1,oh.orig.dim[2],1,1,1,1)
+  print(OH.files[[1]])
+  print(target.var)
+  targ.subset <- get.FUDGE.subset(1, i_idx, i_max)
+  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.subset), 
+                              dim=ds.ref$oh_dimlist, 
+                              x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
+                              "none")
+  ds.coords <- get.loop.indices(targ.dim[1], targ.dim[2], 
+                                x.by=1, y.by=1, allow_partial=F)
+}
 
 #Create list of time masks for application
 message("Reading in and checking time windowing masks")
@@ -262,9 +301,9 @@ adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 ###to simplify the general qcmask calls.
 
 output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset, 
-                  mf.dim[4:6]) #time/ensemble/n vars come from the MF dataset
-ds <- list('ds' = array(NA, dim=output.dim), 
-           'qc' = array(NA, dim=output.dim))
+                  mf.orig.dim[4:6]) #time/ensemble/n vars come from the MF dataset
+# ds <- list('ds' = array(NA, dim=output.dim), 
+#            'qc' = array(NA, dim=output.dim))
 
 ##s3 call formerly here
 

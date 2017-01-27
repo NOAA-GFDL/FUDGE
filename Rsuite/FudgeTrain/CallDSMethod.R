@@ -40,7 +40,7 @@ callDSMethod <- function(method, OH, MH, MF, args,
                      'DeltaSD' = callDeltaSD(OH, MH, MF, args, train_qcmask, train.stat, tmasks),
                      'MBC'     = callMBC(OH, MH, MF, args, ds.method="MBC", tmasks, train_qcmask),
                      'QDM'     = callMBC(OH, MH, MF, args, ds.method="QDM", tmasks, train_qcmask),
-                   'sum'   = return(list(ds=rep(sum(MH$tasmax, MF$tasmax, na.rm=T), 2), qc=NULL)),
+                   'sum'   = ds.sum.function(OH, MH, MF, args),
                      ReturnDownscaleError(method)
     )
     #Restore missing values to original place now takes place within method
@@ -52,6 +52,16 @@ callDSMethod <- function(method, OH, MH, MF, args,
 ReturnDownscaleError <- function(ds.method){
   #Returns an error and stops the entire function if the DS method used is not supported.
   stop(paste("Downscale Method Error: the method", ds.method, "is not supported for FUDGE at this time."))
+}
+
+ds.sum.function <- function(OH, MH, MF, args){
+  print("within sum function")
+  sum.all <- sum(c(OH[[1]], MH[[1]], MF[[1]]), na.rm=T)
+  print(sum.all)
+  tmp.data <- array(sum.all, dim=c(1,1,1,1,dim(OH[[1]])[5:6]))
+  print(dim(tmp.data))
+  return(list(ds=tmp.data, 
+              qc=NULL))
 }
 
 callSimple.bias.correct <- function(pred, targ, new, args){

@@ -8,7 +8,6 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, x_by, y_by, geo
   #and then pads the result with chosen pad, if the subset overlaps the end of the dataset
   out <- build.fudge.object(data.path, var=varlist, subset=lapply(subset, '[[', 'subset'), dim=dim, 
                             var_classification=T)
-  
   #Sptaial masks get more complicated - stepping stone towards having multiple
   #spatial masks for multiple vars
   if (length(geomasks) > 0){
@@ -31,6 +30,15 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, x_by, y_by, geo
       }
     }
   }
+  
+  print("getting orig.dims")
+  print(summary(out$data))
+  print(lapply(out$data, 'summary'))
+  print(lapply(out$data, 'dim'))
+  orig.dims <- lapply(out$data, 'dim')
+  print(orig.dims)
+  out$orig_dims <- orig.dims
+  print(summary(out))
   
   #If by > 1, always pad each var along the y axis
   #This goes for vars meant to be 1-d (like ENSO)

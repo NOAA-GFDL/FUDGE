@@ -11,8 +11,12 @@ apply.stencil <- function(data, stencil, stencil_name){
 #   stencil[stencil==0] <- NA
 #   #convert any 3s to 1
 #   stencil[stencil==3] <- 1
-  if (stencil_name != "none" && length(stencil_name) > 1){
-    return(apply.any.mask(mask=stencil, data=data, 'spatial'))
+  print(stencil)
+  if (stencil_name != "none" && length(stencil) > 1){
+    print("applying stencil mask")
+    tmp <- apply.any.mask(mask=stencil, data=data, 'spatial')
+    print(summary(tmp))
+    return(tmp)
   }else{
     return(data)
   }

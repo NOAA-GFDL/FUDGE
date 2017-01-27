@@ -39,6 +39,7 @@ compress.xy.var <- function(data, varname){
   }
   #Relatively simple way to make sure 0.0 is first var. Position of other vars
   #may be up for discussion later.
+  print(names(out))
   out <- out[sort(names(out))]
   return(out)
 }

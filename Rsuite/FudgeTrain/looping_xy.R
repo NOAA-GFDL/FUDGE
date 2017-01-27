@@ -7,9 +7,27 @@ loop.xy.data <- function(){
                               mh.coords$x.start, mf.coords$x.start), 'length'))
   y.len <- unique(sapply(list(oh.coords$y.start, 
                               mh.coords$y.start, mf.coords$y.start), 'length'))
-  OH.all.dim <- dim(OH$data[[1]])[1:3]
-  MF.all.dim <- dim(MF$data[[1]])[4:6]
-  output.all <- rep(list(array(NA, dim=c(OH.all.dim, MF.all.dim))), 
+  print("y.len:")
+  print(sapply(list(oh.coords$y.start, 
+                    mh.coords$y.start, mf.coords$y.start), 'length'))
+  print("x.len:")
+  print(sapply(list(oh.coords$x.start, 
+                    mh.coords$x.start, mf.coords$x.start), 'length'))
+  print(x.len)
+  print(y.len)
+  #...okay. If using multivar_target, you can't use 
+  #this gracefully with the stencils - you write one point; you 
+  #get dimensions from mxn
+  #   if (!ds.ref$multivar_target){
+  #     OH.all.dim <- dim(OH$data[[1]])[1:3]
+  #   }else{
+  #     OH.all.dim <- c(1,1,1)
+  #   }
+  #   MF.all.dim <- dim(MF$data[[1]])[4:6]
+  print("building output dimensions")
+  output.dim <- c(targ.dim[1:3], mf.orig.dim[4:6])
+  print(output.dim)
+  output.all <- rep(list(array(NA, dim=output.dim)), 
                     length(c("ds", "qc")))
   names(output.all) <- c("ds", "qc")
   for (ival in 1:x.len){ #1:x.len
@@ -17,15 +35,16 @@ loop.xy.data <- function(){
     ival <<- ival
     for(jval in 1:y.len){ # 31:31 26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
       message(paste("Starting j loop", jval, 'of', y.len))
+      #stop("Examine this output")
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
       MF.slice <- get.xy.slice(MF$data, mf.coords, ival, jval)
       ##
-      ds.x.start <- oh.coords$x.start[ival]
-      ds.x.end   <- oh.coords$x.end[ival]
-      ds.y.start <- oh.coords$y.start[jval]
-      ds.y.end   <- oh.coords$y.end[jval]
+      ds.x.start <- ds.coords$x.start[ival]
+      ds.x.end   <- ds.coords$x.end[ival]
+      ds.y.start <- ds.coords$y.start[jval]
+      ds.y.end   <- ds.coords$y.end[jval]
       ds.names <- "ds"
       qc.mask.names <- qc.maskopts$qc.method
       if(!is.null(qc.mask.names)){
@@ -33,13 +52,18 @@ loop.xy.data <- function(){
       }
       #qc.mask.names <- c('tasmax_qcmask_train', 'tasmax_qcmask_tailadj')
       all.names <- c(ds.names, qc.mask.names)
-      OH.dim <- dim(OH.slice[[1]])[1:3]
-      MF.dim <- dim(MF.slice[[1]])[4:6]
+      #       OH.dim <- dim(OH.slice[[1]])[1:3]
+      #       MF.dim <- dim(MF.slice[[1]])[4:6]
+      print(ds.coords)
+      ds.dim <- c((ds.x.end-ds.x.start+1), 
+                  (ds.y.end-ds.y.start+1), 1,
+                  dim(MF.slice[[1]])[4:6])
       nmasks <- tmasks$nmasks
+      print(c(ds.dim, nmasks))
       #nmasks is set by the time mask tools
       #...how should this interact with the main driver? 
       #ds as a target is currently being set by the 
-      output <- rep(list(array(NA, dim=c(OH.dim, MF.dim, nmasks))), 
+      output <- rep(list(array(NA, dim=c(ds.dim, nmasks))), 
                     length(all.names))
       #tmasks <- tmask.list
       time_mask_overlap = tmasks$time_mask_overlap
@@ -52,14 +76,17 @@ loop.xy.data <- function(){
       #Current looping settings imply that we're never going to use an 
       #incomplete grid (because padding); thus, we don't have to worry about
       #taking slices of the stencil for application.
-    #  print("Before applying stencils:")
-    #  print(oh.coords)
+      #  print("Before applying stencils:")
+      #  print(oh.coords)
+      print("in process of applying stencil")
+      print(lapply(OH.slice, 'summary'))
       OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
                          aux.ref$OH$stencil_name)
       MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
                          aux.ref$MH$stencil_name)
       MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil, 
                          aux.ref$MF$stencil_name)
+      print(lapply(OH.slice, 'summary'))    
       
       #Make decision to downscale. Can take one of several forms: 
       #'1) Are any of the datasets missing all timelevels at a given x,y?
@@ -171,6 +198,9 @@ loop.xy.data <- function(){
                                  train_qcmask=train_qcmask,
                                  tmasks=tmasks)
           ds.out <- list(ds=tmp.ds$ds)
+          print("after ds")
+          print(dim(ds.out[[1]]))
+          print(dim(ds.out$ds))
           qc.out <- c(qc.out, tmp.ds$qc)
           ds.atts <- tmp.ds$ds.atts
           #ds.atts makes the PARM tail adjustment simpler, when we get to it
@@ -217,6 +247,12 @@ loop.xy.data <- function(){
           #  print(dim(output[[el]]))
           #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
+          print(ds.x.start)
+          print(ds.x.end)
+          print(ds.y.start)
+          print(ds.y.end)
+          print(dim(output.all[[el]]))
+          print(dim(tmp.out))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
         #Once looping by w complete, do the last s5 adjustment
