@@ -5,6 +5,9 @@ get.ncdim.names <- function(obj.nc, nc.var, include.none=F){
   #'Gets the names of all the dimensions a given var will reference
   get.dim.names()
   dim.names <- unlist(lapply(obj.nc$var[[nc.var]]$dim, '[[', 'name'), use.names = F)
+  #   print("within get.ncdim.names:")
+  #   print(summary(obj.nc$var))
+  #   print(dim.names)
   if(length(dim.names)==0){
     if(include.none){
       dim.names <- "none" #...okay, it's been '' for a long time. But that breaks the regex later.
@@ -64,10 +67,18 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
   #'and makes sure that its diemsnions correspond with the 
   #'dimensions expected for FUDGE use.
   #var.data <- ncvar_get(obj.nc, nc.var, collapse_degen=F)
+  
+  #First, check to make sure that var is present in file
+  if (! nc.var%in%names(obj.nc$var)){
+    stop(paste("Error in obtain.fudge.var: var", nc.var, "not found in file", 
+               nc.obj$filename,"!"))
+  }
   var.dims <- get.ncdim.names(obj.nc, nc.var)
   #var.dim.lengths <- get.ncvar.dims(obj.nc, nc.var)
   get.dim.names()
   check_subset <- !(is.null(names(subset)))
+  #print(var.dims)
+  #print(c(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims))
   if (any(!(var.dims %in% c(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)))){
     dims.notlist <- var.dims[which(!(var.dims %in% c(x.dims, y.dims, time.dims, ens.dims, n.dims)))]
     stop(paste("Error in obtain.fudge.var! Var", nc.var, "uses the dimension(s)", 
@@ -165,7 +176,7 @@ get.dim.names <- function(env=parent.frame()){
   env$z.dims <- c('z', 'p', 'k','plevel', 'plev', 'height')
   env$time.dims <- c('time')
   env$ens.dims <- c('m', 'ensmem', 'ensemble', 'ens')
-  env$n.dims <- c('n', 'nsave')
+  env$n.dims <- c('n', 'nsave', 'determinant')
   env$bnds.dims <- c('bnds', 'bounds')
   return(env)
 }
@@ -295,7 +306,7 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
   name.list <-  list(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)
   var.start <- rep(1, length(dim.names))
   var.count <- rep((-1), length(dim.names))
-#  print(names(subset))
+  #  print(names(subset))
   for(el in names(subset)){
     n <- sapply(name.list, function(x,y){any(x%in%y)}, el)
     dim.which <- dim.names %in% unlist(name.list[n])
@@ -303,8 +314,8 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
     var.count[dim.which] <- diff(subset[[el]])+1
   }
   var.all <- nc.obj$var[[var.name]]
-#  print(var.start)
-#  print(var.count)
+  #  print(var.start)
+  #  print(var.count)
   var.data <- ncvar_get(nc.obj, var.name, collapse_degen=F, 
                         start=var.start, count=var.count)
   if (var.all$prec=='int'){
@@ -327,10 +338,10 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   #'of the attribute table from the input 
   #'nc object and variable.
   attnames <- c('standard_name', 'long_name', 'units', 
-                'prec', 'filename', 'rips', 
+                'prec','calendar', 'filename', 'rips', 
                 'climatology')
   att.defaults <- c('', nc.var, "", 
-                    'float', '', "", 
+                    'float', "",'', "", 
                     NA)
   var.att.list <- list()
   #Get var atts
@@ -373,7 +384,7 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   #optional.atts <- c("comments", 'modulo')
   var.att.list['filename'] <- nc.obj$filename
   var.att.list[['frequency']] <- 
-  return(var.att.list)
+    return(var.att.list)
 }
 
 get.rip.data <- function(nc.obj){
