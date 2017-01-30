@@ -112,11 +112,11 @@ reverse.each.xy <- function(data){
   print(data.dim)
   x <- data.dim[1]
   y <- data.dim[2]
-  #   for (i in 1:x){
-  #     data[i,] <- rev(data[i,])
-  #   }
-  for(j in 1:y){
-    data[,j] <- rev(data[,j])
-  }
+    for (i in 1:x){
+      data[i,] <- rev(data[i,])
+    }
+#   for(j in 1:y){
+#     data[,j] <- rev(data[,j])
+#   }
   return(data)
 }
