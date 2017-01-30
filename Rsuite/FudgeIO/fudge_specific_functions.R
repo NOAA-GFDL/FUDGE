@@ -22,8 +22,16 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, x_by, y_by, geo
   if (apply_geomasks){
     for (v in 1:length(varlist)){
       vname <- varlist[[v]]
+      #Okay - resetting the subset in response to the dimensions of the 
+      #variable in use needs to take place in here. 
+      #...only trigger if this is known to be of greater than length 1?
+      #...or return note from dataset building that fewer dims than expected
+      #were available. I don't think that you can apply the mask subset on this 
+      #dataset anyway - not sure how the x,y slicing is going to work.
+      #so only apply the mask if the dataset says that there's more than
+      #one x and y value available?
+      geomask.subset <- 1:dim(out$data[[vname]])[1] #only worried about x subset
       if (geomasks[[v]] != 'none'){
-        print(geomasks[[v]])
         geomask <- ReadMaskNC(nc_open(geomasks[[v]]), subset=lapply(subset, '[[', 'subset')) 
         out$data[[vname]] <- apply.any.mask(data=out$data[[vname]], 
                                             mask=geomask$masks[[1]], dim='spatial')
@@ -31,20 +39,18 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim, x_by, y_by, geo
     }
   }
   
+  #Get variable dimensions before padding (used for getting output dims)
   print("getting orig.dims")
-  print(summary(out$data))
-  print(lapply(out$data, 'summary'))
-  print(lapply(out$data, 'dim'))
   orig.dims <- lapply(out$data, 'dim')
-  print(orig.dims)
   out$orig_dims <- orig.dims
-  print(summary(out))
   
   #If by > 1, always pad each var along the y axis
   #This goes for vars meant to be 1-d (like ENSO)
+  #...upon reading this, I am no longer so sure of that. This seems like the 
+  #sort of thing that needs to be tested.
   if (y_by > 1){
     print('padding subset with missing values')
-    out$data <- lapply(out$data, 'pad.fudge.var.dim', pad.dim='y', pad.by=y_by, #pad.by=(input_by-1)/2, 
+    out$data <- lapply(out$data, 'pad.fudge.var.dim', pad.dim='y', pad.by=y_by,
                        pad.type=dim.pad)
   }
   if (subset$x$olap){

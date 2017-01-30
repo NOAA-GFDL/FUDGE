@@ -30,10 +30,6 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
     out.data[pad.seq,,,,,] <- data
   }else if (pad.dim=='y'){
     pad.start <- (pad.by-1)/2 #start counting from here
-    print(dim(data))
-    print(dim(out.data))
-    print(y.len)
-    print(pad.start)
     out.data[,(1:y.len) + (pad.start),,,,] <- data
   }
   #stop('examine output')

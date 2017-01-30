@@ -165,7 +165,7 @@ get.dim.names <- function(env=parent.frame()){
   env$z.dims <- c('z', 'p', 'k','plevel', 'plev', 'height')
   env$time.dims <- c('time')
   env$ens.dims <- c('m', 'ensmem', 'ensemble', 'ens')
-  env$n.dims <- c('n')
+  env$n.dims <- c('n', 'nsave')
   env$bnds.dims <- c('bnds', 'bounds')
   return(env)
 }
