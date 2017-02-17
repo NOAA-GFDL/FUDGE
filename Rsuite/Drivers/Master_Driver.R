@@ -59,8 +59,6 @@ ds.ref <- getDSInfo(ds.method)
 
 message("Getting info from aux file")
 aux.ref <- get_aux_params(auxfile, copy_from_tmp)
-print(summary(aux.ref))
-print(aux.ref)
 #1-23-17 adding bypass to see if the 'to the left' works
 #Note: this is going to be a bad idea to use on anything but the 
 #
@@ -292,6 +290,25 @@ message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
 adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 
+#Added 02-14-17 - trying to set up defaults differently
+set.ds.defaults <- function(ds.method, args, ...){
+  #Alter args for a given method depending on the args allowed
+  default.methods <- c("MBC", "QDM")
+  if (! (ds.method %in% default.methods)){
+    return(args)
+  }else{
+    new.args <- switch(ds.method, 
+                       MBC = set.MBC.defaults(args, ...), 
+                       QDM = set.MBC.defaults(args, ...),
+                       stop(paste("Error in set.ds.defaults: no method", 
+                                  ds.method, "!")))
+    return(new.args)
+  }
+}
+message("Checking for default ds arguments (requires var units)")
+ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars)
+print(summary(ds.args))
+print(ds.args)
 
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.
@@ -314,11 +331,11 @@ start.time <- proc.time()
 #args should always exist; it's specified in the runcode
 #as of 9-29 I'm not sure why this is here, but it seems to have been
 #needed in the past. 
-if (args[1]=='na'){
-  ds.args=NULL
-}else{
-  ds.args=args
-}
+# if (args[1]=='na'){
+#   ds.args=NULL
+# }else{
+#   ds.args=args
+# }
 
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step

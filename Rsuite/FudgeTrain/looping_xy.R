@@ -76,8 +76,6 @@ loop.xy.data <- function(){
       #Current looping settings imply that we're never going to use an 
       #incomplete grid (because padding); thus, we don't have to worry about
       #taking slices of the stencil for application.
-      #  print("Before applying stencils:")
-      #  print(oh.coords)
       print("in process of applying stencil")
       print(lapply(OH.slice, 'summary'))
       OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
@@ -191,8 +189,10 @@ loop.xy.data <- function(){
             window.post_ds_inloop <- post_ds_inloop
           }      
           #Call the downsaing method
+          print("printing ds.args")
+          print(ds.args)
           tmp.ds <- callDSMethod(ds.method, 
-                                 OH.window, MH.window, MF.window, args, 
+                                 OH.window, MH.window, MF.window, ds.args, 
                                  missvals=ds.ref$missval_method, 
                                  missval.args=missval.args,
                                  train_qcmask=train_qcmask,

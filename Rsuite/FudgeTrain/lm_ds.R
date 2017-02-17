@@ -43,14 +43,18 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
     lm.model <- switch(ds.method, 
                        'lm' = lm.train(OH.data, 
                                        MH.data), 
-                       'lmstep' = lmstep.train(OH.data, MH.data, args)
+                       'lmstep' = lmstep.train(OH.data, MH.data, args),
+                       'multiparm' = multiparm.train(OH.data, MH.data), 
+                       'multiparm_step' = multiparm_step.train(OH.data, MH.data, args)                       
     )
     for (n in 1:nrips){
       MF.slice <- lapply(MF.data, '[', ,,,n,,)
       MF.slice <- lapply(MF.slice, 'as.vector')
       ds.out <- switch(ds.method, 
                        'lm' = lm.downscale(lm.model, MF.slice), 
-                       'lmstep' = lmstep.downscale(lm.model, MF.slice, targ.var)
+                       'lmstep' = lmstep.downscale(lm.model, MF.slice, targ.var),
+                       'multiparm' = multiparm.downscale(lm.model, MF.slice), 
+                       'multiparm_step' = multiparm_step.downscale(lm.model, MF.slice, targ.var)                       
       )
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
       out.data[,,,n,,] <- ds.out #[notna.index]

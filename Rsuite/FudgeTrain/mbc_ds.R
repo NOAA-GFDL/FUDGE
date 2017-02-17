@@ -2,6 +2,7 @@
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
                    tmasks, train_qcmask=F){
+  #'02-14-17 - new asusmption is that rat.seq is of same length as predictor vars
   OH <- compress.xy.data(OH)
   MH <- compress.xy.data(MH)
   MF <- compress.xy.data(MF)
@@ -20,10 +21,10 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  print(summary(missval.args))
   MF_mask <- missval.args$pr$MF
   #Get/override default arguments for MBC
-  args <- set.MBC.defaults(MH, args)
+  #As of 02-14-71, this is done in the main instead
+  #args <- set.MBC.defaults(MH, args)
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
@@ -34,16 +35,23 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='synchronous')
-    print(summary(missval.out))
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
+      #But one common conditioning step should be adjusting the length of ratio.seq
+      loop.args <- args
+      print(loop.args)
+      message("Adjusting ratio.seq to use ")
+      loop.args$ratio.seq <- map.var.to.xy.properties(names(missval.out$MF), 
+                                                 args$var.names, args$ratio.seq)
+      print(loop.args$ratio.seq)
+      print(loop.args$var.names)
       out <- switch(ds.method, 
                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args),  
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
                                     args$variant, 
                                     missval.out$complete.hist, 
-                                    missval.out$complete.fut, args))
+                                    missval.out$complete.fut, loop.args))
       train.stat <- missval.out$missval.status
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
@@ -72,20 +80,18 @@ callQDM <- function(OH, MH, MF, args){
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)
-  print(summary(tmp$mhat.p))
   return(tmp$mhat.p)
 }
 
 callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
+  #Okay...this is the step when any x.y.vars which are all missing get removed.
+  #This is then going to have to be applied to the same list of vars that 
   OH.slice <- as.matrix(as.data.frame(lapply(OH, function(x,y){return(x[y])}, 
                                    complete.hist)))
   MH.slice <- as.matrix(as.data.frame(lapply(MH, function(x,y){return(x[y])}, 
                                    complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
                                    complete.fut)))
-#   print(summary(OH.slice))
-#   print(summary(MH.slice))
-#   print(summary(MF.slice))
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
@@ -110,12 +116,12 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   return(tmp$mhat.p[,1])
 }
 
-set.MBC.defaults <- function(MH, args){
+set.MBC.defaults <- function(args, predictor.vars){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
   iter = 30
   jitter.fac = 0
-  ratio.seq = rep(F, length(MH))
+  ratio.seq = rep(F, length(predictor.vars))
   #This is going to have implications for the multi-point downscaling. 
   #Need access to npts_by in order to expand this list...
   #or really just need 1; multivar-targets are going to have that effect.
@@ -126,13 +132,19 @@ set.MBC.defaults <- function(MH, args){
   #conversion. 
   #...I'm pretty sure those are globals anyway; we can check.
   if ('trace' %in% names(args)){
+    non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
+    #if trace is non-numeric (i.e an arg we'd pass to the pr functions
     #get OH pr units from adjust.metadata (created back in main driver)
-    pr.units <- adjust.metadata$pr_oh_units
-    if (length(pr.units)==0){
-      stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
+    if (non.numeric.trace){
+      pr.units <- adjust.metadata$pr_oh_units
+      if (length(pr.units)==0){
+        stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
+      }
+      pr.trace <- convert.pr.threshold(args$trace, pr.units)
+      trace <- pr.trace
+    }else{
+      trace <- as.numeric(args$trace)
     }
-    pr.trace <- convert.pr.threshold(args$trace, pr.units)
-    trace <- pr.trace
     if ('transform' %in% names(args)){
       tform <- return.t.fxn(args$transform, args$transform_arg)
       if (is.null(tform[[2]])){
@@ -146,12 +158,18 @@ set.MBC.defaults <- function(MH, args){
   if (any(rat.names %in% names(args))){
     rat.name <- rat.names[which(rat.names %in% names(args))]
     in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
-    in.rat.seq <- sapply(in.rat.seq, function(x,r){rep(x,r)}, oh_by**2)
-    ratio.seq <- in.rat.seq
+    #...oh_by is going to blow this entire bit up hard at some point in the 
+    #future. I'm not sure I can get a good check going without it, though.
+    #...it's also going to blow up when we get to using time-varying amplitudes
+    #in here - need to make sure that only one val gets used for those.
+    ##Okay - as of 2-14-17, adding this in two steps: one for the 
+#     in.rat.seq <- sapply(in.rat.seq, function(x,r){rep(x,r)}, oh_by**2)
+#     ratio.seq <- in.rat.seq
     if (length(in.rat.seq) != length(ratio.seq)){
       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
                  "did not have as many elements as MH has vars!"))
     }
+ratio.seq <- in.rat.seq
   }
   jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
   if (any(jitter.names %in% names(args))){
@@ -159,5 +177,5 @@ set.MBC.defaults <- function(MH, args){
     jitter.fac <- args[[jitter.name]]
   }
   return(list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-              variant=args$variant))
+              variant=args$variant, var.names=unlist(predictor.vars)))
 }

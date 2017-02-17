@@ -15,7 +15,6 @@ apply.stencil <- function(data, stencil, stencil_name){
   if (stencil_name != "none" && length(stencil) > 1){
     print("applying stencil mask")
     tmp <- apply.any.mask(mask=stencil, data=data, 'spatial')
-    print(summary(tmp))
     return(tmp)
   }else{
     return(data)
