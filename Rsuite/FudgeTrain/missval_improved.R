@@ -194,10 +194,13 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
     match.vars <- c(match.vars, data.names[match.index])
   }
   for (el in match.vars){
+    print(el)
     #print(summary(pr.mask==0))
     tmp.pr <- data.list[[el]]
     #dim(pr.mask) <- dim(tmp.pr)
     data.list[[el]] <- as.numeric(pr.mask)
+    print(length(data.list[[el]]))
+    print(dim(tmp.pr))
     data.list[[el]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
     dim(data.list[[el]]) <- dim(tmp.pr)
     data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal')    

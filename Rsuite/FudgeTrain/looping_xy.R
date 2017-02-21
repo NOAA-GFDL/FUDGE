@@ -229,6 +229,7 @@ loop.xy.data <- function(){
               #Added 12-17-16 - some indexing needs to take place
               #outside of the s3/s5 adjusts because of backwards compatability
               if (tmasks$time_mask_overlap){
+                print(dim(combine.out[[out]]))
                 combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
                                                      mask=tmasks$trim$masks[[w]],
                                                      dim='time')

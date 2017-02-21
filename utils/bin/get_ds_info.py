@@ -4,7 +4,7 @@
 #a leapday mask copied as part of the master runscript setup
 
 import csv
-import os
+import os,sys
 from os import path as osp
 import json
 

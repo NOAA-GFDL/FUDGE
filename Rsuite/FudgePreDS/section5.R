@@ -72,18 +72,30 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     for(el in names(out$input)){
       print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
+        print(dim(input[[el]][[var]]))
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
+        print(dim(out$input[[el]][[var]]))
       }
     }
-    out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
+    #Okay - manually constructing out.dim as of 02-20-17
+   # out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
+    out.dim <- c(dim(out$input$hist.targ[[1]])[1:3], 
+                 dim(out$input$fut.pred[[1]])[4:6])
+  #  print(out.dim)
     #For the moment, asusme that all data is either of output
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
+    print(paste("This is out.dim", paste(out.dim)))
     for(el in names(out$adjusted.output)){
-      print(el)
+      print("settings vals to out.dim")
       if (!is.null(adjusted.output[[el]])){
-        if (is.null(dim(adjusted.output[[el]]))){
+       # print("checking dim of out$adjusted.output[[el]]")
+      #  print(dim(out$adjusted.output[[el]]))
+        if (is.null(dim(out$adjusted.output[[el]]))){
+        #  print(out.dim)
           dim(out$adjusted.output[[el]]) <- out.dim
+       #   print('after setting dim')
+        #  print(dim(out$adjusted.output[[el]]))
         }
       }
     }

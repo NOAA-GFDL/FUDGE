@@ -85,6 +85,8 @@ def create_all_runscripts(i_start, i_end, njobs, ncpu, fudgetag, scriptdir, OH_d
 	mh_files = []
 	for pred_var in predlist:
 		mh_dir = osp.join(MH_dir, pred_var) + idirsuffix
+		print(mh_dir)
+		print(mh_timerange)
 		mh_file = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
 		mh_files.append(mh_file)
 		dmget_string = dmget_string + "dmget " + mh_file + " \n"

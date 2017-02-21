@@ -2,8 +2,8 @@
 #Both functions are designed to work on multivar datasets,
 #and handle multiple points by decomposing into separate vars.
 
-callMultiParmAll <- function(OH, MH, MF, args, ds.method='lm', 
-                      missval.args, tmasks, train_qcmask=F){
+callLMAsync <- function(OH, MH, MF, args, ds.method='lm', 
+                        missval.args, tmasks, train_qcmask=F){
   #'Setup operations for methods that behave a lot like lm
   #'and lmstep: output time-synchronous with the future, 
   #'traing steps are supposed to have same timelevels present/
@@ -17,23 +17,27 @@ callMultiParmAll <- function(OH, MH, MF, args, ds.method='lm',
   targ.var <- names(OH.data)
   nrips <- dim(MF.data[[1]])[4]
   out.data <- array(NA, dim=dim(MF.data[[1]]))
+  #These methods are asynchronous - they can take an overlapping mask
+  index.mask <- tmasks$MF$masks[[w]]
+  olap <- F
   if(train_qcmask){
     if(tmasks$apply_tmasks){
-      qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+      qc <- mapply(rep, index.mask, nrips)
     }else{
       qc <- rep(1, dim(MF[[1]]))
     }
     dim(qc) <- dim(out.data)
   }else{
-    qc = NULL
+    qc <- NULL
   }
+  MF_mask <- missval.args$pr$MF
   missval.out <- remove.FUDGE.missvals(OH=OH.data, MH=MH.data, MF=MF.data,
                                        missval.args$minsamplesize, 
                                        missval.args, 
                                        missval.method = 'synchronous')
-# save(file="/work/cew/testing/h_pr_2.R", list=c('missval.out', 'missval.args'))
-#  print('ds.possible:')
-#  print(missval.out$ds.possible)
+  # save(file="/work/cew/testing/h_pr_2.R", list=c('missval.out', 'missval.args'))
+  #  print('ds.possible:')
+  #  print(missval.out$ds.possible)
   if (missval.out$ds.possible){
     #If there is enough data to downscale
     #Multi ensembles in OH and MH get pooled in the next step
@@ -41,30 +45,29 @@ callMultiParmAll <- function(OH, MH, MF, args, ds.method='lm',
     MH.data <- missval.out$MH
     MF.data <- missval.out$MF #added 11-8-16; might be responsible for lm diffs
     lm.model <- switch(ds.method, 
-                       'multiparm' = multiparm.train(OH.data, 
-                                       MH.data), 
-                       'multiparm_step' = multiparm_step.train(OH.data, MH.data, args)
+                       'lmAsync' = multiparm.train(OH.data, 
+                                                   MH.data), 
+                       'lmstepAsync' = multiparm_step.train(OH.data, MH.data, args)
     )
     for (n in 1:nrips){
       MF.slice <- lapply(MF.data, '[', ,,,n,,)
       MF.slice <- lapply(MF.slice, 'as.vector')
       ds.out <- switch(ds.method, 
-                       'multiparm' = multiparm.downscale(lm.model, MF.slice), 
-                       'multiparm_step' = multiparm_step.downscale(lm.model, MF.slice, targ.var)
+                       'lmAsync' = multiparm.downscale(lm.model, MF.slice), 
+                       'lmstepAsync' = multiparm_step.downscale(lm.model, MF.slice, targ.var)
       )
-      notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-      out.data[,,,n,,] <- ds.out #[notna.index]
-      #If train_qcmask, check for whether function had to retry
-      if(missval.out$mv.retry && train_qcmask){
+      out.data[,,,n,,] <- index.qm(index.mask, ds.out, olap)
+      if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,][notna.index] <- NA #[notna.index]
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
   }else{
-    #If there is not enough data to downscale, the 
+    print('downscaling not possible at this point')
+    out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
     if(train_qcmask){
-      qc = array(NA, dim=dim(MF.data[[1]]))
+      qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
     }
   }
   return(list(ds=out.data, qc=qc))
@@ -113,7 +116,7 @@ multiparm_step.train <- function(OH,MH,args){
   test.prod <- data.frame(matrix(unlist(test.list), ncol=length(test.list)))
   names(test.prod) <- c('target', names(MH))
   #Sort test.prod by the first element in the DF
-  test.prod <- test.prod[order(target), ]
+  test.prod <- test.prod[order(test.prod$target), ]
   #Get model back
   lm.train.model <- step(lm(as.formula(paste0('target',"~1")),
                             data=test.prod, na.action='na.omit'), #.^2, 
@@ -125,7 +128,7 @@ multiparm_step.train <- function(OH,MH,args){
   return(lm.train.model)
 }
 
-lmstep.downscale <- function(lm.train.model, MF, targ.var){
+multiparm_step.downscale <- function(lm.train.model, MF, targ.var){
   #'Calls downscaling function on lmstep 
   #'#sort MF - we don't have DS, but we can sort by first el of MF instead
   rank.orig <- rank(MF[[1]])
