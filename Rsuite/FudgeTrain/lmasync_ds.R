@@ -79,7 +79,7 @@ multiparm.train <- function(OH, MH){
   OH <- lapply(OH, as.vector)
   MH <- lapply(MH, as.vector)
   #Sort all by the target variable (first el OH)
-  order.all <- order(OH[[1]])
+  order.all <- order(MH[[1]])
   OH <- lapply(OH, '[', order.all)
   MH <- lapply(MH, '[', order.all)
   #Missing values between two datasets already synched from missing value removal function
@@ -116,7 +116,7 @@ multiparm_step.train <- function(OH,MH,args){
   test.prod <- data.frame(matrix(unlist(test.list), ncol=length(test.list)))
   names(test.prod) <- c('target', names(MH))
   #Sort test.prod by the first element in the DF
-  test.prod <- test.prod[order(test.prod$target), ]
+  test.prod <- test.prod[order(test.prod[names(MH)[1]]), ]
   #Get model back
   lm.train.model <- step(lm(as.formula(paste0('target',"~1")),
                             data=test.prod, na.action='na.omit'), #.^2, 
