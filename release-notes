@@ -1,3 +1,6 @@
+03-03-17
+- QDM, MBC added for ds workflow
+
 01-01-17
 - Adding detrending workflow into main FUDGE - postProc workfow adds trends back
 in, downscaling can take place with detrended data
