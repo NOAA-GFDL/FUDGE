@@ -41,8 +41,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #Convert the threshold and create the reference mask
   wetday.convert <- convert.pr.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
-  print(ref.wetdays[7890:7896])
-  print(ref.data[7890:7896])
+#   print(ref.wetdays[7890:7896])
+#   print(ref.data[7890:7896])
   
   #Initialize the adjusted reference vectors
   if(verbose){print('Initializing reference vectors')}
@@ -122,8 +122,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     if(!is.null(dim(future.data))){
       nrips <- dim(future.data)[4]
       for(n in 1:nrips){
-        future.data[,,,n,,] <- conserve.prseries(future.data[,,,n,,],
-                                                 future.wetdays[,,,n,,], pool_ens=T)
+        future.data[,,,n,,] <- conserve.prseries(future.data[,,,n,, ,drop=F],
+                                                 future.wetdays[,,,n,, ,drop=F], pool_ens=T)
       }
     }else{
       future.data <- conserve.prseries(future.data, future.wetdays, pool_ens=T)
@@ -163,6 +163,7 @@ conserve.prseries <- function(data, mask, pool_ens=F){
     #in which case, conserving over nonspatial points is probably a 
     #bad idea
     data.dim <- dim(data)
+    print(paste("dims of data in conserve.prseries:", paste(data.dim, collapse=",")))
     for(x in 1:data.dim[1]){
       for(y in 1:data.dim[2]){
         loop.data <- data[x,y,,,,]

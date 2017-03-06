@@ -72,10 +72,15 @@ callQDM <- function(OH, MH, MF, args){
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
+  print(summary(OH.slice))
+  print(summary(MH.slice))
+  print(summary(MF.slice))
+  print(args$trace)
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)
   print(summary(tmp$mhat.p))
+  #stop('examine this out')
   return(tmp$mhat.p)
 }
 

@@ -57,6 +57,12 @@ loop.xy.data <- function(){
         if(s3.outloop){
           message('Applying S3 Adjustment')
         #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
+        print(summary(MH.slice))
+        print(summary(OH.slice))
+        print(summary(MF.slice))
+        print(dim(MH.slice$pr))
+        print(dim(OH.slice$pr))
+        print(dim(MF.slice$pr))        
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
                                           OH=OH.slice,
