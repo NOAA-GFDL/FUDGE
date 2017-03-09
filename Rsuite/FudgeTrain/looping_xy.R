@@ -57,12 +57,12 @@ loop.xy.data <- function(){
         if(s3.outloop){
           message('Applying S3 Adjustment')
         #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
-        print(summary(MH.slice))
-        print(summary(OH.slice))
-        print(summary(MF.slice))
-        print(dim(MH.slice$pr))
-        print(dim(OH.slice$pr))
-        print(dim(MF.slice$pr))        
+#         print(summary(MH.slice))
+#         print(summary(OH.slice))
+#         print(summary(MF.slice))
+#         print(dim(MH.slice$pr))
+#         print(dim(OH.slice$pr))
+#         print(dim(MF.slice$pr))        
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
                                           OH=OH.slice,
@@ -91,6 +91,7 @@ loop.xy.data <- function(){
           message(paste("Starting window", w, "of", nmasks))
           w <<- w
           qc.out <- NULL
+          print('applying mask')
           if (tmasks$apply_tmask){
             OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
             MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
@@ -101,6 +102,7 @@ loop.xy.data <- function(){
             MF.window <- MF.slice
           }          
           #Call section 3 methods; reassign output
+          print('checking s3 input')
           if (s3.inloop){
             tmp.s3 <- callS3Adjustment(pre.ds.train, 
                                        MH.window, OH.window, MF.window,
@@ -120,6 +122,7 @@ loop.xy.data <- function(){
           }else{
             window.post_ds_inloop <- post_ds_inloop
           }      
+          print('callings ds method')
           #Call the downsaing method
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, args, 

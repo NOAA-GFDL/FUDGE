@@ -21,7 +21,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  print(summary(missval.args))
   MF_mask <- missval.args$pr$MF
   #Get/override default arguments for MBC
   args <- set.MBC.defaults(MH, args)
@@ -31,10 +30,14 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     if (!is.null(missval.args$pr)){
       missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
     }
+#     print("summary of missval.args in mbc:")
+#     print(summary(missval.args))
+#     print(lapply(missval.args, 'summary'))
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='synchronous')
+                                         #missval.method='distributional')
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
@@ -50,19 +53,28 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
+      print("output from the ds loop:")
+      print(length(out))
+      print(summary(out))
+      print("expected sample size:")
       print(summary(missval.out$complete.fut))
+      print(paste('current summary of out.data for loop', n, ":"))
+      print(summary(as.vector(out.data)))
       out.data[,,,n,,][missval.out$complete.fut] <- out
       if(missval.out$mv.retry & train_qcmask){
-        out.data[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out$mhat.p))
+        qc[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out)) #prev.out$mhat.p
       }
     }else{
-      print('downscaling not possible at this point')
+#       print('downscaling not possible at this point')
+#       stop('examine this out')
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
   }
+print("summary of all MBC/QDM outputs:")
+print(summary(out.data))
   return(list(ds=out.data, qc=qc))
 }
 
@@ -84,9 +96,6 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
                                    complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
                                    complete.fut)))
-#   print(summary(OH.slice))
-#   print(summary(MH.slice))
-#   print(summary(MF.slice))
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 

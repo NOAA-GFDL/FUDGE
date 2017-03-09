@@ -133,12 +133,14 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
       pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
     }
   }
-  missval.args$pr <-list(OH=temp.out$ref$pr_mask, 
+  missval.args$pr <<- list(OH=temp.out$ref$pr_mask, 
                            MH=temp.out$adjust$pr_mask, 
                            MF=temp.out$future$pr_mask, 
                            pr_oh = input$att.list$pr_oh, 
                            pr_mh = input$att.list$pr_mh, 
                            pr_mf = input$att.list$pr_mf)
+  print("summary of missval.args:")
+  print(summary(missval.args))
   if(apply.0.mask){
     postproc.output$propts <- pr_mod
   }
@@ -180,7 +182,6 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
     for (varname in names(input[[datatype]])){
       if (var %in% transform.vars){
         #if var is one of the vars receiving a transform
-         print(summary(t.fxn))
         if(!is.null(t.fxn[[2]])){
           #If arguments to the transform, use them
           input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
@@ -193,8 +194,6 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
       }
     }
   }
-  #   print('sumamry of input:')
-  #   print(lapply(lapply(input, '[[', 'pr'), summary))
   return(list('input'=input,
               's5.list'=postproc.output))
 }
