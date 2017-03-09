@@ -1,7 +1,7 @@
 
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
-                   tmasks, train_qcmask=F){
+                    tmasks, train_qcmask=F){
   library(MBC)
   OH <- compress.xy.data(OH)
   MH <- compress.xy.data(MH)
@@ -32,16 +32,16 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='synchronous')
-                                         #missval.method='distributional')
+    #missval.method='distributional')
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
       out <- switch(ds.method, 
                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args),  
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
-                                    args$variant, 
-                                    missval.out$complete.hist, 
-                                    missval.out$complete.fut, args))
+                                        args$variant, 
+                                        missval.out$complete.hist, 
+                                        missval.out$complete.fut, args))
       train.stat <- missval.out$missval.status
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
@@ -60,22 +60,22 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
         qc[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out)) #prev.out$mhat.p
       }
     }else{
-#       print('downscaling not possible at this point')
-#       stop('examine this out')
+      #       print('downscaling not possible at this point')
+      #       stop('examine this out')
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
   }
-print("summary of all MBC/QDM outputs:")
-print(summary(out.data))
+  print("summary of all MBC/QDM outputs:")
+  print(summary(out.data))
   return(list(ds=out.data, qc=qc))
 }
 
 callQDM <- function(OH, MH, MF, args){
-  #print(args)
-  #stop('examine this out')
+  print(args)
+  stop('examine this out')
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
@@ -87,11 +87,11 @@ callQDM <- function(OH, MH, MF, args){
 
 callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   OH.slice <- as.matrix(as.data.frame(lapply(OH, function(x,y){return(x[y])}, 
-                                   complete.hist)))
+                                             complete.hist)))
   MH.slice <- as.matrix(as.data.frame(lapply(MH, function(x,y){return(x[y])}, 
-                                   complete.hist)))
+                                             complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
-                                   complete.fut)))
+                                             complete.fut)))
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
@@ -218,15 +218,15 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
     }
   }
   rat.names <- c('ratio', 'ratio.seq', 'ratio_seq')
-#   if (any(rat.names %in% names(args))){
-#     rat.name <- rat.names[which(rat.names %in% names(args))]
-#     in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
-#     if (length(in.rat.seq) != length(ratio.seq)){
-#       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
-#                  "did not have as many elements as MH has vars!"))
-#     }
-#     ratio.seq <- in.rat.seq
-#   }else 
+  #   if (any(rat.names %in% names(args))){
+  #     rat.name <- rat.names[which(rat.names %in% names(args))]
+  #     in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
+  #     if (length(in.rat.seq) != length(ratio.seq)){
+  #       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
+  #                  "did not have as many elements as MH has vars!"))
+  #     }
+  #     ratio.seq <- in.rat.seq
+  #   }else 
   if ('type' %in% names(args)){
     if (args$type=='add'){
       ratio.seq <- FALSE
@@ -239,7 +239,14 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
     jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
     jitter.fac <- args[[jitter.name]]
   }
-  return(list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-              var.names=unlist(predictor.vars)))
+  #Put together MBC-specific args  
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+                      var.names=unlist(predictor.vars))
+  #Deal with sample size
+  if ('minsamplesize' %in% names(args)){
+    return.args$minsamplesize <- args$minsamplesize
+  }
+  
+  return(return.args)
 }
 
