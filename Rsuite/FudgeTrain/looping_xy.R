@@ -125,7 +125,7 @@ loop.xy.data <- function(){
           print('callings ds method')
           #Call the downsaing method
           tmp.ds <- callDSMethod(ds.method, 
-                                 OH.window, MH.window, MF.window, args, 
+                                 OH.window, MH.window, MF.window, ds.args, 
                                  missvals=ds.ref$missval_method, 
                                  missval.args=missval.args,
                                  train_qcmask=train_qcmask,

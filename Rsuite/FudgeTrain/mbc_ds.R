@@ -22,17 +22,12 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     qc <- NULL
   }
   MF_mask <- missval.args$pr$MF
-  #Get/override default arguments for MBC
-  args <- set.MBC.defaults(MH, args)
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
     if (!is.null(missval.args$pr)){
       missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
     }
-#     print("summary of missval.args in mbc:")
-#     print(summary(missval.args))
-#     print(lapply(missval.args, 'summary'))
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
@@ -79,13 +74,14 @@ print(summary(out.data))
 }
 
 callQDM <- function(OH, MH, MF, args){
+  #print(args)
+  #stop('examine this out')
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)
-  #stop('examine this out')
   return(tmp$mhat.p)
 }
 
@@ -119,12 +115,12 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   return(tmp$mhat.p[,1])
 }
 
-set.MBC.defaults <- function(MH, args){
+set.MBC.defaults <- function(args, predictor.vars, ...){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
   iter = 30
   jitter.fac = 0
-  ratio.seq = rep(F, length(MH))
+  ratio.seq = rep(F, length(predictor.vars))
   #This is going to have implications for the multi-point downscaling. 
   #Need access to npts_by in order to expand this list...
   #or really just need 1; multivar-targets are going to have that effect.
@@ -135,13 +131,19 @@ set.MBC.defaults <- function(MH, args){
   #conversion. 
   #...I'm pretty sure those are globals anyway; we can check.
   if ('trace' %in% names(args)){
+    non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
+    #if trace is non-numeric (i.e an arg we'd pass to the pr functions
     #get OH pr units from adjust.metadata (created back in main driver)
-    pr.units <- adjust.metadata$pr_oh_units
-    if (length(pr.units)==0){
-      stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
+    if (non.numeric.trace){
+      pr.units <- adjust.metadata$pr_oh_units
+      if (length(pr.units)==0){
+        stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
+      }
+      pr.trace <- convert.pr.threshold(args$trace, pr.units)
+      trace <- pr.trace
+    }else{
+      trace <- as.numeric(args$trace)
     }
-    pr.trace <- convert.pr.threshold(args$trace, pr.units)
-    trace <- pr.trace
     if ('transform' %in% names(args)){
       tform <- return.t.fxn(args$transform, args$transform_arg)
       if (is.null(tform[[2]])){
@@ -155,11 +157,81 @@ set.MBC.defaults <- function(MH, args){
   if (any(rat.names %in% names(args))){
     rat.name <- rat.names[which(rat.names %in% names(args))]
     in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
-    in.rat.seq <- sapply(in.rat.seq, function(x,r){rep(x,r)}, oh_by**2)
-    ratio.seq <- in.rat.seq
+    #...oh_by is going to blow this entire bit up hard at some point in the 
+    #future. I'm not sure I can get a good check going without it, though.
+    #...it's also going to blow up when we get to using time-varying amplitudes
+    #in here - need to make sure that only one val gets used for those.
+    ##Okay - as of 2-14-17, adding this in two steps: one for the 
+    #     in.rat.seq <- sapply(in.rat.seq, function(x,r){rep(x,r)}, oh_by**2)
+    #     ratio.seq <- in.rat.seq
     if (length(in.rat.seq) != length(ratio.seq)){
       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
                  "did not have as many elements as MH has vars!"))
+    }
+    ratio.seq <- in.rat.seq
+  }
+  jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
+  if (any(jitter.names %in% names(args))){
+    jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
+    jitter.fac <- args[[jitter.name]]
+  }
+  return(list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+              variant=args$variant, var.names=unlist(predictor.vars)))
+}
+
+
+set.QDM.defaults <- function(args, predictor.vars, ...){
+  #'Sets common defaults for the inputs to MBC that we want
+  #'to control. Most of these also apply to QDM.
+  iter = 30
+  jitter.fac = 0
+  ratio.seq = F #should be 1 for this case
+  trace = 0.05
+  ties = 'first'
+  if ('trace' %in% names(args)){
+    non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
+    #if trace is non-numeric (i.e an arg we'd pass to the pr functions
+    #get OH pr units from adjust.metadata (created back in main driver)
+    if (non.numeric.trace){
+      pr.units <- adjust.metadata$pr_oh_units
+      if (length(pr.units)==0){
+        stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
+      }
+      pr.trace <- convert.pr.threshold(args$trace, pr.units)
+      trace <- pr.trace
+    }else{
+      trace <- as.numeric(args$trace)
+    }
+    #Now check the section 5 args for the 
+    if (exists('pre.ds.train')){
+      pre.ds.types <- sapply(pre.ds.train, '[[', 'type')
+      if ('transform' %in% pre.ds.types){
+        tform.idx <- which(pre.ds.types=='transform')
+        tform <- return.t.fxn(pre.ds.train[[tform.idx]]$pp.args$transform, 
+                              pre.ds.train[[tform.idx]]$pp.args$arg)
+        if (is.null(tform[[2]])){
+          trace <- do.call(tform[[1]], list(trace))
+        }else{
+          trace <- do.call(tform[[1]], list(trace, tform[[2]]))
+        }
+      }
+    }
+  }
+  rat.names <- c('ratio', 'ratio.seq', 'ratio_seq')
+#   if (any(rat.names %in% names(args))){
+#     rat.name <- rat.names[which(rat.names %in% names(args))]
+#     in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
+#     if (length(in.rat.seq) != length(ratio.seq)){
+#       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
+#                  "did not have as many elements as MH has vars!"))
+#     }
+#     ratio.seq <- in.rat.seq
+#   }else 
+  if ('type' %in% names(args)){
+    if (args$type=='add'){
+      ratio.seq <- FALSE
+    }else if (args$type=='mult'){
+      ratio.seq <- TRUE
     }
   }
   jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
@@ -168,5 +240,6 @@ set.MBC.defaults <- function(MH, args){
     jitter.fac <- args[[jitter.name]]
   }
   return(list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-              variant=args$variant))
+              var.names=unlist(predictor.vars)))
 }
+

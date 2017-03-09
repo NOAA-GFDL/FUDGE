@@ -287,8 +287,8 @@ set.ds.defaults <- function(ds.method, args, ...){
     return(args)
   }else{
     new.args <- switch(ds.method, 
-                       MBC = set.MBC.defaults(args, ...), 
-                       QDM = set.QDM.defaults(args, ...),
+                       'MBC' = set.MBC.defaults(args, ...), 
+                      'QDM' = set.QDM.defaults(args, ...),
                        stop(paste("Error in set.ds.defaults: no method", 
                                   ds.method, "!")))
     return(new.args)
@@ -297,8 +297,6 @@ set.ds.defaults <- function(ds.method, args, ...){
 message("Checking for default ds arguments (requires var units)")
 ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
                             pre.ds.train=pre.ds.train)
-print(summary(ds.args))
-print(ds.args)
 
 
 ##s3 call formerly here
@@ -306,15 +304,6 @@ print(ds.args)
 message("FUDGE training begins...")
 message(paste("Starting at:", Sys.time()))
 start.time <- proc.time()
-
-#args should always exist; it's specified in the runcode
-#as of 9-29 I'm not sure why this is here, but it seems to have been
-#needed in the past. 
-if (args[1]=='na'){
-  ds.args=NULL
-}else{
-  ds.args=args
-}
 
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
