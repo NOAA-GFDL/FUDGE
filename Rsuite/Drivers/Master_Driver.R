@@ -278,6 +278,29 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
 ds <- list('ds' = array(NA, dim=output.dim), 
            'qc' = array(NA, dim=output.dim))
 
+#Added 02-14-17 - trying to set up defaults differently
+set.ds.defaults <- function(ds.method, args, ...){
+  #Alter args for a given method depending on the args allowed
+  #(NOTE: may include settings other than default, such as QDM type to ratio)
+  default.methods <- c("MBC", "QDM")
+  if (! (ds.method %in% default.methods)){
+    return(args)
+  }else{
+    new.args <- switch(ds.method, 
+                       MBC = set.MBC.defaults(args, ...), 
+                       QDM = set.QDM.defaults(args, ...),
+                       stop(paste("Error in set.ds.defaults: no method", 
+                                  ds.method, "!")))
+    return(new.args)
+  }
+}
+message("Checking for default ds arguments (requires var units)")
+ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
+                            pre.ds.train=pre.ds.train)
+print(summary(ds.args))
+print(ds.args)
+
+
 ##s3 call formerly here
 
 message("FUDGE training begins...")
@@ -295,6 +318,7 @@ if (args[1]=='na'){
 
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
+
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
 print('summary of ds:')
