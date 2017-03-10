@@ -74,8 +74,8 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
 }
 
 callQDM <- function(OH, MH, MF, args){
-  print(args)
-  stop('examine this out')
+#   print(args)
+#   stop('examine this out')
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
