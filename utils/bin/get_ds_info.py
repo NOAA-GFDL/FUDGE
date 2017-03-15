@@ -28,6 +28,8 @@ def get_ds_info(ds_method, FUDGEROOT):
 		
 def parse_aux_info(jsonfile):
 	#Reads the aux file; returns bits that we are interested in
+	print("Parsing aux file")
+	print(jsonfile)
 	with open(jsonfile, 'r') as jsonfile:
 		jsondict = json.load(jsonfile)
 		#wallclock time
@@ -39,6 +41,15 @@ def parse_aux_info(jsonfile):
 				wallclocktime = jsondict['wallclocktime']	
 		else:
 			wallclocktime='12:00:00'
+		#Subsets in i and j that we are interested in
+		defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}	
+		subsetdict = {}
+		for k in defaultdict.keys():
+			if k in jsondict.keys():
+				subsetdict[k] = jsondict[k][0]
+			else:
+				#default if not present in json
+				subsetdict[k] = jsondict[k]
 		#files that can be copied
 		copy_elements = ['stencil', 'geomask']
 		copy_files = []
@@ -54,5 +65,5 @@ def parse_aux_info(jsonfile):
 						copy_files.append(filetmp)
 		if len(copy_files) > 1:
 			copy_files = list(set(copy_files))				
-	return({'copy_files':copy_files, 'wallclocktime':wallclocktime})					
+	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 'subsetdict':subsetdict})					
 			

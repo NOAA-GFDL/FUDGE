@@ -590,6 +590,17 @@ def main():
 	ds_info = get_ds_info(method, basedir)
 	copy_leapmasks = ds_info['copy_leapmasks']
 	
+	#As of 3-15-17, this needs a check for the 'all' string; turn into coords.
+	i_subset = auxinfo['subsetdict']['i_subset']
+	j_subset = auxinfo['subsetdict']['j_subset']
+	if i_subset == 'all':
+		i_subset = (lone-lons) + 1
+	else:
+		i_subset = int(i_subset)	
+	if j_subset == 'all':
+		j_subset = (late-lats) + 1
+	else:
+		j_subset = int(j_subset)	
 	#print(copy_leapmasks)
 	#print('examine runscript output')
 	#sys.exit()
@@ -598,7 +609,9 @@ def main():
 	mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
 	predlist = predictor.split(",")
-	create_all_runscripts(lons, lone, njobs, ncpus, fudgetag, sbase, \
+	print("Calling create_all_runscripts")
+	create_all_runscripts(lons, lone, i_subset, \
+						  lats, late, j_subset, njobs, ncpus, fudgetag, sbase, \
 	                      target_dir, hist_pred_dir, fut_pred_dir,\
 	                      oh_timerange, mh_timerange, mf_timerange, predlist, \
 	                      spat_mask, target_time_window, hist_time_window, \
@@ -606,8 +619,8 @@ def main():
 	                      file_j_range, idirsuffix, \
 	                      ds_info['copy_leapmasks'], ds_info['multivar_target'], 
 	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'])
-#	print('examine runscript output')
-#	sys.exit()
+	print('examine runscript output')
+	sys.exit()
 		
 	#############################################################
 	#sys.exit("examine outcome of script")  
