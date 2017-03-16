@@ -122,8 +122,10 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     if(!is.null(dim(future.data))){
       nrips <- dim(future.data)[4]
       for(n in 1:nrips){
-        future.data[,,,n,,] <- conserve.prseries(future.data[,,,n,,],
-                                                 future.wetdays[,,,n,,], pool_ens=T)
+        print(dim(future.data))
+        print(dim(future.wetdays))
+        future.data[,,,n,,] <- conserve.prseries(future.data[,,,n,, ,drop=F],
+                                                 future.wetdays[,,,n,, ,drop=F], pool_ens=T)
       }
     }else{
       future.data <- conserve.prseries(future.data, future.wetdays, pool_ens=T)
@@ -163,10 +165,11 @@ conserve.prseries <- function(data, mask, pool_ens=F){
     #in which case, conserving over nonspatial points is probably a 
     #bad idea
     data.dim <- dim(data)
+    print(data.dim)
     for(x in 1:data.dim[1]){
       for(y in 1:data.dim[2]){
-        loop.data <- data[x,y,,,,]
-        loop.mask <- mask[x,y,,,,]
+        loop.data <- data[x,y,,,,, drop=F]
+        loop.mask <- mask[x,y,,,,, drop=F]
         total.trace.pr <- sum(loop.data[loop.mask==FALSE], na.rm=T)
         if(total.trace.pr > 0){
           pr.adjust <- total.trace.pr/sum(loop.mask, na.rm=T)
