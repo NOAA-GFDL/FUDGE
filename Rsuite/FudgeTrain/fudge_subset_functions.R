@@ -4,43 +4,77 @@
 #which coordinates to loop over within the function.
 
 pad.fudge.var.dim <- function(data, pad.dim, pad.by=1, 
-                              pad.type='NA', pad.x.loc='start'){
+                              pad.type='NA', pad.loc='start'){
   #Pads a 6-dimensional dataset with more values along one of 
   #x or y depending on args. The pad specification changes
   #how the missing values will be added/padded.
   #Called from the fudge dataset builder.
   #Strong assumption that the 6-dimensional structure is enforced
   #pad.dim can be one of 'x' or 'y'
+  #As of 3-16-17, x and y are no longer padded diffrently
   new.dim <- dim(data)
   if (pad.dim=='x'){
-    x.len <- new.dim[1]
-    new.dim[1] <- x.len + pad.by
-    if(pad.x.loc=='start'){
-      pad.seq = (new.dim[1]-x.len+1):new.dim[1]
-    }else if(pad.x.loc=='end'){
-      pad.seq = 1:x.len
-    }
+    dim.len <- new.dim[1]
   }else if (pad.dim=='y'){
-    #y dim always gets iterated over twice
-    y.len <- new.dim[2]
-    new.dim[2] <- new.dim[2] + (pad.by - 1) # no longer * 2 
+    dim.len <- new.dim[2]
   }
-  out.data <- array(NA, dim=new.dim)
+  start.pad.seq <- c(1)
+  end.pad.seq <- c()
+  if ('start' %in% pad.loc){
+    pad.idx <- which(pad.loc=='start')
+    pad.dim.len <- dim.len + pad.by[pad.idx]
+    start.pad.seq <- (pad.by[pad.idx]+1):pad.dim.len
+  }
+  if ('end' %in% pad.loc){
+    pad.idx <- which(pad.loc=='end')
+    pad.dim.len <- dim.len + pad.by[pad.idx]
+    end.pad.seq <- min(start.pad.seq):dim.len
+  }
+  all.pad.seq <- sort(unique(c(start.pad.seq, end.pad.seq)))
+  print(pad.loc)
+  print(pad.by)
+  print(all.pad.seq)
+  print(length(all.pad.seq))
+  print(dim(data))
+  new.dim.len <- sum(pad.by) + dim.len
   if (pad.dim=='x'){
-    out.data[pad.seq,,,,,] <- data
+    new.dim[1] <- new.dim.len
+    out.data <- array(NA, dim=new.dim)
+    out.data[all.pad.seq,,,,,] <- data
   }else if (pad.dim=='y'){
-    pad.start <- (pad.by-1)/2 #start counting from here
-    out.data[,(1:y.len) + (pad.start),,,,] <- data
+    new.dim[2] <- new.dim.len
+    out.data <- array(NA, dim=new.dim)
+    out.data[,all.pad.seq,,,,] <- data
   }
-  #stop('examine output')
-  #if we ever get to this point, pad.type can be set to the 
-  #last index in the dimension that it is padding as well
   remove(data)
   gc()
   return(out.data)
+#   if (pad.dim=='x'){
+#     x.len <- new.dim[1]
+#     new.dim[1] <- x.len + pad.by
+#     if(pad.x.loc=='start'){
+#       pad.seq = (new.dim[1]-x.len+1):new.dim[1]
+#     }else if(pad.x.loc=='end'){
+#       pad.seq = 1:x.len
+#     }
+#   }else if (pad.dim=='y'){
+#     #y dim always gets iterated over twice
+#     y.len <- new.dim[2]
+#     new.dim[2] <- new.dim[2] + (pad.by - 1) # no longer * 2 
+#   }
+#   out.data <- array(NA, dim=new.dim)
+#   if (pad.dim=='x'){
+#     out.data[pad.seq,,,,,] <- data
+#   }else if (pad.dim=='y'){
+#     pad.start <- (pad.by-1)/2 #start counting from here
+#     out.data[,(1:y.len) + (pad.start),,,,] <- data
+#   }
+#   remove(data)
+#   gc()
+#   return(out.data)
 }
 
-get.FUDGE.subset <- function(by, idx, idx_max){
+get.FUDGE.subset <- function(by, idx, idx_max, stride=0){
   #Gets a subset of indices suitable for using in the IO functions
   #by: how many points you will be taking in a single slice
   #idx: where you are starting counting from
@@ -51,9 +85,10 @@ get.FUDGE.subset <- function(by, idx, idx_max){
   ##to pad the input datsets.
   delt <- floor(by/2) #for by=1, this is 0
   start = idx - delt
-  end = idx + delt
+  end = idx + delt + stride
   #Track whether or not you need to add end-of-grid checks elsewhere
   #Only one of teh olap conditions should ever be true at once.
+  #This has changed as of 3-16-17 - you can overlap both at once.
   olap = F
   olap_by = 0
   olap_loc = 'none'
@@ -64,13 +99,18 @@ get.FUDGE.subset <- function(by, idx, idx_max){
     start = 1
   }
   if (end > idx_max){
-    if(olap == T){
-      stop(paste("Error in get.fudge.subset: subset overlapped start and end", 
-                 "of index simultaneously! This should not be possible."))
+    #     if(olap == T){
+    #       stop(paste("Error in get.fudge.subset: subset overlapped start and end", 
+    #                  "of index simultaneously! This should not be possible."))
+    #     }
+    if (olap){
+      olap_loc = c('start', 'end')
+      olap_by = c(olap_by, end-idx_max)
+    }else{
+      olap = T
+      olap_by = end - idx_max
+      olap_loc = 'end'
     }
-    olap = T
-    olap_by = end - idx_max
-    olap_loc = 'end'
     end <- idx_max
   }
   return(list(subset=c(start, end), 
@@ -139,7 +179,7 @@ loop.seq <- function(len, delt, allow_partial=F, fixed_edge=T){
     start.seq <- c(rep(start.seq[1], pad), 
                    start.seq, rep(start.seq[length(start.seq)], pad))
     end.seq <- c(rep(end.seq[1], pad), 
-                   end.seq, rep(end.seq[length(end.seq)], pad))
+                 end.seq, rep(end.seq[length(end.seq)], pad))
   }else{
     #complete datasets on edges
     base.seq <- 1:(len - (delt-1) )

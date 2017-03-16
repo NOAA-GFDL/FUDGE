@@ -18,6 +18,7 @@ import get_npts_by
 from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
+from create_all_runscripts import awful_runcode_hack
 from get_pp_specs import get_pp_specs
 import get_ds_info
 from get_ds_info import get_ds_info
@@ -594,11 +595,11 @@ def main():
 	i_subset = auxinfo['subsetdict']['i_subset']
 	j_subset = auxinfo['subsetdict']['j_subset']
 	if i_subset == 'all':
-		i_subset = (lone-lons) + 1
+		i_subset = (int(lone)-int(lons)) + 1
 	else:
 		i_subset = int(i_subset)	
 	if j_subset == 'all':
-		j_subset = (late-lats) + 1
+		j_subset = (int(late)-int(lats)) + 1
 	else:
 		j_subset = int(j_subset)	
 	#print(copy_leapmasks)
@@ -619,8 +620,8 @@ def main():
 	                      file_j_range, idirsuffix, \
 	                      ds_info['copy_leapmasks'], ds_info['multivar_target'], 
 	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'])
-	print('examine runscript output')
-	sys.exit()
+	#print('examine runscript output')
+	#sys.exit()
 		
 	#############################################################
 	#sys.exit("examine outcome of script")  
@@ -643,7 +644,7 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
 	make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
 	make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"'+" "+str(idirsuffix) 
-	#cprint make_code_cmd
+	print(make_code_cmd)
 	#p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 	#cprint make_code_cmd
 	p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -657,6 +658,8 @@ def main():
 	#print output,errors
 	###############################################################################################
 	print "1- completed\n"
+	print("Copying runcodes to modified locations from general runscript mods")
+	awful_runcode_hack(osp.join(sbase, "runcode"), osp.join(sbase, "runscript"))
 	#print "debug............msub turned ",msub
 	############################### 2 ################################################################
 	##################################### 4 ############################################

@@ -42,12 +42,20 @@ print(console.args)
 if (length(console.args) > 0){
   i_idx <- as.numeric(console.args[1])
   i_max <- as.numeric(console.args[2])
-  auxfile <- console.args[3]
-  copy_from_tmp = console.args[4]
+  i_stride <- as.numeric(console.args[3])
+  j_idx <- as.numeric(console.args[4])
+  j_max <- as.numeric(console.args[5])
+  j_stride <- as.numeric(console.args[6])  
+  auxfile <- console.args[7]
+  copy_from_tmp = console.args[8]
   x.pad <- "NA"
 }else{
   i_idx <- 1 #167 #pr_diff = 37 i800 = 53 #194 #10 #47 is ocean, I think
   i_max <- 194
+  i_stride <- 1
+  j_idx <- 1
+  j_max <- 114
+  j_stride <- 114
   auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" #01 has spatial masks; 05_offset has asymmetric grid
   copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
   x.pad <- "NA"
@@ -163,9 +171,8 @@ if(spat.mask.dir_1!="na"){
 ### Now, access input data sets
 message("Reading in target data")
 
-oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max)
-#Note: we get ALL AVAILABLE Y dims for the moment. No subset neccessary.
-#oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max)
+oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max, i_stride)
+oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max, j_stride) 
 if (ds.ref$multivar_target){
   #Right now, only applies to MBC
   OH.files <- c()
@@ -177,7 +184,7 @@ if (ds.ref$multivar_target){
                                                     target.file.start.year_1,target.file.end.year_1, 
                                                     target.suffix, is_OH = F))
   }
-  OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset), 
+  OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset, y=oh_y_subset), 
                             dim=ds.ref$oh_dimlist, 
                             x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
                             aux.ref$OH$geomask)
@@ -185,7 +192,7 @@ if (ds.ref$multivar_target){
   OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                 target.file.start.year_1,target.file.end.year_1, 
                                 target.suffix, is_OH = T)
-  OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset), 
+  OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset, y=oh_y_subset), 
                             dim=ds.ref$oh_dimlist, 
                             x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
                             aux.ref$OH$geomask)
@@ -209,9 +216,10 @@ for (var in predictor.vars){
                                                   hist.file.start.year_1,hist.file.end.year_1, 
                                                   hist.pred.suffix))
 }
-mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max)
+mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride)
+mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride) 
 print(mh_x_subset)
-MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset), 
+MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset,y=mh_y_subset), 
                           dim=ds.ref$mh_dimlist, 
                           x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
                           aux.ref$MH$geomask)
@@ -232,9 +240,10 @@ for (var in predictor.vars){
                                                   fut.file.start.year_1,fut.file.end.year_1, 
                                                   fut.pred.suffix))
 }
-mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max)
+mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max, i_stride)
+mf_y_subset <- get.FUDGE.subset(aux.ref$MF$jdim, j_idx, j_max, j_stride) 
 MF <- build.FUDGE.dataset(MF.files, predictor.vars, 
-                          subset=list(x=mf_x_subset), 
+                          subset=list(x=mf_x_subset, y=mf_y_subset), 
                           dim=ds.ref$mf_dimlist, 
                           x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim, 
                           aux.ref$MF$geomask)

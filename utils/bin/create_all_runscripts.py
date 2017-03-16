@@ -1,5 +1,5 @@
 import re
-import os, stat
+import os, stat, shutil
 from os import path as osp
 import itertools
 
@@ -183,34 +183,42 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
 	
 	print(i_elements)
+	print(len(i_elements))
 	print(j_elements)
+	print(i_offset)
+	print(j_offset)
 	
-	#Finally, start opts that need to loop by index available	
+	#Finally, start opts that need to loop by index available
+	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
 	for j in range(0, len(j_elements)-1):
 		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1])
 		#j_max and j_by are passed in already; they are numeric	
 		for i in range(0, len(i_elements)-1):
+			print("starting loop", i)
 			i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1])
 			if i % njobs == 0 :
 				#Create the master scriptname
 				end_idx = i+njobs-1
 				if end_idx > len(i_elements) - 1:
 					end_idx  = len(i_elements) - 1
-				i_master_string = i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
+				i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
 				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)
+				print('name of master script')
+				print(master_scriptname)	
 				runscript_files = []
 			#Since master is created on first (always), can proceed with rest of runscript calls
-			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+".I"+i_string+"_"+j_string)
+			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+"."+i_string+"_"+j_string)
 			###THIS NEEDS TRANLSATION WORK
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
-													i-i_offset, i_max, i_by, \
-													j-j_offset, j_max, j_by, auxfile, target_var,outdirs)
+													i+1, i_max, i_by, \
+													j+1, j_max, j_by, auxfile, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	
 			runscript_files.append(runscript_name)
-			if i %njobs == (njobs-1) | i == len(i_elements) - 1:
+			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
+				print("writing master to file")
 				runscript_calls = [el + " & \n" for el in runscript_files]
 				runscript_calls = "sleep 20 \n".join(runscript_calls)
 				with open(master_scriptname, 'w') as f: 
@@ -239,7 +247,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 	return(outdir_string)
 	
 def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, 
-							j_max, j_idx, j_by, auxfile, target_var, outdirs):
+							j_idx, j_max, j_by, auxfile, target_var, outdirs):
 	#Creates the runscript code specific to a slice of the grid downscaled 
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
@@ -276,7 +284,7 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	#when we get to writing coordinates, this needs to be updated
 	#Note: right now, for a given script job, all J are going to be identical.
 	outstr = []
-	outstr.append("gcp $TMPDIR/" + outdir + "*.I"+i_string+"_"+j_string + ".nc " + outdir)
+	outstr.append("gcp $TMPDIR/" + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
 	outstr.append("\t touch " + outdir + "/.mini.success")
@@ -285,7 +293,7 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	outstr.append('endif')
 	#Now do the same for the qc mask file
 	out_mask_dir = outdir + "/" + target_var + "_qcmask/"
-	outstr.append("gcp $TMPDIR/" + out_mask_dir + "*.I"+i_string+"_"+j_string + ".nc " + out_mask_dir)
+	outstr.append("gcp $TMPDIR/" + out_mask_dir + "*."+i_string+"_"+j_string + ".nc " + out_mask_dir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
 	outstr.append("\t touch " + out_mask_dir + "/.mini.success")
@@ -293,5 +301,23 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	outstr.append("\t touch " + out_mask_dir + "/.mini.fail")
 	outstr.append('endif')
 	return("\n".join(outstr) + "\n")	
+	
+def awful_runcode_hack(runcode_dir, runscript_dir):
+	#I don't want to have to tinker with something that we're planning on 
+	#replacing during this flavor or the next. For now, it's not much of
+	#a stretch to copy some of the runcodes to a location that fits the
+	#expected pattern in the runscripts.	
+	runscript_files = [el for el in os.listdir(runscript_dir) if re.search("script", el) is not None]	
+	runcode_files = [el for el in os.listdir(runcode_dir) if re.search("code", el) is not None]
+	runscript_patterns = [re.split("\.", el)[-1] for el in runscript_files]
+	print(runscript_patterns)
+	runcode_split = re.split("\.", runcode_files[0])
+	print(runcode_split)
+	for patt in runscript_patterns:
+		tmp_file = runcode_split
+		tmp_file[-1] = patt
+		tmp_dest = osp.join(runcode_dir, ".".join(tmp_file))
+		tmp_src = osp.join(runcode_dir, runcode_files[0])
+		shutil.copy2(tmp_src, tmp_dest)	
 	
                        
