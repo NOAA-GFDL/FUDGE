@@ -23,6 +23,8 @@ from get_pp_specs import get_pp_specs
 import get_ds_info
 from get_ds_info import get_ds_info
 from get_ds_info import parse_aux_info
+import make_postProc_scripts
+from make_postProc_scripts import make_postProc_scripts
 
 list_title = []
 dictDS_hi = {}
@@ -736,77 +738,90 @@ def main():
 	if statmail:
 		open(sbase+"/postProc/verb/verbose.true", 'a').close() 
 	else:
-		open(sbase+"/postProc/verb/verbose.false", 'a').close()				
-	suffctr = 1
-	for pname,pval in copyprop.iteritems():
-	   listrips = pval.split(',')
-	for mout in listrips: 
-	  if (dev == "off"):
-		tsuffix = ""
-		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
-	  else:
-		tsuffix = "_"+tstamp
-		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
-	  try:
-  		ppfile = open(ppbase, 'w') 
-		if(mout != 'na'):
-		   moutsuff = " -e "+mout.strip()
-		   mout_prefix = mout.strip()
-		else:
-		   moutsuff = " "
-		   mout_prefix = "fakerip"	
-		 #CEW edits 5-2 related to writing postproc status files
-		 #ppstat_command = "if ($status == 0) then \n touch "  
-		 #3-3 CEW edits related to email notifications  
-		#check if qc_mask is relevant  
-		if(qc_mask != 'off'):
-  			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
-	 	else:
-			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
-  		ppfile.write(pp_cmnd)
-		print "wrote to ",ppfile
-  		ppfile.close()
-	  except:
-  		print "Unable to create postProc command file. You may want to check your settings."
+		open(sbase+"/postProc/verb/verbose.false", 'a').close()		
+	#CEW edits 3-21-2017:
+	#Making new tool for generating postProc scripts
+	listrips = pval.split(",")
+	try:
+		make_postProc_scripts(listrips, sbase, NEMSemail1)
+		#Note: may need to include commands on the nemsemail as well
+		#os.chmod(msubwrap.name, 0744)
+		#msub -m ae -M <email> script 
+		print "----------------------------------------"
+	except:
+		print "Unable to create the postProc scripts for you at this time"	
+		sys.exit(-4)
+				
+#	suffctr = 1
+#	for pname,pval in copyprop.iteritems():
+#	   listrips = pval.split(',')
+#	for mout in listrips: 
+#	  if (dev == "off"):
+#		tsuffix = ""
+#		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
+#	  else:
+#		tsuffix = "_"+tstamp
+#		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
+#	  try:
+ # 		ppfile = open(ppbase, 'w') 
+	#	if(mout != 'na'):
+	#	   moutsuff = " -e "+mout.strip()
+	#	   mout_prefix = mout.strip()
+	#	else:
+	#	   moutsuff = " "
+	#	   mout_prefix = "fakerip"	
+#		 #CEW edits 5-2 related to writing postproc status files
+#		 #ppstat_command = "if ($status == 0) then \n touch "  
+#		 #3-3 CEW edits related to email notifications  
+#		#check if qc_mask is relevant  
+#		if(qc_mask != 'off'):
+ # 			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
+#	 	else:
+#			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
+ # 		ppfile.write(pp_cmnd)
+#		print "wrote to ",ppfile
+#  		ppfile.close()
+#	  except:
+#  		print "Unable to create postProc command file. You may want to check your settings."
 	#c	print create_pp_cmd
-	  if(os.path.exists(ppbase)):
+#	  if(os.path.exists(ppbase)):
 ######################### write postProc_job to be used ############################
-		ppLoc = basedir+"/utils/bin/"+"create_postProc"
-		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+fudgetag+" "+mout_prefix
-		p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-		output4, error4 = p4.communicate()
-		if(p4.returncode != 0):
-			print "Step4:!!!! FAILED !!!!, please contact developer."
-			print output4, error4
-			sys.exit(-4)
+#		ppLoc = basedir+"/utils/bin/"+"create_postProc"
+#		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+fudgetag+" "+mout_prefix
+#		p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+#		output4, error4 = p4.communicate()
+#		if(p4.returncode != 0):
+#			print "Step4:!!!! FAILED !!!!, please contact developer."
+#			print output4, error4
+#			sys.exit(-4)
 		#uncomment print output4, error4
 		#print "4-"+str(suffctr)+" completed"
-		print "----------------------------------------"
-		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
-		print(NEMSemail1)
-		if (NEMSemail1 != 'none'):  
-			msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
-			print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-		else:       
-   			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-			msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
-
-			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-	  else:
-		print "postProc_command cannot be created. postProc_source does not exist"
-	  suffctr = suffctr + 1
-	print "----------------------------------------"
-	try:
-		msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
-		os.chmod(msubwrap.name, 0744)
-		content = "#!/bin/tcsh -f"
-		for msubitem in msubwrapper:
-		    content = content + "\n" + msubitem
-		content = content + "\n"
-		msubwrap.write(content)
-		msubwrap.close()	
-	except:
-		print "Unable to create msubwrapper script for you at this time"
+#		print "----------------------------------------"
+#		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
+#		print(NEMSemail1)
+#		if (NEMSemail1 != 'none'):  
+#			msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
+#			print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
+#		else:       
+ #  			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
+#			msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
+#
+#			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
+#	  else:
+#		print "postProc_command cannot be created. postProc_source does not exist"
+#	  suffctr = suffctr + 1
+#	print "----------------------------------------"
+#	try:
+#		msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
+	#	os.chmod(msubwrap.name, 0744)
+	#	content = "#!/bin/tcsh -f"
+	#	for msubitem in msubwrapper:
+	#	    content = content + "\n" + msubitem
+	#	content = content + "\n"
+	#	msubwrap.write(content)
+	#	msubwrap.close()	
+	#except:
+	#	print "Unable to create msubwrapper script for you at this time"
 	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", msubwrap.name 
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 job submission (if applicable) ##############################################	
