@@ -7,14 +7,13 @@ loop.xy.data <- function(){
                               mh.coords$x.start, mf.coords$x.start), 'length'))
   y.len <- unique(sapply(list(oh.coords$y.start, 
                               mh.coords$y.start, mf.coords$y.start), 'length'))
-  print("y.len:")
-  print(sapply(list(oh.coords$y.start, 
-                    mh.coords$y.start, mf.coords$y.start), 'length'))
-  print("x.len:")
-  print(sapply(list(oh.coords$x.start, 
-                    mh.coords$x.start, mf.coords$x.start), 'length'))
-  print(x.len)
-  print(y.len)
+#   print("y.len:")
+#   print(sapply(list(oh.coords$y.start, 
+#                     mh.coords$y.start, mf.coords$y.start), 'length'))
+#   print("x.len:")
+#   print(sapply(list(oh.coords$x.start, 
+#                     mh.coords$x.start, mf.coords$x.start), 'length'))
+
   #...okay. If using multivar_target, you can't use 
   #this gracefully with the stencils - you write one point; you 
   #get dimensions from mxn
@@ -52,14 +51,11 @@ loop.xy.data <- function(){
       }
       #qc.mask.names <- c('tasmax_qcmask_train', 'tasmax_qcmask_tailadj')
       all.names <- c(ds.names, qc.mask.names)
-      #       OH.dim <- dim(OH.slice[[1]])[1:3]
-      #       MF.dim <- dim(MF.slice[[1]])[4:6]
       print(ds.coords)
       ds.dim <- c((ds.x.end-ds.x.start+1), 
                   (ds.y.end-ds.y.start+1), 1,
                   dim(MF.slice[[1]])[4:6])
       nmasks <- tmasks$nmasks
-      print(c(ds.dim, nmasks))
       #nmasks is set by the time mask tools
       #...how should this interact with the main driver? 
       #ds as a target is currently being set by the 
@@ -83,8 +79,7 @@ loop.xy.data <- function(){
       MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
                          aux.ref$MH$stencil_name)
       MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil, 
-                         aux.ref$MF$stencil_name)
-      print(lapply(OH.slice, 'summary'))    
+                         aux.ref$MF$stencil_name)  
       
       #Make decision to downscale. Can take one of several forms: 
       #'1) Are any of the datasets missing all timelevels at a given x,y?
@@ -189,8 +184,6 @@ loop.xy.data <- function(){
             window.post_ds_inloop <- post_ds_inloop
           }      
           #Call the downsaing method
-          print("printing ds.args")
-          print(ds.args)
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, ds.args, 
                                  missvals=ds.ref$missval_method, 
@@ -198,9 +191,6 @@ loop.xy.data <- function(){
                                  train_qcmask=train_qcmask,
                                  tmasks=tmasks)
           ds.out <- list(ds=tmp.ds$ds)
-          print("after ds")
-          print(dim(ds.out[[1]]))
-          print(dim(ds.out$ds))
           qc.out <- c(qc.out, tmp.ds$qc)
           ds.atts <- tmp.ds$ds.atts
           #ds.atts makes the PARM tail adjustment simpler, when we get to it
@@ -229,14 +219,10 @@ loop.xy.data <- function(){
               #Added 12-17-16 - some indexing needs to take place
               #outside of the s3/s5 adjusts because of backwards compatability
               if (tmasks$time_mask_overlap){
-                print(dim(combine.out[[out]]))
                 combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
                                                      mask=tmasks$trim$masks[[w]],
                                                      dim='time')
               }
-              print("Leading to issues on the stencil specs?")
-              print(dim(combine.out[[out]]))
-              print(dim(output[[out]]))
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
           }

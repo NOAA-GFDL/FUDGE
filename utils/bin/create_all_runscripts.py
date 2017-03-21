@@ -8,24 +8,22 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	#if --msub is included, also submits jobs at the end of everything
 	
 	#which i_indices are we going to be looping over?
-	print(i_start)
-	print(i_end)
-	print(i_by)
 	i_elements = range(int(i_start), int(i_end), i_by)
-	i_elements.append(int(i_end))
+	i_elements.append(int(i_end)+1)
 	i_elements = list(set(i_elements))
-	i_offset = int(i_start) - 1
+	i_elements = sorted(i_elements)	
+	i_offset = int(i_start)  - 1
 	i_max = int(i_end) - i_offset	
 	#which j indices are we going to be looping over?
 	j_elements = range(int(j_start), int(j_end),j_by)
-	j_elements.append(int(j_end))
+	j_elements.append(int(j_end)+1)
 	j_elements = list(set(j_elements))
-	j_offset = int(j_start) - 1
-	j_max = int(j_end) - j_offset	
-	print("i elements:")
+	j_elements = sorted(j_elements)	
+	j_offset = int(j_start)  - 1
+	j_max = int(j_end) - j_offset
 	print(i_elements)
-	print("j elements:")
 	print(j_elements)
+	#sys.exit("Examine this out")
 	
 	### As of 3-15-17, working on script subset changes needed for 
 	### handling entire-grid downscaling and the arbitrary x,y subsets.
@@ -98,7 +96,7 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 		for pred_var in predlist:
 			#Do a series of replaces on the predictor var dir
 			oh_dir = osp.join(oh_prefix, pred_var) + oh_suffix
-			print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
+			#print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
 			oh_file = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
 			oh_files.append(oh_file)
 			dmget_string = dmget_string + "dmget " + oh_file + " \n"		
@@ -110,8 +108,6 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	mh_files = []
 	for pred_var in predlist:
 		mh_dir = osp.join(MH_dir, pred_var) + idirsuffix
-		print(mh_dir)
-		print(mh_timerange)
 		mh_file = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
 		mh_files.append(mh_file)
 		dmget_string = dmget_string + "dmget " + mh_file + " \n"
@@ -119,8 +115,6 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	mf_files = []
 	for pred_var in predlist:
 		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
-		print(mf_dir)
-		print(mf_timerange)
 		mf_file = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None][0]
 		mf_files.append(mf_file)
 		dmget_string = dmget_string + "dmget " + mf_file + " \n"
@@ -165,9 +159,9 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files + aux_file_list
 	for f in file_list:
 		gcp_string = gcp_string + "mkdir -p $TMPDIR/" + os.path.dirname(f) + " \n"
-		gcp_string = gcp_string + "gcp --sync " + f + " $TMPDIR/" + f + " \n"
+		gcp_string = gcp_string + "gcp --sync --verbose " + f + " $TMPDIR/" + f + " \n"
 	gcp_string = gcp_string + "echo 'Copy operations complete.' \n"	
-	gcp_string = gcp_string + "sleep 20 \n"
+	gcp_string = gcp_string + "sleep 10 \n"
 		
 	#Add code for creating common output directories 
 	#(copy opts for each minifile/slice take place within runscript
@@ -182,36 +176,32 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 		outdirs.append(re.sub(outrip_patt, rip, outdir_opts[0]))
 	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
 	
-	print(i_elements)
-	print(len(i_elements))
-	print(j_elements)
-	print(i_offset)
-	print(j_offset)
-	
 	#Finally, start opts that need to loop by index available
 	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
+	print(j_elements)
+	n_tiles = 0
 	for j in range(0, len(j_elements)-1):
-		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1])
+		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
 		#j_max and j_by are passed in already; they are numeric	
 		for i in range(0, len(i_elements)-1):
-			print("starting loop", i)
-			i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1])
+			n_tiles = n_tiles + 1
+			i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
 			if i % njobs == 0 :
 				#Create the master scriptname
 				end_idx = i+njobs-1
 				if end_idx > len(i_elements) - 1:
 					end_idx  = len(i_elements) - 1
 				i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
-				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)
-				print('name of master script')
-				print(master_scriptname)	
+				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)	
 				runscript_files = []
 			#Since master is created on first (always), can proceed with rest of runscript calls
 			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+"."+i_string+"_"+j_string)
 			###THIS NEEDS TRANLSATION WORK
+			print("components for R code:")
+			print([(i + 1 + i*(i_by-1)), i_max, i_by, i_offset, (j+1 + j*(j_by-1)), j_max, j_by, j_offset])
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
-													i+1, i_max, i_by, \
-													j+1, j_max, j_by, auxfile, target_var,outdirs)
+													(i+1 + i*(i_by-1)), i_max, i_by, i_offset, \
+													(j+1 + j*(j_by-1)), j_max, j_by, j_offset, auxfile, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	
@@ -220,16 +210,18 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 				#Prepare to write all accululated data to file
 				print("writing master to file")
 				runscript_calls = [el + " & \n" for el in runscript_files]
-				runscript_calls = "sleep 20 \n".join(runscript_calls)
+				runscript_calls = "sleep 10 \n".join(runscript_calls)
 				with open(master_scriptname, 'w') as f: 
 					f.write(moab_header)
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
 					f.write(outdir_string)
+					f.write("echo 'Beginning calls to runscripts'\n")
 					f.write(runscript_calls) 
 					f.write("wait")			
-	print('master runscript and mini creation completed')	
+	print('master runscript and mini creation completed')
+	#return(n_tiles)	
 			
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
@@ -246,8 +238,9 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 		outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
 	return(outdir_string)
 	
-def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, 
-							j_idx, j_max, j_by, auxfile, target_var, outdirs):
+def create_slice_runscript(i_string, j_string, scriptdir, 
+							i_idx, i_max, i_by, i_offset,
+							j_idx, j_max, j_by, j_offset, auxfile, target_var, outdirs):
 	#Creates the runscript code specific to a slice of the grid downscaled 
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
@@ -269,10 +262,12 @@ def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by,
 		exp_name = scriptdir.split("/")[-2]
 	runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + "." + i_string + "_" +j_string
 	logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+"."+ i_string + "_" +j_string
+	#print(runcode)
+	#print(logfile)
 	#Okay - this defines the list of runcodes that are going to be run.
 	#i_idx is in the same space as i_max; i is in minifile space.
 	#r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile #+ " &"
-	r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, j_idx, j_max, j_by])
+	r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile, 'TRUE'])+ " >>& " + logfile + " &"
 	runscript = runscript_header + r_command + "\n" + "wait \n"
 	for outdir in outdirs:
 		runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
@@ -284,6 +279,8 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	#when we get to writing coordinates, this needs to be updated
 	#Note: right now, for a given script job, all J are going to be identical.
 	outstr = []
+	outstr.append('echo `ls "$TMPDIR/' + outdir + '"`')
+	outstr.append('echo gcp "$TMPDIR/' + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir + '"')	
 	outstr.append("gcp $TMPDIR/" + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
@@ -293,6 +290,7 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	outstr.append('endif')
 	#Now do the same for the qc mask file
 	out_mask_dir = outdir + "/" + target_var + "_qcmask/"
+	outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "*."+i_string+"_"+j_string + ".nc " + out_mask_dir + '"')
 	outstr.append("gcp $TMPDIR/" + out_mask_dir + "*."+i_string+"_"+j_string + ".nc " + out_mask_dir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")

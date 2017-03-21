@@ -66,15 +66,15 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
-    print('summary of adjusted output:')
-    print(summary(as.vector(out$adjusted.output$ds.out)))
+   # print('summary of adjusted output:')
+  #  print(summary(as.vector(out$adjusted.output$ds.out)))
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
       print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
-        print(dim(input[[el]][[var]]))
+       # print(dim(input[[el]][[var]]))
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
-        print(dim(out$input[[el]][[var]]))
+      #  print(dim(out$input[[el]][[var]]))
       }
     }
     #Okay - manually constructing out.dim as of 02-20-17
@@ -85,7 +85,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #For the moment, asusme that all data is either of output
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
-    print(paste("This is out.dim", paste(out.dim)))
+    #print(paste("This is out.dim", paste(out.dim)))
     for(el in names(out$adjusted.output)){
       print("settings vals to out.dim")
       if (!is.null(adjusted.output[[el]])){

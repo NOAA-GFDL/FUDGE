@@ -43,20 +43,25 @@ if (length(console.args) > 0){
   i_idx <- as.numeric(console.args[1])
   i_max <- as.numeric(console.args[2])
   i_stride <- as.numeric(console.args[3])
-  j_idx <- as.numeric(console.args[4])
-  j_max <- as.numeric(console.args[5])
-  j_stride <- as.numeric(console.args[6])  
-  auxfile <- console.args[7]
-  copy_from_tmp = console.args[8]
+  i_offset <- as.numeric(console.args[4])
+  j_idx <- as.numeric(console.args[5])
+  j_max <- as.numeric(console.args[6])
+  j_stride <- as.numeric(console.args[7])  
+  j_offset <- as.numeric(console.args[8])
+  auxfile <- console.args[9]
+  copy_from_tmp = console.args[10]
   x.pad <- "NA"
 }else{
   i_idx <- 1 #167 #pr_diff = 37 i800 = 53 #194 #10 #47 is ocean, I think
   i_max <- 194
   i_stride <- 1
+  i_offset <- 748
   j_idx <- 1
   j_max <- 114
   j_stride <- 114
-  auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" #01 has spatial masks; 05_offset has asymmetric grid
+  j_offset <- 454
+  auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json" 
+  #auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" ##01 has spatial masks; 05_offset has asymmetric grid
   copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
   x.pad <- "NA"
 }
@@ -66,6 +71,7 @@ message("Setting downscaling method information")
 ds.ref <- getDSInfo(ds.method)
 
 message("Getting info from aux file")
+print(auxfile)
 aux.ref <- get_aux_params(auxfile, copy_from_tmp)
 #1-23-17 adding bypass to see if the 'to the left' works
 #Note: this is going to be a bad idea to use on anything but the 
@@ -171,8 +177,8 @@ if(spat.mask.dir_1!="na"){
 ### Now, access input data sets
 message("Reading in target data")
 
-oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max, i_stride)
-oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max, j_stride) 
+oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max, i_stride-1)
+oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max, j_stride-1) 
 if (ds.ref$multivar_target){
   #Right now, only applies to MBC
   OH.files <- c()
@@ -216,8 +222,8 @@ for (var in predictor.vars){
                                                   hist.file.start.year_1,hist.file.end.year_1, 
                                                   hist.pred.suffix))
 }
-mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride)
-mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride) 
+mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride-1)
+mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride-1) 
 print(mh_x_subset)
 MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset,y=mh_y_subset), 
                           dim=ds.ref$mh_dimlist, 
@@ -240,8 +246,8 @@ for (var in predictor.vars){
                                                   fut.file.start.year_1,fut.file.end.year_1, 
                                                   fut.pred.suffix))
 }
-mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max, i_stride)
-mf_y_subset <- get.FUDGE.subset(aux.ref$MF$jdim, j_idx, j_max, j_stride) 
+mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max, i_stride-1)
+mf_y_subset <- get.FUDGE.subset(aux.ref$MF$jdim, j_idx, j_max, j_stride-1) 
 MF <- build.FUDGE.dataset(MF.files, predictor.vars, 
                           subset=list(x=mf_x_subset, y=mf_y_subset), 
                           dim=ds.ref$mf_dimlist, 
@@ -254,7 +260,8 @@ mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
                               allow_partial=F)
 
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
-                                fut.file.start.year_1,fut.file.end.year_1,i.file,file.j.range)
+                                fut.file.start.year_1,fut.file.end.year_1,
+                                i_idx, i_stride, i_offset, j_idx, j_stride, j_offset)
 out.filename <- file.path(output.dir, out.filename)
 
 #close spatial mask nc, if using
@@ -280,8 +287,6 @@ if (!ds.ref$multivar_target){
   #This is a special bypass for the MBC; we can't count on OH
   #being all 1, and some of the other workflow assumes that
   targ.dim <- c(1,oh.orig.dim[2],1,1,1,1)
-  print(OH.files[[1]])
-  print(target.var)
   targ.subset <- get.FUDGE.subset(1, i_idx, i_max)
   TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.subset), 
                               dim=ds.ref$oh_dimlist, 
@@ -402,6 +407,7 @@ for (r in 1:length(fut.pred.rip.list)){
                             longname=paste(OH$metadata[[target.var]]$long_name),
                             standard_name=paste(OH$metadata[[target.var]]$long_name),
                             global_overwrite=global_att_list,
+                            clone_globals=T, clone_all=F, clone_include="frequency",
                             verbose=F
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))  
@@ -442,7 +448,8 @@ for (r in 1:length(fut.pred.rip.list)){
                                  comment=qc.comment.att, 
                                  longname="QC Mask",
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
-                                 global_overwrite=qc.globals)
+                                 global_overwrite=qc.globals, 
+                                 clone_globals=T, clone_all=F, clone_include="frequency")
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }
