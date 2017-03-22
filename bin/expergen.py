@@ -680,6 +680,15 @@ def main():
 	#Copy environment config file
 	print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
+	################ step 6 fudgeList invocation ##############################################
+	slogloc = sbase+"/"+"experiment_info.txt"
+	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+	out, err = f.communicate()
+	#print "fudgeList out", out
+	#if err is not None:
+	#       print "fudgeList err", err
+	print "Summary Log File: ", slogloc
 	
 	# Create emergency backstop directory for capturing status files when
 	# permissions are an issue
@@ -741,16 +750,20 @@ def main():
 		open(sbase+"/postProc/verb/verbose.false", 'a').close()		
 	#CEW edits 3-21-2017:
 	#Making new tool for generating postProc scripts
+	print(copyprop)
+	print(copyprop.iteritems())
+	pval = copyprop.itervalues().next()
 	listrips = pval.split(",")
-	try:
-		make_postProc_scripts(listrips, sbase, NEMSemail1)
+	print(listrips)
+	#try:
+	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1)
 		#Note: may need to include commands on the nemsemail as well
 		#os.chmod(msubwrap.name, 0744)
 		#msub -m ae -M <email> script 
-		print "----------------------------------------"
-	except:
-		print "Unable to create the postProc scripts for you at this time"	
-		sys.exit(-4)
+	print "----------------------------------------"
+	#except:
+	#	print "Unable to create the postProc scripts for you at this time"	
+	#	sys.exit(-4)
 				
 #	suffctr = 1
 #	for pname,pval in copyprop.iteritems():
@@ -822,7 +835,7 @@ def main():
 	#	msubwrap.close()	
 	#except:
 	#	print "Unable to create msubwrapper script for you at this time"
-	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", msubwrap.name 
+	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 job submission (if applicable) ##############################################	
 	if msub:
@@ -843,15 +856,6 @@ def main():
 			sys.exit(0)
 		print output5, errors5
 		print "5- completed"		
-################ step 6 fudgeList invocation ##############################################
-	slogloc = sbase+"/"+"experiment_info.txt"
-	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
-	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-	out, err = f.communicate()
-	#print "fudgeList out", out
-	#if err is not None:
-	#       print "fudgeList err", err
-	print "Summary Log File: ", slogloc
 	print "-----------"
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   " 
 	if(NEMSemail1 != "none"):

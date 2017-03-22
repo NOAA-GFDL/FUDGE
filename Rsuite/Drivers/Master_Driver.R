@@ -198,6 +198,7 @@ if (ds.ref$multivar_target){
   OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                 target.file.start.year_1,target.file.end.year_1, 
                                 target.suffix, is_OH = T)
+  OH.files <- OH.path
   OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset, y=oh_y_subset), 
                             dim=ds.ref$oh_dimlist, 
                             x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
@@ -407,6 +408,7 @@ for (r in 1:length(fut.pred.rip.list)){
                             longname=paste(OH$metadata[[target.var]]$long_name),
                             standard_name=paste(OH$metadata[[target.var]]$long_name),
                             global_overwrite=global_att_list,
+                            global_clone_file = OH.files[[1]],
                             clone_globals=T, clone_all=F, clone_include="frequency",
                             verbose=F
   )
@@ -449,6 +451,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                  longname="QC Mask",
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals, 
+                                 global_clone_file = OH.files[[1]],
                                  clone_globals=T, clone_all=F, clone_include="frequency")
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }

@@ -107,15 +107,15 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
 	print("concatenated file: " + xy_out)	          
 	#Final step needs to be finalizing some metadata atts
 	#experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
-	if 'experiment_info' is not 'none':
+	if 'exp_info' != 'none':
 		print("finalizing file metadata")
-		xy_out = finalize_metadata_out(xy_out, experiment_info)
+		xy_out = finalize_metadata_out(xy_out, exp_info)
 	else:
 		print("no experiment_info file; metadata unchanged")	
 	print("copying file to final destination")
 	print("cp " + tmp_outfile + " " + outfile)
 	shutil.copy2(tmp_outfile, outfile)	
-	return(xy_out)
+	return(outfile)
 	
 
 def finalize_metadata_out(xy_file, experiment_info):
@@ -131,13 +131,16 @@ def finalize_metadata_out(xy_file, experiment_info):
 	attdict['downscaling_model_type'] = "statistical"
 		
 	attdict['gfdl_experiment_name'] = expdict['ds.experiment']
-	attdict['region_id'] = expdict['region']
+	#attdict['region_id'] = expdict['region']
 	attdict['predictand_calibration_datset'] = "dummy_data"
 
 	#NCO = "I'm not entiretly sure I need to add this in now."
 	
 	att_val_list = [",".join(el) for el in zip(attdict.keys(), attdict.values())]
-	att_val_list = ["'"+el+"'" for el in att_val_list]
+	#Leaving off because the quotes get added in when writing the atts.
+	#If we could strip those, that would be great - but for now, 
+	#keep an eye out for things that might contain spaces.
+	att_val_list = ['"'+el+'"' for el in att_val_list]
 	att_val_string = " ".join(att_val_list)
 
 	print("calling set_metadata")

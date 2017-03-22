@@ -25,7 +25,7 @@ foreach i (`seq 2 $#argv`)
 	else
 		set vals = $desc_atts[2]	
 	endif
-	echo "ncatted -a '$desc_atts[1],global,o,c,$vals' $out_file"
-	ncatted -a "$desc_atts[1],global,o,c,'$vals'" $out_file
+	echo "ncatted -h -a '$desc_atts[1],global,o,c,$vals' $out_file"
+	ncatted -h -a "$desc_atts[1],global,o,c,$vals" $out_file
 end
 
