@@ -45,7 +45,8 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 			pp_source_text = pp_source_text + " -m " + mailid
 		with open(pp_source, 'w') as f:
 			f.write(pp_source_text)
-		os.chmod(pp_source, runmode)	
+		#trying to get permissions right
+		#os.chmod(pp_source, runmode)	
 		##append to list of sourcable files
 		#source_list.append(pp_source)	
 		#make the complicated postProc runcode
