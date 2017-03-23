@@ -57,10 +57,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 										"\t touch " + pp_stat_dir + "/" + ensembles[i] + ".success", 
 										"else", 
 										"\t touch " + pp_stat_dir + "/" + ensembles[i] + ".failure", 
-										"endif"])
-		#append to list of sourcable files
-		os.chmod(pp_runcode, runmode)
-		code_list.append(pp_runcode)																  
+										"endif"])																  
 		with open(pp_runcode, 'w') as f:
 			f.write(pp_runcode_header + "\n")
 			f.write("\n" + "echo 'Setting FUDGE environment ...'" + "\n")
@@ -68,6 +65,13 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 			f.write(pp_checkout_commands + "\n")
 			f.write("source " + pp_source + "\n")
 			f.write(pp_status_commands)
+		#append to list of sourcable files
+		code_list.append(pp_runcode)
+	print(code_list)	
+	#change execute permissions	
+	for el in code_list:
+		print(el)
+		os.chmod(el, runmode)				
 	#write the msubwrapper
 	msub_file = osp.join(pp_dir, 'msubwrapper')
 	msub_text = "#!/bin/tcsh -f \n"
