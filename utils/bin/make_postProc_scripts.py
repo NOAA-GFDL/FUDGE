@@ -59,6 +59,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 										"\t touch " + pp_stat_dir + "/" + ensembles[i] + ".failure", 
 										"endif"])
 		#append to list of sourcable files
+		os.chmod(msub_file, runmode)
 		code_list.append(pp_runcode)																  
 		with open(pp_runcode, 'w') as f:
 			f.write(pp_runcode_header + "\n")
@@ -71,8 +72,8 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 	msub_file = osp.join(pp_dir, 'msubwrapper')
 	msub_text = "#!/bin/tcsh -f \n"
 	msub_text = msub_text + "rm -f " + pp_stat_dir + "/*\n"
-	msub_commands = "\n".join(["msub -d $HOME " + el for el in code_list])
-	msub_text = msub_text + msub_commands
+	msub_commands = "\n".join(["msub -d $HOME " + el for el in code_list]) + "\n"
+	msub_text = msub_text + msub_commands + "\n"
 	with open(msub_file, 'w') as f: 
 		f.write(msub_text)
 	os.chmod(msub_file, runmode)		
