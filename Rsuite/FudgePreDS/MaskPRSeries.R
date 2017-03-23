@@ -67,7 +67,7 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
 #   fut.which.idx <- array(1:length(future.data), dim=dim(future.data))
 #   fut.which.idx <- apply()
   loop.ref <- ref.data[ref.idx]
-  loop.adj <- adjust.data[ref.idx]
+  loop.adj <- adjust.data[adj.idx]
   loop.fut <- future.data[fut.idx]
   loop.ref.wetdays <- ref.wetdays[ref.idx]
   loop.adj.wetdays <- adjust.wetdays[adj.idx]
@@ -96,10 +96,13 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
       #If it would result in changed results, apply
       loop.adj.wetdays <- adjust.data[adj.idx] > threshold.wetday.adj
       loop.fut.wetdays <- future.data[fut.idx] > threshold.wetday.adj
+      
+      adj.thold = threshold.wetday.adj
     }
   } else {
     print('wetday convert:')
     print(wetday.convert)
+    adj.thold = wetday.convert
     loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
     loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
   }
@@ -132,7 +135,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
-                   "future" = list("data" = as.numeric(future.wetdays)*future.data, "pr_mask" = future.wetdays))
+                   "future" = list("data" = as.numeric(future.wetdays)*future.data, "pr_mask" = future.wetdays), 
+                   'adjusted.thold' = adj.thold)
   if(zero.to.na){
     #All 0 values in the data should be NA values instead (needed to avoid calculations in )
     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
