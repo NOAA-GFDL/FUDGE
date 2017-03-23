@@ -32,7 +32,12 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='synchronous')
-    #missval.method='distributional')
+    
+    if (args$adjust_trace){
+      print("adjusting pr trace")
+      args$trace <- min(args$trace, missval.out$pr$adjusted.thold)
+    }
+    
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
@@ -48,13 +53,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      print("output from the ds loop:")
-      print(length(out))
-      print(summary(out))
-      print("expected sample size:")
-      print(summary(missval.out$complete.fut))
-      print(paste('current summary of out.data for loop', n, ":"))
-      print(summary(as.vector(out.data)))
       out.data[,,,n,,][missval.out$complete.fut] <- out
       if(missval.out$mv.retry & train_qcmask){
         qc[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out)) #prev.out$mhat.p
@@ -187,6 +185,7 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
   jitter.fac = 0
   ratio.seq = F #should be 1 for this case
   trace = 0.05
+  adjust_trace <- F
   ties = 'first'
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
@@ -218,15 +217,6 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
     }
   }
   rat.names <- c('ratio', 'ratio.seq', 'ratio_seq')
-  #   if (any(rat.names %in% names(args))){
-  #     rat.name <- rat.names[which(rat.names %in% names(args))]
-  #     in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
-  #     if (length(in.rat.seq) != length(ratio.seq)){
-  #       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
-  #                  "did not have as many elements as MH has vars!"))
-  #     }
-  #     ratio.seq <- in.rat.seq
-  #   }else 
   if ('type' %in% names(args)){
     if (args$type=='add'){
       ratio.seq <- FALSE
@@ -239,14 +229,16 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
     jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
     jitter.fac <- args[[jitter.name]]
   }
+  if ('adjust_trace' %in% names(args)){
+    adjust_trace <- ifelse(args$adjust_trace=='on')
+  }
   #Put together MBC-specific args  
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-                      var.names=unlist(predictor.vars))
+                      var.names=unlist(predictor.vars), adjust_trace=adjust_trace)
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize
-  }
-  
+  }  
   return(return.args)
 }
 
