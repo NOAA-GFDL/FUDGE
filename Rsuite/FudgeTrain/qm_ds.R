@@ -30,25 +30,6 @@ callQM <- function(OH, MH, MF, args, type="",
   #before the addition step *should* solve that particular issue.
 
   index.mask <- tmasks$MF$masks[[w]]
-#  print(str(index.mask))
-
-#   print(str(tmasks))
-#   print(str(tmasks$MF$masks))
-#   print(summary(tmasks$MF$masks[[w]]))
-#   stop('examine this out')
-# 
-#   index.mask <- as.vector(unlist(tmasks$MF$masks[[w]]))
-#   print(summary(tmasks))
-  #for (t in tmasks){
-  #  print(lapply(tmasks, 'summary'))
-  #}
-  #print(lapply(tmasks, 'summary'))
-  #stop('somethings gone wrong; look at this')
-
-#   print(summary(index.mask))
-# print(str(index.mask))
-# stop('examine this out')
-
   olap <- tmasks$time_mask_overlap
   if(train_qcmask){
     if(tmasks$apply_tmasks){
@@ -86,8 +67,6 @@ callQM <- function(OH, MH, MF, args, type="",
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
       tmp <- index.qm(index.mask, out, olap)
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
-      #print("dimensions of out.data:")
-      #print(dim(out.data))
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?

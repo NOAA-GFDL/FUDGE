@@ -10,9 +10,9 @@ index.qm <- function(index.mask, data, olap=T){
   #For quantile mapping methods, there is a chance that you are
   #downscaling on an overlapping mask, which needs to be trimmed
   #back down to size.
-  #if (olap){
+  if (olap){
     data <- apply.any.mask(data, index.mask, dim='time')
-  #}
+  }
   data <- unlist(as.vector(data))
   return(data)
 }
