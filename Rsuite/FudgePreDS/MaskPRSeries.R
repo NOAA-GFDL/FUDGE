@@ -76,7 +76,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #I think there is a high likelihood that you need to do the mask looping in here; 
   #the altered pr wetday behavior in the missing value functions might require it
   
-  
+#initializing adj.thold so we can return regardless
+adj.thold = wetday.convert
   if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values present
     fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
     fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
@@ -102,7 +103,6 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   } else {
     print('wetday convert:')
     print(wetday.convert)
-    adj.thold = wetday.convert
     loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
     loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
   }

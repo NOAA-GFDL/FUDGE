@@ -13,6 +13,9 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   targ.var <- names(input$hist.targ)
   arg.names <- names(test$qc_args)
   nrips <- dim(adjusted.output$ds.out)[4]
+  print("dimensions of adjusted output")
+  #print(dim(adjusted.output$ds.out))
+  print(w)
   if (test$qc.mask=='on'){
     adjusted.output$qc.mask <- array(NA, dim=dim(adjusted.output$ds.out))
   }

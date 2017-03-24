@@ -102,6 +102,7 @@ get.fudge.timemask.list <- function(){
   tmask.list$apply_tmasks <- apply_tmasks
   tmask.list$nmasks <- nmasks
   tmask.list$filenames <- tmask.filenames
+  #print(str(tmask.list))
   return(tmask.list)
 }
 

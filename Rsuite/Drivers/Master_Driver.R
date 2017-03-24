@@ -88,6 +88,10 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
   train_qcmask <- pp.out$train_qcmask
 }
 
+# print(pre_ds)
+# print(post_ds)
+# stop('examine this output')
+
 ##Make sure that you have the experiment rip ready to apply to
 ##other code (i.e. the actual rip experiment is being run under)
 experiment.rip <- gsub("(.*_)", "", fut.scenario_1)

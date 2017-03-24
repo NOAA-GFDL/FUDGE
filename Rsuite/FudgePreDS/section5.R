@@ -34,22 +34,26 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   qc.mask <- NULL  #If no mask generated, will keep being null forever
   adjusted.output <- list("ds.out" = data, "qc.mask" = qc.mask)
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
+  ds.dim <- dim(adjusted.output$ds.out)
+  print("ds.dim:")
+  print(ds.dim)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
     #    # if(verbose){
-    #    if (test$type=='cdfttailadj'){
-    #      print(paste("on test", test[[1]]))
-    #      print("MH:")
-    #      print(lapply(out$input$hist.pred, 'length'))
-    #      print("OH:")
-    #      print(summary(out$input$hist.targ))
-    #      print("MF:")
-    #      print(lapply(out$input$fut.pred, 'length'))
-    #      print("DS:")
-    #      print(lapply(out$adjusted.output$ds, 'length'))
-    #      save(file="/home/cew/Code/testing/test_out.R", list=c('out'))
-    #      stop('examine output')
+    #   if (test$type=='cdfttailadj'){
+#          print(paste("on test", test[[1]]))
+#          print("MH:")
+#          print(lapply(out$input$hist.pred, 'length'))
+#          print("OH:")
+#          print(summary(out$input$hist.targ))
+#          print("MF:")
+#          print(lapply(out$input$fut.pred, 'length'))
+#          print("DS:")
+#          print(lapply(out$adjusted.output$ds, 'length'))
+#          save(file="/home/cew/Code/testing/test_out.R", list=c('out'))
+#          stop('examine output')
     #    }
+  print(test$type)
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
@@ -72,6 +76,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     for(el in names(out$input)){
       print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
+        print(dim(input[[el]][[var]]))
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
       }
     }
@@ -81,10 +86,14 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
       print(el)
+      print(summary(adjusted.output[[el]]))
       if (!is.null(adjusted.output[[el]])){
-        if (is.null(dim(adjusted.output[[el]]))){
-          dim(out$adjusted.output[[el]]) <- out.dim
-        }
+        print('adjust should take place')
+        #if (is.null(dim(adjusted.output[[el]]))){
+          print('dimensions of out.dim:')
+          print(ds.dim)
+          dim(out$adjusted.output[[el]]) <- c(ds.dim)
+        #}
       }
     }
   }
