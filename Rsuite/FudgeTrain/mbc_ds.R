@@ -35,7 +35,24 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     
     if (args$adjust_trace){
       print("adjusting pr trace")
-      args$trace <- min(args$trace, missval.out$pr$adjusted.thold)
+      #print(str(missval.args$pr))
+      adj.thold <- missval.args$pr$adjusted.thold
+      #print(adj.thold)
+      #print(args$trace)
+      if (args$transform){
+        if (is.null(args$tform_fxn[[2]])){
+          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
+        }else{
+          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold, args$tform_fxn[[2]]))
+        }
+      }
+      if (args$trace > adj.thold){
+        print("QDM: using adjusted trace instead of trace")
+        print(args$trace)
+        print(adj.thold)
+        args$trace <- adj.thold
+      }
+      #args$trace <- min(args$trace, adj.thold)
     }
     
     if(missval.out$ds.possible){
@@ -185,7 +202,9 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
   jitter.fac = 0
   ratio.seq = F #should be 1 for this case
   trace = 0.05
-  adjust_trace <- F
+  adjust_trace = F
+  transform = F
+  tform_fxn = 'none'
   ties = 'first'
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
@@ -205,13 +224,14 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
     if (exists('pre.ds.train')){
       pre.ds.types <- sapply(pre.ds.train, '[[', 'type')
       if ('transform' %in% pre.ds.types){
+        transform <- T
         tform.idx <- which(pre.ds.types=='transform')
-        tform <- return.t.fxn(pre.ds.train[[tform.idx]]$pp.args$transform, 
+        tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$pp.args$transform, 
                               pre.ds.train[[tform.idx]]$pp.args$arg)
-        if (is.null(tform[[2]])){
-          trace <- do.call(tform[[1]], list(trace))
+        if (is.null(tform_fxn[[2]])){
+          trace <- do.call(tform_fxn[[1]], list(trace))
         }else{
-          trace <- do.call(tform[[1]], list(trace, tform[[2]]))
+          trace <- do.call(tform_fxn[[1]], list(trace, tform_fxn[[2]]))
         }
       }
     }
@@ -230,11 +250,12 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
     jitter.fac <- args[[jitter.name]]
   }
   if ('adjust_trace' %in% names(args)){
-    adjust_trace <- ifelse(args$adjust_trace=='on')
+    adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }
   #Put together MBC-specific args  
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-                      var.names=unlist(predictor.vars), adjust_trace=adjust_trace)
+                      var.names=unlist(predictor.vars), 
+                      adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn)
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize

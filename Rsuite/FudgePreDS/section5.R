@@ -74,9 +74,9 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     print(summary(as.vector(out$adjusted.output$ds.out)))
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
-      print("This step should ensure dim info does not get lost")
+      #print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
-        print(dim(input[[el]][[var]]))
+        #print(dim(input[[el]][[var]]))
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
       }
     }
@@ -85,10 +85,10 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
-      print(el)
-      print(summary(adjusted.output[[el]]))
+      #print(el)
+      #print(summary(adjusted.output[[el]]))
       if (!is.null(adjusted.output[[el]])){
-        print('adjust should take place')
+        print(paste('adjust should take place on', el))
         #if (is.null(dim(adjusted.output[[el]]))){
           print('dimensions of out.dim:')
           print(ds.dim)

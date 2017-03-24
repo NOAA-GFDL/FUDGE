@@ -124,7 +124,7 @@ loop.xy.data <- function(){
                                  missval.args=missval.args,
                                  train_qcmask=train_qcmask,
                                  tmasks=tmasks)
-          print(str(tmp.ds))
+          #print(str(tmp.ds))
           #stop('examine this again')
           ds.out <- list(ds=tmp.ds$ds)
           qc.out <- c(qc.out, tmp.ds$qc)
