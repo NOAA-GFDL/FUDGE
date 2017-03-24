@@ -28,12 +28,10 @@ callQM <- function(OH, MH, MF, args, type="",
   #need the overlapped data in order to reproduce past results. 
   #Deleting the more complicated indexing in here and moving that indexing step to just
   #before the addition step *should* solve that particular issue.
-
   index.mask <- tmasks$MF$masks[[w]]
-  olap <- tmasks$time_mask_overlap
+  olap <- F
   if(train_qcmask){
     if(tmasks$apply_tmasks){
-      #qc <- list(rep(nrips, list(index.mask)))
       qc <- mapply(rep, index.mask, nrips)
     }else{
       qc <- rep(1, dim(MF[[1]]))
@@ -43,9 +41,7 @@ callQM <- function(OH, MH, MF, args, type="",
     qc <- NULL
   }
   MF_mask <- missval.args$pr$MF
-#for(n in 1:1){
   for (n in 1:nrips){
-   # print(n)
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
     if (!is.null(missval.args$pr)){
@@ -65,7 +61,7 @@ callQM <- function(OH, MH, MF, args, type="",
                     'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args), 
                     'CFQM' = callCFQMv3(OH.slice, MH.slice, MF.slice, args), 
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
-      tmp <- index.qm(index.mask, out, olap)
+     # print(length(out))
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
@@ -80,8 +76,6 @@ callQM <- function(OH, MH, MF, args, type="",
       }
     }
   }
-
-
   return(list(ds=out.data, qc=qc))
 }
 
@@ -211,7 +205,7 @@ callCFQMv3<-function(LH,CH,CF, args){
      if (ORDERING=="CF"){
        # CHANGE FACTOR ORDERED BY COARSE FUTURE
        temp.CFsorted2<-temp[order(temp$CF),]
-       #print(summary(quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)))
+       print(summary(quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)))
        temp.CFsorted2$qLH[1:len.out]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
        temp.CFsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
        temp.CFsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
@@ -255,13 +249,6 @@ callBCQMv2<-function(LH,CH,CF,args){
      
      #Unlist data from its input form
      #     CH <- unlist(CH)
-     CH <- CH[!is.na(CH)]
-     LH <- LH[!is.na(LH)]
-     CF.idx <- !is.na(CF)
-     cf.present <- sum(!is.na(CF))
-     CF <- CF[!is.na(CF)]
-     
-     
      lengthCH<-length(CH)
      lengthLH<-length(LH)
      lengthCF<-length(CF)
@@ -283,21 +270,15 @@ callBCQMv2<-function(LH,CH,CF,args){
      temp$CF[1:lengthCF]<-CF
      temp$CH[1:lengthCH]<-CH
      temp$LH[1:lengthLH]<-LH #THIS is the line that's throwing things off
-     #print(summary(temp))
      temp.CFsorted<-temp[order(temp$CF),]
      temp.CFsorted$qCF[1:cf.present]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
      temp.CFsorted$ecdfCHqCF[1:cf.present]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
      temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
                                                         na.rm =T)
-#      print(temp.CFsorted$index)
-      temp<-temp.CFsorted[order(temp.CFsorted$index, na.last=T),]
-      #print(summary(temp))
-#        return(temp$qLHecdfCHqCF[1:lengthCF])
-  ds.out <- rep(NA, length(CF.idx))
-  ds.out[CF.idx] <- temp$qLHecdfCHqCF[1:lengthCF]
-     return(ds.out)
+     temp<-temp.CFsorted[order(temp.CFsorted$index),]
+       return(temp$qLHecdfCHqCF[1:lengthCF])
      }else{
        print("No present values in CF; returning all NA")
-       return(rep(NA, length(CF.idx)))
+       return(CF)
      }
 }
