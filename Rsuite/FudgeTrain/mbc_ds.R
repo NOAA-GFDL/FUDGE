@@ -3,6 +3,7 @@
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
   library(MBC)
+ # set.seed(8675309)
   OH <- compress.xy.data(OH)
   MH <- compress.xy.data(MH)
   MF <- compress.xy.data(MF)

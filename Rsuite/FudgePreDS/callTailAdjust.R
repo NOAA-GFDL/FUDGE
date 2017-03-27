@@ -119,6 +119,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
   # PREPARE DATA
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
+  ds.idx <- is.na(ds.orig)
   model.hist <- remove.missvals(unlist(model.hist))
   obs.hist <- remove.missvals(unlist(obs.hist))
   model.fut <- remove.missvals(unlist(model.fut))
@@ -151,8 +152,14 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     } else {
       print('calling upper')
       hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      #hi.cond <- ds.idx
+      #hi.cond[hi.cond] <- hitail$cond
+      #hitail$cond <- hi.cond
       print('calling lower')
       lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      #lo.cond <- ds.idx
+      #lo.cond[lo.cond] <- lotail$cond
+      #lotail$cond <- lo.cond
     }
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
