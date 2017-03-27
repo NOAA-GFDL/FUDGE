@@ -140,8 +140,8 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
                            pr_mh = input$att.list$pr_mh, 
                            pr_mf = input$att.list$pr_mf, 
                            adjusted.thold = temp.out$adjusted.thold)
-  print("summary of missval.args:")
-  print(summary(missval.args))
+  print("summary of missval.args in pr adjust:")
+  print(str(missval.args))
   if(apply.0.mask){
     postproc.output$propts <- pr_mod
   }
@@ -195,8 +195,11 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
       }
     }
   }
+  print('summary of missval.args in pr:')
+  print(str(missval.args))
   return(list('input'=input,
-              's5.list'=postproc.output))
+              's5.list'=postproc.output, 
+              'missval.args'=missval.args))
 }
 
 return.t.fxn <- function(tform, arg){

@@ -90,6 +90,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #Retry with pr missings set to 0
     mv.retry <- T
     ds.possible <- F
+#     print("missval.args$pr")
+#     print(str(missval.args$pr))
     if (length(missval.args$pr) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)

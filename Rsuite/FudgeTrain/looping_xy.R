@@ -56,7 +56,7 @@ loop.xy.data <- function(){
         message('Looking for pre-processing functions to apply')
         if(s3.outloop){
           message('Applying S3 Adjustment')
-        #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))       
+        #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))  
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
                                           OH=OH.slice,
@@ -67,7 +67,8 @@ loop.xy.data <- function(){
                                           s5.instructions=post.ds, 
                                           missval.args = missval.args)
           #Assign output and remove temporary output
-          missval.args <- temp.output$missval.args
+        #  missval.args <- temp.output$missval.args
+#         print(str(missval.args))
           post.ds <- temp.output$s5.list
           OH.slice <- temp.output$input$OH
           MH.slice <- temp.output$input$MH
