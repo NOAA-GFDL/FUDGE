@@ -55,6 +55,13 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
       #args$trace <- min(args$trace, adj.thold)
     }
+    loop.args <- args    
+    if (missval.out$mv.retry){
+      loop.args <- args
+      loop.args$ratio.max <- 2
+      loop.args$ratio.max.trace <- 15 * args$trace
+      loop.args$trace.calc <- 0.2 * args$trace
+    }
     
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
