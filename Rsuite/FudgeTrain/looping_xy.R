@@ -73,6 +73,9 @@ loop.xy.data <- function(){
           OH.slice <- temp.output$input$OH
           MH.slice <- temp.output$input$MH
           MF.slice <- temp.output$input$MF
+###CW mod for writing adjusted trace
+trace.pr[ival,jval] <<- missval.args$pr$adjusted.thold
+#stop('examine this output')
           if (!is.null(temp.output$input$qc)){
             for (el in names(temp.output$qc)){
               ds[[el]] <- temp.output$qc[[el]]

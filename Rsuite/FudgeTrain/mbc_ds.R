@@ -55,13 +55,19 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
       #args$trace <- min(args$trace, adj.thold)
     }
-    loop.args <- args    
+    loop.args <- args   
     if (missval.out$mv.retry){
-#       loop.args <- args
-#       loop.args$ratio.max <- 2
-#       loop.args$ratio.max.trace <- 15 * args$trace
-#       loop.args$trace.calc <- 0.2 * args$trace
-      set.seed(8675309)
+#       pct.mh <- sum(missval.out$MH[[1]] != 0, na.rm=T)/sum(missval.out$complete.hist)
+#       pct.mf <- sum(missval.out$MF[[1]] != 0, na.rm=T)/sum(missval.out$complete.fut)
+#       if ( (pct.mh > pct.mf) & (abs(pct.mh-pct.mf) < 3) ) { 
+#         print("QDM: setting restrictive retry option")
+#         print(pct.mh)
+#         print(pct.mf)
+#         set.seed(ival * 100 + jval * 10 + w)
+# #         loop.args$ratio.max <- 1
+# #         loop.args$ratio.max.trace <- 20 * args$trace
+# #         loop.args$trace.calc <- 0.05 * args$trace
+#       }
     }
     
     if(missval.out$ds.possible){
@@ -94,7 +100,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }
 if (missval.out$mv.retry){
   #Unset the seed 
-  set.seed(seed=NULL)
+  #set.seed(seed=NULL)
 }
   print("summary of all MBC/QDM outputs:")
   print(summary(out.data))
@@ -106,16 +112,22 @@ callQDM <- function(OH, MH, MF, args){
 #   stop('examine this out')
   print("Summary of OH:")
   print(summary(OH[[1]]))
-  print(sum(OH[[1]]!=0))
+  print(sum(OH[[1]]!=0, na.rm=T))
+  print(sum(OH[[1]]!=0, na.rm=T)/length(OH[[1]]))
   print("Summary of MH:")
   print(summary(MH[[1]]))
-  print(sum(MH[[1]]!=0))
+  print(sum(MH[[1]]!=0, na.rm=T))
+  print(sum(MH[[1]]!=0, na.rm=T)/length(MH[[1]]))  
   print("Summary of MF:")
   print(summary(MF[[1]]))
-  print(sum(MF[[1]]!=0))  
+  print(sum(MF[[1]]!=0, na.rm=T))  
+  print(sum(MF[[1]]!=0, na.rm=T)/length(MF[[1]]))  
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
+  if (max (OH.slice) > max(MF.slice)){
+    print("callQDM: OH max greater than MF max")
+  }
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)
