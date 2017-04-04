@@ -57,10 +57,11 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     }
     loop.args <- args    
     if (missval.out$mv.retry){
-      loop.args <- args
-      loop.args$ratio.max <- 2
-      loop.args$ratio.max.trace <- 15 * args$trace
-      loop.args$trace.calc <- 0.2 * args$trace
+#       loop.args <- args
+#       loop.args$ratio.max <- 2
+#       loop.args$ratio.max.trace <- 15 * args$trace
+#       loop.args$trace.calc <- 0.2 * args$trace
+      set.seed(8675309)
     }
     
     if(missval.out$ds.possible){
@@ -91,6 +92,10 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
     }
   }
+if (missval.out$mv.retry){
+  #Unset the seed 
+  set.seed(seed=NULL)
+}
   print("summary of all MBC/QDM outputs:")
   print(summary(out.data))
   return(list(ds=out.data, qc=qc))
@@ -99,6 +104,15 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
 callQDM <- function(OH, MH, MF, args){
 #   print(args)
 #   stop('examine this out')
+  print("Summary of OH:")
+  print(summary(OH[[1]]))
+  print(sum(OH[[1]]!=0))
+  print("Summary of MH:")
+  print(summary(MH[[1]]))
+  print(sum(MH[[1]]!=0))
+  print("Summary of MF:")
+  print(summary(MF[[1]]))
+  print(sum(MF[[1]]!=0))  
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
