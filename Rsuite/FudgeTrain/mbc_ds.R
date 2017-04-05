@@ -32,7 +32,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
-                                         missval.method='synchronous')
+                                         missval.method='distributional')
     
     if (args$adjust_trace){
       print("adjusting pr trace")
