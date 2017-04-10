@@ -3,7 +3,7 @@
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
   library(MBC)
- # set.seed(8675309)
+  # set.seed(8675309)
   OH <- compress.xy.data(OH)
   MH <- compress.xy.data(MH)
   MF <- compress.xy.data(MF)
@@ -23,6 +23,19 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     qc <- NULL
   }
   MF_mask <- missval.args$pr$MF
+  
+  #Going blunter on the seed setting
+  # - this has led to issues in progressing from
+  # seed to seed when the seed is not fixed.
+  #Instead, set and do not unset?
+  #   if (missval.out$mv.retry){
+  #     print("precip retry took effect")
+  #     #out <- missval.out$MF[[1]]
+  #     seed.val <- ival * jval * w
+  #     set.seed(seed.val)
+  #   }
+  
+  
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
@@ -36,10 +49,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     
     if (args$adjust_trace){
       print("adjusting pr trace")
-      #print(str(missval.args$pr))
       adj.thold <- missval.args$pr$adjusted.thold
-      #print(adj.thold)
-      #print(args$trace)
       if (args$transform){
         if (is.null(args$tform_fxn[[2]])){
           adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
@@ -55,39 +65,70 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
       #args$trace <- min(args$trace, adj.thold)
     }
-    loop.args <- args   
-    if (missval.out$mv.retry){
-#       pct.mh <- sum(missval.out$MH[[1]] != 0, na.rm=T)/sum(missval.out$complete.hist)
-#       pct.mf <- sum(missval.out$MF[[1]] != 0, na.rm=T)/sum(missval.out$complete.fut)
-#       if ( (pct.mh > pct.mf) & (abs(pct.mh-pct.mf) < 3) ) { 
-#         print("QDM: setting restrictive retry option")
-#         print(pct.mh)
-#         print(pct.mf)
-#         set.seed(ival * 100 + jval * 10 + w)
-# #         loop.args$ratio.max <- 1
-# #         loop.args$ratio.max.trace <- 20 * args$trace
-# #         loop.args$trace.calc <- 0.05 * args$trace
-#       }
-    }
+    loop.args <- args  
+    #     print("precip retry took effect")
+    #     seed.val <- ival * 100 + jval * 10 + w
+    #     set.seed(seed.val)
     
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
+      use.restrict.retry <- F
+      print(str(missval.out))
+      print(missval.out$mv.retry)
+      if (missval.out$mv.retry){
+        #stop('examine this output')
+        pct.oh <- sum(missval.out$OH[[1]] != 0, na.rm=T)/length(missval.out$OH[[1]])
+        pct.mh <- sum(missval.out$MH[[1]] != 0, na.rm=T)/length(missval.out$MH[[1]])          
+        pct.mf <- sum(missval.out$MF[[1]] != 0, na.rm=T)/length(missval.out$MF[[1]])
+        print("Percentages of data wet after retry:")
+        print(pct.oh)
+        print(pct.mh)
+        print(pct.mf)
+        if ( (pct.mh > pct.mf) ){ #& ((pct.oh < pct.mh) | (pct.oh > (pct.mh - pct.mf)) ) 
+          print("QDM: setting restrictive retry option")
+          use.restrict.retry <- T
+          #Okay - so we can expect trouble around the 3 points in MF.rank that
+          #are just at the edge of the qhatile mapping from MF to OH
+          #As a test run, try setting all of these to 0.
+#           tau.fxn <- function(mf, trace){
+#             mf[mf < calc.trace] <- runif(sum(mf < calc.trace), .Machine$double.eps, calc.trace/2)
+#             tau <- seq(0, 1, length.out=length(mf))
+#             return(tau[rank(mf)])
+#           }
+#           MF.rank <- tau.fxn(missval.out$MF[[1]], args$trace)
+#           #Okay - this case seems to legit work. Probably worth trying in practice.
+#           restrict.retry <- MF.rank < ( (1-pct.oh) * pct.mf)]
+          restrict.retry <- rep(T, remove.missvals(length(missval.out$MF[[1]])))
+        }
+      }
       out <- switch(ds.method, 
-                    'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args),  
+                    'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
+                    'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
                                         args$variant, 
                                         missval.out$complete.hist, 
                                         missval.out$complete.fut, args))
+      if (use.restrict.retry){
+        out[restrict.retry] <- 0
+      }
       train.stat <- missval.out$missval.status
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      out.data[,,,n,,][missval.out$complete.fut] <- out
+      #       out.data[,,,n,,][missval.out$complete.fut] <- out
+      #       if(missval.out$mv.retry & train_qcmask){
+      #         qc[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out)) #prev.out$mhat.p
+      #       }
+      print(length(out))
+      print(length(index.mask))
+      print(sum(!is.na(index.mask)))
+      #out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+      out.data[,,,n,,][!is.na(index.mask)] <- out
       if(missval.out$mv.retry & train_qcmask){
-        qc[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out)) #prev.out$mhat.p
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap) #prev.out$mhat.p
       }
     }else{
       #       print('downscaling not possible at this point')
@@ -98,18 +139,29 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
     }
   }
-if (missval.out$mv.retry){
-  #Unset the seed 
-  #set.seed(seed=NULL)
-}
   print("summary of all MBC/QDM outputs:")
   print(summary(out.data))
   return(list(ds=out.data, qc=qc))
 }
 
+callQDM_mod <- function(OH, MH, MF, args){
+  OH.slice <- remove.missvals(unlist(as.vector(OH)))
+  MH.slice <- remove.missvals(unlist(as.vector(MH)))
+  MF.slice <- remove.missvals(unlist(as.vector(MF)))
+  if (max (OH.slice) > max(MF.slice)){
+    print("callQDM: OH max greater than MF max")
+  }
+  tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
+                 ratio=args$ratio.seq, trace=args$trace, 
+                 jitter.factor=args$jitter.factor, ties=args$ties)
+  return(tmp$mhat.p)
+}
+
+
+
 callQDM <- function(OH, MH, MF, args){
-#   print(args)
-#   stop('examine this out')
+  #   print(args)
+  #   stop('examine this out')
   print("Summary of OH:")
   print(summary(OH[[1]]))
   print(sum(OH[[1]]!=0, na.rm=T))
@@ -261,7 +313,7 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
         transform <- T
         tform.idx <- which(pre.ds.types=='transform')
         tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$pp.args$transform, 
-                              pre.ds.train[[tform.idx]]$pp.args$arg)
+                                  pre.ds.train[[tform.idx]]$pp.args$arg)
         if (is.null(tform_fxn[[2]])){
           trace <- do.call(tform_fxn[[1]], list(trace))
         }else{

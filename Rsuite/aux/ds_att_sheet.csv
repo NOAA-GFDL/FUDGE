@@ -7,6 +7,7 @@ DeltaSD,"OH, MH","MH,MF",MF,,TRUE,FALSE,distributional,delta,squish,,,"spatial,t
 BCQM,"MH, MF","OH,MH",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,FALSE,FALSE,
 EDQM,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,FALSE,FALSE,"Li et.al. 2010"
 CFQM,"OH, MH","MH,MF",MF,OH,TRUE,TRUE,distributional,qm,squish,,,"spatial,temporal",FALSE,FALSE,
-PARM,"MH, MF","OH,MH",OH,MF,FALSE,TRUE,synchronous,qm,squish,spatial,,temporal,FALSE,FALSE,"Stoner et.al. 2007"
-MBC,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,synchronous,qm,squish,spatial,,temporal,TRUE,TRUE,"Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
-QDM,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,synchronous,qm,squish,spatial,,temporal,FALSE,TRUE,"Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
+PARM,"MH, MF","OH,MH",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,FALSE,FALSE,"Stoner et.al. 2007"
+MBC,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,TRUE,TRUE,"Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
+QDM,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,FALSE,TRUE,"Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
+QDM_mod,"OH, MH, MF","OH, MH, MF",OH,MF,FALSE,TRUE,distributional,qm,squish,spatial,,temporal,FALSE,TRUE,"Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"

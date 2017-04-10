@@ -47,11 +47,12 @@ if (length(console.args) > 0){
   i_max <- as.numeric(console.args[5])
   x.pad <- "NA"
 }else{
+  #1 1 1 92 190
   oh_by <- 1 #3
   mh_by <- 1 #3 #5 #3
   mf_by <- 1 #3 #5 #3
-  i_idx <- 48 #167 #pr_diff = 37 i800 = 53 #194 #10
-  i_max <- 194
+  i_idx <- 92 #167 #pr_diff = 37 i800 = 53 #194 #10
+  i_max <- 190
   x.pad <- "NA"
 }
 
@@ -286,13 +287,14 @@ ds <- list('ds' = array(NA, dim=output.dim),
 set.ds.defaults <- function(ds.method, args, ...){
   #Alter args for a given method depending on the args allowed
   #(NOTE: may include settings other than default, such as QDM type to ratio)
-  default.methods <- c("MBC", "QDM")
+  default.methods <- c("MBC", "QDM", "QDM_mod")
   if (! (ds.method %in% default.methods)){
     return(args)
   }else{
     new.args <- switch(ds.method, 
                        'MBC' = set.MBC.defaults(args, ...), 
                       'QDM' = set.QDM.defaults(args, ...),
+                      'QDM_mod' = set.QDM.defaults(args, ...),
                        stop(paste("Error in set.ds.defaults: no method", 
                                   ds.method, "!")))
     return(new.args)
@@ -313,6 +315,8 @@ start.time <- proc.time()
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
+## CW mod for writing adjusted trace
+trace.pr <- array(NA, dim=c(1, 140))
 ds <- loop.xy.data()
 print('summary of ds:')
 print(summary(ds))
