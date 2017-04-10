@@ -397,7 +397,12 @@ for (r in 1:length(fut.pred.rip.list)){
       #qc.globals$info <- ""
       qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
                                                ds.experiment, label.validation, label.training, 
-                                               predictor.vars, fut.pred.rip.list, qc.maskopts$qc.method)
+                                               predictor.vars, fut.pred.rip.list, 
+                                               qc.maskopts$qc.method, missval.args, 
+                                               paste(c(paste(ds.ref$predictors[-length(ds.ref$predictors)], 
+                                                             collapse=","), 
+                                                       ds.ref$predictors[length(ds.ref$predictors)]), 
+                                                     collapse=" and "))
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
