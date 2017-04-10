@@ -15,7 +15,8 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
     qc.str.method <- switch(qc.method, 
                             'qc.train' = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
                                                 " met for ", train.string, ' and missing indicates retry option invoked'),
-                            'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not')
+                            'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
+                            qc.method
     )
     print(qc.str.method)
     string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
