@@ -52,7 +52,10 @@ if (length(console.args) > 0){
   copy_from_tmp = console.args[10]
   x.pad <- "NA"
 }else{
-  i_idx <- 1 #167 #pr_diff = 37 i800 = 53 #194 #10 #47 is ocean, I think
+  oh_by <- 3
+  mh_by <- 3 #5 #3
+  mf_by <- 3 #5 #3
+  i_idx <- 41 #167 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
   i_stride <- 1
   i_offset <- 748
@@ -108,6 +111,10 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
   post_ds <- pp.out$post_ds
   train_qcmask <- pp.out$train_qcmask
 }
+
+# print(pre_ds)
+# print(post_ds)
+# stop('examine this output')
 
 ##Make sure that you have the experiment rip ready to apply to
 ##other code (i.e. the actual rip experiment is being run under)
@@ -337,6 +344,27 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
 # ds <- list('ds' = array(NA, dim=output.dim), 
 #            'qc' = array(NA, dim=output.dim))
 
+#Added 02-14-17 - trying to set up defaults differently
+set.ds.defaults <- function(ds.method, args, ...){
+  #Alter args for a given method depending on the args allowed
+  #(NOTE: may include settings other than default, such as QDM type to ratio)
+  default.methods <- c("MBC", "QDM")
+  if (! (ds.method %in% default.methods)){
+    return(args)
+  }else{
+    new.args <- switch(ds.method, 
+                       'MBC' = set.MBC.defaults(args, ...), 
+                      'QDM' = set.QDM.defaults(args, ...),
+                       stop(paste("Error in set.ds.defaults: no method", 
+                                  ds.method, "!")))
+    return(new.args)
+  }
+}
+message("Checking for default ds arguments (requires var units)")
+ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
+                            pre.ds.train=pre.ds.train)
+
+
 ##s3 call formerly here
 
 message("FUDGE training begins...")
@@ -346,14 +374,15 @@ start.time <- proc.time()
 #args should always exist; it's specified in the runcode
 #as of 9-29 I'm not sure why this is here, but it seems to have been
 #needed in the past. 
-# if (args[1]=='na'){
-#   ds.args=NULL
-# }else{
-#   ds.args=args
-# }
+if (args[1]=='na'){
+  ds.args=NULL
+}else{
+  ds.args=args
+}
 
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
+
 ds <- loop.xy.data()
 print('summary of ds:')
 print(summary(ds))

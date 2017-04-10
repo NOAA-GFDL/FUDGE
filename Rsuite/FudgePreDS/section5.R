@@ -66,36 +66,24 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
-   # print('summary of adjusted output:')
-  #  print(summary(as.vector(out$adjusted.output$ds.out)))
+    print('summary of adjusted output:')
+    print(summary(as.vector(out$adjusted.output$ds.out)))
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
       print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
-       # print(dim(input[[el]][[var]]))
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
-      #  print(dim(out$input[[el]][[var]]))
       }
     }
-    #Okay - manually constructing out.dim as of 02-20-17
-   # out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
-    out.dim <- c(dim(out$input$hist.targ[[1]])[1:3], 
-                 dim(out$input$fut.pred[[1]])[4:6])
-  #  print(out.dim)
+    out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
     #For the moment, asusme that all data is either of output
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
-    #print(paste("This is out.dim", paste(out.dim)))
     for(el in names(out$adjusted.output)){
       print("settings vals to out.dim")
       if (!is.null(adjusted.output[[el]])){
-       # print("checking dim of out$adjusted.output[[el]]")
-      #  print(dim(out$adjusted.output[[el]]))
-        if (is.null(dim(out$adjusted.output[[el]]))){
-        #  print(out.dim)
+        if (is.null(dim(adjusted.output[[el]]))){
           dim(out$adjusted.output[[el]]) <- out.dim
-       #   print('after setting dim')
-        #  print(dim(out$adjusted.output[[el]]))
         }
       }
     }

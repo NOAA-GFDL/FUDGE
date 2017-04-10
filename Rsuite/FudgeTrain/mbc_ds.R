@@ -2,7 +2,8 @@
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
                    tmasks, train_qcmask=F){
-  #'02-14-17 - new asusmption is that rat.seq is of same length as predictor vars
+  library(MBC)
+ # set.seed(8675309)
   OH <- compress.xy.data(OH)
   MH <- compress.xy.data(MH)
   MF <- compress.xy.data(MF)
@@ -21,6 +22,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
+  print(summary(missval.args))
   MF_mask <- missval.args$pr$MF
   #Get/override default arguments for MBC
   #As of 02-14-71, this is done in the main instead
@@ -35,29 +37,46 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='synchronous')
+    
+    if (args$adjust_trace){
+      print("adjusting pr trace")
+      #print(str(missval.args$pr))
+      adj.thold <- missval.args$pr$adjusted.thold
+      #print(adj.thold)
+      #print(args$trace)
+      if (args$transform){
+        if (is.null(args$tform_fxn[[2]])){
+          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
+        }else{
+          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold, args$tform_fxn[[2]]))
+        }
+      }
+      if (args$trace > adj.thold){
+        print("QDM: using adjusted trace instead of trace")
+        print(args$trace)
+        print(adj.thold)
+        args$trace <- adj.thold
+      }
+      #args$trace <- min(args$trace, adj.thold)
+    }
+    
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
-      #But one common conditioning step should be adjusting the length of ratio.seq
-      loop.args <- args
-      print(loop.args)
-      message("Adjusting ratio.seq to use ")
-      loop.args$ratio.seq <- map.var.to.xy.properties(names(missval.out$MF), 
-                                                 args$var.names, args$ratio.seq)
-      print(loop.args$ratio.seq)
-      print(loop.args$var.names)
       out <- switch(ds.method, 
                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args),  
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
-                                    args$variant, 
-                                    missval.out$complete.hist, 
-                                    missval.out$complete.fut, loop.args))
+                                        args$variant, 
+                                        missval.out$complete.hist, 
+                                        missval.out$complete.fut, args))
       train.stat <- missval.out$missval.status
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
+      print(summary(missval.out$complete.fut))
+      print(length(out))
       out.data[,,,n,,][missval.out$complete.fut] <- out
       if(missval.out$mv.retry & train_qcmask){
         out.data[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out$mhat.p))
@@ -70,6 +89,8 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
     }
   }
+  print("summary of all MBC/QDM outputs:")
+  print(summary(out.data))
   return(list(ds=out.data, qc=qc))
 }
 
@@ -80,6 +101,7 @@ callQDM <- function(OH, MH, MF, args){
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)
+  print(summary(tmp$mhat.p))
   return(tmp$mhat.p)
 }
 
@@ -112,11 +134,10 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #...also need to do more advanced checking of missing values. 
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
-  print(summary(tmp$mhat.p))
   return(tmp$mhat.p[,1])
 }
 
-set.MBC.defaults <- function(args, predictor.vars){
+set.MBC.defaults <- function(args, predictor.vars, ...){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
   iter = 30
@@ -145,6 +166,8 @@ set.MBC.defaults <- function(args, predictor.vars){
     }else{
       trace <- as.numeric(args$trace)
     }
+    pr.trace <- convert.pr.threshold(args$trace, pr.units)
+    trace <- pr.trace
     if ('transform' %in% names(args)){
       tform <- return.t.fxn(args$transform, args$transform_arg)
       if (is.null(tform[[2]])){
@@ -163,13 +186,13 @@ set.MBC.defaults <- function(args, predictor.vars){
     #...it's also going to blow up when we get to using time-varying amplitudes
     #in here - need to make sure that only one val gets used for those.
     ##Okay - as of 2-14-17, adding this in two steps: one for the 
-#     in.rat.seq <- sapply(in.rat.seq, function(x,r){rep(x,r)}, oh_by**2)
-#     ratio.seq <- in.rat.seq
+    #     in.rat.seq <- sapply(in.rat.seq, function(x,r){rep(x,r)}, oh_by**2)
+    #     ratio.seq <- in.rat.seq
     if (length(in.rat.seq) != length(ratio.seq)){
       stop(paste("Error in set.MBC.defaults: string", args$ratio.seq, 
                  "did not have as many elements as MH has vars!"))
     }
-ratio.seq <- in.rat.seq
+    ratio.seq <- in.rat.seq
   }
   jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
   if (any(jitter.names %in% names(args))){
@@ -179,3 +202,73 @@ ratio.seq <- in.rat.seq
   return(list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars)))
 }
+
+
+set.QDM.defaults <- function(args, predictor.vars, ...){
+  #'Sets common defaults for the inputs to MBC that we want
+  #'to control. Most of these also apply to QDM.
+  iter = 30
+  jitter.fac = 0
+  ratio.seq = F #should be 1 for this case
+  trace = 0.05
+  adjust_trace = F
+  transform = F
+  tform_fxn = 'none'
+  ties = 'first'
+  if ('trace' %in% names(args)){
+    non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
+    #if trace is non-numeric (i.e an arg we'd pass to the pr functions
+    #get OH pr units from adjust.metadata (created back in main driver)
+    if (non.numeric.trace){
+      pr.units <- adjust.metadata$pr_oh_units
+      if (length(pr.units)==0){
+        stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
+      }
+      pr.trace <- convert.pr.threshold(args$trace, pr.units)
+      trace <- pr.trace
+    }else{
+      trace <- as.numeric(args$trace)
+    }
+    #Now check the section 5 args for the 
+    if (exists('pre.ds.train')){
+      pre.ds.types <- sapply(pre.ds.train, '[[', 'type')
+      if ('transform' %in% pre.ds.types){
+        transform <- T
+        tform.idx <- which(pre.ds.types=='transform')
+        tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$pp.args$transform, 
+                              pre.ds.train[[tform.idx]]$pp.args$arg)
+        if (is.null(tform_fxn[[2]])){
+          trace <- do.call(tform_fxn[[1]], list(trace))
+        }else{
+          trace <- do.call(tform_fxn[[1]], list(trace, tform_fxn[[2]]))
+        }
+      }
+    }
+  }
+  rat.names <- c('ratio', 'ratio.seq', 'ratio_seq')
+  if ('type' %in% names(args)){
+    if (args$type=='add'){
+      ratio.seq <- FALSE
+    }else if (args$type=='mult'){
+      ratio.seq <- TRUE
+    }
+  }
+  jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
+  if (any(jitter.names %in% names(args))){
+    jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
+    jitter.fac <- args[[jitter.name]]
+  }
+  if ('adjust_trace' %in% names(args)){
+    adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
+  }
+  #Put together MBC-specific args  
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+                      var.names=unlist(predictor.vars), 
+                      adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn)
+  #Deal with sample size
+  if ('minsamplesize' %in% names(args)){
+    return.args$minsamplesize <- args$minsamplesize
+  }  
+  return(return.args)
+}
+

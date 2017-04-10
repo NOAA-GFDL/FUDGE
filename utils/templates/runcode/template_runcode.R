@@ -80,7 +80,7 @@ rm(list=ls())
 # ------ Set FUDGE environment ---------------
 	FUDGEROOT <<- Sys.getenv(c("BASEDIR"))
 	FUDGETAG <<- Sys.getenv(c("FUDGETAG"))
-	#FUDGEROOT <- <FUDGEROOT>
+	#FUDGEROOT <<- <FUDGEROOT>
 	print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
 	BRANCH <- <BRANCH>
 ################ call main driver ###################################

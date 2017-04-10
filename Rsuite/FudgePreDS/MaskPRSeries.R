@@ -41,8 +41,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #Convert the threshold and create the reference mask
   wetday.convert <- convert.pr.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
-  print(ref.wetdays[7890:7896])
-  print(ref.data[7890:7896])
+#   print(ref.wetdays[7890:7896])
+#   print(ref.data[7890:7896])
   
   #Initialize the adjusted reference vectors
   if(verbose){print('Initializing reference vectors')}
@@ -67,7 +67,7 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
 #   fut.which.idx <- array(1:length(future.data), dim=dim(future.data))
 #   fut.which.idx <- apply()
   loop.ref <- ref.data[ref.idx]
-  loop.adj <- adjust.data[ref.idx]
+  loop.adj <- adjust.data[adj.idx]
   loop.fut <- future.data[fut.idx]
   loop.ref.wetdays <- ref.wetdays[ref.idx]
   loop.adj.wetdays <- adjust.wetdays[adj.idx]
@@ -76,7 +76,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #I think there is a high likelihood that you need to do the mask looping in here; 
   #the altered pr wetday behavior in the missing value functions might require it
   
-  
+#initializing adj.thold so we can return regardless
+adj.thold = wetday.convert
   if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values present
     fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
     fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
@@ -96,6 +97,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
       #If it would result in changed results, apply
       loop.adj.wetdays <- adjust.data[adj.idx] > threshold.wetday.adj
       loop.fut.wetdays <- future.data[fut.idx] > threshold.wetday.adj
+      
+      adj.thold = threshold.wetday.adj
     }
   } else {
     print('wetday convert:')
@@ -122,8 +125,6 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
     if(!is.null(dim(future.data))){
       nrips <- dim(future.data)[4]
       for(n in 1:nrips){
-        print(dim(future.data))
-        print(dim(future.wetdays))
         future.data[,,,n,,] <- conserve.prseries(future.data[,,,n,, ,drop=F],
                                                  future.wetdays[,,,n,, ,drop=F], pool_ens=T)
       }
@@ -134,7 +135,8 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 
-                   "future" = list("data" = as.numeric(future.wetdays)*future.data, "pr_mask" = future.wetdays))
+                   "future" = list("data" = as.numeric(future.wetdays)*future.data, "pr_mask" = future.wetdays), 
+                   'adjusted.thold' = adj.thold)
   if(zero.to.na){
     #All 0 values in the data should be NA values instead (needed to avoid calculations in )
     out.list$ref$data[out.list$ref$pr_mask==0] <- NA
@@ -165,11 +167,11 @@ conserve.prseries <- function(data, mask, pool_ens=F){
     #in which case, conserving over nonspatial points is probably a 
     #bad idea
     data.dim <- dim(data)
-    print(data.dim)
+    print(paste("dims of data in conserve.prseries:", paste(data.dim, collapse=",")))
     for(x in 1:data.dim[1]){
       for(y in 1:data.dim[2]){
-        loop.data <- data[x,y,,,,, drop=F]
-        loop.mask <- mask[x,y,,,,, drop=F]
+        loop.data <- data[x,y,,,,]
+        loop.mask <- mask[x,y,,,,]
         total.trace.pr <- sum(loop.data[loop.mask==FALSE], na.rm=T)
         if(total.trace.pr > 0){
           pr.adjust <- total.trace.pr/sum(loop.mask, na.rm=T)

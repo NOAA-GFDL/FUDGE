@@ -7,26 +7,9 @@ loop.xy.data <- function(){
                               mh.coords$x.start, mf.coords$x.start), 'length'))
   y.len <- unique(sapply(list(oh.coords$y.start, 
                               mh.coords$y.start, mf.coords$y.start), 'length'))
-#   print("y.len:")
-#   print(sapply(list(oh.coords$y.start, 
-#                     mh.coords$y.start, mf.coords$y.start), 'length'))
-#   print("x.len:")
-#   print(sapply(list(oh.coords$x.start, 
-#                     mh.coords$x.start, mf.coords$x.start), 'length'))
-
-  #...okay. If using multivar_target, you can't use 
-  #this gracefully with the stencils - you write one point; you 
-  #get dimensions from mxn
-  #   if (!ds.ref$multivar_target){
-  #     OH.all.dim <- dim(OH$data[[1]])[1:3]
-  #   }else{
-  #     OH.all.dim <- c(1,1,1)
-  #   }
-  #   MF.all.dim <- dim(MF$data[[1]])[4:6]
-  print("building output dimensions")
-  output.dim <- c(targ.dim[1:3], mf.orig.dim[4:6])
-  print(output.dim)
-  output.all <- rep(list(array(NA, dim=output.dim)), 
+  OH.all.dim <- dim(OH$data[[1]])[1:3]
+  MF.all.dim <- dim(MF$data[[1]])[4:6]
+  output.all <- rep(list(array(NA, dim=c(OH.all.dim, MF.all.dim))), 
                     length(c("ds", "qc")))
   names(output.all) <- c("ds", "qc")
   for (ival in 1:x.len){ #1:x.len
@@ -34,7 +17,6 @@ loop.xy.data <- function(){
     ival <<- ival
     for(jval in 1:y.len){ # 31:31 26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
       message(paste("Starting j loop", jval, 'of', y.len))
-      #stop("Examine this output")
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
@@ -51,15 +33,13 @@ loop.xy.data <- function(){
       }
       #qc.mask.names <- c('tasmax_qcmask_train', 'tasmax_qcmask_tailadj')
       all.names <- c(ds.names, qc.mask.names)
-      print(ds.coords)
-      ds.dim <- c((ds.x.end-ds.x.start+1), 
-                  (ds.y.end-ds.y.start+1), 1,
-                  dim(MF.slice[[1]])[4:6])
+      OH.dim <- dim(OH.slice[[1]])[1:3]
+      MF.dim <- dim(MF.slice[[1]])[4:6]
       nmasks <- tmasks$nmasks
       #nmasks is set by the time mask tools
       #...how should this interact with the main driver? 
       #ds as a target is currently being set by the 
-      output <- rep(list(array(NA, dim=c(ds.dim, nmasks))), 
+      output <- rep(list(array(NA, dim=c(OH.dim, MF.dim, nmasks))), 
                     length(all.names))
       #tmasks <- tmask.list
       time_mask_overlap = tmasks$time_mask_overlap
@@ -125,7 +105,7 @@ loop.xy.data <- function(){
         message('Looking for pre-processing functions to apply')
         if(s3.outloop){
           message('Applying S3 Adjustment')
-          #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
+        #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
           temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                           MH=MH.slice, 
                                           OH=OH.slice,
@@ -150,7 +130,7 @@ loop.xy.data <- function(){
         }
         #Loop by time window
         for(w in 1:nmasks){
-          #  for(w in 3:3){
+        #  for(w in 3:3){
           message(paste("Starting window", w, "of", nmasks))
           w <<- w
           qc.out <- NULL
@@ -185,7 +165,7 @@ loop.xy.data <- function(){
           }      
           #Call the downsaing method
           tmp.ds <- callDSMethod(ds.method, 
-                                 OH.window, MH.window, MF.window, ds.args, 
+                                 OH.window, MH.window, MF.window, args, 
                                  missvals=ds.ref$missval_method, 
                                  missval.args=missval.args,
                                  train_qcmask=train_qcmask,
@@ -221,7 +201,7 @@ loop.xy.data <- function(){
               if (tmasks$time_mask_overlap){
                 combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
                                                      mask=tmasks$trim$masks[[w]],
-                                                     dim='time')
+                                                    dim='time')
               }
               output[[out]][,,,,,,w] <- combine.out[[out]]
             }
@@ -230,16 +210,10 @@ loop.xy.data <- function(){
         ##bring together all time levels
         for (el in names(output)){
           #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
-          #  print('adding over temporary output')
-          #  print(dim(output[[el]]))
-          #  print(summary(output[[el]]))
+        #  print('adding over temporary output')
+        #  print(dim(output[[el]]))
+        #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
-          print(ds.x.start)
-          print(ds.x.end)
-          print(ds.y.start)
-          print(ds.y.end)
-          print(dim(output.all[[el]]))
-          print(dim(tmp.out))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
         #Once looping by w complete, do the last s5 adjustment
@@ -257,16 +231,16 @@ loop.xy.data <- function(){
           #Or rather, once you get a list of qc masks, you return them - 
           #ATM, only one process at a time should be returning a qc mask
           output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
-          #           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
-          #             stop('examine the coords - this is leading to issues')
-          #           }
+#           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
+#             stop('examine the coords - this is leading to issues')
+#           }
           if(qc.maskopts$qc.outloop){
             output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
           }
           remove(temp.postproc)
         }
-        # print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-        #  stop('examine output - the tail adjust is giving weird and wonky values')
+       # print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+      #  stop('examine output - the tail adjust is giving weird and wonky values')
       } 
     }#loop by y
   }#loop by x
@@ -296,9 +270,6 @@ missing.all.xy <- function(dataset){
   #non-missing values at each x,y point to downscale over.
   #Missing all values at any point is enough to disqualify
   #the x,y loop from downscaling.
-  print(paste("length of dataset:", length(dataset)))
-  print(paste("Dimensions of dataset:", paste(dim(dataset), collapse=",")))
-  print(summary(dataset))
   return(as.vector(apply(dataset, c(1,2), 
                          function(x){
                            !any(!is.na(x))

@@ -47,6 +47,7 @@ callQM <- function(OH, MH, MF, args, type="",
     if (!is.null(missval.args$pr)){
       missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
     }
+    #print(str(missval.args))
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 

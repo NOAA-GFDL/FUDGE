@@ -90,6 +90,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #Retry with pr missings set to 0
     mv.retry <- T
     ds.possible <- F
+#     print("missval.args$pr")
+#     print(str(missval.args$pr))
     if (length(missval.args$pr) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
@@ -107,6 +109,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #if you do not use it, the synchronous missing values step 
         #removes samples in OH and MH that never get added back in
         var.idx <- pr_vars[[el]]
+        #print(summary(orig[[el]]))
         assign(el, retry.with.pr.present(orig[[el]], 
                                      missval.args$pr[[el]],  
                                      missval.args$pr[[var.idx]],
@@ -202,7 +205,13 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
     print(length(data.list[[el]]))
     print(dim(tmp.pr))
     data.list[[el]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
+#     print(dim(pr.mask))
+#     print(dim(tmp.pr))
+#     print(length(data.list[[el]]))
+    #...ooookay, as of 03-07-2017, this is causing issues. Is there a way to fix it?
+#dim issues seem to have been caused by unexamined assumption that target could be 3x3.
     dim(data.list[[el]]) <- dim(tmp.pr)
+#    print(length(data.tmask))
     data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal')    
   }
   return(data.list)
