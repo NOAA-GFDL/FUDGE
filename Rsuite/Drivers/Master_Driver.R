@@ -480,12 +480,12 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
       ##h_qdm_trace_pr
-      time.dim <- ncdim_def(name=name, 
-                            vals=time.vals, 
+      time.dim <- ncdim_def(name='time', 
+                            vals=0.5, 
                             unlim=TRUE,
-                            units=units, 
+                            units='days since 0-0-0000', 
                             create_dimvar=TRUE, 
-                            calendar=calendar, 
+                            calendar=dimlist$time$calendar, 
                             longname="time")
       time.bounds <- c(0,1)
       time.bounds <- create.fudge.metavar.object('time.bnds', time.bounds, 
@@ -500,13 +500,13 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.dimlist<- dimlist[names(dimlist) != 'ensmem']
       qc.dimlist$time <- time.dim
       qc.varlist <- varlist
-      qc.varlist$time.bnds <- time.bounds
+      qc.varlist$time_bnds <- time.bounds
       ########
       qc.out.filename  = WriteNC(qc.file, pr_trace, 'adjusted_trace_pr', 
                                  dim.list = qc.dimlist, var.data=qc.varlist, 
-                                 prec='float', missval=1e20, units="1", 
+                                 prec='float', missval=1e20, units="kg m-2 s-1", 
                                  #comment=qc.comment.att, 
-                                 longname="Hack at trace pe",
+                                 longname="Hack at trace pr",
                                  standard_name = paste("Hasty hack to get trace pr"),
                                  global_overwrite=qc.globals, 
                                  global_clone_file = OH.files[[1]],
