@@ -8,7 +8,7 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	#if --msub is included, also submits jobs at the end of everything
 	
 	#which i_indices are we going to be looping over?
-	i_elements = range(int(i_start), int(i_end), i_by)
+	i_elements = range(int(i_start), int(i_end)+1, i_by)
 	i_elements.append(int(i_end)+1)
 	i_elements = list(set(i_elements))
 	i_elements = sorted(i_elements)	
