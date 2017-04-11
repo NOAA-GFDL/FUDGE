@@ -304,8 +304,18 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #c	   print "or not"
 	out_dir,listoutdir =  parse_outdir(out_dir,property)
 	print "new out_dir", out_dir	
+	###CEW edits - debugging single-ens I35 case
 	global copyprop	
-	copyprop = property
+	if len(property) == 0:
+		print("splitting filename to determine rip")
+		property = out_dir.split("/")[-7]
+		copyprop = property
+	else:
+		property = property.items()
+		copyprop = property	
+#	print(property)
+#	print(out_dir, listoutdir)
+#	sys.exit()
 	if (len(listoutdir) > 1):
 	   print "Multi-output ON"
 	   global multi
@@ -732,6 +742,7 @@ def main():
 	else:
 	 suffix = ['']	
 	 listrips = ['na']
+	 listrips = [copyprop]
 
 	if not os.path.exists(sbase+"/postProc/aux/"):
 		os.makedirs(sbase+"/postProc/aux/")
@@ -750,12 +761,15 @@ def main():
 		open(sbase+"/postProc/verb/verbose.false", 'a').close()		
 	#CEW edits 3-21-2017:
 	#Making new tool for generating postProc scripts
-	print(copyprop)
-	print(copyprop.iteritems())
-	pval = copyprop.itervalues().next()
-	listrips = pval.split(",")
+	print("Making postproc scripts")
+	#print(copyprop)
+	#print(copyprop.iteritems())
+	#pval = copyprop.itervalues().next()
+	#if len(pval) > 0:
+	listrips = copyprop.split(",")
 	print(listrips)
 	#try:
+	print("script-making command:")
 	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1)
 		#Note: may need to include commands on the nemsemail as well
 		#os.chmod(msubwrap.name, 0744)
