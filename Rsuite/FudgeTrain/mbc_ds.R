@@ -63,45 +63,12 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
         print(adj.thold)
         args$trace <- adj.thold
       }
-      #args$trace <- min(args$trace, adj.thold)
     }
-    loop.args <- args  
-    #     print("precip retry took effect")
-    #     seed.val <- ival * 100 + jval * 10 + w
-    #     set.seed(seed.val)
+    #loop.args <- args  
     
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
-      use.restrict.retry <- F
-      print(str(missval.out))
-      print(missval.out$mv.retry)
-#       if (missval.out$mv.retry){
-#         #stop('examine this output')
-#         pct.oh <- sum(missval.out$OH[[1]] != 0, na.rm=T)/length(missval.out$OH[[1]])
-#         pct.mh <- sum(missval.out$MH[[1]] != 0, na.rm=T)/length(missval.out$MH[[1]])          
-#         pct.mf <- sum(missval.out$MF[[1]] != 0, na.rm=T)/length(missval.out$MF[[1]])
-#         print("Percentages of data wet after retry:")
-#         print(pct.oh)
-#         print(pct.mh)
-#         print(pct.mf)
-#         if ( (pct.mh >= pct.mf) | (pct.oh >= pct.mf) ){ #& ((pct.oh < pct.mh) | (pct.oh > (pct.mh - pct.mf)) ) 
-#           print("QDM: setting restrictive retry option")
-#           use.restrict.retry <- T
-#           #Okay - so we can expect trouble around the 3 points in MF.rank that
-#           #are just at the edge of the qhatile mapping from MF to OH
-#           #As a test run, try setting all of these to 0.
-# #           tau.fxn <- function(mf, trace){
-# #             mf[mf < calc.trace] <- runif(sum(mf < calc.trace), .Machine$double.eps, calc.trace/2)
-# #             tau <- seq(0, 1, length.out=length(mf))
-# #             return(tau[rank(mf)])
-# #           }
-# #           MF.rank <- tau.fxn(missval.out$MF[[1]], args$trace)
-# #           #Okay - this case seems to legit work. Probably worth trying in practice.
-# #           restrict.retry <- MF.rank < ( (1-pct.oh) * pct.mf)]
-#           restrict.retry <- rep(T, remove.missvals(length(missval.out$MF[[1]])))
-#         }
-#      }
       out <- switch(ds.method, 
                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
                     'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
@@ -109,32 +76,14 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                         args$variant, 
                                         missval.out$complete.hist, 
                                         missval.out$complete.fut, args))
-#       if (use.restrict.retry){
-#         print(summary(restrict.retry))
-#         out[restrict.retry] <- 0
-#       }
       train.stat <- missval.out$missval.status
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      #       out.data[,,,n,,][missval.out$complete.fut] <- out
-      #       if(missval.out$mv.retry & train_qcmask){
-      #         qc[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out)) #prev.out$mhat.p
-      #       }
-      print(length(out))
-      print(length(index.mask))
-      print(sum(!is.na(index.mask)))
-      #out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       out.data[,,,n,,][!is.na(index.mask)] <- out
-      #if(missval.out$mv.retry & train_qcmask){
-#       if (use.restrict.retry){
-#         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap) #prev.out$mhat.p
-#       }
     }else{
-      #       print('downscaling not possible at this point')
-      #       stop('examine this out')
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
       if(train_qcmask){
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
