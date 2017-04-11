@@ -233,7 +233,7 @@ for (var in predictor.vars){
 mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride-1)
 mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride-1) 
 print(mh_x_subset)
-MH <- build.FUDGE.dataset(MH.files, predictor.vars, subset=list(x=mh_x_subset,y=mh_y_subset), 
+MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_subset), 
                           dim=ds.ref$mh_dimlist, 
                           x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
                           aux.ref$MH$geomask)
@@ -295,8 +295,9 @@ if (!ds.ref$multivar_target){
   #This is a special bypass for the MBC; we can't count on OH
   #being all 1, and some of the other workflow assumes that
   targ.dim <- c(1,oh.orig.dim[2],1,1,1,1)
-  targ.subset <- get.FUDGE.subset(1, i_idx, i_max)
-  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.subset), 
+  targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
+  targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
+  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.x.subset,y=targ.y.subset), 
                               dim=ds.ref$oh_dimlist, 
                               x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
                               "none")
@@ -374,14 +375,19 @@ start.time <- proc.time()
 #args should always exist; it's specified in the runcode
 #as of 9-29 I'm not sure why this is here, but it seems to have been
 #needed in the past. 
-if (args[1]=='na'){
-  ds.args=NULL
-}else{
-  ds.args=args
-}
+# if (args[1]=='na'){
+#   ds.args=NULL
+# }else{
+#   ds.args=args
+# }
 
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
+
+#h_record_trace_pr
+#####Note: because this is a one-off vairant branch, 
+#####making global array to record pr info
+pr_trace <<- array(NA, dim=c(output.dim[1:3], c(1,1,1)))
 
 ds <- loop.xy.data()
 print('summary of ds:')
@@ -473,12 +479,35 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
-      qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var, 
-                                 dim.list = dimlist, var.data=varlist, 
+      ##h_qdm_trace_pr
+      time.dim <- ncdim_def(name=name, 
+                            vals=time.vals, 
+                            unlim=TRUE,
+                            units=units, 
+                            create_dimvar=TRUE, 
+                            calendar=calendar, 
+                            longname="time")
+      time.bounds <- c(0,1)
+      time.bounds <- create.fudge.metavar.object('time.bnds', time.bounds, 
+                                                 prec='double', dimnames=c('bnds', 'time'), 
+                                                 longname='time axis boundaries', 
+                                                 units=time.dim$units)
+      attributes(time.bounds) <- c(list('units' = time.dim$units, 
+                                        'dimids' = "bnds,time", 
+                                        'prec' = "double", 
+                                        'longname' = "time axis boundaries"), 
+                                   attributes(time.bounds))
+      qc.dimlist<- dimlist[names(dimlist) != 'ensmem']
+      qc.dimlist$time <- time.dim
+      qc.varlist <- varlist
+      qc.varlist$time.bnds <- time.bounds
+      ########
+      qc.out.filename  = WriteNC(qc.file, pr_trace, 'adjusted_trace_pr', 
+                                 dim.list = qc.dimlist, var.data=qc.varlist, 
                                  prec='float', missval=1e20, units="1", 
-                                 comment=qc.comment.att, 
-                                 longname="QC Mask",
-                                 standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
+                                 #comment=qc.comment.att, 
+                                 longname="Hack at trace pe",
+                                 standard_name = paste("Hasty hack to get trace pr"),
                                  global_overwrite=qc.globals, 
                                  global_clone_file = OH.files[[1]],
                                  clone_globals=T, clone_all=F, clone_include="frequency")

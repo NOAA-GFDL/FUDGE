@@ -117,6 +117,8 @@ loop.xy.data <- function(){
                                           missval.args = missval.args)
           #Assign output and remove temporary output
           missval.args <- temp.output$missval.args
+        ####h_record_trace_pr
+        pr_trace[i,j,1,,1] <<- missval.args$pr$adjusted.thold
           post.ds <- temp.output$s5.list
           OH.slice <- temp.output$input$OH
           MH.slice <- temp.output$input$MH
