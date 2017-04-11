@@ -30,9 +30,9 @@ QDM_mod <- function (o.c, m.c, m.p, ratio = FALSE, trace = 0.05, trace.calc = 0.
                                                             size = length(tau))), 2, quantile, probs = tau))
   }
   else {
-    quant.o.c <- quantile(o.c, tau)
-    quant.m.c <- quantile(m.c, tau)
-    quant.m.p <- quantile(m.p, tau)
+    quant.o.c <- quantile(o.c, tau, type=3)
+    quant.m.c <- quantile(m.c, tau, type=3)
+    quant.m.p <- quantile(m.p, tau, type=3)
   }
   tau.m.p <- approx(quant.m.p, tau, m.p, rule = 2, method='constant', f=1, ties = "ordered")$y
   if (ratio) {
