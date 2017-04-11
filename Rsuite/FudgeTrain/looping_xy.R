@@ -123,6 +123,8 @@ loop.xy.data <- function(){
 #         print(missval.args$pr$adjusted.thold)
 #         print(dim(pr_trace))
 #         print(dim(pr_trace[ival,jval,,1,,1]))
+#print(dim(pr_trace))
+#stop('examine this out')
         pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
           post.ds <- temp.output$s5.list
           OH.slice <- temp.output$input$OH

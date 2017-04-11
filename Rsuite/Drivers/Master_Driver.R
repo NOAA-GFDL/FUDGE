@@ -294,7 +294,7 @@ if (!ds.ref$multivar_target){
 }else{
   #This is a special bypass for the MBC; we can't count on OH
   #being all 1, and some of the other workflow assumes that
-  targ.dim <- c(1,oh.orig.dim[2],1,1,1,1)
+  targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
   targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
   targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
   TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.x.subset,y=targ.y.subset), 
