@@ -85,7 +85,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
         print(pct.oh)
         print(pct.mh)
         print(pct.mf)
-        if ( (pct.mh > pct.mf) ){ #& ((pct.oh < pct.mh) | (pct.oh > (pct.mh - pct.mf)) ) 
+        if ( (pct.mh >= pct.mf) | (pct.oh >= pct.mf) ){ #& ((pct.oh < pct.mh) | (pct.oh > (pct.mh - pct.mf)) ) 
           print("QDM: setting restrictive retry option")
           use.restrict.retry <- T
           #Okay - so we can expect trouble around the 3 points in MF.rank that
@@ -127,7 +127,8 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       print(sum(!is.na(index.mask)))
       #out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       out.data[,,,n,,][!is.na(index.mask)] <- out
-      if(missval.out$mv.retry & train_qcmask){
+      #if(missval.out$mv.retry & train_qcmask){
+      if (use.restrict.retry){
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap) #prev.out$mhat.p
       }
     }else{
