@@ -132,6 +132,8 @@ adj.thold = wetday.convert
       future.data <- conserve.prseries(future.data, future.wetdays, pool_ens=T)
     }
   } 
+print("adjusted.thold:")
+print(adj.thold)
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays), 
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays), 

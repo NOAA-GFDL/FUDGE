@@ -116,8 +116,13 @@ loop.xy.data <- function(){
                                           s5.instructions=post.ds, 
                                           missval.args = missval.args)
           #Assign output and remove temporary output
-          missval.args <- temp.output$missval.args
+         # missval.args <- temp.output$missval.args
         ####h_record_trace_pr
+#         str(temp.output$missval.args)
+#         print(missval.args$pr)
+#         print(missval.args$pr$adjusted.thold)
+#         print(dim(pr_trace))
+#         print(dim(pr_trace[ival,jval,,1,,1]))
         pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
           post.ds <- temp.output$s5.list
           OH.slice <- temp.output$input$OH
@@ -167,7 +172,7 @@ loop.xy.data <- function(){
           }      
           #Call the downsaing method
           tmp.ds <- callDSMethod(ds.method, 
-                                 OH.window, MH.window, MF.window, args, 
+                                 OH.window, MH.window, MF.window, ds.args, 
                                  missvals=ds.ref$missval_method, 
                                  missval.args=missval.args,
                                  train_qcmask=train_qcmask,

@@ -38,6 +38,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args, 
                                          missval.method='distributional')
     
+    args$adjust_trace <- F
     if (args$adjust_trace){
       print("adjusting pr trace")
       #print(str(missval.args$pr))
