@@ -34,20 +34,20 @@ QDM_mod <- function (o.c, m.c, m.p, ratio = FALSE, trace = 0.05, trace.calc = 0.
     quant.m.c <- quantile(m.c, tau, type=3)
     quant.m.p <- quantile(m.p, tau, type=3)
   }
-  tau.m.p <- approx(quant.m.p, tau, m.p, rule = 2, method='constant', f=1, ties = "ordered")$y
+  tau.m.p <- approx(quant.m.p, tau, m.p, rule = 2)$y
   if (ratio) {
-    approx.t.qmc.tmp <- approx(tau, quant.m.c, tau.m.p, rule = 2, method='constant', f=1, ties = "ordered")$y
+    approx.t.qmc.tmp <- approx(tau, quant.m.c, tau.m.p, rule = 2)$y
     delta.m <- m.p/approx.t.qmc.tmp
     delta.m[(delta.m > ratio.max) & (approx.t.qmc.tmp < ratio.max.trace)] <- ratio.max
-    mhat.p <- approx(tau, quant.o.c, tau.m.p, rule = 2, method='constant', f=1, ties = "ordered")$y * 
+    mhat.p <- approx(tau, quant.o.c, tau.m.p, rule = 2)$y * 
       delta.m
   }
   else {
-    delta.m <- m.p - approx(tau, quant.m.c, tau.m.p, rule = 2, method='constant', f=1, ties = "ordered")$y
-    mhat.p <- approx(tau, quant.o.c, tau.m.p, rule = 2, method='constant', f=1, ties = "ordered")$y + 
+    delta.m <- m.p - approx(tau, quant.m.c, tau.m.p, rule = 2)$y
+    mhat.p <- approx(tau, quant.o.c, tau.m.p, rule = 2)$y + 
       delta.m
   }
-  mhat.c <- approx(quant.m.c, quant.o.c, m.c, rule = 2, method='constant', f=1, ties = "ordered")$y
+  mhat.c <- approx(quant.m.c, quant.o.c, m.c, rule = 2)$y
   if (ratio) {
     mhat.c[mhat.c < trace] <- 0
     mhat.p[mhat.p < trace] <- 0
