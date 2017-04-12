@@ -100,9 +100,13 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			#since multiple exit points aren't that much of an issue and you
 			#WANT things to come to a screeching halt, but that may change later.
 		else:
+			#This should produce at least one file
 			outdir = osp.dirname(expdict['output.path'][0])
 			outdir_contents = os.listdir(outdir)	
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
+			if len(outfiles) < 1:
+				print("Error in ppWatcher: No files found in " + outdir + " !"
+				sys.exit(1)
 			outfiles = "\n\t".join(outfiles)	
 		if warnCrossval: 
 			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
@@ -134,6 +138,9 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		outfile_exp_info = ["/".join(el.split("/")[:-3]) + "/experiment_info.txt" for el in outfiles.split("\n")]
 		outfile_exp_info = [el.split(":")[-1] for el in outfile_exp_info]
 		script_exp_info = [infile]
+		#print(outfiles)
+		#print("outfile exp_info + script exp_info:")
+		#print(outfile_exp_info + script_exp_info)
 		write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')	
 		##Added 9-28: get profiling info, write to file
 		make_prof_file(expdict['script.base'], expdict['script.base'] + "/log/")

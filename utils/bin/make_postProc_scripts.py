@@ -64,7 +64,8 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 			f.write("\n" + "echo 'Setting FUDGE environment ...'" + "\n")
 			f.write(pp_statfile_remove + "\n")
 			f.write(pp_checkout_commands + "\n")
-			f.write("source " + pp_source + "\n")
+			#f.write("source " + pp_source + "\n")
+			f.write("eval `cat " + pp_source + "`\n")	
 			f.write(pp_status_commands)
 		#append to list of sourcable files
 		code_list.append(pp_runcode)
