@@ -64,12 +64,17 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
         args$trace <- adj.thold
       }
     }
-    #loop.args <- args  
+    if (missval.out$mv.retry){
+      print('switching QDM and QDM_mod')
+      loop.ds <- 'QDM_mod'
+    }else{
+      loop.ds <- ds.method
+    }  
     
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
-      out <- switch(ds.method, 
+      out <- switch(loop.ds, 
                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
                     'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
@@ -82,11 +87,15 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      out.data[,,,n,,][!is.na(index.mask)] <- out
+      #out.data[,,,n,,][!is.na(index.mask)] <- out
+      out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+      if (train_qcmask &  missval.out$mv.retry){
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+      }
     }else{
-      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
+      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, sum(!is.na(index.mask))), olap)
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
   }
@@ -96,6 +105,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
 }
 
 callQDM_mod <- function(OH, MH, MF, args){
+  MF.idx <- !is.na(unlist(as.vector(MF)))
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
@@ -104,8 +114,10 @@ callQDM_mod <- function(OH, MH, MF, args){
   }
   tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
                  ratio=args$ratio.seq, trace=args$trace, 
-                 jitter.factor=args$jitter.factor, ties=args$ties)
-  return(tmp$mhat.p)
+                 jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  out <- rep(NA, length(MF.idx))
+  out[MF.idx] <- tmp
+  return(out)
 }
 
 
@@ -113,18 +125,19 @@ callQDM_mod <- function(OH, MH, MF, args){
 callQDM <- function(OH, MH, MF, args){
   #   print(args)
   #   stop('examine this out')
-  print("Summary of OH:")
-  print(summary(OH[[1]]))
-  print(sum(OH[[1]]!=0, na.rm=T))
-  print(sum(OH[[1]]!=0, na.rm=T)/length(OH[[1]]))
-  print("Summary of MH:")
-  print(summary(MH[[1]]))
-  print(sum(MH[[1]]!=0, na.rm=T))
-  print(sum(MH[[1]]!=0, na.rm=T)/length(MH[[1]]))  
-  print("Summary of MF:")
-  print(summary(MF[[1]]))
-  print(sum(MF[[1]]!=0, na.rm=T))  
-  print(sum(MF[[1]]!=0, na.rm=T)/length(MF[[1]]))  
+  MF.idx <- !is.na(unlist(as.vector(MF)))
+#   print("Summary of OH:")
+#   print(summary(OH[[1]]))
+#   print(sum(OH[[1]]!=0, na.rm=T))
+#   print(sum(OH[[1]]!=0, na.rm=T)/length(OH[[1]]))
+#   print("Summary of MH:")
+#   print(summary(MH[[1]]))
+#   print(sum(MH[[1]]!=0, na.rm=T))
+#   print(sum(MH[[1]]!=0, na.rm=T)/length(MH[[1]]))  
+#   print("Summary of MF:")
+#   print(summary(MF[[1]]))
+#   print(sum(MF[[1]]!=0, na.rm=T))  
+#   print(sum(MF[[1]]!=0, na.rm=T)/length(MF[[1]]))  
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
@@ -133,8 +146,10 @@ callQDM <- function(OH, MH, MF, args){
   }
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
-             jitter.factor=args$jitter.factor, ties=args$ties)
-  return(tmp$mhat.p)
+             jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  out <- rep(NA, length(MF.idx))
+  out[MF.idx] <- tmp
+  return(out)
 }
 
 callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
