@@ -394,21 +394,26 @@ for (r in 1:length(fut.pred.rip.list)){
         print("ERROR! Dir creation script not beahving as expected!")
       }
       message(paste('attempting to write to', qc.file))
-      qc.comment <- get.qc.comment(qc.maskopts$qc.method)
-      qc.comment.att <- list()
-      qc.comment.att[[qc.var]] <- qc.comment
+#       qc.comment <- get.qc.comment(qc.maskopts$qc.method)
+#       qc.comment.att <- list()
+#       qc.comment.att[[qc.var]] <- qc.comment
       qc.globals <- global_att_list
       #qc.globals$info <- ""
-      qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
+      qc.globals$comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
                                                ds.experiment, label.validation, label.training, 
-                                               predictor.vars, fut.pred.rip.list, qc.maskopts$qc.method)
+                                               predictor.vars, fut.pred.rip.list, 
+                                               qc.maskopts$qc.method, missval.args, 
+                                               paste(c(paste(ds.ref$predictors[-length(ds.ref$predictors)], 
+                                                             collapse=","), 
+                                                       ds.ref$predictors[length(ds.ref$predictors)]), 
+                                                     collapse=" and "))
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
       qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var, 
                                  dim.list = dimlist, var.data=varlist, 
                                  prec='float', missval=1e20, units="1", 
-                                 comment=qc.comment.att, 
+                                 comment=qc.globals$comment, 
                                  longname="QC Mask",
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals)
