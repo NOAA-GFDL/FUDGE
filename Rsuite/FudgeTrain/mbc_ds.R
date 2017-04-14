@@ -65,12 +65,12 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
     }
     loop.ds <- ds.method
-#     if (missval.out$mv.retry){
-#       print('switching QDM and QDM_mod')
-#       loop.ds <- 'QDM_mod'
-#     }else{
-#       loop.ds <- ds.method
-#     } 
+    if (missval.out$mv.retry){
+      print('switching QDM and QDM_mod')
+      loop.ds <- 'QDM_mod'
+    }else{
+      loop.ds <- ds.method
+    } 
     
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
