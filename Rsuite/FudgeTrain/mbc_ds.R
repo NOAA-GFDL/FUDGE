@@ -80,7 +80,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       print(length(out))
       out.data[,,,n,,][missval.out$complete.fut] <- out
       if(missval.out$mv.retry & train_qcmask){
-        out.data[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out$mhat.p))
+        out.data[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out))
       }
     }else{
       print('downscaling not possible at this point')
@@ -194,6 +194,13 @@ set.MBC.defaults <- function(args, predictor.vars, ...){
                  "did not have as many elements as MH has vars!"))
     }
     ratio.seq <- in.rat.seq
+  }
+  if ('type' %in% names(args)){
+    if (args$type=='add'){
+      ratio.seq <- FALSE
+    }else if (args$type=='mult'){
+      ratio.seq <- TRUE
+    }
   }
   jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
   if (any(jitter.names %in% names(args))){

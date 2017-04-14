@@ -85,12 +85,12 @@ if ("multivar_target" %in% aux.ref){
 
 message("Checking downscaling arguments")
 ds.args <<- args
-QCDSArguments(k=k.fold, ds.method = ds.method, args=args, 
+QCDSArguments(k=k.fold, ds.method = ds.method, args=ds.args, 
               is.multivar=(length(predictor.vars) > 1), 
               is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 message("Checking the missing value arguments")
-missval.args <- getMissvalArgs(args, ds.ref$missval_method)
+missval.args <- getMissvalArgs(ds.args, ds.ref$missval_method)
 
 message("Checking input predictor var order")
 predictor.vars <- fix.var.order(predictor.vars, target.var)
@@ -152,12 +152,12 @@ train_qcmask <- 'qc.train' %in% sapply(mask.list, '[[', 'type')
 
 #Adapt some of the parameters being set by the f-to-g bridge code
 if(!exists('pr_opts')){
-  f.list <- override.f.defaults(args)
+  f.list <- override.f.defaults(ds.args)
 }else{
-  f.list <- override.f.defaults(args, pr_opts)
+  f.list <- override.f.defaults(ds.args, pr_opts)
 }
 min.present <- f.list$threshold
-args <- f.list$args
+ds.args <- f.list$args
 
 #Then, check that the s3 and s5 adjustments you are performing make sense in
 #this context
@@ -312,26 +312,6 @@ tmask.list <- get.fudge.timemask.list()
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
 adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
-
-#Added 02-14-17 - trying to set up defaults differently
-set.ds.defaults <- function(ds.method, args, ...){
-  #Alter args for a given method depending on the args allowed
-  default.methods <- c("MBC", "QDM")
-  if (! (ds.method %in% default.methods)){
-    return(args)
-  }else{
-    new.args <- switch(ds.method, 
-                       MBC = set.MBC.defaults(args, ...), 
-                       QDM = set.MBC.defaults(args, ...),
-                       stop(paste("Error in set.ds.defaults: no method", 
-                                  ds.method, "!")))
-    return(new.args)
-  }
-}
-message("Checking for default ds arguments (requires var units)")
-ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars)
-print(summary(ds.args))
-print(ds.args)
 
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.

@@ -311,10 +311,12 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		property = out_dir.split("/")[-7]
 		copyprop = property
 	else:
-		property = property.items()
-		copyprop = property	
+		copyprop = property['RIP']
+		#copyprop = property.iteritems()
 #	print(property)
 #	print(out_dir, listoutdir)
+#	print(copyprop)
+#	print(property)
 #	sys.exit()
 	if (len(listoutdir) > 1):
 	   print "Multi-output ON"
@@ -766,6 +768,8 @@ def main():
 	#print(copyprop.iteritems())
 	#pval = copyprop.itervalues().next()
 	#if len(pval) > 0:
+	print(multi)
+	print(copyprop)
 	listrips = copyprop.split(",")
 	print(listrips)
 	#try:
