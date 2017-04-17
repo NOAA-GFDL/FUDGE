@@ -77,3 +77,15 @@ get.OH.experiment.atts <- function(in.file){
   nc_close(in.nc)
   return(list(ds_OH_source = dataset))
 }
+
+get.FUDGE.file.atts <- function(OH.files, MH.files, MF.files){
+  datasets <- c(OH.files, MH.files, MF.files)
+  var.names <- c('OH_filenames', 'MH_filenames', 'MF_filenames')
+  for (e in 1:length(datasets)){
+    el <- datasets[e]
+    dset.filenames <- sapply(el, '[[', 'filename')
+    dset.filenames <- paste(sapply(basename(dset.filenames), 'paste'), collapse="; ")
+    assign(var.names[e], dset.filenames)
+  }
+  return(list(filenames_OH = OH_filenames, filenames_MH = MH_filenames, filenames_MF = MF_filenames))
+}

@@ -22,7 +22,8 @@ make.fudge.globals <- function(){
                                      pre_ds, post_ds)
   fudge.OH.atts <- get.OH.experiment.atts(OH$metadata[[1]]$filename)
   fudge.MF.atts <- get.MF.experiment.atts(MF$metadata[[1]]$filename)
-  atts.all <- c(fudge.info.atts, fudge.OH.atts, fudge.MF.atts)
+  fudge.file.atts <- get.FUDGE.file.atts(OH$metadata, MH$metadata, MF$metadata)
+  atts.all <- c(fudge.info.atts, fudge.OH.atts, fudge.MF.atts, fudge.file.atts)
   #Hey, check on this - is it working as intended?
   fudge.climatology <- MF$metadata[[target.var]]$climatology
   ##############################################################################

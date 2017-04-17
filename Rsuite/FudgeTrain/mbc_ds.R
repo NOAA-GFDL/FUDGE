@@ -124,21 +124,7 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 
 callQDM <- function(OH, MH, MF, args){
-  #   print(args)
-  #   stop('examine this out')
   MF.idx <- !is.na(unlist(as.vector(MF)))
-#   print("Summary of OH:")
-#   print(summary(OH[[1]]))
-#   print(sum(OH[[1]]!=0, na.rm=T))
-#   print(sum(OH[[1]]!=0, na.rm=T)/length(OH[[1]]))
-#   print("Summary of MH:")
-#   print(summary(MH[[1]]))
-#   print(sum(MH[[1]]!=0, na.rm=T))
-#   print(sum(MH[[1]]!=0, na.rm=T)/length(MH[[1]]))  
-#   print("Summary of MF:")
-#   print(summary(MF[[1]]))
-#   print(sum(MF[[1]]!=0, na.rm=T))  
-#   print(sum(MF[[1]]!=0, na.rm=T)/length(MF[[1]]))  
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
