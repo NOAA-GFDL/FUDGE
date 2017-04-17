@@ -1,7 +1,7 @@
 
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
-                   tmasks, train_qcmask=F){
+                    tmasks, train_qcmask=F){
   library(MBC)
  # set.seed(8675309)
   OH <- compress.xy.data(OH)
@@ -22,11 +22,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  print(summary(missval.args))
   MF_mask <- missval.args$pr$MF
-  #Get/override default arguments for MBC
-  #As of 02-14-71, this is done in the main instead
-  #args <- set.MBC.defaults(MH, args)
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
@@ -38,7 +34,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args, 
                                          missval.method='distributional')
     
-    args$adjust_trace <- F
     if (args$adjust_trace){
       print("adjusting pr trace")
       #print(str(missval.args$pr))
@@ -60,12 +55,20 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
       #args$trace <- min(args$trace, adj.thold)
     }
+    loop.ds <- ds.method
+    if (missval.out$mv.retry){
+      print('switching QDM and QDM_mod')
+      loop.ds <- 'QDM_mod'
+    }else{
+      loop.ds <- ds.method
+    } 
     
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
-      out <- switch(ds.method, 
-                    'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args),  
+      out <- switch(loop.ds, 
+                    'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
+                    'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
                                         args$variant, 
                                         missval.out$complete.hist, 
@@ -76,14 +79,14 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #and that the synch missing values also need some sort of master 
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      print(summary(missval.out$complete.fut))
-      print(length(out))
-      out.data[,,,n,,][missval.out$complete.fut] <- out
-      if(missval.out$mv.retry & train_qcmask){
-        out.data[,,,n,,][missval.out$complete.fut] <- rep(NA, length(out))
+      #out.data[,,,n,,][!is.na(index.mask)] <- out
+      out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+      if (train_qcmask &  missval.out$mv.retry){
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }else{
-      print('downscaling not possible at this point')
+      #       print('downscaling not possible at this point')
+      #       stop('examine this out')
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
@@ -95,26 +98,50 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   return(list(ds=out.data, qc=qc))
 }
 
-callQDM <- function(OH, MH, MF, args){
+callQDM_mod <- function(OH, MH, MF, args){
+  MF.idx <- !is.na(unlist(as.vector(MF)))
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
+  if (max (OH.slice) > max(MF.slice)){
+    print("callQDM: OH max greater than MF max")
+  }
+  tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
+                 ratio=args$ratio.seq, trace=args$trace, 
+                 jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  out <- rep(NA, length(MF.idx))
+  out[MF.idx] <- tmp
+  return(out)
+}
+
+
+
+callQDM <- function(OH, MH, MF, args){
+#   print(args)
+#   stop('examine this out')
+  OH.slice <- remove.missvals(unlist(as.vector(OH)))
+  MH.slice <- remove.missvals(unlist(as.vector(MH)))
+  MF.slice <- remove.missvals(unlist(as.vector(MF)))
+  if (max (OH.slice) > max(MF.slice)){
+    print("callQDM: OH max greater than MF max")
+  }
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
-             jitter.factor=args$jitter.factor, ties=args$ties)
-  print(summary(tmp$mhat.p))
-  return(tmp$mhat.p)
+             jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  out <- rep(NA, length(MF.idx))
+  out[MF.idx] <- tmp
+  return(out)
 }
 
 callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #Okay...this is the step when any x.y.vars which are all missing get removed.
   #This is then going to have to be applied to the same list of vars that 
   OH.slice <- as.matrix(as.data.frame(lapply(OH, function(x,y){return(x[y])}, 
-                                   complete.hist)))
+                                             complete.hist)))
   MH.slice <- as.matrix(as.data.frame(lapply(MH, function(x,y){return(x[y])}, 
-                                   complete.hist)))
+                                             complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
-                                   complete.fut)))
+                                             complete.fut)))
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
@@ -167,8 +194,6 @@ set.MBC.defaults <- function(args, predictor.vars, ...){
     }else{
       trace <- as.numeric(args$trace)
     }
-    pr.trace <- convert.pr.threshold(args$trace, pr.units)
-    trace <- pr.trace
     if ('transform' %in% names(args)){
       tform <- return.t.fxn(args$transform, args$transform_arg)
       if (is.null(tform[[2]])){

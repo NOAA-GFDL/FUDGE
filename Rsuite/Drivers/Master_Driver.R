@@ -52,10 +52,10 @@ if (length(console.args) > 0){
   copy_from_tmp = console.args[10]
   x.pad <- "NA"
 }else{
-  oh_by <- 3
-  mh_by <- 3 #5 #3
-  mf_by <- 3 #5 #3
-  i_idx <- 41 #167 #pr_diff = 37 i800 = 53 #194 #10
+  oh_by <- 1 #3
+  mh_by <- 1 #3 #5 #3
+  mf_by <- 1 #3 #5 #3
+  i_idx <- 48 #167 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
   i_stride <- 1
   i_offset <- 748
@@ -191,6 +191,9 @@ if (ds.ref$multivar_target){
   OH.files <- c()
   target.indir_1 <- dirname(dirname(dirname(target.indir_1)))
   for (var in predictor.vars){
+    print(hist.indir_1)
+    print(target.indir_1)
+    print(paste("reading target var", var))
     OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1, 
                                                     var,target.freq_1,target.model_1,
                                                     target.scenario_1,grid,
@@ -313,6 +316,28 @@ message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
 adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 
+#delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
+######
+######################################################
+###Hasty DeltaSD adjustment for asynchronous leap years
+###Hasty adjustment tentaively no longer needed as of 2016-20-21; 
+###now relying on internal DeltaSd call to adjust the leap days
+# delta.string <- ""
+# if('OH'%in% ds.ref$predictors){
+#   h.time.len <- oh.dim[6]
+#   delta.adj.index <- correct.hist.leapdays(oh.dim[6],
+#                                            mf.dim[6],
+#                                            hist.file.start.year_1, hist.file.end.year_1,
+#                                            fut.file.start.year_1, fut.file.end.year_1)
+#   delta.mask <<- c(rep(NA, delta.adj.index[1]), 
+#                    rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
+#                    c(rep(NA, delta.adj.index[2])))
+#   print(summary(delta.mask))
+#   delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
+#                         "to", delta.adj.index[4], "for the downscaling step")
+# }
+######################################################
+
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.
 ###Until the input structure is fixed, that means you can get
@@ -352,23 +377,10 @@ message("FUDGE training begins...")
 message(paste("Starting at:", Sys.time()))
 start.time <- proc.time()
 
-#args should always exist; it's specified in the runcode
-#as of 9-29 I'm not sure why this is here, but it seems to have been
-#needed in the past. 
-# if (args[1]=='na'){
-#   ds.args=NULL
-# }else{
-#   ds.args=args
-# }
-
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
-#h_record_trace_pr
-#####Note: because this is a one-off vairant branch, 
-#####making global array to record pr info
-pr_trace <<- array(NA, dim=c(output.dim[1:3], c(1,1,1)))
-
+#names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
 print('summary of ds:')
 print(summary(ds))
@@ -459,38 +471,13 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
-      ##h_qdm_trace_pr
-      time.dim <- ncdim_def(name='time', 
-                            vals=0.5, 
-                            unlim=TRUE,
-                            units='days since 0-0-0000', 
-                            create_dimvar=TRUE, 
-                            calendar=dimlist$time$calendar, 
-                            longname="time")
-      time.bounds <- c(0,1)
-      time.bounds <- create.fudge.metavar.object('time.bnds', time.bounds, 
-                                                 prec='double', dimnames=c('bnds', 'time'), 
-                                                 longname='time axis boundaries', 
-                                                 units=time.dim$units)
-      attributes(time.bounds) <- c(list('units' = time.dim$units, 
-                                        'dimids' = "bnds,time", 
-                                        'prec' = "double", 
-                                        'longname' = "time axis boundaries"), 
-                                   attributes(time.bounds))
-      qc.dimlist<- dimlist[names(dimlist) != 'ensmem']
-      qc.dimlist$time <- time.dim
-      qc.varlist <- varlist
-      qc.varlist$time_bnds <- time.bounds
-      ########
-      qc.out.filename  = WriteNC(qc.file, pr_trace, 'adjusted_trace_pr', 
-                                 dim.list = qc.dimlist, var.data=qc.varlist, 
-                                 prec='float', missval=1e20, units="kg m-2 s-1", 
-                                 #comment=qc.comment.att, 
-                                 longname="Hack at trace pr",
-                                 standard_name = paste("Hasty hack to get trace pr"),
-                                 global_overwrite=qc.globals, 
-                                 global_clone_file = OH.files[[1]],
-                                 clone_globals=T, clone_all=F, clone_include="frequency")
+      qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var, 
+                                 dim.list = dimlist, var.data=varlist, 
+                                 prec='float', missval=1e20, units="1", 
+                                 comment=qc.comment.att, 
+                                 longname="QC Mask",
+                                 standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
+                                 global_overwrite=qc.globals)
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }

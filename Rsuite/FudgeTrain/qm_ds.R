@@ -15,7 +15,7 @@ callQM <- function(OH, MH, MF, args, type="",
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
-  #Prepare indexing mask
+#   #Prepare indexing mask
 #   if (tmasks$time_mask_overlap){
 #     index.mask <- tmasks$trim$masks[[w]]
 #     olap=T

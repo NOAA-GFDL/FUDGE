@@ -5,12 +5,21 @@ make.fudge.history <- function(inst,ver){
 }
 make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfold, 
                                experiment.name, experiment.config, training.data, 
-                               predictor.vars, fut.pred.rips, qc.method=NA){
+                               predictor.vars, fut.pred.rips, 
+                               qc.method=NA, missval.args=NA, train.string=NA){
   #'The comment attribute stores a human-readable description of the experiment
   #'and its arguments.
   is_qcmask <- !is.na(qc.method)
   if (is_qcmask){
-    string.start <- paste("Output produced from a QC mask check", qc.method, "performed upon", ds.method, 'downscaled output')
+    #This is going to switch based upon the method
+    qc.str.method <- switch(qc.method, 
+                            'qc.train' = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
+                                                " met for ", train.string, ' and missing indicates retry option invoked'),
+                            'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
+                            qc.method
+    )
+    print(qc.str.method)
+    string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
     string.desc <- paste("This is a QC check related to a downscaled estimate of", ds.var) 
   }else{
     string.start <- paste("Output produced by downscaling by the", ds.method, "method")

@@ -85,6 +85,7 @@ adj.thold = wetday.convert
     # Perform the following calculations and adjustments to the GCM time series
     # only if the user has asked for the drizzle adjusment to be applied 
     if (fraction.wet.adj > fraction.wet.ref) {
+      message('adjusting MH/MF threshold')
       #Find the threshold for a drizzle adjustment
       first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)
       small.fraction <- 1.0/sum(ref.idx)
