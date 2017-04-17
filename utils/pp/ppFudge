@@ -107,7 +107,9 @@ set root = $indir${postfix}
 
 set tooldir=$basedir/utils/pp/
 
-set exp = ${epoch}_${rip}
+#set exp = ${epoch}_${rip}
+#CEW edit 04-17-2017 for gfdl_experiment_name having the rip appended
+set exp = ${epoch}
 set preprefix = ${var}_day_${method}
 if ($epoch == amip) set prefix = ${preprefix}_${exp}_19790101-20081231
 if ($epoch == sst2090) set prefix = ${preprefix}_${exp}_20860101-20951231

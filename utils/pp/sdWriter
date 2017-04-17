@@ -494,7 +494,7 @@ if ($dversion != "") then
 	ncatted -O -h -a downscaled_data_version,global,a,c,"${dversion}" $OFILE
 endif
 ncatted -O -h -a driving_data_type,global,a,c,"GCM" $OFILE
-ncatted -O -h -a predictand_calibration_dataset,global,a,c,"GFDL-HIRAM-C360(the high resolution model output)" $OFILE
+#ncatted -O -h -a predictand_calibration_dataset,global,a,c,"GFDL-HIRAM-C360(the high resolution model output)" $OFILE
 ncatted -O -h -a downscaling_model_type,global,a,c,"statistical" $OFILE
 ncatted -O -h -a frequency,global,a,c,"day" $OFILE
 ncatted -O -h -a version,global,a,c,"v1" $OFILE

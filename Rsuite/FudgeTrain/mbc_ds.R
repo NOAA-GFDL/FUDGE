@@ -117,8 +117,6 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 
 callQDM <- function(OH, MH, MF, args){
-#   print(args)
-#   stop('examine this out')
   MF.idx <- !is.na(unlist(as.vector(MF)))
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
