@@ -308,6 +308,10 @@ if (!ds.ref$multivar_target){
                                 x.by=1, y.by=1, allow_partial=F)
 }
 
+#Get string of training data for the metadata atts
+train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)], collapse=","), 
+                      paste("and", ds.ref$training[length(ds.ref$training)]))
+
 #Create list of time masks for application
 message("Reading in and checking time windowing masks")
 tmask.list <- get.fudge.timemask.list()

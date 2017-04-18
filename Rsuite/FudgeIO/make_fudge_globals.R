@@ -13,8 +13,10 @@ make.fudge.globals <- function(){
   fudgetag = FUDGETAG
   fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG)
   fudge.comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold, 
-                                      ds.experiment, label.validation, label.training, 
-                                      predictor.vars, fut.pred.rip.list)
+                                      ds.experiment, 
+                                      #label.validation, label.training, 
+                                      predictor.vars, fut.pred.rip.list, 
+                                      train.string=train.string)
   
   fudge.info.atts <- make.fudge.info(tmasks$filenames, aux.ref,
                                      missval.args,
