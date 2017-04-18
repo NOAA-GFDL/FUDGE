@@ -132,7 +132,7 @@ def finalize_metadata_out(xy_file, experiment_info):
 		
 	attdict['gfdl_experiment_name'] = expdict['ds.experiment']
 	#attdict['region_id'] = expdict['region']
-	attdict['predictand_calibration_datset'] = "dummy_data"
+	#attdict['predictand_calibration_datset'] = "dummy_data"
 
 	#NCO = "I'm not entiretly sure I need to add this in now."
 	
