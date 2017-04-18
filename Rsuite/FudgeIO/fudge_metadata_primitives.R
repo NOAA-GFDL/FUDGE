@@ -4,7 +4,8 @@ make.fudge.history <- function(inst,ver){
         ver,'on', date())
 }
 make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfold, 
-                               experiment.name, experiment.config, training.data, 
+                               experiment.name, 
+                               #experiment.config, training.data, 
                                predictor.vars, fut.pred.rips, 
                                qc.method=NA, missval.args=NA, train.string=NA){
   #'The comment attribute stores a human-readable description of the experiment
@@ -28,10 +29,13 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
   string.main <- paste("on the subset", mask.region, "of the", grid.region, "grid", 
                        ",and based on", paste0(kfold, "-fold cross-validation,"), 
                        "with experiment configuration", paste0(experiment.name,"."), 
+                       string.desc, "trained on", train.string, "using predictor", 
+                       "variable(s)", paste0(predictor.vars, collapse=","), "and future predictor rip", 
+                       paste(fut.pred.rips, collapse=","))
                        string.desc, "for the", experiment.config, "experiment", 
-                       "having done training using the", training.data, "time series,", 
-                       "predictor(s) used:", paste0(predictor.vars,","), 
-                       "future predictor rip used:", paste(fut.pred.rips, collapse=","))
+#                        "having done training using the", training.data, "time series,", 
+#                        "predictor(s) used:", paste0(predictor.vars,","), 
+#                        "future predictor rip used:", paste(fut.pred.rips, collapse=","))
   return(paste(string.start, string.main))
 }
 
