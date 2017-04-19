@@ -36,6 +36,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
+    print(test$type)
     #    # if(verbose){
     #    if (test$type=='cdfttailadj'){
     #      print(paste("on test", test[[1]]))
@@ -68,6 +69,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                              "is not supported for callS5Adjustment. Please check your input.")))
     print('summary of adjusted output:')
     print(summary(as.vector(out$adjusted.output$ds.out)))
+    print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
       print("This step should ensure dim info does not get lost")

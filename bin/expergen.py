@@ -702,6 +702,10 @@ def main():
 	#       print "fudgeList err", err
 	print "Summary Log File: ", slogloc
 	
+	auxloc = sbase + "/config/" + osp.basename(auxinput)
+	shutil.copy2(auxinput, auxloc)
+	print("Aux file location: " + auxloc)
+	
 	# Create emergency backstop directory for capturing status files when
 	# permissions are an issue
 #	statdir = sbase + "/status"

@@ -27,6 +27,10 @@ import fudgeUtils
 from fudgeUtils import send_status_email
 import concatenate_file
 from concatenate_file import concatenate_files	
+import trend_supplement
+from trend_supplement import callCopyToTrendDetr, callAddResid
+import clim_supplement
+from clim_supplement import callCopyToAnomClim, callAddAnom
 
 def postProc():
 	#Input parsing and arg checking for main body of code
@@ -107,7 +111,7 @@ def runPostProc(exp_info, ds_dir, out_dir, mailid, verbose=False):
 		                   exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
 		                   outfiles = ds_dir, xml = xml_loc)
 			sys.exit(-2)               		
-		output_files.append(check_anom_resid(qc_file, out_dir, total_exp_name, var+"_qcmask", send_to,script_dir, xml_loc))	
+		output_files.append(check_anom_resid(qc_file, out_dir, total_exp_name, var+"_qcmask", send_to,script_dir, xml_loc, is_qc=True))	
 	else:
 		print "No _qcmask files found. Moving on to next step."
 	output_files = [el for el in output_files if el is not None]
@@ -117,7 +121,7 @@ def runPostProc(exp_info, ds_dir, out_dir, mailid, verbose=False):
 	sys.exit(0)	
 				
 
-def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput):	
+def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput, is_qc=False):	
 	#Checks for whether you need to call the anom addition or trend addition scripts; 
 	#calls them and returns the output file, if needed.
 	#note: uinput is the xml
@@ -127,9 +131,23 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
 		#Copy operations are predictable, and called by everything
 		#You need to do the add operations (note: adds here include copies. Yes, it's weird.)	
 		if ("Anom" in var):
-			copy_file = callCopyToAnomClim(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+			if not is_qc:
+				print "Calling the anomaly addition script"
+				anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+				print(osp.dirname(anom_file))
+				copy_file = anom_file
+			else:
+				print("Copying qc file to final destination")
+				climvar = re.sub('Anom', '', var)
+				copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
 		elif ("Detr" in var):
-			copy_file = callCopyToTrendDetr(final_out_dir, total_exp_name, var, send_to, sbase, uinput)	
+			if not is_qc:
+				print "Calling the trend/resid addition script"
+				anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)	
+				climvar = re.sub('Detr', '', var)
+			else:	
+				print("Copying qc file to final destination")
+				copy_file = callCopyToTrendDetr(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)	
 	else:
 		print "None of " + ",".join(add_strings)," found in var; no adding/trending operations take place."	
 	return(copy_file)			

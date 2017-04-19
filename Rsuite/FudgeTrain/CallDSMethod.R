@@ -48,6 +48,9 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
     #Restore missing values to original place now takes place within method
     #No longer taking place within method as of 10-15; now adding as formal indexing
     #step based off of downscaling method classification
+#   print(summary(ds.out))
+#   print(lapply(ds.out, 'summary'))
+#   stop('examine this output')
   return(list(ds=ds.out$ds, qc=ds.out$qc, ds.atts=ds.out$ds.atts))
 }
 

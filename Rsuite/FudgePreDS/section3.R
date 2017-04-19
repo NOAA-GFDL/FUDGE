@@ -49,6 +49,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #The transforms may have elements that will depend on the conditions of the initial transform, 
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
+    print(test$type)
     adjusted.list <- switch(test$type,
                             'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list, adjusted.list$missval.args),
                             'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list, adjusted.list$missval.args),
@@ -56,7 +57,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }
   #print(lapply(adjusted.list, 'summary'))
-  #stop('examine this output')
+  #stop('examine this output') 
   return(adjusted.list)
 }
 
@@ -140,8 +141,8 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
                            pr_mh = input$att.list$pr_mh, 
                            pr_mf = input$att.list$pr_mf, 
                            adjusted.thold = temp.out$adjusted.thold)
-  print("summary of missval.args in pr adjust:")
-  print(str(missval.args))
+  #  print("summary of missval.args in pr adjust:")
+  #  print(str(missval.args))
   if(apply.0.mask){
     postproc.output$propts <- pr_mod
   }
@@ -180,23 +181,27 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   #...you know, for more readable metadata, it might be worth it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
   for (datatype in names(input)){
-    for (varname in names(input[[datatype]])){
-      if (var %in% transform.vars){
-        #if var is one of the vars receiving a transform
-        if(!is.null(t.fxn[[2]])){
-          #If arguments to the transform, use them
-          input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
-                                              list(input[[datatype]][[var]], t.fxn[[2]]))
-        }else{
-          #Otherwise, call without arguments
-          input[[datatype]][[var]] <- do.call(t.fxn[[1]], 
-                                              list(input[[datatype]][[var]]))
+    if (datatype %in% c("OH", "MH", "MF")){
+      for (varname in names(input[[datatype]])){
+        grep.var <- grepl(varname, transform.vars, fixed=T)
+        #if (varname %in% transform.vars){
+        if ( any(grep.var) ){
+          #if var is one of the vars receiving a transform
+          if(!is.null(t.fxn[[2]])){
+            #If arguments to the transform, use them
+            input[[datatype]][[varname]] <- do.call(t.fxn[[1]], 
+                                                list(input[[datatype]][[varname]], t.fxn[[2]]))
+          }else{
+            #Otherwise, call without arguments
+            input[[datatype]][[varname]] <- do.call(t.fxn[[1]], 
+                                                list(input[[datatype]][[varname]]))
+          }
         }
       }
     }
   }
-  print('summary of missval.args in pr:')
-  print(str(missval.args))
+  #  print('summary of missval.args in pr:')
+  #  print(str(missval.args))
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))
@@ -206,11 +211,11 @@ return.t.fxn <- function(tform, arg){
   #'Helper function for returning a transform from a transform
   #'arg - now gets used by pr transforms AND MBC
   out <- switch(tform,
-         'log' = list('log', NULL, 'exp', NULL), #log base e 
-         'log10' = list('log10', NULL, 'exp10', NULL), #log base 10
-         'power' = list('^', arg, '^', 1/arg), 
-         stop(paste("Error in return.t.fxn: transform", tform, 
-                    "was not one of the allowed options!")))
+                'log' = list('log', NULL, 'exp', NULL), #log base e 
+                'log10' = list('log10', NULL, 'exp10', NULL), #log base 10
+                'power' = list('^', arg, '^', 1/arg), 
+                stop(paste("Error in return.t.fxn: transform", tform, 
+                           "was not one of the allowed options!")))
   return(out)
 }
 

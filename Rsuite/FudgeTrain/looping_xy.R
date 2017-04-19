@@ -222,10 +222,12 @@ loop.xy.data <- function(){
         ##bring together all time levels
         for (el in names(output)){
           #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
-        #  print('adding over temporary output')
+        #  
         #  print(dim(output[[el]]))
         #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
+          print('adding over temporary output')
+          print(summary(tmp.out))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
         #Once looping by w complete, do the last s5 adjustment
@@ -251,7 +253,7 @@ loop.xy.data <- function(){
           }
           remove(temp.postproc)
         }
-       # print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+      #  print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
       #  stop('examine output - the tail adjust is giving weird and wonky values')
       } 
     }#loop by y

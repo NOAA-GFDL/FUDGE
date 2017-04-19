@@ -11,6 +11,10 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   #'PARM doesn't quite qualify due to its internal setup requirements; 
   #'it' smostly its own weird thing.
   #Pre-processing step to compress vectors into multivariate/multi-point form
+#  print("Entering callLMAll")
+#  print(lapply(OH, 'dim'))
+#  print(lapply(MH, 'dim'))
+#  print(lapply(MF, 'dim'))  
   OH.data <- compress.xy.data(OH)
   MH.data <- compress.xy.data(MH)
   MF.data <- compress.xy.data(MF)
@@ -57,7 +61,11 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
                        'multiparm_step' = multiparm_step.downscale(lm.model, MF.slice, targ.var)                       
       )
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-      out.data[,,,n,,] <- ds.out #[notna.index]
+#       print(summary(notna.index))
+#       print(length(notna.index))
+#       print(length(ds.out))
+#       stop('examine this output')
+      out.data[,,,n,,][notna.index] <- ds.out #[notna.index]
       #If train_qcmask, check for whether function had to retry
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
@@ -73,6 +81,8 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
   }
 #  save(file="/work/cew/testing/h_pr_3.R", list=c('out.data'))
 #   stop('examine output')
+#print(summary(as.vector(out.data)))
+#stop('examine this output')
   return(list(ds=out.data, qc=qc))
 }
 
@@ -100,6 +110,9 @@ lmstep.train <- function(OH,MH,args){
   #'the data in new to predict the future results
   #'Does not currently take any arguments according to XMLGen; 
   #'k can be specified for training purposes.
+  
+  OH <- lapply(OH, remove.missvals)
+  MH <- lapply(MH, remove.missvals)
   if(!is.null(args$k)){
     k.val <- args$k
   }else{
@@ -122,6 +135,12 @@ lmstep.train <- function(OH,MH,args){
 
 lmstep.downscale <- function(lm.train.model, MF, targ.var){
   #'Calls downscaling function on lmstep 
+  
+  #print(summary(MF))
+  #print(lapply(MF, 'summary'))
+  #print(lapply(MF, 'length'))
+  MF <- lapply(MF, remove.missvals)
+  #print(summary(MF))
   tmp.out <- suppressWarnings(predict(lm.train.model, newdata=MF))
   if(length(tmp.out)==0){
     warning(paste("Warning in callStep.lm: step eliminated all variables,", 
@@ -134,6 +153,8 @@ lmstep.downscale <- function(lm.train.model, MF, targ.var){
       return(MF[[1]])
     }
   }else{
+    print("Summary of output from lmstep:")
+    print(summary(tmp.out))
     return(tmp.out)
   }
 }

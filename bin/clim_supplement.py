@@ -20,6 +20,8 @@ def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, s
 	#Copies output to anom+clim output directory and changes the var name
 	out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
 	out_files = [f for f in out_files if re.search(var, f) is not None]
+	print("out_files:")
+	print(out_files)
 	if len(out_files) > 1:
 		print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
 		sys.exit(1)

@@ -38,8 +38,8 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
 	
 	print("getting list of files")	
 	file_subset = [f for f in os.listdir(input_dir) if re.search(patt, f) is not None]
-	print("file_subset:")
-	print(file_subset)
+	#print("file_subset:")
+	#print(file_subset)
 	#Start dividing the file subset into subsets based on the separators.
 	#Each one is going to be in the general form of $capital_letter$start_index-$end_index
 	#find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
@@ -48,7 +48,6 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
 	index_subset = [re.split("\.", f)[1] for f in file_subset]
 	i_patterns = find_match_string('I', index_subset, file_subset)
 	j_patterns = find_match_string('J', index_subset, file_subset)
-	print(i_patterns)
 	file_split = re.split("\.", file_subset[0])
 	print(file_split)
 	out_filename = ".".join([file_split[0], file_split[-1]])

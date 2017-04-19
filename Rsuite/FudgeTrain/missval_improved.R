@@ -254,16 +254,35 @@ place.synch.missvals <- function(OH, MH, MF, env=parent.frame()){
   all.missing <- OH.missing + MH.missing
   all.missing[all.missing  > 0] <- NA
   all.missing[all.missing == 0] <- 1
+  print("working on the hist vals")
   OH <- lapply(OH, apply.fudge.tmask, all.missing)
   MH <- lapply(MH, apply.fudge.tmask, all.missing)
   #Added 11-10: Apparently, I was doing this for the synch lm masks, WTH.
-#   MF.missvals <- lapply(MF, function(x){apply(x, c(1,2,3,5,6), 'sum')})
+#  MF.missvals <- lapply(MF, function(x){apply(x, c(1,2,3,5,6), 'sum')})
 #   for (el in names(MF)){
 #     missval.mask <- as.numeric(!is.na(MF.missvals[[el]]))
 #     missval.mask[missval.mask==0] <- NA
+#     print(summary(missval.mask))
 #     MF[[el]] <- MF[[el]] *  missval.mask 
 #   }
-#   env$MF <- MF
+##Trying to fix this as of 4-19-2017
+for (n in 1:dim(MF[[1]])[4]){
+  #print(paste("starting ens", n))
+  #print(dim(MF[[1]]))
+  #print(summary(sapply(lapply(MF, '[', ,,,n,,,drop=F), missval.xyens)))
+  MF.ens.missvals <- rowSums(sapply(lapply(MF, '[', ,,,n,,,drop=F), missval.xyens)) > 0 #T is NA
+  MF.ens.missvals[MF.ens.missvals  > 0] <- NA
+  MF.ens.missvals[MF.ens.missvals == 0] <- 1
+  #print("MF.ens.missvals:")
+  #print(summary(MF.ens.missvals))
+  for (el in names(MF)){
+    MF[[el]][,,,n,,] <- apply.fudge.tmask(MF[[el]][,,,n,,,drop=F], MF.ens.missvals)
+  }
+}
+#print("Summary of rags returend from missval functions:")
+#print(lapply(MF, 'summary'))
+#print(lapply(MF, 'length'))
+  env$MF <- MF
   #Definetly keep these
   env$OH <- OH
   env$MH <- MH

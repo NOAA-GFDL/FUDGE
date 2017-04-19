@@ -32,7 +32,7 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
                        string.desc, "trained on", train.string, "using predictor", 
                        "variable(s)", paste0(predictor.vars, collapse=","), "and future predictor rip", 
                        paste(fut.pred.rips, collapse=","))
-                       string.desc, "for the", experiment.config, "experiment", 
+#                       string.desc, "for the", experiment.config, "experiment", 
 #                        "having done training using the", training.data, "time series,", 
 #                        "predictor(s) used:", paste0(predictor.vars,","), 
 #                        "future predictor rip used:", paste(fut.pred.rips, collapse=","))
