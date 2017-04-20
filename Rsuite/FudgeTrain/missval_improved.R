@@ -279,6 +279,15 @@ for (n in 1:dim(MF[[1]])[4]){
     MF[[el]][,,,n,,] <- apply.fudge.tmask(MF[[el]][,,,n,,,drop=F], MF.ens.missvals)
   }
 }
+# MF.missing <- rowSums(sapply(MF, missval.xyens)) > 0 #T is NA
+# MF.missing[MF.missing  > 0] <- NA
+# MF.missing[MF.missing == 0] <- 1
+# MF <- lapply(MF, apply.fudge.tmask, MF.missing)
+
+#print(summary(MF.missing))
+#print(summary(MF))
+#print(lapply(MF, 'summary'))
+
 #print("Summary of rags returend from missval functions:")
 #print(lapply(MF, 'summary'))
 #print(lapply(MF, 'length'))
