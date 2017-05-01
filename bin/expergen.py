@@ -21,8 +21,7 @@ from create_all_runscripts import create_all_runscripts
 from create_all_runscripts import awful_runcode_hack
 from get_pp_specs import get_pp_specs
 import get_ds_info
-from get_ds_info import get_ds_info
-from get_ds_info import parse_aux_info
+from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 import make_postProc_scripts
 from make_postProc_scripts import make_postProc_scripts
 
@@ -489,7 +488,7 @@ def main():
 	parser = OptionParser(usage=help)
 	parser.add_option("-i", "--file", dest="uinput",
 	help="pass location of XML template", metavar="FILE")
-	parser.add_option("-a", "--aux", dest="auxinput", help="pass location of auxilary JSON input for stencil, mask specifications")
+	parser.add_option("-a", "--aux", default="default_aux",dest="auxinput", help="pass location of auxilary JSON input for stencil, mask, subset and other specificaions. If not set in XML or by command line, a default aux will be created.")
 	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
@@ -522,13 +521,19 @@ def main():
 		print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
 		sys.exit()
 	#1-19-17: aux input
+	#5-1-17: default aux input
 	if(os.path.exists(options.auxinput)):
 		auxinput = os.path.abspath(options.auxinput)
+		search_xml_aux = False
 		print "JSON input: " + auxinput
 	else:
 		print "JSON input " + options.auxinput + "not found!"
-		print "Please pass a valid input JSON filename with the -i argument and try again. See -h for syntax. Quitting now.."
-		sys.exit()
+		if (options.auxinput == "default_aux"):
+			print("Aux file will be searched for in XML (or a default will be created)")
+			search_xml_aux = True
+		else:
+			print "Please pass a valid input JSON filename with the -i argument and try again. See -h for syntax. Quitting now.."
+			sys.exit()
 		
 	#Similar edits for the 	
 		
@@ -552,23 +557,8 @@ def main():
 #########################################################################################      		
 	#########  call listVars() #############################################################
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
-	##CEW edit 10-2016 for the multi-pt ds params
-		#CEW edit 10-2016: check for the presence of the 3 'by' tags in the XML; if 
-	#they are not present, set to 1. These get used in the runcode creation
-	#for setting command-line parameters.
-	#by_params = get_npts_by(uinput)
-	#mh_by = str(by_params[0]) #OH
-	#oh_by = str(by_params[1]) #MH
-	#mf_by = str(by_params[2])#MF
-		### As of 10-13, get the ncpus and njobs specifications from the XML
-	specdict = get_pp_specs(uinput)
-	njobs = int(specdict['njobs'])
-	ncpus = int(specdict['ncpus'])
-	#And as of 1-19-17, get the aux file specifications from the options
-	#You don't need to parse any of these, but you do need to get a list of the 
-	#copy-able files (and possibly a wallclock time parameter)
-	auxinfo = parse_aux_info(auxinput)
-	######### call script creators..  #######################################################
+	
+		######### call script creators..  #######################################################
 	############################### 1 ###############################################################
 	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
 
@@ -597,6 +587,34 @@ def main():
 		subdir = osp.join(sbase,el)
 		if not osp.exists(subdir):
 			os.makedirs(subdir)	
+			
+	##CEW edit 10-2016 for the multi-pt ds params
+		#CEW edit 10-2016: check for the presence of the 3 'by' tags in the XML; if 
+	#they are not present, set to 1. These get used in the runcode creation
+	#for setting command-line parameters.
+	#by_params = get_npts_by(uinput)
+	#mh_by = str(by_params[0]) #OH
+	#oh_by = str(by_params[1]) #MH
+	#mf_by = str(by_params[2])#MF
+		### As of 10-13, get the ncpus and njobs specifications from the XML
+	specdict = get_pp_specs(uinput)
+	njobs = int(specdict['njobs'])
+	ncpus = int(specdict['ncpus'])
+	#And as of 1-19-17, get the aux file specifications from the options
+	#You don't need to parse any of these, but you do need to get a list of the 
+	#copy-able files (and possibly a wallclock time parameter)
+	if search_xml_aux and specdict['aux'] != "none":
+		auxinput = specdict['aux']
+		if(os.path.exists(auxinput)):
+			auxinput = os.path.abspath(auxinput)
+		else:
+			print("Error in expergen: aux input from xml, "+ auxinput + " does not exist on this filesystem!")
+			print("Please use --aux input for other aux or remove from xml.")
+			sys.exit(1)
+	else:
+		auxinput = make_aux_input(output_grid, sbase)
+	auxinfo = parse_aux_info(auxinput)
+
 		
 		
 	#############################################################
@@ -697,14 +715,15 @@ def main():
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate()
-	#print "fudgeList out", out
-	#if err is not None:
-	#       print "fudgeList err", err
 	print "Summary Log File: ", slogloc
 	
 	auxloc = sbase + "/config/" + osp.basename(auxinput)
 	shutil.copy2(auxinput, auxloc)
 	print("Aux file location: " + auxloc)
+	
+	with open(slogloc, 'a') as f:
+		f.write("\naux:" + osp.basename(auxinput))
+	#sys.exit(1)	
 	
 	# Create emergency backstop directory for capturing status files when
 	# permissions are an issue

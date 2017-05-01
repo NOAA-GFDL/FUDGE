@@ -65,5 +65,42 @@ def parse_aux_info(jsonfile):
 						copy_files.append(filetmp)
 		if len(copy_files) > 1:
 			copy_files = list(set(copy_files))				
-	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 'subsetdict':subsetdict})					
+	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 'subsetdict':subsetdict})
+	
+def make_aux_input(grid, script_base):
+	#Creates an aux info file with g-or-earlier default settings: minifiles, 
+	#no stencils, etc.
+	print("Making default aux file")
+	jdict = {'US48' : 114, 
+	         'I35'  : 140, 
+	         'RR'   : 140}
+	if grid in jdict.keys():
+		jv  = str(jdict[grid])
+		aux_scriptname = script_base + "/config/" + "default_mini_"+grid+".json"
+	else:
+		print("Error in make_aux_info: grid, " + grid + " not in jdict!")
+		sys.exit(1)	         
+	i_subset = '"i_subset": [1]'          + ","
+	j_subset = '"j_subset": [' + jv + ']' + ","
+	tile_olap = '"tile_olap": [0]'        + ","
+	#Most of the specs are not going to change unless you use stencils
+	main_text = "\n".join(['"geomask_names": [""],',
+                           '"ds_handle_missing": ["continue"],',
+                           '"wallclocktime": ["12:00:00"],',
+                           '"OH": {',
+                           '    "stencil": ["none"],',
+                           '    "geomask": ["none"]',
+                           '},',
+                           '"MH": {',
+                           '    "stencil": ["none"],',
+                           '    "geomask": ["none"]',
+                           '},',
+                           '"MF": {',
+                           '    "stencil": ["none"],',
+                           '    "geomask": ["none"]',
+                           '}'])
+	aux_text = "\n".join(["{", i_subset, j_subset, tile_olap, main_text, "}"])
+	with open(aux_scriptname, 'w') as f: 
+		f.write(aux_text)
+	return(aux_scriptname)							
 			

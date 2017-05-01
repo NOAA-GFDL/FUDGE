@@ -21,8 +21,8 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	j_elements = sorted(j_elements)	
 	j_offset = int(j_start)  - 1
 	j_max = int(j_end) - j_offset
-	print(i_elements)
-	print(j_elements)
+	#print(i_elements)
+	#print(j_elements)
 	#sys.exit("Examine this out")
 	
 	### As of 3-15-17, working on script subset changes needed for 
@@ -178,7 +178,7 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	
 	#Finally, start opts that need to loop by index available
 	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
-	print(j_elements)
+	#print(j_elements)
 	n_tiles = 0
 	for j in range(0, len(j_elements)-1):
 		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
@@ -197,8 +197,8 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 			#Since master is created on first (always), can proceed with rest of runscript calls
 			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+"."+i_string+"_"+j_string)
 			###THIS NEEDS TRANLSATION WORK
-			print("components for R code:")
-			print([(i + 1 + i*(i_by-1)), i_max, i_by, i_offset, (j+1 + j*(j_by-1)), j_max, j_by, j_offset])
+			#print("components for R code:")
+			#print([(i + 1 + i*(i_by-1)), i_max, i_by, i_offset, (j+1 + j*(j_by-1)), j_max, j_by, j_offset])
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
 													(i+1 + i*(i_by-1)), i_max, i_by, i_offset, \
 													(j+1 + j*(j_by-1)), j_max, j_by, j_offset, auxfile, target_var,outdirs)
@@ -208,7 +208,7 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
-				print("writing master to file")
+				#print("writing master to file")
 				runscript_calls = [el + " & \n" for el in runscript_files]
 				runscript_calls = "sleep 10 \n".join(runscript_calls)
 				with open(master_scriptname, 'w') as f: 
