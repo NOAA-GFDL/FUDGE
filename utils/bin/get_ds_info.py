@@ -72,11 +72,11 @@ def make_aux_input(grid, script_base):
 	#no stencils, etc.
 	print("Making default aux file")
 	jdict = {'US48' : 114, 
-	         'I35'  : 140, 
+	         'SCCSC0p1'  : 140, 
 	         'RR'   : 140}
 	if grid in jdict.keys():
 		jv  = str(jdict[grid])
-		aux_scriptname = script_base + "/config/" + "default_mini_"+grid+".json"
+		aux_scriptname = script_base + "/default_mini_"+grid+".json"
 	else:
 		print("Error in make_aux_info: grid, " + grid + " not in jdict!")
 		sys.exit(1)	         

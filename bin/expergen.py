@@ -722,7 +722,7 @@ def main():
 	print("Aux file location: " + auxloc)
 	
 	with open(slogloc, 'a') as f:
-		f.write("\naux:" + osp.basename(auxinput))
+		f.write("\naux:" + os.path.abspath(auxinput))
 	#sys.exit(1)	
 	
 	# Create emergency backstop directory for capturing status files when
