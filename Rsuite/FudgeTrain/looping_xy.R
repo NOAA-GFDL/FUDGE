@@ -175,7 +175,10 @@ loop.xy.data <- function(){
           }else{
             window.post_ds_inloop <- post_ds_inloop
           }      
-          #Call the downsaing method
+          #Call the downscaling method
+#           if (all(is.na(MH.window[[1]]))){
+#             stop('examine this output - MH is all NA after s3 opts')
+#           }
           tmp.ds <- callDSMethod(ds.method, 
                                  OH.window, MH.window, MF.window, ds.args, 
                                  missvals=ds.ref$missval_method, 

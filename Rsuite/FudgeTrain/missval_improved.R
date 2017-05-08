@@ -90,8 +90,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #Retry with pr missings set to 0
     mv.retry <- T
     ds.possible <- F
-#     print("missval.args$pr")
-#     print(str(missval.args$pr))
     if (length(missval.args$pr) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
@@ -104,12 +102,12 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       #Datset.index only has 3 elements - important for multivar pr
       dataset.index <- rowSums(sapply(ds.ref$training, 
                                       grepl, c("OH", "MH", "MF"))) > 0
+      print(dataset.index)
       for(el in c('OH', 'MH', 'MF')[dataset.index]){
         #Note: this needs to take place with elements of orig; 
         #if you do not use it, the synchronous missing values step 
         #removes samples in OH and MH that never get added back in
         var.idx <- pr_vars[[el]]
-        #print(summary(orig[[el]]))
         assign(el, retry.with.pr.present(orig[[el]], 
                                      missval.args$pr[[el]],  
                                      missval.args$pr[[var.idx]],
@@ -198,12 +196,9 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   }
   for (el in match.vars){
     print(el)
-    #print(summary(pr.mask==0))
     tmp.pr <- data.list[[el]]
     #dim(pr.mask) <- dim(tmp.pr)
     data.list[[el]] <- as.numeric(pr.mask)
-    print(length(data.list[[el]]))
-    print(dim(tmp.pr))
     data.list[[el]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
 #     print(dim(pr.mask))
 #     print(dim(tmp.pr))

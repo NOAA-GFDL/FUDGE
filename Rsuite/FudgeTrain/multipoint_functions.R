@@ -3,17 +3,17 @@
 #in the input dataset. Generally used as a preprocessing step
 #before the 
 
-compress.xy.data <- function(data, remove.all.identical=F){
+compress.xy.data <- function(data, remove.all.identical=F, remove.all.missing=T){
   #Takes a list of 6-dimensional vars
   #and compresses x and y dims into separate vars
   output <- list()
   for(el in names(data)){
-    output <- c(output, compress.xy.var(data[[el]], el, remove.all.identical))
+    output <- c(output, compress.xy.var(data[[el]], el, remove.all.identical, remove.all.missing))
   }
   return(output)
 }
 
-compress.xy.var <- function(data, varname, remove.all.identical){
+compress.xy.var <- function(data, varname, remove.all.identical, remove.all.missing){
   #Receives a 6-dimensional set of data; 
   #compresses each x and y element into separate vectors
   out <- list()
@@ -31,13 +31,24 @@ compress.xy.var <- function(data, varname, remove.all.identical){
           if (length(unique(data[x,y,,,,]))!=1){
             out[[loop.varname]] <- data[x,y,,,, ,drop=F]
           }
-          #Ohterwise, don't do anything - drop that particular var.
+          #Otherwise, don't do anything - drop that particular var.
         }else{
           out[[loop.varname]] <- data[x,y,,,, ,drop=F]
         }
       }else{
+        #Unless we want to allow all missing data
+        if (!remove.all.missing){
+          if (remove.all.identical){
+            if (length(unique(data[x,y,,,,]))!=1){
+              out[[loop.varname]] <- data[x,y,,,, ,drop=F]
+            }
+            #Otherwise, don't do anything - drop that particular var.
+          }else{
+            out[[loop.varname]] <- data[x,y,,,, ,drop=F]
+          }
+        }
         #...this print so many messages guys. so many.
-        #message(paste("All missing in", x, y, "; dropping"))
+        message(paste("All missing in", x, y, "; dropping"))
         #Note that if  we get to the point where we write out more than
         #one point at a time, this is also going to need to return which
         #indices got dropped.

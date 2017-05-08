@@ -3,10 +3,10 @@
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
   library(MBC)
- # set.seed(8675309)
-  OH <- compress.xy.data(OH)
-  MH <- compress.xy.data(MH)
-  MF <- compress.xy.data(MF)
+  OH <- compress.xy.data(OH, remove.all.identical=F)
+  MH <- compress.xy.data(MH, remove.all.missing=F)
+  MF <- compress.xy.data(MF, remove.all.missing=F)
+
   #Create output data
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
@@ -33,6 +33,9 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
+    if (all(is.na(missval.out$MH[[1]]))){
+      stop(paste("Error in QDM: adding args back in didn't fix anytning"))
+    }
     
     if (args$adjust_trace){
       print("adjusting pr trace")
