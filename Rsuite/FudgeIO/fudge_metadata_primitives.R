@@ -1,7 +1,8 @@
-make.fudge.history <- function(inst,ver){
+make.fudge.history <- function(inst,ver, FUDGEROOT){
   paste('File processed at',inst,
-        'using FUDGE (Framework For Unified Downscaling of GCMs Empirically) developed at GFDL, using version:', 
-        ver,'on', date())
+        'using FUDGE (Framework For Unified Downscaling of GCMs Empirically)", 
+        "developed at GFDL, using version:', ver,'on', date(),"; ", 
+        get.git.branch(FUDGEROOT))
 }
 make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfold, 
                                experiment.name, 

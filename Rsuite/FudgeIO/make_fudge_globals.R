@@ -11,7 +11,7 @@ make.fudge.globals <- function(){
   fudge.institution <- paste("NOAA/GFDL", "(201 Forrestal Rd, Princeton, NJ, 08540)")
   fudge.insitute.id <- paste("NOAA/GFDL")
   fudgetag = FUDGETAG
-  fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG)
+  fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG, FUDGEROOT)
   fudge.comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold, 
                                       ds.experiment, 
                                       #label.validation, label.training, 

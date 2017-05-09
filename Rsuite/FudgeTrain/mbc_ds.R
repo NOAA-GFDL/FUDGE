@@ -66,7 +66,7 @@ callQDM <- function(OH, MH, MF, args, ds.method="",
       #There are different pre-conditioning steps that need
       #to take place for each method
       out <- switch(loop.ds, 
-                    'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
+                    'QDM' = callQDM_orig(missval.out$OH, missval.out$MH, missval.out$MF, args), 
                     'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args)
       )
       train.stat <- missval.out$missval.status
@@ -208,7 +208,7 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 
 
-callQDM <- function(OH, MH, MF, args){
+callQDM_orig <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
