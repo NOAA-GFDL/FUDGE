@@ -304,5 +304,6 @@ def notifyUser(mailid,subject,text):
 		smtp = smtplib.SMTP("localhost")
 		smtp.sendmail(send_from, send_to, msg.as_string())
 		smtp.close()	
+						
 if __name__ == '__main__':
    parserWatcher()
