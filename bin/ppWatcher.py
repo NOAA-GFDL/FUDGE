@@ -164,9 +164,8 @@ def compress_logs(logdir):
 	afterwards. 
 	'''
 	print("Archiving R code logfiles...")
-	compress_files = [osp.join(logdir, el) for el in os.listdir(logdir) if re.search("out.*", el) is not None]
-	print(compress_files)
-	logfile = osp.join(logdir, "compressed_R_code_jobs.tar.gz")
+	compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)] # if re.search("out.*", el) is not None
+	logfile = osp.join(logdir, "compressed_FUDGE_logfiles.tar.gz")
 	tar_log = tarfile.open(logfile, "w:gz")
 	for name in compress_files:
 		tar_log.add(name)
