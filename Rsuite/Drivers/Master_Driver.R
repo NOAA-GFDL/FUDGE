@@ -318,7 +318,11 @@ tmask.list <- get.fudge.timemask.list()
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
-adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
+if (!exists('pr_opts')){
+  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, NULL)
+}else{
+  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
+}
 
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######
@@ -358,13 +362,16 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
 set.ds.defaults <- function(ds.method, args, ...){
   #Alter args for a given method depending on the args allowed
   #(NOTE: may include settings other than default, such as QDM type to ratio)
-  default.methods <- c("MBC", "QDM")
+  default.methods <- c("MBC", "QDM", "CFQM")
   if (! (ds.method %in% default.methods)){
     return(args)
   }else{
     new.args <- switch(ds.method, 
                        'MBC' = set.MBC.defaults(args, ...), 
                       'QDM' = set.QDM.defaults(args, ...),
+                      "CFQM" = set.CFQM.defaults(args, ...),
+                      "lmAsync" = set.lmAsync(args, ...), 
+                      "lmstepAsync" = set.lmstepAsync(args, ...),
                        stop(paste("Error in set.ds.defaults: no method", 
                                   ds.method, "!")))
     return(new.args)
@@ -372,7 +379,9 @@ set.ds.defaults <- function(ds.method, args, ...){
 }
 message("Checking for default ds arguments (requires var units)")
 ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
-                            pre.ds.train=pre.ds.train)
+                            pre.ds.train=pre.ds.train, 
+                            ds.ref=ds.ref, 
+                            env=environment())
 
 
 ##s3 call formerly here
@@ -470,11 +479,26 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.globals <- global_att_list
       #qc.globals$info <- ""
       qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
-                                               ds.experiment, 
-                                               #label.validation, label.training, 
-                                               predictor.vars, fut.pred.rip.list, 
-                                               qc.maskopts$qc.method, missval.args, train.string=train.string)
+                                                ds.experiment, 
+                                                #label.validation, label.training, 
+                                                predictor.vars, fut.pred.rip.list, 
+                                                qc.maskopts$qc.method, missval.args, train.string=train.string)
       qc.globals$climatology <- NA
+      qc.list <- list()
+      qc.list[[qc.var]] <- ds$qc
+      qc.dimlist <- dimlist
+      qc.varlist <- varlist
+      ### Commenting out the save-specific adaptations as of 2017-05-11
+      #  qc.dimlist$time <- save.time.dim
+      #  qc.varlist$time_bnds <- save.time.bnds
+      #  out.array <- list('pr_trace' = pr_trace, 'OH_ss' = OH_ss, "MH_ss" = MH_ss, "MF_ss" = MF_ss)
+      #  out.varnames <- c("pr_trace", 'OH_ss', "MH_ss", "MF_ss")
+      #  print(lapply(lapply(out.array, '[', ,,,r,, ,drop=F), 'dim'))
+      #  print(out.varnames)
+      #qc.comment.att <- list("pr_trace" = "adjusted trace pr for MH and MF", 
+      #                   "OH_ss" = "sample size of OH before downscaling", 
+      #                   "MH_ss" = "sample size of MH before downscaling", 
+      #                   "MF_ss" = "sample size of MF before downscaling")
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
       qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var, 
@@ -484,6 +508,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                  longname="QC Mask",
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals)
+      
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }

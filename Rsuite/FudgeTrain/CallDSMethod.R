@@ -25,32 +25,31 @@
 callDSMethod <- function(method, OH, MH, MF, ds.args, 
                          missvals="distributional", 
                          missval.args=list(minsamplesize=1), 
-                         train_qcmask=F, tmasks=list()){
+                         train_qcmask=F, tmasks=list(), 
+                         s5_list=list()){
   #Missing value removal now takes place within the ds method wrappers
   #called by CallDSMethod
   ds.out <- switch(method, 
-                     'lm'      = callLMAll(OH, MH, MF, ds.args, ds.method='lm',    missval.args, tmasks, train_qcmask), 
-                     'lmstep'  = callLMAll(OH, MH, MF, ds.args, ds.method='lmstep', missval.args, tmasks, train_qcmask), 
-                     'lmAsync'      = callLMAsync(OH, MH, MF, ds.args, ds.method='lmAsync',    missval.args, tmasks, train_qcmask), 
-                     'lmstepAsync'  = callLMAsync(OH, MH, MF, ds.args, ds.method='lmstepAsync', missval.args, tmasks, train_qcmask),                   
-                     'CDFt'    = callCDFt(OH, MH, MF, ds.args,  ds.method="CDFt",   missval.args, tmasks, train_qcmask), 
-                     'CDFtmod' = callCDFt(OH, MH, MF, ds.args,  ds.method="CDFtmod", missval.args, tmasks, train_qcmask),
-                     'PARM'    = callPARM(MH, OH, MF, ds.args, missval.args, tmasks, train_qcmask),
-                     'BCQM'    = callQM(OH, MH, MF, ds.args, type='BCQM', missval.args, tmasks, train_qcmask),
-                     'EDQM'    = callQM(OH, MH, MF, ds.args, type='EDQM', missval.args, tmasks, train_qcmask),
-                     'CFQM'    = callQM(OH, MH, MF, ds.args, type='CFQM', missval.args, tmasks, train_qcmask),
-                     'DeltaSD' = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, train.stat, tmasks),
-                     #'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
-                     'QDM'     = callQDM(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
-                     'sum'   = ds.sum.function(OH, MH, MF, ds.args),
-                     ReturnDownscaleError(method)
-    )
-    #Restore missing values to original place now takes place within method
-    #No longer taking place within method as of 10-15; now adding as formal indexing
-    #step based off of downscaling method classification
-#   print(summary(ds.out))
-#   print(lapply(ds.out, 'summary'))
-#   stop('examine this output')
+                   'lm'      = callLMAll(OH, MH, MF, ds.args, ds.method='lm',    missval.args, tmasks, train_qcmask), 
+                   'lmstep'  = callLMAll(OH, MH, MF, ds.args, ds.method='lmstep', missval.args, tmasks, train_qcmask), 
+                   'lmAsync'      = callLMAsync(OH, MH, MF, ds.args, ds.method='lmAsync',    missval.args, tmasks, train_qcmask), 
+                   'lmstepAsync'  = callLMAsync(OH, MH, MF, ds.args, ds.method='lmstepAsync', missval.args, tmasks, train_qcmask),                   
+                   'CDFt'    = callCDFt(OH, MH, MF, ds.args,  ds.method="CDFt",   missval.args, tmasks, train_qcmask), 
+                   'CDFtmod' = callCDFt(OH, MH, MF, ds.args,  ds.method="CDFtmod", missval.args, tmasks, train_qcmask),
+                   'PARM'    = callPARM(MH, OH, MF, ds.args, missval.args, tmasks, train_qcmask),
+                   'BCQM'    = callQM(OH, MH, MF, ds.args, type='BCQM', missval.args, tmasks, train_qcmask),
+                   'EDQM'    = callQM(OH, MH, MF, ds.args, type='EDQM', missval.args, tmasks, train_qcmask),
+                   #'CFQM'    = callQM(OH, MH, MF, ds.args, type='CFQM', missval.args, tmasks, train_qcmask),
+                   'DeltaSD' = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, tmasks),
+                   'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
+                   'QDM'     = callMBC(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
+                   'CFQM'    = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
+                   'sum'   = ds.sum.function(OH, MH, MF, ds.args),
+                   ReturnDownscaleError(method)
+  )
+  #Restore missing values to original place now takes place within method
+  #No longer taking place within method as of 10-15; now adding as formal indexing
+  #step based off of downscaling method classification
   return(list(ds=ds.out$ds, qc=ds.out$qc, ds.atts=ds.out$ds.atts))
 }
 

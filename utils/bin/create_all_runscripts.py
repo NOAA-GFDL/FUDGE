@@ -315,8 +315,8 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
 	#expected pattern in the runscripts.	
 	runscript_files = [el for el in os.listdir(runscript_dir) if re.search("script", el) is not None]	
 	runcode_files = [el for el in os.listdir(runcode_dir) if re.search("code", el) is not None]
-	runscript_patterns = [re.split("\.", el)[-1] for el in runscript_files]
-	print(runscript_patterns)
+	runscript_patterns = [re.split("\.", el)[-1] for el in runscript_files if (re.split("\.", el)[-1]).count('-') == 2]
+	#print(runscript_patterns)
 	runcode_split = re.split("\.", runcode_files[0])
 	print(runcode_split)
 	for patt in runscript_patterns:

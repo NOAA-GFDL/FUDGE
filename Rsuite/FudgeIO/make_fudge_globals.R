@@ -2,7 +2,7 @@ make.fudge.globals <- function(){
   #Okay, this might be a simple as grouping all of the
   #available functions in one place to keep them
   #from mucking up the workflow any.
-  fudge.title <- sub("  ", " ", paste(get_orig_experiment(MF$metadata[[target.var]]$filename),
+  fudge.title <- sub("  ", " ", paste(get_orig_experiment(MF$metadata[[1]]$filename),
                                       #Yes, it's MF above - that's what it was originally.
                                       #Talk about this with someone else when you do metdata revisions.
                                       "downscaled by FUDGE", FUDGETAG,

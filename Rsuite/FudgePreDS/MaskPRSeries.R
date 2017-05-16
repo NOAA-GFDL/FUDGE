@@ -78,35 +78,32 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   
 #initializing adj.thold so we can return regardless
 adj.thold = wetday.convert
-  if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values present
-    fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
-    fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
+if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values present
+  fraction.wet.ref <- sum(loop.ref.wetdays) / length(loop.ref.wetdays)
+  fraction.wet.adj <- sum(loop.adj.wetdays) / length(loop.adj.wetdays)
+  
+  # Perform the following calculations and adjustments to the GCM time series
+  # only if the user has asked for the drizzle adjusment to be applied 
+  if (fraction.wet.adj > fraction.wet.ref) {
+    message('adjusting MH/MF threshold')
+    #Find the threshold for a drizzle adjustment
+    adj.method="new"
+    adj.thold <- switch(adj.method, 
+                        "orig" = find.thold.orig(fraction.wet.ref, OH.var, MH.var), 
+                        "new"  = find.thold.kd(fraction.wet.ref, OH.var, MH.var))
     
-    # Perform the following calculations and adjustments to the GCM time series
-    # only if the user has asked for the drizzle adjusment to be applied 
-    if (fraction.wet.adj > fraction.wet.ref) {
-      message('adjusting MH/MF threshold')
-      #Find the threshold for a drizzle adjustment
-      first.above.threshold <- quantile(loop.ref,  probs=(1.0-fraction.wet.ref),na.rm=TRUE)
-      small.fraction <- 1.0/sum(ref.idx)
-      last.below.threshold <- quantile(loop.ref, probs=(1.0-fraction.wet.ref-small.fraction), na.rm=TRUE)
-      num.zero.in.adjusted <- ((1.0-fraction.wet.ref)*sum(adj.idx)) - 1
-      threshold.wetday.adj <- quantile(loop.adj, names = FALSE,
-                                       probs=(num.zero.in.adjusted/sum(adj.idx)), 
-                                       na.rm=TRUE)
-      if(verbose){print(paste("threshold:", threshold.wetday.adj))}
-      #If it would result in changed results, apply
-      loop.adj.wetdays <- adjust.data[adj.idx] > threshold.wetday.adj
-      loop.fut.wetdays <- future.data[fut.idx] > threshold.wetday.adj
-      
-      adj.thold = threshold.wetday.adj
-    }
-  } else {
-    print('wetday convert:')
-    print(wetday.convert)
-    loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
-    loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
+    #If it would result in changed results, apply
+    loop.adj.wetdays <- adjust.data[adj.idx] > adj.thold
+    loop.fut.wetdays <- future.data[fut.idx] > adj.thold
+    
   }
+} else {
+  print('wetday convert:')
+  print(wetday.convert)
+  loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
+  loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
+}
+
 #   ###Now consider the conserve option
 #   if(lopt.conserve==TRUE){
 #     loop.ref <- conserve.prseries(loop.ref, loop.ref.wetdays, pool_ens=T) 

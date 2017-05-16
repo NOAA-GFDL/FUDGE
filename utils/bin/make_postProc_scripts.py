@@ -22,10 +22,11 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 	exp_info_file = osp.join(script_dir, "experiment_info.txt")
 	expdict = read_exp_info_file(exp_info_file)
 	
-	
+	#Wallclock time is hard-coded here. Setting it lower as of 2017-05, since
+	#we've been staying in the queue for far longer than we normally do.
 	pp_runcode_header = "\n".join(["#!/bin/tcsh", 
 								   "#PBS -S /bin/tcsh", 
-								   "#PBS -l nodes=1:ppn=2,walltime=12:00:00", 
+								   "#PBS -l nodes=1:ppn=2,walltime=2:00:00", 
 								   "#PBS -r y",
 								   "#PBS -j oe", 
 								   "#PBS -N fudge_postProc", 

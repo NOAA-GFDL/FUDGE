@@ -1,101 +1,12 @@
 
-#MBC and QDM share much of the same DNA, but there's enough difference between
-#the univariate and multivariate versions that QDM probably now merits its own
-#downscaling method.
-
-callQDM <- function(OH, MH, MF, args, ds.method="",
-                    tmasks, train_qcmask=F){
-  #Create output data
-  out.data <- array(NA, dim=dim(MF[[1]]))
-  nrips <- dim(out.data)[4]
-  index.mask <- tmasks$MF$masks[[w]]
-  olap <- F
-  if(train_qcmask){
-    if(tmasks$apply_tmasks){
-      qc <- mapply(rep, index.mask, nrips)
-    }else{
-      qc <- rep(1, dim(MF[[1]]))
-    }
-    dim(qc) <- dim(out.data)
-  }else{
-    qc <- NULL
-  }
-  MF_mask <- missval.args$pr$MF
-  for (n in 1:nrips){
-    MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
-    #pr-specific check for now; only do if present
-    if (!is.null(missval.args$pr)){
-      missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
-    }
-    missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
-                                         missval.args$minsamplesize, 
-                                         missval.args, 
-                                         missval.method='distributional')
-    if (all(is.na(missval.out$MH[[1]]))){
-      stop(paste("Error in QDM: adding args back in didn't fix anytning"))
-    }
-    
-    if (args$adjust_trace){
-      print("adjusting pr trace")
-      #print(str(missval.args$pr))
-      adj.thold <- missval.args$pr$adjusted.thold
-      if (args$transform){
-        if (is.null(args$tform_fxn[[2]])){
-          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
-        }else{
-          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold, args$tform_fxn[[2]]))
-        }
-      }
-      if (args$trace > adj.thold){
-        print("QDM: using adjusted trace instead of trace")
-        print(args$trace)
-        print(adj.thold)
-        args$trace <- adj.thold
-      }
-      #args$trace <- min(args$trace, adj.thold)
-    }
-    loop.ds <- ds.method
-    if (missval.out$mv.retry){
-      print('switching QDM and QDM_mod')
-      loop.ds <- 'QDM_mod'
-    }else{
-      loop.ds <- ds.method
-    } 
-    
-    if(missval.out$ds.possible){
-      #There are different pre-conditioning steps that need
-      #to take place for each method
-      out <- switch(loop.ds, 
-                    'QDM' = callQDM_orig(missval.out$OH, missval.out$MH, missval.out$MF, args), 
-                    'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args)
-      )
-      train.stat <- missval.out$missval.status
-      out.data[,,,n,,] <- index.qm(index.mask, out, olap)
-      if (train_qcmask &  missval.out$mv.retry){
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
-      }
-    }else{
-             print('downscaling not possible at this point')
-      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
-      if(train_qcmask){
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
-      }
-    }
-  }
-  print("summary of all QDM outputs:")
-  print(summary(out.data))
-  return(list(ds=out.data, qc=qc))
-}
-
-
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
   library(MBC)
-  OH <- compress.xy.data(OH, remove.all.missing=F)
-  MH <- compress.xy.data(MH, remove.all.missing=F)
-  MF <- compress.xy.data(MF, remove.all.missing=F)
-
+ # set.seed(8675309)
+#   OH <- compress.xy.data(OH)
+#   MH <- compress.xy.data(MH)
+#   MF <- compress.xy.data(MF)
   #Create output data
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
@@ -111,8 +22,9 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  MF_mask <- missval.args$pr$MF
+  MF_mask <- missval.args$pr_opts$MF[[1]]
   for (n in 1:nrips){
+    nval <<- n
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
     if (!is.null(missval.args$pr)){
@@ -122,9 +34,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
-    if (all(is.na(missval.out$MH[[1]]))){
-      stop(paste("Error in QDM: adding args back in didn't fix anytning"))
-    }
     
     if (args$adjust_trace){
       print("adjusting pr trace")
@@ -174,11 +83,11 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #out.data[,,,n,,][!is.na(index.mask)] <- out
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if (train_qcmask &  missval.out$mv.retry){
+        print("adding the pr retry mask")
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }else{
-      #       print('downscaling not possible at this point')
-      #       stop('examine this out')
+      print('downscaling not possible at this point')
       out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if(train_qcmask){
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
@@ -208,7 +117,7 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 
 
-callQDM_orig <- function(OH, MH, MF, args){
+callQDM <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
@@ -256,7 +165,7 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   return(tmp$mhat.p[,1])
 }
 
-set.MBC.defaults <- function(args, predictor.vars, ...){
+set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
   iter = 30
@@ -323,12 +232,14 @@ set.MBC.defaults <- function(args, predictor.vars, ...){
     jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
     jitter.fac <- args[[jitter.name]]
   }
-  return(list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-              variant=args$variant, var.names=unlist(predictor.vars)))
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+              variant=args$variant, var.names=unlist(predictor.vars))
+  env$ds.args <- return.args
+  return(env)
 }
 
 
-set.QDM.defaults <- function(args, predictor.vars, ...){
+set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
   iter = 30
@@ -392,7 +303,8 @@ set.QDM.defaults <- function(args, predictor.vars, ...){
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize
-  }  
-  return(return.args)
+  } 
+  env$ds.args <- return.args
+  return(env)
 }
 

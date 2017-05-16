@@ -2,7 +2,7 @@
 #Main and helper functions for downscaling
 #with DeltaSD
 
-callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
+callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #over a single variable
@@ -29,16 +29,18 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
     OH = OH[[1]]
     MH = MH[[1]]
     MF = MF[[1]]
+    status=0
     out.data <- array(NA, dim=dim(MF))
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
       if(tmasks$apply_tmasks){
         #This is going to have to be revised for use in the workflow
-        qc <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+        qc.data <- mapply(rep, tmasks$MF$masks[[w]], nrips)
       }else{
-        qc <- rep(1, dim(MF[[1]]))
+        qc.data <- rep(1, dim(MF[[1]]))
       }
+      dim(qc.data) <- dim(out.data)
     }else{
       qc.data <- NULL
     }
@@ -63,7 +65,7 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
     }else{
       index.mask <- tmasks$trim$masks[[w]]
     }
-    start <- 1
+    pr_start <- 1
     oh_longer <- length(MF[,,,1,,]) <= length(OH)
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
@@ -71,27 +73,14 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
       MF.data <- MF[,,,n,,]
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
-        MF.idx <- 1:length(MF)
-        #         if ((tmasks$hist.year.div[tmasks$nyears_fut*n]) <= tmasks$hist.year.div[length(tmasks$hist.year.div)]){
-        #           print(tmasks$nyears_fut)
-        #           end <- start + tmasks$nyears_fut - 1
-        #           OH.idx <- start:tmasks$hist.year.div[tmasks$nyears_fut * (n)]
-        #           start <- 1 + tmasks$hist.year.div[tmasks$nyears_fut * (n)]
-        #         }else{
-        #           #You have an odd modulo; wrap around to the beginning of OH
-        #           #...try to find a case that checks this logic.
-        #           year_diff = tmasks$nyears_hist - start
-        #           OH.idx <- c(tmasks$hist.year.div[start]:tmasks$hist.year.div[length(tmasks$hist.year.div)], 
-        #                       tmasks$hist.year.div[1]:tmasks$hist.year.div[year_diff])
-        #         }
-        ###Trying the new delta indexing scheme
+        print("in delta")
+        print(n)
+        print(pr_start)
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=start)
+                                 start_year=pr_start)
         OH.idx <- idx$index
-        print(summary(OH.idx))
-        #print(rle(as.numeric(OH.idx)))
-        start <- idx$end
+        pr_start <- idx$end
         delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
         ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
@@ -150,7 +139,7 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
                                       index.mask,
                                       ds.out) 
       #MF.data)
-      if(out.status > 0){
+      #if(out.status > 0){
         #As of 10-14-16, replacing status setting with qcmask
         if (train_qcmask){
           #the below used to store the status return; for now, to keep 
@@ -158,7 +147,7 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, status=0, tmasks=list()){
           #methods, we're replacing that with NA
           qc.data[,,,n,,] <- NA 
         }
-      }
+      #}
     }
     return(list(ds=out.data, qc=qc.data))
 }

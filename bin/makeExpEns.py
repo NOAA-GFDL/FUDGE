@@ -115,6 +115,8 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	elif (num_files[0]==0):
 		print("Error in makeExpEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")		
 	all_outfiles = zip(*all_outfiles)
+	print("all_outfiles:")
+	print(all_outfiles)
 	ens_list = []
 	for flist in all_outfiles:
 		flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
@@ -170,6 +172,10 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	print("Calling ensemble creation on " + inFiles)
 	with Dataset(flist[0], 'r') as nc_obj:
 		varnames = nc_obj.variables.keys()
+	print("varnames in file:")
+	print(varnames)
+	print("climvar:")
+	print(climvar)
 	vname = [varnames[v] for v in range(0, len(varnames)) if re.search(climvar,varnames[v]) is not None][0]
 	if isAnom:
 		print("Checking for presence of anomaly var")

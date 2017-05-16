@@ -121,14 +121,18 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                                        #apply_0_mask=pr_opts$apply_0_mask))
     if('transform' %in% names(pr_opts)){
       if(pr_opts$transform!='none'){
+        if ('vars' %in% names(pr_opts)){
+          vars = unlist(strsplit(pr_opts$vars, ","))
+        }else{
+          #This is an option from legacy XML
+          vars = "pr"
+        }
         pre_ds <- c(pre_ds, 
-                    list(list(type='transform', vars=unlist(strsplit(pr_opts$vars, ",")), 
+                    list(list(type='transform', vars=vars, 
                               apply='by.var', loc='inloop', 
                          pp.args=list(transform=pr_opts$transform, 
                                       arg=pr_opts$arg, 
-                                      vars=unlist(strsplit(sub(" ", "", 
-                                                               pr_opts$vars),
-                                                           ","))
+                                      vars=vars
                                       ))))
       }
       #print(lapply(pre_ds, 'summary'))
@@ -299,7 +303,7 @@ exp10 <- function(x){
 get_orig_experiment <- function(in.file, var='tasmax'){
   #Gets the original experiment from an input file
   #according to the metadata present
-  print("obtaining file")
+  print(paste("obtaining file", in.file))
   test.nc <- nc_open(in.file)
   atts = ncatt_get(test.nc, 0)
   nc_close(test.nc)

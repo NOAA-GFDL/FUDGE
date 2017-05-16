@@ -85,9 +85,11 @@ def make_aux_input(grid, script_base):
 	j_subset = '"j_subset": [' + jv + ']' + ","
 	tile_olap = '"tile_olap": [0]'        + ","
 	#Most of the specs are not going to change unless you use stencils
+	#...which is why it's probably safe to set the default wallclocktime
+	#to 2 hours rather than 12, as we have been using forever.
 	main_text = "\n".join(['"geomask_names": [""],',
                            '"ds_handle_missing": ["continue"],',
-                           '"wallclocktime": ["12:00:00"],',
+                           '"wallclocktime": ["2:00:00"],',
                            '"OH": {',
                            '    "stencil": ["none"],',
                            '    "geomask": ["none"]',

@@ -11,6 +11,14 @@ callQM <- function(OH, MH, MF, args, type="",
   #'which share a lot of DNA with each other.
   #'For now, even methods that can do the training once
   #'all do training within looping by ensemble.
+  #'
+  
+  #Note: pr adjustments now effectively require this to be called before
+  #the retry options can work properly.
+  
+#   OH.data <- compress.xy.data(OH)
+#   MH.data <- compress.xy.data(MH)
+#   MF.data <- compress.xy.data(MF)
   
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
@@ -40,14 +48,10 @@ callQM <- function(OH, MH, MF, args, type="",
   }else{
     qc <- NULL
   }
-  MF_mask <- missval.args$pr$MF
+#  MF_mask <- missval.args$pr$MF
+start_year <- 1
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
-    #pr-specific check for now; only do if present
-    if (!is.null(missval.args$pr)){
-      missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
-    }
-    #print(str(missval.args))
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
@@ -60,7 +64,9 @@ callQM <- function(OH, MH, MF, args, type="",
       train.stat <- missval.out$missval.status
       out <- switch(type, 
                     'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args), 
-                    'CFQM' = callCFQMv3(OH.slice, MH.slice, MF.slice, args), 
+                    #'CFQM_orig' = callCFQMv3(OH.slice, MH.slice, MF.slice, args),
+                    'CFQM_hist' = CFQM_hist(OH.slice, MH.slice, MF.slice, args, tmasks, start_year), 
+                    'CFQM_fut' =  CFQM_fut(OH.slice, MH.slice, MF.slice, args),  
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
      # print(length(out))
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
@@ -77,6 +83,7 @@ callQM <- function(OH, MH, MF, args, type="",
       }
     }
   }
+#stop('examine idx returned')
   return(list(ds=out.data, qc=qc))
 }
 
@@ -234,6 +241,80 @@ callCFQMv3<-function(LH,CH,CF, args){
      print(summary(temp.CFQM2$qCFecdfCHqLH))
      out[MF.idx] <- temp.CFQM2$qCFecdfCHqLH[1:len.out]
      return(out)
+}
+
+CFQM_futa <- function(OH, MH, MF, args){
+  prob <- seq(0.001,0.999,length.out=sum(!is.na(MF))) #lengthCF
+  MF.rank <- rank(MF)
+  #Create OH mapped to MH
+  OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
+  #Map MF
+  ds <- quantile(MF, OH.mapped.to.MH, na.rm=T)
+  return(ds[MF.rank])
+}
+
+CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
+  
+  oh_longer <- ifelse(length(OH) > length(MF), T, F)
+  
+  #Prepare indexing mask
+  if (tmasks$time_mask_overlap){
+    index.mask <- tmasks$trim$masks[[w]]
+    olap=T
+  }else{
+    index.mask <- tmasks$MF$masks[[w]]
+    olap=F
+  }
+  
+  #print(str(tmasks))
+  #Do the sample size adjustment as your initial step
+  if (oh_longer){
+    #Repeat current MF to extend same length as OH,MH - taking leapdays into account
+    print('indexing args with issues')
+    print(tmasks$nyears_hist)
+    print(tmasks$nyears_fut) 
+    print(tmasks$hist.year.div) 
+    print(tmasks$fut.year.div)
+    print(start_year)
+#     stop('examine this out')
+    idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+                             tmasks$hist.year.div, tmasks$fut.year.div, 
+                             start_year=start_year)
+    print(str(idx))
+    OH.idx <- idx$index
+    #start_year <<- idx$end
+    MH <- MH[OH.idx]
+    OH <- OH[OH.idx]
+    #delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
+    #ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)  
+  }else{
+    #Otherwise, repeat MH,MF to extend to same length as current MF
+    idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+                             tmasks$hist.year.div, tmasks$fut.year.div, 
+                             start_year=1)
+    OH.idx <- idx$index
+    start_year <<- idx$end
+    #OH.idx is the repeated number of entries that you need in order 
+    #
+    MH <- MH[OH.idx]
+    OH <- OH[OH.idx]    
+  }
+  
+  #Create OH mapped to MH
+  prob <- seq(0.001,0.999,length.out=sum(!is.na(OH)))
+  OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
+  #map MF
+  ds <- quantile(MF, OH.mapped.to.MH, na.rm=T)
+  
+  #And finally, do the indexing according to the
+  #delta method
+  #print(str(tmasks))
+  ds <- index.delta(tmasks$hist.leapmask[OH.idx], 
+                    tmasks$fut.leapmask, 
+                    tmasks$OH$masks[[w]][OH.idx],
+                    index.mask,
+                    ds)
+  return(ds)
 }
 
 callBCQMv2<-function(LH,CH,CF,args){
