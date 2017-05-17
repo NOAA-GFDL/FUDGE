@@ -36,7 +36,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-    #print(test$type)
+    print(test$type)
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),

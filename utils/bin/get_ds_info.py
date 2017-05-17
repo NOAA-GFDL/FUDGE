@@ -40,7 +40,7 @@ def parse_aux_info(jsonfile):
 			else:
 				wallclocktime = jsondict['wallclocktime']	
 		else:
-			wallclocktime='12:00:00'
+			wallclocktime='2:00:00'
 		#Subsets in i and j that we are interested in
 		defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}	
 		subsetdict = {}
@@ -87,7 +87,7 @@ def make_aux_input(grid, script_base):
 	#Most of the specs are not going to change unless you use stencils
 	main_text = "\n".join(['"geomask_names": [""],',
                            '"ds_handle_missing": ["continue"],',
-                           '"wallclocktime": ["12:00:00"],',
+                           '"wallclocktime": ["2:00:00"],',
                            '"OH": {',
                            '    "stencil": ["none"],',
                            '    "geomask": ["none"]',

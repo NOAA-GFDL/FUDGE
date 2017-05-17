@@ -54,7 +54,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     ds.args$tail_taper_pct <- 0.1
   }else{
     ds.args$tail_taper_pct <- as.numeric(args$tail_taper_pct)/100
-    print('dividng tail_taper_pct')
+    #print('dividng tail_taper_pct')
     #prints are added to deal with something that may have been leading to 
     #tail_taper_pct being divided by 100 repeatedly.
   }
@@ -63,7 +63,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     ds.args$subsample_pct <- 0.05
   }else{
     ds.args$subsample_pct <- as.numeric(args$subsample_pct)/100
-    print('dividing subsample_pct')
+    #print('dividing subsample_pct')
   }
   
   #Added as a precipitation adjustment
@@ -231,7 +231,7 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
       }
     }else{
       #If there is no breakpoint found, k.out[k.i] is already missing
-      message(paste('no breakpoints found on loop', p))
+      #message(paste('no breakpoints found on loop', p))
     }
     k.i <- k.i + 1
   }#end for p in 1:3
@@ -257,9 +257,7 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
   bad.break.indices <- rep(F, length(slopes))
   bad.slope.indices <- rep(F, length(slopes))
   if(run){
-    print("Printing slopes and values")
-    print(slopes)
-    print(length(slopes))
+    #print("Printing slopes and values")
     for(j in 1:length(slopes)){
       if (is.na(slopes[j])){
         #First, check for missing values. 
@@ -313,7 +311,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   #'in order to downscale with anomaly data.
   
   
-  message('Starting PARM steps 2 and 3: find first and second set of breakpoints')
+  #message('Starting PARM steps 2 and 3: find first and second set of breakpoints')
   fixed_window_width = args$subsample_pct
   #Assume that the tails are always going to be symmetric (for now)
   pmin = args$tail_taper_pct
@@ -382,7 +380,6 @@ parm.train <- function(hist_pred, hist_targ, args){
         q <- which( hist_pred > (val-window_delta) )[1]-1
         window2[(hist.pred.len-j)+1] <- (j-q)
       }
-      print(var.range)
     }else{
       #If controlling the taper of the tails
       window_temp <- fixed_window_width*(max(hist_pred,na.rm=T)-min(hist_pred,na.rm=T))
@@ -480,7 +477,7 @@ parm.train <- function(hist_pred, hist_targ, args){
     start2 <- start
   }
   if(start2 > hist.pred.len){
-    print('setting second start based on hist.pred.len')
+    #print('setting second start based on hist.pred.len')
     start2 <- hist.pred.len
   }
   
@@ -545,9 +542,9 @@ parm.train <- function(hist_pred, hist_targ, args){
   }
   
   breakpoints <- sort(breakpoints0, na.last=T)
-  if(length(breakpoints)==6){
-    print('there is at least one case where you get all 6 breakpoints')
-  }
+#   if(length(breakpoints)==6){
+#     print('there is at least one case where you get all 6 breakpoints')
+#   }
   rank <- rank(breakpoints0, na.last=T, ties='first')
   #get the actual values of temp/precip where the break is
   if(length(breakpoints) > 0){
@@ -567,16 +564,13 @@ parm.train <- function(hist_pred, hist_targ, args){
   #AARM 5: Compute the regression model using the breakpoints
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 860, more or less
-  message('Starting PARM step 5: compute regression model using the breakpoints')
+  #message('Starting PARM step 5: compute regression model using the breakpoints')
   #perform regressions
   mod=hist_pred
   sta=hist_targ
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
   #CEW code added 11-22-2016 for the pr case; returns a lot of identical breakpoints
   #values <- unique(values)
-  print(values)
-  print(length(unique(values)))
-  print(breakpoints)
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
     regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=c(-999,999)
@@ -590,7 +584,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   #AARM 6: Go through the model and remove slopes close to 0
   #orig file: '~/Code/fudge/main/code/ARRM_2013/tasmax/noxval/Rcode/gfdl.temp.grid.autoinput.dscode.r'
   #ref: line 880, more or less
-  message('Starting PARM step 6: removing model slopes close to 0')
+  #message('Starting PARM step 6: removing model slopes close to 0')
   
   # find model values (xvals) and obs values (yvals) of start point, breakpoints, and end point to calculate slopes
   xvals <- c(min(hist_pred),values,max(hist_pred))
@@ -624,8 +618,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   for (k in 1:5){# do loop up to 5 times (assuming that one month cannot possibly have that many negative slope segments)
     #if(sum(bad.slope.indices)>=1){
     if(sum(bad.indices$bad.slopes)>=1){
-      print('there is at least one point where the bad slope indices are activated')
-      #}
+      #print('there is at least one point where the bad slope indices are activated')
       if(length(values_new1)==1)  values_new1 <- NA
       else{
         #Store all points but the single bad value of interest

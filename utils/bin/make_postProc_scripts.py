@@ -25,7 +25,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 	
 	pp_runcode_header = "\n".join(["#!/bin/tcsh", 
 								   "#PBS -S /bin/tcsh", 
-								   "#PBS -l nodes=1:ppn=2,walltime=12:00:00", 
+								   "#PBS -l nodes=1:ppn=2,walltime=2:00:00", 
 								   "#PBS -r y",
 								   "#PBS -j oe", 
 								   "#PBS -N fudge_postProc", 
