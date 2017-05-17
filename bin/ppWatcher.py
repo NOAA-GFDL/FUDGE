@@ -168,11 +168,9 @@ def compress_logs(logdir):
 	logfile = osp.join(logdir, "compressed_R_code_jobs.tar.gz")
 	tar_log = tarfile.open(logfile, "w:gz")
 	for name in compress_files:
-		print(name)
 		tar_log.add(name)
 	tar_log.close()
 	for name in compress_files:
-		print(name)
 		os.remove(name)	
 			
 def write_xml_info(outdirs, xml_dir):
