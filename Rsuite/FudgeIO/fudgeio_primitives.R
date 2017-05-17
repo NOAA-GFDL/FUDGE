@@ -5,9 +5,6 @@ get.ncdim.names <- function(obj.nc, nc.var, include.none=F){
   #'Gets the names of all the dimensions a given var will reference
   get.dim.names()
   dim.names <- unlist(lapply(obj.nc$var[[nc.var]]$dim, '[[', 'name'), use.names = F)
-  #   print("within get.ncdim.names:")
-  #   print(summary(obj.nc$var))
-  #   print(dim.names)
   if(length(dim.names)==0){
     if(include.none){
       dim.names <- "none" #...okay, it's been '' for a long time. But that breaks the regex later.
@@ -77,8 +74,6 @@ obtain.fudge.var <- function(obj.nc, nc.var, subset=list(), select=NA){
   #var.dim.lengths <- get.ncvar.dims(obj.nc, nc.var)
   get.dim.names()
   check_subset <- !(is.null(names(subset)))
-  #print(var.dims)
-  #print(c(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims))
   if (any(!(var.dims %in% c(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)))){
     dims.notlist <- var.dims[which(!(var.dims %in% c(x.dims, y.dims, time.dims, ens.dims, n.dims)))]
     stop(paste("Error in obtain.fudge.var! Var", nc.var, "uses the dimension(s)", 
@@ -306,7 +301,6 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
   name.list <-  list(x.dims, y.dims, z.dims, time.dims, ens.dims, n.dims)
   var.start <- rep(1, length(dim.names))
   var.count <- rep((-1), length(dim.names))
-  #  print(names(subset))
   for(el in names(subset)){
     n <- sapply(name.list, function(x,y){any(x%in%y)}, el)
     dim.which <- dim.names %in% unlist(name.list[n])
@@ -314,8 +308,6 @@ clone.fudge.metavar.object <- function(var.name, nc.obj, subset=list()){
     var.count[dim.which] <- diff(subset[[el]])+1
   }
   var.all <- nc.obj$var[[var.name]]
-  #  print(var.start)
-  #  print(var.count)
   var.data <- ncvar_get(nc.obj, var.name, collapse_degen=F, 
                         start=var.start, count=var.count)
   if (var.all$prec=='int'){

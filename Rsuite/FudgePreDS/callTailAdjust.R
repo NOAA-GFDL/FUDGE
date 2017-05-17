@@ -13,9 +13,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   targ.var <- names(input$hist.targ)
   arg.names <- names(test$qc_args)
   nrips <- dim(adjusted.output$ds.out)[4]
-  print("dimensions of adjusted output")
-  #print(dim(adjusted.output$ds.out))
-  print(w)
   if (test$qc.mask=='on'){
     adjusted.output$qc.mask <- array(NA, dim=dim(adjusted.output$ds.out))
   }
@@ -138,24 +135,22 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     #     print('args before triggertype')
     #     print(args)
     if (args$triggertype == 'cdft'){
-      #print(args)
-      #stop('in cdft call')
-      print('calling upper')
+      #print('calling upper')
       hitail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      print('calling lower')
+      #print('calling lower')
       lotail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     }else if (args$triggertype == 'cdft_orig'){
-      print('calling upper')
+      #print('calling upper')
       hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      print('calling lower')
+      #print('calling lower')
       lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     } else {
-      print('calling upper')
+      #print('calling upper')
       hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
 #       hi.cond <- ds.idx
 #       hi.cond[hi.cond] <- hitail$cond
 #       hitail$cond <- hi.cond
-      print('calling lower')
+      #print('calling lower')
       lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
 #       lo.cond <- ds.idx
 #       lo.cond[lo.cond] <- lotail$cond
@@ -254,7 +249,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
-      print(paste0("Adjusting tail with ", adjmethod))
+      #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
       if (adjmethod == 'add') {
         offset <- mean(DS[delta.idx] - MF[delta.idx])

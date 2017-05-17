@@ -22,7 +22,6 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
                             'time', 'temporal'), grep, dim)
     dim.order <- unlist(dim.order[sapply(dim.order, 'length') > 0], use.names=F)
     dim <- dim[dim.order]
-    print(dim)
   }
   
   fudge.data <- list()
@@ -95,7 +94,7 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   
   #Add metadata propertioes of var based off of lookup table
   if (var_classification){
-    print('var clasification added')
+    #print('var clasification added')
     var.table <- paste0(FUDGEROOT, "Rsuite/aux/var_att_sheet.csv")
     if (! file.exists(var.table)){
       stop(paste("Error in build.fudge.object: var_classification was true, but", 
@@ -104,7 +103,6 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
       #open table
       input <- read.csv(var.table, header=T, stringsAsFactors=F)
       table_varnames <- input$var_name
-      print(input$var_name)
       properties <- c('is_precip')
       defaults <- list(is_precip = F)
       for (var in varnames){
@@ -115,9 +113,7 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
           }
         }else{
           var.idx <- which(table_varnames==var)
-          print(var.idx)
           for (el in properties){
-            print(el)
             fudge.metadata[[var]][[el]] <- input[[el]][[var.idx]]
           }
         }

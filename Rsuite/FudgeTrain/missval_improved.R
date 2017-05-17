@@ -102,7 +102,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       #Datset.index only has 3 elements - important for multivar pr
       dataset.index <- rowSums(sapply(ds.ref$training, 
                                       grepl, c("OH", "MH", "MF"))) > 0
-      print(dataset.index)
       for(el in c('OH', 'MH', 'MF')[dataset.index]){
         #Note: this needs to take place with elements of orig; 
         #if you do not use it, the synchronous missing values step 
@@ -195,7 +194,7 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
     match.vars <- c(match.vars, data.names[match.index])
   }
   for (el in match.vars){
-    print(el)
+    #print(el)
     tmp.pr <- data.list[[el]]
     #dim(pr.mask) <- dim(tmp.pr)
     data.list[[el]] <- as.numeric(pr.mask)
@@ -221,10 +220,6 @@ segment.missval.vars <- function(varnames, data, masks, data.coords, ival, jval,
   #data.masks <- get.xy.slice(masks[varnames], data.coords, ival, jval)
   #No longer needed; looping on i and j before call to pr missvals
   data.masks <- masks
-  print(summary(data.masks))
-  print(dim(data.masks))
-  print(mode(data.masks))
-  print(summary(tmasks))
   #Apply tmask
   if (apply_tmask){
     data.masks <- apply.fudge.tmask(data.masks, tmasks$masks[[w]]) #lapply(data=data.masks, "apply.fudge.tmask", tmasks$masks[[w]])
@@ -249,7 +244,7 @@ place.synch.missvals <- function(OH, MH, MF, env=parent.frame()){
   all.missing <- OH.missing + MH.missing
   all.missing[all.missing  > 0] <- NA
   all.missing[all.missing == 0] <- 1
-  print("working on the hist vals")
+  #print("working on the hist vals")
   OH <- lapply(OH, apply.fudge.tmask, all.missing)
   MH <- lapply(MH, apply.fudge.tmask, all.missing)
   #Added 11-10: Apparently, I was doing this for the synch lm masks, WTH.
