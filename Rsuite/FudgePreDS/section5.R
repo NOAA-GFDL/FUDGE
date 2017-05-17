@@ -37,20 +37,6 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
     print(test$type)
-    #    # if(verbose){
-    #    if (test$type=='cdfttailadj'){
-    #      print(paste("on test", test[[1]]))
-    #      print("MH:")
-    #      print(lapply(out$input$hist.pred, 'length'))
-    #      print("OH:")
-    #      print(summary(out$input$hist.targ))
-    #      print("MF:")
-    #      print(lapply(out$input$fut.pred, 'length'))
-    #      print("DS:")
-    #      print(lapply(out$adjusted.output$ds, 'length'))
-    #      save(file="/home/cew/Code/testing/test_out.R", list=c('out'))
-    #      stop('examine output')
-    #    }
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
@@ -67,12 +53,12 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
-    print('summary of adjusted output:')
-    print(summary(as.vector(out$adjusted.output$ds.out)))
-    print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
+#     print('summary of adjusted output:')
+#     print(summary(as.vector(out$adjusted.output$ds.out)))
+#     print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
-      print("This step should ensure dim info does not get lost")
+      #print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
       }
@@ -82,7 +68,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
-      print("settings vals to out.dim")
+      #print("settings vals to out.dim")
       if (!is.null(adjusted.output[[el]])){
         if (is.null(dim(adjusted.output[[el]]))){
           dim(out$adjusted.output[[el]]) <- out.dim

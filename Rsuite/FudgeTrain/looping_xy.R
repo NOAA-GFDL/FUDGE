@@ -53,7 +53,6 @@ loop.xy.data <- function(){
       #incomplete grid (because padding); thus, we don't have to worry about
       #taking slices of the stencil for application.
       print("in process of applying stencil")
-      print(lapply(OH.slice, 'summary'))
       OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
                          aux.ref$OH$stencil_name)
       MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
@@ -230,7 +229,6 @@ loop.xy.data <- function(){
         #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
           print('adding over temporary output')
-          print(summary(tmp.out))
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
         }
         #Once looping by w complete, do the last s5 adjustment

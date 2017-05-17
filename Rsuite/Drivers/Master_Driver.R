@@ -191,8 +191,6 @@ if (ds.ref$multivar_target){
   OH.files <- c()
   target.indir_1 <- dirname(dirname(dirname(target.indir_1)))
   for (var in predictor.vars){
-    print(hist.indir_1)
-    print(target.indir_1)
     print(paste("reading target var", var))
     OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1, 
                                                     var,target.freq_1,target.model_1,
@@ -235,15 +233,12 @@ for (var in predictor.vars){
 }
 mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride-1)
 mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride-1) 
-print(mh_x_subset)
 MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_subset), 
                           dim=ds.ref$mh_dimlist, 
                           x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
                           aux.ref$MH$geomask)
 mh.orig.dim <- MH$orig_dims[[1]]
 mh.dim <- dim(MH$data[[1]])
-print(MH$orig_dims)
-print(mh.orig.dim)
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
                               x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim, 
                               allow_partial=F)#(aux.ref$ds_handle_missing=='continue'))

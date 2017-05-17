@@ -55,7 +55,6 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE,
             return(1)
           }}
         true.dims <- as.vector(unlist(sapply(dim.names,'check.dimlen',mask.nc)))
-        print(true.dims)
         dim(mask) <- true.dims
       }
     }
@@ -69,7 +68,6 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE,
   if(verbose){message(paste('dim:',dim))}
   if(!('none'%in%dim)){
     verbose = TRUE
-    print(paste('mask.var:', mask.var[1]))
     dim.list <- list()
     for(d in 1:length(dim)){
       temp.list <- switch(dim[d], 

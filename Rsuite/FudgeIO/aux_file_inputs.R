@@ -67,9 +67,6 @@ read_stencil_data <- function(stencil_file, delim="none", convert_to_mask=T){
   #Check to make sure that center of stencil is present (not added yet)
   return(list(idim=IDIM, jdim=JDIM, stencil=stencil, stencil_name=stencil_file))
 }
-
-#out <- read_stencil_data(test.file)
-#print(out)
 #Check on this with whitespace
 
 get_aux_params <- function(aux_file, copy_from_tmpdir=F){
@@ -109,7 +106,6 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
 reverse.each.xy <- function(data){
   #data is a 2-d array
   data.dim <- dim(data)
-  print(data.dim)
   x <- data.dim[1]
   y <- data.dim[2]
     for (i in 1:x){
