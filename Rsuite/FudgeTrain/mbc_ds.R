@@ -1,9 +1,98 @@
 
+#MBC and QDM share much of the same DNA, but there's enough difference between
+#the univariate and multivariate versions that QDM probably now merits its own
+#downscaling method.
+
+callQDM <- function(OH, MH, MF, args, ds.method="",
+                    tmasks, train_qcmask=F){
+  #Create output data
+  out.data <- array(NA, dim=dim(MF[[1]]))
+  nrips <- dim(out.data)[4]
+  index.mask <- tmasks$MF$masks[[w]]
+  olap <- F
+  if(train_qcmask){
+    if(tmasks$apply_tmasks){
+      qc <- mapply(rep, index.mask, nrips)
+    }else{
+      qc <- rep(1, dim(MF[[1]]))
+    }
+    dim(qc) <- dim(out.data)
+  }else{
+    qc <- NULL
+  }
+  MF_mask <- missval.args$pr$MF
+  for (n in 1:nrips){
+    MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
+    #pr-specific check for now; only do if present
+    if (!is.null(missval.args$pr)){
+      missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
+    }
+    missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
+                                         missval.args$minsamplesize, 
+                                         missval.args, 
+                                         missval.method='distributional')
+    if (all(is.na(missval.out$MH[[1]]))){
+      stop(paste("Error in QDM: adding args back in didn't fix anytning"))
+    }
+    
+    if (args$adjust_trace){
+      print("adjusting pr trace")
+      #print(str(missval.args$pr))
+      adj.thold <- missval.args$pr$adjusted.thold
+      if (args$transform){
+        if (is.null(args$tform_fxn[[2]])){
+          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
+        }else{
+          adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold, args$tform_fxn[[2]]))
+        }
+      }
+      if (args$trace > adj.thold){
+        print("QDM: using adjusted trace instead of trace")
+        print(args$trace)
+        print(adj.thold)
+        args$trace <- adj.thold
+      }
+      #args$trace <- min(args$trace, adj.thold)
+    }
+    loop.ds <- ds.method
+    if (missval.out$mv.retry){
+      print('switching QDM and QDM_mod')
+      loop.ds <- 'QDM_mod'
+    }else{
+      loop.ds <- ds.method
+    } 
+    
+    if(missval.out$ds.possible){
+      #There are different pre-conditioning steps that need
+      #to take place for each method
+      out <- switch(loop.ds, 
+                    'QDM' = callQDM_orig(missval.out$OH, missval.out$MH, missval.out$MF, args), 
+                    'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args)
+      )
+      train.stat <- missval.out$missval.status
+      out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+      if (train_qcmask &  missval.out$mv.retry){
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+      }
+    }else{
+             print('downscaling not possible at this point')
+      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+      if(train_qcmask){
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+      }
+    }
+  }
+  print("summary of all QDM outputs:")
+  print(summary(out.data))
+  return(list(ds=out.data, qc=qc))
+}
+
+
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
   library(MBC)
-  OH <- compress.xy.data(OH, remove.all.identical=F)
+  OH <- compress.xy.data(OH, remove.all.missing=F)
   MH <- compress.xy.data(MH, remove.all.missing=F)
   MF <- compress.xy.data(MF, remove.all.missing=F)
 
@@ -119,7 +208,7 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 
 
-callQDM <- function(OH, MH, MF, args){
+callQDM_orig <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))

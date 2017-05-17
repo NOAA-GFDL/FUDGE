@@ -25,6 +25,12 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	#print(j_elements)
 	#sys.exit("Examine this out")
 	
+	#Okay - as of 207-05-09, adding a one-off special case for the synthetic data
+	#cases - as distinguished by the presence of grid0. 
+	if idirsuffix=="/grid0/":
+		print("Adding synthetic data workaround")
+		idirsuffix = idirsuffix + "ZeroD/"
+	
 	### As of 3-15-17, working on script subset changes needed for 
 	### handling entire-grid downscaling and the arbitrary x,y subsets.
 	####don't worry about the njobs parameter for now; it's handled in the subset looping.
@@ -108,6 +114,8 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	mh_files = []
 	for pred_var in predlist:
 		mh_dir = osp.join(MH_dir, pred_var) + idirsuffix
+		print(idirsuffix)
+		print(mh_dir + " , " + mh_timerange)
 		mh_file = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
 		mh_files.append(mh_file)
 		dmget_string = dmget_string + "dmget " + mh_file + " \n"

@@ -40,9 +40,9 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
                      'EDQM'    = callQM(OH, MH, MF, ds.args, type='EDQM', missval.args, tmasks, train_qcmask),
                      'CFQM'    = callQM(OH, MH, MF, ds.args, type='CFQM', missval.args, tmasks, train_qcmask),
                      'DeltaSD' = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, train.stat, tmasks),
-                     'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
-                     'QDM'     = callMBC(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
-                   'sum'   = ds.sum.function(OH, MH, MF, ds.args),
+                     #'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
+                     'QDM'     = callQDM(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
+                     'sum'   = ds.sum.function(OH, MH, MF, ds.args),
                      ReturnDownscaleError(method)
     )
     #Restore missing values to original place now takes place within method

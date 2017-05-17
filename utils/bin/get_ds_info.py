@@ -73,7 +73,8 @@ def make_aux_input(grid, script_base):
 	print("Making default aux file")
 	jdict = {'US48' : 114, 
 	         'SCCSC0p1'  : 140, 
-	         'RR'   : 140}
+	         'RR'   : 140, 
+	         'grid0': 1}
 	if grid in jdict.keys():
 		jv  = str(jdict[grid])
 		aux_scriptname = script_base + "/default_mini_"+grid+".json"

@@ -723,6 +723,7 @@ def main():
 	
 	with open(slogloc, 'a') as f:
 		f.write("\naux:" + os.path.abspath(auxinput))
+		f.write("\nNEMSemail:" + NEMSemail1)
 	#sys.exit(1)	
 	
 	# Create emergency backstop directory for capturing status files when

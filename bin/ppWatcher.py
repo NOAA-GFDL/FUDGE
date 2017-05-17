@@ -29,6 +29,7 @@ from makeCVEns import runMakeCVEns
 import profile_FUDGE
 from profile_FUDGE import make_prof_file
 import cgitb
+import tarfile
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
 	#print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
@@ -143,7 +144,10 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		#print(outfile_exp_info + script_exp_info)
 		write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')	
 		##Added 9-28: get profiling info, write to file
+		print("File cleanup operations in progress")
 		make_prof_file(expdict['script.base'], expdict['script.base'] + "/log/")
+		compress_logs(expdict['script.base'] + "/log/")
+		
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
 		send_status_email("failure", 'ppWatcher', exp_name, \
@@ -152,7 +156,23 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		                   outfiles = expdict['output.path'])
 		sys.exit(1)                   		                       
 	sys.exit(0)
-	
+
+def compress_logs(logdir):
+	'''
+	Compresses all files in logdir matching the pattern (out.* ) 
+	which matches the R code logfiles, and deletes the uncompressed files
+	afterwards. 
+	'''
+	print("Archiving R code logfiles...")
+	compress_files = [osp.join(logdir, el) for el in logdir if re.search("out\.", el) is not None]
+	logfile = osp.join(logdir, "compressed_R_code_jobs.tar.gz")
+	tar_log = tarfile.open(logfile, "w:gz")
+	for name in compress_files:
+		compress_log.add(name)
+	tar_log.close()
+	for name in compress_files:
+		os.remove(name)	
+			
 def write_xml_info(outdirs, xml_dir):
 	#Writes the contents of the experiment xml
 	#to the end of all experiment info files
