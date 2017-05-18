@@ -59,7 +59,8 @@ read_stencil_data <- function(stencil_file, delim="none", convert_to_mask=T){
   }
   if (convert_to_mask){
     #Converts to follow conventions of our other mask data
-    stencil[stencil > 0] <- 1
+    #no longer using this step
+    #stencil[stencil > 0] <- 1
     stencil[stencil == 0] <- NA
   }
   ##Working 1-24-16 on way to make sure stencil shows correct dimensions

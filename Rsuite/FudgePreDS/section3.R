@@ -100,14 +100,11 @@ callPRPreproc <- function(test, input, postproc.output,
   #save(file='/work/cew/pre_adjust_pr.R', list=c('input', 'lopt.drizzle', 'lopt.conserve', 'threshold'))
   #stop('examine this pre output')
   print(pr_target)
-  print(nrips)
-  print(prime_predictor)
-  print(str(input$OH))
-  print(str(input$MH))
-  print(str(input$MF))
-  temp.out <- AdjustWetdays(ref.data=input$OH[[prime_predictor]],   ref.units=input$att.list$pr_oh_units, 
-                            adjust.data=input$MH[[prime_predictor]],adjust.units=input$att.list$pr_mh_units[[pr_target]],
-                            future.data=input$MF[[prime_predictor]],future.units=input$att.list$pr_mf_units[[pr_target]],
+  targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
+  pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$MH))
+  temp.out <- AdjustWetdays(ref.data=input$OH[[targ_idx]],   ref.units=input$att.list$pr_oh_units, 
+                            adjust.data=input$MH[[pred_idx]],adjust.units=input$att.list$pr_mh_units[[1]],
+                            future.data=input$MF[[pred_idx]],future.units=input$att.list$pr_mf_units[[1]],
                             opt.wetday=threshold, 
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 

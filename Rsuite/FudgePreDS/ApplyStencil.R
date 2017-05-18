@@ -9,8 +9,8 @@ apply.stencil <- function(data, stencil, stencil_name){
 #  Not doing this here anymore; do it when reading in the stencil
 #   #Convert 0 to NA on the stencil
 #   stencil[stencil==0] <- NA
-#   #convert any 3s to 1
-#   stencil[stencil==3] <- 1
+  #convert any 3s to 1
+  stencil[stencil==3] <- 1
   #print(stencil)
   if (stencil_name != "none" && length(stencil) > 1){
     print("applying stencil mask")
@@ -27,16 +27,14 @@ get.prime.predictor <- function(prime_var, aux.ref, ...){
   # (i.e. the predictor that is identified with a 3).
   #If stencil=="none", then the singular var point is returned.
   #Check to make sure MH and MF are identical
-  if (aux.ref$MH$stencil != aux.ref$MF$stencil){
+  if (aux.ref$MH$stencil_name != aux.ref$MF$stencil_name){
     stop(paste("Error in get.prime.predictor: MH and MF stencils were not identical!"))
   }
-  print("in stencil")
   prime.stencil <- aux.ref$MF$stencil
-  print(prime.stencil)
-  if (prime.stencil != "none"){
-    print(prime.stencil)
+  if (aux.ref$MF$stencil_name != "none"){
   prime.stencil[prime.stencil != 3] <- NA
   tmp.list <- list()
+  dim(prime.stencil) <- c(dim(prime.stencil), c(1,1,1,1))
   tmp.list[[prime_var]] <- prime.stencil
   tmp.data <- compress.xy.data(tmp.list)
   if (length(tmp.data) == 0){

@@ -174,7 +174,7 @@ lmstep.downscale <- function(lm.train.model, MF, args){
   }
 }
 
-set.lm.defaults <- function(args, ...){
+set.lm.defaults <- function(args, ..., env){
   #Sets the defaults for the lmAsync function - including behavior if no prime
   #predictor (climvar + xy location) is specified.
   #For this method, it is assumed that lmAsync has 'prime_var' set in its 
@@ -192,7 +192,7 @@ set.lm.defaults <- function(args, ...){
   return(env)
 }
 
-set.lmstep.defaults <- function(args, ...){
+set.lmstep.defaults <- function(args, ..., env){
   #Same.
   
   if ('prime_var' %in% names(args)){

@@ -2,7 +2,7 @@
 #Both functions are designed to work on multivar datasets,
 #and handle multiple points by decomposing into separate vars.
 
-callLMAsync <- function(OH, MH, MF, args, ds.method='lm', 
+callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm', 
                         missval.args, tmasks, train_qcmask=F){
   #'Setup operations for methods that behave a lot like lm
   #'and lmstep: output time-synchronous with the future, 
@@ -11,9 +11,11 @@ callLMAsync <- function(OH, MH, MF, args, ds.method='lm',
   #'PARM doesn't quite qualify due to its internal setup requirements; 
   #'it' smostly its own weird thing.
   #Pre-processing step to compress vectors into multivariate/multi-point form
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
+#   OH.data <- compress.xy.data(OH)
+#   MH.data <- compress.xy.data(MH)
+#   MF.data <- compress.xy.data(MF)
+  
+  print('in lmAsync')
   targ.var <- names(OH.data)
   nrips <- dim(MF.data[[1]])[4]
   out.data <- array(NA, dim=dim(MF.data[[1]]))
@@ -89,8 +91,8 @@ multiparm.train <- function(OH, MH, args){
   #of each other, for quantile mapping
   oh.order <- order(OH[[1]])
   OH <- lapply(OH, '{', oh.order)
-  if ('prime_var' %in% names(args)){
-    mh.order <- order(MH[args$prime_var])
+  if ('prime_predictor' %in% names(args)){
+    mh.order <- order(MH[args$prime_predictor])
   }else{
     mh.order <- order(MH[[1]])
   }
@@ -107,9 +109,9 @@ multiparm.downscale <- function(lm.model, MF, args){
   #MF is a named list of vectors returned from compress.xy.data
   #...so we can't sort by DS. We can at least sort MF by rank, though.
   MF <- lapply(MF, remove.missvals)
-  if ('prime_var' %in% names(args)){
-    mf.order <- order(MF[args$prime_var])
-    mf.rank  <- rank(MF[args$prime_var])
+  if ('prime_predictor' %in% names(args)){
+    mf.order <- order(MF[args$prime_predictor])
+    mf.rank  <- rank(MF[args$prime_predictor])
   }else{
     mf.order <- order(MF[[1]])
     mf.rank <- rank(MF[[1]])
@@ -198,25 +200,24 @@ multiparm_step.downscale <- function(lm.train.model, MF, args){
   }
 }
 
-set.lmAsync.defaults <- function(args, ...){
+set.lmAsync.defaults <- function(args, ..., env){
   #Sets the defaults for the lmAsync function - including behavior if no prime
   #predictor (climvar + xy location) is specified.
   #For this method, it is assumed that lmAsync has 'prime_var' set in its 
   #arguments.
   
   #get stencil - should be same for MH and MF
-  prime_predictor <<- get.prime.predictor(args$prime_var, aux.ref)
+  prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
   return_args <- c(args, list(prime_predictor=prime_predictor))
   env$ds.args <- return_args
   env$prime_predictor <- prime_predictor
   return(env)
 }
 
-set.lmstepAsync.defaults <- function(args, ...){
+set.lmstepAsync.defaults <- function(args, ..., env){
   #Same.
   
   #get stencil - should be same for MH and MF
-  print(str(aux.ref))
   prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
   return_args <- c(args, list(prime_predictor=prime_predictor))
   env$ds.args <- return_args

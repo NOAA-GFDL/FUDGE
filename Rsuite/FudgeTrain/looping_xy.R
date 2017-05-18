@@ -155,6 +155,8 @@ loop.xy.data <- function(){
           w <<- w
           qc.out <- NULL
           if (tmasks$apply_tmask){
+            print(str(OH.slice))
+            stop('examine call from lapply')
             OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
             MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
             MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])

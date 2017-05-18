@@ -369,11 +369,11 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
     #return(args)
   }else{
     env <- switch(ds.method, 
-           'MBC' = set.MBC.defaults(args, ..., env), 
-           'QDM' = set.QDM.defaults(args, ..., env),
-           "CFQM" = set.CFQM.defaults(args, ..., env),
-           "lmAsync" = set.lmAsync.defaults(args, ..., env), 
-           "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env),
+           'MBC' = set.MBC.defaults(args, ..., env=env), 
+           'QDM' = set.QDM.defaults(args, ..., env=env),
+           "CFQM" = set.CFQM.defaults(args, ..., env=env),
+           "lmAsync" = set.lmAsync.defaults(args, ..., env=env), 
+           "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env=env),
            stop(paste("Error in set.ds.defaults: no method", 
                       ds.method, "!")))
     #return(new.args)
@@ -385,9 +385,6 @@ set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars,
                             pre.ds.train=pre.ds.train, 
                             ds.ref=ds.ref, aux.ref=aux.ref,
                             env=environment())
-
-print(prime_predictor)
-stop('examine output in main')
 
 ##s3 call formerly here
 
