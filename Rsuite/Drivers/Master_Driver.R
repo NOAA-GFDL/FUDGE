@@ -364,7 +364,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #the lm() and MBC(0 family of methods may reset this value)
   #print(str(as.list(match.call())))
   env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
-  default.methods <- c("MBC", "QDM", "CFQM")
+  default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync')
   if (! (ds.method %in% default.methods)){
     #return(args)
   }else{
@@ -372,8 +372,8 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
            'MBC' = set.MBC.defaults(args, ..., env), 
            'QDM' = set.QDM.defaults(args, ..., env),
            "CFQM" = set.CFQM.defaults(args, ..., env),
-           "lmAsync" = set.lmAsync(args, ..., env), 
-           "lmstepAsync" = set.lmstepAsync(args, ..., env),
+           "lmAsync" = set.lmAsync.defaults(args, ..., env), 
+           "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env),
            stop(paste("Error in set.ds.defaults: no method", 
                       ds.method, "!")))
     #return(new.args)
@@ -386,6 +386,8 @@ set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars,
                             ds.ref=ds.ref, aux.ref=aux.ref,
                             env=environment())
 
+print(prime_predictor)
+stop('examine output in main')
 
 ##s3 call formerly here
 

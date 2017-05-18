@@ -30,8 +30,11 @@ get.prime.predictor <- function(prime_var, aux.ref, ...){
   if (aux.ref$MH$stencil != aux.ref$MF$stencil){
     stop(paste("Error in get.prime.predictor: MH and MF stencils were not identical!"))
   }
+  print("in stencil")
   prime.stencil <- aux.ref$MF$stencil
+  print(prime.stencil)
   if (prime.stencil != "none"){
+    print(prime.stencil)
   prime.stencil[prime.stencil != 3] <- NA
   tmp.list <- list()
   tmp.list[[prime_var]] <- prime.stencil
@@ -40,7 +43,7 @@ get.prime.predictor <- function(prime_var, aux.ref, ...){
     stop(paste("Error in get.prime.predictor: var", prime_var, 
                "does not have a prime predictor (3) specified in the stencil!"))
   }
-  return(names(tmp.data))
+    return(names(tmp.data))
   }else{
     return(paste0(prime_var, ".0.0"))
   }

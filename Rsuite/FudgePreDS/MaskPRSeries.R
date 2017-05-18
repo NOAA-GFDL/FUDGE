@@ -87,7 +87,7 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
   if (fraction.wet.adj > fraction.wet.ref) {
     message('adjusting MH/MF threshold')
     #Find the threshold for a drizzle adjustment
-    adj.method="new"
+    adj.method="orig"
     adj.thold <- switch(adj.method, 
                         "orig" = find.thold.orig(fraction.wet.ref, OH.var, MH.var), 
                         "new"  = find.thold.kd(fraction.wet.ref, OH.var, MH.var))

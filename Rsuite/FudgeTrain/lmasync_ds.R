@@ -216,6 +216,7 @@ set.lmstepAsync.defaults <- function(args, ...){
   #Same.
   
   #get stencil - should be same for MH and MF
+  print(str(aux.ref))
   prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
   return_args <- c(args, list(prime_predictor=prime_predictor))
   env$ds.args <- return_args

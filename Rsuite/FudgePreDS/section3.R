@@ -192,8 +192,9 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   for (datatype in names(input)){
     if (datatype %in% c("OH", "MH", "MF")){
       for (varname in names(input[[datatype]])){
-        print(transform.vars)
-        print(names(input[[datatype]]))
+        print(varname)
+#         print(transform.vars)
+#         print(names(input[[datatype]]))
         grep.var <- sapply(transform.vars, function(x){grepl(paste0("^", x, "\\."), varname, perl=T)})
 #         print(grep.vars)
 #         stop('examine s3 output')
@@ -201,6 +202,7 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
         #if (varname %in% transform.vars){
         if ( any(grep.var) ){
           #if var is one of the vars receiving a transform
+          print("tform triggered")
           if(!is.null(t.fxn[[2]])){
             #If arguments to the transform, use them
             input[[datatype]][[varname]] <- do.call(t.fxn[[1]], 
@@ -212,8 +214,9 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
           }
         }
       }
-    }
+    } 
   }
+  #stop('examine the transform out')
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))

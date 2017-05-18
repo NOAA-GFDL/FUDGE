@@ -30,7 +30,7 @@ def get_pp_specs(xml):
 					if fmatch is None:
 						print("Error in get_pp_specs! Line " + line + " failed the partition search!")
 					else:
-						pp_spec_dict[patt] = fmatch	
+						pp_spec_dict[patt] = fmatch.partition(" ")[0]	
 	#if len(pp_spec_dict) != 3:
 	#	print "Error in get_pp_specs: there should either be 3 matches or 0 matches!"
 	return(pp_spec_dict)								
