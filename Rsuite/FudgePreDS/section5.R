@@ -180,7 +180,14 @@ callPRPostproc <- function(test, input, adjusted.output){
       #non-OH downscaling is straightforward:
       #get center of possible 9-point mask and apply to ds output
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
+      print('summary of fut.prmask:')
+      print(summary(fut.prmask))
+      print(summary(as.vector(adjusted.output$ds.out)))
+      print(summary(as.vector(adjusted.output$ds.out[!is.na(adjusted.output$ds.out)])))
+
       adjusted.output$ds.out[!fut.prmask] <- 0
+      print(summary(as.vector(adjusted.output$ds.out)))
+      #stop('examine the s5 output')
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
       obs.prmask <- get.xy.center(test$qc_args$targ.prmask)
@@ -222,10 +229,14 @@ callPRPostproc <- function(test, input, adjusted.output){
                              pr.units = input$data.atts$pr_oh_units, 
                              pr.index = test$qc_args$thold, 
                              pr.conserve = (test$qc_args$conserve=='on'))
+  print(summary(as.vector(adjusted.pr$ds.out)))
+  #stop('examine s5 out')
   adjusted.output$ds.out <- adjusted.pr$ds.out
   if(test$qc.mask=='on'){
     adjusted.output$qc.mask <- get.xy.center(adjusted.output$qc.mask)
   }
+print(summary(as.vector(adjusted.output$ds.out)))
+#stop('examine return from s5')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 

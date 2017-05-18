@@ -16,9 +16,10 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
 #  print(lapply(MH, 'dim'))
 #  print(lapply(MF, 'dim'))  
   
-  OH.data <- compress.xy.data(OH)
-  MH.data <- compress.xy.data(MH)
-  MF.data <- compress.xy.data(MF)
+#   OH.data <- compress.xy.data(OH)
+#   MH.data <- compress.xy.data(MH)
+#   MF.data <- compress.xy.data(MF)
+  
   print(str(MF))
   targ.var <- names(OH)
   nrips <- dim(MF[[1]])[4]
@@ -62,13 +63,15 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       )
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
       print("summary of notna.index:")
-      print(summary(notna.index))
-      out.data[,,,n,,][notna.index] <- ds.out #[notna.index]
+      print(length(notna.index))
+      print(length(ds.out))
+      print(dim(missval.out$complete.fut))
+      out.data[,,,n,,][missval.out$complete.fut[,,,n,,]] <- ds.out #[notna.index]
       #If train_qcmask, check for whether function had to retry
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,][notna.index] <- NA #[notna.index]
+        qc[,,,n,,][missval.args$complete.fut] <- NA #[notna.index]
       }
     }
   }else{

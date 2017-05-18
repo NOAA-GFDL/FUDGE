@@ -37,6 +37,7 @@ index.delta <- function(hist_leapdays, fut_leapdays, hist_mask, fut_mask, data){
   if (day_diff != 0){
     print(length(hist_days))
     print(length(fut_days))
+    print("hist and fut non-leap day count:")
     print(sum(hist_days))
     print(sum(fut_days))
     print(rle(as.numeric(hist_days)))
@@ -44,6 +45,12 @@ index.delta <- function(hist_leapdays, fut_leapdays, hist_mask, fut_mask, data){
     stop(paste('Error in index.delta! number of present days in future and historical samples', 
                'did not match!'))
   }
+#   print(length(fut_days))
+#   print(length(hist_days))
+#   print(summary(fut_days))
+#   print(summary(hist_days))
+#   print(length(out))
+#   print(length(data))
   out[fut_days] <- data[hist_days]
   #Repeat Feb.28 for Feb. 29
   out[fut_leapdays] <- out[fut_leapdays-1]

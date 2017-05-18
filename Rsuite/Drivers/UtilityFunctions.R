@@ -119,7 +119,9 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
     )
                           ###Change added 9-23 to test the ppr opts)
                                        #apply_0_mask=pr_opts$apply_0_mask))
+    #print(str(pr_opts))
     if('transform' %in% names(pr_opts)){
+      #print(str(pr_opts))
       if(pr_opts$transform!='none'){
         if ('vars' %in% names(pr_opts)){
           vars = unlist(strsplit(pr_opts$vars, ","))

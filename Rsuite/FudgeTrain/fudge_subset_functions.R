@@ -49,29 +49,6 @@ pad.fudge.var.dim <- function(data, pad.dim, pad.by=1,
   remove(data)
   gc()
   return(out.data)
-#   if (pad.dim=='x'){
-#     x.len <- new.dim[1]
-#     new.dim[1] <- x.len + pad.by
-#     if(pad.x.loc=='start'){
-#       pad.seq = (new.dim[1]-x.len+1):new.dim[1]
-#     }else if(pad.x.loc=='end'){
-#       pad.seq = 1:x.len
-#     }
-#   }else if (pad.dim=='y'){
-#     #y dim always gets iterated over twice
-#     y.len <- new.dim[2]
-#     new.dim[2] <- new.dim[2] + (pad.by - 1) # no longer * 2 
-#   }
-#   out.data <- array(NA, dim=new.dim)
-#   if (pad.dim=='x'){
-#     out.data[pad.seq,,,,,] <- data
-#   }else if (pad.dim=='y'){
-#     pad.start <- (pad.by-1)/2 #start counting from here
-#     out.data[,(1:y.len) + (pad.start),,,,] <- data
-#   }
-#   remove(data)
-#   gc()
-#   return(out.data)
 }
 
 get.FUDGE.subset <- function(by, idx, idx_max, stride=0){
@@ -222,5 +199,7 @@ get.xy.center <- function(dataset){
   spat.dims <- dim(dataset)[1:2]
   x.mid <- floor(mean(1, spat.dims[1]))
   y.mid <- floor(mean(1, spat.dims[2]))
-  return(dataset[x.mid,y.mid,,,, ,drop=F])
+  data.slice <- dataset[x.mid,y.mid,,,, ,drop=F]
+  dim(data.slice) <- c( c(1,1), dim(dataset)[3:6])
+  return(data.slice)
 }

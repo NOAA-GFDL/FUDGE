@@ -6,13 +6,17 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
   #'shorter.
   #' Used by: delta downscaling, CFQM downscaling, the pr masking functions when
   #' OH is used to downscale
-  if (nyears_hist >= nyears_fut){
+  if (nyears_hist > nyears_fut){
     if (start_year > 1){
-      start_idx <- hist.year.div[start_year] + 1
+      start_idx <- hist.year.div[start_year - 1] + 1
     }else{
       start_idx <- 1
     }
-    if (start_idx + hist.year.div[start_year] <= hist.year.div[length(hist.year.div)]){
+    tmp.ndays <- start_idx:hist.year.div[nyears_fut + start_year - 1]
+    max.ndays <- start_idx:hist.year.div[length(hist.year.div)]
+    if (hist.year.div[start_year + nyears_fut - 1] <= hist.year.div[length(hist.year.div)]){
+  #  if (start_idx + hist.year.div[start_year] <= hist.year.div[length(hist.year.div)]){
+   #if (length(tmp.ndays) >= max.ndays){
       #Net next nyears samples
       OH.idx <- start_idx:hist.year.div[nyears_fut + start_year - 1]
       #start_idx <- start_idx + hist.year.div[nyears_fut + start_year]
@@ -20,10 +24,10 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
       #Get last n samples from end of OH; cycle around to beginning
       year_diff = nyears_hist - start_year
       OH.idx <- c(start_idx:hist.year.div[length(hist.year.div)], 
-                  hist.year.div[1]:hist.year.div[year_diff])
+                  hist.year.div[1]:hist.year.div[year_diff - 1])
       #start_idx <- OH.idx[length(OH.idx)] + 1
     }
-    start_year <- ((start_year  + nyears_fut) %% nyears_hist) + 1
+    start_year <- ((start_year  + nyears_fut) %% nyears_hist) #I'm not sure the +1 that used to be here is needed
   }else{
     #If you are repeating OH samples to make up MF
     #....this should be based off of YEARS, not simple indices

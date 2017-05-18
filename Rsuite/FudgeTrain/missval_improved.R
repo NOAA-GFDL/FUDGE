@@ -160,6 +160,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #a single status for the entire thing.
   complete.hist <- complete.cases(c(OH,MH))
   complete.fut <- complete.cases(MF)
+  dim(complete.fut) <- dim(MF[[1]])
+  dim(complete.hist) <- dim(MH[[1]])
   return(list(OH=OH, MH=MH, MF=MF, 
               qc=qcmask, 
               mv.retry=mv.retry, ds.possible=ds.possible, 

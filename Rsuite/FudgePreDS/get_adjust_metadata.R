@@ -17,10 +17,11 @@ get.adjust.metadata <- function(OH, MH, MF){
                                     # out.metadata$pr_oh)
   out.metadata$pr_mh_units <- lapply(MH$metadata, '[[', 'units')[mh_idx]
   out.metadata$pr_mf_units <- lapply(MF$metadata, '[[', 'units')[mf_idx]
+  out.metadata$pr_vars <- NA
   if (!is.null(pr_opts)){
+    if ('vars' %in% names(pr_opts)){
     out.metadata$pr_vars <- unlist(strsplit(pr_opts$vars, ","))
-  }else{
-    out.metadata$pr_vars <- NA
+    }
   }
   return(out.metadata)
 }

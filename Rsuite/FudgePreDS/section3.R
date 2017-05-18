@@ -34,7 +34,8 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                            adjust.metadata=list(),
                            create.qc.mask=FALSE, create.adjust.out=FALSE, 
                            s5.instructions=list('na'), 
-                           missval.args = list()){
+                           missval.args = list(), 
+                           prime_predictor='none'){
   #Create list of variables that will not change with iteration
   #input<- list('MH' = MH, 'OH' = OH, 'MF' = MF)
   #Define data that will change with iteration
@@ -51,8 +52,10 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #that go into it. 
     print(test$type)
     adjusted.list <- switch(test$type,
-                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list, adjusted.list$missval.args),
-                            'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list, adjusted.list$missval.args),
+                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list, 
+                                                 adjusted.list$missval.args, prime_predictor),
+                            'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list, 
+                                                          adjusted.list$missval.args),
                             stop(paste('Adjustment Method Error: method', test$type, 
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }
@@ -61,7 +64,8 @@ callS3Adjustment<-function(s3.instructions=list('na'),
   return(adjusted.list)
 }
 
-callPRPreproc <- function(test, input, postproc.output, missval.args){
+callPRPreproc <- function(test, input, postproc.output, 
+                          missval.args, prime_predictor){
   #Outputs a set of adjusted input datasets
   #as output by the precipitation adjustment
   #functions
@@ -95,30 +99,36 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
   #    MF.slice <- input$MF[[pr_target]][,,n,,,]
   #save(file='/work/cew/pre_adjust_pr.R', list=c('input', 'lopt.drizzle', 'lopt.conserve', 'threshold'))
   #stop('examine this pre output')
-  temp.out <- AdjustWetdays(ref.data=input$OH[[pr_target]],   ref.units=input$att.list$pr_oh_units, 
-                            adjust.data=input$MH[[pr_target]],adjust.units=input$att.list$pr_mh_units[[pr_target]],
-                            future.data=input$MF[[pr_target]],future.units=input$att.list$pr_mf_units[[pr_target]],
+  print(pr_target)
+  print(nrips)
+  print(prime_predictor)
+  print(str(input$OH))
+  print(str(input$MH))
+  print(str(input$MF))
+  temp.out <- AdjustWetdays(ref.data=input$OH[[prime_predictor]],   ref.units=input$att.list$pr_oh_units, 
+                            adjust.data=input$MH[[prime_predictor]],adjust.units=input$att.list$pr_mh_units[[pr_target]],
+                            future.data=input$MF[[prime_predictor]],future.units=input$att.list$pr_mf_units[[pr_target]],
                             opt.wetday=threshold, 
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 
                             zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
-  input$OH[[pr_target]] <- temp.out$ref$data   #only a single target variable
-  input$MH[[pr_target]] <- temp.out$adjust$data
-  input$MF[[pr_target]] <- temp.out$future$data
+  input$OH[[prime_predictor]] <- temp.out$ref$data   #only a single target variable
+  input$MH[[prime_predictor]] <- temp.out$adjust$data
+  input$MF[[prime_predictor]] <- temp.out$future$data
   if(apply.0.mask){
     tmp.ref <- temp.out$ref$pr_mask
     tmp.adj <- temp.out$adjust$pr_mask
     tmp.ref[tmp.ref==0] <- NA
     tmp.adj[tmp.adj==0] <- NA
-    input$OH[[pr_target]] <- (input$OH[[pr_target]]   * tmp.ref)
-    for (el in input$att.list$pr_mh){
+    input$OH[[prime_predictor]] <- (input$OH[[prime_predictor]]   * tmp.ref)
+    for (el in prime_predictor){ #input$att.list$pr_mh
       input$MH[[el]] <- input$MH[[el]] * tmp.adj
     }
     #This should make sure that when extra missing values are added, all datasets
     #in the predictor datasets will have the missing values added back in
     tmp.fut <- temp.out$future$pr_mask
     tmp.fut[tmp.fut==0] <- NA
-    for (el in input$att.list$pr_mf){
+    for (el in prime_predictor){ #input$att.list$pr_mf
       input$MF[[el]] <- input$MF[[el]] * tmp.fut
     }
     #Save future pr mask fo application in section 5;
@@ -134,18 +144,17 @@ callPRPreproc <- function(test, input, postproc.output, missval.args){
       pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
     }
   }
-  missval.args$pr <<- list(OH=temp.out$ref$pr_mask, 
+  missval.args$pr_opts <<- list(OH=temp.out$ref$pr_mask, 
                            MH=temp.out$adjust$pr_mask, 
                            MF=temp.out$future$pr_mask, 
                            pr_oh = input$att.list$pr_oh, 
                            pr_mh = input$att.list$pr_mh, 
                            pr_mf = input$att.list$pr_mf, 
                            adjusted.thold = temp.out$adjusted.thold)
-  #  print("summary of missval.args in pr adjust:")
-  #  print(str(missval.args))
   if(apply.0.mask){
     postproc.output$propts <- pr_mod
   }
+
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))
@@ -183,7 +192,12 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   for (datatype in names(input)){
     if (datatype %in% c("OH", "MH", "MF")){
       for (varname in names(input[[datatype]])){
-        grep.var <- grepl(varname, transform.vars, fixed=T)
+        print(transform.vars)
+        print(names(input[[datatype]]))
+        grep.var <- sapply(transform.vars, function(x){grepl(paste0("^", x, "\\."), varname, perl=T)})
+#         print(grep.vars)
+#         stop('examine s3 output')
+#         grep.var <- grepl(varname, transform.vars, fixed=T)
         #if (varname %in% transform.vars){
         if ( any(grep.var) ){
           #if var is one of the vars receiving a transform

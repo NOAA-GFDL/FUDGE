@@ -98,7 +98,15 @@ loop.xy.data <- function(){
       if (is.ds.happening.fxn(i=i,j=j,
                               OH.slice=OH.slice, MH.slice=MH.slice, 
                               MF.slice=MF.slice)){
-        
+        print("compressing data")
+        OH.slice <- compress.xy.data(OH.slice)
+        MH.slice <- compress.xy.data(MH.slice)
+        MF.slice <- compress.xy.data(MF.slice)
+        if ( !(prime_predictor) %in% names(MH.slice)){
+          print(paste("Downscaling not possible at", 
+                      'i', ival, 'j', jval,
+                      "due to missing prime predictor"))
+        }else{
         #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
         #looping by time window
         message('Looking for pre-processing functions to apply')
@@ -113,7 +121,8 @@ loop.xy.data <- function(){
                                           #how to pass it in? Pointer in global environment?
                                           adjust.metadata,
                                           s5.instructions=post.ds, 
-                                          missval.args = missval.args)
+                                          missval.args = missval.args, 
+                                          prime_predictor=prime_predictor)
           #Assign output and remove temporary output
          # missval.args <- temp.output$missval.args
         ####h_record_trace_pr
@@ -254,9 +263,10 @@ loop.xy.data <- function(){
           }
           remove(temp.postproc)
         }
-      #  print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-      #  stop('examine output - the tail adjust is giving weird and wonky values')
-      } 
+#        print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+#        stop('examine output - the tail adjust is giving weird and wonky values')
+      }
+      }#prime_predictor present
     }#loop by y
   }#loop by x
   # print(summary(as.vector(output.all$ds)))

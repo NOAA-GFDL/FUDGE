@@ -313,11 +313,13 @@ tmask.list <- get.fudge.timemask.list()
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
-if (!exists('pr_opts')){
-  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, NULL)
-}else{
-  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
-}
+# if (!exists('pr_opts')){
+#   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, NULL)
+# }else{
+#   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
+# }
+
+adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######
@@ -354,28 +356,34 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
 #            'qc' = array(NA, dim=output.dim))
 
 #Added 02-14-17 - trying to set up defaults differently
-set.ds.defaults <- function(ds.method, args, ...){
+set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #Alter args for a given method depending on the args allowed
   #(NOTE: may include settings other than default, such as QDM type to ratio)
+  
+  #Okay - from now on, we also need to set a default prime_predictor; 
+  #the lm() and MBC(0 family of methods may reset this value)
+  #print(str(as.list(match.call())))
+  env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   default.methods <- c("MBC", "QDM", "CFQM")
   if (! (ds.method %in% default.methods)){
-    return(args)
+    #return(args)
   }else{
-    new.args <- switch(ds.method, 
-                       'MBC' = set.MBC.defaults(args, ...), 
-                      'QDM' = set.QDM.defaults(args, ...),
-                      "CFQM" = set.CFQM.defaults(args, ...),
-                      "lmAsync" = set.lmAsync(args, ...), 
-                      "lmstepAsync" = set.lmstepAsync(args, ...),
-                       stop(paste("Error in set.ds.defaults: no method", 
-                                  ds.method, "!")))
-    return(new.args)
+    env <- switch(ds.method, 
+           'MBC' = set.MBC.defaults(args, ..., env), 
+           'QDM' = set.QDM.defaults(args, ..., env),
+           "CFQM" = set.CFQM.defaults(args, ..., env),
+           "lmAsync" = set.lmAsync(args, ..., env), 
+           "lmstepAsync" = set.lmstepAsync(args, ..., env),
+           stop(paste("Error in set.ds.defaults: no method", 
+                      ds.method, "!")))
+    #return(new.args)
   }
+  return(env)
 }
 message("Checking for default ds arguments (requires var units)")
-ds.args <<- set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
+set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
                             pre.ds.train=pre.ds.train, 
-                            ds.ref=ds.ref, 
+                            ds.ref=ds.ref, aux.ref=aux.ref,
                             env=environment())
 
 

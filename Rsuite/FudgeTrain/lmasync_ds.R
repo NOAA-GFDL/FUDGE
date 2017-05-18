@@ -205,6 +205,20 @@ set.lmAsync.defaults <- function(args, ...){
   #arguments.
   
   #get stencil - should be same for MH and MF
-  
+  prime_predictor <<- get.prime.predictor(args$prime_var, aux.ref)
+  return_args <- c(args, list(prime_predictor=prime_predictor))
+  env$ds.args <- return_args
+  env$prime_predictor <- prime_predictor
+  return(env)
 }
-"lmstepAsync" = set.lmstepAsync.defaults(args, ...)
+
+set.lmstepAsync.defaults <- function(args, ...){
+  #Same.
+  
+  #get stencil - should be same for MH and MF
+  prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
+  return_args <- c(args, list(prime_predictor=prime_predictor))
+  env$ds.args <- return_args
+  env$prime_predictor <- prime_predictor
+  return(env)
+}
