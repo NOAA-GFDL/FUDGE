@@ -99,12 +99,14 @@ callPRPreproc <- function(test, input, postproc.output,
   #    MF.slice <- input$MF[[pr_target]][,,n,,,]
   #save(file='/work/cew/pre_adjust_pr.R', list=c('input', 'lopt.drizzle', 'lopt.conserve', 'threshold'))
   #stop('examine this pre output')
-  print(pr_target)
+#  print(pr_target)
   targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
   pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$MH))
-  temp.out <- AdjustWetdays(ref.data=input$OH[[targ_idx]],   ref.units=input$att.list$pr_oh_units, 
-                            adjust.data=input$MH[[pred_idx]],adjust.units=input$att.list$pr_mh_units[[1]],
-                            future.data=input$MF[[pred_idx]],future.units=input$att.list$pr_mf_units[[1]],
+#   print(pred_idx)
+#   print(targ_idx)
+  temp.out <- AdjustWetdays(ref.data=input$OH[[prime_predictor]],   ref.units=input$att.list$pr_oh_units, 
+                            adjust.data=input$MH[[prime_predictor]],adjust.units=input$att.list$pr_mh_units[[1]],
+                            future.data=input$MF[[prime_predictor]],future.units=input$att.list$pr_mf_units[[1]],
                             opt.wetday=threshold, 
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 
@@ -181,25 +183,17 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
                                  arg=t.fxn[[4]], 
                                  vars=""))
   postproc.output <- c(list(backtform), postproc.output)
-  #print(backtform)
-  #   print('sumamry of input:')
-  #   print(lapply(lapply(input, '[[', 'pr'), summary))
   #...you know, for more readable metadata, it might be worth it to do cubrt and 
   #sqrt functions. Since the names wind up in the metadata.
   for (datatype in names(input)){
     if (datatype %in% c("OH", "MH", "MF")){
       for (varname in names(input[[datatype]])){
-        print(varname)
-#         print(transform.vars)
-#         print(names(input[[datatype]]))
-        grep.var <- sapply(transform.vars, function(x){grepl(paste0("^", x, "\\."), varname, perl=T)})
-#         print(grep.vars)
-#         stop('examine s3 output')
-#         grep.var <- grepl(varname, transform.vars, fixed=T)
-        #if (varname %in% transform.vars){
+        #print(varname)
+        grep.var <- sapply(transform.vars, 
+                           function(x){grepl(paste0("^", x, "\\."), 
+                                             varname, perl=T)})
         if ( any(grep.var) ){
           #if var is one of the vars receiving a transform
-          print("tform triggered")
           if(!is.null(t.fxn[[2]])){
             #If arguments to the transform, use them
             input[[datatype]][[varname]] <- do.call(t.fxn[[1]], 

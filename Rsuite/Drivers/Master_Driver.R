@@ -313,13 +313,13 @@ tmask.list <- get.fudge.timemask.list()
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
-# if (!exists('pr_opts')){
-#   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, NULL)
-# }else{
-#   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
-# }
+if (!exists('pr_opts')){
+  adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
+}else{
+  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts=pr_opts)
+}
 
-adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
+#adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
 
 #delayedAssign('targ.dim', c(eval(parse(text=targ.dimstr))))
 ######

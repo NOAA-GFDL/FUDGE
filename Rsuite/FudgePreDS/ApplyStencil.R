@@ -35,6 +35,7 @@ get.prime.predictor <- function(prime_var, aux.ref, ...){
   prime.stencil[prime.stencil != 3] <- NA
   tmp.list <- list()
   dim(prime.stencil) <- c(dim(prime.stencil), c(1,1,1,1))
+  print(prime_var)
   tmp.list[[prime_var]] <- prime.stencil
   tmp.data <- compress.xy.data(tmp.list)
   if (length(tmp.data) == 0){
@@ -44,20 +45,5 @@ get.prime.predictor <- function(prime_var, aux.ref, ...){
     return(names(tmp.data))
   }else{
     return(paste0(prime_var, ".0.0"))
-  }
-}
-
-FUDGE.error.function <- function(){
-  #'Prints out information needed for debugging calls from FUDGE
-  #'in the production workflow - namely, your ival, jval, and twindow coords.
-  
-  cat(paste("ival:", ival), "\n")
-  cat(paste("jval:", jval), '\n')
-  cat(paste("w:", w), '\n')
-  
-  print(str(as.list(eval('match.call', parent.frame(n=2)))))
-  if (!interactive()){
-    on.exit(traceback(2)) #skips first two entries on the stack (i.e. call to tb)
-    q('no', 1, FALSE)
   }
 }

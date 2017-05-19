@@ -20,7 +20,6 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
 #   MH.data <- compress.xy.data(MH)
 #   MF.data <- compress.xy.data(MF)
   
-  print(str(MF))
   targ.var <- names(OH)
   nrips <- dim(MF[[1]])[4]
   out.data <- array(NA, dim=dim(MF[[1]]))
@@ -62,10 +61,10 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
                        'multiparm_step' = multiparm_step.downscale(lm.model, MF.slice, args)                       
       )
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-      print("summary of notna.index:")
-      print(length(notna.index))
-      print(length(ds.out))
-      print(dim(missval.out$complete.fut))
+#       print("summary of notna.index:")
+#       print(length(notna.index))
+#       print(length(ds.out))
+#       print(dim(missval.out$complete.fut))
       out.data[,,,n,,][missval.out$complete.fut[,,,n,,]] <- ds.out #[notna.index]
       #If train_qcmask, check for whether function had to retry
       if(missval.out$mv.retry && train_qcmask){
@@ -81,8 +80,8 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       qc = array(NA, dim=dim(MF.data[[1]]))
     }
   }
-  print("downscaled output:")
-  print(summary(as.vector(out.data)))
+#  print("downscaled output:")
+#  print(summary(as.vector(out.data)))
 #  save(file="/work/cew/testing/h_pr_3.R", list=c('out.data'))
 #   stop('examine output')
   return(list(ds=out.data, qc=qc))
@@ -124,7 +123,6 @@ lmstep.train <- function(OH,MH,args){
     k.val <- 2
   }
   direc='forward'
-  print(args)
   targ.var <- args$targ.var
   test.list <- c(OH, MH)
   test.prod <- data.frame(matrix(unlist(test.list), ncol=length(test.list)))

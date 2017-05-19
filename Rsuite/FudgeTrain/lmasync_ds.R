@@ -46,15 +46,15 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
       MH.data <- missval.out$MH
       MF.data <- missval.out$MF #added 11-8-16; might be responsible for lm diffs
       lm.model <- switch(ds.method, 
-                         'lmAsync' = multiparm.train(OH.data, 
+                         'lmAsync' = lmAsync.train(OH.data, 
                                                      MH.data, args), 
-                         'lmstepAsync' = multiparm_step.train(OH.data, MH.data, args)
+                         'lmstepAsync' = lmstepAsync.train(OH.data, MH.data, args)
       )
       MF.slice <- lapply(MF.data, '[', ,,,n,,)
       MF.slice <- lapply(MF.slice, 'as.vector')
       ds.out <- switch(ds.method, 
-                       'lmAsync' = multiparm.downscale(lm.model, MF.slice,args), 
-                       'lmstepAsync' = multiparm_step.downscale(lm.model, MF.slice, args)
+                       'lmAsync' = lmAsync.downscale(lm.model, MF.slice,args), 
+                       'lmstepAsync' = lmstepAsync.downscale(lm.model, MF.slice, args)
       )
       #out.data[,,,n,,] <- index.qm(index.mask, ds.out, olap)
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
@@ -77,7 +77,7 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
 }
 
 
-multiparm.train <- function(OH, MH, args){
+lmAsync.train <- function(OH, MH, args){
   #OH and MH are named lists of vectors returned by compress.xy.data
   OH <- lapply(OH, remove.missvals)
   MH <- lapply(MH, remove.missvals)
@@ -105,7 +105,7 @@ multiparm.train <- function(OH, MH, args){
   return(lm.model)
 }
 
-multiparm.downscale <- function(lm.model, MF, args){
+lmAsync.downscale <- function(lm.model, MF, args){
   #MF is a named list of vectors returned from compress.xy.data
   #...so we can't sort by DS. We can at least sort MF by rank, though.
   MF <- lapply(MF, remove.missvals)
@@ -122,7 +122,7 @@ multiparm.downscale <- function(lm.model, MF, args){
   return(out[mf.rank])
 }
 
-multiparm_step.train <- function(OH,MH,args){
+lmstepAsync.train <- function(OH,MH,args){
   #'Calls R's lm() function using targ as a function
   #'of linear variability of one or more variables in 
   #'pred, optimizes the model with step, and then uses 
@@ -133,7 +133,7 @@ multiparm_step.train <- function(OH,MH,args){
   MH <- lapply(MH, remove.missvals)
   
   oh.order <- order(OH[[1]])
-  OH <- lapply(OH, '{', oh.order)
+  OH <- lapply(OH, '[', oh.order)
   if ('prime_var' %in% names(args)){
     mh.order <- order(MH[args$prime_var])
   }else{
@@ -164,7 +164,7 @@ multiparm_step.train <- function(OH,MH,args){
   return(lm.train.model)
 }
 
-multiparm_step.downscale <- function(lm.train.model, MF, args){
+lmstepAsync.downscale <- function(lm.train.model, MF, args){
   #'Calls downscaling function on lmstep 
   #'#sort MF - we don't have DS, but we can sort by first el of MF instead
   
@@ -218,6 +218,7 @@ set.lmstepAsync.defaults <- function(args, ..., env){
   #Same.
   
   #get stencil - should be same for MH and MF
+  print(args)
   prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
   return_args <- c(args, list(prime_predictor=prime_predictor))
   env$ds.args <- return_args

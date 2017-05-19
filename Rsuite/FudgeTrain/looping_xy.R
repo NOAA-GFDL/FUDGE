@@ -126,21 +126,11 @@ loop.xy.data <- function(){
           #Assign output and remove temporary output
          # missval.args <- temp.output$missval.args
         ####h_record_trace_pr
-#         str(temp.output$missval.args)
-#         print(missval.args$pr)
-#         print(missval.args$pr$adjusted.thold)
-#         print(dim(pr_trace))
-#         print(dim(pr_trace[ival,jval,,1,,1]))
-#print(dim(pr_trace))
-#stop('examine this out')
         #pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
           post.ds <- temp.output$s5.list
           OH.slice <- temp.output$input$OH
           MH.slice <- temp.output$input$MH
           MF.slice <- temp.output$input$MF
-###CW mod for writing adjusted trace
-#trace.pr[ival,jval] <<- missval.args$pr$adjusted.thold
-#stop('examine this output')
           if (!is.null(temp.output$input$qc)){
             for (el in names(temp.output$qc)){
               ds[[el]] <- temp.output$qc[[el]]
@@ -155,8 +145,8 @@ loop.xy.data <- function(){
           w <<- w
           qc.out <- NULL
           if (tmasks$apply_tmask){
-            print(str(OH.slice))
-            stop('examine call from lapply')
+#             print(str(OH.slice))
+#             stop('examine call from lapply')
             OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
             MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
             MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])
