@@ -40,7 +40,7 @@ def parse_aux_info(jsonfile):
 			else:
 				wallclocktime = jsondict['wallclocktime']	
 		else:
-			wallclocktime='5:00:00'
+			wallclocktime='12:00:00'
 		#Subsets in i and j that we are interested in
 		defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}	
 		subsetdict = {}

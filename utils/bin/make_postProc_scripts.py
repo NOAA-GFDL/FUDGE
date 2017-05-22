@@ -26,7 +26,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 	#we've been staying in the queue for far longer than we normally do.
 	pp_runcode_header = "\n".join(["#!/bin/tcsh", 
 								   "#PBS -S /bin/tcsh", 
-								   "#PBS -l nodes=1:ppn=2,walltime=2:00:00", 
+								   "#PBS -l nodes=1:ppn=2,walltime=4:00:00", 
 								   "#PBS -r y",
 								   "#PBS -j oe", 
 								   "#PBS -N fudge_postProc", 
