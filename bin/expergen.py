@@ -19,7 +19,7 @@ from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
 from create_all_runscripts import awful_runcode_hack
-from get_pp_specs import get_pp_specs
+from get_comment_specs import get_comment_specs
 import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 import make_postProc_scripts
@@ -597,7 +597,7 @@ def main():
 	#oh_by = str(by_params[1]) #MH
 	#mf_by = str(by_params[2])#MF
 		### As of 10-13, get the ncpus and njobs specifications from the XML
-	specdict = get_pp_specs(uinput)
+	specdict = get_comment_specs(uinput)
 	njobs = int(specdict['njobs'])
 	ncpus = int(specdict['ncpus'])
 	#And as of 1-19-17, get the aux file specifications from the options
@@ -614,6 +614,11 @@ def main():
 	else:
 		auxinput = make_aux_input(output_grid, sbase)
 	auxinfo = parse_aux_info(auxinput)
+	#If aux file is not default, aux file overrides XML parameters
+	if auxinput['njobs'] != 4:
+		njobs = auxinput['njobs']
+	if auxinput['ncpus'] != 2:
+		ncpus = auxinput['ncpus']
 
 		
 		

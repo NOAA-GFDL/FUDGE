@@ -40,7 +40,8 @@ FUDGE.error.handler.function <- function(){
   }
 }
 #previously traceback
-options(error=FUDGE.error.handler.function, warn = 1, showErrorCalls=TRUE)
+options(error=FUDGE.error.handler.function, 
+        warn = 1, showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
 ###after this point. Probably not a component of a --vanilla run.
 ###But it unquestionably simplifies debugging.

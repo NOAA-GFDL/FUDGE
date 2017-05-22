@@ -41,6 +41,15 @@ def parse_aux_info(jsonfile):
 				wallclocktime = jsondict['wallclocktime']	
 		else:
 			wallclocktime='12:00:00'
+		#njobs and ncpus parameters: 
+		if 'njobs' in jsondict.keys():\			
+			njobs = jsondict['njobs'][0]
+		else:
+			njobs = 4
+		if 'ncpus' in jsondict.keys():
+			ncpus = jsondict['ncpus'][0]
+		else:
+			ncpus = 2	
 		#Subsets in i and j that we are interested in
 		defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}	
 		subsetdict = {}
@@ -65,7 +74,8 @@ def parse_aux_info(jsonfile):
 						copy_files.append(filetmp)
 		if len(copy_files) > 1:
 			copy_files = list(set(copy_files))				
-	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 'subsetdict':subsetdict})
+	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, \, 
+	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus})
 	
 def make_aux_input(grid, script_base):
 	#Creates an aux info file with g-or-earlier default settings: minifiles, 
