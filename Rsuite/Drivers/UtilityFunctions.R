@@ -117,6 +117,12 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
                                        ignore0=ifelse(pr_opts$ignore0=='off', 
                                                       'off', 'on'))
     )
+    if ('pr_adjmethod' %in% names(pr_opts)){
+      pre_ds$propts$pp.args['method'] <- pr_opts$pr_adjmethod
+    }else{
+      #Maintain the default behavior up until H wrapup
+      pre_ds$propts$pp.args['method'] <- 'approx'
+    }
                           ###Change added 9-23 to test the ppr opts)
                                        #apply_0_mask=pr_opts$apply_0_mask))
     #print(str(pr_opts))

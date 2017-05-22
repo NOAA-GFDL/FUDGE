@@ -35,7 +35,7 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
                           adjust.data=NA, adjust.units=NULL, 
                           future.data=NA, future.units=NULL,
                           opt.wetday, lopt.drizzle=FALSE, lopt.conserve=FALSE,
-                          zero.to.na=FALSE,
+                          zero.to.na=FALSE, adj.method='none',
                           lopt.graphics=FALSE, verbose=FALSE){
   
   #Convert the threshold and create the reference mask
@@ -87,10 +87,10 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
   if (fraction.wet.adj > fraction.wet.ref) {
     message('adjusting MH/MF threshold')
     #Find the threshold for a drizzle adjustment
-    adj.method="orig"
+    #adj.method="orig"
     adj.thold <- switch(adj.method, 
-                        "orig" = find.thold.orig(fraction.wet.ref, OH.var, MH.var), 
-                        "new"  = find.thold.kd(fraction.wet.ref, OH.var, MH.var))
+                        "approx" = find.thold.orig(fraction.wet.ref, OH.var, MH.var), 
+                        "exact"  = find.thold.kd(fraction.wet.ref, OH.var, MH.var))
     
     #If it would result in changed results, apply
     loop.adj.wetdays <- adjust.data[adj.idx] > adj.thold

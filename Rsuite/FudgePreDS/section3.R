@@ -110,6 +110,7 @@ callPRPreproc <- function(test, input, postproc.output,
                             opt.wetday=threshold, 
                             lopt.drizzle=lopt.drizzle, 
                             lopt.conserve=lopt.conserve, 
+                            adj.method=test$pp.args$method,
                             zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
   input$OH[[prime_predictor]] <- temp.out$ref$data   #only a single target variable
   input$MH[[prime_predictor]] <- temp.out$adjust$data

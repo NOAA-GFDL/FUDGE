@@ -42,7 +42,7 @@ def parse_aux_info(jsonfile):
 		else:
 			wallclocktime='12:00:00'
 		#njobs and ncpus parameters: 
-		if 'njobs' in jsondict.keys():\			
+		if 'njobs' in jsondict.keys():	
 			njobs = jsondict['njobs'][0]
 		else:
 			njobs = 4
@@ -74,7 +74,7 @@ def parse_aux_info(jsonfile):
 						copy_files.append(filetmp)
 		if len(copy_files) > 1:
 			copy_files = list(set(copy_files))				
-	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, \, 
+	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 
 	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus})
 	
 def make_aux_input(grid, script_base):

@@ -615,10 +615,10 @@ def main():
 		auxinput = make_aux_input(output_grid, sbase)
 	auxinfo = parse_aux_info(auxinput)
 	#If aux file is not default, aux file overrides XML parameters
-	if auxinput['njobs'] != 4:
-		njobs = auxinput['njobs']
-	if auxinput['ncpus'] != 2:
-		ncpus = auxinput['ncpus']
+	if auxinfo['njobs'] != 4:
+		njobs = auxinfo['njobs']
+	if auxinfo['ncpus'] != 2:
+		ncpus = auxinfo['ncpus']
 
 		
 		
