@@ -11,7 +11,7 @@ def get_comment_specs(xml):
 	if not osp.isfile(xml):
 		print "Error in get_npts_by! File " + xml + " does not exist"
 	#set default values of njobs,ncpus	
-	pp_spec_dict = {'njobs' : 4, 'ncpus' : 2, 'aux' : 'none'}	
+	pp_spec_dict = {'njobs' : 8, 'ncpus' : 2, 'aux' : 'none'}	
 	pp_strings = ['njobs', 'ncpus', 'aux']
 	with open(xml, 'r') as f:	
 		for line in f.readlines():

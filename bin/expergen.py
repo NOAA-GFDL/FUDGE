@@ -603,19 +603,22 @@ def main():
 	#And as of 1-19-17, get the aux file specifications from the options
 	#You don't need to parse any of these, but you do need to get a list of the 
 	#copy-able files (and possibly a wallclock time parameter)
-	if search_xml_aux and specdict['aux'] != "none":
-		auxinput = specdict['aux']
-		if(os.path.exists(auxinput)):
-			auxinput = os.path.abspath(auxinput)
+	#If no aux was specified as --aux
+	if search_xml_aux:
+		if specdict['aux'] != "none":
+			auxinput = specdict['aux']
+			if(os.path.exists(auxinput)):
+				auxinput = os.path.abspath(auxinput)
+			else:
+				print("Error in expergen: aux input from xml, "+ auxinput + " does not exist on this filesystem!")
+				print("Please use --aux input for other aux or remove from xml.")
+				sys.exit(1)
 		else:
-			print("Error in expergen: aux input from xml, "+ auxinput + " does not exist on this filesystem!")
-			print("Please use --aux input for other aux or remove from xml.")
-			sys.exit(1)
-	else:
-		auxinput = make_aux_input(output_grid, sbase)
+			print('making default aux file')
+			auxinput = make_aux_input(output_grid, sbase)		
 	auxinfo = parse_aux_info(auxinput)
 	#If aux file is not default, aux file overrides XML parameters
-	if auxinfo['njobs'] != 4:
+	if auxinfo['njobs'] != 8:
 		njobs = auxinfo['njobs']
 	if auxinfo['ncpus'] != 2:
 		ncpus = auxinfo['ncpus']

@@ -45,7 +45,7 @@ def parse_aux_info(jsonfile):
 		if 'njobs' in jsondict.keys():	
 			njobs = jsondict['njobs'][0]
 		else:
-			njobs = 4
+			njobs = 8
 		if 'ncpus' in jsondict.keys():
 			ncpus = jsondict['ncpus'][0]
 		else:
