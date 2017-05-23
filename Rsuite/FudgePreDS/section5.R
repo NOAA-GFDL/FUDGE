@@ -168,7 +168,6 @@ callPRPostproc <- function(test, input, adjusted.output){
   #Performs the adjustments needed for post-downscaling precipitation
   #on the downscaled ouput, including a threshold adjustment for drizzle
   #bias and conservation of the total precipitation per time range
-  
   arg.names <- names(test$qc_args)
   #This code is not getting used anywhere else, and I can't remmber why it was supposed to be important
   if(!('thold'%in%arg.names) || !('conserve'%in%arg.names)){
@@ -179,6 +178,7 @@ callPRPostproc <- function(test, input, adjusted.output){
     if (!ds.ref$downscale_oh){
       #non-OH downscaling is straightforward:
       #get center of possible 9-point mask and apply to ds output
+      ds.dim <- dim(adjusted.output$ds.out)
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
 #       print('summary of fut.prmask:')
 #       print(summary(fut.prmask))
@@ -186,6 +186,7 @@ callPRPostproc <- function(test, input, adjusted.output){
 #       print(summary(as.vector(adjusted.output$ds.out[!is.na(adjusted.output$ds.out)])))
 
       adjusted.output$ds.out[!fut.prmask] <- 0
+      dim(adjusted.output$ds.out) <- ds.dim
 #      print(summary(as.vector(adjusted.output$ds.out)))
       #stop('examine the s5 output')
     }else{
@@ -247,6 +248,8 @@ pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
   out.mask <- MaskPRSeries(pr.data, pr.units, pr.index)
   if(pr.conserve){
     pr.dim <- dim(pr.data)
+    print(summary(as.vector(pr.data)))
+    print(pr.dim)
     for(i in 1:pr.dim[1]){
       for(j in 1:pr.dim[2]){
         for (n in 1:pr.dim[4]){
@@ -395,6 +398,10 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #ds.vars <- names(adjusted.output$ds.out)
   
   ds.var <- names(input$hist.targ)
+#   print(str(input))
+#   print(str(adjusted.output))
+#   print(summary(as.vector(adjusted.output$ds.out)))
+#   stop('examine this output')
   out.list <- adjusted.output
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args

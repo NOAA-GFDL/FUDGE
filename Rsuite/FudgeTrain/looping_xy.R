@@ -205,6 +205,8 @@ loop.xy.data <- function(){
               qc.out <- tmp.s5$qc
             }
           }
+# print(summary(as.vector(ds.out$ds)))
+# stop('examine this output')
           #...hm. Is it possible to adapt that OU code that included window
           #as an extra dimension and include it for multiple qc masks?
           combine.out <- list(ds=ds.out$ds, qc=qc.out)
@@ -231,13 +233,15 @@ loop.xy.data <- function(){
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
           print('adding over temporary output')
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
+          print(paste("summary of", el))
+          print(summary(as.vector(output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,])))
         }
         #Once looping by w complete, do the last s5 adjustment
         #Call the Section 5 Adjustments to be applied to post-downscaled output
         message("Calling outloop Section 5 Adjustments")
         if(s5.outloop){
           temp.postproc <- callS5Adjustment(post.ds,
-                                            data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,],
+                                            data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,, ,drop=F],
                                             hist.pred = MH.window,
                                             hist.targ = OH.window,
                                             fut.pred = MF.window, 

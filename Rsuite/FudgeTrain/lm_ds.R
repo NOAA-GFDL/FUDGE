@@ -65,12 +65,13 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
 #       print(length(notna.index))
 #       print(length(ds.out))
 #       print(dim(missval.out$complete.fut))
-      out.data[,,,n,,][missval.out$complete.fut[,,,n,,]] <- ds.out #[notna.index]
+#missval.out$complete.fut[,,,n,,]
+      out.data[,,,n,,][notna.index] <- ds.out #[notna.index]
       #If train_qcmask, check for whether function had to retry
       if(missval.out$mv.retry && train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
-        qc[,,,n,,][missval.args$complete.fut] <- NA #[notna.index]
+        qc[,,,n,,] <- NA
       }
     }
   }else{

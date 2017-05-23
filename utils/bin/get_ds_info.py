@@ -88,6 +88,7 @@ def make_aux_input(grid, script_base):
 	if grid in jdict.keys():
 		jv  = str(jdict[grid])
 		aux_scriptname = script_base + "/default_mini_"+grid+".json"
+		print(aux_scriptname)
 	else:
 		print("Error in make_aux_info: grid, " + grid + " not in jdict!")
 		sys.exit(1)	         

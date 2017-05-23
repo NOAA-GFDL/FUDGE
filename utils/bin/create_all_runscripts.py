@@ -7,6 +7,11 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	
+	print(i_start)
+	print(i_end)
+	print(j_start)
+	print(j_end)
+	
 	#which i_indices are we going to be looping over?
 	i_elements = range(int(i_start), int(i_end)+1, i_by)
 	i_elements.append(int(i_end)+1)
@@ -30,6 +35,7 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	if idirsuffix=="/grid0/":
 		print("Adding synthetic data workaround")
 		idirsuffix = idirsuffix + "ZeroD/"
+		j_elements  = [1, 2]
 	
 	### As of 3-15-17, working on script subset changes needed for 
 	### handling entire-grid downscaling and the arbitrary x,y subsets.

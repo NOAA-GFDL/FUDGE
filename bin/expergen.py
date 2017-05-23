@@ -488,7 +488,7 @@ def main():
 	parser = OptionParser(usage=help)
 	parser.add_option("-i", "--file", dest="uinput",
 	help="pass location of XML template", metavar="FILE")
-	parser.add_option("-a", "--aux", default="default_aux",dest="auxinput", help="pass location of auxilary JSON input for stencil, mask, subset and other specificaions. If not set in XML or by command line, a default aux will be created.")
+	parser.add_option("-a", "--aux", default="none",dest="auxinput", help="pass location of auxilary JSON input for stencil, mask, subset and other specificaions. If not set in XML or by command line, a default aux will be created.")
 	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")	
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
@@ -528,7 +528,7 @@ def main():
 		print "JSON input: " + auxinput
 	else:
 		print "JSON input " + options.auxinput + "not found!"
-		if (options.auxinput == "default_aux"):
+		if (options.auxinput == "none"):
 			print("Aux file will be searched for in XML (or a default will be created)")
 			search_xml_aux = True
 		else:
@@ -604,6 +604,9 @@ def main():
 	#You don't need to parse any of these, but you do need to get a list of the 
 	#copy-able files (and possibly a wallclock time parameter)
 	#If no aux was specified as --aux
+	print(options.auxinput)
+	print(str(search_xml_aux))
+	print(specdict)
 	if search_xml_aux:
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']

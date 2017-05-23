@@ -58,12 +58,14 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
       )
       #out.data[,,,n,,] <- index.qm(index.mask, ds.out, olap)
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-      out.data[,,,n,,][notna.index] <- ds.out
+      #print(str(missval.out))
+      #print(summary(missval.out$complete.fut))
+      out.data[,,,n,,][missval.out$complete.fut[,,,n,,]] <- ds.out
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
         #qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+        qc[,,,n,,] <- NA #index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }else{
       print('downscaling not possible at this point')
@@ -90,9 +92,9 @@ lmAsync.train <- function(OH, MH, args){
   ##That's not what we're doing - instead, we should sort OH and MH independent
   #of each other, for quantile mapping
   oh.order <- order(OH[[1]])
-  OH <- lapply(OH, '{', oh.order)
+  OH <- lapply(OH, '[', oh.order)
   if ('prime_predictor' %in% names(args)){
-    mh.order <- order(MH[args$prime_predictor])
+    mh.order <- order(MH[[args$prime_predictor]])
   }else{
     mh.order <- order(MH[[1]])
   }
@@ -109,14 +111,15 @@ lmAsync.downscale <- function(lm.model, MF, args){
   #MF is a named list of vectors returned from compress.xy.data
   #...so we can't sort by DS. We can at least sort MF by rank, though.
   MF <- lapply(MF, remove.missvals)
+  MF <- MF[!is.null(names(MF))]
+
   if ('prime_predictor' %in% names(args)){
-    mf.order <- order(MF[args$prime_predictor])
-    mf.rank  <- rank(MF[args$prime_predictor])
+    mf.order <- order(MF[[args$prime_predictor]])
+    mf.rank  <- rank(MF[[args$prime_predictor]])
   }else{
     mf.order <- order(MF[[1]])
     mf.rank <- rank(MF[[1]])
-  }
-  
+  }  
   MF <- lapply(MF, '[', mf.order)
   out <- suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF)))
   return(out[mf.rank])
@@ -135,7 +138,7 @@ lmstepAsync.train <- function(OH,MH,args){
   oh.order <- order(OH[[1]])
   OH <- lapply(OH, '[', oh.order)
   if ('prime_var' %in% names(args)){
-    mh.order <- order(MH[args$prime_var])
+    mh.order <- order(MH[[args$prime_var]])
   }else{
     mh.order <- order(MH[[1]])
   }
@@ -170,8 +173,8 @@ lmstepAsync.downscale <- function(lm.train.model, MF, args){
   
   MF <- lapply(MF, remove.missvals)
   if ('prime_var' %in% names(args)){
-    mf.order <- order(MF[args$prime_var])
-    mf.rank  <- rank(MF[args$prime_var])
+    mf.order <- order(MF[[args$prime_var]])
+    mf.rank  <- rank(MF[[args$prime_var]])
   }else{
     mf.order <- order(MF[[1]])
     mf.rank <- rank(MF[[1]])
@@ -207,6 +210,9 @@ set.lmAsync.defaults <- function(args, ..., env){
   #arguments.
   
   #get stencil - should be same for MH and MF
+  if (! ('prime_var' %in% names(args))){
+    stop(paste("Error in set.lmAsync.defaults: prime_var is required!"))
+  }
   prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
   return_args <- c(args, list(prime_predictor=prime_predictor))
   env$ds.args <- return_args
@@ -218,7 +224,9 @@ set.lmstepAsync.defaults <- function(args, ..., env){
   #Same.
   
   #get stencil - should be same for MH and MF
-  print(args)
+  if (! ('prime_var' %in% names(args))){
+    stop(paste("Error in set.lmAsync.defaults: prime_var is required!"))
+  }
   prime_predictor <- get.prime.predictor(args$prime_var, aux.ref)
   return_args <- c(args, list(prime_predictor=prime_predictor))
   env$ds.args <- return_args

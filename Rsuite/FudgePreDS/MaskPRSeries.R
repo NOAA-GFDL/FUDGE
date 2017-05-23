@@ -89,8 +89,8 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
     #Find the threshold for a drizzle adjustment
     #adj.method="orig"
     adj.thold <- switch(adj.method, 
-                        "approx" = find.thold.orig(fraction.wet.ref, OH.var, MH.var), 
-                        "exact"  = find.thold.kd(fraction.wet.ref, OH.var, MH.var))
+                        "approx" = find.thold.orig(fraction.wet.ref, loop.ref, loop.adj), 
+                        "exact"  = find.thold.kd(fraction.wet.ref, loop.ref, loop.adj))
     
     #If it would result in changed results, apply
     loop.adj.wetdays <- adjust.data[adj.idx] > adj.thold
