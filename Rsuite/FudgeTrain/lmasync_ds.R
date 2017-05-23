@@ -21,7 +21,7 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
   out.data <- array(NA, dim=dim(MF.data[[1]]))
   #These methods are asynchronous - they can take an overlapping mask
   index.mask <- tmasks$MF$masks[[w]]
-  olap <- F
+  olap <- tmasks$time_mask_overlap
   if(train_qcmask){
     if(tmasks$apply_tmasks){
       qc <- mapply(rep, index.mask, nrips)
@@ -74,6 +74,12 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
+  }
+  #Final indexing step - just in case there is an overlapping mask
+  # (which is possible, this is supposed to support the pm2weeks masks)
+  if (olap){
+    out.data[,,,n,,] <- apply.any.mask(mask=index.mask, 
+                                       data=out.data[,,,n,,], dim='time')
   }
   return(list(ds=out.data, qc=qc))
 }
