@@ -213,9 +213,11 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 			###THIS NEEDS TRANLSATION WORK
 			#print("components for R code:")
 			#print([(i + 1 + i*(i_by-1)), i_max, i_by, i_offset, (j+1 + j*(j_by-1)), j_max, j_by, j_offset])
+			#...okay - as of 2017-05-24, testing an indexing bug on teh single minifile cases
+			#by adding 1 to i_offset and j_offset.
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
-													(i+1 + i*(i_by-1)), i_max, i_by, i_offset, \
-													(j+1 + j*(j_by-1)), j_max, j_by, j_offset, auxfile, target_var,outdirs)
+													(i+1 + i*(i_by-1)), i_max, i_by, i_offset+1, \
+													(j+1 + j*(j_by-1)), j_max, j_by, j_offset+1, auxfile, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	
