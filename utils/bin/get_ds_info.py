@@ -20,11 +20,16 @@ def get_ds_info(ds_method, FUDGEROOT):
 				ds_match = True
 				downscale_oh = (row['downscale_oh']=='TRUE')
 				multivar_target = (row['multivar_target']=='TRUE')
+				multivar_possible = (row['multivar_possible']=='TRUE')
+				
 	if ds_match is False:
 		print("Error in get_ds_info: Method " + ds_method + " not found in ds_att_sheet.csv!")
 		sys.exit(1)
 	else:
-		return({'copy_leapmasks':downscale_oh, 'multivar_target':multivar_target})
+		return({'ds_method':ds_method, 
+		        'copy_leapmasks':downscale_oh, 
+		        'multivar_target':multivar_target,  
+		        'multivar_possible':multivar_possible})
 		
 def parse_aux_info(jsonfile):
 	#Reads the aux file; returns bits that we are interested in
@@ -40,14 +45,22 @@ def parse_aux_info(jsonfile):
 			else:
 				wallclocktime = jsondict['wallclocktime']	
 		else:
-			wallclocktime='12:00:00'
+			wallclocktime='5:00:00'
 		#njobs and ncpus parameters: 
 		if 'njobs' in jsondict.keys():	
-			njobs = jsondict['njobs'][0]
+			njob_tmp = jsondict['njobs']
+			if isinstance(njob_tmp, list):
+				njobs = njob_tmp[0]
+			else:
+				njobs = njob_tmp
 		else:
 			njobs = 8
 		if 'ncpus' in jsondict.keys():
-			ncpus = jsondict['ncpus'][0]
+			ncpus_tmp = jsondict['ncpus']
+			if isinstance(ncpus_tmp, list):
+				ncpus = ncpus_tmp[0]
+			else:
+				ncpus = ncpus_tmp
 		else:
 			ncpus = 2	
 		#Subsets in i and j that we are interested in
@@ -55,7 +68,11 @@ def parse_aux_info(jsonfile):
 		subsetdict = {}
 		for k in defaultdict.keys():
 			if k in jsondict.keys():
-				subsetdict[k] = jsondict[k][0]
+				tmp_k = jsondict[k]
+				if isinstance(tmp_k, list):
+					subsetdict[k] = tmp_k[0]
+				else:
+					subsetdict[k] = tmp_k	
 			else:
 				#default if not present in json
 				subsetdict[k] = jsondict[k]

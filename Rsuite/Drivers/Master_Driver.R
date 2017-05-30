@@ -281,7 +281,7 @@ mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
 
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
                                 fut.file.start.year_1,fut.file.end.year_1,
-                                i_idx, i_stride, i_offset, j_idx, j_stride, j_offset)
+                                i_idx, i_stride, i_offset, i_max, j_idx, j_stride, j_offset, j_max)
 out.filename <- file.path(output.dir, out.filename)
 
 #close spatial mask nc, if using

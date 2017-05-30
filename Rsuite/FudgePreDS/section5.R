@@ -109,6 +109,7 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   #'Assumes one predictor variable and one target variable
   #'But multiple ensemble members are supported
   
+  #print(str(input))
   if(verbose){print("entering simple bias correction function")}
   if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
     toplim <- test$qc_args$toplim
@@ -116,17 +117,18 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   }else{
     stop("Section 5 Adjustment Error: Arguments toplim and botlim are not present for the SBiasCorr function. Please check your XML.")
   }
-  target.var <- unlist(lapply(input$data.atts$hist.targ, "[[", 'var'))
+  #target.var <- unlist(lapply(input$data.atts$hist.targ, "[[", 'var'))
+  target.var <- names(input$hist.targ)[1]
   ds.vars <- names(adjusted.output$ds.out)
   #Unlist the historic predictors
-  hist.select <- c(lapply(input$data.atts$hist.pred, "[[", 'var')==target.var)
+  hist.select <- c(names(input$hist.pred)==target.var)
   hist.pred <- unlist(input$hist.pred[hist.select])
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
   for (ds.var in ds.vars){
     #There can be more than pne future predictor for the ensemble
     fut.pred <- unlist(input$fut.pred[[ds.var]])
     #compute difference for all time values
-    hist.bias <- mean(hist.pred-input$hist.targ, na.rm=TRUE)
+    hist.bias <- mean(hist.pred-input$hist.targ[[target.var]], na.rm=TRUE)
     fut.targ <- fut.pred-hist.bias
     tmp.diff <- as.numeric(adjusted.output$ds.out) - fut.targ
     mask.vec <- ifelse( (botlim <= (tmp.diff) &
@@ -312,6 +314,7 @@ callBCSDCorrect <- function(test, input, adjusted.output){
   #'Calls a BCSD-style adjustment on quantile-mapped code
   #'based off of the limits to the adjustment of the
   #'MH and MF datasets
+
   rips <- unique(lapply(input$data.atts$fut.pred, "[[", 'rip'))
   targ.var <- names(input$data.atts$hist.targ)
   arg.names <- names(test$qc_args)

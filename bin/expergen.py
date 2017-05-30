@@ -654,8 +654,19 @@ def main():
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
 	predlist = predictor.split(",")
 	print("Calling create_all_runscripts")
-	create_all_runscripts(lons, lone, i_subset, \
-						  lats, late, j_subset, njobs, ncpus, fudgetag, sbase, \
+	idict = {'US48' : 748, 
+	         'SCCSC0p1'  : 181, 
+	         'RR'   : 181, 
+	         'grid0': 0}
+	jdict = {'US48' : 454, 
+	         'SCCSC0p1'  : 31, 
+	         'RR'   : 31, 
+	         'grid0': 0}         
+	i_offset = idict[output_grid]
+	j_offset = jdict[output_grid]
+	create_all_runscripts(lons, lone, i_subset, i_offset, \
+						  lats, late, j_subset, j_offset, \
+						  njobs, ncpus, fudgetag, sbase, \
 	                      target_dir, hist_pred_dir, fut_pred_dir,\
 	                      oh_timerange, mh_timerange, mf_timerange, predlist, \
 	                      spat_mask, target_time_window, hist_time_window, \

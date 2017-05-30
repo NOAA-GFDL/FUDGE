@@ -3,7 +3,9 @@ import os, stat, shutil
 from os import path as osp
 import itertools
 
-def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, copy_leapmasks, multivar_target, auxfile, aux_file_list, wallclocktime):
+def create_all_runscripts(i_start, i_end, i_by, i_offset, 
+                         j_start, j_end, j_by, j_offset, 
+                         njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, copy_leapmasks, multivar_target, auxfile, aux_file_list, wallclocktime):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	
@@ -17,17 +19,15 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	i_elements.append(int(i_end)+1)
 	i_elements = list(set(i_elements))
 	i_elements = sorted(i_elements)	
-	i_offset = int(i_start)  - 1
+	#i_offset = int(i_start)  - 1
 	i_max = int(i_end) - i_offset	
 	#which j indices are we going to be looping over?
 	j_elements = range(int(j_start), int(j_end),j_by)
 	j_elements.append(int(j_end)+1)
 	j_elements = list(set(j_elements))
 	j_elements = sorted(j_elements)	
-	j_offset = int(j_start)  - 1
+	#j_offset = int(j_start)  - 1
 	j_max = int(j_end) - j_offset
-	#print(i_elements)
-	#print(j_elements)
 	#sys.exit("Examine this out")
 	
 	#Okay - as of 207-05-09, adding a one-off special case for the synthetic data
@@ -195,9 +195,11 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 	#print(j_elements)
 	n_tiles = 0
 	for j in range(0, len(j_elements)-1):
+		jval = j_elements[j]
 		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
 		#j_max and j_by are passed in already; they are numeric	
 		for i in range(0, len(i_elements)-1):
+			ival = i_elements[i]
 			n_tiles = n_tiles + 1
 			i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
 			if i % njobs == 0 :
@@ -215,9 +217,19 @@ def create_all_runscripts(i_start, i_end, i_by, j_start, j_end, j_by, njobs, ncp
 			#print([(i + 1 + i*(i_by-1)), i_max, i_by, i_offset, (j+1 + j*(j_by-1)), j_max, j_by, j_offset])
 			#...okay - as of 2017-05-24, testing an indexing bug on teh single minifile cases
 			#by adding 1 to i_offset and j_offset.
+			#runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
+			#										(i+1 + i*(i_by-1)), i_max, i_by, i_offset+1, \
+			#										(j+1 + j*(j_by-1)), j_max, j_by, j_offset+1, auxfile, target_var,outdirs)
+			#Okay...as of 05-25, I think I've identified a bigger issue at stake for 
+			#running the minifile jobs - namely, offset isn't offset exactly.
+			#...welp. As of 6 PM, it's forming the indexes correctly, but the 926th index in the new stuff still seems
+			#to match the 925th in the old. 
+			#I'm not getting errors about longitude anymore, thoug. That's...probably progress.
+			i_idx = i_offset - (i+1 + i*(i_by-1))
+			j_idx = j_offset - (j+1 + j*(j_by-1))
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
-													(i+1 + i*(i_by-1)), i_max, i_by, i_offset+1, \
-													(j+1 + j*(j_by-1)), j_max, j_by, j_offset+1, auxfile, target_var,outdirs)
+													ival - i_offset + 1, i_max + 1, i_by, i_offset, \
+													jval - j_offset + 1, j_max + 1, j_by, j_offset, auxfile, target_var,outdirs)			
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	

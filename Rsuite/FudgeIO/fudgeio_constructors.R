@@ -26,6 +26,8 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   
   fudge.data <- list()
   fudge.metadata <- list()
+  #print(subset)
+  #stop('examine this out')
   for (v in 1:length(varnames)){
     filename <- filenames[[v]]
     nc.var <- varnames[[v]]

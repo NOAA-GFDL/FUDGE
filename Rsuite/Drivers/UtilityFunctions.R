@@ -148,14 +148,20 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
       message(paste("Warning in adapt.pp.input: no transfrom option was present in the", 
                     "XML, and no transform will be added to the pr data."))
     }
+    if ('ignore0' %in% names(pr_opts)){
+      ignore0 = ifelse(pr_opts$ignore0=='off', 
+                       'off', 'on')
+    }else{
+      #Legacy code; use old setting
+      ignore0 = FALSE
+    }
     post_ds$propts <- list(type='PR', 
                            adjust.out='on', 
                            qc.mask='off', 
                            loc='outloop', 
                            qc_args=list(thold=pr_opts$pr_threshold_out,
                                         conserve=pr_opts$pr_conserve_out, 
-                                        ignore0=ifelse(pr_opts$ignore0=='off', 
-                                                       'off', 'on')))
+                                        ignore0=ignore0))
                                         #apply_0_mask=pr_opts$apply_0_mask))
   }
   flag.negvar <- FALSE
@@ -269,12 +275,15 @@ override.f.defaults <- function(ds.args=NA,
       out.list$args <- ds.args
     }
   }
-  if(!is.na(pr_opts[1])){
-    print(pr_opts)
-    if(!(pr_opts$ignore0=='off' || pr_opts$ignore0=='on')){
-      missval.handling <<- pr_opts$ignore0
-    }
-  }
+# Pretty sure as of 2017-05-29 that this bit isn't used by anything 
+# else anymore. Commenting out to check.
+#   if(!is.na(pr_opts[1])){
+#     if ('ignore0' %in% names(pr_opts)){
+#       if(!(pr_opts$ignore0=='off' || pr_opts$ignore0=='on')){
+#         missval.handling <<- pr_opts$ignore0
+#       }
+#     }
+#   }
   #Final check added for ignore0.Delta and the pr ignore0 option
   if('ignore0.Delta'%in%names(ds.args)){
     if(ds.args$ignore0.Delta=='on' && pr_opts$ignore0!='off'){
