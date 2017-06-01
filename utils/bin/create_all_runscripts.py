@@ -57,7 +57,10 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	                        '#PBS -j oe ', 
 	                        '#PBS -N fudge_master ', 
 	                        '#PBS -E ', 
-	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',  
+	                        #Swapping out 2017-05-31. Apparently, the curly brackets are
+	                        #an unsupported feature? See Tim emails.
+	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',  
+	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)', 
 	                        "#PBS -q batch "]) + "\n"
 	#The path to the checkout script is hard-coded, and probably going to 
 	#stay that way for now; the load of git is DEFINETLY needed if the
@@ -136,16 +139,18 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	leapmask_files = []
 	if tmask_present:
 		tmask_files = [OH_tmask, MH_tmask, MF_tmask]
-		dmget_string = dmget_string + "# Get OH tmask " + "\n"
-		dmget_string = dmget_string + "dmget " + OH_tmask + "\n" 
-		dmget_string = dmget_string + "# Get MH tmask " + "\n"
-		dmget_string = dmget_string + "dmget " + MH_tmask + "\n" 
-		dmget_string = dmget_string + "# Get MF tmask " + "\n"
-		dmget_string = dmget_string + "dmget " + MF_tmask + "\n" 
+		dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
+		#dmget_string = dmget_string + "dmget " + OH_tmask + "\n" 
+		#dmget_string = dmget_string + "# Get MH tmask " + "\n"
+		#dmget_string = dmget_string + "dmget " + MH_tmask + "\n" 
+		#dmget_string = dmget_string + "# Get MF tmask " + "\n"
+		#dmget_string = dmget_string + "dmget " + MF_tmask + "\n" 
 		if trim_time_mask_present:
 			tmask_files.append(trim_tmask)
-			dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"	
-			dmget_string = dmget_string + "dmget " + trim_tmask + "\n" 
+			#dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"	
+			#dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
+		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n" 
+		dmget_string = dmget_string + tmask_dmget
 		if copy_leapmasks:	
 			#Need a historic and a future leapday mask file
 			leapmask_base = "/archive/esd//PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_missingleapdays_"
