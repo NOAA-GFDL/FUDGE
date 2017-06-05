@@ -188,10 +188,13 @@ QCAdjustArguments(pre_ds, post_ds,
 # # spatial mask read check
 message("Checking for spatial masks vars")
 if(spat.mask.dir_1!="na"){
-  spat.mask.nc <- nc_open(file.path(dirname(spat.mask.dir_1), 
-                                    paste0(spat.mask.var, ".nc")))
+  apply_spatmask <- T
+  spatmask.file <- file.path(dirname(spat.mask.dir_1), 
+                             paste0(spat.mask.var, ".nc"))
+  #spat.mask.nc <- nc_open()
 }else{
-  spat.mask.nc <- NULL
+  #spat.mask.nc <- NULL
+  apply_spatmask <- F
   message("no spatial mask included; skipping to next step")
 }
 
@@ -216,6 +219,12 @@ if (ds.ref$multivar_target){
                             dim=ds.ref$oh_dimlist, 
                             x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
                             aux.ref$OH$geomask)
+  if (apply_spatmask){
+    spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
+    for (el in names(OH$data)){
+     OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial') 
+    }
+  }
 }else{
   OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
                                 target.file.start.year_1,target.file.end.year_1, 
@@ -225,6 +234,12 @@ if (ds.ref$multivar_target){
                             dim=ds.ref$oh_dimlist, 
                             x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
                             aux.ref$OH$geomask)
+  if (apply_spatmask){
+    spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
+    for (el in names(OH$data)){
+      OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial') 
+    }
+  }
 }
 #Now that we can read in stencils, the below is not
 #going to work anymore. Some of the fixes are down just before
@@ -251,6 +266,12 @@ MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_su
                           dim=ds.ref$mh_dimlist, 
                           x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
                           aux.ref$MH$geomask)
+if (apply_spatmask){
+  spatmask <- ReadSpatialMask(spatmask.file, mh_x_subset$subset, mh_y_subset$subset)
+  for (el in names(MH$data)){
+    MH$data[[el]] <- apply.any.mask(data=MH$data[[el]], mask=spatmask, dim='spatial') 
+  }
+}
 mh.orig.dim <- MH$orig_dims[[1]]
 mh.dim <- dim(MH$data[[1]])
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
@@ -273,6 +294,12 @@ MF <- build.FUDGE.dataset(MF.files, predictor.vars,
                           dim=ds.ref$mf_dimlist, 
                           x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim, 
                           aux.ref$MF$geomask)
+if (apply_spatmask){
+  spatmask <- ReadSpatialMask(spatmask.file, mf_x_subset$subset, mf_y_subset$subset)
+  for (el in names(MH$data)){
+    MF$data[[el]] <- apply.any.mask(data=MF$data[[el]], mask=spatmask, dim='spatial') 
+  }
+}
 mf.orig.dim <- MF$orig_dims[[1]]
 mf.dim <- dim(MF$data[[1]])
 mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
@@ -285,9 +312,9 @@ out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario
 out.filename <- file.path(output.dir, out.filename)
 
 #close spatial mask nc, if using
-if (!is.null(spat.mask.nc)){
-  nc_close(spat.mask.nc)
-}
+# if (!is.null(spat.mask.nc)){
+#   nc_close(spat.mask.nc)
+# }
 
 ###### Set target dataset for blind reference at a later point
 ###### (note: the clever delayed evaluation in getDSInfo() is not working)
