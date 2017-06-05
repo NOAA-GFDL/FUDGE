@@ -657,13 +657,21 @@ def main():
 	idict = {'US48' : 748, 
 	         'SCCSC0p1'  : 181, 
 	         'RR'   : 181, 
-	         'grid0': 0}
+	         'grid0': 0, 
+	         'NEUSA': 1}
 	jdict = {'US48' : 454, 
 	         'SCCSC0p1'  : 31, 
 	         'RR'   : 31, 
-	         'grid0': 0}         
-	i_offset = idict[output_grid]
-	j_offset = jdict[output_grid]
+	         'grid0': 0, 
+	         'NEUSA': 1}
+	try:         
+		i_offset = idict[output_grid]
+	except KeyError:
+		i_offset = 1
+	try:		
+		j_offset = jdict[output_grid]
+	except KeyError:
+		j_offset = 1	
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
