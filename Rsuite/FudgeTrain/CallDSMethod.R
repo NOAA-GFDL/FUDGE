@@ -40,10 +40,10 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
                    'BCQM'    = callQM(OH, MH, MF, ds.args, type='BCQM', missval.args, tmasks, train_qcmask),
                    'EDQM'    = callQM(OH, MH, MF, ds.args, type='EDQM', missval.args, tmasks, train_qcmask),
                    #'CFQM'    = callQM(OH, MH, MF, ds.args, type='CFQM', missval.args, tmasks, train_qcmask),
-                   'DeltaSD' = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, tmasks),
-                   'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
+                   #'DeltaSD' = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, tmasks),
+                   #'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
                    'QDM'     = callMBC(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
-                   'CFQM'    = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
+                   #'CFQM'    = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
                    'sum'   = ds.sum.function(OH, MH, MF, ds.args),
                    ReturnDownscaleError(method)
   )
