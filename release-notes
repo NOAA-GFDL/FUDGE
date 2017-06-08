@@ -1,4 +1,7 @@
-06-05-16
+06-08-17
+- Delta, CFQM revised, present and working for non-pr cases
+
+06-05-17
 - Flexible subsetting
 - njobs, ncpus, wallclocktime available in the aux file
 - commenting out CFQM, MBC, DeltaSD for development
