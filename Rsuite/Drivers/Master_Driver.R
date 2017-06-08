@@ -426,6 +426,9 @@ set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars,
                             pre.ds.train=pre.ds.train, 
                             ds.ref=ds.ref, aux.ref=aux.ref,
                             env=environment())
+# print(s5.outloop)
+# print(post.ds)
+# stop('examine this out')
 
 ##s3 call formerly here
 

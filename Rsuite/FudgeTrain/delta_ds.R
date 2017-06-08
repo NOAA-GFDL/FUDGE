@@ -131,7 +131,8 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
         ###from the existing behavior.
         start <- idx$end
         loop.delta <- delta.train(MH[OH.idx], MF.data, deltatype, deltaop, ignore0.Delta, status)
-        ds.out <- delta.downscale(loop.delta, OH[hist.idx], deltaop, status)
+        #hist.idx
+        ds.out <- delta.downscale(loop.delta, OH[OH.idx], deltaop, status)
       }
       out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                       tmasks$fut.leapmask, 

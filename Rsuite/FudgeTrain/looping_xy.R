@@ -242,9 +242,9 @@ loop.xy.data <- function(){
         if(s5.outloop){
           temp.postproc <- callS5Adjustment(post.ds,
                                             data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,, ,drop=F],
-                                            hist.pred = MH.window,
-                                            hist.targ = OH.window,
-                                            fut.pred = MF.window, 
+                                            hist.pred = MH.slice,
+                                            hist.targ = OH.slice,
+                                            fut.pred = MF.slice, 
                                             data.atts = adjust.metadata)
           #Your return should include a list of two elements - modified ds out, 
           #and a list of qc masks

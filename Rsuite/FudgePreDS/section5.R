@@ -51,6 +51,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'cdft_limtailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft'),
                   'cdft_simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='cdft_orig'),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
+                  'mapMFOrder' = callMapMFOrder(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
 #     print('summary of adjusted output:')
@@ -437,4 +438,75 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
 round.negative <- function(num){
   #assumes no 0 values are passed
   return(ifelse(num > 0, 1, -1))
+}
+
+callMapMFOrder <- function(test, input, adjusted.output){
+  #'Maps the downscaled values to the ransk of the
+  #'order in MF. Since this is meant to be called as an outloop
+  #'section 5 operation, there's less checking of missing values - 
+  #'since this is SUPPOSED to be called only for CFQM (which is univariate), 
+  #'we should not be too worreid about missing values and making them
+  #'blindingly obvious should be sufficient for now.
+  out.list <- adjusted.output
+  nrips <- dim(input$fut.pred[[1]])[4]
+  #   print(summary(input$fut.pred[[1]]))
+  #   stop('examine this out')
+  #   save(file="/home/cew/Code/testing/test_out.R", 
+  #        list=c("input", 'out.list'))
+  for (n in 1:nrips){
+    #input$fut.pred
+    MF.rip <- input$fut.pred[[1]][,,,n,,]
+    MF.rank <- rank(MF.rip, na.last=F, ties='min')
+    #Determine overlap in MF and DS wetday frequency, if applicable.
+    #print(which(is.na(sort(MF.rip, na.last = F))))
+    which.dry <- tail(which(is.na(sort(MF.rip, na.last = F))), n=1)
+
+    MF.dry.freq <- which.dry/length(MF.rank)
+    OH.dry.freq <- sum((out.list$ds.out[,,,n,,]==0))/length(out.list$ds.out[,,,n,,])
+    sort.ds.out <- sort(out.list$ds.out[,,,n,,])
+    #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
+    
+#     if (MF.dry.freq > OH.dry.freq){
+#       #If thre are more dry days in the future than the roughly time-synchronous
+#       #historical
+#       diff.freq <- MF.dry.freq - OH.dry.freq
+#       diff.num  <- floor(diff.freq * length(MF.rank))
+#       ds.max <- sort.ds.out[floor(OH.dry.freq * length(MF.rank)) + 1]
+#       print("before alter.vals")
+#       print(diff.num)
+#       print(which.dry)
+#       alter.vals <- alter.ds.diff(diff.num, which.dry, 
+#                                   sort.ds.out[1], ds.max)
+#       sort.ds.out[alter.vals$idx] <- alter.vals$vals
+#     }
+#     tlev <- 1:length(MF.rank)
+
+
+    #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
+    x <- out.list$ds.out[,,,n,,]
+    y <- MF.rip
+# print(summary(x))
+# print(length(x))
+# print(summary(y))
+# print(length(y))
+    out.list$ds.out[,,,n,,] <- sort(x)[rank(y)]
+#print(summary(out.list$ds.out[,,,n,,]))
+#stop('examine this output')
+
+#         plot(tlev, input$fut.pred[[1]][,,,n,,], #ylim=c(0,0.0008), 
+#              lty=2,
+#              main=paste("rank for ens", n))
+#         plot(tlev, out.list$ds.out[,,,n,,], col='red')
+#         ds.sort <- sort.ds.out
+#         lines(tlev, ds.sort[MF.rank], col='blue')
+  }
+  return(list('input' = input, 'adjusted.output' = out.list))
+}
+
+alter.ds.diff <- function(diff.num, diff.max, min.val, max.val){
+  set.seed(ival * 100 + jval * 10 + w)
+  ds.idx <- sample(x=diff.max:diff.max+diff.num, size=diff.num, replace=F)
+  #ds.vals <- runif(diff.num, min.val, max.val)
+  ds.vals <- rep(0, diff.num)
+  return(list(idx=ds.idx, vals=ds.vals))
 }

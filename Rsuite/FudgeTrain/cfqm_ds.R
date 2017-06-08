@@ -115,8 +115,10 @@ CFQM_hist <- function(MH, MF, OH){
 
 set.CFQM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   return.args <- args[! (names(args) %in% c('sort'))]
+  apply.s5 <- F
   if ('wxseq' %in% names(args)){
     if (args$wxseq=="MFseq"){
+      apply.s5 <- T
       post.ds$mapMF <- list(type="mapMFOrder", 
                                  adjust.out="on",
                                  qc.mask="off", 
@@ -138,7 +140,7 @@ set.CFQM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       return.args <- c(return.args, list(wxseq="OHseq"))
     }
   }
-  env$s5.outloop <- TRUE
+  env$s5.outloop <- apply.s5
   env$ds.args <- return.args
   env$post.ds <- post.ds
   return(env)
