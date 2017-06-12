@@ -99,6 +99,7 @@ def checkTags(dictParams,key):
 				print "Error: Missing value for ",key
 				sys.exit(1)  
 		return val 
+
 def parse_outdir(out_dir,property):
 	print "Parsing out_dir to check if it references property tags"
 	list_subs = []
@@ -106,17 +107,17 @@ def parse_outdir(out_dir,property):
 	outdirsplit = out_dir.split('/')
 	replace = ""
 	expect_property = 0 
+	pname = 'na'
 	for outdirs in outdirsplit:
 		if '$(' in outdirs:
-		   print "outdirs as defined expects a property tag.."
-		   expect_prop = 1
-		   for pname,pval in property.iteritems():
-			pname = '$('+pname+')' 
-			if pname == outdirs:
-			  print "we may have located the property tag"
-			  replace = pval
-		 #	 new_out_dir = out_dir.replace('$(RIP)',replace)
-			  break;
+			print "outdirs as defined expects a property tag.."
+			expect_prop = 1
+			for pname,pval in property.iteritems():
+				pname = '$('+pname+')' 
+				if pname == outdirs:
+					print "we may have located the property tag"
+					replace = pval
+					break;
 	if(replace != ""):
 	 if (out_dir  != ""):
 	     list_new_out_dir = replace.split(",")	
@@ -133,6 +134,8 @@ def parse_outdir(out_dir,property):
 	else:
 	 list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
 	return list_subs,listout	
+
+	
 def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
 	ctr = 0
 	dictDS = {}

@@ -1,5 +1,6 @@
 06-08-17
 - Delta, CFQM revised, present and working for non-pr cases
+- ignore0 removed from delta options; using pr ignore0
 
 06-05-17
 - Flexible subsetting
