@@ -88,6 +88,7 @@ WriteNC <-  function(filename,out.data,var.names,
     all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "longname", "prec", "dim", "dimids", "missval", 'names'))]
     if(length(all.att.list) > 0){
       for (at in 1:length(all.att.list)){
+        #print(paste(loop.var, ":", names(all.att.list)[[at]], "=", all.att.list[[at]]))
         ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])
       }
     }
@@ -114,6 +115,9 @@ WriteNC <-  function(filename,out.data,var.names,
       # do not have bnds vars present
       dim.axis <- switch(dim.name, 'time' = 'T', 'lat'='Y', 'lon'='X')
       bnds.name <- paste0(dim.name, "_bnds")
+#       print(bnds.name)
+#       print(names(var.data))
+#       print(bnds.name %in% names(var.data))
       if (bnds.name %in% names(var.data)){
         set_att_fun <- function(dim.name, dim.axis, bnds.name, nc.obj){
           ncatt_put(nc.obj, dim.name, 'axis', dim.axis)
@@ -123,6 +127,7 @@ WriteNC <-  function(filename,out.data,var.names,
         nc.obj <- set_att_fun(dim.name, dim.axis, bnds.name, nc.obj)
       }
     }
+    #stop('examine this output')
   }
   #clone most globals as well
   if (clone_globals){

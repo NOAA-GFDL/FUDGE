@@ -73,7 +73,7 @@ get.OH.experiment.atts <- function(in.file){
     #prism can get title, too.
     #/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/prism/historical/day/atmos/day/r0i0p1/v1/tasmax/SCCSC0p1/tasmax_day_prism_historical_r0i0p1_SCCSC0p1_19810101-20051231.nc
     data_title <- ncatt_get(in.nc, 0, 'title')
-    if (data_title$hastatt){
+    if (data_title$hasatt){
         dataset <- strsplit(data_title$value, " ")[[1]][2]
     	dataset <- sub(",", "", dataset)
     }else{

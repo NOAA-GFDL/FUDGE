@@ -339,9 +339,6 @@ get_orig_experiment <- function(in.file, var='tasmax'){
     #Assume only title att present
     orig_exp <- gsub(paste0(var,", "), "", atts['title']) #var with or without a trailing comma
   }
-#   if('realization' %in% att.names){
-#     orig_exp <- paste(orig_exp, 'realization', atts['realization'])
-#   }
 if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
   #Perfect model-specific corrections
   print(atts['experiment_id'])
