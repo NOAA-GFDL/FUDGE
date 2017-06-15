@@ -3,7 +3,7 @@ get.MF.experiment.atts <- function(in.file){
   #attributes present in the input file
   #Currently searches for: 
   #ds_scenario
-  #ds_MF_source
+  #ds_MF_source (something close to a column heading)
   #is_PM <- grepl(strsplit(in.file, "/")[[1]][7], "^NCPP", perl=T)
   scenario = 'none'
   dataset = 'none'
@@ -43,7 +43,7 @@ get.OH.experiment.atts <- function(in.file){
   #'Gets experiment attributes based off of the atts
   #'in the input file, assumed to be OH.
   #'Currently searches for: 
-  #'ds_OH_source
+  #'ds_OH_source (column-heading appropriate)
   #is_PM <- grepl(strsplit(in.file, "/")[[1]][7], "^NCPP", perl=T)
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
