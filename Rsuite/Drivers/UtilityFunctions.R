@@ -355,8 +355,8 @@ if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
                       '1'='ESM', 
                       '2'='CM3')
   }
-  orig_exp <- paste("GFDL-HIRAM", atts['experiment_id'], 
-                    emissions_scenario, physics)
+  orig_exp <- paste("GFDL-HIRAM", emissions_scenario, physics, 
+                    atts['experiment_id'])
   
 }
   return(orig_exp)

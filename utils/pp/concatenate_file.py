@@ -76,6 +76,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
 	i_outfiles = []
 	i_out_paths = []
 	print("looping over i_patterns and concatenating in j")
+	print(i_patterns)
 	for i_patt,i in zip( i_patterns, range( len(i_patterns) ) ):
 		i_subset = [f for f in file_subset if re.search(i_patt, f) is not None]
 		natural_sort(i_subset)
@@ -170,14 +171,14 @@ def find_match_string(lett, patt_array, match_array):
 	print("in find_match_string")
 	blank_patt = "(ZZ[0-9]*)_|(ZZ[0-9]*-[0-9]*)"
 	patt = re.sub('ZZ', lett, blank_patt)
-	print(patt)
 	find_list  = [re.findall(patt, f) for f in patt_array]
 	#print("list of matches")
 	#print(find_list)
 	unwind_list = [el for f in find_list for el in f ]	
 	if len(set(unwind_list))==1:
 		print("No unique matches on this dim; don't concatenate")
-		unwind_matches = [set(unwind_list)] #no unique matches on this dim
+		unwind_matches = [el for f in unwind_list for el in f if el != ""] #no unique matches on this dim
+		print(unwind_matches)
 	else:	
 		patt_matches = sorted(list(set([el for f in unwind_list for el in f if el != ""])))
 		natural_sort(patt_matches)
