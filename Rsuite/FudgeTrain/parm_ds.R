@@ -715,12 +715,13 @@ get.knot.range <- function(dataset){
   if (is.na(data.dev)){
     #As of now, this case is only likely to happen with pr
     #and TBH, it's sort of vanishingly unlikely
-    if !(is.na(data.dev[1])){
-      print("Too few samples for boundary.knots calculation; defaulting to 5 percent")
-      data.dev <- 0.05 * dataset
-    }else{
-      stop("Error in get.knot.range: passed dataset")
-    }
+#     if (!is.na(data.dev[1])){
+#       print("Too few samples for boundary.knots calculation; defaulting to 5 percent")
+#       data.dev <- 0.05 * dataset
+#     }else{
+#       stop("Error in get.knot.range: passed dataset")
+#     }
+    stop(paste("Error in get.knot.range: returned diff(data.range) was NA!"))
   }
   #return(c(data.range[1] - 2*data.dev, data.range[2]+2*data.dev))
   return(c(data.range[1] - data.dev, data.range[2] + data.dev))  
