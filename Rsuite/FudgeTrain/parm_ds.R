@@ -571,9 +571,15 @@ parm.train <- function(hist_pred, hist_targ, args){
   ds <- data.frame(mod=hist_pred, sta=hist_targ)
   #CEW code added 11-22-2016 for the pr case; returns a lot of identical breakpoints
   #values <- unique(values)
+  
+  #Boundary.knots was -999,999 for all calculations up to this point.
+  #However, this may be leading to values of boundary.knots of ~1000 in./day
+  #before the tail adjusts are applied; we're working on a replacement paramter.
+  boundary.knots <- get.knot.range(c(hist_pred, hist_targ))
+  
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
-    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=c(-999,999)
+    regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=boundary.knots #c(-999,999)
     ),data=ds)
   }else{
     print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
@@ -636,7 +642,7 @@ parm.train <- function(hist_pred, hist_targ, args){
                                        #but it might be leading to weird settings for precip.
                                        #Like, 10000-inches-per-day weird.
                                       # Boundary.knots=c(-999,999)),
-                                       Boundary.knots=c(-999,999)),
+                                       Boundary.knots=boundary.knots),
         #),
         data=ds)
       }else{
@@ -697,3 +703,25 @@ parm.downscale <- function(fut_pred, hist_targ, regr_piecewise,
   model_future_fit <- fut_obs
   return(list(fut_obs=fut_obs, fit=NULL))
 }#end arrm.downscale
+
+get.knot.range <- function(dataset){
+	#'Gets parameters for the Boundary.knots
+	#'with some wiggle room, since data may not be same shape
+	#' in the future.
+  data.range <- range(dataset, na.rm = T, finite = T)
+  #data.dev <- sd(dataset, na.rm = T)
+  #KD, D1A conversation 2017-06-20 suggested wider range
+  data.dev <- abs(diff(data.range))
+  if (is.na(data.dev)){
+    #As of now, this case is only likely to happen with pr
+    #and TBH, it's sort of vanishingly unlikely
+    if !(is.na(data.dev[1])){
+      print("Too few samples for boundary.knots calculation; defaulting to 5 percent")
+      data.dev <- 0.05 * dataset
+    }else{
+      stop("Error in get.knot.range: passed dataset")
+    }
+  }
+  #return(c(data.range[1] - 2*data.dev, data.range[2]+2*data.dev))
+  return(c(data.range[1] - data.dev, data.range[2] + data.dev))  
+}
