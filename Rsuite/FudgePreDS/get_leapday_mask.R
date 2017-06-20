@@ -3,7 +3,8 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T){
   #since we currently copy the ENTIRE FILE PATH.
   #time.string: 19790101-20081231
   #valendar: julian
-  noleap.strings <- c("noleap", "NOLEAP", "365", "365-day")
+  noleap.strings <- c("noleap", "NOLEAP", "365", "365-day", 
+                      "360", "360-day")
   if ( !(calendar%in%noleap.strings) ){
     base.leap.path <- "/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/"
     filename <- paste0('maskdays_missingleapdays_', time.string, ".nc")
@@ -28,7 +29,11 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T){
     #Honestly, for the period of time that we are going to be using this 
     #hack, we are probably okay doing a naiive assumption of 365 days per year
     year.str <- sapply(strsplit(time.string, '-'), substr, 1, 4)
-    return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 365 ))
+    if ( calendar %in% c("360", "360-day")){
+        return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 360 ))
+    }else{
+        return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 365 ))
+    }    
   }
 }
 

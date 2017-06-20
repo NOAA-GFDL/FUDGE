@@ -13,10 +13,10 @@ loop.xy.data <- function(){
                     length(c("ds", "qc")))
   names(output.all) <- c("ds", "qc")
   for (ival in 1:x.len){ #1:x.len
-    message(paste("Starting i loop", ival, 'of', x.len))
+    #message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
     for(jval in 1:y.len){ # 31:31 26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
-      message(paste("Starting j loop", jval, 'of', y.len))
+      #message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
@@ -52,7 +52,7 @@ loop.xy.data <- function(){
       #Current looping settings imply that we're never going to use an 
       #incomplete grid (because padding); thus, we don't have to worry about
       #taking slices of the stencil for application.
-      print("in process of applying stencil")
+      #print("in process of applying stencil")
       OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
                          aux.ref$OH$stencil_name)
       MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
@@ -98,7 +98,7 @@ loop.xy.data <- function(){
       if (is.ds.happening.fxn(i=i,j=j,
                               OH.slice=OH.slice, MH.slice=MH.slice, 
                               MF.slice=MF.slice)){
-        print("compressing data")
+        #print("compressing data")
         OH.slice <- compress.xy.data(OH.slice)
         MH.slice <- compress.xy.data(MH.slice)
         MF.slice <- compress.xy.data(MF.slice)
@@ -231,10 +231,10 @@ loop.xy.data <- function(){
         #  print(dim(output[[el]]))
         #  print(summary(output[[el]]))
           tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
-          print('adding over temporary output')
+          #print('adding over temporary output')
           output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
-          print(paste("summary of", el))
-          print(summary(as.vector(output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,])))
+          #print(paste("summary of", el))
+          #print(summary(as.vector(output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,])))
         }
         #Once looping by w complete, do the last s5 adjustment
         #Call the Section 5 Adjustments to be applied to post-downscaled output
