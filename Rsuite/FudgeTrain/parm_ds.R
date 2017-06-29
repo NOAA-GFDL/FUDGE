@@ -119,29 +119,32 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   }else{
     qc <- NULL
   }
+
+print(summary(as.vector(hist_pred[[1]])))
+if (all.identical(remove.missvals(hist_pred[[1]]))){
+  print("MH data all identical; returning MF data for DS")
+  if(train_qcmask){
+    qc <- array(1, dim(out.data))
+  }
+  return(list(ds=fut_pred[[1]], qc=qc))
+}else{
   #Synchronize missing values across OH and MH datasets
   missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
                                        missval.args$minsamplesize, 
                                        missval.args, 
                                        missval.method = 'synchronous')
+hist_pred = missval.out$MH
+fut_pred  = missval.out$MF
+hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
+
+print(summary(as.vector(hist_pred[[1]])))
+print(summary(as.vector(hist_targ[[1]])))
+print(summary(as.vector(fut_pred[[1]])))
+
+#Added 2017-06-27; all same case causes errors for one subsample method, but
+#returns MF data unchaged for the other
+
   if (missval.out$ds.possible){
-    hist_pred = missval.out$MH
-    fut_pred  = missval.out$MF
-    hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
-    
-    #Added 2017-06-27; all same case causes errors for one subsample method, but
-    #returns MF data unchaged for the other
-    if (all.identical(hist_pred)){
-      print("MH data all identical; using regression_subsample_method = total_sample_size")
-      tmp.ds.args <- ds.args
-      tmp.ds.args$regression_subsample_method = 'total_sample_size'
-    }else{
-      tmp.ds.args <- ds.args
-    }
-    
-    print(summary(as.vector(hist_pred[[1]])))
-    print(summary(as.vector(hist_targ[[1]])))
-    print(summary(as.vector(fut_pred[[1]])))
     #Now, call the training code
     hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
     hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
@@ -151,7 +154,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     }
     parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
                                   sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
-                                  tmp.ds.args)
+                                  ds.args)
     #10-13: The default behavior of sort is to remove NA values.
     #If that's the case, you might be able to get away with removing
     #the indexing calls in the call to parm.train
@@ -171,7 +174,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
         }
         out.tmp <- parm.downscale(model_combine_data, 
                                   parm.targ, #maintain orig order and orig placement of missvals
-                                  parm.model, tmp.ds.args)
+                                  parm.model, ds.args)
         rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
         out <- rep(NA, length(MF.idx))
         out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
@@ -195,6 +198,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     }
   }
   return(list(ds=out.data, qc=qc))
+}
 }
 
 arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
@@ -592,24 +596,29 @@ parm.train <- function(hist_pred, hist_targ, args){
   #before the tail adjusts are applied; we're working on a replacement paramter.
   boundary.knots <- get.knot.range(c(hist_pred, hist_targ))
 
-### More diagnostic prints 2017-06-27
-#   print("first set of breakpoints:")
-#   print(format(values, digits=10), sep="  ")
-#   slopefun <- function(x.vals, y.vals){
-#     n.slope <- length(x.vals) - 1
-#     slope.vals <- rep(NA, n.slope)
-#     for (n in 1:n.slope){
-#       slope.vals[n] <- (x.vals[n+1] - x.vals[n]) / (y.vals[n+1] - y.vals[n])
-#     }
-#     return(slope.vals)
-#   }
-#   b.slopes <- slopefun()
-
-
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
     regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=boundary.knots #c(-999,999)
     ),data=ds)
+    
+    ### More diagnostic prints 2017-06-27
+    print("first set of breakpoints:")
+    print(format(values, digits=10), sep="  ")
+    slopefun <- function(x.vals, y.vals){
+      n.slope <- length(x.vals) - 1
+      slope.vals <- rep(NA, n.slope)
+      for (n in 1:n.slope){
+        slope.vals[n] <- (x.vals[n+1] - x.vals[n]) / (y.vals[n+1] - y.vals[n])
+      }
+      return(slope.vals)
+    }
+    b.knot.vals <- predict(regr_piecewise, data.frame(mod=boundary.knots))
+    b.pred.vals <- predict(regr_piecewise, data.frame(mod=values))
+    b.slopes <- slopefun(c(boundary.knots[1], values, boundary.knots[2]), 
+                         c(b.knot.vals[1], b.pred.vals, b.knot.vals[2]))
+    print("first set of slopes")
+    print(format(b.slopes, digits=10, sep="  "))
+    
   }else{
     print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
     regr_piecewise <- lm(sta ~ mod, data=ds)

@@ -366,5 +366,10 @@ all.identical <- function(x){
   #Taken from this stackoverflow exchange: 
   #http://stackoverflow.com/questions/4752275/
   #test-for-equality-among-all-elements-of-a-single-vector
-  diff(range(x)) < .Machine$double.eps ^ 0.5
+  test <- diff(range(x)) < .Machine$double.eps ^ 0.5
+  if (is.na(test)){
+    return(sum(is.na(x))==length(x))
+  }else{
+    return(test)
+  }
 }
