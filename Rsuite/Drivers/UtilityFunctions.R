@@ -339,9 +339,6 @@ get_orig_experiment <- function(in.file, var='tasmax'){
     #Assume only title att present
     orig_exp <- gsub(paste0(var,", "), "", atts['title']) #var with or without a trailing comma
   }
-#   if('realization' %in% att.names){
-#     orig_exp <- paste(orig_exp, 'realization', atts['realization'])
-#   }
 if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
   #Perfect model-specific corrections
   print(atts['experiment_id'])
@@ -358,9 +355,21 @@ if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
                       '1'='ESM', 
                       '2'='CM3')
   }
-  orig_exp <- paste("GFDL-HIRAM", atts['experiment_id'], 
-                    emissions_scenario, physics)
+  orig_exp <- paste("GFDL-HIRAM", emissions_scenario, physics, 
+                    atts['experiment_id'])
   
 }
   return(orig_exp)
+}
+
+all.identical <- function(x){
+  #Taken from this stackoverflow exchange: 
+  #http://stackoverflow.com/questions/4752275/
+  #test-for-equality-among-all-elements-of-a-single-vector
+  test <- diff(range(x)) < .Machine$double.eps ^ 0.5
+  if (is.na(test)){
+    return(sum(is.na(x))==length(x))
+  }else{
+    return(test)
+  }
 }

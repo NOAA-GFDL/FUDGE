@@ -1,4 +1,3 @@
-# Aparna Radhakrishnan 08/04/2014
 WriteNC <-  function(filename,out.data,var.names,
                      #xlon,ylat,time.index.start=NA, time.index.end=NA, downscale.tseries=NA, downscale.origin=NA,
                      dim.list,
@@ -89,6 +88,7 @@ WriteNC <-  function(filename,out.data,var.names,
     all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "longname", "prec", "dim", "dimids", "missval", 'names'))]
     if(length(all.att.list) > 0){
       for (at in 1:length(all.att.list)){
+        #print(paste(loop.var, ":", names(all.att.list)[[at]], "=", all.att.list[[at]]))
         ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])
       }
     }
@@ -111,15 +111,23 @@ WriteNC <-  function(filename,out.data,var.names,
     if(dim.name%in%dim.namelist){
       #Link bounds variables to the corresponding dims; link axes
       #Cloning won't do this if you are creating your own time dimension
+      # revising 2017-06-13 because it inserts bnds attributes when we 
+      # do not have bnds vars present
       dim.axis <- switch(dim.name, 'time' = 'T', 'lat'='Y', 'lon'='X')
       bnds.name <- paste0(dim.name, "_bnds")
-      set_att_fun <- function(dim.name, dim.axis, bnds.name, nc.obj){
-        ncatt_put(nc.obj, dim.name, 'axis', dim.axis)
-        ncatt_put(nc.obj, dim.name, 'bounds', bnds.name)
-        return(nc.obj)
+#       print(bnds.name)
+#       print(names(var.data))
+#       print(bnds.name %in% names(var.data))
+      if (bnds.name %in% names(var.data)){
+        set_att_fun <- function(dim.name, dim.axis, bnds.name, nc.obj){
+          ncatt_put(nc.obj, dim.name, 'axis', dim.axis)
+          ncatt_put(nc.obj, dim.name, 'bounds', bnds.name)
+          return(nc.obj)
+        }
+        nc.obj <- set_att_fun(dim.name, dim.axis, bnds.name, nc.obj)
       }
-      nc.obj <- set_att_fun(dim.name, dim.axis, bnds.name, nc.obj)
     }
+    #stop('examine this output')
   }
   #clone most globals as well
   if (clone_globals){

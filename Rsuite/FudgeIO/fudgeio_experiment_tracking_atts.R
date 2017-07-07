@@ -3,8 +3,10 @@ get.MF.experiment.atts <- function(in.file){
   #attributes present in the input file
   #Currently searches for: 
   #ds_scenario
-  #ds_MF_source
+  #ds_MF_source (something close to a column heading)
   #is_PM <- grepl(strsplit(in.file, "/")[[1]][7], "^NCPP", perl=T)
+  scenario = 'none'
+  dataset = 'none'
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
   is_PM <- exp_name$hasatt
@@ -41,7 +43,7 @@ get.OH.experiment.atts <- function(in.file){
   #'Gets experiment attributes based off of the atts
   #'in the input file, assumed to be OH.
   #'Currently searches for: 
-  #'ds_OH_source
+  #'ds_OH_source (column-heading appropriate)
   #is_PM <- grepl(strsplit(in.file, "/")[[1]][7], "^NCPP", perl=T)
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
@@ -71,8 +73,12 @@ get.OH.experiment.atts <- function(in.file){
     #prism can get title, too.
     #/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/prism/historical/day/atmos/day/r0i0p1/v1/tasmax/SCCSC0p1/tasmax_day_prism_historical_r0i0p1_SCCSC0p1_19810101-20051231.nc
     data_title <- ncatt_get(in.nc, 0, 'title')
-    dataset <- strsplit(data_title$value, " ")[[1]][2]
-    dataset <- sub(",", "", dataset)
+    if (data_title$hasatt){
+        dataset <- strsplit(data_title$value, " ")[[1]][2]
+    	dataset <- sub(",", "", dataset)
+    }else{
+		dataset = 'none'
+	}
   }
   nc_close(in.nc)
   return(list(ds_OH_source = dataset))

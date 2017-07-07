@@ -87,6 +87,14 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE,
   return(listout)
 }
 
+ReadSpatialMask <- function(spat.file, x.subset, y.subset, spat.name='none'){
+  #'Function to subset a spatial mask file in x and y.
+  spat.nc <- nc_open(spat.file)
+  data <- ReadMaskNC(spat.nc)$masks[[1]][x.subset[1]:x.subset[2], y.subset[1]:y.subset[2], drop=F]
+  nc_close(spat.nc)
+  return(data)
+}
+
 correct.int <- function(string){
   if(string=="int"){
     return("integer")

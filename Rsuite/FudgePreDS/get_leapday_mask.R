@@ -3,25 +3,47 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T){
   #since we currently copy the ENTIRE FILE PATH.
   #time.string: 19790101-20081231
   #valendar: julian
-  noleap.strings <- c("noleap", "NOLEAP", "365", "365-day")
+  noleap.strings <- c("noleap", "NOLEAP", "365", "365-day", 
+                      "360", "360-day")
   if ( !(calendar%in%noleap.strings) ){
     base.leap.path <- "/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/"
     filename <- paste0('maskdays_missingleapdays_', time.string, ".nc")
     tmpdir = Sys.getenv("TMPDIR")
     leap.file <- file.path(tmpdir, base.leap.path, filename)
-    if (!(file.exists(leap.file))){
+    print(file.exists(leap.file))
+    print(leap.file)
+    if (file.exists(leap.file)){
       gcp.tmpdir(file.path(base.leap.path, filename))
+      #otherwise, read your data
+      return(ReadMaskNC(nc_open(leap.file))$masks[[1]])
+    }else{
+#       print("No leapmask found; generating mask on the fly")
+#       start.date <- time.string[1] + "01-01"
+#       end.date <- time.string[2] + ""12-31
+#       time.data <- as.PCICt(cal="", origin="")
+#       return(make.leapday.mask(time.data))
     }
-    #otherwise, read your data
-    return(ReadMaskNC(nc_open(leap.file))$masks[[1]])
   }else{
     #If your calendar has no leapdays, you simply need to return
     #a vector of all missing values
     #Honestly, for the period of time that we are going to be using this 
     #hack, we are probably okay doing a naiive assumption of 365 days per year
     year.str <- sapply(strsplit(time.string, '-'), substr, 1, 4)
-    return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 365 ))
+    if ( calendar %in% c("360", "360-day")){
+        return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 360 ))
+    }else{
+        return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 365 ))
+    }    
   }
+}
+
+make.leapday.mask <- function(timeseries){
+  #Given a timeseries formatted in a date-like format (such as PCICt), 
+  #creates a mask with NAs on all Feb. 29ths.
+  leapdays <- which(format(timeseries, "%m-%d")=="02-29")
+  mask <- rep(1, length(timeseries))
+  mask[leapdays] <- NA
+  return(mask)
 }
 
 gcp.tmpdir <- function(file, verbose=F){

@@ -1,3 +1,14 @@
+06-08-17
+- Delta, CFQM revised, present and working for non-pr cases
+- ignore0 removed from delta options; using pr ignore0
+
+06-05-17
+- Flexible subsetting
+- njobs, ncpus, wallclocktime available in the aux file
+- commenting out CFQM, MBC, DeltaSD for development
+- default aux file generated if no aux provided
+- lmAsync, lmstepAsync added
+
 03-03-17
 - QDM, MBC added for ds workflow
 
@@ -38,10 +49,7 @@ tested for tasmax, pr (ratio) tests are in progress
 - Multiplicative (ratio) tail adjustment option to "cdfttailadjust" and "simpletailadjust". Brief metadata update.
 (cew)
 - Merge with branch containing improved postProc workflow
-<<<<<<< HEAD
-=======
 - Adding parsing of ncpu,njobs from XML
->>>>>>> g_final
 
 8-23-16
 - Bugfix for cross-validated qc mask pathanmes

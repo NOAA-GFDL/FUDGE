@@ -52,9 +52,12 @@ callQM <- function(OH, MH, MF, args, type="",
 start_year <- 1
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
+    missval.new <- missval.args
+    print(dim(missval.new$pr_opts$MF))
+    missval.new$pr_opts$MF <- missval.new$pr_opts$MF[,,,n,, , drop=F]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
-                                         missval.args, 
+                                         missval.new, 
                                          missval.method='distributional')
     if(missval.out$ds.possible){
       OH.slice <- missval.out$OH[[1]]

@@ -99,6 +99,7 @@ def checkTags(dictParams,key):
 				print "Error: Missing value for ",key
 				sys.exit(1)  
 		return val 
+
 def parse_outdir(out_dir,property):
 	print "Parsing out_dir to check if it references property tags"
 	list_subs = []
@@ -106,17 +107,17 @@ def parse_outdir(out_dir,property):
 	outdirsplit = out_dir.split('/')
 	replace = ""
 	expect_property = 0 
+	pname = 'na'
 	for outdirs in outdirsplit:
 		if '$(' in outdirs:
-		   print "outdirs as defined expects a property tag.."
-		   expect_prop = 1
-		   for pname,pval in property.iteritems():
-			pname = '$('+pname+')' 
-			if pname == outdirs:
-			  print "we may have located the property tag"
-			  replace = pval
-		 #	 new_out_dir = out_dir.replace('$(RIP)',replace)
-			  break;
+			print "outdirs as defined expects a property tag.."
+			expect_prop = 1
+			for pname,pval in property.iteritems():
+				pname = '$('+pname+')' 
+				if pname == outdirs:
+					print "we may have located the property tag"
+					replace = pval
+					break;
 	if(replace != ""):
 	 if (out_dir  != ""):
 	     list_new_out_dir = replace.split(",")	
@@ -133,6 +134,8 @@ def parse_outdir(out_dir,property):
 	else:
 	 list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
 	return list_subs,listout	
+
+	
 def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
 	ctr = 0
 	dictDS = {}
@@ -657,13 +660,21 @@ def main():
 	idict = {'US48' : 748, 
 	         'SCCSC0p1'  : 181, 
 	         'RR'   : 181, 
-	         'grid0': 0}
+	         'grid0': 0, 
+	         'NEUSA': 1}
 	jdict = {'US48' : 454, 
 	         'SCCSC0p1'  : 31, 
 	         'RR'   : 31, 
-	         'grid0': 0}         
-	i_offset = idict[output_grid]
-	j_offset = jdict[output_grid]
+	         'grid0': 0, 
+	         'NEUSA': 1}
+	try:         
+		i_offset = idict[output_grid]
+	except KeyError:
+		i_offset = 1
+	try:		
+		j_offset = jdict[output_grid]
+	except KeyError:
+		j_offset = 1	
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \

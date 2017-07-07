@@ -9,6 +9,7 @@ LoadLib <- function(ds.method){
   library(jsonlite)
   library(plyr)
   #library(abind)
+  library('climod', lib.loc = "/home/d1a/R/x86_64-unknown-linux-gnu-library/3.2/")
   if(grepl('CDFt', ds.method)){
     print("Importing CDFt library")       
     library(CDFt)

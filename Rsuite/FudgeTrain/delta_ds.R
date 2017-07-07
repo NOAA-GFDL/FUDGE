@@ -55,11 +55,11 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
     }else{
       stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
     }
-    if(!is.null(args$ignore0.Delta)){
-      ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
-    }else{
-      stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
-    }
+#     if(!is.null(args$ignore0.Delta)){
+#       ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
+#     }else{
+#       stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
+#     }
     if(!tmasks$time_mask_overlap){
       index.mask <- tmasks$MF$masks[[w]]
     }else{
@@ -81,7 +81,7 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
                                  start_year=pr_start)
         OH.idx <- idx$index
         pr_start <- idx$end
-        delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
+        delta <- delta.train(MH, MF.data, deltatype, deltaop, status) #ignore0.Delta
         ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
         #calendars in any dataset, need to adjust the two for concurrent leapdays
@@ -130,8 +130,9 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
         ###its arguably a closer match to the behavior above, but it's still a change
         ###from the existing behavior.
         start <- idx$end
-        loop.delta <- delta.train(MH[OH.idx], MF.data, deltatype, deltaop, ignore0.Delta, status)
-        ds.out <- delta.downscale(loop.delta, OH[hist.idx], deltaop, status)
+        loop.delta <- delta.train(MH[OH.idx], MF.data, deltatype, deltaop, status)
+        #hist.idx
+        ds.out <- delta.downscale(loop.delta, OH[OH.idx], deltaop, status)
       }
       out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                       tmasks$fut.leapmask, 
@@ -152,7 +153,7 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
     return(list(ds=out.data, qc=qc.data))
 }
 
-delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, ignore0.Delta, status){
+delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
   #'Separates out the training step of delta downscaling (calculating deltas)
   #'As of 2016-10, used to call delta training once per future rip available
   #'Calls to ignore0.Delta are bing removed, since that option is now included

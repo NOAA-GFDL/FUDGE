@@ -57,11 +57,28 @@ ncdump -h $outFile |grep plev
   \mv tmp.nc $outFile
   
   #echo ">>>> use nco tools to refine new file contents "
-  set vars2copy = "i_offset,j_offset,lat_bnds,lon_bnds,time_bnds"
+
+  
+  set varsPresent = ("i_offset" "j_offset", "lat_bnds" "lon_bnds" "time_bnds")
+  set vars2copy   = ""
+  foreach v ($varsPresent)
+  	ncdump -h $inFiles_array[1] | grep $v >> /dev/null
+  	set ispresent = $status
+  	if ($ispresent == 0) then
+  		if ($vars2copy == "") then
+  			set vars2copy = $v
+  		else
+  			set vars2copy = "${vars2copy},$v"
+  		endif
+  	endif
+  end
+  echo $vars2copy 
+  
   if("$climvar" == "tasmax" || "$climvar" == "tasmin") then
      set vars2copy = "$vars2copy,height"
   endif
   ncks -A -h -v $vars2copy $inFiles_array[1]  $outFile
+  
   
   if ($enstype == "CV") then
   	echo "in cross-validated case"
