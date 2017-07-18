@@ -27,7 +27,13 @@ make.fudge.globals <- function(){
   fudge.file.atts <- get.FUDGE.file.atts(OH$metadata, MH$metadata, MF$metadata)
   atts.all <- c(fudge.info.atts, fudge.OH.atts, fudge.MF.atts, fudge.file.atts)
   #Hey, check on this - is it working as intended?
-  fudge.climatology <- MF$metadata[[target.var]]$climatology
+  #Updating with OH clone for seasonal forecasts 2017-07-17
+#   print(aux_ref$climo_source)
+#   if (aux.ref$climo_source == 'MF'){
+#     fudge.climatology <- MF$metadata[[target.var]]$climatology
+#   }else if (aux.ref$climo_source == 'OH'){
+#     fudge.climatology <- OH$metadata[[target.var]]$climatology 
+#   }
   ##############################################################################
   global_att_list <- c(list('title' = fudge.title, 
                             'history' = fudge.history, 
@@ -35,14 +41,18 @@ make.fudge.globals <- function(){
                             "institute_id" = fudge.insitute.id,
                             'comment' = fudge.comment, 
                             'references' = fudge.reference, 
-                            'climatology' = fudge.climatology, 
+                            #'climatology' = fudge.climatology, 
                             'realizations' = paste(fut.pred.rip.list, collapse=","), 
                             'fudgetag' = fudgetag, 
                             'ds_downscaling_method' = ds.ref$method), 
                        atts.all)
   #Check for attributes that may not be present
   #climatology and trend
+  if (aux.ref$climo_source == 'MF'){
   clim.nc <- nc_open(MF$metadata[[1]]$filename)
+  }else if (aux.ref$climo_source == 'OH'){
+    clim.nc <- nc_open(OH$metadata[[1]]$filename)
+  }
   clim.att <- ncatt_get(clim.nc, 0, 'climatology')
   trend.att <- ncatt_get(clim.nc, 0, 'trend')
   nc_close(clim.nc)

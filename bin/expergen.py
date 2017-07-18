@@ -621,7 +621,7 @@ def main():
 				sys.exit(1)
 		else:
 			print('making default aux file')
-			auxinput = make_aux_input(output_grid, sbase)		
+			auxinput = make_aux_input(output_grid, sbase, target)		
 	auxinfo = parse_aux_info(auxinput)
 	#If aux file is not default, aux file overrides XML parameters
 	if auxinfo['njobs'] != 8:
@@ -675,6 +675,7 @@ def main():
 		j_offset = jdict[output_grid]
 	except KeyError:
 		j_offset = 1	
+	print(target_dir)	
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \

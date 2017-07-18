@@ -7,6 +7,7 @@ import csv
 import os,sys
 from os import path as osp
 import json
+import re
 
 def get_ds_info(ds_method, FUDGEROOT):
 	#Reads the ds lookup table
@@ -94,9 +95,11 @@ def parse_aux_info(jsonfile):
 	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 
 	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus})
 	
-def make_aux_input(grid, script_base):
+def make_aux_input(grid, script_base, targ_var):
 	#Creates an aux info file with g-or-earlier default settings: minifiles, 
 	#no stencils, etc.
+	#As of 2017-07-18, also checks for modified aux settings and objects 
+	#if trying to implement default using them.
 	print("Making default aux file")
 	jdict = {'US48' : 114, 
 	         'SCCSC0p1'  : 140, 
@@ -131,7 +134,14 @@ def make_aux_input(grid, script_base):
                            '    "stencil": ["none"],',
                            '    "geomask": ["none"]',
                            '}'])
-	aux_text = "\n".join(["{", i_subset, j_subset, tile_olap, main_text, "}"])
+	print(targ_var)
+	if re.search('Anom', targ_var) is not None:
+		print("Error in make_aux_input: if using an anomaly var " + targ_var + \
+		      " user specification of climo_source in aux file is required!")
+		sys.exit(1)
+	else:    
+		meta_text = '"climo_source":["MF"],'                           
+	aux_text = "\n".join(["{", i_subset, j_subset, tile_olap, meta_text, main_text, "}"])
 	with open(aux_scriptname, 'w') as f: 
 		f.write(aux_text)
 	return(aux_scriptname)							

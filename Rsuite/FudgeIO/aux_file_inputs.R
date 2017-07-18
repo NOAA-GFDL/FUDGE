@@ -91,6 +91,7 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   if ('multivar_target' %in% names(aux_list)){
     output$multivar_target <- aux_list$multivar_target
   }
+  output$climo_source <- aux_list$climo_source
   dataset_names <- c("OH", "MH", "MF")
   for (n in dataset_names){
     el <- aux_list[[n]]

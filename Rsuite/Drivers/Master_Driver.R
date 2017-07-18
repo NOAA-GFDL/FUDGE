@@ -441,6 +441,7 @@ tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
 ds <- loop.xy.data()
+#ds <- list(ds=MF$data[[1]])
 print('summary of ds:')
 print(summary(ds))
 message("FUDGE downscaling ends")
@@ -495,7 +496,8 @@ for (r in 1:length(fut.pred.rip.list)){
                             standard_name=paste(OH$metadata[[target.var]]$long_name),
                             global_overwrite=global_att_list,
                             global_clone_file = OH.files[[1]],
-                            clone_globals=T, clone_all=F, clone_include="frequency",
+                            clone_globals=T, clone_all=F, 
+                            clone_include="frequency",clone_exclude="climatology",
                             verbose=F
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))  

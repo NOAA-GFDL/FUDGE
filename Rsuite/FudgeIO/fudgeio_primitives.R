@@ -330,11 +330,9 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   #'of the attribute table from the input 
   #'nc object and variable.
   attnames <- c('standard_name', 'long_name', 'units', 
-                'prec','calendar', 'filename', 'rips', 
-                'climatology')
+                'prec','calendar', 'filename', 'rips')
   att.defaults <- c('', nc.var, "", 
-                    'float', "",'', "", 
-                    NA)
+                    'float', "",'', "")
   var.att.list <- list()
   #Get var atts
   for (n in 1:length(attnames)){
@@ -361,11 +359,11 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
     var.att.list$rips <- get.rip.data(nc.obj)
   }
   #Get global atts
-  glob_attnames <- c('frequency')
-  glob.defaults <- c("")
+  glob_attnames <- c('frequency', 'climatology')
+  glob.defaults <- c("", NA)
   glob.att.list <- list()
   for (n in 1:length(glob_attnames)){
-    tmp.att <- ncatt_get(nc.obj, nc.var, glob_attnames[n])
+    tmp.att <- ncatt_get(nc.obj, 0, glob_attnames[n])
     if ( !(tmp.att$hasatt)){
       tmp.att$value <- glob.defaults[n]
     }
