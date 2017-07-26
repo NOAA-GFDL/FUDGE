@@ -167,7 +167,7 @@ print(summary(as.vector(fut_pred[[1]])))
       MF.slice <- MF.slice[MF.idx]
       if( length(MF.slice) != 0){
         rip.len <- sum(MF.idx)
-        rip.rank <- rank(MF.slice)
+        rip.rank <- rank(MF.slice, ties='first')
         model_combine_data <- sort(MF.slice)
         if (jitter){
           model_combine_data <- pr_jitter_fxn(model_combine_data)

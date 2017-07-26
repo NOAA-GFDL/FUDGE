@@ -110,7 +110,7 @@ CFQM_hist <- function(MH, MF, OH){
   prob=seq(from=0.001, to=0.999, length.out=length(OH))
   OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
   DS <- quantile(MF, OH.mapped.to.MH, na.rm=T)
-  return(DS[rank(OH)])
+  return(DS[rank(OH, ties='first')])
 }
 
 set.CFQM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){

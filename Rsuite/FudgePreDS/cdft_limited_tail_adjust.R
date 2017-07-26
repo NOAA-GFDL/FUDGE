@@ -21,7 +21,7 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   #Initialize and sort data
   ds.cond = do.call(select.cond, list(DS, cutoff))
   ds.order = order(DS) #used to sort from lowest to highest
-  ds.rank <- rank(DS)  #used to get sorted output in same order as unsorted ds
+  ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
   DS = sort(DS)
   MF = MF[ds.order]
   apply_adjust = T

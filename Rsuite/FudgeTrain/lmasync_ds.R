@@ -121,10 +121,10 @@ lmAsync.downscale <- function(lm.model, MF, args){
 
   if ('prime_predictor' %in% names(args)){
     mf.order <- order(MF[[args$prime_predictor]])
-    mf.rank  <- rank(MF[[args$prime_predictor]])
+    mf.rank  <- rank(MF[[args$prime_predictor]], ties='first')
   }else{
     mf.order <- order(MF[[1]])
-    mf.rank <- rank(MF[[1]])
+    mf.rank <- rank(MF[[1]], ties='first')
   }  
   MF <- lapply(MF, '[', mf.order)
   out <- suppressWarnings(predict.lm(lm.model, newdata=as.data.frame(MF)))

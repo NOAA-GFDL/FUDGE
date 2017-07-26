@@ -82,7 +82,7 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
 get.PCICt.time.series <- function(origin, time.data, calendar){
   #Returns a fast and dirty date conversion into the PCICt time
   #series format, whcih contains noleap data
-  julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 'proleptic_gregorian')
+  julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
   if(calendar%in%julian.strings){
     calendar <- 'gregorian'
   }

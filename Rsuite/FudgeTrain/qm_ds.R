@@ -248,7 +248,7 @@ callCFQMv3<-function(LH,CH,CF, args){
 
 CFQM_futa <- function(OH, MH, MF, args){
   prob <- seq(0.001,0.999,length.out=sum(!is.na(MF))) #lengthCF
-  MF.rank <- rank(MF)
+  MF.rank <- rank(MF, ties='first')
   #Create OH mapped to MH
   OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
   #Map MF

@@ -216,7 +216,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   # CHECKS FOR TYPE OF TAIL SCHEME -- SEEMS LIKE THIS IS NOT NECESSARY SINCE THIS
   # FUNCTION ONLY PERTAINS TO THE SIMPLE TYPE -- SHOULD NEVER GET HERE OTHERWISE
   #   if(args$triggertype=='GfGh'){
-  mf.rank = rank(MF)
+  mf.rank = rank(MF, ties='first')
   MF  = sort(MF)
   DS = sort(DS)
   #mf.idx = tail(which(MF <= max(MH)), 1)
