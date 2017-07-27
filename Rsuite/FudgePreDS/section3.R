@@ -96,11 +96,13 @@ callPRPreproc <- function(test, input, postproc.output,
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
   source('/home/cew/Code/s8_testing/adjust_pr//pairwise_adjust_pr.R')
-  print(summary(input$OH))
-#  stop('examien this output')
+#   print(summary(input$OH))
+#   print(summary(test$pp.args))
+#   print(summary(test))
+#    stop('examien this output')
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF, 
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
-                             test$pp.args$vars, prime_predictor,
+                             test$var, prime_predictor,
                              test$pp.args$thold, lopt.drizzle, lopt.conserve, ignore0)
   #'Okay, this is going to need some work on how to transmit the unit conversions
   #'from in here
@@ -108,6 +110,16 @@ callPRPreproc <- function(test, input, postproc.output,
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
   missval.args$pr_opts <<- tmp.out$pr_args
+
+  #and store args for later use
+  pr_mod$qc_args <- c(pr_mod$qc_args, 
+                      list(oh = tmp.out$pr_args$oh, 
+                           mh = tmp.out$pr_args$mh, 
+                           mf = tmp.out$pr_args$mf))
+  print(summary(tmp.out))
+  print(summary(pr_mod$qc_args))
+  stop('examine this out')
+  postproc.output$propts <- pr_mod
 
   return(list('input'=input,
               's5.list'=postproc.output, 
