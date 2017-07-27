@@ -110,15 +110,16 @@ callPRPreproc <- function(test, input, postproc.output,
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
   missval.args$pr_opts <<- tmp.out$pr_args
+missval.args$pr_opts$prime_predictor <<- prime_predictor
 
   #and store args for later use
   pr_mod$qc_args <- c(pr_mod$qc_args, 
-                      list(oh = tmp.out$pr_args$oh, 
-                           mh = tmp.out$pr_args$mh, 
-                           mf = tmp.out$pr_args$mf))
-  print(summary(tmp.out))
-  print(summary(pr_mod$qc_args))
-  stop('examine this out')
+                      list(OH = tmp.out$pr_args$OH, 
+                           MH = tmp.out$pr_args$MH, 
+                           MF = tmp.out$pr_args$MF))
+#   print(summary(tmp.out))
+#   print(summary(pr_mod$qc_args))
+#   stop('examine this out')
   postproc.output$propts <- pr_mod
 
   return(list('input'=input,
