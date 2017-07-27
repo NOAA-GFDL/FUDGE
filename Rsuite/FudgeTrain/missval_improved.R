@@ -86,6 +86,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #This is the most common case
     insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
+  #Okay, pairwise settings are entirely different settings
+  #...and for now, that's going in the ds method
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
@@ -158,6 +160,10 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Because this treats a failure in any ensemble as cause to retry absolutely 
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
+  print(length(OH[[1]]))
+  print(length(MH[[1]]))
+print(length(orig$OH[[1]]))
+print(length(orig$MH[[1]]))
   complete.hist <- complete.cases(c(OH,MH))
   complete.fut <- complete.cases(MF)
   dim(complete.fut) <- dim(MF[[1]])

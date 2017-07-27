@@ -97,7 +97,7 @@ kount.vals <- function(data, thold=NA){
   return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals+zero.vals)), thold=thold.vals))
 }
 
-adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
+adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list('na')){
   #' Fast and dirty modifications to make the pre- and post-processing 
   #' scheme that the XML currently supports match the R infrastucture
   #' for the more general version yet to be implemented
@@ -105,17 +105,27 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
   post_ds=list()
   train_qcmask <- FALSE
   if(pr_opts[[1]]!='na'){
+    #As of early I, pairwise methods (lm, lmAsync, PARM) all get adjusted from
+    #within the twindow loops
+    if (ds.ref$is_pairwise){
+      pr.loc='inloop'
+      allow.low.mh <- TRUE
+    }else{
+      pr.loc='outloop'
+      allow.low.mh <- FALSE
+    }
     if('apply_0_mask' %in% names(pr_opts)){
       message(paste("Warning in adapt.pp.input: use of apply_0_mask as an opt name is deprecated!", 
                     "Changing to new name, ignore0"))
       pr_opts['ignore0'] <- pr_opts$apply_0_mask
     }
-    pre_ds$propts <- list(type='PR', var='pr', apply='all', loc='outloop', 
+    pre_ds$propts <- list(type='PR', var='pr', apply='all', loc=pr.loc, 
                           pp.args=list(thold=pr_opts$pr_threshold_in,
                                        freqadj=pr_opts$pr_freqadj_in,
                                        conserve=pr_opts$pr_conserve_in, 
                                        ignore0=ifelse(pr_opts$ignore0=='off', 
-                                                      'off', 'on'))
+                                                      'off', 'on'), 
+                                       allow_low_mh = allow.low.mh)
     )
     if ('pr_adjmethod' %in% names(pr_opts)){
       pre_ds$propts$pp.args['method'] <- pr_opts$pr_adjmethod
@@ -158,7 +168,7 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
     post_ds$propts <- list(type='PR', 
                            adjust.out='on', 
                            qc.mask='off', 
-                           loc='outloop', 
+                           loc=pr.loc, 
                            qc_args=list(thold=pr_opts$pr_threshold_out,
                                         conserve=pr_opts$pr_conserve_out, 
                                         ignore0=ignore0))

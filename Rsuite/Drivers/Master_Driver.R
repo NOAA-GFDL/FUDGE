@@ -117,7 +117,7 @@ if (mask.list=='na'){
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
   message('Conversion of pre- and post- downscaling adjustment input')
   if(exists('pr_opts')){
-    pp.out <- adapt.pp.input(mask.list, pr_opts)
+    pp.out <- adapt.pp.input(mask.list, pr_opts, ds.ref)
   }else{
     pp.out <- adapt.pp.input(mask.list)
   }

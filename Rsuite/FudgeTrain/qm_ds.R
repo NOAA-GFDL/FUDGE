@@ -55,6 +55,8 @@ start_year <- 1
     missval.new <- missval.args
     print(dim(missval.new$pr_opts$MF))
     missval.new$pr_opts$MF <- missval.new$pr_opts$MF[,,,n,, , drop=F]
+    print(summary(OH))
+    print(summary(MH))
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.new, 

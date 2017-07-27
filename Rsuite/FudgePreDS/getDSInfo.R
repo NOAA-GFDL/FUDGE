@@ -15,6 +15,7 @@ getDSInfo <- function(ds.method){
   ds.idx <- which(ds.method == method.names)
   print(method.names)
   print(ds.idx)
+  print(names(input))
   ds.object <- list('method'         = ds.method, 
                     'downscale_oh'   = eval(parse(text=input$downscale_oh[ds.idx])),
                     'predictors'     = csplit(input$predictor_datasets[ds.idx]), 
@@ -24,6 +25,9 @@ getDSInfo <- function(ds.method){
                     'missval_method' = input$missval_method[ds.idx], 
                     'multipt_method' = input$multipt_method[ds.idx], 
                     'multivar_target'= input$multivar_target[ds.idx],
+                    'is_qm'          = eval(parse(text=input$is_qm[ds.idx])), 
+                    'is_pairwise'    = eval(parse(text=input$is_pairwise[ds.idx])), 
+                    'missval_method' = input$missval_method[ds.idx],
                     'oh_dimlist' = csplit(input$oh_dimlist[ds.idx]), 
                     'mh_dimlist' = csplit(input$mh_dimlist[ds.idx]), 
                     'mf_dimlist' = csplit(input$mf_dimlist[ds.idx]), 
