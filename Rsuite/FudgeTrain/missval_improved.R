@@ -111,11 +111,14 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         
         #var.idx <- pr_vars[[el]]
         if (el == 'OH'){
+          #print(summary(orig[[el]][!is.na(orig[[el]])]))
           assign(el, retry.with.pr.present(orig[[el]], 
                                            missval.args$pr_opts[[el]],  
                                            1, #missval.args$pr[[var.idx]],
                                            tmasks$apply_tmasks, 
                                            tmasks[[el]]$masks[[w]]))
+#           print(summary(orig[[el]]))
+#           stop('examine this output')
         }else{
           assign(el, retry.with.pr.present(orig[[el]], 
                                            missval.args$pr_opts[[el]],  
@@ -169,10 +172,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Because this treats a failure in any ensemble as cause to retry absolutely 
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
-  print(length(OH[[1]]))
-  print(length(MH[[1]]))
-print(length(orig$OH[[1]]))
-print(length(orig$MH[[1]]))
   complete.hist <- complete.cases(c(OH,MH))
   complete.fut <- complete.cases(MF)
   dim(complete.fut) <- dim(MF[[1]])

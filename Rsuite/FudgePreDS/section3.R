@@ -106,11 +106,14 @@ callPRPreproc <- function(test, input, postproc.output,
                              test$pp.args$thold, lopt.drizzle, lopt.conserve, ignore0)
   #'Okay, this is going to need some work on how to transmit the unit conversions
   #'from in here
+  print(summary(input$OH[[1]]))
   input$OH <- tmp.out$OH
+print(summary(input$OH[[1]]))
+#stop('examine this output')
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
   missval.args$pr_opts <<- tmp.out$pr_args
-missval.args$pr_opts$prime_predictor <<- prime_predictor
+  missval.args$pr_opts$prime_predictor <<- prime_predictor
 
   #and store args for later use
   pr_mod$qc_args <- c(pr_mod$qc_args, 
