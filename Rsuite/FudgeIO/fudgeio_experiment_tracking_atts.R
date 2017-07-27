@@ -10,6 +10,13 @@ get.MF.experiment.atts <- function(in.file){
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
   is_PM <- exp_name$hasatt
+  is_CORDEX = F
+  proj_att = ncatt_get(in.nc, 0, 'project_id')
+  if (proj_att$hasatt){
+    if(proj_att$value=='CORDEX'){
+        is_CORDEX = TRUE
+    }
+  }
   if(is_PM){
     #Get dataset name
     tmp.split <- strsplit(exp_name$value, "_")
@@ -24,10 +31,9 @@ get.MF.experiment.atts <- function(in.file){
     }else{
       stop(paste("Error in metadata parsing functions: please check att formatting!"))
     }
-#     dataset <- ncatt_get(in.nc, 0, 'model_id')$value
-#     #scenario needs forcing and model
-#     scenario <- paste(ncatt_get(in.nc, 0, 'experiment_id')$value, 
-#                        exp_name$value)
+  }else if(is_CORDEX){
+    dataset = ncatt_get(in.nc, 0, 'model_id')$value
+    scenario  = ncatt_get(in.nc, 0, 'experiment_id')$value
   }else{
     #Assume the 3^5 hogepoge of observational datasets
     #model_id, experiment_id
@@ -48,6 +54,13 @@ get.OH.experiment.atts <- function(in.file){
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
   is_PM <- exp_name$hasatt
+  is_CORDEX = F
+  proj_att = ncatt_get(in.nc, 0, 'project_id')
+  if (proj_att$hasatt){
+    if(proj_att$value=='CORDEX'){
+      is_CORDEX = TRUE
+    }
+  }
   if(is_PM){
     #Get dataset name
     #dataset <- ncatt_get(in.nc, 0, 'model_id')$value
@@ -63,6 +76,8 @@ get.OH.experiment.atts <- function(in.file){
     }else{
       stop(paste("Error in metadata parsing functions: please check att formatting!"))
     }
+  }else if(is_CORDEX){
+    dataset = ncatt_get(in.nc, 0, 'model_id')$value
   }else{
     #Assume the 3^5 hogepoge of observational datasets
     #daymet can be obtained from source attribute:
