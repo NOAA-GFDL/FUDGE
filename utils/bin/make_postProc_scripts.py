@@ -52,7 +52,9 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 		#source_list.append(pp_source)	
 		#make the complicated postProc runcode
 		pp_runcode = osp.join(pp_dir, "postProc_command_" + str(i+1))
-		pp_statfile_remove = "find " + pp_stat_dir + " | grep " + ensembles[i] + " | xargs rm -rf "
+		#would also work by using a -w for ensembles[i] - that would only match on ensembles[i]
+		#as a word, not as a pattern in other words (i.e. the scRIPts problem)
+		pp_statfile_remove = "find " + pp_stat_dir + "/* | grep " + ensembles[i] + " | grep 'status' | xargs rm -rf "
 		pp_checkout_commands = "\n".join(["module load git/2.4.6", 
 										  "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
 		pp_status_commands = "\n".join(["if ( $status == 0 ) then", 
