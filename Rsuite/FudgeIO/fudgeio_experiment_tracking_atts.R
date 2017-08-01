@@ -10,6 +10,13 @@ get.MF.experiment.atts <- function(in.file){
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
   is_PM <- exp_name$hasatt
+  is_CORDEX = F
+  proj_att = ncatt_get(in.nc, 0, 'project_id')
+  if (proj_att$hasatt){
+    if(proj_att$value=='CORDEX'){
+        is_CORDEX = TRUE
+    }
+  }
   if(is_PM){
     #Get dataset name
     tmp.split <- strsplit(exp_name$value, "_")
@@ -24,10 +31,9 @@ get.MF.experiment.atts <- function(in.file){
     }else{
       stop(paste("Error in metadata parsing functions: please check att formatting!"))
     }
-#     dataset <- ncatt_get(in.nc, 0, 'model_id')$value
-#     #scenario needs forcing and model
-#     scenario <- paste(ncatt_get(in.nc, 0, 'experiment_id')$value, 
-#                        exp_name$value)
+  }else if(is_CORDEX){
+    dataset = ncatt_get(in.nc, 0, 'model_id')$value
+    scenario  = ncatt_get(in.nc, 0, 'experiment_id')$value
   }else{
     #Assume the 3^5 hogepoge of observational datasets
     #model_id, experiment_id
@@ -45,9 +51,18 @@ get.OH.experiment.atts <- function(in.file){
   #'Currently searches for: 
   #'ds_OH_source (column-heading appropriate)
   #is_PM <- grepl(strsplit(in.file, "/")[[1]][7], "^NCPP", perl=T)
+  #is_cbay tas_day_TPLM2_historical_r0i0p0_NEUSA_19860101-20151231.I*_J1-41.nc
   in.nc <- nc_open(in.file)
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
   is_PM <- exp_name$hasatt
+  is_CORDEX = F
+  proj_att = ncatt_get(in.nc, 0, 'project_id')
+  if (proj_att$hasatt){
+    if(proj_att$value=='CORDEX'){
+      is_CORDEX = TRUE
+    }
+  }
+  is_cbay <- strsplit(basename(in.file), "_")[[1]][3] == 'TPLM2'
   if(is_PM){
     #Get dataset name
     #dataset <- ncatt_get(in.nc, 0, 'model_id')$value
@@ -63,6 +78,10 @@ get.OH.experiment.atts <- function(in.file){
     }else{
       stop(paste("Error in metadata parsing functions: please check att formatting!"))
     }
+  }else if(is_CORDEX){
+    dataset = ncatt_get(in.nc, 0, 'model_id')$value
+  }else if (is_cbay){
+    dataset = 'TPLM2'
   }else{
     #Assume the 3^5 hogepoge of observational datasets
     #daymet can be obtained from source attribute:

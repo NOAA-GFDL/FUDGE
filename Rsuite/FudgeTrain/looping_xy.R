@@ -2,6 +2,7 @@
 #Currently called from global environment in master driver
 
 loop.xy.data <- function(){
+  verbose <- F
   #This is with the new downscaling object structure
   x.len <- unique(sapply(list(oh.coords$x.start, 
                               mh.coords$x.start, mf.coords$x.start), 'length'))
@@ -15,9 +16,31 @@ loop.xy.data <- function(){
   for (ival in 1:x.len){ #1:x.len
     #message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
+    if (ival %% 5 == 1){
+      message(paste("ival:", ival, "/", x.len))
+      if (ival != 1){
+        i.elapsed <- (proc.time() - i.start)[3]
+        message(paste("Last 5 i loops took:", i.elapsed))
+      }
+      i.start <- proc.time()
+      i.write <- T
+    }else{
+      i.write <- F
+    }
     for(jval in 1:y.len){ # 31:31 26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
       #message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
+      if ( (jval %% 5 == 1) & i.write){
+        message(paste("jval:", jval, "/", y.len))
+        if (jval != 1){
+          j.elapsed <- (proc.time() - j.start)[3]
+          message(paste("Last 5 j loops took:", j.elapsed))
+        }
+        j.start <- proc.time()
+        j.write <- T
+      }else{
+        j.write <- F
+      }
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
       MF.slice <- get.xy.slice(MF$data, mf.coords, ival, jval)
@@ -107,163 +130,171 @@ loop.xy.data <- function(){
                       'i', ival, 'j', jval,
                       "due to missing prime predictor"))
         }else{
-        #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
-        #looping by time window
-        message('Looking for pre-processing functions to apply')
-        if(s3.outloop){
-          message('Applying S3 Adjustment')
-        #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
-          temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
-                                          MH=MH.slice, 
-                                          OH=OH.slice,
-                                          MF=MF.slice,
-                                          #this really needs a metadata call of some sort.
-                                          #how to pass it in? Pointer in global environment?
-                                          adjust.metadata,
-                                          s5.instructions=post.ds, 
-                                          missval.args = missval.args, 
-                                          prime_predictor=prime_predictor)
-          #Assign output and remove temporary output
-         # missval.args <- temp.output$missval.args
-        ####h_record_trace_pr
-        #pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
-          post.ds <- temp.output$s5.list
-          OH.slice <- temp.output$input$OH
-          MH.slice <- temp.output$input$MH
-          MF.slice <- temp.output$input$MF
-          if (!is.null(temp.output$input$qc)){
-            for (el in names(temp.output$qc)){
-              ds[[el]] <- temp.output$qc[[el]]
-            }
-          }
-          remove(temp.output)
-        }
-        #Loop by time window
-        for(w in 1:nmasks){
-        #  for(w in 3:3){
-          message(paste("Starting window", w, "of", nmasks))
-          w <<- w
-          qc.out <- NULL
-          if (tmasks$apply_tmask){
-#             print(str(OH.slice))
-#             stop('examine call from lapply')
-            OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
-            MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
-            MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])
-          }else{
-            OH.window <- OH.slice
-            MH.window <- MH.slice
-            MF.window <- MF.slice
-          }          
-          #Call section 3 methods; reassign output
-          if (s3.inloop){
-            tmp.s3 <- callS3Adjustment(pre.ds.train, 
-                                       MH.window, OH.window, MF.window,
-                                       adjust.metadata,
-                                       s5.instructions=post_ds_inloop, 
-                                       missval.args=missval.args)
-            #s3 functions only return data, not metadata
-            #(there's only one function that changes metadata, and it is)
-            #dealt with by adding elements to the stack
-            OH.window <- tmp.s3$input$OH
-            MH.window <- tmp.s3$input$MH
-            MF.window <- tmp.s3$input$MF
-            window.post_ds_inloop <- tmp.s3$s5.list
-            if (length(window.post_ds_inloop) > 0){
-              s5.inloop <- TRUE
-            }
-          }else{
-            window.post_ds_inloop <- post_ds_inloop
-          }      
-          #Call the downscaling method
-#           if (all(is.na(MH.window[[1]]))){
-#             stop('examine this output - MH is all NA after s3 opts')
-#           }
-          tmp.ds <- callDSMethod(ds.method, 
-                                 OH.window, MH.window, MF.window, ds.args, 
-                                 missvals=ds.ref$missval_method, 
-                                 missval.args=missval.args,
-                                 train_qcmask=train_qcmask,
-                                 tmasks=tmasks)
-          ds.out <- list(ds=tmp.ds$ds)
-          qc.out <- c(qc.out, tmp.ds$qc)
-          ds.atts <- tmp.ds$ds.atts
-          #ds.atts makes the PARM tail adjustment simpler, when we get to it
-          if(s5.inloop){
-            tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
-                                       data = ds.out$ds, 
-                                       hist.targ = OH.window,
-                                       hist.pred = MH.window, 
-                                       fut.pred  = MF.window, 
-                                       ds.atts = ds.atts, 
-                                       tmasks = tmasks)
-            ds.out$ds <- tmp.s5$ds.out
-            # qc.out <- c(qc.out, tmp.s5$qc)
-            #qc.out more complicated; trying to preserve dim information
-            #in with the edits on 12-17-16
-            if (!is.null(tmp.s5$qc)){
-              qc.out <- tmp.s5$qc
-            }
-          }
-# print(summary(as.vector(ds.out$ds)))
-# stop('examine this output')
-          #...hm. Is it possible to adapt that OU code that included window
-          #as an extra dimension and include it for multiple qc masks?
-          combine.out <- list(ds=ds.out$ds, qc=qc.out)
-          for (out in names(combine.out)){
-            #it is LEGIT POSSIBLE to get all NA back from the downscaling function
-            if (!is.null(combine.out[[out]])){
-              #Added 12-17-16 - some indexing needs to take place
-              #outside of the s3/s5 adjusts because of backwards compatability
-              if (tmasks$time_mask_overlap){
-                combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
-                                                     mask=tmasks$trim$masks[[w]],
-                                                    dim='time')
+          #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
+          #looping by time window
+          if (verbose){message('Looking for pre-processing functions to apply')}
+          if(s3.outloop){
+            message('Applying S3 Adjustment')
+            #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
+            temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
+                                            MH=MH.slice, 
+                                            OH=OH.slice,
+                                            MF=MF.slice,
+                                            #this really needs a metadata call of some sort.
+                                            #how to pass it in? Pointer in global environment?
+                                            adjust.metadata,
+                                            s5.instructions=post.ds, 
+                                            missval.args = missval.args, 
+                                            prime_predictor=prime_predictor)
+            #Assign output and remove temporary output
+            # missval.args <- temp.output$missval.args
+            ####h_record_trace_pr
+            #pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
+            post.ds <- temp.output$s5.list
+            OH.slice <- temp.output$input$OH
+            MH.slice <- temp.output$input$MH
+            MF.slice <- temp.output$input$MF
+            if (!is.null(temp.output$input$qc)){
+              for (el in names(temp.output$qc)){
+                ds[[el]] <- temp.output$qc[[el]]
               }
-              output[[out]][,,,,,,w] <- combine.out[[out]]
             }
+            remove(temp.output)
           }
-        }#Loop by w complete
-        ##bring together all time levels
-        for (el in names(output)){
-          #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
-        #  
-        #  print(dim(output[[el]]))
-        #  print(summary(output[[el]]))
-          tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
-          #print('adding over temporary output')
-          output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
-          #print(paste("summary of", el))
-          #print(summary(as.vector(output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,])))
-        }
-        #Once looping by w complete, do the last s5 adjustment
-        #Call the Section 5 Adjustments to be applied to post-downscaled output
-        message("Calling outloop Section 5 Adjustments")
-        if(s5.outloop){
-          temp.postproc <- callS5Adjustment(post.ds,
-                                            data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,, ,drop=F],
-                                            hist.pred = MH.slice,
-                                            hist.targ = OH.slice,
-                                            fut.pred = MF.slice, 
-                                            data.atts = adjust.metadata)
-          #Your return should include a list of two elements - modified ds out, 
-          #and a list of qc masks
-          #Or rather, once you get a list of qc masks, you return them - 
-          #ATM, only one process at a time should be returning a qc mask
-          output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
-#           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
-#             stop('examine the coords - this is leading to issues')
-#           }
-          if(qc.maskopts$qc.outloop){
-            output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
+          #Loop by time window
+          for(w in 1:nmasks){
+            #  for(w in 3:3){
+            if ( (w %% 10 == 0 | w ==1) & j.write) {
+              print(paste("twindow:", w, "/", nmasks))
+            }
+            w <<- w
+            qc.out <- NULL
+            if (tmasks$apply_tmask){
+              #             print(str(OH.slice))
+              #             stop('examine call from lapply')
+              OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
+              MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
+              MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])
+            }else{
+              OH.window <- OH.slice
+              MH.window <- MH.slice
+              MF.window <- MF.slice
+            }          
+            #Call section 3 methods; reassign output
+            if (s3.inloop){
+              tmp.s3 <- callS3Adjustment(pre.ds.train, 
+                                         MH.window, OH.window, MF.window,
+                                         adjust.metadata,
+                                         s5.instructions=post_ds_inloop, 
+                                         missval.args=missval.args)
+              #s3 functions only return data, not metadata
+              #(there's only one function that changes metadata, and it is)
+              #dealt with by adding elements to the stack
+              OH.window <- tmp.s3$input$OH
+              MH.window <- tmp.s3$input$MH
+              MF.window <- tmp.s3$input$MF
+              window.post_ds_inloop <- tmp.s3$s5.list
+              if (length(window.post_ds_inloop) > 0){
+                s5.inloop <- TRUE
+              }
+            }else{
+              window.post_ds_inloop <- post_ds_inloop
+            }      
+            #Call the downscaling method
+            #           if (all(is.na(MH.window[[1]]))){
+            #             stop('examine this output - MH is all NA after s3 opts')
+            #           }
+            tmp.ds <- callDSMethod(ds.method, 
+                                   OH.window, MH.window, MF.window, ds.args, 
+                                   missvals=ds.ref$missval_method, 
+                                   missval.args=missval.args,
+                                   train_qcmask=train_qcmask,
+                                   tmasks=tmasks)
+            ds.out <- list(ds=tmp.ds$ds)
+            qc.out <- c(qc.out, tmp.ds$qc)
+            ds.atts <- tmp.ds$ds.atts
+            #ds.atts makes the PARM tail adjustment simpler, when we get to it
+            if(s5.inloop){
+              tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
+                                         data = ds.out$ds, 
+                                         hist.targ = OH.window,
+                                         hist.pred = MH.window, 
+                                         fut.pred  = MF.window, 
+                                         ds.atts = ds.atts, 
+                                         tmasks = tmasks)
+              ds.out$ds <- tmp.s5$ds.out
+              # qc.out <- c(qc.out, tmp.s5$qc)
+              #qc.out more complicated; trying to preserve dim information
+              #in with the edits on 12-17-16
+              if (!is.null(tmp.s5$qc)){
+                qc.out <- tmp.s5$qc
+              }
+            }
+            # print(summary(as.vector(ds.out$ds)))
+            # stop('examine this output')
+            #...hm. Is it possible to adapt that OU code that included window
+            #as an extra dimension and include it for multiple qc masks?
+            combine.out <- list(ds=ds.out$ds, qc=qc.out)
+            for (out in names(combine.out)){
+              #it is LEGIT POSSIBLE to get all NA back from the downscaling function
+              if (!is.null(combine.out[[out]])){
+                #Added 12-17-16 - some indexing needs to take place
+                #outside of the s3/s5 adjusts because of backwards compatability
+                if (tmasks$time_mask_overlap){
+                  combine.out[[out]] <- apply.any.mask(data=combine.out[[out]], 
+                                                       mask=tmasks$trim$masks[[w]],
+                                                       dim='time')
+                }
+                output[[out]][,,,,,,w] <- combine.out[[out]]
+              }
+            }
+          }#Loop by w complete
+          ##bring together all time levels
+          for (el in names(output)){
+            #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
+            #  
+            #  print(dim(output[[el]]))
+            #  print(summary(output[[el]]))
+            tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
+            #print('adding over temporary output')
+            output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
+            #print(paste("summary of", el))
+            #print(summary(as.vector(output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,])))
           }
-          remove(temp.postproc)
+          #Once looping by w complete, do the last s5 adjustment
+          #Call the Section 5 Adjustments to be applied to post-downscaled output
+          if (verbose){message("Calling outloop Section 5 Adjustments")}
+          if(s5.outloop){
+            temp.postproc <- callS5Adjustment(post.ds,
+                                              data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,, ,drop=F],
+                                              hist.pred = MH.slice,
+                                              hist.targ = OH.slice,
+                                              fut.pred = MF.slice, 
+                                              data.atts = adjust.metadata)
+            #Your return should include a list of two elements - modified ds out, 
+            #and a list of qc masks
+            #Or rather, once you get a list of qc masks, you return them - 
+            #ATM, only one process at a time should be returning a qc mask
+            output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
+            #           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
+            #             stop('examine the coords - this is leading to issues')
+            #           }
+            if(qc.maskopts$qc.outloop){
+              output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
+            }
+            remove(temp.postproc)
+          }
+          #        print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
+          #        stop('examine output - the tail adjust is giving weird and wonky values')
         }
-#        print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-#        stop('examine output - the tail adjust is giving weird and wonky values')
-      }
       }#prime_predictor present
+      if ( (jval == y.len) & i.write) {
+        message(paste("Ending jval:", jval, "/", y.len))
+      }
     }#loop by y
+    if (ival == x.len){
+      message(paste("Ending ival:", ival, "/", x.len))
+    }
   }#loop by x
   # print(summary(as.vector(output.all$ds)))
   #stop('examine output from calls')

@@ -36,11 +36,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.method='distributional')
     
     if (args$adjust_trace){
-      print("adjusting pr trace")
-      #print(str(missval.args$pr))
       adj.thold <- missval.args$pr$adjusted.thold
-      #print(adj.thold)
-      #print(args$trace)
       if (args$transform){
         if (is.null(args$tform_fxn[[2]])){
           adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
@@ -49,9 +45,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
         }
       }
       if (args$trace > adj.thold){
-        print("QDM: using adjusted trace instead of trace")
-        print(args$trace)
-        print(adj.thold)
         args$trace <- adj.thold
       }
       #args$trace <- min(args$trace, adj.thold)
@@ -94,8 +87,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
     }
   }
-  print("summary of all MBC/QDM outputs:")
-  print(summary(out.data))
   return(list(ds=out.data, qc=qc))
 }
 
@@ -104,9 +95,9 @@ callQDM_mod <- function(OH, MH, MF, args){
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
-  if (max (OH.slice) > max(MF.slice)){
-    print("callQDM: OH max greater than MF max")
-  }
+#   if (max (OH.slice) > max(MF.slice)){
+#     print("callQDM: OH max greater than MF max")
+#   }
   tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
                  ratio=args$ratio.seq, trace=args$trace, 
                  jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
@@ -122,9 +113,9 @@ callQDM <- function(OH, MH, MF, args){
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
-  if (max (OH.slice) > max(MF.slice)){
-    print("callQDM: OH max greater than MF max")
-  }
+#   if (max (OH.slice) > max(MF.slice)){
+#     print("callQDM: OH max greater than MF max")
+#   }
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
