@@ -133,6 +133,7 @@ loop.xy.data <- function(){
           #2016-10-26: Adding in s3/s5 ajdustment calls outside of 
           #looping by time window
           if (verbose){message('Looking for pre-processing functions to apply')}
+          post_ds_outloop <- post.ds
           if(s3.outloop){
             message('Applying S3 Adjustment')
             #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
@@ -150,7 +151,7 @@ loop.xy.data <- function(){
             # missval.args <- temp.output$missval.args
             ####h_record_trace_pr
             #pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
-            post.ds <- temp.output$s5.list
+            post_ds_outloop <- temp.output$s5.list
             OH.slice <- temp.output$input$OH
             MH.slice <- temp.output$input$MH
             MF.slice <- temp.output$input$MF
@@ -221,7 +222,8 @@ loop.xy.data <- function(){
                                          hist.pred = MH.window, 
                                          fut.pred  = MF.window, 
                                          ds.atts = ds.atts, 
-                                         tmasks = tmasks)
+                                         tmasks = tmasks, 
+                                         data.atts = adjust.metadata)
               ds.out$ds <- tmp.s5$ds.out
               # qc.out <- c(qc.out, tmp.s5$qc)
               #qc.out more complicated; trying to preserve dim information
@@ -264,8 +266,15 @@ loop.xy.data <- function(){
           #Once looping by w complete, do the last s5 adjustment
           #Call the Section 5 Adjustments to be applied to post-downscaled output
           if (verbose){message("Calling outloop Section 5 Adjustments")}
+#           print(s3.outloop)
+#           print(s5.outloop)
+#           print(summary(post.ds[[1]]))
+#           print(summary(post.ds[[2]]))
+#           print(names(post.ds[[1]]$qc_args))
+#           #print(post.ds[[2]]$type)
+#           stop('examine this outptu')
           if(s5.outloop){
-            temp.postproc <- callS5Adjustment(post.ds,
+            temp.postproc <- callS5Adjustment(post_ds_outloop,
                                               data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,, ,drop=F],
                                               hist.pred = MH.slice,
                                               hist.targ = OH.slice,

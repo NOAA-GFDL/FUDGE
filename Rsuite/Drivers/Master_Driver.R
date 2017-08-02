@@ -440,6 +440,9 @@ start.time <- proc.time()
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
+# print(summary(pre.ds.train))
+# print(summary(post.ds.train))
+# stop('examine this out')
 ds <- loop.xy.data()
 #ds <- list(ds=MF$data[[1]])
 print('summary of ds:')

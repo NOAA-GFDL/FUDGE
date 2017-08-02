@@ -184,10 +184,9 @@ callPRPostproc <- function(test, input, adjusted.output){
       #get center of possible 9-point mask and apply to ds output
       ds.dim <- dim(adjusted.output$ds.out)
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
-#       print('summary of fut.prmask:')
-#       print(summary(fut.prmask))
-#       print(summary(as.vector(adjusted.output$ds.out)))
-#       print(summary(as.vector(adjusted.output$ds.out[!is.na(adjusted.output$ds.out)])))
+      print(summary(test$qc_args))
+      print(lapply(test$qc_args, 'summary'))
+      stop('examine this output')
 
       adjusted.output$ds.out[!fut.prmask] <- 0
       dim(adjusted.output$ds.out) <- ds.dim

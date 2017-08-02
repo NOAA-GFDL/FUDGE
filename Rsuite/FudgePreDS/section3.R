@@ -95,7 +95,7 @@ callPRPreproc <- function(test, input, postproc.output,
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-  source('/home/cew/Code/s8_testing/adjust_pr//pairwise_adjust_pr.R')
+#  source('/home/cew/Code/s8_testing/adjust_pr//pairwise_adjust_pr.R')
 #   print(summary(input$OH))
 #   print(summary(test$pp.args))
 #   print(summary(test))
@@ -109,7 +109,8 @@ callPRPreproc <- function(test, input, postproc.output,
   print(summary(input$OH[[1]]))
   input$OH <- tmp.out$OH
 print(summary(input$OH[[1]]))
-#stop('examine this output')
+print(summary(input$OH[[1]][!is.na(input$OH[[1]])]))
+# stop('examine this output')
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
   missval.args$pr_opts <<- tmp.out$pr_args

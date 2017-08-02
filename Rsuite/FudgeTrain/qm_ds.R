@@ -323,9 +323,14 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
 }
 
 callBCQMv4 <- function(Oh, Mh, Mf, args) {
+#   if (w == 1){
+#     save(file='/home/cew/Code/testing/BCQMv4_pr.R', 
+#          list=c('Oh', 'Mh', 'Mf', 'args'))
+#   }
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
+  Mf.nas <- is.na(Mf)
   Mf <- Mf[!(Mf.nas <- is.na(Mf))]
   n.max <- max(length(Oh), length(Mh))
   tau <- c(0, (1:n.max)/(n.max+1), 1)
@@ -337,6 +342,15 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
 	yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
 	yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
   DSout[!Mf.nas] <- yout
+#   if (sum(is.na(DSout)) != sum(Mf.nas)) {
+#     print(summary(Mf))
+#     print(summary(y))
+#     print(summary(x))
+#     print(summary(as.vector(yout)))
+#     print(summary(Mf.nas))
+#   print(summary(as.vector(DSout)))
+#   stop('examine this output')
+#   }
   return(DSout)
 }
 
