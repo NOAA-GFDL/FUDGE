@@ -52,8 +52,8 @@ adjustTrace <- function(OH, MH, MF,
   
   OH <- OH[oh.ord2]#[oh.ord]
   MH <- MH[mh.ord2]#[mh.ord]
-  oh.mask <- c(rep(F, oh.dry), rep(T, (length(OH)-oh.dry)) )[oh.ord2]#[oh.ord]
-  mh.mask <- c(rep(F, mh.dry), rep(T, (length(MH)-mh.dry)) )[mh.ord2]#[mh.ord]
+  oh.mask <- c(rep(T, oh.dry), rep(F, (length(OH)-oh.dry)) )[oh.ord2]#[oh.ord]
+  mh.mask <- c(rep(T, mh.dry), rep(F, (length(MH)-mh.dry)) )[mh.ord2]#[mh.ord]
   
   oh.ss <- sum(oh.mask)
   mh.ss <- sum(mh.mask)
@@ -269,6 +269,7 @@ AdjustPRPoints <- function(OH, MH, MF,
         }   
       }
     }
+save(file='/home/cew/Code/i_testing/parm_pr/i_run/post3.R', list=c('OH', 'MH', 'MF'))
   }
   return(list(OH=OH, MH=MH, MF=MF, pr_args=pr_args))
 }

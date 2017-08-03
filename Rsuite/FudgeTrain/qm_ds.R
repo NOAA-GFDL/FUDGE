@@ -66,7 +66,7 @@ start_year <- 1
       mf.missing <- sum(is.na(MF.slice))
       train.stat <- missval.out$missval.status
       out <- switch(type,
-                    'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
+                    'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args),
                     #'CFQM_orig' = callCFQMv3(OH.slice, MH.slice, MF.slice, args),
                     'CFQM_hist' = CFQM_hist(OH.slice, MH.slice, MF.slice, args, tmasks, start_year),
                     'CFQM_fut' =  CFQM_fut(OH.slice, MH.slice, MF.slice, args),
@@ -369,3 +369,52 @@ callKDDM <- function(OH,MH,MF,args){
 
 	return(kddm.bc.out$fut)
 }
+
+callBCQMv2<-function(LH,CH,CF,args){
+  #'Performs an bias-correction quantile mapping on a single variable
+  #'over the historical period, in order to generate downscaled data.
+  #' @param LH: Local Historical (a.k.a. observations)
+     #' @param CH: Coarse Historical (a.k.a. GCM historical)
+     #' @param CF: Coarse Future (a.k.a GCM future)
+     #' Contains no other arguments in the args parameter.
+     #' 
+     #' Note: Even though there is no training step on this method, and no
+     #' intention of implementing multivar downscaling for the QM methods, 
+     #' they need to be named to fit into the new indexing scheme. 
+     
+     #Unlist data from its input form
+     #     CH <- unlist(CH)
+     lengthCH<-length(CH)
+     lengthLH<-length(LH)
+     lengthCF<-length(CF)
+     
+     # if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
+     maxdim=max(c(lengthCH, lengthCF, lengthLH))
+     
+     # first define vector with probabilities [0,1]
+     #previously, prob was lengthCF
+     cf.present <- sum(!is.na(CF))
+     prob<-seq(0.001,0.999,length.out=cf.present)
+     
+     # initialize data.frame
+     #index used ot be 1:lengthCF; doing 1:maxdim instead
+     #c(seq(1,lengthCF), rep(NA,maxdim-lengthCF))
+     if(cf.present != 0){
+       temp<-data.frame(index=1:maxdim,CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
+                        qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
+       temp$CF[1:lengthCF]<-CF
+       temp$CH[1:lengthCH]<-CH
+       temp$LH[1:lengthLH]<-LH #THIS is the line that's throwing things off
+       temp.CFsorted<-temp[order(temp$CF),]
+       temp.CFsorted$qCF[1:cf.present]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
+       temp.CFsorted$ecdfCHqCF[1:cf.present]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
+       temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
+                                                          na.rm =T)
+       temp<-temp.CFsorted[order(temp.CFsorted$index),]
+       return(temp$qLHecdfCHqCF[1:lengthCF])
+     }else{
+       print("No present values in CF; returning all NA")
+       return(CF)
+     }
+}
+
