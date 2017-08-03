@@ -64,6 +64,10 @@ start_year <- 1
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
       mf.missing <- sum(is.na(MF.slice))
+
+			args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
+			args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
+
       train.stat <- missval.out$missval.status
       out <- switch(type,
                     'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
@@ -327,17 +331,23 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
   Mf <- Mf[!(Mf.nas <- is.na(Mf))]
-  n.max <- max(length(Oh), length(Mh))
-  tau <- c(0, (1:n.max)/(n.max+1), 1)
-	x <- quantile(Mh, tau, type=8, na.rm=TRUE)
-	y <- quantile(Oh, tau, type=8, na.rm=TRUE)
-	yout <- approx(x, y, xout=Mf, rule=1)$y
-	extrap.lower <- is.na(yout) & (Mf < min(Mh))
-	extrap.upper <- is.na(yout) & (Mf > max(Mh))
-	yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
-	yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
-  DSout[!Mf.nas] <- yout
-  return(DSout)
+
+	if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
+		n.max <- max(length(Oh), length(Mh))
+		tau <- c(0, (1:n.max)/(n.max+1), 1)
+		x <- quantile(Mh, tau, type=8, na.rm=TRUE)
+		y <- quantile(Oh, tau, type=8, na.rm=TRUE)
+		yout <- approx(x, y, xout=Mf, rule=1)$y
+		extrap.lower <- is.na(yout) & (Mf <= min(Mh))
+		extrap.upper <- is.na(yout) & (Mf >= max(Mh))
+		yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
+		yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
+		DSout[!Mf.nas] <- yout
+		return(DSout)
+	} else {
+		print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""), ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"), " uniform. Returning Mf."))
+		return(Mf)
+	}
 }
 
 callKDDM <- function(OH,MH,MF,args){
@@ -349,9 +359,9 @@ callKDDM <- function(OH,MH,MF,args){
     #'Contains no other arguments in the args parameter.
 #   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
 
-#   norm <- ifelse(exists('pr_opts'), "boxcox", "zscore")
+	if (!(args$norm %in% c("boxcox", "zscore", "none"))) stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
 
-	kddm.bc.out <- biascorrect(list(obs=list(OH), cur=list(MH), fut=list(MF)), norm='zscore')
+	kddm.bc.out <- biascorrect(list(obs=list(OH), cur=list(MH), fut=list(MF)), norm=args$norm)
 
 	return(kddm.bc.out$fut)
 }
