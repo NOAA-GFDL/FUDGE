@@ -38,7 +38,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     test <- s5.instructions[[element]]
     print(test$type)
     out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
-    source('~/Code/s8_testing/adjust_pr/pairwise_adjust_pr_s5.R')
+    #source('~/Code/s8_testing/adjust_pr/pairwise_adjust_pr_s5.R')
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),

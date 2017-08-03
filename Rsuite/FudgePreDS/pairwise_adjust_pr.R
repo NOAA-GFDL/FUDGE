@@ -29,7 +29,8 @@ adjustTrace <- function(OH, MH, MF,
     #This is the most common case
     mh.dry <- oh.dry
     zed.idx <- oh.dry 
-    mh.trace <- MH[zed.idx]
+    #mh.trace <- mean(MH[zed.idx]) #This is the way that we wanted to calculate it in I. Even samples all the way.
+    mh.trace <- mean(MH[(zed.idx+1):(zed.idx+2)]) #Okay, this is effectively the way it was calculated in H
   }else{
     adjust_low <- T
     if(allow_lower_mh){
@@ -58,7 +59,7 @@ adjustTrace <- function(OH, MH, MF,
   oh.ss <- sum(oh.mask)
   mh.ss <- sum(mh.mask)
   MF[MF < mh.trace] <- 0
-  mf.mask <- MF != 0
+  mf.mask <- (MF == 0)
   
   if (conserve){
     OH <- conserve_pr(OH, oh.mask)
@@ -113,11 +114,11 @@ adjustPR <- function(OH, MH, MF,
     MH[1:mh.dry] <- 0
     OH <- OH[oh.ord2]
     MH <- MH[mh.ord2]
-    oh.mask <- c(rep(T, oh.dry), rep(F, length(MH)-oh.dry))[oh.ord2]
+    oh.mask <- c(rep(T, oh.dry), rep(F, length(OH)-oh.dry))[oh.ord2]
     mh.mask <- c(rep(T, mh.dry), rep(F, length(MH)-mh.dry))[mh.ord2]
     
     MF[MF < pr.trace] <- 0
-    mf.mask <- MF == 0
+    mf.mask <- (MF == 0)
     #print(summary(MF==0))
     #print(summary(mf.mask))
     #stop('examine the summary!')
@@ -165,6 +166,9 @@ adjustPR <- function(OH, MH, MF,
   }  
   out.list$oh.trace <- pr.trace
   out.list$mh.trace <- adjust.trace
+#print(pr.trace)
+#print(adjust.trace)
+#stop('examine this output')
   return(out.list)
 }
 
