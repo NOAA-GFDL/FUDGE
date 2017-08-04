@@ -1,25 +1,25 @@
 #qm_ds.R
-#Contains a wrapper/setup method (callQM) 
+#Contains a wrapper/setup method (callQM)
 #and several quantile mapping methods
 #(BCQM, CFQM, EDQM)
 #CFQMv2 is kept for reference purposes - it's been repalced by v3
 
 callQM <- function(OH, MH, MF, args, type="",
                    missval.args, tmasks, train_qcmask=F){
-  #'Wrapper for the single-var, single-point 
-  #'quantile mapping downscaling methods, 
+  #'Wrapper for the single-var, single-point
+  #'quantile mapping downscaling methods,
   #'which share a lot of DNA with each other.
   #'For now, even methods that can do the training once
   #'all do training within looping by ensemble.
   #'
-  
+
   #Note: pr adjustments now effectively require this to be called before
   #the retry options can work properly.
-  
+
 #   OH.data <- compress.xy.data(OH)
 #   MH.data <- compress.xy.data(MH)
 #   MF.data <- compress.xy.data(MF)
-  
+
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
@@ -31,9 +31,9 @@ callQM <- function(OH, MH, MF, args, type="",
 #     index.mask <- tmasks$MF$masks[[w]]
 #     olap=F
 #   }
-  #Trying a workaround for the quantile mapping workflow issue - 
+  #Trying a workaround for the quantile mapping workflow issue -
   #The new indexing works on non-overlap cases, but the s5 examples really
-  #need the overlapped data in order to reproduce past results. 
+  #need the overlapped data in order to reproduce past results.
   #Deleting the more complicated indexing in here and moving that indexing step to just
   #before the addition step *should* solve that particular issue.
   index.mask <- tmasks$MF$masks[[w]]
@@ -55,22 +55,28 @@ start_year <- 1
     missval.new <- missval.args
     print(dim(missval.new$pr_opts$MF))
     missval.new$pr_opts$MF <- missval.new$pr_opts$MF[,,,n,, , drop=F]
-    missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
-                                         missval.args$minsamplesize, 
-                                         missval.new, 
+    missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice,
+                                         missval.args$minsamplesize,
+                                         missval.new,
                                          missval.method='distributional')
     if(missval.out$ds.possible){
       OH.slice <- missval.out$OH[[1]]
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
       mf.missing <- sum(is.na(MF.slice))
+
+			args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
+			args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
+
       train.stat <- missval.out$missval.status
-      out <- switch(type, 
-                    'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args), 
+      out <- switch(type,
+                    'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
                     #'CFQM_orig' = callCFQMv3(OH.slice, MH.slice, MF.slice, args),
-                    'CFQM_hist' = CFQM_hist(OH.slice, MH.slice, MF.slice, args, tmasks, start_year), 
-                    'CFQM_fut' =  CFQM_fut(OH.slice, MH.slice, MF.slice, args),  
-                    'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args))
+                    'CFQM_hist' = CFQM_hist(OH.slice, MH.slice, MF.slice, args, tmasks, start_year),
+                    'CFQM_fut' =  CFQM_fut(OH.slice, MH.slice, MF.slice, args),
+                    'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args),
+                    'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args)
+										)
      # print(length(out))
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if(missval.out$mv.retry & train_qcmask){
@@ -90,7 +96,7 @@ start_year <- 1
   return(list(ds=out.data, qc=qc))
 }
 
-callEDQMv2<-function(LH,CH,CF,args){ 
+callEDQMv2<-function(LH,CH,CF,args){
   #'Performs an equidistant correction adjustment on a single variable
   #'over the historical period, in order to generate downscaled data.
   #'@param LH: Local Historical (a.k.a. observations)
@@ -98,7 +104,7 @@ callEDQMv2<-function(LH,CH,CF,args){
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'Contains no other arguments in the args parameter.
     #'@citation Li et. al. 2010
-    
+
     #Unlist data from its input form
     #CH <- unlist(CH)
     CH <- CH[!is.na(CH)]
@@ -106,30 +112,30 @@ callEDQMv2<-function(LH,CH,CF,args){
     CF.idx <- !is.na(CF)
     cf.present <- sum(!is.na(CF))
     CF <- CF[!is.na(CF)]
-    
+
     lengthCH<-length(CH)
     lengthLH<-length(LH)
     lengthCF<-length(CF)
 
-    
+
     #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
     maxdim=max(c(lengthCH, lengthCF, lengthLH))
-    
+
     # first define vector with probabilities [0,1]
     prob<-seq(0.001,0.999,length.out=cf.present)
-    
+
     # initialize data.frame
     temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                      qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
                      EquiDistant=rep(NA,maxdim))
-    
+
     SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
                     LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),
                     EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
     temp$CF[1:lengthCF]<-CF
     temp$CH[1:lengthCH]<-CH
     temp$LH[1:lengthLH]<-LH
-    
+
     temp.CFsorted<-temp[order(temp$CF),]
     #Combine needed to deal with cases where CH longer than CF
     if (maxdim-cf.present > 0){
@@ -137,7 +143,7 @@ callEDQMv2<-function(LH,CH,CF,args){
     }else{
       temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
     }
-    
+
     temp.CFsorted$qLHecdfCFqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
     temp.CFsorted$qCHecdfCFqCF[1:cf.present]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
     # EQUIDISTANT CDF (Li et al. 2010)
@@ -156,7 +162,7 @@ callCFQMv3<-function(LH,CH,CF, args){
      #' @param CF: Coarse Future (a.k.a GCM future)
      #' Contains no other arguments in the args parameter.
      #'2-27-2015 edit: added an argument in args, sort, for determining
-     #'whether data is sorted by the CH ('historical'), CF ('future'), 
+     #'whether data is sorted by the CH ('historical'), CF ('future'),
      #'or LH ('target') vectors.
      if(!is.null(args$sort)){
        #can be one of 'future' or 'historical'
@@ -179,13 +185,13 @@ callCFQMv3<-function(LH,CH,CF, args){
      MF.idx <- !is.na(CF)
      out <- rep(NA, length(MF.idx))
      CF <- CF[MF.idx]
-     
+
      lengthCH<-length(CH)
      lengthLH<-length(LH)
      lengthCF<-length(CF)
      cf.present <- sum(!is.na(CF))
      if(is.null(args$len.out)){
-       message(paste("Warning in callCFQMv3: len.out not specified; will be deduced from", 
+       message(paste("Warning in callCFQMv3: len.out not specified; will be deduced from",
                      'length of CF data'))
        len.out <- cf.present
      }else{
@@ -195,21 +201,21 @@ callCFQMv3<-function(LH,CH,CF, args){
      #if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
      maxdim=max(c(lengthCH, lengthCF, lengthLH))
      mindim=min(c(lengthCH, lengthCF, lengthLH))
-     
+
      #lengthCFna<-length(which(!is.na(CF))) # count number of obs without NA
      #lengthCHna<-length(which(!is.na(CH)))
-     
+
      #if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
      mindim=min(c(sum(!is.na(CF)), sum(!is.na(CH)), sum(!is.na(LH))))
-     
+
      # first define vector with probabilities [0,1]
      prob<-seq(0.001,0.999,length.out=len.out) #lengthCF
-     
+
      # initialize data.frame
      temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
                       LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
      SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim))
-     
+
      SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF
      SDF$CH[1:lengthCH]<-temp$CH[1:lengthCH]<-CH
      SDF$LH[1:lengthLH]<-temp$LH[1:lengthLH]<-LH
@@ -222,12 +228,12 @@ callCFQMv3<-function(LH,CH,CF, args){
        temp.CFsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
        #print(summary(temp.CFsorted2$index))
        #print(summary(temp.CFsorted2[order(temp.CFsorted2$index),]))
-       temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),][1:lengthCF,] 
+       temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),][1:lengthCF,]
        #By this point, it has successfully ordered the first lengthCF members of the output data
      }
      if (ORDERING=="LH"){
        # CHANGE FACTOR ORDERED BY LOCAL HISTORICAL
-       temp.LHsorted2<-temp[order(temp$LH),] 
+       temp.LHsorted2<-temp[order(temp$LH),]
        temp.LHsorted2$qLH[1:len.out]<-quantile(temp.LHsorted2$LH,prob,na.rm =TRUE)
        temp.LHsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
        temp.LHsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
@@ -235,7 +241,7 @@ callCFQMv3<-function(LH,CH,CF, args){
      }
      if (ORDERING=="CH"){
        # CHANGE FACTOR ORDERED BY COARSE HISTORICAL
-       temp.CHsorted2<-temp[order(temp$CH),] 
+       temp.CHsorted2<-temp[order(temp$CH),]
        temp.CHsorted2$qLH[1:len.out]<-quantile(temp.CHsorted2$LH,prob,na.rm =TRUE)
        temp.CHsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE))
        temp.CHsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
@@ -257,9 +263,9 @@ CFQM_futa <- function(OH, MH, MF, args){
 }
 
 CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
-  
+
   oh_longer <- ifelse(length(OH) > length(MF), T, F)
-  
+
   #Prepare indexing mask
   if (tmasks$time_mask_overlap){
     index.mask <- tmasks$trim$masks[[w]]
@@ -268,20 +274,20 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
     index.mask <- tmasks$MF$masks[[w]]
     olap=F
   }
-  
+
   #print(str(tmasks))
   #Do the sample size adjustment as your initial step
   if (oh_longer){
     #Repeat current MF to extend same length as OH,MH - taking leapdays into account
     print('indexing args with issues')
     print(tmasks$nyears_hist)
-    print(tmasks$nyears_fut) 
-    print(tmasks$hist.year.div) 
+    print(tmasks$nyears_fut)
+    print(tmasks$hist.year.div)
     print(tmasks$fut.year.div)
     print(start_year)
 #     stop('examine this out')
-    idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                             tmasks$hist.year.div, tmasks$fut.year.div, 
+    idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut,
+                             tmasks$hist.year.div, tmasks$fut.year.div,
                              start_year=start_year)
     print(str(idx))
     OH.idx <- idx$index
@@ -289,81 +295,73 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
     MH <- MH[OH.idx]
     OH <- OH[OH.idx]
     #delta <- delta.train(MH, MF.data, deltatype, deltaop, ignore0.delta, status)
-    #ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)  
+    #ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
   }else{
     #Otherwise, repeat MH,MF to extend to same length as current MF
-    idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                             tmasks$hist.year.div, tmasks$fut.year.div, 
+    idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut,
+                             tmasks$hist.year.div, tmasks$fut.year.div,
                              start_year=1)
     OH.idx <- idx$index
     start_year <<- idx$end
-    #OH.idx is the repeated number of entries that you need in order 
+    #OH.idx is the repeated number of entries that you need in order
     #
     MH <- MH[OH.idx]
-    OH <- OH[OH.idx]    
+    OH <- OH[OH.idx]
   }
-  
+
   #Create OH mapped to MH
   prob <- seq(0.001,0.999,length.out=sum(!is.na(OH)))
   OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
   #map MF
   ds <- quantile(MF, OH.mapped.to.MH, na.rm=T)
-  
+
   #And finally, do the indexing according to the
   #delta method
   #print(str(tmasks))
-  ds <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                    tmasks$fut.leapmask, 
+  ds <- index.delta(tmasks$hist.leapmask[OH.idx],
+                    tmasks$fut.leapmask,
                     tmasks$OH$masks[[w]][OH.idx],
                     index.mask,
                     ds)
   return(ds)
 }
 
-callBCQMv2<-function(LH,CH,CF,args){
-  #'Performs an bias-correction quantile mapping on a single variable
-  #'over the historical period, in order to generate downscaled data.
-  #' @param LH: Local Historical (a.k.a. observations)
-     #' @param CH: Coarse Historical (a.k.a. GCM historical)
-     #' @param CF: Coarse Future (a.k.a GCM future)
-     #' Contains no other arguments in the args parameter.
-     #' 
-     #' Note: Even though there is no training step on this method, and no
-     #' intention of implementing multivar downscaling for the QM methods, 
-     #' they need to be named to fit into the new indexing scheme. 
-     
-     #Unlist data from its input form
-     #     CH <- unlist(CH)
-     lengthCH<-length(CH)
-     lengthLH<-length(LH)
-     lengthCF<-length(CF)
-     
-     # if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-     maxdim=max(c(lengthCH, lengthCF, lengthLH))
-     
-     # first define vector with probabilities [0,1]
-     #previously, prob was lengthCF
-     cf.present <- sum(!is.na(CF))
-     prob<-seq(0.001,0.999,length.out=cf.present)
-     
-     # initialize data.frame
-     #index used ot be 1:lengthCF; doing 1:maxdim instead
-     #c(seq(1,lengthCF), rep(NA,maxdim-lengthCF))
-     if(cf.present != 0){
-     temp<-data.frame(index=1:maxdim,CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                      qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
-     temp$CF[1:lengthCF]<-CF
-     temp$CH[1:lengthCH]<-CH
-     temp$LH[1:lengthLH]<-LH #THIS is the line that's throwing things off
-     temp.CFsorted<-temp[order(temp$CF),]
-     temp.CFsorted$qCF[1:cf.present]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
-     temp.CFsorted$ecdfCHqCF[1:cf.present]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
-     temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
-                                                        na.rm =T)
-     temp<-temp.CFsorted[order(temp.CFsorted$index),]
-       return(temp$qLHecdfCHqCF[1:lengthCF])
-     }else{
-       print("No present values in CF; returning all NA")
-       return(CF)
-     }
+callBCQMv4 <- function(Oh, Mh, Mf, args) {
+  DSout <- Mf + NA
+  Oh <- Oh[!is.na(Oh)]
+  Mh <- Mh[!is.na(Mh)]
+  Mf <- Mf[!(Mf.nas <- is.na(Mf))]
+
+	if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
+		n.max <- max(length(Oh), length(Mh))
+		tau <- c(0, (1:n.max)/(n.max+1), 1)
+		x <- quantile(Mh, tau, type=8, na.rm=TRUE)
+		y <- quantile(Oh, tau, type=8, na.rm=TRUE)
+		yout <- approx(x, y, xout=Mf, rule=1)$y
+		extrap.lower <- is.na(yout) & (Mf <= min(Mh))
+		extrap.upper <- is.na(yout) & (Mf >= max(Mh))
+		yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
+		yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
+		DSout[!Mf.nas] <- yout
+		return(DSout)
+	} else {
+		print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""), ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"), " uniform. Returning Mf."))
+		return(Mf)
+	}
+}
+
+callKDDM <- function(OH,MH,MF,args){
+  #'Bias correction of climate model output using KDDM on a single variable
+  #'from the 'climod' package https://github.com/sethmcg/climod
+  #'@param OH: Observed Historical (a.k.a. observations)
+    #'@param MH: Model Historical (a.k.a. GCM historical)
+    #'@param MF: Model Future (a.k.a GCM future)
+    #'Contains no other arguments in the args parameter.
+#   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
+
+	if (!(args$norm %in% c("boxcox", "zscore", "none"))) stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
+
+	kddm.bc.out <- biascorrect(list(obs=list(OH), cur=list(MH), fut=list(MF)), norm=args$norm)
+
+	return(kddm.bc.out$fut)
 }

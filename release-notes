@@ -1,6 +1,22 @@
+
 08-03-17
+(cew)
 - Bugfix for tmask application for EDQM, CDFt, QDM; print on tmask application
 more verbose
+(d1a)
+- KDDM norm option now passed in from XMLgen
+- BCQM handles all-NA or all-uniform cases.
+- BCQM bugfix in extrapolation. Changed comparisons from lt/gt to le/ge.
+
+07-28-2017
+(cew)
+- updates to verbosity of looping
+- bugfix for grep in postProc cleanup
+
+07-28-17
+(d1a)
+- KDDM added: NCAR code for ESTCP collaboration
+- BCQM repeal/replace: CFG code replaced by stripped-down PCIC code
 
 06-08-17
 - Delta, CFQM revised, present and working for non-pr cases
@@ -31,7 +47,7 @@ and thus wildly negative temperatures
 
 12-13-16
 (cew)
-- Minsamplesize requirments for tail adjust added in 
+- Minsamplesize requirments for tail adjust added in
 
 11-2-16
 - Revised behavior for DeltaSD; calculates deltas based off of nyears_present
@@ -45,7 +61,7 @@ of leapdays on historical and future time periods
 9-28-16
 (cew)
 - Profiling information per minifile added to experiments
-- New cdft tail adjustment with new option to limit number of points adjusted; 
+- New cdft tail adjustment with new option to limit number of points adjusted;
 tested for tasmax, pr (ratio) tests are in progress
 
 9-22-16
@@ -67,7 +83,7 @@ tested for tasmax, pr (ratio) tests are in progress
 7-1-16
 - Email notification verbosity settings can be set by expergen (--msubmail, --statmail)
 - Metadata updates for tracking the fudgetag used
-- FUDGE now relies on the checkout script to get copies of FUDGE, located at: 
+- FUDGE now relies on the checkout script to get copies of FUDGE, located at:
 /home/esd/bin/checkout-fudge
 
 6-15-16:
@@ -87,14 +103,14 @@ tested for tasmax, pr (ratio) tests are in progress
 - Adding bugfix for PARM missing value addition in CallDSmethod returning list
 for s5 steps rather than vector
 
-5-25-16: 
+5-25-16:
 (cew)
 - Changing email sender; all notification emails not come from fudge.esd
 - Adding common email error notification system
 - module load in postproc template now appends both locations on ESD and locations
-  on developer workspaces; should work just fine as long as module names remain 
+  on developer workspaces; should work just fine as long as module names remain
   different
-- Changing order of email notifications;   
+- Changing order of email notifications;
 
 4-19-16
 (cew)
@@ -107,8 +123,8 @@ for s5 steps rather than vector
 
 3-3-16
 (cew)
-- g_orangeplus merged into main dev branch; postproc email notifications added for failure and success of postproc operations. 
- 
+- g_orangeplus merged into main dev branch; postproc email notifications added for failure and success of postproc operations.
+
 3-1-16
 (cew)
 - New DS method, CDFtmod, allows for contol of low tail adjustments in CDFt code
@@ -132,7 +148,7 @@ rips present in target, predictor, and future datasts added to the runcode
 - Methods that downscale with OH (i.e. Delta) have adjusted OH data to match position of leapdays
 in data and sample before entering downscaling function
 - PR pre- and post-ds adjustments return prmask based off of OH data if OH data used to downscale
-- BCQM.tail.adj bugfix for experiments with ignore0 
+- BCQM.tail.adj bugfix for experiments with ignore0
 - R code exits with error if ignore0 and ignore0.delta are both turned on
 
 10-27-15
@@ -146,7 +162,7 @@ in data and sample before entering downscaling function
 10-23-15
 (cew)
 - bugfix for backtransforms operating more than once on ds out
-- bugfix for backtransforms operating only on ds data, which interfered with 
+- bugfix for backtransforms operating only on ds data, which interfered with
 subsequent calculations that used the input datasets (BCQM.tail.adj)
 
 10-19-15
@@ -193,7 +209,7 @@ if insufficent data for downscaling
 
 9-24-15
 (cew)
-- transform options implemented at XML level in the pr_opts section for the 
+- transform options implemented at XML level in the pr_opts section for the
 power transforms
 
 9-1-15
@@ -221,7 +237,7 @@ power transforms
 07-24-2015
 (a1r)
 -fudgeList to include minifile.I.start and
-minifile.I.end  
+minifile.I.end
 07-2-2015
 (cew)
 - multi.lm method changed to lm method in R code for the XML
@@ -242,7 +258,7 @@ minifile.I.end
 (a1r)
 -ensemble support in postProc suite of tools
 -- expergen to provide commands/sourcing scripts or msub scripts to submit
-each PP job. In addition, it also provides a msubwrapper script to submit all ensemble member related PP jobs for a specific experiment at once.  
+each PP job. In addition, it also provides a msubwrapper script to submit all ensemble member related PP jobs for a specific experiment at once.
 
 06-2-2015
 (a1r)
@@ -251,7 +267,7 @@ each PP job. In addition, it also provides a msubwrapper script to submit all en
 5-29-2015
 (cew)
 - Multi-ensemble changes working with modified expergen runcode
-- Modifications to metadata to support recoding future predictor rip 
+- Modifications to metadata to support recoding future predictor rip
 
 4-29-2015
 (cew)
@@ -262,7 +278,7 @@ each PP job. In addition, it also provides a msubwrapper script to submit all en
 (cew)
 1. Added support for a multivariate workflow in the R code
 -- added method multi.lm for linear regression with multiple predictors
--- updated ReadNC, WriteNC to read in multivariate files; added a new function, ReadMultiVars, 
+-- updated ReadNC, WriteNC to read in multivariate files; added a new function, ReadMultiVars,
 to exted the ReadNC framework to multiple predictor variables
 -- updated internal methods of R code for more explicit metadata passing between functions (att_table)
 2. Cleaned up excess print statements in the R code; started addition of a --verbose option
@@ -276,23 +292,23 @@ to exted the ReadNC framework to multiple predictor variables
 
 03/30/2015
 (a1r)
-1. Reduced number of  echo statements, warnings in expergen, postProc where possible. 
+1. Reduced number of  echo statements, warnings in expergen, postProc where possible.
 2. Corrected: PP appears to be checking in the wrong location for pre-existing concatenated output
-3. Corrected: <ifpreexist> statements. 
+3. Corrected: <ifpreexist> statements.
 
 03/20/2015
 (a1r)
 
 1. remove timestamps from runscripts,master scripts,runcode and pp scripts as per esd team's request (informal dev option floats around for later clean up and implementations)
-2. submit_job changed according to 1. 
-3. Moab standard out logs moved to experiment scripts log directory as per esd team's request.   
+2. submit_job changed according to 1.
+3. Moab standard out logs moved to experiment scripts log directory as per esd team's request.
 
 03/17/2015
 (a1r)
-1. fudgelist outputs script.base and also prints script directory to feed clobber. 
+1. fudgelist outputs script.base and also prints script directory to feed clobber.
 (cew)
-1. utils/bin/cleanup_script.csh cleans up script directories based off of project_ID, 
-as determined by the script directory 
+1. utils/bin/cleanup_script.csh cleans up script directories based off of project_ID,
+as determined by the script directory
 
 03/14/2015
 (a1r)
@@ -306,7 +322,7 @@ as determined by the script directory
 (a1r)
 1. checker count bugfix on 1 and 2d with varname param. Plus postProc/ppFudge fixes to output masks
 dir relative to out_dir
-2. postProc template updates <BRANCH> inclusion. 
+2. postProc template updates <BRANCH> inclusion.
 3. expergen uses NEMSemail if available to print msub email notification syntax along with postProc_command
 
 02/24/2015
@@ -315,22 +331,22 @@ dir relative to out_dir
 2. postProc parser switched, whitespaces parsable from -v.
 3. postProc exits if variable not found in OneD.
 4. postProc_command is now a msub friendly script. postProc_command structure is different and is saved in scripts directory.
-5. workflow can be run on PP nodes as well. 
- 
+5. workflow can be run on PP nodes as well.
+
 1/19/2015
 (a1r,cew)
-1. Support for updated input and output directory structure (based on document provided by MJN and KD, sent Jan 16) 
+1. Support for updated input and output directory structure (based on document provided by MJN and KD, sent Jan 16)
  - Related expergen,postProc changes.
  - Disabled features that existed within expergen to construct output path (commented); most of FUDGE experiment name construction and now uses dumb param.
-2. XML1.9 support for the following new/updated attributes and tags 
+2. XML1.9 support for the following new/updated attributes and tags
 (listing just for future reference)
-- target_ID,in_root,dim,file_start_time/end_time/train_start_time/end_time with MMDD included. 
+- target_ID,in_root,dim,file_start_time/end_time/train_start_time/end_time with MMDD included.
 - project_ID, absolutely out_dir
-3. Make optional spatial masks and temporal masks 
-4. Support for sourcing ppscript  and msub ppscript 
-- If mask is relevant, that variable gets added. 
-5. Tested with synthetic dataset "example", PM "example", RR "example". More tests to follow. 
-6. ppFudge uses unique temp directory. 
+3. Make optional spatial masks and temporal masks
+4. Support for sourcing ppscript  and msub ppscript
+- If mask is relevant, that variable gets added.
+5. Tested with synthetic dataset "example", PM "example", RR "example". More tests to follow.
+6. ppFudge uses unique temp directory.
 7. cleanup-script with XML as input
 - Cleanup script accepts 2 possible options: 'e' for erase, and 'm' for move, which moves the experiment experiment-name to experiment-name~n, where n is the number of experiments by that name in the current directory
 - Cleanup script no longer throws an error when trying to remove nonexistant directory
@@ -348,28 +364,28 @@ Aparna Radhakrishnan
 1.Changes to support absence of spatial and temporal masks in XML (tested only in expergen)
 2. Previous changes to support PM  merged
 3. This version not to be used with postProc (updates to follow)
- 
+
 11/15/2014
 postProc changes:
 Aparna Radhakrishnan
 1. Ability to post post-process two fields at a time (e.g. tasmin, tasmin_qcmask)
-2. BasicChecker before post post-processing begins (this is coded in a way it can be a potential generic stand-alone tool) 
+2. BasicChecker before post post-processing begins (this is coded in a way it can be a potential generic stand-alone tool)
       -- Quits if there are extraneous files in OneD directory
       -- Quits if there are extraneous files in twoD catted directory
       -- Quits if the total number of minifiles does not match the expected number (lon range)
-      -- Quits if atleast one of the files in the OneD or existing twoD directory is Zero bytes. 
-    
-3. Color coding Error messages.
-4. Fix predictand_calibration_dataset global attribute (item from QC results from ESD call 11/12/14)----- removed if the variable is a mask. 
+      -- Quits if atleast one of the files in the OneD or existing twoD directory is Zero bytes.
 
-expergen changes: 
+3. Color coding Error messages.
+4. Fix predictand_calibration_dataset global attribute (item from QC results from ESD call 11/12/14)----- removed if the variable is a mask.
+
+expergen changes:
 Aparna Radhakrishnan
 1. Changes to use <ifprefixexist>tags for anti-clobber feature.
    -- If  <ifprefixexist> has exit: if either OneD output OR scripts already exist, expergen throws errors and exits.
-   -- If  <ifprefixexist> has erase:  if either OneD output OR scripts already exist, expergen throws warning messages, then executes the external cleaner/scrubber script (from cew). After this expergen continues it's regular workflow of creating runscripts, etc. 
-   --- If platform is anything other than PAN, expergen quits with an error at this time. 
+   -- If  <ifprefixexist> has erase:  if either OneD output OR scripts already exist, expergen throws warning messages, then executes the external cleaner/scrubber script (from cew). After this expergen continues it's regular workflow of creating runscripts, etc.
+   --- If platform is anything other than PAN, expergen quits with an error at this time.
    --- Errors/warnings color coding
-2. "automatic msub" option added to expergen. This is a command-line option --msub. When you pass --msub to expergen, expergen not only creates master runscripts for you, but also submits them to MOAB automatically. By default, this is turned off. One can always opt to use the existing submit_job script to submit jobs as well. 
+2. "automatic msub" option added to expergen. This is a command-line option --msub. When you pass --msub to expergen, expergen not only creates master runscripts for you, but also submits them to MOAB automatically. By default, this is turned off. One can always opt to use the existing submit_job script to submit jobs as well.
 
 --
 incomplete release notes
