@@ -1,3 +1,7 @@
+08-03-17
+- Bugfix for tmask application for EDQM, CDFt, QDM; print on tmask application
+more verbose
+
 06-08-17
 - Delta, CFQM revised, present and working for non-pr cases
 - ignore0 removed from delta options; using pr ignore0
