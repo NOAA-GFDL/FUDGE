@@ -32,7 +32,8 @@ get.MF.experiment.atts <- function(in.file){
       stop(paste("Error in metadata parsing functions: please check att formatting!"))
     }
   }else if(is_CORDEX){
-    dataset = ncatt_get(in.nc, 0, 'model_id')$value
+    dataset = paste(ncatt_get(in.nc, 0, 'model_id')$value, "driven by", 
+                    ncatt_get(in.nc, 0, 'driving_model_id')$value)
     scenario  = ncatt_get(in.nc, 0, 'experiment_id')$value
   }else{
     #Assume the 3^5 hogepoge of observational datasets
@@ -79,7 +80,8 @@ get.OH.experiment.atts <- function(in.file){
       stop(paste("Error in metadata parsing functions: please check att formatting!"))
     }
   }else if(is_CORDEX){
-    dataset = ncatt_get(in.nc, 0, 'model_id')$value
+    dataset = paste(ncatt_get(in.nc, 0, 'model_id')$value, "driven by", 
+                    ncatt_get(in.nc, 0, 'driving_model_id')$value)
   }else if (is_cbay){
     dataset = 'TPLM2'
   }else{
