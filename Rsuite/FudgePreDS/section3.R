@@ -95,37 +95,81 @@ callPRPreproc <- function(test, input, postproc.output,
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-#  source('/home/cew/Code/s8_testing/adjust_pr//pairwise_adjust_pr.R')
-#   print(summary(input$OH))
-#   print(summary(test$pp.args))
-#   print(summary(test))
-#    stop('examien this output')
+  if (test$pp.args$pr_adjmethod == 'eqfreq'){
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF, 
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
                              test$var, prime_predictor,
                              test$pp.args$thold, lopt.drizzle, lopt.conserve, ignore0)
   #'Okay, this is going to need some work on how to transmit the unit conversions
   #'from in here
-  print(summary(input$OH[[1]]))
   input$OH <- tmp.out$OH
-print(summary(input$OH[[1]]))
-print(summary(input$OH[[1]][!is.na(input$OH[[1]])]))
-# stop('examine this output')
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
   missval.args$pr_opts <<- tmp.out$pr_args
   missval.args$pr_opts$prime_predictor <<- prime_predictor
-
   #and store args for later use
   pr_mod$qc_args <- c(pr_mod$qc_args, 
                       list(OH = tmp.out$pr_args$OH, 
                            MH = tmp.out$pr_args$MH, 
                            MF = tmp.out$pr_args$MF))
-#   print(summary(tmp.out))
-#   print(summary(pr_mod$qc_args))
-#   stop('examine this out')
   postproc.output$propts <- pr_mod
-
+  }else if (test$pp.args$pr_adjmethod == 'exact'){
+    pr_target <- input$att.list$pr_oh
+    nrips <- dim(input$MF[[pr_target]])[4]
+    targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
+    pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$MH))
+    temp.out <- AdjustWetdays(ref.data=input$OH[[prime_predictor]],   ref.units=input$att.list$pr_oh_units, 
+                              adjust.data=input$MH[[prime_predictor]],adjust.units=input$att.list$pr_mh_units[[1]],
+                              future.data=input$MF[[prime_predictor]],future.units=input$att.list$pr_mf_units[[1]],
+                              opt.wetday=threshold, 
+                              lopt.drizzle=lopt.drizzle, 
+                              lopt.conserve=lopt.conserve, 
+                              adj.method='exact',
+                              zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
+    input$OH[[prime_predictor]] <- temp.out$ref$data   #only a single target variable
+    input$MH[[prime_predictor]] <- temp.out$adjust$data
+    input$MF[[prime_predictor]] <- temp.out$future$data
+    if(ignore0){
+      tmp.ref <- temp.out$ref$pr_mask
+      tmp.adj <- temp.out$adjust$pr_mask
+      tmp.ref[tmp.ref==0] <- NA
+      tmp.adj[tmp.adj==0] <- NA
+      input$OH[[prime_predictor]] <- (input$OH[[prime_predictor]]   * tmp.ref)
+      for (el in prime_predictor){ #input$att.list$pr_mh
+        input$MH[[el]] <- input$MH[[el]] * tmp.adj
+      }
+      #This should make sure that when extra missing values are added, all datasets
+      #in the predictor datasets will have the missing values added back in
+      tmp.fut <- temp.out$future$pr_mask
+      tmp.fut[tmp.fut==0] <- NA
+      for (el in prime_predictor){ #input$att.list$pr_mf
+        input$MF[[el]] <- input$MF[[el]] * tmp.fut
+      }
+      #Save future pr mask fo application in section 5;
+      #note that it is the presence of this mask that 
+      #leads to the adjustment being performed.
+      if(!(ds.ref$downscale_oh)){
+        print(paste('adding future prmask'))
+        fut.prmask <- temp.out$future$pr_mask
+        pr_mod$qc_args$fut.prmask <- fut.prmask
+      }else{
+        #Assume that you are downsciang on the OH dataset instead; store accordingly
+        print(paste('adding target prmask'))
+        pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
+      }
+    }
+    missval.args$pr_opts <<- list(OH=temp.out$ref$pr_mask, 
+                                  MH=temp.out$adjust$pr_mask, 
+                                  MF=temp.out$future$pr_mask, 
+                                  pr_oh = input$att.list$pr_oh, 
+                                  pr_mh = input$att.list$pr_mh, 
+                                  pr_mf = input$att.list$pr_mf, 
+                                  adjusted.thold = temp.out$adjusted.thold)
+    if(ignore0){
+      postproc.output$propts <- pr_mod
+    }
+  }
+  missval.args <<- missval.args
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))

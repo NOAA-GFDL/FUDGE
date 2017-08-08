@@ -92,13 +92,13 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #Retry with pr missings set to 0
     mv.retry <- T
     ds.possible <- F
-    if (length(missval.args$pr) > 0){
+    if (length(missval.args$pr_opts) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
       message('retrying sample size with precipiation added in')
       pr_vars <- list(OH='pr_oh', MH='pr_mh', MF='pr_mf')
       #env=parent.frame(n=0)
-#       print('is there something wrong with teh indexing?')
+#       print('is there something wrong with the indexing?')
 #       print(train.index)
 #       print(c('OH', 'MH', "MF")[train.index])
       #Datset.index only has 3 elements - important for multivar pr
@@ -110,6 +110,10 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #removes samples in OH and MH that never get added back in
         
         #var.idx <- pr_vars[[el]]
+        print(summary(missval.args$pr_opts))
+        print(summary(orig[[el]]))
+        print(missval.args$pr_oh)
+        print(missval.args$pr_mh)
         if (el == 'OH'){
           #print(summary(orig[[el]][!is.na(orig[[el]])]))
           assign(el, retry.with.pr.present(orig[[el]], 
@@ -196,6 +200,7 @@ retry.with.pr.present <- function(data.list, pr.mask, var.id,
   #'that would not have been included in the sample.
   #...this is going to be so nasty when we get vaugely pr-like vars
   #as fixed sptaial grids it is going to be the worst
+  print(var.id)
   if (apply_tmask){
   #switching from appy_fudge_tmask to apply.any.mask; maybe fixes problem?
     pr.mask <- apply.any.mask(data=pr.mask, mask=data.tmask, dim='temporal')
@@ -306,8 +311,8 @@ place.delta.missvals <- function(OH, MH, MF, args, threshold,
   #If there are no non-missing vals in MF, replace pr missvals
   #in MF AND MF ONLY
   if (any(count.all.present.xyn(MF) == 0 )){
-    pr.MF.vars <- length(missval.args$pr$MF)
-    MF <- segment.missval.vars(pr.MF.vars, MF, missval.args$pr$MF, 
+    pr.MF.vars <- length(missval.args$pr_opts$MF)
+    MF <- segment.missval.vars(pr.MF.vars, MF, missval.args$pr_opts$MF, 
                                oh.coords, ival, jval, 
                                tmasks$apply_tmask, tmasks$MF, w)
     message(paste("Warning in remove.delta.missvals: one or more MF  datasets", 

@@ -128,10 +128,10 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
                                        allow_low_mh = allow.low.mh)
     )
     if ('pr_adjmethod' %in% names(pr_opts)){
-      pre_ds$propts$pp.args['method'] <- pr_opts$pr_adjmethod
+      pre_ds$propts$pp.args['pr_adjmethod'] <- pr_opts$pr_adjmethod
     }else{
-      #Maintain the default behavior up until H wrapup
-      pre_ds$propts$pp.args['method'] <- 'approx'
+      #Maintain H-compatible default until wrapup of I
+      pre_ds$propts$pp.args['pr_adjmethod'] <- 'exact'
     }
                           ###Change added 9-23 to test the ppr opts)
                                        #apply_0_mask=pr_opts$apply_0_mask))
@@ -172,7 +172,12 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
                            qc_args=list(thold=pr_opts$pr_threshold_out,
                                         conserve=pr_opts$pr_conserve_out, 
                                         ignore0=ignore0))
-                                        #apply_0_mask=pr_opts$apply_0_mask))
+  }
+  if ('pr_adjmethod' %in% names(pr_opts)){
+    post_ds$propts$qc_args['pr_adjmethod'] <- pr_opts$pr_adjmethod
+  }else{
+    #Maintain H-compatible default until wrapup of I
+    post_ds$propts$qc_args['pr_adjmethod'] <- 'exact'
   }
   flag.negvar <- FALSE
   qc.maskvar <- FALSE
@@ -221,6 +226,9 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
     #print(post_ds)
     #stop('examine post_ds structure')
   }
+#   print(pre_ds)
+#   print(post_ds)
+#   stop('examine this output')
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds,'train_qcmask'=train_qcmask))  
 }
 
