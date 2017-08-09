@@ -88,6 +88,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   }
   #Okay, pairwise settings are entirely different settings
   #...and for now, that's going in the ds method
+  print(insufficient.data)
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
@@ -112,8 +113,9 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #var.idx <- pr_vars[[el]]
         print(summary(missval.args$pr_opts))
         print(summary(orig[[el]]))
-        print(missval.args$pr_oh)
-        print(missval.args$pr_mh)
+        print(missval.args$pr_opts$pr_oh)
+        print(missval.args$pr_opts$pr_mh)
+        print(el)
         if (el == 'OH'){
           #print(summary(orig[[el]][!is.na(orig[[el]])]))
           assign(el, retry.with.pr.present(orig[[el]], 

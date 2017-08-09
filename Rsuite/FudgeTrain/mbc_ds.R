@@ -39,6 +39,10 @@ print(length(MF_mask[[1]]))
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
+
+print(summary(missval.out$OH[[1]]))
+print(summary(missval.out$MH[[1]]))
+print(summary(missval.out$MF[[1]]))
     
     if (args$adjust_trace){
       adj.thold <- missval.args$pr_opts$adjusted.thold

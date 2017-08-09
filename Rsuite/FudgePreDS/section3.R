@@ -158,13 +158,14 @@ callPRPreproc <- function(test, input, postproc.output,
         pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
       }
     }
-    missval.args$pr_opts <<- list(OH=temp.out$ref$pr_mask, 
-                                  MH=temp.out$adjust$pr_mask, 
-                                  MF=temp.out$future$pr_mask, 
+    missval.args$pr_opts <- list(OH= !temp.out$ref$pr_mask, 
+                                  MH= !temp.out$adjust$pr_mask, 
+                                  MF= !temp.out$future$pr_mask, 
                                   pr_oh = input$att.list$pr_oh, 
                                   pr_mh = input$att.list$pr_mh, 
                                   pr_mf = input$att.list$pr_mf, 
-                                  adjusted.thold = temp.out$adjusted.thold)
+                                  adjusted.thold = temp.out$adjusted.thold, 
+                                  prime_predictor = prime_predictor)
     if(ignore0){
       postproc.output$propts <- pr_mod
     }
