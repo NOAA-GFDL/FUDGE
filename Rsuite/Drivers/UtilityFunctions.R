@@ -21,13 +21,15 @@ add.over.missvals <- function(val1, val2){
   }
 }
 
-index.a.list <- function(list, index, val){
+index.a.list <- function(lst, index, val){
   #Returns the list if the member of the 
   #list indicated by index is equal to val
   # (helper function for lapply - doesn't speed code, 
   #  but will make it more readable)
-  if(list[[index]]==val){
-      return(list)
+  if (index %in% names(lst)){
+    if(list[[index]]==val){
+      return(lst)
+    }
   }
 }
 

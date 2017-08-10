@@ -175,6 +175,8 @@ ds.args <- f.list$args
 
 #Then, check that the s3 and s5 adjustments you are performing make sense in
 #this context
+print(length(pre_ds))
+print(length(post_ds))
 QCAdjustArguments(pre_ds, post_ds,
                   is.multivar=(length(predictor.vars) > 1),
                   is.multi.ens=(length(fut.pred.rip.list) > 1),

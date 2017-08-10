@@ -88,7 +88,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   }
   #Okay, pairwise settings are entirely different settings
   #...and for now, that's going in the ds method
-  print(insufficient.data)
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
