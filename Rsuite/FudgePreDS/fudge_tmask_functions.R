@@ -47,7 +47,7 @@ get.fudge.timemask.list <- function(){
       names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
       tmask.filenames <- c(tmask.filenames, list('trim' = fut.time.trim.mask))
       nmasks <- length(tmask.list$OH$masks)
-      if (grepl("olap.nc", tmask.filenames$MF, fixed=T)){
+      if (grepl("_olap", tmask.filenames$MF, fixed=T)){
         time_mask_overlap <- T
       }
     }
