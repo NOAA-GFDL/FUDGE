@@ -1,12 +1,17 @@
 
-08-03-17
+08-10-2017
 (cew)
-- Bugfix for tmask application for EDQM, CDFt, QDM; print on tmask application
-more verbose
+- Metadata update for CORDEX (driving model)
+- Precip indexing bugfix (pr instead of pr_opts)
+
+08-03-2017
 (d1a)
 - KDDM norm option now passed in from XMLgen
 - BCQM handles all-NA or all-uniform cases.
 - BCQM bugfix in extrapolation. Changed comparisons from lt/gt to le/ge.
+(cew)
+- Bugfix for tmask application for EDQM, CDFt, QDM; print on tmask application
+more verbose
 
 07-28-2017
 (cew)
