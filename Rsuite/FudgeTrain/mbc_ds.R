@@ -22,13 +22,15 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  MF_mask <- missval.args$pr_opts$MF[[1]]
+#print(summary(missval.args$pr_opts$MF))
+  MF_mask <- missval.args$pr_opts$MF
+print(summary(as.vector(MF_mask)))
   for (n in 1:nrips){
     nval <<- n
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #pr-specific check for now; only do if present
-    if (!is.null(missval.args$pr)){
-      missval.args$pr$MF <- MF_mask[,,,n,, ,drop=F]
+    if (!is.null(missval.args$pr_opts)){
+      missval.args$pr_opts$MF <- MF_mask[,,,n,, ,drop=F]
     }
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
@@ -36,7 +38,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                          missval.method='distributional')
     
     if (args$adjust_trace){
-      adj.thold <- missval.args$pr$adjusted.thold
+      adj.thold <- missval.args$pr_opts$adjusted.thold
       if (args$transform){
         if (is.null(args$tform_fxn[[2]])){
           adj.thold <- do.call(args$tform_fxn[[1]], list(adj.thold))
@@ -56,7 +58,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     }else{
       loop.ds <- ds.method
     } 
-    
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method

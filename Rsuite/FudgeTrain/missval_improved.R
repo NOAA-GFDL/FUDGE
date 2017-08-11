@@ -86,11 +86,14 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #This is the most common case
     insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
+  print(insufficient.data)
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
     ds.possible <- F
-    if (length(missval.args$pr) > 0){
+    print(summary(missval.args))
+    print(length(missval.args$pr_opts))
+    if (length(missval.args$pr_opts) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
       message('retrying sample size with precipiation added in')
@@ -108,8 +111,8 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #removes samples in OH and MH that never get added back in
         var.idx <- pr_vars[[el]]
         assign(el, retry.with.pr.present(orig[[el]], 
-                                     missval.args$pr[[el]],  
-                                     missval.args$pr[[var.idx]],
+                                     missval.args$pr_opts[[el]],  
+                                     1, #missval.args$pr_opts[[var.idx]],
                                      tmasks$apply_tmasks, 
                                      tmasks[[el]]$masks[[w]]))
       }
@@ -190,11 +193,13 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   #Thanks to var collapsing, extra step needed to check for matches
   match.vars <- c()
   data.names <- names(data.list)
-  for (v in var.list){
-    match.index <- c(grep(paste0(v, "$"), data.names), 
-                     grep(paste0(v, "\\."), data.names))
-    match.vars <- c(match.vars, data.names[match.index])
-  }
+#   for (v in var.list){
+#     match.index <- c(grep(paste0(v, "$"), data.names), 
+#                     grep(paste0(v, "\\."), data.names))
+#     match.vars <- c(match.vars, data.names[match.index])
+#   }
+ # match.vars <- data.names
+ match.vars <- data.names[var.list[1]]
   for (el in match.vars){
     #print(el)
     tmp.pr <- data.list[[el]]
@@ -207,7 +212,8 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
 #dim issues seem to have been caused by unexamined assumption that target could be 3x3.
     dim(data.list[[el]]) <- dim(tmp.pr)
 #    print(length(data.tmask))
-    data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal')    
+    data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal') 
+print(summary(as.vector(data.list[[el]])))
   }
   return(data.list)
 }
@@ -302,8 +308,8 @@ place.delta.missvals <- function(OH, MH, MF, args, threshold,
   #If there are no non-missing vals in MF, replace pr missvals
   #in MF AND MF ONLY
   if (any(count.all.present.xyn(MF) == 0 )){
-    pr.MF.vars <- length(missval.args$pr$MF)
-    MF <- segment.missval.vars(pr.MF.vars, MF, missval.args$pr$MF, 
+    pr.MF.vars <- length(missval.args$pr_opts$MF)
+    MF <- segment.missval.vars(pr.MF.vars, MF, missval.args$pr_opts$MF, 
                                oh.coords, ival, jval, 
                                tmasks$apply_tmask, tmasks$MF, w)
     message(paste("Warning in remove.delta.missvals: one or more MF  datasets", 

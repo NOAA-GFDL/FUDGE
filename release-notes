@@ -1,3 +1,8 @@
+08-10-2017
+(cew)
+- Metadata update for CORDEX (driving model)
+- Precip indexing bugfix (pr instead of pr_opts)
+
 08-03-2017
 (d1a)
 - KDDM norm option now passed in from XMLgen

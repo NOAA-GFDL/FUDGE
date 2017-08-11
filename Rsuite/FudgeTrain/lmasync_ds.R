@@ -32,7 +32,7 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
   }else{
     qc <- NULL
   }
-  MF_mask <- missval.args$pr$MF
+  MF_mask <- missval.args$pr_opts$MF
   missval.out <- remove.FUDGE.missvals(OH=OH.data, MH=MH.data, MF=MF.data,
                                        missval.args$minsamplesize, 
                                        missval.args, 
