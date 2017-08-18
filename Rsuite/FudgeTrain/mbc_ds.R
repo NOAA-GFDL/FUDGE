@@ -22,20 +22,23 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-#print(summary(missval.args$pr_opts$MF))
-  MF_mask <- missval.args$pr_opts$MF
-print(summary(as.vector(MF_mask)))
+  MF_mask <- missval.args$pr_opts$MF #[[1]]
+tmp.missvals <- missval.args
   for (n in 1:nrips){
     nval <<- n
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
+#     MF.mask.slice <- lapply(MF_mask, '[', ,,,n,, , drop=F)
+#     tmp.missvals$pr_opts$MF <- MF.mask.slice
     #pr-specific check for now; only do if present
-    if (!is.null(missval.args$pr_opts)){
-      missval.args$pr_opts$MF <- MF_mask[,,,n,, ,drop=F]
-    }
+    missval.args$pr_opts$MF <- MF_mask[,,,n,, ,drop=F]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
+
+#print(summary(missval.out$OH[[1]]))
+#print(summary(missval.out$MH[[1]]))
+#print(summary(missval.out$MF[[1]]))
     
     if (args$adjust_trace){
       adj.thold <- missval.args$pr_opts$adjusted.thold

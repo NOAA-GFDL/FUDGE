@@ -38,12 +38,13 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     test <- s5.instructions[[element]]
     print(test$type)
     out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
+    #source('~/Code/s8_testing/adjust_pr/pairwise_adjust_pr_s5.R')
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
                   'SBiasCorr' = callSBCorr(test, out$input, out$adjusted.output),
                   'flag.neg' = callFlagNegativeValues(test, out$input, out$adjusted.output),
-                  'PR' = callPRPostproc(test, out$input, out$adjusted.output),
+                  'PR' = callAdjustPrecipS5(test, out$input, out$adjusted.output),
                   'Nothing' = callNoMethod(test, out$input, out$adjusted.output),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
@@ -167,6 +168,18 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
+
+callAdjustPrecipS5 <- function(test, input, adjusted.output){
+  if (test$qc_args$pr_adjmethod %in% c('exact', 'approx')){
+    return(callPRPostproc(test, input, adjusted.output))
+  }else if (test$qc_args$pr_adjmethod == 'eqfreq'){
+    return(adjust_pr_s5(test, input, adjusted.output))
+  }else{
+    stop(paste("Error in callAdjustPrecipS5: pr_adjmethod should be one of", 
+               "exact, approx, or eqfreq, but was", test$qc_args$pr_adjmethod,"!"))
+  }
+}
+
 callPRPostproc <- function(test, input, adjusted.output){
   #Performs the adjustments needed for post-downscaling precipitation
   #on the downscaled ouput, including a threshold adjustment for drizzle
@@ -183,16 +196,8 @@ callPRPostproc <- function(test, input, adjusted.output){
       #get center of possible 9-point mask and apply to ds output
       ds.dim <- dim(adjusted.output$ds.out)
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
-      print('summary of fut.prmask:')
-      print(summary(fut.prmask))
-      print(summary(as.vector(adjusted.output$ds.out)))
-      print(summary(as.vector(adjusted.output$ds.out[!is.na(adjusted.output$ds.out)])))
-      #stop('examine this output')
-
       adjusted.output$ds.out[!fut.prmask] <- 0
       dim(adjusted.output$ds.out) <- ds.dim
-#      print(summary(as.vector(adjusted.output$ds.out)))
-      #stop('examine the s5 output')
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
       obs.prmask <- get.xy.center(test$qc_args$targ.prmask)

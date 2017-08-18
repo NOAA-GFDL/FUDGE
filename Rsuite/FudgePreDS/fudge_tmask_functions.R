@@ -47,7 +47,8 @@ get.fudge.timemask.list <- function(){
       names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
       tmask.filenames <- c(tmask.filenames, list('trim' = fut.time.trim.mask))
       nmasks <- length(tmask.list$OH$masks)
-      if (grepl("_olap", tmask.filenames$MF, fixed=T)){
+      #if (grepl("_olap", tmask.filenames$MF, fixed=T)){
+      if (check_mask_olap(tmask.list$MF$masks)){
         time_mask_overlap <- T
       }
     }
@@ -98,6 +99,7 @@ get.fudge.timemask.list <- function(){
     tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
   }
   ###Set booleans for handy access
+  print(paste("Applying overlapping time window masks:", time_mask_overlap))
   tmask.list$time_mask_overlap <- time_mask_overlap
   tmask.list$apply_tmasks <- apply_tmasks
   tmask.list$nmasks <- nmasks
@@ -116,5 +118,15 @@ apply.fudge.tmask <- function(data, mask){
   result <- rep(mask, length.out=length(data)) * as.vector(data)
   dim(result) <- data.dim
   return(aperm(result, c(2,3,4,5,6,1)))
+}
+
+check_mask_olap <- function(data.list){
+  #'Checks the masks for overlapping along the time axis
+  out <- rep(0, length(data.list[[1]]))
+  for (n in 1:length(data.list)){
+    data.list[[n]][is.na(data.list[[n]])] <- 0
+    out <- out + data.list[[n]]
+  } 
+  return(any(out > 1))
 }
 

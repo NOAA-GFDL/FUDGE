@@ -14,3 +14,5 @@ Rsuite/sampleNC/.nfs00000000242a560a0000023a
 Regression_tests/
 .nfs000000001c49abc8000001bd
 .nfs00000000e8a05cd2000001bc
+builds/
+gitlab-runner
