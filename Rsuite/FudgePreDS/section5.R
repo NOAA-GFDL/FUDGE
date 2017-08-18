@@ -170,13 +170,13 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
 
 
 callAdjustPrecipS5 <- function(test, input, adjusted.output){
-  if (test$qc_args$pr_adjmethod == 'exact'){
+  if (test$qc_args$pr_adjmethod %in% c('exact', 'approx')){
     return(callPRPostproc(test, input, adjusted.output))
   }else if (test$qc_args$pr_adjmethod == 'eqfreq'){
     return(adjust_pr_s5(test, input, adjusted.output))
   }else{
     stop(paste("Error in callAdjustPrecipS5: pr_adjmethod should be one of", 
-               "exact or eqfreq, but was", test$qc_args$pr_adjmethod,"!"))
+               "exact, approx, or eqfreq, but was", test$qc_args$pr_adjmethod,"!"))
   }
 }
 
