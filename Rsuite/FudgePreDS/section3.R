@@ -113,7 +113,7 @@ callPRPreproc <- function(test, input, postproc.output,
                            MH = tmp.out$pr_args$MH, 
                            MF = tmp.out$pr_args$MF))
   postproc.output$propts <- pr_mod
-  }else if (test$pp.args$pr_adjmethod == 'exact'){
+  }else if (test$pp.args$pr_adjmethod %in% c('exact', 'approx')){
     pr_target <- input$att.list$pr_oh
     nrips <- dim(input$MF[[pr_target]])[4]
     targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
@@ -124,7 +124,7 @@ callPRPreproc <- function(test, input, postproc.output,
                               opt.wetday=threshold, 
                               lopt.drizzle=lopt.drizzle, 
                               lopt.conserve=lopt.conserve, 
-                              adj.method='exact',
+                              adj.method=test$pp.args$pr_adjmethod,
                               zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
     input$OH[[prime_predictor]] <- temp.out$ref$data   #only a single target variable
     input$MH[[prime_predictor]] <- temp.out$adjust$data
