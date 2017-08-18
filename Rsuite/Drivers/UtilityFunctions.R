@@ -26,11 +26,11 @@ index.a.list <- function(lst, index, val){
   #list indicated by index is equal to val
   # (helper function for lapply - doesn't speed code, 
   #  but will make it more readable)
-  if (index %in% names(lst)){
-    if(list[[index]]==val){
+  #if (index %in% names(lst)){
+    if(lst[[index]]==val){
       return(lst)
     }
-  }
+  #}
 }
 
 both.na <- function(x, y){
