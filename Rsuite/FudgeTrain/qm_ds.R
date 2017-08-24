@@ -69,7 +69,7 @@ start_year <- 1
 
       train.stat <- missval.out$missval.status
       out <- switch(type,
-                    'BCQM' = callBCQMv2(OH.slice, MH.slice, MF.slice, args),
+                    'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
                     #'CFQM_orig' = callCFQMv3(OH.slice, MH.slice, MF.slice, args),
                     'CFQM_hist' = CFQM_hist(OH.slice, MH.slice, MF.slice, args, tmasks, start_year),
                     'CFQM_fut' =  CFQM_fut(OH.slice, MH.slice, MF.slice, args),
