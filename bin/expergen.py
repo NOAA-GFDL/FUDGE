@@ -739,8 +739,6 @@ def main():
 	shutil.copy2(auxinput, cdir)
 	print "Config XML and aux file saved in ",cdir 
 	print "RunScripts will be saved under:",sbase
-	print "----See readMe in fudge2014 directory for the next steps----"
-	print "Use submit_job to submit scripts"
 	#Copy environment config file
 	print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
@@ -837,92 +835,20 @@ def main():
 		#os.chmod(msubwrap.name, 0744)
 		#msub -m ae -M <email> script 
 	print "----------------------------------------"
-	#except:
-	#	print "Unable to create the postProc scripts for you at this time"	
-	#	sys.exit(-4)
-				
-#	suffctr = 1
-#	for pname,pval in copyprop.iteritems():
-#	   listrips = pval.split(',')
-#	for mout in listrips: 
-#	  if (dev == "off"):
-#		tsuffix = ""
-#		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
-#	  else:
-#		tsuffix = "_"+tstamp
-#		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
-#	  try:
- # 		ppfile = open(ppbase, 'w') 
-	#	if(mout != 'na'):
-	#	   moutsuff = " -e "+mout.strip()
-	#	   mout_prefix = mout.strip()
-	#	else:
-	#	   moutsuff = " "
-	#	   mout_prefix = "fakerip"	
-#		 #CEW edits 5-2 related to writing postproc status files
-#		 #ppstat_command = "if ($status == 0) then \n touch "  
-#		 #3-3 CEW edits related to email notifications  
-#		#check if qc_mask is relevant  
-#		if(qc_mask != 'off'):
- # 			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
-#	 	else:
-#			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n" 
- # 		ppfile.write(pp_cmnd)
-#		print "wrote to ",ppfile
-#  		ppfile.close()
-#	  except:
-#  		print "Unable to create postProc command file. You may want to check your settings."
-	#c	print create_pp_cmd
-#	  if(os.path.exists(ppbase)):
-######################### write postProc_job to be used ############################
-#		ppLoc = basedir+"/utils/bin/"+"create_postProc"
-#		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+fudgetag+" "+mout_prefix
-#		p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-#		output4, error4 = p4.communicate()
-#		if(p4.returncode != 0):
-#			print "Step4:!!!! FAILED !!!!, please contact developer."
-#			print output4, error4
-#			sys.exit(-4)
-		#uncomment print output4, error4
-		#print "4-"+str(suffctr)+" completed"
-#		print "----------------------------------------"
-#		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
-#		print(NEMSemail1)
-#		if (NEMSemail1 != 'none'):  
-#			msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))  
-#			print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-#		else:       
- #  			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script " 
-#			msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
-#
-#			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-#	  else:
-#		print "postProc_command cannot be created. postProc_source does not exist"
-#	  suffctr = suffctr + 1
-#	print "----------------------------------------"
-#	try:
-#		msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
-	#	os.chmod(msubwrap.name, 0744)
-	#	content = "#!/bin/tcsh -f"
-	#	for msubitem in msubwrapper:
-	#	    content = content + "\n" + msubitem
-	#	content = content + "\n"
-	#	msubwrap.write(content)
-	#	msubwrap.close()	
-	#except:
-	#	print "Unable to create msubwrapper script for you at this time"
 	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 job submission (if applicable) ##############################################	
-	if msub:
-		if msubmail == 1 and NEMSemail1 != 'none':
-				msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
-		else:
-			msub_string = "msub -d $HOME "	
-		master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
-		msub_cmd = "module load moab; "
-		for el in master_scripts:
-			msub_cmd = msub_cmd + msub_string + el + "; "
+	print "Starting step 5: job submission"
+	if msubmail == 1 and NEMSemail1 != 'none':
+			msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
+	else:
+		msub_string = "msub -d $HOME "	
+	master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
+	msub_cmd = "module load moab; "
+	for el in master_scripts:
+		#msub_cmd can be saved for later
+		msub_cmd = msub_cmd + msub_string + el + "; "
+	if msub:			
 		p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 		output5, errors5 = p5.communicate()
 		#######
@@ -931,8 +857,11 @@ def main():
 			print output5, errors5
 			sys.exit(0)
 		print output5, errors5
-		print "5- completed"		
+		print "5 - completed"		
 	print "-----------"
+	if not msub:
+		print "--msub not set on command line. To submit jobs at a later point, please use the following:"
+		print "\033[1;95m"+msub_cmd+"\033[1;m"  
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   " 
 	if(NEMSemail1 != "none"):
 	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"

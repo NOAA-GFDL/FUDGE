@@ -34,8 +34,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                            adjust.metadata=list(),
                            create.qc.mask=FALSE, create.adjust.out=FALSE, 
                            s5.instructions=list('na'), 
-                           missval.args = list(), 
-                           prime_predictor='none'){
+                           missval.args = list()){
   #Create list of variables that will not change with iteration
   #input<- list('MH' = MH, 'OH' = OH, 'MF' = MF)
   #Define data that will change with iteration
@@ -118,6 +117,10 @@ callPRPreproc <- function(test, input, postproc.output,
     nrips <- dim(input$MF[[pr_target]])[4]
     targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
     pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$MH))
+    print(pred_idx)
+    print(targ_idx)
+    print(names(input$OH))
+    print(prime_predictor)
     temp.out <- AdjustWetdays(ref.data=input$OH[[prime_predictor]],   ref.units=input$att.list$pr_oh_units, 
                               adjust.data=input$MH[[prime_predictor]],adjust.units=input$att.list$pr_mh_units[[1]],
                               future.data=input$MF[[prime_predictor]],future.units=input$att.list$pr_mf_units[[1]],
