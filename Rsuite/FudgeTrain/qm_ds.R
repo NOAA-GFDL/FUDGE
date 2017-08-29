@@ -53,7 +53,7 @@ start_year <- 1
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     missval.new <- missval.args
-    print(dim(missval.new$pr_opts$MF))
+#     print(dim(missval.new$pr_opts$MF))
     missval.new$pr_opts$MF <- missval.new$pr_opts$MF[,,,n,, , drop=F]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice,
                                          missval.args$minsamplesize,
@@ -349,6 +349,22 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
 		return(Mf)
 	}
 }
+#
+# callKDDM <- function(OH,MH,MF,args){
+#   #'Bias correction of climate model output using KDDM on a single variable
+#   #'from the 'climod' package https://github.com/sethmcg/climod
+#   #'@param OH: Observed Historical (a.k.a. observations)
+#     #'@param MH: Model Historical (a.k.a. GCM historical)
+#     #'@param MF: Model Future (a.k.a GCM future)
+#     #'Contains no other arguments in the args parameter.
+# #   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
+#
+# 	if (!(args$norm %in% c("boxcox", "zscore", "none"))) stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
+#
+# 	kddm.bc.out <- biascorrect(list(obs=list(OH), cur=list(MH), fut=list(MF)), norm=args$norm)
+#
+# 	return(kddm.bc.out$fut)
+# }
 
 callKDDM <- function(OH,MH,MF,args){
   #'Bias correction of climate model output using KDDM on a single variable
@@ -357,11 +373,23 @@ callKDDM <- function(OH,MH,MF,args){
     #'@param MH: Model Historical (a.k.a. GCM historical)
     #'@param MF: Model Future (a.k.a GCM future)
     #'Contains no other arguments in the args parameter.
-#   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
+    #   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
 
-	if (!(args$norm %in% c("boxcox", "zscore", "none"))) stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
+    if (!(args$norm %in% c("boxcox", "zscore", "none"))) {
+      stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
+    }
+    DSout <- MF + NA
+    Mf.nas <- is.na(MF)
 
-	kddm.bc.out <- biascorrect(list(obs=list(OH), cur=list(MH), fut=list(MF)), norm=args$norm)
+    folded.OH <- as.list(data.frame(matrix(OH[!is.na(tmasks$OH$masks[[w]])], byrow=FALSE, nrow=31)))
+    folded.MH <- as.list(data.frame(matrix(MH[!is.na(tmasks$MH$masks[[w]])], byrow=FALSE, nrow=31)))
+    folded.MF <- as.list(data.frame(matrix(MF[!is.na(tmasks$MF$masks[[w]])], byrow=FALSE, nrow=31)))
 
-	return(kddm.bc.out$fut)
+    kddm.bc.out <- biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=args$norm)
+
+    kddm.out <- unlist(kddm.bc.out$fut)
+
+    # kddm.out <- unlist(lapply(kddm.bc.out$fut,"[[",16))
+    DSout[!Mf.nas] <- kddm.out
+    return(DSout)
 }
