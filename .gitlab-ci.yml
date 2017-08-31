@@ -1,15 +1,15 @@
 #Setting up automatic deployment of regression tests
-test:
-  script:
-  # This does the environment setup and the checking out of a new branch
-  - source /usr/local/Modules/3.1.6/init/bash
-  - module use -a /home/esd/local/modulefiles
-  - module purge
-  - module load esd/env
-  #- eval `checkout-fudge-s8-bash --fudgetag ${CI_COMMIT_SHA}`
-  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag cew-dev`
-  - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
-  - alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
+#test:
+#  script:
+#  # This does the environment setup and the checking out of a new branch
+#  - source /usr/local/Modules/3.1.6/init/bash
+#  - module use -a /home/esd/local/modulefiles
+#  - module purge
+#  - module load esd/env
+#  #- eval `checkout-fudge-s8-bash --fudgetag ${CI_COMMIT_SHA}`
+#  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag cew-dev`
+#  - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
+#  - alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
 
 staging:
   # This step is meant to run the minifile tests. 
