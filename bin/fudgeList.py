@@ -19,7 +19,7 @@ def fudgeVer():
 		fudgeversion = "<undefined>"
 		
 	return fudgeversion
-def fudgeList():
+def fudgeList(verbose=False):
      #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
      force = False #default
      usage = "\n############################################################################\n"
@@ -209,7 +209,8 @@ def fudgeList():
                                                 	logop.close()
 
 					###### end writing to summary log file #########
-							print "----------Summary Log File: ", sumlogloc 	
+							if (verbose):
+								print "----------Summary Log File: ", sumlogloc 	
 	
 
 

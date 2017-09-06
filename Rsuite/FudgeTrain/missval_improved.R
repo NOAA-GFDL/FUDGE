@@ -250,6 +250,11 @@ place.synch.missvals <- function(OH, MH, MF, env=parent.frame()){
   #synchronizes missing values between OH and MH, placing vals back
   #in the calling environment.
   #Assumes that OH vars and MH vars have the same time dimension
+#   print("placing synch missvals")
+#   print(summary(OH))
+#   print(summary(MH))
+#   print(dim(OH))
+#   print(dim(MH))
   OH.missing <- rowSums(sapply(OH, missval.xyens)) > 0 #T is NA 
   MH.missing <- rowSums(sapply(MH, missval.xyens)) > 0 #T is NA 
   all.missing <- OH.missing + MH.missing

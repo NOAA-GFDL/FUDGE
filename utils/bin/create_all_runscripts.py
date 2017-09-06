@@ -9,10 +9,12 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	
+	'''
 	print(i_start)
 	print(i_end)
 	print(j_start)
 	print(j_end)
+	'''
 	
 	#which i_indices are we going to be looping over?
 	i_elements = range(int(i_start), int(i_end)+1, i_by)
@@ -167,7 +169,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
 			dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
 	#And finally, add the files that the aux file specifies
-	print(aux_file_list)
+	#print(aux_file_list)
 	if len(aux_file_list) > 0:
 		aux_strlist = ["#Copy files from aux specification"]
 		for el in aux_file_list:
@@ -343,7 +345,7 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
 	runscript_patterns = [re.split("\.", el)[-1] for el in runscript_files if (re.split("\.", el)[-1]).count('-') == 2]
 	#print(runscript_patterns)
 	runcode_split = re.split("\.", runcode_files[0])
-	print(runcode_split)
+	#print(runcode_split)
 	for patt in runscript_patterns:
 		tmp_file = runcode_split
 		tmp_file[-1] = patt

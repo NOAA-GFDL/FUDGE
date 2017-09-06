@@ -31,6 +31,9 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
   #Obtain sort options
   pr_start <- 1
   oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH[[1]])
+  print(dim(OH[[1]]))
+  print(dim(MH[[1]]))
+  print(dim(MF[[1]]))
   for (n in 1:nrips){
 #     print(paste("on ens", n))
 #     print(pr_start)
@@ -38,9 +41,12 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
     out.status <- 0
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     #Determine if there is sufficient data to downscale at this point
+    print(str(tmasks))
+    #stop('examine this out')
     if ('pr_opts' %in% names(missval.args)){
       tmp.missval.args <- missval.args
-      tmp.missval.args$pr_opts$MF <- lapply(missval.args$pr_opts$MF, '[', ,,,n,, , drop=F)
+      print(str(missval.args$pr_opts$MF))
+      tmp.missval.args$pr_opts$MF <- missval.args$pr_opts$MF[,,,n,, , drop=F]
     }else{
       tmp.missval.args <- missval.args
     }

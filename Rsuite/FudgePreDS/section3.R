@@ -34,7 +34,8 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                            adjust.metadata=list(),
                            create.qc.mask=FALSE, create.adjust.out=FALSE, 
                            s5.instructions=list('na'), 
-                           missval.args = list()){
+                           missval.args = list(), 
+                           prime_predictor='na'){
   #Create list of variables that will not change with iteration
   #input<- list('MH' = MH, 'OH' = OH, 'MF' = MF)
   #Define data that will change with iteration
@@ -58,8 +59,6 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                             stop(paste('Adjustment Method Error: method', test$type, 
                                        "is not supported for callS3Adjustment. Please check your input.")))
   }
-  #print(lapply(adjusted.list, 'summary'))
-  #stop('examine this output') 
   return(adjusted.list)
 }
 
@@ -94,6 +93,7 @@ callPRPreproc <- function(test, input, postproc.output,
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
+  print(test$pp.args$pr_adjmethod)
   if (test$pp.args$pr_adjmethod == 'eqfreq'){
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF, 
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
@@ -117,10 +117,12 @@ callPRPreproc <- function(test, input, postproc.output,
     nrips <- dim(input$MF[[pr_target]])[4]
     targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
     pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$MH))
-    print(pred_idx)
-    print(targ_idx)
-    print(names(input$OH))
-    print(prime_predictor)
+#     print(pred_idx)
+#     print(targ_idx)
+#     print(names(input$OH))
+    if (prime_predictor == 'na'){
+      prime_predictor = names(input$OH)
+    }
     temp.out <- AdjustWetdays(ref.data=input$OH[[prime_predictor]],   ref.units=input$att.list$pr_oh_units, 
                               adjust.data=input$MH[[prime_predictor]],adjust.units=input$att.list$pr_mh_units[[1]],
                               future.data=input$MF[[prime_predictor]],future.units=input$att.list$pr_mf_units[[1]],
@@ -216,18 +218,21 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
           #if var is one of the vars receiving a transform
           if(!is.null(t.fxn[[2]])){
             #If arguments to the transform, use them
+            #data.dim <- dim(input[[datatype]][[varname]])
             input[[datatype]][[varname]] <- do.call(t.fxn[[1]], 
                                                 list(input[[datatype]][[varname]], t.fxn[[2]]))
+            #dim(input[[datatype]][[varname]]) <- data.dim
           }else{
             #Otherwise, call without arguments
+            #data.dim <- dim(input[[datatype]][[varname]])
             input[[datatype]][[varname]] <- do.call(t.fxn[[1]], 
                                                 list(input[[datatype]][[varname]]))
+            #dim(input[[datatype]][[varname]]) <- data.dim
           }
         }
       }
     } 
   }
-  #stop('examine the transform out')
   return(list('input'=input,
               's5.list'=postproc.output, 
               'missval.args'=missval.args))

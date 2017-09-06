@@ -1,35 +1,33 @@
 #Setting up automatic deployment of regression tests
-#test:
-#  script:
-#  # This does the environment setup and the checking out of a new branch
-#  - source /usr/local/Modules/3.1.6/init/bash
-#  - module use -a /home/esd/local/modulefiles
-#  - module purge
-#  - module load esd/env
-#  #- eval `checkout-fudge-s8-bash --fudgetag ${CI_COMMIT_SHA}`
-#  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag cew-dev`
-#  - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
-#  - alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
+stages:
+ - test
 
-staging:
-  # This step is meant to run the minifile tests. 
-  type: test
-  script:
-  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag cew-dev`
+minijob:
+ # This step is meant to run the minifile tests. 
+ stage: test
+ script:
+  #- echo $CI_COMMIT_SHA
+  #- echo ${CI_COMMIT_SHA:0:8}
+  #- echo $CI_COMMIT_REF_NAME
+  #- printenv
+  #Note: we're using an outdated version at the lab; this is normally commit sha
+  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME`
   - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
   #The below does not work. Calling entire thing, rather than alias.
   #- alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
   - datestr=`date +%Y%m%d-%H%M`
   - summfile="${TMPDIR}/${FUDGETAG}_${datestr}.txt"
-  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
-  only:
-  - tags,master,i_gitlab-ci
-
-#production:
-#  type: test
-#  script:
-#  - datestr=`date +%Y%m%d-%H%M`
-#  - summfile="${TMPDIR}/${FUDGETAG}_${datestr}.txt"
-#  - run_regtests -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest
-#  only:
-#  - i_master
+  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
+ #only:
+ # - tags,master,i_gitlab-ci-new
+ tags:
+  - analysis 
+  
+fulljob:
+ stage: test
+ script:
+  - datestr=`date +%Y%m%d-%H%M`
+  - summfile="${TMPDIR}/${FUDGETAG}_${datestr}.txt"
+  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest
+ #only:
+ # - i_master

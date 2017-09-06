@@ -101,7 +101,7 @@ def checkTags(dictParams,key):
 		return val 
 
 def parse_outdir(out_dir,property):
-	print "Parsing out_dir to check if it references property tags"
+	#print "Parsing out_dir to check if it references property tags"
 	list_subs = []
 	listout=[]
 	outdirsplit = out_dir.split('/')
@@ -110,12 +110,12 @@ def parse_outdir(out_dir,property):
 	pname = 'na'
 	for outdirs in outdirsplit:
 		if '$(' in outdirs:
-			print "outdirs as defined expects a property tag.."
+			#print "outdirs as defined expects a property tag.."
 			expect_prop = 1
 			for pname,pval in property.iteritems():
 				pname = '$('+pname+')' 
 				if pname == outdirs:
-					print "we may have located the property tag"
+					#print "we may have located the property tag"
 					replace = pval
 					break;
 	if(replace != ""):
@@ -197,8 +197,8 @@ def getDir(listDir,label):
 	return dire	
 	
 	
-def listVars(uinput,basedir=None,msub=False,pp=False):
-	print "PP option is set to ",pp
+def listVars(uinput,basedir=None,msub=False,pp=False, verbose=True):
+	#print "PP option is set to ",pp
 	if os.path.exists(uinput):
 		handler = xmlhandler.XMLHandler(  )
 		dictParams = handler.getParams(uinput)
@@ -206,13 +206,13 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 			dversion = dictParams['dversion']
 		except:
 			dversion='' #dversion deprecated
-	print "----Downscaling XML template-", uinput
+	#print "----Downscaling XML template-", uinput
       #  print "----Force Override existing output Flag-", force
 	###################################
-	print "Input from XML"
-	print "########################"
-	for name,val in dictParams.iteritems():
-		print name,"=",val 
+	##print "Input from XML"
+	##print "########################"
+	#for name,val in dictParams.iteritems():
+	#	print name,"=",val 
 	###### get dictParams #################################
 	predictor =  checkTags(dictParams,'predictor_list')
 	target = checkTags(dictParams,'target') 
@@ -242,7 +242,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	dim = checkTags(dictParams,'dim')
 	output_grid = checkTags(dictParams,'output_grid')
 	###CEW edit
-	print "Initiate checkTags"
+	#print "Initiate checkTags"
 	region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask') 
 	spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
@@ -274,10 +274,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	fut_suffix = checkTags(dictParams,'future_predictor_suffix')
 	##### end filename suffix ######
 	# removing the following precipitation check. Checks in XMLGen should be good enough. And this condition may not apply any more. Espresso release
-	# if(target != 'pr'):
-	#	if(pr_opts != 'na'):
-	#		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
-	#		sys.exit()	 
+	## if(target != 'pr'):
+	##	if(pr_opts != 'na'):
+	##		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
+	##		sys.exit()	 
 	print "pr_opts:---------------- ",pr_opts 
 	#### pr_opts #########
 	auxcustom1 = "na"  #$auxcustom1 now not used
@@ -288,9 +288,9 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    		getpar = par.split('=')
 	    		val = getpar[1]
 	    		if (val.startswith( "'/archive" )): 
-	    			print "file to be gcpied to vftmp: ",val
+	    			#print "file to be gcpied to vftmp: ",val
 				auxcustom1 = val
-			print "auxcustom1:",auxcustom1
+			#print "auxcustom1:",auxcustom1
 	#projectRoot = checkTags(dictParams,'oroot')
 	global rootdir 
 	rootdir = checkTags(dictParams,'in_root') 
@@ -305,11 +305,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #c	else:
 #c	   print "or not"
 	out_dir,listoutdir =  parse_outdir(out_dir,property)
-	print "new out_dir", out_dir	
+	#print "new out_dir", out_dir	
 	###CEW edits - debugging single-ens I35 case
 	global copyprop	
 	if len(property) == 0:
-		print("splitting filename to determine rip")
+		#print("splitting filename to determine rip")
 		property = out_dir.split("/")[-7]
 		copyprop = property
 	else:
@@ -333,7 +333,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
-	print "qc_mask....... ",qc_mask
+	#print "qc_mask....... ",qc_mask
 	adjust_out = checkTags(dictParams,'adjust_out')
 	#adjust_out = "na"
 	qc_varname = checkTags(dictParams,'qc_varname')
@@ -346,7 +346,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	masklists = checkTags(dictParams,'masklists')
 	preexist = checkTags(dictParams,'preexist')
 	#TODO add preexist as another return variable
-	print "preexist"+preexist
+	#print "preexist"+preexist
 	if(preexist == 'exit'):
 		force = False
 	elif(preexist == 'erase'):
@@ -356,14 +356,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	else:
 		print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
 		sys.exit(-2)
-	#print "----Force Override existing output Flag-", force
-	####### end get  dictParams ###########################
-	## OneD or ZeroD that's the question and starting feb 10 2015 this will be received from xml##  
-	#if(region != "station"):
-	# dim = "OneD"
-	#else:
-	# dim = "ZeroD"
-	#print(dim)
 	if(output_grid == 'station'):
 		if(latjstart == latjend):
 			dsuffix = "J"+str(latjstart)
@@ -393,16 +385,16 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	####################################################################
 	target_dir = getDir(listt,'hidir')
 	target_dir = os.path.abspath(target_dir)
-	print "target dir: ",target_dir 
+	#print "target dir: ",target_dir 
 	hist_pred_dir = getDir(listh,'lodir')
 	hist_pred_dir = os.path.abspath(hist_pred_dir)	
-	print "historical predictor dir",hist_pred_dir
+	#print "historical predictor dir",hist_pred_dir
 	fut_pred_dir = getDir(listf,'futdir')
 	fut_pred_dir = os.path.abspath(fut_pred_dir)
-	print "future predictor dir",fut_pred_dir
+	#print "future predictor dir",fut_pred_dir
 	global idirsuffix
 	idirsuffix = "/"+output_grid+"/" #+dim+"/" CEW edit 10-2016: removing OneD in path specs
-	print "idirsuffix",idirsuffix
+	#print "idirsuffix",idirsuffix
 	#### get outdir #####
 	if(out_dir != 'na'):
 	    category = 'downscaled'
@@ -423,8 +415,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    else:
 		outdir = out_dir
 	    #experiment in the above is expconfig that's constructed 
-	    print "Output directory is :",outdir
-	    print "Script directory is:",sbase  
+	    #print "Output directory is :",outdir
+	    #print "Script directory is:",sbase  
 #new
 	    if (pp == False):	
 		    	for lon in range(int(lons),int(lone)):
@@ -443,7 +435,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		if(preexist == 'move'):
 			global preexist_glob
 			preexist_glob = 'move'
-			print "preexist turned ON................"
+			#print "preexist turned ON................"
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
@@ -607,9 +599,6 @@ def main():
 	#You don't need to parse any of these, but you do need to get a list of the 
 	#copy-able files (and possibly a wallclock time parameter)
 	#If no aux was specified as --aux
-	print(options.auxinput)
-	print(str(search_xml_aux))
-	print(specdict)
 	if search_xml_aux:
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']
@@ -674,8 +663,7 @@ def main():
 	try:		
 		j_offset = jdict[output_grid]
 	except KeyError:
-		j_offset = 1	
-	print(target_dir)	
+		j_offset = 1		
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
@@ -710,7 +698,8 @@ def main():
 	params_pr_opts = '"'+str(pr_opts)+'\"'
 	make_code_cmd = make_code_cmd +" "+params_new+" "+"'"+str(ds_region)+"'"
 	make_code_cmd = make_code_cmd+" "+str(auxcustom)+" "+str(qc_mask)+" "+str(qc_varname)+" "+str(qc_type)+" "+str(adjust_out)+" "+str(sbase)+" "+str(params_pr_opts)+" "+str(branch)+" "+'"'+str(masklists)+'"'+" "+str(idirsuffix) 
-	print(make_code_cmd)
+	#print(make_code_cmd)
+	
 	#p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 	#cprint make_code_cmd
 	p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -737,21 +726,21 @@ def main():
 #	  print "Unable to create dir. Dir may exist already", cdir 
 	shutil.copy2(uinput, cdir)
 	shutil.copy2(auxinput, cdir)
-	print "Config XML and aux file saved in ",cdir 
-	print "RunScripts will be saved under:",sbase
-	#Copy environment config file
-	print("Copying environment info to "+sd+"environment_info.csh")
+	#print "Config XML and aux file saved in ",cdir 
+	#print "RunScripts will be saved under:",sbase
+	##Copy environment config file
+	#print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
 	################ step 6 fudgeList invocation ##############################################
 	slogloc = sbase+"/"+"experiment_info.txt"
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate()
-	print "Summary Log File: ", slogloc
+	#print "Summary Log File: ", slogloc
 	
 	auxloc = sbase + "/config/" + osp.basename(auxinput)
 	shutil.copy2(auxinput, auxloc)
-	print("Aux file location: " + auxloc)
+	#print("Aux file location: " + auxloc)
 	
 	with open(slogloc, 'a') as f:
 		f.write("\naux:" + os.path.abspath(auxinput))
@@ -768,7 +757,7 @@ def main():
 
 ############### crte ppscript #################
 	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
-	print " ========================="
+	#print " ========================="
 	dev = "off" 
 	msubwrapper = []
 	#CEW edit 6-30 for better status file monitoring when queue is full
@@ -820,16 +809,7 @@ def main():
 	#CEW edits 3-21-2017:
 	#Making new tool for generating postProc scripts
 	print("Making postproc scripts")
-	#print(copyprop)
-	#print(copyprop.iteritems())
-	#pval = copyprop.itervalues().next()
-	#if len(pval) > 0:
-	print(multi)
-	print(copyprop)
-	listrips = copyprop.split(",")
-	print(listrips)
-	#try:
-	print("script-making command:")
+	#print("script-making command:")
 	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1)
 		#Note: may need to include commands on the nemsemail as well
 		#os.chmod(msubwrap.name, 0744)
