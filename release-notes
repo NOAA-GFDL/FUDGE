@@ -1,6 +1,11 @@
-08-17-207
+09-06-2017
 (cew)
-- Pr opts now deal wiht all pr adjmethod options, including H; i options 
+- gitlab-ci config added, running on push from all branches at present (as long as runner available)
+- bugfix for the synchronous missing value methods
+
+08-17-2017
+(cew)
+- Pr opts now deal with all pr adjmethod options, including H; i options 
 reproducing h results
 
 08-10-2017
