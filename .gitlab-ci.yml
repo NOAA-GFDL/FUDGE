@@ -6,10 +6,6 @@ minijob:
  # This step is meant to run the minifile tests. 
  stage: test
  script:
-  #- echo $CI_COMMIT_SHA
-  #- echo ${CI_COMMIT_SHA:0:8}
-  #- echo $CI_COMMIT_REF_NAME
-  #- printenv
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME`
   - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
@@ -26,6 +22,8 @@ minijob:
 fulljob:
  stage: test
  script:
+  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME`
+  - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
   - datestr=`date +%Y%m%d-%H%M`
   - summfile="${TMPDIR}/${FUDGETAG}_${datestr}.txt"
   - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest
