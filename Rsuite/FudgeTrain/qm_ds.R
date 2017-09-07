@@ -330,6 +330,7 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
+  Mf.orig <- Mf
   Mf <- Mf[!(Mf.nas <- is.na(Mf))]
 
 	if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
@@ -345,8 +346,10 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
 		DSout[!Mf.nas] <- yout
 		return(DSout)
 	} else {
-		print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""), ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"), " uniform. Returning Mf."))
-		return(Mf)
+		print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""), 
+                 ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"), 
+                 " uniform. Returning Mf."))
+		return(Mf.orig)
 	}
 }
 
