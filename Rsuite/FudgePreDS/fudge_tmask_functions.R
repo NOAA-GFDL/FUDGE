@@ -84,14 +84,16 @@ get.fudge.timemask.list <- function(){
     #Create global reference vectors for where leapdays are in the input
     #historical and future datasets
     if (!apply_tmasks){
-            print(paste("Error in get.fudge.tmask.list: you should use a tmask if", 
-                        "working with delta and/or CFQM!"))
-#       tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
-#                                                           target.file.end.year_1), 
-#                                                    OH$metadata[[1]]$calendar)
-#       tmask.list$fut.leapmask <- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
-#                                                          fut.file.end.year_1), 
-#                                                   MF$metadata[[1]]$calendar)
+      warning(paste("Warning in get.fudge.tmask.list: you should use a tmask if", 
+                  "working with delta and/or CFQM!"))
+      fut.tseries <- get.PCICt.time.series(MF$metadata$dim$time$units, 
+                                           MF$metadata$dim$time$vals, 
+                                           MF$metadata$dim$time$calendar)
+      hist.tseries <- get.PCICt.time.series(OH$metadata$dim$time$units, 
+                                            OH$metadata$dim$time$vals, 
+                                            OH$metadata$dim$time$calendar)
+      tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
+      tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
     }else{
       tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
                                                           target.file.end.year_1), 
@@ -115,9 +117,6 @@ get.fudge.timemask.list <- function(){
   tmask.list$apply_tmasks <- apply_tmasks
   tmask.list$nmasks <- nmasks
   tmask.list$filenames <- tmask.filenames
-  print(str(tmask.list))
-  stop('examine this output')
-  #print(str(tmask.list))
   return(tmask.list)
 }
 
