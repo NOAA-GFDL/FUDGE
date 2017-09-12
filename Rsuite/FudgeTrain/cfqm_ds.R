@@ -35,11 +35,10 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
 #   print(dim(MH[[1]]))
 #   print(dim(MF[[1]]))
   for (n in 1:nrips){
-#     print(paste("on ens", n))
-#     print(pr_start)
     #Determine data to use when indexing against OH
     out.status <- 0
-    MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
+    MF.slice <- list(MF[[1]][,,,n,, ,drop=F])
+    names(MF.slice) <- names(MF)
     #Determine if there is sufficient data to downscale at this point
     #print(str(tmasks))
     #stop('examine this out')

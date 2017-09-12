@@ -102,58 +102,64 @@ callCDFt <- function(OH, MH, MF, args, ds.method,
        ## explanation as to why. This way works.
        #args.list <- c(list(targ, pred, new.data), list(npas=npas, dev=dev))
        is.retry <- FALSE
-       temp <-tryCatch({
-         do.call(ds.method, c(list(OH, MH, MF.slice), 
-                              list(npas=npas, dev=dev)
-         ))[c('DS', 'high_cutoff', 'low_cutoff')]}, 
-         error=function(e){
-           is.retry <<- TRUE;
-           loop.try <- FALSE
-           i=1;
-           while(dev <= maxdev && loop.try==FALSE){
-             message(paste0("Error caught from ", ds.method, " with dev=",
-                            dev," and npas=",npas,
-                            "; retrying with dev=dev+",1))
-             loop.try <- TRUE
-             dev=dev+1
-             i=i+1
-             loop.try <- tryCatch(do.call(ds.method, 
-                                          c(list(OH, MH, MF.slice), 
-                                            list(npas=npas, dev=(dev)
-                                            )))[c('DS', 'high_cutoff', 'low_cutoff')], 
-                                  error=function(e){return(FALSE)}
-             )
-           }
-           if(dev > maxdev){
-             #This has not come up yet in testing, but it might.
-             if(args$retry=='stop'){
-               stop(paste("Error in callCDFt: In the process of retrying", 
-                          ds.method, "downscaling at this point",
-                          "dev grew to >", maxdev,
-                          "without the", ds.method, "function",
-                          "being able to complete", 
-                          'while retry was set to "stop".', 
-                          "Please retry with different settings", 
-                          "or contact Carolyn Whitlock."))
-             }else if(args$retry=='missing'){
-               return(list(DS=rep(NA, length(MF.slice)), 
-                           high_cutoff=NA, low_cutoff=NA))
-             }else if(args$retry=='predictor'){
-               return(list(DS=MF.slice, 
-                           high_cutoff=NA, low_cutoff=NA))
+       if (!any(c(length(OH), length(MH), length(MF.slice)) == 0)){
+         temp <-tryCatch({
+           do.call(ds.method, c(list(OH, MH, MF.slice), 
+                                list(npas=npas, dev=dev)
+           ))[c('DS', 'high_cutoff', 'low_cutoff')]}, 
+           error=function(e){
+             is.retry <<- TRUE;
+             loop.try <- FALSE
+             i=1;
+             while(dev <= maxdev && loop.try==FALSE){
+               message(paste0("Error caught from ", ds.method, " with dev=",
+                              dev," and npas=",npas,
+                              "; retrying with dev=dev+",1))
+               loop.try <- TRUE
+               dev=dev+1
+               i=i+1
+               loop.try <- tryCatch(do.call(ds.method, 
+                                            c(list(OH, MH, MF.slice), 
+                                              list(npas=npas, dev=(dev)
+                                              )))[c('DS', 'high_cutoff', 'low_cutoff')], 
+                                    error=function(e){return(FALSE)}
+               )
              }
-           }else{
-             return(do.call(ds.method, 
-                            c(list(OH, MH, MF), 
-                              list(npas=npas, dev=(dev))
-                            ))[c('DS', 'high_cutoff', 'low_cutoff')])
-           }
-         }, 
-         silent=FALSE)
-       #Index output back to a non-overlapping future time series, 
-       #if needed
-       tmp.out[notna.idx[,n]] <- temp$DS
-       out.data[,,,n,,] <- index.qm(index.mask, tmp.out, olap)
+             if(dev > maxdev){
+               #This has not come up yet in testing, but it might.
+               if(args$retry=='stop'){
+                 stop(paste("Error in callCDFt: In the process of retrying", 
+                            ds.method, "downscaling at this point",
+                            "dev grew to >", maxdev,
+                            "without the", ds.method, "function",
+                            "being able to complete", 
+                            'while retry was set to "stop".', 
+                            "Please retry with different settings", 
+                            "or contact Carolyn Whitlock."))
+               }else if(args$retry=='missing'){
+                 return(list(DS=rep(NA, length(MF.slice)), 
+                             high_cutoff=NA, low_cutoff=NA))
+               }else if(args$retry=='predictor'){
+                 return(list(DS=MF.slice, 
+                             high_cutoff=NA, low_cutoff=NA))
+               }
+             }else{
+               return(do.call(ds.method, 
+                              c(list(OH, MH, MF), 
+                                list(npas=npas, dev=(dev))
+                              ))[c('DS', 'high_cutoff', 'low_cutoff')])
+             }
+           }, 
+           silent=FALSE)
+         #Index output back to a non-overlapping future time series, 
+         #if needed
+         tmp.out[notna.idx[,n]] <- temp$DS
+         out.data[,,,n,,] <- index.qm(index.mask, tmp.out, olap)
+       }else{
+         temp = list()
+         temp$high_cutoffs = NA
+         temp$low_cutoff = NA
+       }
        high_cutoffs = c(high_cutoffs, temp$high_cutoff)
        low_cutoffs = c(low_cutoffs, temp$low_cutoff)
        if(is.retry && train_qcmask){

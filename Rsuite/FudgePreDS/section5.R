@@ -56,9 +56,9 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'mapMFOrder' = callMapMFOrder(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
-    print('summary of adjusted output:')
-    print(summary(as.vector(out$adjusted.output$ds.out)))
-    print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
+#     print('summary of adjusted output:')
+#     print(summary(as.vector(out$adjusted.output$ds.out)))
+#     print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
       #print("This step should ensure dim info does not get lost")
@@ -201,13 +201,17 @@ callPRPostproc <- function(test, input, adjusted.output){
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
       obs.prmask <- get.xy.center(test$qc_args$targ.prmask)
-      oh.timelen <- dim(input$adjusted.output$hist_targ)[6]
-      mf.timelen <- dim(input$adjusted.output$fut_pred)[6]
+      oh.timelen <- dim(input$hist.targ[[1]])[6]
+      mf.timelen <- dim(input$fut.pred[[1]])[6]
       nrips <- dim(adjusted.output$ds.out)[4]
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-        if (oh_timelen >= mf_timelen){
+#         print(summary(input))
+#         print(summary(adjusted.output$fut_pred))
+#         print(oh.timelen)
+#         print(mf.timelen)
+        if (oh.timelen >= mf.timelen){
           #If more samples in OH, index by nyears present
           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                    tmasks$hist.year.div, tmasks$fut.year.div, 
@@ -228,7 +232,9 @@ callPRPostproc <- function(test, input, adjusted.output){
                                       tmasks$fut.leapmask, 
                                       rep(1, oh.timelen), 
                                       rep(1, mf.timelen), 
-                                      obs.prmask[,,,n,,])
+                                      obs.prmask[,,,1,,])
+        #obs.prmask right now does not support more than one
+        #ensemble member.
         adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
       }
     }

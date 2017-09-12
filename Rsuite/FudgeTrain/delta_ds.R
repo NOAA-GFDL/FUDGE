@@ -81,6 +81,10 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
                                  start_year=pr_start)
         OH.idx <- idx$index
         pr_start <- idx$end
+        print(summary(MH))
+        print(summary(MF.data))
+        print(deltatype)
+        print(deltaop)
         delta <- delta.train(MH, MF.data, deltatype, deltaop, status) #ignore0.Delta
         ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
@@ -94,34 +98,6 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
         in.len <- length(OH)
         OH.idx <- c()
         ds.out <- c()
-        #         #vector comparisons take a long time relative to other things
-        #         while(write.len <= out.len){
-        #           if((write.len + in.len) <= out.len){
-        #             MF.idx <- write.len:(write.len+in.len)
-        #             loop.delta <- delta.train(MH, MF.data[MF.idx], 
-        #                                       deltatype, deltaop, ignore0.Delta, status)
-        #             #Insert status check here
-        #             loop.ds <- delta.downscale(loop.delta, OH, deltaop, status)
-        #             OH.idx <- c(OH.idx, 1:length(OH))
-        #             ds.out <- c(ds.out, loop.ds)
-        #             #Insert second status check here?
-        #           }else{
-        #             len.diff <- out.len - write.len + 1
-        #             hist.idx <- 1:len.diff
-        #             MF.idx <- write.len:out.len
-        #             #This needs an elese case for the case where there is *more* OH data
-        #             #than MF data at a given point.
-        #             #...though maybe not if we are using entire vectors rather than compressed
-        #             in.len <- len.diff
-        #             loop.delta <- delta.train(MH[hist.idx], MF.data[MF.idx], 
-        #                                       deltatype, deltaop, ignore0.Delta, status)
-        #             #Insert status check here
-        #             loop.ds <- delta.downscale(loop.delta, OH[hist.idx], deltaop, status)
-        #             OH.idx <- c(OH.idx, hist.idx)
-        #             ds.out <- c(ds.out, loop.ds)
-        #             #Insert second status check here?
-        #           }
-        #         }
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
                                  start_year=1)
@@ -167,7 +143,7 @@ delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
       return(1)
     }
   }
-  
+  print(deltaop)
   if(deltaop=='add'){
     #Downscale by difference delta
     delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
@@ -181,9 +157,6 @@ delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
                     "Returning delta of 1 for the calculation."))
       #Add a value flagging operation at this point
       delta <- 1
-      #       out <- delta.targ
-      #       attr(out, 'status') <- 1
-      #       return(out)
     }
   }
   return(delta)
