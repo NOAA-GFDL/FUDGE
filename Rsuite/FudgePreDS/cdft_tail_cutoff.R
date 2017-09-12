@@ -48,7 +48,7 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
       opp.cond = switch(args$tail,
                         upper = '<=',
                         lower = '>=')
-      if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && !is.na(opp.tail.cut)) {
+      if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && (!is.na(opp.tail.cut$low_cutoff) & !is.na(opp.tail.cut$high_cutoff))) {
         opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
         if (args$tail=='upper'){
           opp.idx <- opp.indices[length(opp.indices)] + 1

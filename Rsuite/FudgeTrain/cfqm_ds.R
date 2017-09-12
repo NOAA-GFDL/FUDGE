@@ -32,15 +32,15 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
   pr_start <- 1
   oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH[[1]])
   for (n in 1:nrips){
-#     print(paste("on ens", n))
-#     print(pr_start)
     #Determine data to use when indexing against OH
     out.status <- 0
-    MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
+    MF.slice <- list(MF[[1]][,,,n,, ,drop=F])
+    names(MF.slice) <- names(MF)
     #Determine if there is sufficient data to downscale at this point
     if ('pr_opts' %in% names(missval.args)){
       tmp.missval.args <- missval.args
-      tmp.missval.args$pr_opts$MF <- lapply(missval.args$pr_opts$MF, '[', ,,,n,, , drop=F)
+      #print(summary(missval.args$pr_opts$MF))
+      tmp.missval.args$pr_opts$MF <- missval.args$pr_opts$MF[,,,n,, ,drop=F]
     }else{
       tmp.missval.args <- missval.args
     }

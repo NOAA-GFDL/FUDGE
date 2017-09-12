@@ -5,7 +5,10 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
   #'if fut timeseries is longer, and subsampling hist samples if fut time len is 
   #'shorter.
   #' Used by: delta downscaling, CFQM downscaling, the pr masking functions when
-  #' OH is used to downscale
+  #' OH is used to downscae
+  print('num years in hist and fut')
+  print(nyears_hist)
+  print(nyears_fut)
   if (nyears_hist > nyears_fut){
     if (start_year > 1){
       start_idx <- hist.year.div[start_year - 1] + 1
@@ -37,9 +40,13 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
     start.vec <- start_idx:hist.max
     num.rep <- floor(nyears_fut/nyears_hist)
     num.remain <- nyears_fut %% nyears_hist
-    idx.remain <- hist.year.div[num.remain]
-    OH.idx <- c(rep(1:hist.max, num.rep), 
-                1:idx.remain)
+    if (num.remain == 0){
+      OH.idx <- c(rep(1:hist.max, num.rep))
+    }else{
+      idx.remain <- hist.year.div[num.remain]
+      OH.idx <- c(rep(1:hist.max, num.rep), 
+                  1:idx.remain)
+    }
   }
   return(list(index=OH.idx, end=start_year))
 }
