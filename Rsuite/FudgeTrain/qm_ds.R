@@ -16,21 +16,21 @@ callQM <- function(OH, MH, MF, args, type="",
   #Note: pr adjustments now effectively require this to be called before
   #the retry options can work properly.
 
-#   OH.data <- compress.xy.data(OH)
-#   MH.data <- compress.xy.data(MH)
-#   MF.data <- compress.xy.data(MF)
+  #   OH.data <- compress.xy.data(OH)
+  #   MH.data <- compress.xy.data(MH)
+  #   MF.data <- compress.xy.data(MF)
 
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
-#   #Prepare indexing mask
-#   if (tmasks$time_mask_overlap){
-#     index.mask <- tmasks$trim$masks[[w]]
-#     olap=T
-#   }else{
-#     index.mask <- tmasks$MF$masks[[w]]
-#     olap=F
-#   }
+  #   #Prepare indexing mask
+  #   if (tmasks$time_mask_overlap){
+  #     index.mask <- tmasks$trim$masks[[w]]
+  #     olap=T
+  #   }else{
+  #     index.mask <- tmasks$MF$masks[[w]]
+  #     olap=F
+  #   }
   #Trying a workaround for the quantile mapping workflow issue -
   #The new indexing works on non-overlap cases, but the s5 examples really
   #need the overlapped data in order to reproduce past results.
@@ -48,12 +48,12 @@ callQM <- function(OH, MH, MF, args, type="",
   }else{
     qc <- NULL
   }
-#  MF_mask <- missval.args$pr$MF
-start_year <- 1
+  #  MF_mask <- missval.args$pr$MF
+  start_year <- 1
   for (n in 1:nrips){
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
     missval.new <- missval.args
-#     print(dim(missval.new$pr_opts$MF))
+    #     print(dim(missval.new$pr_opts$MF))
     missval.new$pr_opts$MF <- missval.new$pr_opts$MF[,,,n,, , drop=F]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice,
                                          missval.args$minsamplesize,
@@ -65,8 +65,8 @@ start_year <- 1
       MF.slice <- missval.out$MF[[1]]
       mf.missing <- sum(is.na(MF.slice))
 
-			args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
-			args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
+      args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
+      args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
 
       train.stat <- missval.out$missval.status
       out <- switch(type,
@@ -76,8 +76,8 @@ start_year <- 1
                     'CFQM_fut' =  CFQM_fut(OH.slice, MH.slice, MF.slice, args),
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args),
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args)
-										)
-     # print(length(out))
+      )
+      # print(length(out))
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
@@ -92,7 +92,7 @@ start_year <- 1
       }
     }
   }
-#stop('examine idx returned')
+  #stop('examine idx returned')
   return(list(ds=out.data, qc=qc))
 }
 
@@ -285,7 +285,7 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
     print(tmasks$hist.year.div)
     print(tmasks$fut.year.div)
     print(start_year)
-#     stop('examine this out')
+    #     stop('examine this out')
     idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut,
                              tmasks$hist.year.div, tmasks$fut.year.div,
                              start_year=start_year)
@@ -332,64 +332,114 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
   Mh <- Mh[!is.na(Mh)]
   Mf <- Mf[!(Mf.nas <- is.na(Mf))]
 
-	if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
-		n.max <- max(length(Oh), length(Mh))
-		tau <- c(0, (1:n.max)/(n.max+1), 1)
-		x <- quantile(Mh, tau, type=8, na.rm=TRUE)
-		y <- quantile(Oh, tau, type=8, na.rm=TRUE)
-		yout <- approx(x, y, xout=Mf, rule=1)$y
-		extrap.lower <- is.na(yout) & (Mf <= min(Mh))
-		extrap.upper <- is.na(yout) & (Mf >= max(Mh))
-		yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
-		yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
-		DSout[!Mf.nas] <- yout
-		return(DSout)
-	} else {
-		print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""), ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"), " uniform. Returning Mf."))
-		return(Mf)
-	}
+  if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
+    n.max <- max(length(Oh), length(Mh))
+    tau <- c(0, (1:n.max)/(n.max+1), 1)
+    x <- quantile(Mh, tau, type=8, na.rm=TRUE)
+    y <- quantile(Oh, tau, type=8, na.rm=TRUE)
+    yout <- approx(x, y, xout=Mf, rule=1)$y
+    extrap.lower <- is.na(yout) & (Mf <= min(Mh))
+    extrap.upper <- is.na(yout) & (Mf >= max(Mh))
+    yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
+    yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
+    DSout[!Mf.nas] <- yout
+    return(DSout)
+  } else {
+    print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""), ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"), " uniform. Returning Mf."))
+    return(Mf)
+  }
 }
-#
-# callKDDM <- function(OH,MH,MF,args){
-#   #'Bias correction of climate model output using KDDM on a single variable
-#   #'from the 'climod' package https://github.com/sethmcg/climod
-#   #'@param OH: Observed Historical (a.k.a. observations)
-#     #'@param MH: Model Historical (a.k.a. GCM historical)
-#     #'@param MF: Model Future (a.k.a GCM future)
-#     #'Contains no other arguments in the args parameter.
-# #   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
-#
-# 	if (!(args$norm %in% c("boxcox", "zscore", "none"))) stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
-#
-# 	kddm.bc.out <- biascorrect(list(obs=list(OH), cur=list(MH), fut=list(MF)), norm=args$norm)
-#
-# 	return(kddm.bc.out$fut)
-# }
 
-callKDDM <- function(OH,MH,MF,args){
+
+callKDDM <- function(Oh, Mh, Mf, args){
   #'Bias correction of climate model output using KDDM on a single variable
   #'from the 'climod' package https://github.com/sethmcg/climod
-  #'@param OH: Observed Historical (a.k.a. observations)
-    #'@param MH: Model Historical (a.k.a. GCM historical)
-    #'@param MF: Model Future (a.k.a GCM future)
+  #'@param Oh: Observed Historical (a.k.a. observations, obs)
+    #'@param Mh: Model Historical (a.k.a. GCM historical, cur)
+    #'@param Mf: Model Future (a.k.a GCM future, fut)
+    #'@param norm: Choice of normalization technique. Contained in args parameter.
     #'Contains no other arguments in the args parameter.
-    #   save(OH,MH,MF,file=paste0("/work/d1a/testing/kddm/kddm_tst",round(runif(1)*1000),".Rdat"))
 
     if (!(args$norm %in% c("boxcox", "zscore", "none"))) {
-      stop(paste('KDDM norm must be one of {"boxcox", "zscore", "none"}'))
+      stop(paste('KDDM norm must be one of {"zscore", "boxcox", "none"}'))
     }
-    DSout <- MF + NA
-    Mf.nas <- is.na(MF)
 
-    folded.OH <- as.list(data.frame(matrix(OH[!is.na(tmasks$OH$masks[[w]])], byrow=FALSE, nrow=31)))
-    folded.MH <- as.list(data.frame(matrix(MH[!is.na(tmasks$MH$masks[[w]])], byrow=FALSE, nrow=31)))
-    folded.MF <- as.list(data.frame(matrix(MF[!is.na(tmasks$MF$masks[[w]])], byrow=FALSE, nrow=31)))
+    # Prepare Downscaled output array of NAs the same dimension as Mf
+    DSout <- Mf + NA
 
-    kddm.bc.out <- biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=args$norm)
+    # Subset to remove the masked NAs
+    subset.OH <- as.vector(Oh)[!is.na(tmasks$OH$masks[[w]])]
+    subset.MH <- as.vector(Mh)[!is.na(tmasks$MH$masks[[w]])]
+    subset.MF <- as.vector(Mf)[!is.na(tmasks$MF$masks[[w]])]
 
-    kddm.out <- unlist(kddm.bc.out$fut)
+    # Find the time window width
+    window.width <- sum(!is.na(tmasks$MF$masks[[w]][1:365]))
+    # Find the number of years in each data set
+    num.years.Oh <- length(Oh)/365
+    num.years.Mh <- length(Mh)/365
+    num.years.Mf <- length(Mf)/365
+    # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
+    half.window <- ceiling(window.width/2)
+    # Initialize a padding variable to shift December data across the boundary if necessary.
+    pad <- 0
+    # If the current time window center is within a half-window of the Dec31/Jan1 boundary then shift data.
+    # if ( w < half.window | w > 366 - half.window) {
+    # Alternatively, can test if mask==1 for Jan1 and Dec31
+    # jan1.in.mask <- !is.na(head(tmasks$MF$masks[[w]],1)) # is first day (assumed to be Jan1) in mask not NA?
+    # dec31.in.mask <- !is.na(tail(tmasks$MF$masks[[w]],1)) # is last day (assumed to be Dec31) in mask not NA?
+    # if ( jan1.in.mask & dec31.in.mask ) {
 
-    # kddm.out <- unlist(lapply(kddm.bc.out$fut,"[[",16))
-    DSout[!Mf.nas] <- kddm.out
+    # or test where the first and last NAs are in a mask
+    if ( (pad1 <- min(which(is.na(tmasks$MF$masks[[w]]))) - 1) == 0 | (pad2 <- length(tmasks$MF$masks[[w]]) - max(which(is.na(tmasks$MF$masks[[w]])))) == 0 ) {
+      # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of winow.width length.
+      folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+      folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+      folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+    } else {
+      # otherwise, the smaller side should be padded
+      pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
+      # If window is beginning of year...
+      #       if ( w < half.window ) {
+      if (padside == 2) {
+#         pad <- half.window - w
+        subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
+        subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
+        subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
+
+        folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+        folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+        folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+
+        folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
+        folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
+        folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
+      } else {
+        # otherwise window is end of year
+#         pad <-  half.window - (366 - w)
+        subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
+        subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
+        subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
+
+        folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+        folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+        folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+
+        folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
+        folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
+        folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+      }
+    }
+    # Bias Correct using the climod KDDM routine, return the unlisted array of future values
+    kddm.bc.out <- unlist(biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=ifelse(args$norm=="none","identity",args$norm))$fut)
+    # If pad was increased to shift data, shift it back
+    if(pad > 0) {
+      if ( w < half.window ) {
+        kddm.bc.out <- c(kddm.bc.out, rep(NA,pad))
+      } else {
+        kddm.bc.out <- c(rep(NA,pad), kddm.bc.out)
+      }
+    }
+    # Write the bias corrected results into the DSout array in the unmasked indices and return.
+    DSout[!is.na(tmasks$MF$masks[[w]])] <- kddm.bc.out
     return(DSout)
 }
