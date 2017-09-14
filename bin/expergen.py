@@ -809,6 +809,7 @@ def main():
 	#CEW edits 3-21-2017:
 	#Making new tool for generating postProc scripts
 	print("Making postproc scripts")
+	listrips = copyprop.split(",")
 	#print("script-making command:")
 	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1)
 		#Note: may need to include commands on the nemsemail as well
