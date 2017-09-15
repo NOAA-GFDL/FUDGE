@@ -170,6 +170,9 @@ print(summary(as.vector(fut_pred[[1]])))
     oh.len <- length(hist.targ.tmp)
     oh.pres <- which(!is.na(hist.targ.tmp))[1]
     
+    #print(summary(hist.pred.tmp[oh.pres:oh.len]))
+    #print(summary(hist.targ.tmp[oh.pres:oh.len]))
+    
     parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
                                   hist.targ.tmp[oh.pres:oh.len], 
                                   ds.args)
