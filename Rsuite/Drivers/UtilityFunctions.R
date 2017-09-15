@@ -21,13 +21,15 @@ add.over.missvals <- function(val1, val2){
   }
 }
 
-index.a.list <- function(list, index, val){
+index.a.list <- function(lst, index, val){
   #Returns the list if the member of the 
   #list indicated by index is equal to val
   # (helper function for lapply - doesn't speed code, 
   #  but will make it more readable)
-  if(list[[index]]==val){
-      return(list)
+  if (index %in% names(lst)){
+    if(lst[[index]]==val){
+      return(lst)
+    }
   }
 }
 
@@ -97,7 +99,7 @@ kount.vals <- function(data, thold=NA){
   return(c(missing=miss.vals, zero=zero.vals, present=(d.len-(miss.vals+zero.vals)), thold=thold.vals))
 }
 
-adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
+adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list('na')){
   #' Fast and dirty modifications to make the pre- and post-processing 
   #' scheme that the XML currently supports match the R infrastucture
   #' for the more general version yet to be implemented
@@ -105,23 +107,33 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
   post_ds=list()
   train_qcmask <- FALSE
   if(pr_opts[[1]]!='na'){
+    #As of early I, pairwise methods (lm, lmAsync, PARM) all get adjusted from
+    #within the twindow loops
+    if (ds.ref$is_pairwise){
+      pr.loc='inloop'
+      allow.low.mh <- TRUE
+    }else{
+      pr.loc='outloop'
+      allow.low.mh <- FALSE
+    }
     if('apply_0_mask' %in% names(pr_opts)){
       message(paste("Warning in adapt.pp.input: use of apply_0_mask as an opt name is deprecated!", 
                     "Changing to new name, ignore0"))
       pr_opts['ignore0'] <- pr_opts$apply_0_mask
     }
-    pre_ds$propts <- list(type='PR', var='pr', apply='all', loc='outloop', 
+    pre_ds$propts <- list(type='PR', var='pr', apply='all', loc=pr.loc, 
                           pp.args=list(thold=pr_opts$pr_threshold_in,
                                        freqadj=pr_opts$pr_freqadj_in,
                                        conserve=pr_opts$pr_conserve_in, 
                                        ignore0=ifelse(pr_opts$ignore0=='off', 
-                                                      'off', 'on'))
+                                                      'off', 'on'), 
+                                       allow_low_mh = allow.low.mh)
     )
     if ('pr_adjmethod' %in% names(pr_opts)){
-      pre_ds$propts$pp.args['method'] <- pr_opts$pr_adjmethod
+      pre_ds$propts$pp.args['pr_adjmethod'] <- pr_opts$pr_adjmethod
     }else{
-      #Maintain the default behavior up until H wrapup
-      pre_ds$propts$pp.args['method'] <- 'approx'
+      #Maintain H-compatible default until wrapup of I
+      pre_ds$propts$pp.args['pr_adjmethod'] <- 'exact'
     }
                           ###Change added 9-23 to test the ppr opts)
                                        #apply_0_mask=pr_opts$apply_0_mask))
@@ -158,11 +170,16 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
     post_ds$propts <- list(type='PR', 
                            adjust.out='on', 
                            qc.mask='off', 
-                           loc='outloop', 
+                           loc=pr.loc, 
                            qc_args=list(thold=pr_opts$pr_threshold_out,
                                         conserve=pr_opts$pr_conserve_out, 
                                         ignore0=ignore0))
-                                        #apply_0_mask=pr_opts$apply_0_mask))
+  }
+  if ('pr_adjmethod' %in% names(pr_opts)){
+    post_ds$propts$qc_args['pr_adjmethod'] <- pr_opts$pr_adjmethod
+  }else{
+    #Maintain H-compatible default until wrapup of I
+    post_ds$propts$qc_args['pr_adjmethod'] <- 'exact'
   }
   flag.negvar <- FALSE
   qc.maskvar <- FALSE
@@ -211,6 +228,9 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na')){
     #print(post_ds)
     #stop('examine post_ds structure')
   }
+#   print(pre_ds)
+#   print(post_ds)
+#   stop('examine this output')
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds,'train_qcmask'=train_qcmask))  
 }
 

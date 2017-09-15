@@ -25,7 +25,7 @@ QCAdjustArguments <- function(pre_ds, post_ds,
   list.all <- c(pre.ds.list, post.ds.list)
   #Check each of them against the adjustments that will be performed
   for(adj in list.all){
-    if(is.multivar){
+  	if (length(adj) > 0){    if(is.multivar){
       if(!adj%in%multivar.possible){
         stop(paste("Error in QCAdjustArguments: method",adj,"does not support",
                    "multiple variables!"))
@@ -55,6 +55,7 @@ QCAdjustArguments <- function(pre_ds, post_ds,
                    paste(t.list$vars, collapse=","), "was not present in the",
                    "predictor or target vars!"))
       }
+    }
     }
   }
 }

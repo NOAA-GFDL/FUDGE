@@ -47,7 +47,8 @@ get.fudge.timemask.list <- function(){
       names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
       tmask.filenames <- c(tmask.filenames, list('trim' = fut.time.trim.mask))
       nmasks <- length(tmask.list$OH$masks)
-      if (grepl("_olap", tmask.filenames$MF, fixed=T)){
+      #if (grepl("_olap", tmask.filenames$MF, fixed=T)){
+      if (check_mask_olap(tmask.list$MF$masks)){
         time_mask_overlap <- T
       }
     }
@@ -82,27 +83,40 @@ get.fudge.timemask.list <- function(){
   if (ds.ref$downscale_oh){
     #Create global reference vectors for where leapdays are in the input
     #historical and future datasets
-    tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
-                                                  target.file.end.year_1), 
-                                           OH$metadata[[1]]$calendar)
-    tmask.list$fut.leapmask <- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
-                                                 fut.file.end.year_1), 
-                                          MF$metadata[[1]]$calendar)
+    if (!apply_tmasks){
+      warning(paste("Warning in get.fudge.tmask.list: you should use a tmask if", 
+                  "working with delta and/or CFQM!"))
+      fut.tseries <- get.PCICt.time.series(MF$metadata$dim$time$units, 
+                                           MF$metadata$dim$time$vals, 
+                                           MF$metadata$dim$time$calendar)
+      hist.tseries <- get.PCICt.time.series(OH$metadata$dim$time$units, 
+                                            OH$metadata$dim$time$vals, 
+                                            OH$metadata$dim$time$calendar)
+      tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
+      tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
+    }else{
+      tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
+                                                          target.file.end.year_1), 
+                                                   OH$metadata[[1]]$calendar)
+      tmask.list$fut.leapmask <- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
+                                                         fut.file.end.year_1), 
+                                                  MF$metadata[[1]]$calendar)
+    }
     tmask.list$hist.year.div <- get.year.divisions(target.file.start.year_1, 
-                                         target.file.end.year_1, 
-                                         OH$metadata[[1]]$calendar)
+                                                   target.file.end.year_1, 
+                                                   OH$metadata[[1]]$calendar)
     tmask.list$fut.year.div <- get.year.divisions(fut.file.start.year_1, 
-                                        fut.file.end.year_1, 
-                                        MF$metadata[[1]]$calendar)
+                                                  fut.file.end.year_1, 
+                                                  MF$metadata[[1]]$calendar)
     tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
     tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
   }
   ###Set booleans for handy access
+  print(paste("Applying overlapping time window masks:", time_mask_overlap))
   tmask.list$time_mask_overlap <- time_mask_overlap
   tmask.list$apply_tmasks <- apply_tmasks
   tmask.list$nmasks <- nmasks
   tmask.list$filenames <- tmask.filenames
-  #print(str(tmask.list))
   return(tmask.list)
 }
 
@@ -116,5 +130,15 @@ apply.fudge.tmask <- function(data, mask){
   result <- rep(mask, length.out=length(data)) * as.vector(data)
   dim(result) <- data.dim
   return(aperm(result, c(2,3,4,5,6,1)))
+}
+
+check_mask_olap <- function(data.list){
+  #'Checks the masks for overlapping along the time axis
+  out <- rep(0, length(data.list[[1]]))
+  for (n in 1:length(data.list)){
+    data.list[[n]][is.na(data.list[[n]])] <- 0
+    out <- out + data.list[[n]]
+  } 
+  return(any(out > 1))
 }
 

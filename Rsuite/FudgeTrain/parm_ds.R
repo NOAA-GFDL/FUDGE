@@ -129,13 +129,24 @@ if (all.identical(remove.missvals(hist_pred[[1]]))){
   return(list(ds=fut_pred[[1]], qc=qc))
 }else{
   #Synchronize missing values across OH and MH datasets
+  print(summary(hist_targ))
+  print(summary(hist_pred))
+  print(summary(fut_pred))
   missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
                                        missval.args$minsamplesize, 
                                        missval.args, 
-                                       missval.method = 'synchronous')
+                                       missval.method = 'distributional')
 hist_pred = missval.out$MH
 fut_pred  = missval.out$MF
 hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
+
+if (length(hist_pred) != length(hist_targ) ){
+	#In this case, you will not be able to downscale
+	print(length(hist_pred))
+	print(length(hist_targ))
+	stop(paste("Error in parm_ds: length of OH and MH datasets after removing", 
+	"missing values should be identical!"))
+} 
 
 print(summary(as.vector(hist_pred[[1]])))
 print(summary(as.vector(hist_targ[[1]])))
@@ -152,8 +163,18 @@ print(summary(as.vector(fut_pred[[1]])))
       hist.pred.tmp <- pr_jitter_fxn(hist.pred.tmp)
       hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
     }
-    parm.train.data <- parm.train(sort(hist.pred.tmp[!is.na(hist.pred.tmp)]), 
-                                  sort(hist.targ.tmp[!is.na(hist.targ.tmp)]), 
+    
+    #Okay, pairwise settings go in here
+    hist.targ.tmp <- sort(hist.targ.tmp, na.last=FALSE)
+    hist.pred.tmp <- sort(hist.pred.tmp, na.last=FALSE)
+    oh.len <- length(hist.targ.tmp)
+    oh.pres <- which(!is.na(hist.targ.tmp))[1]
+    
+    #print(summary(hist.pred.tmp[oh.pres:oh.len]))
+    #print(summary(hist.targ.tmp[oh.pres:oh.len]))
+    
+    parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
+                                  hist.targ.tmp[oh.pres:oh.len], 
                                   ds.args)
     #10-13: The default behavior of sort is to remove NA values.
     #If that's the case, you might be able to get away with removing

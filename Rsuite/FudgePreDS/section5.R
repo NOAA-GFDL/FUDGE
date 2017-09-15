@@ -38,12 +38,13 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     test <- s5.instructions[[element]]
     print(test$type)
     out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
+    #source('~/Code/s8_testing/adjust_pr/pairwise_adjust_pr_s5.R')
     out <- switch(test$type,
                   'sdev' = callSdev(test, out$input, out$adjusted.output),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
                   'SBiasCorr' = callSBCorr(test, out$input, out$adjusted.output),
                   'flag.neg' = callFlagNegativeValues(test, out$input, out$adjusted.output),
-                  'PR' = callPRPostproc(test, out$input, out$adjusted.output),
+                  'PR' = callAdjustPrecipS5(test, out$input, out$adjusted.output),
                   'Nothing' = callNoMethod(test, out$input, out$adjusted.output),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
@@ -55,9 +56,9 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'mapMFOrder' = callMapMFOrder(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
-    print('summary of adjusted output:')
-    print(summary(as.vector(out$adjusted.output$ds.out)))
-    print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
+#     print('summary of adjusted output:')
+#     print(summary(as.vector(out$adjusted.output$ds.out)))
+#     print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
       #print("This step should ensure dim info does not get lost")
@@ -167,6 +168,18 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
+
+callAdjustPrecipS5 <- function(test, input, adjusted.output){
+  if (test$qc_args$pr_adjmethod %in% c('exact', 'approx')){
+    return(callPRPostproc(test, input, adjusted.output))
+  }else if (test$qc_args$pr_adjmethod == 'eqfreq'){
+    return(adjust_pr_s5(test, input, adjusted.output))
+  }else{
+    stop(paste("Error in callAdjustPrecipS5: pr_adjmethod should be one of", 
+               "exact, approx, or eqfreq, but was", test$qc_args$pr_adjmethod,"!"))
+  }
+}
+
 callPRPostproc <- function(test, input, adjusted.output){
   #Performs the adjustments needed for post-downscaling precipitation
   #on the downscaled ouput, including a threshold adjustment for drizzle
@@ -183,26 +196,22 @@ callPRPostproc <- function(test, input, adjusted.output){
       #get center of possible 9-point mask and apply to ds output
       ds.dim <- dim(adjusted.output$ds.out)
       fut.prmask <- get.xy.center(test$qc_args$fut.prmask)
-      print('summary of fut.prmask:')
-      print(summary(fut.prmask))
-      print(summary(as.vector(adjusted.output$ds.out)))
-      print(summary(as.vector(adjusted.output$ds.out[!is.na(adjusted.output$ds.out)])))
-      #stop('examine this output')
-
       adjusted.output$ds.out[!fut.prmask] <- 0
       dim(adjusted.output$ds.out) <- ds.dim
-#      print(summary(as.vector(adjusted.output$ds.out)))
-      #stop('examine the s5 output')
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
       obs.prmask <- get.xy.center(test$qc_args$targ.prmask)
-      oh.timelen <- dim(input$adjusted.output$hist_targ)[6]
-      mf.timelen <- dim(input$adjusted.output$fut_pred)[6]
+      oh.timelen <- dim(input$hist.targ[[1]])[6]
+      mf.timelen <- dim(input$fut.pred[[1]])[6]
       nrips <- dim(adjusted.output$ds.out)[4]
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-        if (oh_timelen >= mf_timelen){
+#         print(summary(input))
+#         print(summary(adjusted.output$fut_pred))
+#         print(oh.timelen)
+#         print(mf.timelen)
+        if (oh.timelen >= mf.timelen){
           #If more samples in OH, index by nyears present
           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                    tmasks$hist.year.div, tmasks$fut.year.div, 
@@ -223,7 +232,9 @@ callPRPostproc <- function(test, input, adjusted.output){
                                       tmasks$fut.leapmask, 
                                       rep(1, oh.timelen), 
                                       rep(1, mf.timelen), 
-                                      obs.prmask[,,,n,,])
+                                      obs.prmask[,,,1,,])
+        #obs.prmask right now does not support more than one
+        #ensemble member.
         adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
       }
     }

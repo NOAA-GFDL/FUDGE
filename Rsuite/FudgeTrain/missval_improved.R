@@ -86,20 +86,19 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
     #This is the most common case
     insufficient.data <- any(c(npts.OH, npts.MH, npts.MF)[train.index] < missval.thold)
   }
-  print(insufficient.data)
+  #Okay, pairwise settings are entirely different settings
+  #...and for now, that's going in the ds method
   if (insufficient.data){
     #Retry with pr missings set to 0
     mv.retry <- T
     ds.possible <- F
-    print(summary(missval.args))
-    print(length(missval.args$pr_opts))
     if (length(missval.args$pr_opts) > 0){
       #Segment the pr missing value masks
       #(might use rle encoding at some point, but not yet)
       message('retrying sample size with precipiation added in')
       pr_vars <- list(OH='pr_oh', MH='pr_mh', MF='pr_mf')
       #env=parent.frame(n=0)
-#       print('is there something wrong with teh indexing?')
+#       print('is there something wrong with the indexing?')
 #       print(train.index)
 #       print(c('OH', 'MH', "MF")[train.index])
       #Datset.index only has 3 elements - important for multivar pr
@@ -109,12 +108,29 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #Note: this needs to take place with elements of orig; 
         #if you do not use it, the synchronous missing values step 
         #removes samples in OH and MH that never get added back in
-        var.idx <- pr_vars[[el]]
-        assign(el, retry.with.pr.present(orig[[el]], 
-                                     missval.args$pr_opts[[el]],  
-                                     1, #missval.args$pr_opts[[var.idx]],
-                                     tmasks$apply_tmasks, 
-                                     tmasks[[el]]$masks[[w]]))
+        
+        #var.idx <- pr_vars[[el]]
+        print(summary(missval.args$pr_opts))
+        print(summary(orig[[el]]))
+        print(missval.args$pr_opts$pr_oh)
+        print(missval.args$pr_opts$pr_mh)
+        print(el)
+        if (el == 'OH'){
+          #print(summary(orig[[el]][!is.na(orig[[el]])]))
+          assign(el, retry.with.pr.present(orig[[el]], 
+                                           missval.args$pr_opts[[el]],  
+                                           1, #missval.args$pr[[var.idx]],
+                                           tmasks$apply_tmasks, 
+                                           tmasks[[el]]$masks[[w]]))
+#           print(summary(orig[[el]]))
+#           stop('examine this output')
+        }else{
+          assign(el, retry.with.pr.present(orig[[el]], 
+                                           missval.args$pr_opts[[el]],  
+                                           missval.args$pr_opts$prime_predictor,
+                                           tmasks$apply_tmasks, 
+                                           tmasks[[el]]$masks[[w]]))
+        }
       }
       npts.MF <- lapply(MF, count.all.present.xyn)
       npts.OH <- lapply(OH, count.all.present.xyn)
@@ -172,7 +188,7 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
               complete.hist=complete.hist, complete.fut=complete.fut))
 }
 
-retry.with.pr.present <- function(data.list, pr.mask, var.list, 
+retry.with.pr.present <- function(data.list, pr.mask, var.id, 
                                   apply_tmask, data.tmask){
   #'For each var in var.list, finds a corresponding el in 
   #'#data.list and makes all places where pr.mask was F
@@ -185,36 +201,24 @@ retry.with.pr.present <- function(data.list, pr.mask, var.list,
   #'that would not have been included in the sample.
   #...this is going to be so nasty when we get vaugely pr-like vars
   #as fixed sptaial grids it is going to be the worst
+  print(var.id)
   if (apply_tmask){
   #switching from appy_fudge_tmask to apply.any.mask; maybe fixes problem?
     pr.mask <- apply.any.mask(data=pr.mask, mask=data.tmask, dim='temporal')
     #pr.mask[is.na(pr.mask)] <- T
   }
+  #As of 2017-07027, we are only applying the ignore0 settings to a single
+  #one of the input varsa (prime_predictor and whatever OH is doing).
+  #Thus, there is no need for the var searching steo
   #Thanks to var collapsing, extra step needed to check for matches
-  match.vars <- c()
-  data.names <- names(data.list)
-#   for (v in var.list){
-#     match.index <- c(grep(paste0(v, "$"), data.names), 
-#                     grep(paste0(v, "\\."), data.names))
-#     match.vars <- c(match.vars, data.names[match.index])
-#   }
- # match.vars <- data.names
- match.vars <- data.names[var.list[1]]
-  for (el in match.vars){
-    #print(el)
-    tmp.pr <- data.list[[el]]
-    data.list[[el]] <- as.numeric(pr.mask)
-    data.list[[el]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
-    print(dim(pr.mask))
-    print(dim(tmp.pr))
-    print(length(data.list[[el]]))
-    #...ooookay, as of 03-07-2017, this is causing issues. Is there a way to fix it?
-#dim issues seem to have been caused by unexamined assumption that target could be 3x3.
-    dim(data.list[[el]]) <- dim(tmp.pr)
-#    print(length(data.tmask))
-    data.list[[el]] <- apply.any.mask(data=data.list[[el]], mask=data.tmask, dim='temporal') 
-print(summary(as.vector(data.list[[el]])))
-  }
+  tmp.pr <- data.list[[var.id]]
+  data.list[[var.id]] <- as.numeric(!pr.mask)
+  data.list[[var.id]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
+  #...ooookay, as of 03-07-2017, this is causing issues. Is there a way to fix it?
+  #dim issues seem to have been caused by unexamined assumption that target could be 3x3.
+  dim(data.list[[var.id]]) <- dim(tmp.pr)
+  #    print(length(data.tmask))
+  data.list[[var.id]] <- apply.any.mask(data=data.list[[var.id]], mask=data.tmask, dim='temporal')  
   return(data.list)
 }
 
@@ -246,6 +250,11 @@ place.synch.missvals <- function(OH, MH, MF, env=parent.frame()){
   #synchronizes missing values between OH and MH, placing vals back
   #in the calling environment.
   #Assumes that OH vars and MH vars have the same time dimension
+#   print("placing synch missvals")
+#   print(summary(OH))
+#   print(summary(MH))
+#   print(dim(OH))
+#   print(dim(MH))
   OH.missing <- rowSums(sapply(OH, missval.xyens)) > 0 #T is NA 
   MH.missing <- rowSums(sapply(MH, missval.xyens)) > 0 #T is NA 
   all.missing <- OH.missing + MH.missing

@@ -101,7 +101,7 @@ def checkTags(dictParams,key):
 		return val
 
 def parse_outdir(out_dir,property):
-	print "Parsing out_dir to check if it references property tags"
+	#print "Parsing out_dir to check if it references property tags"
 	list_subs = []
 	listout=[]
 	outdirsplit = out_dir.split('/')
@@ -110,12 +110,12 @@ def parse_outdir(out_dir,property):
 	pname = 'na'
 	for outdirs in outdirsplit:
 		if '$(' in outdirs:
-			print "outdirs as defined expects a property tag.."
+			#print "outdirs as defined expects a property tag.."
 			expect_prop = 1
 			for pname,pval in property.iteritems():
 				pname = '$('+pname+')'
 				if pname == outdirs:
-					print "we may have located the property tag"
+					#print "we may have located the property tag"
 					replace = pval
 					break;
 	if(replace != ""):
@@ -206,7 +206,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 			dversion = dictParams['dversion']
 		except:
 			dversion='' #dversion deprecated
-	print "----Downscaling XML template-", uinput
+	#print "----Downscaling XML template-", uinput
       #  print "----Force Override existing output Flag-", force
 	###################################
 	print "Input from XML"
@@ -242,7 +242,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	dim = checkTags(dictParams,'dim')
 	output_grid = checkTags(dictParams,'output_grid')
 	###CEW edit
-	print "Initiate checkTags"
+	#print "Initiate checkTags"
 	region = checkTags(dictParams,'maskvar')
 	spat_mask = checkTags(dictParams,'spat_mask')
 	spat_mask_ID = checkTags(dictParams,'spat_mask_ID')
@@ -288,9 +288,9 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    		getpar = par.split('=')
 	    		val = getpar[1]
 	    		if (val.startswith( "'/archive" )):
-	    			print "file to be gcpied to vftmp: ",val
+	    			#print "file to be gcpied to vftmp: ",val
 				auxcustom1 = val
-			print "auxcustom1:",auxcustom1
+			#print "auxcustom1:",auxcustom1
 	#projectRoot = checkTags(dictParams,'oroot')
 	global rootdir
 	rootdir = checkTags(dictParams,'in_root')
@@ -305,11 +305,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #c	else:
 #c	   print "or not"
 	out_dir,listoutdir =  parse_outdir(out_dir,property)
-	print "new out_dir", out_dir
+	#print "new out_dir", out_dir
 	###CEW edits - debugging single-ens I35 case
 	global copyprop
 	if len(property) == 0:
-		print("splitting filename to determine rip")
+		#print("splitting filename to determine rip")
 		property = out_dir.split("/")[-7]
 		copyprop = property
 	else:
@@ -333,7 +333,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
 	## pp section ##
 	qc_mask = checkTags(dictParams,'qc_mask')
-	print "qc_mask....... ",qc_mask
+	#print "qc_mask....... ",qc_mask
 	adjust_out = checkTags(dictParams,'adjust_out')
 	#adjust_out = "na"
 	qc_varname = checkTags(dictParams,'qc_varname')
@@ -346,7 +346,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	masklists = checkTags(dictParams,'masklists')
 	preexist = checkTags(dictParams,'preexist')
 	#TODO add preexist as another return variable
-	print "preexist"+preexist
+	#print "preexist"+preexist
 	if(preexist == 'exit'):
 		force = False
 	elif(preexist == 'erase'):
@@ -356,14 +356,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	else:
 		print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
 		sys.exit(-2)
-	#print "----Force Override existing output Flag-", force
-	####### end get  dictParams ###########################
-	## OneD or ZeroD that's the question and starting feb 10 2015 this will be received from xml##
-	#if(region != "station"):
-	# dim = "OneD"
-	#else:
-	# dim = "ZeroD"
-	#print(dim)
 	if(output_grid == 'station'):
 		if(latjstart == latjend):
 			dsuffix = "J"+str(latjstart)
@@ -393,16 +385,16 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	####################################################################
 	target_dir = getDir(listt,'hidir')
 	target_dir = os.path.abspath(target_dir)
-	print "target dir: ",target_dir
+	#print "target dir: ",target_dir
 	hist_pred_dir = getDir(listh,'lodir')
 	hist_pred_dir = os.path.abspath(hist_pred_dir)
-	print "historical predictor dir",hist_pred_dir
+	#print "historical predictor dir",hist_pred_dir
 	fut_pred_dir = getDir(listf,'futdir')
 	fut_pred_dir = os.path.abspath(fut_pred_dir)
-	print "future predictor dir",fut_pred_dir
+	#print "future predictor dir",fut_pred_dir
 	global idirsuffix
 	idirsuffix = "/"+output_grid+"/" #+dim+"/" CEW edit 10-2016: removing OneD in path specs
-	print "idirsuffix",idirsuffix
+	#print "idirsuffix",idirsuffix
 	#### get outdir #####
 	if(out_dir != 'na'):
 	    category = 'downscaled'
@@ -423,8 +415,8 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	    else:
 		outdir = out_dir
 	    #experiment in the above is expconfig that's constructed
-	    print "Output directory is :",outdir
-	    print "Script directory is:",sbase
+	    #print "Output directory is :",outdir
+	    #print "Script directory is:",sbase
 #new
 	    if (pp == False):
 		    	for lon in range(int(lons),int(lone)):
@@ -443,7 +435,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		if(preexist == 'move'):
 			global preexist_glob
 			preexist_glob = 'move'
-			print "preexist turned ON................"
+			#print "preexist turned ON................"
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
@@ -607,9 +599,6 @@ def main():
 	#You don't need to parse any of these, but you do need to get a list of the
 	#copy-able files (and possibly a wallclock time parameter)
 	#If no aux was specified as --aux
-	print(options.auxinput)
-	print(str(search_xml_aux))
-	print(specdict)
 	if search_xml_aux:
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']
@@ -675,7 +664,6 @@ def main():
 		j_offset = jdict[output_grid]
 	except KeyError:
 		j_offset = 1
-	print(target_dir)
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
@@ -737,23 +725,21 @@ def main():
 #	  print "Unable to create dir. Dir may exist already", cdir
 	shutil.copy2(uinput, cdir)
 	shutil.copy2(auxinput, cdir)
-	print "Config XML and aux file saved in ",cdir
-	print "RunScripts will be saved under:",sbase
-	print "----See readMe in fudge2014 directory for the next steps----"
-	print "Use submit_job to submit scripts"
-	#Copy environment config file
-	print("Copying environment info to "+sd+"environment_info.csh")
+	#print "Config XML and aux file saved in ",cdir
+	#print "RunScripts will be saved under:",sbase
+	##Copy environment config file
+	#print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
 	################ step 6 fudgeList invocation ##############################################
 	slogloc = sbase+"/"+"experiment_info.txt"
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate()
-	print "Summary Log File: ", slogloc
+	#print "Summary Log File: ", slogloc
 
 	auxloc = sbase + "/config/" + osp.basename(auxinput)
 	shutil.copy2(auxinput, auxloc)
-	print("Aux file location: " + auxloc)
+	#print("Aux file location: " + auxloc)
 
 	with open(slogloc, 'a') as f:
 		f.write("\naux:" + os.path.abspath(auxinput))
@@ -770,7 +756,7 @@ def main():
 
 ############### crte ppscript #################
 	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
-	print " ========================="
+	#print " ========================="
 	dev = "off"
 	msubwrapper = []
 	#CEW edit 6-30 for better status file monitoring when queue is full
@@ -822,108 +808,27 @@ def main():
 	#CEW edits 3-21-2017:
 	#Making new tool for generating postProc scripts
 	print("Making postproc scripts")
-	#print(copyprop)
-	#print(copyprop.iteritems())
-	#pval = copyprop.itervalues().next()
-	#if len(pval) > 0:
-	print(multi)
-	print(copyprop)
 	listrips = copyprop.split(",")
-	print(listrips)
-	#try:
-	print("script-making command:")
+	#print("script-making command:")
 	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1)
 		#Note: may need to include commands on the nemsemail as well
 		#os.chmod(msubwrap.name, 0744)
 		#msub -m ae -M <email> script
 	print "----------------------------------------"
-	#except:
-	#	print "Unable to create the postProc scripts for you at this time"
-	#	sys.exit(-4)
-
-#	suffctr = 1
-#	for pname,pval in copyprop.iteritems():
-#	   listrips = pval.split(',')
-#	for mout in listrips:
-#	  if (dev == "off"):
-#		tsuffix = ""
-#		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+"_"+str(suffctr)
-#	  else:
-#		tsuffix = "_"+tstamp
-#		ppbase = sbase+"/postProc/aux/"+"/postProc_source"+tstamp
-#	  try:
- # 		ppfile = open(ppbase, 'w')
-	#	if(mout != 'na'):
-	#	   moutsuff = " -e "+mout.strip()
-	#	   mout_prefix = mout.strip()
-	#	else:
-	#	   moutsuff = " "
-	#	   mout_prefix = "fakerip"
-#		 #CEW edits 5-2 related to writing postproc status files
-#		 #ppstat_command = "if ($status == 0) then \n touch "
-#		 #3-3 CEW edits related to email notifications
-#		#check if qc_mask is relevant
-#		if(qc_mask != 'off'):
- # 			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+","+target+"_qcmask"+moutsuff+"\n"
-#	 	else:
-#			pp_cmnd = "python $BASEDIR/bin/postProc -f "+mail_command+" -i "+os.path.abspath(uinput)+" -v "+target+moutsuff+"\n"
- # 		ppfile.write(pp_cmnd)
-#		print "wrote to ",ppfile
-#  		ppfile.close()
-#	  except:
-#  		print "Unable to create postProc command file. You may want to check your settings."
-	#c	print create_pp_cmd
-#	  if(os.path.exists(ppbase)):
-######################### write postProc_job to be used ############################
-#		ppLoc = basedir+"/utils/bin/"+"create_postProc"
-#		create_pp_cmd= ppLoc+" "+ppbase+" "+sbase+"  "+basedir+" _"+str(suffctr)+" "+branch+fudgetag+" "+mout_prefix
-#		p4 = subprocess.Popen('tcsh -c "'+create_pp_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-#		output4, error4 = p4.communicate()
-#		if(p4.returncode != 0):
-#			print "Step4:!!!! FAILED !!!!, please contact developer."
-#			print output4, error4
-#			sys.exit(-4)
-		#uncomment print output4, error4
-		#print "4-"+str(suffctr)+" completed"
-#		print "----------------------------------------"
-#		print "\033[1;42m "+str(suffctr)+" ---Please use this script to run post post-processing (or msub this script), postProc when downscaling jobs are complete \033[1;m",sbase+"postProc/postProc_command_"+str(suffctr)
-#		print(NEMSemail1)
-#		if (NEMSemail1 != 'none'):
-#			msubwrapper.append("msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr))
-#			print "msub -d $HOME "+msub_mail_command+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-#		else:
- #  			print "NEMSemail not set. Please use your email for notification in the following msub command i.e msub -m ae -M <email> script "
-#			msubwrapper.append("msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr))
-#
-#			print "msub -d $HOME "+sbase+"postProc/postProc_command"+"_"+str(suffctr)
-#	  else:
-#		print "postProc_command cannot be created. postProc_source does not exist"
-#	  suffctr = suffctr + 1
-#	print "----------------------------------------"
-#	try:
-#		msubwrap  = open(sbase+"postProc/msubwrapper", 'w')
-	#	os.chmod(msubwrap.name, 0744)
-	#	content = "#!/bin/tcsh -f"
-	#	for msubitem in msubwrapper:
-	#	    content = content + "\n" + msubitem
-	#	content = content + "\n"
-	#	msubwrap.write(content)
-	#	msubwrap.close()
-	#except:
-	#	print "Unable to create msubwrapper script for you at this time"
 	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 job submission (if applicable) ##############################################
+	print "Starting step 5: job submission"
+	if msubmail == 1 and NEMSemail1 != 'none':
+			msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
+	else:
+		msub_string = "msub -d $HOME "
+	master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
+	msub_cmd = "module load moab; "
+	for el in master_scripts:
+		#msub_cmd can be saved for later
+		msub_cmd = msub_cmd + msub_string + el + "; "
 	if msub:
-		if msubmail == 1 and NEMSemail1 != 'none':
-				msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
-		else:
-			msub_string = "msub -d $HOME "
-		master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
-		msub_cmd = "module load moab; "
-		for el in master_scripts:
-			msub_cmd = msub_cmd + msub_string + el + "; "
-		print(msub_cmd)
 		p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 		output5, errors5 = p5.communicate()
 		#######
@@ -932,9 +837,13 @@ def main():
 			print output5, errors5
 			sys.exit(0)
 		print output5, errors5
-		print "5- completed"
+		print "5 - completed"
 	print "-----------"
+	if not msub:
+		print "--msub not set on command line. To submit jobs at a later point, please use the following:"
+		print "\033[1;95m"+msub_cmd+"\033[1;m"
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
+
 	if(NEMSemail1 != "none"):
 	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
 	else:

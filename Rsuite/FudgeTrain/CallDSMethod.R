@@ -29,6 +29,9 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
                          s5_list=list()){
   #Missing value removal now takes place within the ds method wrappers
   #called by CallDSMethod
+  print(dim(OH))
+  print(dim(MH))
+  print(dim(MF))
   ds.out <- switch(method,
                    'lm'      = callLMAll(OH, MH, MF, ds.args, ds.method='lm',    missval.args, tmasks, train_qcmask),
                    'lmstep'  = callLMAll(OH, MH, MF, ds.args, ds.method='lmstep', missval.args, tmasks, train_qcmask),

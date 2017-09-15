@@ -117,7 +117,7 @@ if (mask.list=='na'){
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
   message('Conversion of pre- and post- downscaling adjustment input')
   if(exists('pr_opts')){
-    pp.out <- adapt.pp.input(mask.list, pr_opts)
+    pp.out <- adapt.pp.input(mask.list, pr_opts, ds.ref)
   }else{
     pp.out <- adapt.pp.input(mask.list)
   }
@@ -175,6 +175,8 @@ ds.args <- f.list$args
 
 #Then, check that the s3 and s5 adjustments you are performing make sense in
 #this context
+print(length(pre_ds))
+print(length(post_ds))
 QCAdjustArguments(pre_ds, post_ds,
                   is.multivar=(length(predictor.vars) > 1),
                   is.multi.ens=(length(fut.pred.rip.list) > 1),
@@ -426,6 +428,10 @@ set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars,
                             pre.ds.train=pre.ds.train, 
                             ds.ref=ds.ref, aux.ref=aux.ref,
                             env=environment())
+
+# print(prime_predictor)
+# stop('examine this output')
+
 # print(s5.outloop)
 # print(post.ds)
 # stop('examine this out')
@@ -440,6 +446,9 @@ start.time <- proc.time()
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
 #names(tmasks) <- c('MH', "OH", "MF", 'trim')
+# print(summary(pre.ds.train))
+# print(summary(post.ds.train))
+# stop('examine this out')
 ds <- loop.xy.data()
 #ds <- list(ds=MF$data[[1]])
 print('summary of ds:')

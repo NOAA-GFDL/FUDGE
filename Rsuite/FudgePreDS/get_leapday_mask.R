@@ -19,9 +19,9 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T){
     }else{
 #       print("No leapmask found; generating mask on the fly")
 #       start.date <- time.string[1] + "01-01"
-#       end.date <- time.string[2] + ""12-31
-#       time.data <- as.PCICt(cal="", origin="")
-#       return(make.leapday.mask(time.data))
+#       end.date <- time.string[2] + "12-31"
+#       time.data <- as.PCICt(cal=calendar, origin=origin)
+ #      return(make.leapday.mask(time.data))
     }
   }else{
     #If your calendar has no leapdays, you simply need to return

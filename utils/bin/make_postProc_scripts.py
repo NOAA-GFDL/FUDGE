@@ -72,10 +72,10 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 			f.write(pp_status_commands)
 		#append to list of sourcable files
 		code_list.append(pp_runcode)
-	print(code_list)	
+	#print(code_list)	
 	#change execute permissions	
 	for el in code_list:
-		print(el)
+		#print(el)
 		os.chmod(el, runmode)				
 	#write the msubwrapper
 	msub_file = osp.join(pp_dir, 'msubwrapper')
@@ -83,6 +83,11 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 	msub_text = msub_text + "rm -f " + pp_stat_dir + "/*\n"
 	msub_commands = "\n".join(["msub -d $HOME " + el for el in code_list]) + "\n"
 	msub_text = msub_text + msub_commands + "\n"
+	#print('writing to msub_file ' + msub_file)
+	#print("code_list "+ str(code_list))
+	#print(ensembles)
+	#print(expdict['output.path'])
+	#sys.exit('examine this output')
 	with open(msub_file, 'w') as f: 
 		f.write(msub_text)
 	os.chmod(msub_file, runmode)		
