@@ -367,13 +367,22 @@ callKDDM <- function(Oh, Mh, Mf, args){
     # Prepare Downscaled output array of NAs the same dimension as Mf
     DSout <- Mf + NA
 
+    if (tmasks$apply_tmasks) {
+      oh.mask <- tmasks$OH$masks[[w]]
+      mh.mask <- tmasks$MH$masks[[w]]
+      mf.mask <- tmasks$MF$masks[[w]]
+    } else {
+      oh.mask <- rep(1,length(Oh))
+      mh.mask <- rep(1,length(Mh))
+      mf.mask <- rep(1,length(Mf))
+    }
     # Subset to remove the masked NAs
-    subset.OH <- as.vector(Oh)[!is.na(tmasks$OH$masks[[w]])]
-    subset.MH <- as.vector(Mh)[!is.na(tmasks$MH$masks[[w]])]
-    subset.MF <- as.vector(Mf)[!is.na(tmasks$MF$masks[[w]])]
+    subset.OH <- as.vector(Oh)[!is.na(oh.mask)]
+    subset.MH <- as.vector(Mh)[!is.na(mh.mask)]
+    subset.MF <- as.vector(Mf)[!is.na(mf.mask)]
 
     # Find the time window width
-    window.width <- sum(!is.na(tmasks$MF$masks[[w]][1:365]))
+    window.width <- sum(!is.na(mf.mask[1:365]))
     # Find the number of years in each data set
     num.years.Oh <- length(Oh)/365
     num.years.Mh <- length(Mh)/365
@@ -385,12 +394,12 @@ callKDDM <- function(Oh, Mh, Mf, args){
     # If the current time window center is within a half-window of the Dec31/Jan1 boundary then shift data.
     # if ( w < half.window | w > 366 - half.window) {
     # Alternatively, can test if mask==1 for Jan1 and Dec31
-    # jan1.in.mask <- !is.na(head(tmasks$MF$masks[[w]],1)) # is first day (assumed to be Jan1) in mask not NA?
-    # dec31.in.mask <- !is.na(tail(tmasks$MF$masks[[w]],1)) # is last day (assumed to be Dec31) in mask not NA?
+    # jan1.in.mask <- !is.na(head(mf.mask,1)) # is first day (assumed to be Jan1) in mask not NA?
+    # dec31.in.mask <- !is.na(tail(mf.mask,1)) # is last day (assumed to be Dec31) in mask not NA?
     # if ( jan1.in.mask & dec31.in.mask ) {
 
     # or test where the first and last NAs are in a mask
-    if ( (pad1 <- min(which(is.na(tmasks$MF$masks[[w]]))) - 1) == 0 | (pad2 <- length(tmasks$MF$masks[[w]]) - max(which(is.na(tmasks$MF$masks[[w]])))) == 0 ) {
+    if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 | (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 | window.width == 365) {
       # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of winow.width length.
       folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
       folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
@@ -401,7 +410,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
       # If window is beginning of year...
       #       if ( w < half.window ) {
       if (padside == 2) {
-#         pad <- half.window - w
+        #         pad <- half.window - w
         subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
         subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
         subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
@@ -415,7 +424,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
         folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
       } else {
         # otherwise window is end of year
-#         pad <-  half.window - (366 - w)
+        #         pad <-  half.window - (366 - w)
         subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
         subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
         subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
@@ -440,6 +449,6 @@ callKDDM <- function(Oh, Mh, Mf, args){
       }
     }
     # Write the bias corrected results into the DSout array in the unmasked indices and return.
-    DSout[!is.na(tmasks$MF$masks[[w]])] <- kddm.bc.out
+    DSout[!is.na(mf.mask)] <- kddm.bc.out
     return(DSout)
 }
