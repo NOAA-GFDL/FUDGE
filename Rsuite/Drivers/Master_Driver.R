@@ -354,6 +354,16 @@ train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)], collapse=
 message("Reading in and checking time windowing masks")
 tmask.list <- get.fudge.timemask.list()
 
+##Adding 2017-09 for the intermediate KDDM steps
+julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 
+                    'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
+if ( (MF$metadata$dim$time$calendar %in% julian.strings) | !(ds.var %in% c('tasmax', 'tasmin')) ){
+  if (ds.method == 'KDDM'){
+    stop(paste("Error in Master_Driver: KDDM is not currently supported", 
+               "for calendars with leapdays!"))
+  }
+}
+
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
 if (!exists('pr_opts')){

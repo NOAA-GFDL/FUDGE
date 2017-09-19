@@ -1,6 +1,7 @@
 #Setting up automatic deployment of regression tests
 stages:
- - test
+ - test_mini
+ - test_full
 
 minijob:
  # This step is meant to run the minifile tests. 
@@ -20,7 +21,7 @@ minijob:
   - analysis 
   
 fulljob:
- stage: test
+ stage: test_full
  script:
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME`
   - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
