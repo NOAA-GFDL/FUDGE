@@ -357,10 +357,10 @@ tmask.list <- get.fudge.timemask.list()
 ##Adding 2017-09 for the intermediate KDDM steps
 julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 
                     'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
-if ( (MF$metadata$dim$time$calendar %in% julian.strings) | !(ds.var %in% c('tasmax', 'tasmin')) ){
+if ( (tmask.list$calendar %in% julian.strings) | !(target.var %in% c('tasmax', 'tasmin')) ){
   if (ds.method == 'KDDM'){
     stop(paste("Error in Master_Driver: KDDM is not currently supported", 
-               "for calendars with leapdays!"))
+               "for calendars with leapdays and vars that are not tasmax/tasmin!"))
   }
 }
 

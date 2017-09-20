@@ -36,7 +36,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
   out <- list('input' = input, 'adjusted.output' = adjusted.output)
   for(element in 1:length(s5.instructions)){
     test <- s5.instructions[[element]]
-    print(test$type)
+    #print(test$type)
     out.dim <- unlist(unique(lapply(out$adjusted.output, 'attr', 'dim')))
     #source('~/Code/s8_testing/adjust_pr/pairwise_adjust_pr_s5.R')
     out <- switch(test$type,
@@ -207,10 +207,6 @@ callPRPostproc <- function(test, input, adjusted.output){
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-#         print(summary(input))
-#         print(summary(adjusted.output$fut_pred))
-#         print(oh.timelen)
-#         print(mf.timelen)
         if (oh.timelen >= mf.timelen){
           #If more samples in OH, index by nyears present
           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
@@ -263,8 +259,6 @@ pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
   out.mask <- MaskPRSeries(pr.data, pr.units, pr.index)
   if(pr.conserve){
     pr.dim <- dim(pr.data)
-    print(summary(as.vector(pr.data)))
-    print(pr.dim)
     for(i in 1:pr.dim[1]){
       for(j in 1:pr.dim[2]){
         for (n in 1:pr.dim[4]){
@@ -402,7 +396,6 @@ bcsd.correct <- function(model.hist, obs.hist,  model.fut, obs.fut, sample_size=
   }
   smallx.tmax <- which(model.fut < min(model.hist))    #List of indices for which dist is stretched
   min.delta.tmax <- model.hist.val - obs.hist.val    #Delta calculated as diff of min(hist) - min(obs)
-  print(length(smallx.tmax))
   obs.fut[smallx.tmax] <- model.fut[smallx.tmax] - min.delta.tmax
   return(obs.fut)
 }

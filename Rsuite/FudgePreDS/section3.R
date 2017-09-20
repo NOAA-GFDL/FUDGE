@@ -50,7 +50,7 @@ callS3Adjustment<-function(s3.instructions=list('na'),
     #The transforms may have elements that will depend on the conditions of the initial transform, 
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it. 
-    print(test$type)
+    #print(test$type)
     adjusted.list <- switch(test$type,
                             'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list, 
                                                  adjusted.list$missval.args, prime_predictor),
@@ -93,7 +93,6 @@ callPRPreproc <- function(test, input, postproc.output,
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-  print(test$pp.args$pr_adjmethod)
   if (test$pp.args$pr_adjmethod == 'eqfreq'){
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF, 
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
