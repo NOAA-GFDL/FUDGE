@@ -110,11 +110,11 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #removes samples in OH and MH that never get added back in
         
         #var.idx <- pr_vars[[el]]
-        print(summary(missval.args$pr_opts))
-        print(summary(orig[[el]]))
-        print(missval.args$pr_opts$pr_oh)
-        print(missval.args$pr_opts$pr_mh)
-        print(el)
+#         print(summary(missval.args$pr_opts))
+#         print(summary(orig[[el]]))
+#         print(missval.args$pr_opts$pr_oh)
+#         print(missval.args$pr_opts$pr_mh)
+#         print(el)
         if (el == 'OH'){
           #print(summary(orig[[el]][!is.na(orig[[el]])]))
           assign(el, retry.with.pr.present(orig[[el]], 
@@ -201,7 +201,6 @@ retry.with.pr.present <- function(data.list, pr.mask, var.id,
   #'that would not have been included in the sample.
   #...this is going to be so nasty when we get vaugely pr-like vars
   #as fixed sptaial grids it is going to be the worst
-  print(var.id)
   if (apply_tmask){
   #switching from appy_fudge_tmask to apply.any.mask; maybe fixes problem?
     pr.mask <- apply.any.mask(data=pr.mask, mask=data.tmask, dim='temporal')
