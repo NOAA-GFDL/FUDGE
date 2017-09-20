@@ -66,6 +66,7 @@ callQM <- function(OH, MH, MF, args, type="",
 
       args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
       args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
+      args$is.uniform.Mf <- length(unique(MF.slice[!is.na(MF.slice)])) <= 1
 
       train.stat <- missval.out$missval.status
       out <- switch(type,
@@ -366,99 +367,169 @@ callKDDM <- function(Oh, Mh, Mf, args){
     #'@param Mf: Model Future (a.k.a GCM future, fut)
     #'@param norm: Choice of normalization technique. Contained in args parameter.
     #'Contains no other arguments in the args parameter.
+    #' Not valid for pr variables or julian calendar. When updated, remove check in line 351 of MasterDriver.R
 
     if (!(args$norm %in% c("boxcox", "zscore", "none"))) {
       stop(paste('KDDM norm must be one of {"zscore", "boxcox", "none"}'))
     }
-
-    # Prepare Downscaled output array of NAs the same dimension as Mf
-    DSout <- Mf + NA
-
-    if (tmasks$apply_tmasks) {
-      oh.mask <- tmasks$OH$masks[[w]]
-      mh.mask <- tmasks$MH$masks[[w]]
-      mf.mask <- tmasks$MF$masks[[w]]
-    } else {
-      oh.mask <- rep(1,length(Oh))
-      mh.mask <- rep(1,length(Mh))
-      mf.mask <- rep(1,length(Mf))
+    if (w==1) {
+      print("printing globals...")
+      print(ls(envir=.GlobalEnv))
     }
-    # Subset to remove the masked NAs
-    subset.OH <- as.vector(Oh)[!is.na(oh.mask)]
-    subset.MH <- as.vector(Mh)[!is.na(mh.mask)]
-    subset.MF <- as.vector(Mf)[!is.na(mf.mask)]
-
-    # Find the time window width
-    window.width <- sum(!is.na(mf.mask[1:365]))
-    # Find the number of years in each data set
-    num.years.Oh <- length(Oh)/365
-    num.years.Mh <- length(Mh)/365
-    num.years.Mf <- length(Mf)/365
-    # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
-    half.window <- ceiling(window.width/2)
-    # Initialize a padding variable to shift December data across the boundary if necessary.
-    pad <- 0
-    # If the current time window center is within a half-window of the Dec31/Jan1 boundary then shift data.
-    # if ( w < half.window | w > 366 - half.window) {
-    # Alternatively, can test if mask==1 for Jan1 and Dec31
-    # jan1.in.mask <- !is.na(head(mf.mask,1)) # is first day (assumed to be Jan1) in mask not NA?
-    # dec31.in.mask <- !is.na(tail(mf.mask,1)) # is last day (assumed to be Dec31) in mask not NA?
-    # if ( jan1.in.mask & dec31.in.mask ) {
-
-    # or test where the first and last NAs are in a mask
-    if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 | (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 | window.width == 365) {
-      # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of winow.width length.
-      folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
-      folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
-      folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
-    } else {
-      # otherwise, the smaller side should be padded
-      pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
-      # If window is beginning of year...
-      #       if ( w < half.window ) {
-      if (padside == 2) {
-        #         pad <- half.window - w
-        subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
-        subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
-        subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
-
+    # Prepare Downscaled output array the same as Mf
+    DSout <- Mf
+    if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
+      # Prepare Downscaled output array of NAs the same dimension as Mf
+      DSout <- DSout + NA
+      if (tmasks$apply_tmasks) {
+        oh.mask <- tmasks$OH$masks[[w]]
+        mh.mask <- tmasks$MH$masks[[w]]
+        mf.mask <- tmasks$MF$masks[[w]]
+      } else {
+        oh.mask <- rep(1,length(Oh))
+        mh.mask <- rep(1,length(Mh))
+        mf.mask <- rep(1,length(Mf))
+      }
+      # Subset to remove the masked NAs
+      subset.OH <- as.vector(Oh)[!is.na(oh.mask)]
+      subset.MH <- as.vector(Mh)[!is.na(mh.mask)]
+      subset.MF <- as.vector(Mf)[!is.na(mf.mask)]
+      # Find the time window width
+      window.width <- sum(!is.na(mf.mask[1:365]))
+      # Find the number of years in each data set
+      num.years.Oh <- length(Oh)/365
+      num.years.Mh <- length(Mh)/365
+      num.years.Mf <- length(Mf)/365
+      # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
+      half.window <- ceiling(window.width/2)
+      # Initialize a padding variable to shift December data across the boundary if necessary.
+      pad <- 0
+      # If the first or last NAs are the first or last array entry, then mask does not wrap.
+      if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 | (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 | window.width == 365) {
+        # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of winow.width length.
         folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
         folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
         folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
-
-        folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
-        folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
-        folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
       } else {
-        # otherwise window is end of year
-        #         pad <-  half.window - (366 - w)
-        subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
-        subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
-        subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
+        print("Adjusting for 31DEC/1JAN overlap.")
+        # otherwise, the smaller side should be padded
+        pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
+        # If window is beginning of year...
+        #       if ( w < half.window ) {
+        if (padside == 2) {
+          #         pad <- half.window - w
+          subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
+          subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
+          subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
 
-        folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
-        folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
-        folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+          folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+          folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+          folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
 
-        folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
-        folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
-        folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+          folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
+          folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
+          folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
+        } else {
+          # otherwise window is end of year
+          #         pad <-  half.window - (366 - w)
+          subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
+          subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
+          subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
+
+          folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+          folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+          folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+
+          folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
+          folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
+          folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+        }
       }
-    }
-    # Bias Correct using the climod KDDM routine, return the unlisted array of future values
-    kddm.bc.out <- unlist(biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=ifelse(args$norm=="none","identity",args$norm))$fut)
-    # If pad was increased to shift data, shift it back
-    if(pad > 0) {
-      if ( w < half.window ) {
-        kddm.bc.out <- c(kddm.bc.out, rep(NA,pad))
-      } else {
-        kddm.bc.out <- c(rep(NA,pad), kddm.bc.out)
+      # Bias Correct using the climod KDDM routine, return the unlisted array of future values
+
+      # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
+      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=ifelse(args$norm=="none","identity",args$norm))$fut)
+      # If pad was increased to shift data, shift it back
+      if(pad > 0) {
+        if ( w < half.window ) {
+          kddm.bc.out <- c(kddm.bc.out, rep(NA,pad))
+        } else {
+          kddm.bc.out <- c(rep(NA,pad), kddm.bc.out)
+        }
       }
+      # Write the bias corrected results into the DSout array in the unmasked indices and return.
+      DSout[!is.na(mf.mask)] <- kddm.bc.out
+    } else {
+      print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
+                   ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
+                   " uniform. Returning Mf."))
     }
-    # Write the bias corrected results into the DSout array in the unmasked indices and return.
-    DSout[!is.na(mf.mask)] <- kddm.bc.out
     return(DSout)
 }
+
+# NOTE: GFDL modfified KDDM biascorrect() function includes "na.rm=TRUE" fix for missing ESTCP December bug.
+#       When NCAR updates, this can be deleted
+gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = FALSE, ...)
+{
+  if (sum(is.finite(unlist(bcdata$obs))) < minobs | sum(is.finite(unlist(bcdata$cur))) <
+        minobs) {
+    unfixable <- function(x) {
+      x@uncorrectable <- is.finite(x)
+      x + NA
+    }
+    return(rapply(bcdata, unfixable, how = "replace"))
+  }
+  if (norm == "boxcox") {
+    gamma <- megamma(unlist(bcdata, use.names = FALSE))
+    nbcd <- rapply(bcdata, normalize, how = "replace", norm = norm,
+                   gamma = gamma)
+  }
+  else {
+    nbcd <- rapply(bcdata, normalize, how = "replace", norm = norm)
+  }
+  mapping <- distmap(unlist(nbcd$cur), unlist(nbcd$obs), ...)
+  fixed <- rapply(nbcd, function(x) {
+    predict(mapping, x)
+  }, how = "replace")
+  adj <- rapply(fixed, attributes, how = "replace")
+  adj <- lapply(adj, renest)
+  adj <- lapply(adj, function(x) {
+    lapply(x, function(y) {
+      unlist(y)
+    })
+  })
+  adj <- lapply(adj, function(x) {
+    x$norm <- NULL
+    x
+  })
+  ## FIX for NA/NaN here...
+#   adj <- rapply(adj, mean, how = "replace")
+  adj <- rapply(adj, mean, how = "replace", na.rm=TRUE)
+  adj <- renest(adj)
+  shift <- NA
+  scale <- NA
+  pscale <- NA
+  if (norm == "zscore") {
+    shift <- adj$mu$obs - adj$mu$cur
+    scale <- adj$sigma$obs/adj$sigma$cur
+  }
+  if (norm == "boxcox") {
+    shift <- 0
+    pscale <- 1
+  }
+  result <- list()
+  result$obs <- bcdata$obs
+  result$cur <- rapply(fixed$cur, denormalize, how = "replace",
+                       shift = shift, scale = scale, pscale = pscale)
+  result$fut <- rapply(fixed$fut, denormalize, how = "replace",
+                       shift = shift, scale = scale, pscale = pscale)
+  if (dmap) {
+    result$distmap <- mapping
+  }
+  return(result)
+}
+
+
 
 callBCQMv2<-function(LH,CH,CF,args){
   #'Performs an bias-correction quantile mapping on a single variable
