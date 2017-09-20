@@ -372,14 +372,6 @@ callKDDM <- function(Oh, Mh, Mf, args){
     if (!(args$norm %in% c("boxcox", "zscore", "none"))) {
       stop(paste('KDDM norm must be one of {"zscore", "boxcox", "none"}'))
     }
-    if (j==1) {
-      print('Start in KDDM')
-      print("printing globals...")
-      print(ls(envir=.GlobalEnv))
-      print("tmasks structure")
-      print(str(tmasks))
-      print('End in KDDM')
-    }
     # Prepare Downscaled output array the same as Mf
     DSout <- Mf
     if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
