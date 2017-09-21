@@ -37,6 +37,10 @@ adjustTrace <- function(OH, MH, MF,
       mh.dry <- oh.dry
       zed.idx <- oh.dry 
       mh.trace <- MH[zed.idx]
+      #Special adjustment for a case in which MH has negative precip
+      #hasn't come up, but some of teh ESTCP datasets do include negative 
+      #precip data
+      MH[MH < 0] <- 0
       if (mh.trace <= 0){
         tmp.idx <- tail(which(MH == 0), n=1)
         mh.trace <- MH[tmp.idx+1]

@@ -97,17 +97,17 @@ get.fudge.timemask.list <- function(){
     }else{
       tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
                                                           target.file.end.year_1), 
-                                                   OH$metadata[[1]][[1]]$calendar)
+                                                   OH$metadata[[1]]$dim$time$calendar)
       tmask.list$fut.leapmask <- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
                                                          fut.file.end.year_1), 
-                                                  MF$metadata[[1]][[1]]$calendar)
+                                                  MF$metadata[[1]]$dim$time$calendar)
     }
     tmask.list$hist.year.div <- get.year.divisions(target.file.start.year_1, 
                                                    target.file.end.year_1, 
-                                                   OH$metadata[[1]][[1]]$calendar)
+                                                   OH$metadata[[1]]$dim$time$calendar)
     tmask.list$fut.year.div <- get.year.divisions(fut.file.start.year_1, 
                                                   fut.file.end.year_1, 
-                                                  MF$metadata[[1]][[1]]$calendar)
+                                                  MF$metadata[[1]]$dim$time$calendar)
     tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
     tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
   }
