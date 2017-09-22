@@ -11,7 +11,7 @@ import smtplib
 import re
 	
 
-def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
+def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00:00'):
 	#Okay, this is going to go in a few steps:
 	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
 	pp_dir = osp.join(script_dir, 'postProc') 
@@ -26,7 +26,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid):
 	#we've been staying in the queue for far longer than we normally do.
 	pp_runcode_header = "\n".join(["#!/bin/tcsh", 
 								   "#PBS -S /bin/tcsh", 
-								   "#PBS -l nodes=1:ppn=2,walltime=4:00:00", 
+								   "#PBS -l nodes=1:ppn=2,walltime="+str(runtime),
 								   "#PBS -r y",
 								   "#PBS -j oe", 
 								   "#PBS -N fudge_postProc", 

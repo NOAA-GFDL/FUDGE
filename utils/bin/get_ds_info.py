@@ -46,7 +46,15 @@ def parse_aux_info(jsonfile):
 			else:
 				wallclocktime = jsondict['wallclocktime']	
 		else:
-			wallclocktime='5:00:00'
+			wallclocktime='6:00:00'
+		#pp wallclocktime
+		if 'pp_wallclocktime' in jsondict.keys():
+			if isinstance(jsondict['pp_wallclocktime'], list):
+				pp_wallclocktime=jsondict['pp_wallclocktime'][0]
+			else:
+				pp_wallclocktime = jsondict['pp_wallclocktime']
+		else:
+			pp_wallclocktime = '6:00:00'
 		#njobs and ncpus parameters: 
 		if 'njobs' in jsondict.keys():	
 			njob_tmp = jsondict['njobs']
@@ -93,6 +101,7 @@ def parse_aux_info(jsonfile):
 		if len(copy_files) > 1:
 			copy_files = list(set(copy_files))				
 	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 
+			'pp_wallclocktime':pp_wallclocktime,
 	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus})
 	
 def make_aux_input(grid, script_base, targ_var):
@@ -122,7 +131,8 @@ def make_aux_input(grid, script_base, targ_var):
 	#to 2 hours rather than 12, as we have been using forever.
 	main_text = "\n".join(['"geomask_names": [""],',
                            '"ds_handle_missing": ["continue"],',
-                           '"wallclocktime": ["5:00:00"],',
+                           '"wallclocktime": ["6:00:00"],',
+                           '"pp_wallclocktime": ["6:00:00"],',
                            '"OH": {',
                            '    "stencil": ["none"],',
                            '    "geomask": ["none"]',

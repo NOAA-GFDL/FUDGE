@@ -811,7 +811,7 @@ def main():
 	print("Making postproc scripts")
 	listrips = copyprop.split(",")
 	#print("script-making command:")
-	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1)
+	make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
 		#Note: may need to include commands on the nemsemail as well
 		#os.chmod(msubwrap.name, 0744)
 		#msub -m ae -M <email> script 
