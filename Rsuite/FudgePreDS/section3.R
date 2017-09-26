@@ -103,6 +103,17 @@ callPRPreproc <- function(test, input, postproc.output,
   input$OH <- tmp.out$OH
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
+  #Adding in variant branch to test negative pr behavior
+#   rand_below_0 <- function(data){
+#     which.data <- which(data == 0)
+#     which.rand <- round(length(which.data)/2)
+#     rand.which.data <- sample(which.data, which.rand, replace = F)
+#     data[rand.which.data] <- rnorm(which.rand, -1e-05, sd=1e-05)
+#     return(data)
+#   }
+#   input$OH[[1]] <- rand_below_0(input$OH[[1]])
+#   input$MH[[1]] <- rand_below_0(input$MH[[1]])
+#   input$MF[[1]] <- rand_below_0(input$MF[[1]])
   missval.args$pr_opts <- tmp.out$pr_args
   missval.args$pr_opts$prime_predictor <- prime_predictor
   #and store args for later use
