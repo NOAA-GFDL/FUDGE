@@ -7,6 +7,10 @@
 - Check for invalid KDDM settings
 - adding calendar of MF to the tmask list
 
+09-14-2017
+(d1a)
+- KDDM origami updated to match NCAR/climod/Seth McGinnis.
+
 09-06-2017
 (cew)
 - gitlab-ci config added, running on push from all branches at present (as long as runner available)
@@ -14,7 +18,7 @@
 
 08-17-2017
 (cew)
-- Pr opts now deal with all pr adjmethod options, including H; i options 
+- Pr opts now deal with all pr adjmethod options, including H; i options
 reproducing h results
 
 08-10-2017
