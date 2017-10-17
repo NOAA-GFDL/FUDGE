@@ -277,7 +277,6 @@ AdjustPRPoints <- function(OH, MH, MF,
         }   
       }
     }
-save(file='/home/cew/Code/i_testing/parm_pr/i_run/post3.R', list=c('OH', 'MH', 'MF'))
   }
   return(list(OH=OH, MH=MH, MF=MF, pr_args=pr_args))
 }

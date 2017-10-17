@@ -97,13 +97,13 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   #Attempting switch to index masking data 
   #on 12-15-16; this is the way we used to do it, 
   #but I thought there was a clever way around it.
-#   if (tmasks$time_mask_overlap){
-#     index.mask <- tmasks$trim$masks[[w]]
-#     olap=T
-#   }else{
-#     index.mask <- tmasks$MF$masks[[w]]
-#     olap=F
-#   }
+  #   if (tmasks$time_mask_overlap){
+  #     index.mask <- tmasks$trim$masks[[w]]
+  #     olap=T
+  #   }else{
+  #     index.mask <- tmasks$MF$masks[[w]]
+  #     olap=F
+  #   }
   #Revising above on 12-17-16. We need to undo the trimming/qm indexing
   #at this step in order to use the full data in the s3/s5 adjustments.
   index.mask <- tmasks$MF$masks[[w]]
@@ -119,107 +119,102 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   }else{
     qc <- NULL
   }
-
-print(summary(as.vector(hist_pred[[1]])))
-if (all.identical(remove.missvals(hist_pred[[1]]))){
-  print("MH data all identical; returning MF data for DS")
-  if(train_qcmask){
-    qc <- array(1, dim(out.data))
-  }
-  return(list(ds=fut_pred[[1]], qc=qc))
-}else{
-  #Synchronize missing values across OH and MH datasets
-  print(summary(hist_targ))
-  print(summary(hist_pred))
-  print(summary(fut_pred))
-  missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
-                                       missval.args$minsamplesize, 
-                                       missval.args, 
-                                       missval.method = 'distributional')
-hist_pred = missval.out$MH
-fut_pred  = missval.out$MF
-hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
-
-if (length(hist_pred) != length(hist_targ) ){
-	#In this case, you will not be able to downscale
-	print(length(hist_pred))
-	print(length(hist_targ))
-	stop(paste("Error in parm_ds: length of OH and MH datasets after removing", 
-	"missing values should be identical!"))
-} 
-
-print(summary(as.vector(hist_pred[[1]])))
-print(summary(as.vector(hist_targ[[1]])))
-print(summary(as.vector(fut_pred[[1]])))
-
-#Added 2017-06-27; all same case causes errors for one subsample method, but
-#returns MF data unchaged for the other
-
-  if (missval.out$ds.possible){
-    #Now, call the training code
-    hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
-    hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
-    if(jitter){
-      hist.pred.tmp <- pr_jitter_fxn(hist.pred.tmp)
-      hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
+  
+  #print(summary(as.vector(hist_pred[[1]])))
+  if (all.identical(remove.missvals(hist_pred[[1]]))){
+    print("MH data all identical; returning MF data for DS")
+    if(train_qcmask){
+      qc <- array(1, dim(out.data))
     }
+    return(list(ds=fut_pred[[1]], qc=qc))
+  }else{
+    #Synchronize missing values across OH and MH datasets
+    missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
+                                         missval.args$minsamplesize, 
+                                         missval.args, 
+                                         missval.method = 'distributional')
+    hist_pred = missval.out$MH
+    fut_pred  = missval.out$MF
+    hist_targ = missval.out$OH #added 11-8-16; trying to track lm diffs
     
-    #Okay, pairwise settings go in here
-    hist.targ.tmp <- sort(hist.targ.tmp, na.last=FALSE)
-    hist.pred.tmp <- sort(hist.pred.tmp, na.last=FALSE)
-    oh.len <- length(hist.targ.tmp)
-    oh.pres <- which(!is.na(hist.targ.tmp))[1]
+    if (length(hist_pred) != length(hist_targ) ){
+      #In this case, you will not be able to downscale
+      stop(paste("Error in parm_ds: length of OH and MH datasets after removing", 
+                 "missing values should be identical!"))
+    } 
     
-    #print(summary(hist.pred.tmp[oh.pres:oh.len]))
-    #print(summary(hist.targ.tmp[oh.pres:oh.len]))
+#     print(summary(as.vector(hist_pred[[1]])))
+#     print(summary(as.vector(hist_targ[[1]])))
+#     print(summary(as.vector(fut_pred[[1]])))
     
-    parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
-                                  hist.targ.tmp[oh.pres:oh.len], 
-                                  ds.args)
-    #10-13: The default behavior of sort is to remove NA values.
-    #If that's the case, you might be able to get away with removing
-    #the indexing calls in the call to parm.train
-    parm.model <- parm.train.data$ds.model
-    parm.targ <- parm.train.data$sta_mon_save
-    #should be a list of one element - ds.model
-    for(n in 1:nrips){
-      MF.slice <- fut_pred[[1]][,,,n,,]
-      MF.idx <- !is.na(MF.slice)
-      MF.slice <- MF.slice[MF.idx]
-      if( length(MF.slice) != 0){
-        rip.len <- sum(MF.idx)
-        rip.rank <- rank(MF.slice, ties='first')
-        model_combine_data <- sort(MF.slice)
-        if (jitter){
-          model_combine_data <- pr_jitter_fxn(model_combine_data)
+    #Added 2017-06-27; all same case causes errors for one subsample method, but
+    #returns MF data unchaged for the other
+    
+    if (missval.out$ds.possible){
+      #Now, call the training code
+      hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
+      hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
+      if(jitter){
+        hist.pred.tmp <- pr_jitter_fxn(hist.pred.tmp)
+        hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
+      }
+      
+      #Okay, pairwise settings go in here
+      hist.targ.tmp <- sort(hist.targ.tmp, na.last=FALSE)
+      hist.pred.tmp <- sort(hist.pred.tmp, na.last=FALSE)
+      oh.len <- length(hist.targ.tmp)
+      oh.pres <- which(!is.na(hist.targ.tmp))[1]
+      
+      #print(summary(hist.pred.tmp[oh.pres:oh.len]))
+      #print(summary(hist.targ.tmp[oh.pres:oh.len]))
+      
+      parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
+                                    hist.targ.tmp[oh.pres:oh.len], 
+                                    ds.args)
+      #10-13: The default behavior of sort is to remove NA values.
+      #If that's the case, you might be able to get away with removing
+      #the indexing calls in the call to parm.train
+      parm.model <- parm.train.data$ds.model
+      parm.targ <- parm.train.data$sta_mon_save
+      #should be a list of one element - ds.model
+      for(n in 1:nrips){
+        MF.slice <- fut_pred[[1]][,,,n,,]
+        MF.idx <- !is.na(MF.slice)
+        MF.slice <- MF.slice[MF.idx]
+        if( length(MF.slice) != 0){
+          rip.len <- sum(MF.idx)
+          rip.rank <- rank(MF.slice, ties='first')
+          model_combine_data <- sort(MF.slice)
+          if (jitter){
+            model_combine_data <- pr_jitter_fxn(model_combine_data)
+          }
+          out.tmp <- parm.downscale(model_combine_data, 
+                                    parm.targ, #maintain orig order and orig placement of missvals
+                                    parm.model, ds.args)
+          rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
+          out <- rep(NA, length(MF.idx))
+          out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
+          #print("summary of PARM output:")
+          #print(summary(as.vector(out)))
+          if (jitter){
+            out <- pr_unjitter_fxn(out)
+          }
+          # previously ouyt
+          out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+        } #Don't need to do anything otherwise - just return all missing
+        #qcmask
+        if(missval.out$mv.retry && train_qcmask){
+          qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap) 
         }
-        out.tmp <- parm.downscale(model_combine_data, 
-                                  parm.targ, #maintain orig order and orig placement of missvals
-                                  parm.model, ds.args)
-        rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
-        out <- rep(NA, length(MF.idx))
-        out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
-        #print("summary of PARM output:")
-        #print(summary(as.vector(out)))
-        if (jitter){
-          out <- pr_unjitter_fxn(out)
-        }
-        # previously ouyt
-        out.data[,,,n,,] <- index.qm(index.mask, out, olap)
-      } #Don't need to do anything otherwise - just return all missing
-      #qcmask
-      if(missval.out$mv.retry && train_qcmask){
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap) 
+      }
+    }else{
+      if(train_qcmask){
+        #out.data is already set; qc needs to be replaced
+        qc <- array(NA, dim(out.data))
       }
     }
-  }else{
-    if(train_qcmask){
-      #out.data is already set; qc needs to be replaced
-      qc <- array(NA, dim(out.data))
-    }
+    return(list(ds=out.data, qc=qc))
   }
-  return(list(ds=out.data, qc=qc))
-}
 }
 
 arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
@@ -581,10 +576,10 @@ parm.train <- function(hist_pred, hist_targ, args){
   }
   
   breakpoints <- sort(breakpoints0, na.last=T)
-
-#   if(length(breakpoints)==6){
-#     print('there is at least one case where you get all 6 breakpoints')
-#   }
+  
+  #   if(length(breakpoints)==6){
+  #     print('there is at least one case where you get all 6 breakpoints')
+  #   }
   rank <- rank(breakpoints0, na.last=T, ties='first')
   #get the actual values of temp/precip where the break is
   if(length(breakpoints) > 0){
@@ -616,15 +611,15 @@ parm.train <- function(hist_pred, hist_targ, args){
   #However, this may be leading to values of boundary.knots of ~1000 in./day
   #before the tail adjusts are applied; we're working on a replacement paramter.
   boundary.knots <- get.knot.range(c(hist_pred, hist_targ))
-
+  
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
     print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
     regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=boundary.knots #c(-999,999)
     ),data=ds)
     
     ### More diagnostic prints 2017-06-27
-    print("first set of breakpoints:")
-    print(format(values, digits=10), sep="  ")
+#     print("first set of breakpoints:")
+#     print(format(values, digits=10), sep="  ")
     slopefun <- function(x.vals, y.vals){
       n.slope <- length(x.vals) - 1
       slope.vals <- rep(NA, n.slope)
@@ -637,8 +632,8 @@ parm.train <- function(hist_pred, hist_targ, args){
     b.pred.vals <- predict(regr_piecewise, data.frame(mod=values))
     b.slopes <- slopefun(c(boundary.knots[1], values, boundary.knots[2]), 
                          c(b.knot.vals[1], b.pred.vals, b.knot.vals[2]))
-    print("first set of slopes")
-    print(format(b.slopes, digits=10, sep="  "))
+#     print("first set of slopes")
+#     print(format(b.slopes, digits=10, sep="  "))
     
   }else{
     print("No breakpoints or all identical breakpoints found; activating simple lm prediction")
@@ -695,17 +690,17 @@ parm.train <- function(hist_pred, hist_targ, args){
       #Perform regressions again with the first slope taken out
       ds <- data.frame(mod=hist_pred, sta=hist_targ)
       if(!is.na(breakpoints[1])){
-        print("Beginning piecewise linear regression")
+        #print("Beginning piecewise linear regression")
         regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,
                                        #Boundary_knots has been set for our PARM analysis, 
                                        #but it might be leading to weird settings for precip.
                                        #Like, 10000-inches-per-day weird.
-                                      # Boundary.knots=c(-999,999)),
+                                       # Boundary.knots=c(-999,999)),
                                        Boundary.knots=boundary.knots),
-        #),
-        data=ds)
+                              #),
+                              data=ds)
       }else{
-        print("No breakpoints found; activating simple lm prediction")
+        #print("No breakpoints found; activating simple lm prediction")
         regr_piecewise2 <- lm(sta ~ mod, data=ds)
       }
       # recalculate slopes
@@ -764,9 +759,9 @@ parm.downscale <- function(fut_pred, hist_targ, regr_piecewise,
 }#end arrm.downscale
 
 get.knot.range <- function(dataset){
-	#'Gets parameters for the Boundary.knots
-	#'with some wiggle room, since data may not be same shape
-	#' in the future.
+  #'Gets parameters for the Boundary.knots
+  #'with some wiggle room, since data may not be same shape
+  #' in the future.
   data.range <- range(dataset, na.rm = T, finite = T)
   #data.dev <- sd(dataset, na.rm = T)
   #KD, D1A conversation 2017-06-20 suggested wider range
@@ -774,12 +769,12 @@ get.knot.range <- function(dataset){
   if (is.na(data.dev)){
     #As of now, this case is only likely to happen with pr
     #and TBH, it's sort of vanishingly unlikely
-#     if (!is.na(data.dev[1])){
-#       print("Too few samples for boundary.knots calculation; defaulting to 5 percent")
-#       data.dev <- 0.05 * dataset
-#     }else{
-#       stop("Error in get.knot.range: passed dataset")
-#     }
+    #     if (!is.na(data.dev[1])){
+    #       print("Too few samples for boundary.knots calculation; defaulting to 5 percent")
+    #       data.dev <- 0.05 * dataset
+    #     }else{
+    #       stop("Error in get.knot.range: passed dataset")
+    #     }
     stop(paste("Error in get.knot.range: returned diff(data.range) was NA!"))
   }
   #return(c(data.range[1] - 2*data.dev, data.range[2]+2*data.dev))

@@ -29,10 +29,11 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
 	#orig_var = var.split('Detr')[0]
 	#trendetr_var = re.sub("Detr", "", var)
 	try:
-		detr_method = re.match('.*?(Detr.*?)_', var).group(1)
+		#detr_method = re.match('.*?(Detr.*?)_', var).group(1)
+		detr_method = re.match('.*?(Detr.*?)', var).group(1)
 	except:
 		print("Error in callCopyToTrendDetr! Regular expression failed to find" + \
-		      " _ in expression!")
+		      "Detr in expression!")
 		sys.exit(1)      	
 	#trendetr_var = re.sub('Detr.+?_', '_', var)
 	#trendetr_climvar = var.split('Detr')[0]
