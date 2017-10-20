@@ -108,7 +108,17 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			if len(outfiles) < 1:
 				print("Error in ppWatcher: No files found in " + outdir + " !")
 				sys.exit(1)
-			outfiles = "\n\t".join(outfiles)	
+			
+			#Checks for printing anomaly/detrending files needed for the detrending wofkflow	
+			if re.search('Anom', outdir) is not None:
+				anom_outdir = re.sub("Anom", "", outdir)
+				anom_outfiles = [osp.join(anom_outdir, p) for p in os.listdir(anom_outdir) if re.search(".nc$", p) is not None]
+				outfiles = outfiles + anom_outfiles
+			if re.search('Detr', outdir) is not None:
+				detr_outdir = re.sub("Detr", "", outdir)
+				detr_outfiles = [osp.join(detr_outdir, p) for p in os.listdir(detr_outdir) if re.search(".nc$", p) is not None]
+				outfiles = outfiles + detr_outfiles
+			outfiles = "\n\t".join(outfiles)
 		if warnCrossval: 
 			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
 		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
