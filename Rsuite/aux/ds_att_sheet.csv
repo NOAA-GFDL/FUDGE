@@ -13,3 +13,4 @@
 "QDM","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
 "lmAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
 "lmstepAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
+"returnMF","MH, MF","OH, MH","OH","MF","FALSE",FALSE,"distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE","Returning unaltered MF dataset"

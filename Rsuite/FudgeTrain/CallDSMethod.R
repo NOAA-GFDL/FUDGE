@@ -45,7 +45,7 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
                    #'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
                    'QDM'     = callMBC(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
                    'CFQM'    = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
-                   #'sum'   = ds.sum.function(OH, MH, MF, ds.args),
+                   'returnMF'   = ds.MF.function(OH, MH, MF, ds.args),
                    ReturnDownscaleError(method)
   )
   #Restore missing values to original place now takes place within method
@@ -66,6 +66,12 @@ ds.sum.function <- function(OH, MH, MF, args){
   tmp.data <- array(sum.all, dim=c(1,1,1,1,dim(OH[[1]])[5:6]))
   print(dim(tmp.data))
   return(list(ds=tmp.data,
+              qc=NULL))
+}
+
+ds.MF.function <- function(OH, MH, MF, args){
+  #'returns the MF data, unchanged
+  return(list(ds=MF[[1]],
               qc=NULL))
 }
 
