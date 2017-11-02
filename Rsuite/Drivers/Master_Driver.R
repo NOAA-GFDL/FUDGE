@@ -40,7 +40,7 @@ FUDGE.error.handler.function <- function(){
   }
 }
 #previously traceback
-options(error=FUDGE.error.handler.function, 
+options(error=FUDGE.error.handler.function,
         warn = 1, showErrorCalls=TRUE)
 ###See if there's a good way to return back to the original settings
 ###after this point. Probably not a component of a --vanilla run.
@@ -60,7 +60,7 @@ if (length(console.args) > 0){
   i_offset <- as.numeric(console.args[4])
   j_idx <- as.numeric(console.args[5])
   j_max <- as.numeric(console.args[6])
-  j_stride <- as.numeric(console.args[7])  
+  j_stride <- as.numeric(console.args[7])
   j_offset <- as.numeric(console.args[8])
   auxfile <- console.args[9]
   copy_from_tmp = console.args[10]
@@ -77,7 +77,7 @@ if (length(console.args) > 0){
   j_max <- 114
   j_stride <- 114
   j_offset <- 454
-  auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json" 
+  auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json"
   #auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" ##01 has spatial masks; 05_offset has asymmetric grid
   copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
   x.pad <- "NA"
@@ -91,7 +91,7 @@ message("Getting info from aux file")
 print(auxfile)
 aux.ref <- get_aux_params(auxfile, copy_from_tmp)
 #1-23-17 adding bypass to see if the 'to the left' works
-#Note: this is going to be a bad idea to use on anything but the 
+#Note: this is going to be a bad idea to use on anything but the
 #
 if ("multivar_target" %in% aux.ref){
   ds.ref$multivar_target <- aux.ref$multivar_target
@@ -99,8 +99,8 @@ if ("multivar_target" %in% aux.ref){
 
 message("Checking downscaling arguments")
 ds.args <<- args
-QCDSArguments(k=k.fold, ds.method = ds.method, args=ds.args, 
-              is.multivar=(length(predictor.vars) > 1), 
+QCDSArguments(k=k.fold, ds.method = ds.method, args=ds.args,
+              is.multivar=(length(predictor.vars) > 1),
               is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 message("Checking the missing value arguments")
@@ -191,7 +191,7 @@ QCAdjustArguments(pre_ds, post_ds,
 message("Checking for spatial masks vars")
 if(spat.mask.dir_1!="na"){
   apply_spatmask <- T
-  spatmask.file <- file.path(dirname(spat.mask.dir_1), 
+  spatmask.file <- file.path(dirname(spat.mask.dir_1),
                              paste0(spat.mask.var, ".nc"))
   #spat.mask.nc <- nc_open()
 }else{
@@ -204,42 +204,42 @@ if(spat.mask.dir_1!="na"){
 message("Reading in target data")
 
 oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max, i_stride-1)
-oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max, j_stride-1) 
+oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max, j_stride-1)
 if (ds.ref$multivar_target){
   #Right now, only applies to MBC
   OH.files <- c()
   target.indir_1 <- dirname(dirname(dirname(target.indir_1)))
   for (var in predictor.vars){
     print(paste("reading target var", var))
-    OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1, 
+    OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1,
                                                     var,target.freq_1,target.model_1,
                                                     target.scenario_1,grid,
-                                                    target.file.start.year_1,target.file.end.year_1, 
+                                                    target.file.start.year_1,target.file.end.year_1,
                                                     target.suffix, is_OH = F))
   }
-  OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset, y=oh_y_subset), 
-                            dim=ds.ref$oh_dimlist, 
-                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
+  OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset, y=oh_y_subset),
+                            dim=ds.ref$oh_dimlist,
+                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim,
                             aux.ref$OH$geomask)
   if (apply_spatmask){
     spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
     for (el in names(OH$data)){
-     OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial') 
+     OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial')
     }
   }
 }else{
   OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
-                                target.file.start.year_1,target.file.end.year_1, 
+                                target.file.start.year_1,target.file.end.year_1,
                                 target.suffix, is_OH = T)
   OH.files <- OH.path
-  OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset, y=oh_y_subset), 
-                            dim=ds.ref$oh_dimlist, 
-                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
+  OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset, y=oh_y_subset),
+                            dim=ds.ref$oh_dimlist,
+                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim,
                             aux.ref$OH$geomask)
   if (apply_spatmask){
     spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
     for (el in names(OH$data)){
-      OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial') 
+      OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial')
     }
   }
 }
@@ -249,57 +249,57 @@ if (ds.ref$multivar_target){
 #oh.dim <- dim(OH$data[[1]])
 oh.orig.dim <- OH$orig_dims[[1]]
 oh.dim <- dim(OH$data[[1]])
-oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2], 
+oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2],
                               x.by=aux.ref$OH$idim, y.by=aux.ref$OH$jdim,
                               allow_partial=F)
 
 message("Reading in historical predictor data")
 MH.files <- c()
 for (var in predictor.vars){
-  MH.files <- append(MH.files, get.FUDGE.filepath(hist.indir_1, 
+  MH.files <- append(MH.files, get.FUDGE.filepath(hist.indir_1,
                                                   var,hist.freq_1,hist.model_1,
                                                   hist.scenario_1,grid,
-                                                  hist.file.start.year_1,hist.file.end.year_1, 
+                                                  hist.file.start.year_1,hist.file.end.year_1,
                                                   hist.pred.suffix))
 }
 mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride-1)
-mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride-1) 
-MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_subset), 
-                          dim=ds.ref$mh_dimlist, 
-                          x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim, 
+mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride-1)
+MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_subset),
+                          dim=ds.ref$mh_dimlist,
+                          x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim,
                           aux.ref$MH$geomask)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, mh_x_subset$subset, mh_y_subset$subset)
   for (el in names(MH$data)){
-    MH$data[[el]] <- apply.any.mask(data=MH$data[[el]], mask=spatmask, dim='spatial') 
+    MH$data[[el]] <- apply.any.mask(data=MH$data[[el]], mask=spatmask, dim='spatial')
   }
 }
 mh.orig.dim <- MH$orig_dims[[1]]
 mh.dim <- dim(MH$data[[1]])
-mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2], 
-                              x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim, 
+mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2],
+                              x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim,
                               allow_partial=F)#(aux.ref$ds_handle_missing=='continue'))
 
 message("Reading in future predictor data")
 MF.files <- c()
 for (var in predictor.vars){
-  MF.files <- append(MF.files, get.FUDGE.filepath(fut.indir_1, 
+  MF.files <- append(MF.files, get.FUDGE.filepath(fut.indir_1,
                                                   var,fut.freq_1,fut.model_1,
                                                   fut.scenario_1,grid,
-                                                  fut.file.start.year_1,fut.file.end.year_1, 
+                                                  fut.file.start.year_1,fut.file.end.year_1,
                                                   fut.pred.suffix))
 }
 mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max, i_stride-1)
-mf_y_subset <- get.FUDGE.subset(aux.ref$MF$jdim, j_idx, j_max, j_stride-1) 
-MF <- build.FUDGE.dataset(MF.files, predictor.vars, 
-                          subset=list(x=mf_x_subset, y=mf_y_subset), 
-                          dim=ds.ref$mf_dimlist, 
-                          x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim, 
+mf_y_subset <- get.FUDGE.subset(aux.ref$MF$jdim, j_idx, j_max, j_stride-1)
+MF <- build.FUDGE.dataset(MF.files, predictor.vars,
+                          subset=list(x=mf_x_subset, y=mf_y_subset),
+                          dim=ds.ref$mf_dimlist,
+                          x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim,
                           aux.ref$MF$geomask)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, mf_x_subset$subset, mf_y_subset$subset)
   for (el in names(MH$data)){
-    MF$data[[el]] <- apply.any.mask(data=MF$data[[el]], mask=spatmask, dim='spatial') 
+    MF$data[[el]] <- apply.any.mask(data=MF$data[[el]], mask=spatmask, dim='spatial')
   }
 }
 mf.orig.dim <- MF$orig_dims[[1]]
@@ -323,9 +323,9 @@ out.filename <- file.path(output.dir, out.filename)
 message("Setting target dimensions")
 delayedAssign('TARG', eval(parse(text=ds.ref$target)))
 if (!ds.ref$multivar_target){
-  targ.dim <- switch(ds.ref$target, 
-                     'OH' = oh.orig.dim, 
-                     'MH' = mh.orig.dim, 
+  targ.dim <- switch(ds.ref$target,
+                     'OH' = oh.orig.dim,
+                     'MH' = mh.orig.dim,
                      'MF' = mf.orig.dim)
   if (ds.ref$target=='OH'){
     ds.coords <- oh.coords
@@ -338,16 +338,16 @@ if (!ds.ref$multivar_target){
   targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
   targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
   targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
-  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.x.subset,y=targ.y.subset), 
-                              dim=ds.ref$oh_dimlist, 
-                              x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim, 
+  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.x.subset,y=targ.y.subset),
+                              dim=ds.ref$oh_dimlist,
+                              x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim,
                               "none")
-  ds.coords <- get.loop.indices(targ.dim[1], targ.dim[2], 
+  ds.coords <- get.loop.indices(targ.dim[1], targ.dim[2],
                                 x.by=1, y.by=1, allow_partial=F)
 }
 
 #Get string of training data for the metadata atts
-train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)], collapse=","), 
+train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)], collapse=","),
                       paste("and", ds.ref$training[length(ds.ref$training)]))
 
 #Create list of time masks for application
@@ -355,11 +355,11 @@ message("Reading in and checking time windowing masks")
 tmask.list <- get.fudge.timemask.list()
 
 ##Adding 2017-09 for the intermediate KDDM steps
-julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 
+julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian',
                     'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
 if ( (tmask.list$calendar %in% julian.strings) | !(target.var %in% c('tasmax', 'tasmin')) ){
   if (ds.method == 'KDDM'){
-    stop(paste("Error in Master_Driver: KDDM is not currently supported", 
+    stop(paste("Error in Master_Driver: KDDM is not currently supported",
                "for calendars with leapdays and vars that are not tasmax/tasmin!"))
   }
 }
@@ -378,7 +378,7 @@ if (!exists('pr_opts')){
 ######
 ######################################################
 ###Hasty DeltaSD adjustment for asynchronous leap years
-###Hasty adjustment tentaively no longer needed as of 2016-20-21; 
+###Hasty adjustment tentaively no longer needed as of 2016-20-21;
 ###now relying on internal DeltaSd call to adjust the leap days
 # delta.string <- ""
 # if('OH'%in% ds.ref$predictors){
@@ -387,11 +387,11 @@ if (!exists('pr_opts')){
 #                                            mf.dim[6],
 #                                            hist.file.start.year_1, hist.file.end.year_1,
 #                                            fut.file.start.year_1, fut.file.end.year_1)
-#   delta.mask <<- c(rep(NA, delta.adj.index[1]), 
-#                    rep(1, (h.time.len-(sum(delta.adj.index[1:2])))), 
+#   delta.mask <<- c(rep(NA, delta.adj.index[1]),
+#                    rep(1, (h.time.len-(sum(delta.adj.index[1:2])))),
 #                    c(rep(NA, delta.adj.index[2])))
 #   print(summary(delta.mask))
-#   delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3], 
+#   delta.string <- paste("using an OH timseries trimmed from", delta.adj.index[3],
 #                         "to", delta.adj.index[4], "for the downscaling step")
 # }
 ######################################################
@@ -399,21 +399,21 @@ if (!exists('pr_opts')){
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.
 ###Until the input structure is fixed, that means you can get
-###the qc mask information from the qc.maskopts structure, 
+###the qc mask information from the qc.maskopts structure,
 ###and that the solitary qcmask will be named 'qc' in order
 ###to simplify the general qcmask calls.
 
-output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset, 
+output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
                   mf.orig.dim[4:6]) #time/ensemble/n vars come from the MF dataset
-# ds <- list('ds' = array(NA, dim=output.dim), 
+# ds <- list('ds' = array(NA, dim=output.dim),
 #            'qc' = array(NA, dim=output.dim))
 
 #Added 02-14-17 - trying to set up defaults differently
 set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #Alter args for a given method depending on the args allowed
   #(NOTE: may include settings other than default, such as QDM type to ratio)
-  
-  #Okay - from now on, we also need to set a default prime_predictor; 
+
+  #Okay - from now on, we also need to set a default prime_predictor;
   #the lm() and MBC(0 family of methods may reset this value)
   #print(str(as.list(match.call())))
   env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
@@ -421,21 +421,21 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   if (! (ds.method %in% default.methods)){
     #return(args)
   }else{
-    env <- switch(ds.method, 
-           'MBC' = set.MBC.defaults(args, ..., env=env), 
+    env <- switch(ds.method,
+           'MBC' = set.MBC.defaults(args, ..., env=env),
            'QDM' = set.QDM.defaults(args, ..., env=env),
            "CFQM" = set.CFQM.defaults(args, ..., env=env),
-           "lmAsync" = set.lmAsync.defaults(args, ..., env=env), 
+           "lmAsync" = set.lmAsync.defaults(args, ..., env=env),
            "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env=env),
-           stop(paste("Error in set.ds.defaults: no method", 
+           stop(paste("Error in set.ds.defaults: no method",
                       ds.method, "!")))
     #return(new.args)
   }
   return(env)
 }
 message("Checking for default ds arguments (requires var units)")
-set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars, 
-                            pre.ds.train=pre.ds.train, 
+set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars,
+                            pre.ds.train=pre.ds.train,
                             ds.ref=ds.ref, aux.ref=aux.ref,
                             env=environment())
 
@@ -480,18 +480,18 @@ names(out.file.list) <- unlist(fut.pred.rip.list)
 for (r in 1:length(fut.pred.rip.list)){
   rip = fut.pred.rip.list[r]
   #substitute instances of future predictor rip for the current rip
-  loop.out.filename <- sub('r[[:digit:]][[:alpha:]]*[[:digit:]]*i[[:digit:]]p[[:digit:]]', 
+  loop.out.filename <- sub('r[[:digit:]][[:alpha:]]*[[:digit:]]*i[[:digit:]]p[[:digit:]]',
                            rip,out.filename, perl = T)
   loop.out.filename <- sub('$(RIP)', rip, loop.out.filename, fixed = T)
   #Write Global attributes to downscaled netcdf
   label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
-  
+
   message('writing global attributes')
   global_att_list <- make.fudge.globals()
-  ##For now, assume that we are sticking with LM-style training; 
+  ##For now, assume that we are sticking with LM-style training;
   ##spatial coords from OH, time/ensemble coords from MH
-  ##...man, this is going to take close to forever - you also need 
+  ##...man, this is going to take close to forever - you also need
   ## to get the target data & metadata from the input files.
   ## Which implies that you set oh.dimlist, mh.dimlist
   ## and mf.dimlist at the beginning of the entire exercise.
@@ -515,23 +515,23 @@ for (r in 1:length(fut.pred.rip.list)){
                             standard_name=paste(OH$metadata[[target.var]]$long_name),
                             global_overwrite=global_att_list,
                             global_clone_file = OH.files[[1]],
-                            clone_globals=T, clone_all=F, 
+                            clone_globals=T, clone_all=F,
                             clone_include="frequency",clone_exclude="climatology",
                             verbose=F
   )
-  message(paste('Downscaled output file:',ds.out.filename,sep=''))  
-  if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){ 
+  message(paste('Downscaled output file:',ds.out.filename,sep=''))
+  if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){
     ##Created waaay back at the beginning, as part of the QC functions
     for (var in target.var){
       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
       #Sunstitute to get mask output directory
-      #There are two setps - one to add _qcmask to the output directory after OneD; 
+      #There are two setps - one to add _qcmask to the output directory after OneD;
       #the next, to correct the filename
       qc.file <- sub('OneD/', paste0('OneD/', qc.var, '/'), loop.out.filename)
       qc.filename <- sub(var, qc.var, basename(qc.file))
       qc.file <- file.path(dirname(qc.file), qc.filename)
-      
+
       ###Check to make sure that it is possible to create the qc file; create dirs if not
       message("Attempting creation of QC file")
       message(qc.file)
@@ -545,10 +545,10 @@ for (r in 1:length(fut.pred.rip.list)){
       qc.comment.att[[qc.var]] <- qc.comment
       qc.globals <- global_att_list
       #qc.globals$info <- ""
-      qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,  
-                                                ds.experiment, 
-                                                #label.validation, label.training, 
-                                                predictor.vars, fut.pred.rip.list, 
+      qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,
+                                                ds.experiment,
+                                                #label.validation, label.training,
+                                                predictor.vars, fut.pred.rip.list,
                                                 qc.maskopts$qc.method, missval.args, train.string=train.string)
       qc.globals$climatology <- NA
       qc.list <- list()
@@ -562,20 +562,20 @@ for (r in 1:length(fut.pred.rip.list)){
       #  out.varnames <- c("pr_trace", 'OH_ss', "MH_ss", "MF_ss")
       #  print(lapply(lapply(out.array, '[', ,,,r,, ,drop=F), 'dim'))
       #  print(out.varnames)
-      #qc.comment.att <- list("pr_trace" = "adjusted trace pr for MH and MF", 
-      #                   "OH_ss" = "sample size of OH before downscaling", 
-      #                   "MH_ss" = "sample size of MH before downscaling", 
+      #qc.comment.att <- list("pr_trace" = "adjusted trace pr for MH and MF",
+      #                   "OH_ss" = "sample size of OH before downscaling",
+      #                   "MH_ss" = "sample size of MH before downscaling",
       #                   "MF_ss" = "sample size of MF before downscaling")
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
-      qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var, 
-                                 dim.list = dimlist, var.data=varlist, 
-                                 prec='float', missval=1e20, units="1", 
-                                 comment=qc.comment.att, 
+      qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,
+                                 dim.list = dimlist, var.data=varlist,
+                                 prec='float', missval=1e20, units="1",
+                                 comment=qc.comment.att,
                                  longname="QC Mask",
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals)
-      
+
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }
@@ -583,5 +583,5 @@ for (r in 1:length(fut.pred.rip.list)){
 
 #As a final step, print basic profiling information to the logfile
 profileFUDGERun()
-#Note: this means the runscript needs to include the call for system memory usage; 
+#Note: this means the runscript needs to include the call for system memory usage;
 #or, that can wait for a bit

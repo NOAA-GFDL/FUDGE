@@ -327,10 +327,10 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
 }
 
 callBCQMv4 <- function(Oh, Mh, Mf, args) {
-#   if (w == 1){
-#     save(file='/home/cew/Code/testing/BCQMv4_pr.R',
-#          list=c('Oh', 'Mh', 'Mf', 'args'))
-#   }
+  #   if (w == 1){
+  #     save(file='/home/cew/Code/testing/BCQMv4_pr.R',
+  #          list=c('Oh', 'Mh', 'Mf', 'args'))
+  #   }
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
@@ -338,23 +338,23 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
   Mf <- Mf[!(Mf.nas <- is.na(Mf))]
 
   if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
-		n.max <- max(length(Oh), length(Mh))
-		tau <- c(0, (1:n.max)/(n.max+1), 1)
-		x <- quantile(Mh, tau, type=8, na.rm=TRUE)
-		y <- quantile(Oh, tau, type=8, na.rm=TRUE)
-		yout <- approx(x, y, xout=Mf, rule=1)$y
-		extrap.lower <- is.na(yout) & (Mf <= min(Mh))
-		extrap.upper <- is.na(yout) & (Mf >= max(Mh))
-		yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
-		yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
-		DSout[!Mf.nas] <- yout
-		return(DSout)
-	} else {
-		print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
+    n.max <- max(length(Oh), length(Mh))
+    tau <- c(0, (1:n.max)/(n.max+1), 1)
+    x <- quantile(Mh, tau, type=8, na.rm=TRUE)
+    y <- quantile(Oh, tau, type=8, na.rm=TRUE)
+    yout <- approx(x, y, xout=Mf, rule=1)$y
+    extrap.lower <- is.na(yout) & (Mf <= min(Mh))
+    extrap.upper <- is.na(yout) & (Mf >= max(Mh))
+    yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
+    yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
+    DSout[!Mf.nas] <- yout
+    return(DSout)
+  } else {
+    print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
                  ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
                  " uniform. Returning Mf."))
-		return(Mf.orig)
-	}
+    return(Mf.orig)
+  }
 
 }
 
@@ -374,7 +374,16 @@ callKDDM <- function(Oh, Mh, Mf, args){
     }
     # Prepare Downscaled output array the same as Mf
     DSout <- Mf
-    if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
+
+    #     print(paste(hist.train.start.year_1,"-",hist.train.end.year_1))
+    #     print(paste(target.train.start.year_1,"-",target.train.end.year_1))
+    #     print(paste(fut.train.start.year_1,"-",fut.train.end.year_1))
+    # print(paste(tmasks$calendar))
+    # yrz <- format(seq(as.PCICt(fut.train.start.year_1, cal=tmasks$calendar, format="%Y%m%d"), as.PCICt(fut.train.end.year_1, cal=tmasks$calendar, format="%Y%m%d"), by=fut.freq_1), "%Y")
+    #     stop()
+
+    yr.length <- ifelse(tmasks$calendar=="360_day", 360, 365)
+    if (!args$is.uniform.Oh & !args$is.uniform.Mh ) {
       # Prepare Downscaled output array of NAs the same dimension as Mf
       DSout <- DSout + NA
       if (tmasks$apply_tmasks) {
@@ -390,56 +399,65 @@ callKDDM <- function(Oh, Mh, Mf, args){
       subset.OH <- as.vector(Oh)[!is.na(oh.mask)]
       subset.MH <- as.vector(Mh)[!is.na(mh.mask)]
       subset.MF <- as.vector(Mf)[!is.na(mf.mask)]
-      # Find the time window width
-      window.width <- sum(!is.na(mf.mask[1:365]))
-      # Find the number of years in each data set
-      num.years.Oh <- length(Oh)/365
-      num.years.Mh <- length(Mh)/365
-      num.years.Mf <- length(Mf)/365
-      # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
-      half.window <- ceiling(window.width/2)
-      # Initialize a padding variable to shift December data across the boundary if necessary.
+
       pad <- 0
-      # If the first or last NAs are the first or last array entry, then mask does not wrap.
-      if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 | (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 | window.width == 365) {
-        # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of winow.width length.
-        folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
-        folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
-        folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
-      } else {
-        print("Adjusting for 31DEC/1JAN overlap.")
-        # otherwise, the smaller side should be padded
-        pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
-        # If window is beginning of year...
-        #       if ( w < half.window ) {
-        if (padside == 2) {
-          #         pad <- half.window - w
-          subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
-          subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
-          subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
 
+      if (var != "pr") {
+        # Find the time window width
+        window.width <- sum(!is.na(mf.mask[1:yr.length]))
+        # Find the number of years in each data set
+        num.years.Oh <- length(Oh)/yr.length
+        num.years.Mh <- length(Mh)/yr.length
+        num.years.Mf <- length(Mf)/yr.length
+        # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
+        half.window <- ceiling(window.width/2)
+        # Initialize a padding variable to shift December data across the boundary if necessary.
+
+        # If the first or last NAs are the first or last array entry, then mask does not wrap.
+        if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 | (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 | window.width == yr.length) {
+          # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of window.width length.
           folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
           folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
           folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
-
-          folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
-          folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
-          folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
         } else {
-          # otherwise window is end of year
-          #         pad <-  half.window - (366 - w)
-          subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
-          subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
-          subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
+          message("Adjusting for 31DEC/1JAN overlap.")
+          # otherwise, the smaller side should be padded
+          pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
+          # If window is beginning of year...
+          #       if ( w < half.window ) {
+          if (padside == 2) {
+            #         pad <- half.window - w
+            subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
+            subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
+            subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
 
-          folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
-          folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
-          folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+            folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+            folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+            folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
 
-          folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
-          folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
-          folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+            folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
+            folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
+            folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
+          } else {
+            # otherwise window is end of year
+            #         pad <-  half.window - (366 - w)
+            subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
+            subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
+            subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
+
+            folded.OH <- as.list(data.frame(matrix(subset.OH, byrow=FALSE, nrow=window.width)))
+            folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
+            folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
+
+            folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
+            folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
+            folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+          }
         }
+      } else {
+        folded.OH <- list(subset.OH)
+        folded.MH <- list(subset.MH)
+        folded.MF <- list(subset.MF)
       }
       # Bias Correct using the climod KDDM routine, return the unlisted array of future values
 
@@ -461,6 +479,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
                    " uniform. Returning Mf."))
     }
     return(DSout)
+
 }
 
 # NOTE: GFDL modfified KDDM biascorrect() function includes "na.rm=TRUE" fix for missing ESTCP December bug.
@@ -499,7 +518,7 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
     x
   })
   ## FIX for NA/NaN here...
-#   adj <- rapply(adj, mean, how = "replace")
+  #   adj <- rapply(adj, mean, how = "replace")
   adj <- rapply(adj, mean, how = "replace", na.rm=TRUE)
   adj <- renest(adj)
   shift <- NA
