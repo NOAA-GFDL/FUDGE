@@ -91,9 +91,9 @@ callPRPreproc <- function(test, input, postproc.output,
     ignore0=FALSE
   }
   #recognize that there might be a default value of prime_predictor
-  if (prime_predictor == 'na'){
-    prime_predictor <- names(input$MF)[1]
-  }
+#   if (prime_predictor == 'na'){
+#     prime_predictor <- names(input$MF)[1]
+#   }
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
