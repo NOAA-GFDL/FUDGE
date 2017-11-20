@@ -187,7 +187,8 @@ loop.xy.data <- function(){
                                          MH.window, OH.window, MF.window,
                                          adjust.metadata,
                                          s5.instructions=post_ds_inloop, 
-                                         missval.args=missval.args)
+                                         missval.args=missval.args, 
+                                         prime_predictor=prime_predictor)
               #s3 functions only return data, not metadata
               #(there's only one function that changes metadata, and it is)
               #dealt with by adding elements to the stack

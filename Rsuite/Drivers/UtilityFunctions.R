@@ -47,7 +47,7 @@ compact <- function(x){
   #as the preferred way to deal with nulls in apply()
   Filter(Negate(is.null), x)
 }
-  
+
 convert.list.to.string <- function(this.vector){
   #Converts a list into a string representation
   #Does not assume that the list is named
@@ -121,22 +121,23 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
                     "Changing to new name, ignore0"))
       pr_opts['ignore0'] <- pr_opts$apply_0_mask
     }
-    pre_ds$propts <- list(type='PR', var='pr', apply='all', loc=pr.loc, 
-                          pp.args=list(thold=pr_opts$pr_threshold_in,
-                                       freqadj=pr_opts$pr_freqadj_in,
-                                       conserve=pr_opts$pr_conserve_in, 
-                                       ignore0=ifelse(pr_opts$ignore0=='off', 
-                                                      'off', 'on'), 
-                                       allow_low_mh = allow.low.mh)
+    propts <- list(type='PR', var='pr', apply='all', loc=pr.loc, 
+                   pp.args=list(thold=pr_opts$pr_threshold_in,
+                                freqadj=pr_opts$pr_freqadj_in,
+                                conserve=pr_opts$pr_conserve_in, 
+                                ignore0=ifelse(pr_opts$ignore0=='off', 
+                                               'off', 'on'), 
+                                allow_low_mh = allow.low.mh)
     )
     if ('pr_adjmethod' %in% names(pr_opts)){
-      pre_ds$propts$pp.args['pr_adjmethod'] <- pr_opts$pr_adjmethod
+      propts$pp.args['pr_adjmethod'] <- pr_opts$pr_adjmethod
     }else{
       #Maintain H-compatible default until wrapup of I
-      pre_ds$propts$pp.args['pr_adjmethod'] <- 'exact'
+      propts$pp.args['pr_adjmethod'] <- 'exact'
     }
-                          ###Change added 9-23 to test the ppr opts)
-                                       #apply_0_mask=pr_opts$apply_0_mask))
+    #As of 2017-11-12, propts are the first argument of pre_ds
+    pre_ds <- c(list('propts'=propts), 
+                pre_ds)
     #print(str(pr_opts))
     if('transform' %in% names(pr_opts)){
       #print(str(pr_opts))
@@ -150,10 +151,10 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
         pre_ds <- c(pre_ds, 
                     list(list(type='transform', vars=vars, 
                               apply='by.var', loc='inloop', 
-                         pp.args=list(transform=pr_opts$transform, 
-                                      arg=pr_opts$arg, 
-                                      vars=vars
-                                      ))))
+                              pp.args=list(transform=pr_opts$transform, 
+                                           arg=pr_opts$arg, 
+                                           vars=vars
+                              ))))
       }
       #print(lapply(pre_ds, 'summary'))
     }else{
@@ -167,19 +168,20 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
       #Legacy code; use old setting
       ignore0 = FALSE
     }
-    post_ds$propts <- list(type='PR', 
-                           adjust.out='on', 
-                           qc.mask='off', 
-                           loc=pr.loc, 
-                           qc_args=list(thold=pr_opts$pr_threshold_out,
-                                        conserve=pr_opts$pr_conserve_out, 
-                                        ignore0=ignore0))
-  }
-  if ('pr_adjmethod' %in% names(pr_opts)){
-    post_ds$propts$qc_args['pr_adjmethod'] <- pr_opts$pr_adjmethod
-  }else{
-    #Maintain H-compatible default until wrapup of I
-    post_ds$propts$qc_args['pr_adjmethod'] <- 'exact'
+    #As of 2017-11-12, propts are the last option in post_ds
+    propts <- list(type='PR', 
+                   adjust.out='on', 
+                   qc.mask='off', 
+                   loc=pr.loc, 
+                   qc_args=list(thold=pr_opts$pr_threshold_out,
+                                conserve=pr_opts$pr_conserve_out, 
+                                ignore0=ignore0))
+    if ('pr_adjmethod' %in% names(pr_opts)){
+      propts$qc_args['pr_adjmethod'] <- pr_opts$pr_adjmethod
+    }else{
+      #Maintain H-compatible default until wrapup of I
+      propts$qc_args['pr_adjmethod'] <- 'exact'
+    }
   }
   flag.negvar <- FALSE
   qc.maskvar <- FALSE
@@ -206,6 +208,10 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
       }
     }
   }
+  #2017-11-12 change again. precipitation adjustment should be AFTER the tail adjust.
+  if (pr_opts[[1]] != 'na'){
+    post_ds[['propts']] <- propts
+  }
   if('flag_neg'%in%names(pr_opts)){
     if(flag.negvar){
       stop(paste("Error in adapt.pp.input: flag.neg was specified in s5 while the", 
@@ -220,17 +226,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
                           qc_args=list('na')) #Changed for user readability 7-1-16
       #Check for prior qc option that returns a qc mask
       post_ds <- c(post_ds, list(flag.negopt))
-    }#else{
-    #stop('check on why this is failing')
-    #}
-    #print('post_ds')
-    #print(lapply(post_ds, 'summary'))
-    #print(post_ds)
-    #stop('examine post_ds structure')
+    }
   }
-#   print(pre_ds)
-#   print(post_ds)
-#   stop('examine this output')
   return(list('pre_ds'=pre_ds, 'post_ds'=post_ds,'train_qcmask'=train_qcmask))  
 }
 
@@ -295,15 +292,15 @@ override.f.defaults <- function(ds.args=NA,
       out.list$args <- ds.args
     }
   }
-# Pretty sure as of 2017-05-29 that this bit isn't used by anything 
-# else anymore. Commenting out to check.
-#   if(!is.na(pr_opts[1])){
-#     if ('ignore0' %in% names(pr_opts)){
-#       if(!(pr_opts$ignore0=='off' || pr_opts$ignore0=='on')){
-#         missval.handling <<- pr_opts$ignore0
-#       }
-#     }
-#   }
+  # Pretty sure as of 2017-05-29 that this bit isn't used by anything 
+  # else anymore. Commenting out to check.
+  #   if(!is.na(pr_opts[1])){
+  #     if ('ignore0' %in% names(pr_opts)){
+  #       if(!(pr_opts$ignore0=='off' || pr_opts$ignore0=='on')){
+  #         missval.handling <<- pr_opts$ignore0
+  #       }
+  #     }
+  #   }
   #Final check added for ignore0.Delta and the pr ignore0 option
   if('ignore0.Delta'%in%names(ds.args)){
     if(ds.args$ignore0.Delta=='on' && pr_opts$ignore0!='off'){
@@ -359,26 +356,26 @@ get_orig_experiment <- function(in.file, var='tasmax'){
     #Assume only title att present
     orig_exp <- gsub(paste0(var,", "), "", atts['title']) #var with or without a trailing comma
   }
-if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
-  #Perfect model-specific corrections
-  print(atts['experiment_id'])
-  emissions_scenario <- switch(atts[['experiment_id']], 
-                               'sst2030' = 'RCP 4.5', 
-                               'sst2090' = 'RCP 8.5')
-  if('pyhsics_version'%in%names(atts)){
-    physics <- switch(as.character(atts[['physics_version']]), 
-                      '1' = 'ESM', 
-                      '2' = 'CM3')
-  }else{
-    physvers = grep("[0-9]+p(.*)_", in.file, perl=T)
-    physics <- switch(physvers, 
-                      '1'='ESM', 
-                      '2'='CM3')
+  if (grepl("GFDL-HIRAM-C360-COARSENED", orig_exp)){
+    #Perfect model-specific corrections
+    print(atts['experiment_id'])
+    emissions_scenario <- switch(atts[['experiment_id']], 
+                                 'sst2030' = 'RCP 4.5', 
+                                 'sst2090' = 'RCP 8.5')
+    if('pyhsics_version'%in%names(atts)){
+      physics <- switch(as.character(atts[['physics_version']]), 
+                        '1' = 'ESM', 
+                        '2' = 'CM3')
+    }else{
+      physvers = grep("[0-9]+p(.*)_", in.file, perl=T)
+      physics <- switch(physvers, 
+                        '1'='ESM', 
+                        '2'='CM3')
+    }
+    orig_exp <- paste("GFDL-HIRAM", emissions_scenario, physics, 
+                      atts['experiment_id'])
+    
   }
-  orig_exp <- paste("GFDL-HIRAM", emissions_scenario, physics, 
-                    atts['experiment_id'])
-  
-}
   return(orig_exp)
 }
 

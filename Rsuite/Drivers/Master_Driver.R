@@ -419,7 +419,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync')
   if (! (ds.method %in% default.methods)){
-    #return(args)
+    env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   }else{
     env <- switch(ds.method,
            'MBC' = set.MBC.defaults(args, ..., env=env),

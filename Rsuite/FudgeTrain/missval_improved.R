@@ -177,10 +177,15 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
   #Because this treats a failure in any ensemble as cause to retry absolutely 
   #everything, it is going to be prone to false positives. OTOH, you only need 
   #a single status for the entire thing.
-  complete.hist <- complete.cases(c(OH,MH))
-  complete.fut <- complete.cases(MF)
-  dim(complete.fut) <- dim(MF[[1]])
-  dim(complete.hist) <- dim(MH[[1]])
+  if (length(OH[[1]]) == length(MH[[1]]) ){
+    complete.hist <- complete.cases(c(OH,MH))
+  	complete.fut <- complete.cases(MF)
+    dim(complete.fut) <- dim(MF[[1]])
+    dim(complete.hist) <- dim(MH[[1]])
+  }else{
+  	complete.hist <- complete.cases(OH)
+  	complete.fut <- complete.cases(MF)
+  }
   return(list(OH=OH, MH=MH, MF=MF, 
               qc=qcmask, 
               mv.retry=mv.retry, ds.possible=ds.possible, 

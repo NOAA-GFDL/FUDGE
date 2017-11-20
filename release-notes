@@ -1,3 +1,9 @@
+11-12-2017
+(cew)
+- Update for ability to use different calendars in OH, MH
+- Fix for order of operations of section 5 adjustments in eqfreq adjmethod; 
+precip adjust goes after the tail adjustment
+
 09-25-2017
 (cew)
 - Adding ability to set pp_wallclocktime from aux file
