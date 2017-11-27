@@ -236,7 +236,7 @@ convert.pr.threshold <- function(index, units){
     }
   }
   switch(index, 
-         'zero' = return(zero.thold),
+         'zero' = return(zero.thold + (2 * .Machine$double.eps)),
          'us_trace' = return(us.trace.thold), 
          'global_trace' = return(global.trace.thold), 
          return((index))) #If own threshold supplied,

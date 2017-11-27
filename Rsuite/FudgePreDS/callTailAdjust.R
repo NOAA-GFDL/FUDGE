@@ -257,10 +257,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         ## Check for division by zero or very small number, replace with "largest seen" ratio
         mult.ifzero <- max(DS[-delta.idx]/MF[-delta.idx])
         mult.vec <- DS[delta.idx]/MF[delta.idx]
-        if (any(mult.vec > mult.ifzero, na.rm=T)) {
-          print("Some calculated multipliers were too large, replacing with max inside tails.")
-          mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
-        }
+#         if (any(mult.vec > mult.ifzero, na.rm=T)) {
+#           print("Some calculated multipliers were too large, replacing with max inside tails.")
+#           mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
+#         }
         offset <- mean(mult.vec)
       } else {
         stop("something is wrong with adjmethod supplied")

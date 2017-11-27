@@ -37,8 +37,9 @@ adjustTrace <- function(OH, MH, MF,
       mh.dry <- oh.dry
       zed.idx <- oh.dry
       mh.trace <- MH[zed.idx]
+      
       #Special adjustment for a case in which MH has negative precip
-      #hasn't come up, but some of teh ESTCP datasets do include negative
+      #hasn't come up, but some of the ESTCP datasets do include negative
       #precip data
       MH[MH < 0] <- 0
       if (mh.trace <= 0){
@@ -316,7 +317,7 @@ get_pr_trace <- function(index, units){
     }
   }
   switch(index,
-         'zero' = return(zero.thold),
+         'zero' = return(zero.thold + 2 * (.Machine$double.eps)),
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
          return((index))) #If own threshold supplied,
