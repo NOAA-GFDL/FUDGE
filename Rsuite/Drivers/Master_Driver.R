@@ -355,14 +355,14 @@ message("Reading in and checking time windowing masks")
 tmask.list <- get.fudge.timemask.list()
 
 ##Adding 2017-09 for the intermediate KDDM steps
-julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian',
-                    'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
-if ( (tmask.list$calendar %in% julian.strings) | !(target.var %in% c('tasmax', 'tasmin')) ){
-  if (ds.method == 'KDDM'){
-    stop(paste("Error in Master_Driver: KDDM is not currently supported",
-               "for calendars with leapdays and vars that are not tasmax/tasmin!"))
-  }
-}
+# julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian',
+#                     'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
+# if (tmask.list$calendar %in% julian.strings) {
+#   if (ds.method == 'KDDM'){
+#     stop(paste("Error in Master_Driver: KDDM is not currently supported",
+#                "for calendars with leapdays!"))
+#   }
+# }
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
@@ -417,7 +417,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #the lm() and MBC(0 family of methods may reset this value)
   #print(str(as.list(match.call())))
   env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
-  default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync')
+  default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
   if (! (ds.method %in% default.methods)){
     env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   }else{
@@ -427,6 +427,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
            "CFQM" = set.CFQM.defaults(args, ..., env=env),
            "lmAsync" = set.lmAsync.defaults(args, ..., env=env),
            "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env=env),
+           "KDDM" = set.KDDM.defaults(args, ..., env=env),
            stop(paste("Error in set.ds.defaults: no method",
                       ds.method, "!")))
     #return(new.args)
@@ -496,8 +497,13 @@ for (r in 1:length(fut.pred.rip.list)){
   ## Which implies that you set oh.dimlist, mh.dimlist
   ## and mf.dimlist at the beginning of the entire exercise.
   if (ds.ref$target != "MF"){
-    dimlist <- c(TARG$metadata[[1]]$dim,  MF$metadata[[1]]$dim)
-    varlist <- c(TARG$metadata[[1]]$vars, MF$metadata[[1]]$vars)
+		if (ds.method == "KDDM") {
+			dimlist <- MF$metadata[[1]]$dim
+			varlist <- MF$metadata[[1]]$vars
+		} else {
+			dimlist <- c(TARG$metadata[[1]]$dim,  MF$metadata[[1]]$dim)
+			varlist <- c(TARG$metadata[[1]]$vars, MF$metadata[[1]]$vars)
+		}
   }else{
     dimlist <- TARG$metadata[[1]]$dim
     varlist <- TARG$metadata[[1]]$vars

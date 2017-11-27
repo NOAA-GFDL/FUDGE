@@ -358,6 +358,34 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
 
 }
 
+set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
+## KDDM needs to know about the YEARS in each dataset, this processes the time axis and creates factors KDDM can use for its origami
+# 	Oh.time.units <- strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
+	Oh.time.origin <-strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][3]
+	Oh.time.cal <- OH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
+Oh.time.cal[tolower(Oh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
+
+	Oh.time.vals <- OH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
+	env$Oh.all.yrz <- as.factor(format(as.PCICt(Oh.time.vals*60*60*24, origin=Oh.time.origin, cal=Oh.time.cal), "%Y"))
+
+# 	Mh.time.units <- strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
+	Mh.time.origin <-strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][3]
+	Mh.time.cal <- MH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
+Mh.time.cal[tolower(Mh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
+
+	Mh.time.vals <- MH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
+	env$Mh.all.yrz <- as.factor(format(as.PCICt(Mh.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
+
+# 	Mf.time.units <- strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
+	Mf.time.origin <-strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][3]
+	Mf.time.cal <- MF$metadata[[1]]$dim$time$calendar    # : chr "noleap"
+Mf.time.cal[tolower(Mf.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
+
+	Mf.time.vals <- MF$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
+	env$Mf.all.yrz <- as.factor(format(as.PCICt(Mf.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
+
+	return(env)
+}
 
 callKDDM <- function(Oh, Mh, Mf, args){
   #'Bias correction of climate model output using KDDM on a single variable
@@ -375,12 +403,123 @@ callKDDM <- function(Oh, Mh, Mf, args){
     # Prepare Downscaled output array the same as Mf
     DSout <- Mf
 
-    #     print(paste(hist.train.start.year_1,"-",hist.train.end.year_1))
-    #     print(paste(target.train.start.year_1,"-",target.train.end.year_1))
-    #     print(paste(fut.train.start.year_1,"-",fut.train.end.year_1))
-    # print(paste(tmasks$calendar))
-    # yrz <- format(seq(as.PCICt(fut.train.start.year_1, cal=tmasks$calendar, format="%Y%m%d"), as.PCICt(fut.train.end.year_1, cal=tmasks$calendar, format="%Y%m%d"), by=fut.freq_1), "%Y")
-    #     stop()
+    yr.length <- ifelse(tmasks$calendar %in% c("360_day","360"), 360, 365)
+    if (!args$is.uniform.Oh & !args$is.uniform.Mh ) {
+      # Prepare Downscaled output array of NAs the same dimension as Mf
+      DSout <- DSout + NA
+      if (tmasks$apply_tmasks) {
+        oh.mask <- tmasks$OH$masks[[w]]
+        mh.mask <- tmasks$MH$masks[[w]]
+        mf.mask <- tmasks$MF$masks[[w]]
+      } else {
+        oh.mask <- rep(1,length(Oh))
+        mh.mask <- rep(1,length(Mh))
+        mf.mask <- rep(1,length(Mf))
+      }
+      # Subset to remove the masked NAs
+      subset.OH <- as.vector(Oh)[!is.na(oh.mask)]
+      subset.MH <- as.vector(Mh)[!is.na(mh.mask)]
+      subset.MF <- as.vector(Mf)[!is.na(mf.mask)]
+
+      pad <- 0
+
+      if (var == "pr") {
+				Oh.yrz <- Oh.all.yrz[!is.na(oh.mask)]
+				Mh.yrz <- Mh.all.yrz[!is.na(mh.mask)]
+				Mf.yrz <- Mf.all.yrz[!is.na(mf.mask)]
+        # Find the time window width
+        window.width <- sum(!is.na(mf.mask[1:yr.length]))
+        # Find the number of years in each data set
+        num.years.Oh <- length(Oh)/yr.length
+        num.years.Mh <- length(Mh)/yr.length
+        num.years.Mf <- length(Mf)/yr.length
+        # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
+        half.window <- ceiling(window.width/2)
+        # Initialize a padding variable to shift December data across the boundary if necessary.
+
+        # If the first or last NAs are the first or last array entry, then mask does not wrap.
+        if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 | (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 | window.width == yr.length) {
+          # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of window.width length.
+          folded.OH <- tapply(subset.OH, Oh.yrz, list)
+          folded.MH <- tapply(subset.OH, Mh.yrz, list)
+          folded.MF <- tapply(subset.MF, Mf.yrz, list)
+        } else {
+# 					message("Adjusting for 31DEC/1JAN overlap.")
+          # otherwise, the smaller side should be padded
+          pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
+          # If window is beginning of year...
+          #       if ( w < half.window ) {
+          if (padside == 2) {
+            #         pad <- half.window - w
+            subset.OH <- c(rep(Inf,pad), subset.OH[-c((length(subset.OH)-pad+1):length(subset.OH))])
+            subset.MH <- c(rep(Inf,pad), subset.MH[-c((length(subset.MH)-pad+1):length(subset.MH))])
+            subset.MF <- c(rep(Inf,pad), subset.MF[-c((length(subset.MF)-pad+1):length(subset.MF))])
+
+            folded.OH <- tapply(subset.OH, Oh.yrz, list)
+            folded.MH <- tapply(subset.OH, Mh.yrz, list)
+            folded.MF <- tapply(subset.MF, Mf.yrz, list)
+
+            folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
+            folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
+            folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
+          } else {
+            # otherwise window is end of year
+            #         pad <-  half.window - (366 - w)
+            subset.OH <- c(subset.OH[-c(1:pad)], rep(Inf,pad))
+            subset.MH <- c(subset.MH[-c(1:pad)], rep(Inf,pad))
+            subset.MF <- c(subset.MF[-c(1:pad)], rep(Inf,pad))
+
+            folded.OH <- tapply(subset.OH, Oh.yrz, list)
+            folded.MH <- tapply(subset.OH, Mh.yrz, list)
+            folded.MF <- tapply(subset.MF, Mf.yrz, list)
+
+            folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
+            folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
+            folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+          }
+        }
+      } else {
+        folded.OH <- list(subset.OH)
+        folded.MH <- list(subset.MH)
+        folded.MF <- list(subset.MF)
+      }
+      # Bias Correct using the climod KDDM routine, return the unlisted array of future values
+
+      # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
+      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=ifelse(args$norm=="none","identity",args$norm))$fut)
+      # If pad was increased to shift data, shift it back
+      if(pad > 0) {
+        if ( w < half.window ) {
+          kddm.bc.out <- c(kddm.bc.out, rep(NA,pad))
+        } else {
+          kddm.bc.out <- c(rep(NA,pad), kddm.bc.out)
+        }
+      }
+      # Write the bias corrected results into the DSout array in the unmasked indices and return.
+      DSout[!is.na(mf.mask)] <- kddm.bc.out
+    } else {
+      print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
+                   ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
+                   " uniform. Returning Mf."))
+    }
+    return(DSout)
+}
+
+callKDDM.old <- function(Oh, Mh, Mf, args){
+  #'Bias correction of climate model output using KDDM on a single variable
+  #'from the 'climod' package https://github.com/sethmcg/climod
+  #'@param Oh: Observed Historical (a.k.a. observations, obs)
+    #'@param Mh: Model Historical (a.k.a. GCM historical, cur)
+    #'@param Mf: Model Future (a.k.a GCM future, fut)
+    #'@param norm: Choice of normalization technique. Contained in args parameter.
+    #'Contains no other arguments in the args parameter.
+    #' Not valid for pr variables or julian calendar. When updated, remove check in line 351 of MasterDriver.R
+
+    if (!(args$norm %in% c("boxcox", "zscore", "none"))) {
+      stop(paste('KDDM norm must be one of {"zscore", "boxcox", "none"}'))
+    }
+    # Prepare Downscaled output array the same as Mf
+    DSout <- Mf
 
     yr.length <- ifelse(tmasks$calendar=="360_day", 360, 365)
     if (!args$is.uniform.Oh & !args$is.uniform.Mh ) {
@@ -402,7 +541,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
 
       pad <- 0
 
-      if (var != "pr") {
+      if (var == "pr") {
         # Find the time window width
         window.width <- sum(!is.na(mf.mask[1:yr.length]))
         # Find the number of years in each data set
@@ -420,7 +559,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
           folded.MH <- as.list(data.frame(matrix(subset.MH, byrow=FALSE, nrow=window.width)))
           folded.MF <- as.list(data.frame(matrix(subset.MF, byrow=FALSE, nrow=window.width)))
         } else {
-          message("Adjusting for 31DEC/1JAN overlap.")
+#           if (args$verbose) message("Adjusting for 31DEC/1JAN overlap.")
           # otherwise, the smaller side should be padded
           pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
           # If window is beginning of year...
