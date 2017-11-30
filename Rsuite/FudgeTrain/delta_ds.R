@@ -2,7 +2,7 @@
 #Main and helper functions for downscaling
 #with DeltaSD
 
-callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
+callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
   #'@author carlos.gaitan@noaa.gov
     #'@description The script uses the Delta Method to downscale coarse res. climate variables  
     #over a single variable
@@ -55,52 +55,51 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
     }else{
       stop(paste("DeltaSD Downscaling Error: deltaop not found in args"))
     }
-#     if(!is.null(args$ignore0.Delta)){
-#       ignore0.Delta <- ifelse(args$ignore0.Delta=='on', TRUE, FALSE)
-#     }else{
-#       stop(paste("DeltaSD Downscaling Error: ignore0.Delta not found in args"))
-#     }
     if(!tmasks$time_mask_overlap){
       index.mask <- tmasks$MF$masks[[w]]
     }else{
-      index.mask <- tmasks$trim$masks[[w]]
+      #index.mask <- tmasks$trim$masks[[w]]
+      index.mask <- tmasks$MF$masks[[w]]
     }
+    #Nevermind the offset. KD suggested we pass this thingy in from the XML.
     pr_start <- 1
+    pr_offset <- 7
     oh_longer <- length(MF[,,,1,,]) <= length(OH)
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
-      MF.data <- MF[,,,n,,]
+      MF.data <- MF[,,,n,, ,collapse_degen=F]
+      missval.data <- remove.FUDGE.missvals(OH, MH, MF.data, 
+                                            missval.args$minsamplesize, 
+                                            missval.args, 
+                                            missval.method='distributional')
+      OH.loop <- missval.data$OH
+      MH.loop <- missval.data$MH
+      MF.loop <- missval.data$MF
+      #With delta, DS is always effectively possible - all missing in one 
+      #dataset does not 
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
-        print("in delta")
-        print(n)
-        print(pr_start)
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=pr_start)
+                                 start_year=pr_start + (n-1) * pr_offset)
         OH.idx <- idx$index
         pr_start <- idx$end
-        print(summary(MH))
-        print(summary(MF.data))
-        print(deltatype)
-        print(deltaop)
         delta <- delta.train(MH, MF.data, deltatype, deltaop, status) #ignore0.Delta
-        ds.out <- delta.downscale(delta, OH[OH.idx], deltaop, status)
+        ds.out <- delta.downscale(delta$delta, OH[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
       }else{
         #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
         #where n=length(MF.data)/length(OH)
-        write.len <- 1
         out.len <- length(MF.data)
         in.len <- length(OH)
         OH.idx <- c()
         ds.out <- c()
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=1)
+                                 start_year=1 + (n-1) * pr_offset)
         OH.idx <- idx$index
         ###CHECK THIS LOOPING STRUCTURE WITH 3RD FLOOR. 
         ###its arguably a closer match to the behavior above, but it's still a change
@@ -108,22 +107,30 @@ callDeltaSD <- function(OH,MH,MF,args, train_qcmask, tmasks=list()){
         start <- idx$end
         loop.delta <- delta.train(MH[OH.idx], MF.data, deltatype, deltaop, status)
         #hist.idx
-        ds.out <- delta.downscale(loop.delta, OH[OH.idx], deltaop, status)
+        ds.out <- delta.downscale(loop.delta$delta, OH[OH.idx], deltaop, status)
       }
-      out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                                      tmasks$fut.leapmask, 
-                                      tmasks$OH$masks[[w]][OH.idx],
-                                      index.mask,
-                                      ds.out) 
-      #MF.data)
-      #if(out.status > 0){
-        #As of 10-14-16, replacing status setting with qcmask
-        if (train_qcmask){
-          #the below used to store the status return; for now, to keep 
-          #consistency with the other, more commonly-used training mask
-          #methods, we're replacing that with NA
-          qc.data[,,,n,,] <- NA 
-        }
+      tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
+                             tmasks$fut.leapmask, 
+                             tmasks$OH$masks[[w]][OH.idx],
+                             index.mask,
+                             ds.out) 
+      if (tmasks$time_mask_overlap){
+        tmp.out <- apply.any.mask(data=tmp.out, mask=tmasks$trim$masks[[w]],dim='time')
+      }
+      #For both cases, final case is the same: tmp.out indexed back in
+      out.data[,,,n,,] <- tmp.out
+      if (train_qcmask & missval.out$mv.retry){
+        #the below used to store the status return; for now, to keep 
+        #consistency with the other, more commonly-used training mask
+        #methods, we're replacing that with NA
+        qc.out <- ds.out * NA
+        tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
+                               tmasks$fut.leapmask, 
+                               tmasks$OH$masks[[w]][OH.idx],
+                               index.mask,
+                               qc.out) 
+        qc.data[,,,n,,] <- tmp.out
+      }
       #}
     }
     return(list(ds=out.data, qc=qc.data))
@@ -135,31 +142,34 @@ delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
   #'Calls to ignore0.Delta are bing removed, since that option is now included
   #'as part of the precipitation processing options
   #'
+  delta.status <- 0
   if (all(is.na(delta.hist)) || all(is.na(delta.fut))){
     print("Insufficient data to calculate a delta at this point; returning OH data")
+    delta.status <- 1
     if (deltaop=='add'){
-      return(0)
+      delta <- 0
     }else{
-      return(1)
-    }
-  }
-  print(deltaop)
-  if(deltaop=='add'){
-    #Downscale by difference delta
-    delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
-  }else if(deltaop=='ratio'){
-    #Downscale by percentage delta (never negative, but occasionally NaN)
-    delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
-    #Loud warning message for divide-by-0 case
-    if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
-      message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
-                    "is either NaN or Inf and cannot be processed normally.",
-                    "Returning delta of 1 for the calculation."))
-      #Add a value flagging operation at this point
       delta <- 1
     }
+  }else{
+    if(deltaop=='add'){
+      #Downscale by difference delta
+      delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
+    }else if(deltaop=='ratio'){
+      #Downscale by percentage delta (never negative, but occasionally NaN)
+      delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
+      #Loud warning message for divide-by-0 case
+      if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
+        message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
+                      "is either NaN or Inf and cannot be processed normally.",
+                      "Returning delta of 1 for the calculation."))
+        #Add a value flagging operation at this point
+        delta <- 1
+        delta.status <- 1
+      }
+    }
   }
-  return(delta)
+  return(list(delta=delta, status=delta.status))
 }
 
 delta.downscale <- function(delta, delta.targ, deltaop, status){
