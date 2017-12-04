@@ -197,47 +197,60 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
   #'Function for switching from one tail adjustment to another
-  #'Currently accepts the arguments 'GfGh' and 'OhGh'  # 'OhGh' NO LONGER USED
-  trigger.fxn = switch(args$tail,
-                       lower='min',
-                       upper='max')
-  select.cond = switch(args$tail,
-                       lower = '>=',
-                       upper = '<=')
-  adjust.cond = switch(args$tail,
-                       lower='<',
-                       upper='>')
+  #   trigger.fxn = switch(args$tail,
+  #                        lower='min',
+  #                        upper='max')
+  #   select.cond = switch(args$tail,
+  #                        lower = '>=',
+  #                        upper = '<=')
+  #   adjust.cond = switch(args$tail,
+  #                        lower='<',
+  #                        upper='>')
+  #   delta.by = switch(args$tail,
+  #                     lower=(1),
+  #                     upper=(-1))
+
   delta_sample = args$delta_sample
-  delta.by = switch(args$tail,
-                    lower=(1),
-                    upper=(-1))
+
+  # Would this be more straightforward than switches? -D1A 2017-12-04
+  if (args$tail == "lower") {
+    trigger.fxn <- 'min'
+    select.cond <- '>='
+    adjust.cond <- '<'
+    delta.by <- 1
+  } else if (args$tail == "upper") {
+    trigger.fxn <- 'max'
+    select.cond <- '<='
+    adjust.cond <- '>'
+    delta.by <- -1
+  }
 
 
-  # CHECKS FOR TYPE OF TAIL SCHEME -- SEEMS LIKE THIS IS NOT NECESSARY SINCE THIS
-  # FUNCTION ONLY PERTAINS TO THE SIMPLE TYPE -- SHOULD NEVER GET HERE OTHERWISE
-  #   if(args$triggertype=='GfGh'){
   mf.rank = rank(MF, ties='first')
   MF  = sort(MF)
   DS = sort(DS)
   #mf.idx = tail(which(MF <= max(MH)), 1)
 
-  # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED?
-  mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
-  #     trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)),
-  #                                              do.call(trigger.fxn, list(MH))))
+  # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED? ???
+  #   mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+  # D1A 2017-12-04: review of implementation, this needs to be "inside" the MF distribution
+  mf.points <- MF <= max(MH, na.rm=TRUE) & MF >= min(MH, na.rm=TRUE)
 
-
+  # Do Mh and Mf overlap at all?
   mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
-  #print(trigger.cond)
+
   # CHECKS IF CONDITIONS ARE MET FOR ADJUSTMENT
   if(any(mf.points==TRUE, na.rm=T)){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
+
+    # get the index of the last good point in MF
     mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-    #Check on behavior when Max(MH) == max(MF)
-    #do.call(trigger.fxn, list(MH))
+    # get the MF value of the last googd point
     mf.tmp = MF[mf.idx]
-    ##get delta
+
+    # which method is used?
     adjmethod <- args$adjmethod
+
     if(mf.overlap){
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
@@ -252,44 +265,32 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
       if (adjmethod == 'add') {
+        #### It's THIS easy for additive!  The rest is for ratio!
         offset <- mean(DS[delta.idx] - MF[delta.idx])
-      } else if (args$adjmethod == 'mult'){ # adjmethod is "mult"
+        ####
+
+      } else if (args$adjmethod == 'mult'){
+        ## adjmethod is "mult"
+        ## We will create ratio adjustment. But first!
         ## Check for division by zero or very small number, replace with "largest seen" ratio
-        opp.tail.cut = switch(args$tail,
-                              upper=args$low_cutoff,
-                              lower=args$high_cutoff)
-        opp.trigger.fxn = switch(args$tail,
-                                 upper='min',
-                                 lower='max')
-        opp.cond = switch(args$tail,
-                          upper = '<=',
-                          lower = '>=')
-        if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && (!is.na(opp.tail.cut$low_cutoff) & !is.na(opp.tail.cut$high_cutoff))) {
-          opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
-          if (args$tail=='upper'){
-            opp.idx <- opp.indices[length(opp.indices)] + 1
-          }else if (args$tail=='lower'){
-            opp.idx <- opp.indices[1] - 1
-          }
-        } else {
-          if (args$tail=='upper'){
-            opp.idx <- 1
-          }else if (args$tail=='lower'){
-            opp.idx <- length(DS)
-          }
+
+        # get the indices of the points "inside the tails"
+        if (args$tail=='upper') {
+          inside.tail <- seq(min(delta.idx), min(mf.points))
+        } else if (args$tail=='lower') {
+          inside.tail <- seq(max(delta.idx),  max(mf.points))
         }
-        inside.start <- ds.idx + delta.by*delta_sample
-        inside.tails <- seq(inside.start, opp.idx)
-        #print(delta.idx)
-        #print(inside.tails)
+
         #CEW added 12-12-16; needed to remove negative/0 subscripts
-        if (any(inside.tails < 1)){
-          inside.tails <- inside.tails[inside.tails > 0]
-          if (length(inside.tails) == 0){
+        if (any(inside.tail < 1)){
+          inside.tail <- inside.tail[inside.tail > 0]
+          if (length(inside.tail) == 0){
             stop("Error in tail_cutoff: At least one inside index should be greater than 0!")
           }
         }
-        mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
+        # FIND LARGEST RATIO INSIDE TAILS
+        mult.ifzero <- max(DS[inside.tail]/MF[inside.tail], na.rm=TRUE)
+        # CALCULATE ADJUSTMENT RATIO
         mult.vec <- DS[delta.idx]/MF[delta.idx]
         #CEW added 12-12-16; mult.vec can, in fact, be NA sometimes
         #       print(mult.ifzero)

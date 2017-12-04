@@ -379,13 +379,13 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   Mf.time.cal <- MF$metadata[[1]]$dim$time$calendar    # : chr "noleap"
   Mf.time.cal[tolower(Mf.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
   Mf.time.vals <- MF$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Mf.all.yrz <- as.factor(format(as.PCICt(Mf.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
+  env$Mf.all.yrz <- as.factor(format(as.PCICt(Mf.time.vals*60*60*24, origin=Mf.time.origin, cal=Mf.time.cal), "%Y"))
   env$mf.yr.length <- sum(Mf.all.yrz==levels(Mf.all.yrz)[2])
 
   # Find the number of years in each data set
-  env$num.years.Oh <- length(levels(env$Oh.all.yrz))
-  env$num.years.Mh <- length(levels(env$Mh.all.yrz))
-  env$num.years.Mf <- length(levels(env$Mf.all.yrz))
+  #   env$num.years.Oh <- length(levels(env$Oh.all.yrz))
+  #   env$num.years.Mh <- length(levels(env$Mh.all.yrz))
+  #   env$num.years.Mf <- length(levels(env$Mf.all.yrz))
 
   return(env)
 }
@@ -410,70 +410,60 @@ callKDDM <- function(Oh, Mh, Mf, args){
       # Prepare Downscaled output array of NAs the same dimension as Mf
       DSout <- DSout + NA
       if (tmasks$apply_tmasks) {
-        oh.mask <- tmasks$OH$masks[[w]]
-        mh.mask <- tmasks$MH$masks[[w]]
-        mf.mask <- tmasks$MF$masks[[w]]
+        oh.mask <- !is.na(tmasks$OH$masks[[w]])
+        mh.mask <- !is.na(tmasks$MH$masks[[w]])
+        mf.mask <- !is.na(tmasks$MF$masks[[w]])
       } else {
-        oh.mask <- rep(1,length(Oh))
-        mh.mask <- rep(1,length(Mh))
-        mf.mask <- rep(1,length(Mf))
+        oh.mask <- rep(TRUE, length(Oh))
+        mh.mask <- rep(TRUE, length(Mh))
+        mf.mask <- rep(TRUE, length(Mf))
       }
       # Subset to remove the masked NAs
-      subset.OH <- as.vector(Oh)[!is.na(oh.mask)]
-      subset.MH <- as.vector(Mh)[!is.na(mh.mask)]
-      subset.MF <- as.vector(Mf)[!is.na(mf.mask)]
+      subset.OH <- as.vector(Oh)[oh.mask]
+      subset.MH <- as.vector(Mh)[mh.mask]
+      subset.MF <- as.vector(Mf)[mf.mask]
 
       pad <- 0
 
       if (var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
-        Oh.yrz <- Oh.all.yrz[!is.na(oh.mask)]
-        Mh.yrz <- Mh.all.yrz[!is.na(mh.mask)]
-        Mf.yrz <- Mf.all.yrz[!is.na(mf.mask)]
+        Oh.yrz <- Oh.all.yrz[oh.mask]
+        Mh.yrz <- Mh.all.yrz[mh.mask]
+        Mf.yrz <- Mf.all.yrz[mf.mask]
         # Find the time window width
-        window.width <- sum(!is.na(mf.mask[1:mf.yr.length]))
+        window.width <- sum(mf.mask[1:mf.yr.length])
         # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
         half.window <- ceiling(window.width/2)
         # Initialize a padding variable to shift December data across the boundary if necessary.
 
         # If the first or last NAs are the first or last array entry, then mask does not wrap.
-        if ( (pad1 <- min(which(is.na(mf.mask))) - 1) == 0 |
-               (pad2 <- length(mf.mask) - max(which(is.na(mf.mask)))) == 0 |
+        if ( (pad1 <- min(which(!mf.mask)) - 1) == 0 |
+               (pad2 <- length(mf.mask) - max(which(!mf.mask))) == 0 |
                window.width == mf.yr.length) {
           # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of window.width length
           folded.OH <- tapply(subset.OH, Oh.yrz, list)
-          folded.MH <- tapply(subset.OH, Mh.yrz, list)
+          folded.MH <- tapply(subset.MH, Mh.yrz, list)
           folded.MF <- tapply(subset.MF, Mf.yrz, list)
         } else {
           # otherwise, the smaller side should be padded
           pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
-message(paste("Adjusting for 31DEC/1JAN overlap.",ifelse(padside==1,"Left","Right"), "side padded with",pad,"Inf's"))
+          #           message(paste("Adjusting for 31DEC/1JAN overlap.",
+          #                         ifelse(padside==2,"Left","Right"),
+          #                         "side padded with",pad,"NAs"))
+          NApads <- as.factor(rep(NA,pad))
           # If window is beginning of year...
-          if (padside == 2) {
-            Oh.yrz <- c(rep(NA,pad), Oh.yrz[-c((length(Oh.yrz)-pad+1):length(Oh.yrz))])
-            Mh.yrz <- c(rep(NA,pad), Mh.yrz[-c((length(Mh.yrz)-pad+1):length(Mh.yrz))])
-            Mf.yrz <- c(rep(NA,pad), Mf.yrz[-c((length(Mf.yrz)-pad+1):length(Mf.yrz))])
-
-            folded.OH <- tapply(subset.OH, Oh.yrz, list)
-            folded.MH <- tapply(subset.OH, Mh.yrz, list)
-            folded.MF <- tapply(subset.MF, Mf.yrz, list)
-
-#             folded.OH[[1]] <- folded.OH[[1]][!is.infinite(folded.OH[[1]])]
-#             folded.MH[[1]] <- folded.MH[[1]][!is.infinite(folded.MH[[1]])]
-#             folded.MF[[1]] <- folded.MF[[1]][!is.infinite(folded.MF[[1]])]
+          if (padside == 1) {
+            Oh.yrz <- unlist(list(NApads, Oh.yrz[-c((length(Oh.yrz)-pad+1):length(Oh.yrz))]))
+            Mh.yrz <- unlist(list(NApads, Mh.yrz[-c((length(Mh.yrz)-pad+1):length(Mh.yrz))]))
+            Mf.yrz <- unlist(list(NApads, Mf.yrz[-c((length(Mf.yrz)-pad+1):length(Mf.yrz))]))
           } else {
             # otherwise window is end of year
-            Oh.yrz <- c(Oh.yrz[-c(1:pad)], rep(NA,pad))
-            Mh.yrz <- c(Mh.yrz[-c(1:pad)], rep(NA,pad))
-            Mf.yrz <- c(Mf.yrz[-c(1:pad)], rep(NA,pad))
-
-            folded.OH <- tapply(subset.OH, Oh.yrz, list)
-            folded.MH <- tapply(subset.OH, Mh.yrz, list)
-            folded.MF <- tapply(subset.MF, Mf.yrz, list)
-
-#             folded.OH[[num.years.Oh]] <- folded.OH[[num.years.Oh]][!is.infinite(folded.OH[[num.years.Oh]])]
-#             folded.MH[[num.years.Mh]] <- folded.MH[[num.years.Mh]][!is.infinite(folded.MH[[num.years.Mh]])]
-#             folded.MF[[num.years.Mf]] <- folded.MF[[num.years.Mf]][!is.infinite(folded.MF[[num.years.Mf]])]
+            Oh.yrz <- unlist(list(Oh.yrz[-c(1:pad)], NApads))
+            Mh.yrz <- unlist(list(Mh.yrz[-c(1:pad)], NApads))
+            Mf.yrz <- unlist(list(Mf.yrz[-c(1:pad)], NApads))
           }
+          folded.OH <- tapply(subset.OH, Oh.yrz, list)
+          folded.MH <- tapply(subset.MH, Mh.yrz, list)
+          folded.MF <- tapply(subset.MF, Mf.yrz, list)
         }
       } else {
         # var is precip and do not fold
@@ -482,11 +472,11 @@ message(paste("Adjusting for 31DEC/1JAN overlap.",ifelse(padside==1,"Left","Righ
         folded.MF <- list(subset.MF)
       }
       # Bias Correct using the climod KDDM routine, return the unlisted array of future values
-
       # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
-      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=ifelse(args$norm=="none","identity",args$norm))$fut)
+      which.norm <- ifelse(args$norm=="none", "identity", args$norm)
+      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm)$fut)
       # If pad was increased to shift data, shift it back
-      if(pad > 0) {
+      if(pad != 0) {
         if ( w < half.window ) {
           kddm.bc.out <- c(kddm.bc.out, rep(NA,pad))
         } else {
@@ -494,11 +484,16 @@ message(paste("Adjusting for 31DEC/1JAN overlap.",ifelse(padside==1,"Left","Righ
         }
       }
       # Write the bias corrected results into the DSout array in the unmasked indices and return.
-      DSout[!is.na(mf.mask)] <- kddm.bc.out
+      DSout[mf.mask] <- kddm.bc.out
     } else {
       print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
                    ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
                    " uniform. Returning Mf."))
+    }
+    if (w==16) {
+            message(paste("norm used is", which.norm))
+#       message(write.csv(DSout))
+      stop()
     }
     return(DSout)
 }
