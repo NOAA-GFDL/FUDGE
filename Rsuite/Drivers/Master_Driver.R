@@ -181,7 +181,7 @@ QCAdjustArguments(pre_ds, post_ds,
                   is.multivar=(length(predictor.vars) > 1),
                   is.multi.ens=(length(fut.pred.rip.list) > 1),
                   target.in.predictors = (target.var%in%predictor.vars),
-                  predictor.vars, target.var)
+                  predictor.vars, target.var, ds.method)
 
 #### Then, read in spatial and temporal masks. Those will be used
 #### not only for the masks, but as an immediate check upon the dimensions

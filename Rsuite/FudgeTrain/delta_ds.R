@@ -26,11 +26,11 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     #rather than randomly sampling iff too short.
     
     #Use this rather than unlist - unlist removes some dimension data
-    OH = OH[[1]]
-    MH = MH[[1]]
-    MF = MF[[1]]
+#     OH = OH[[1]]
+#     MH = MH[[1]]
+#     MF = MF[[1]]
     status=0
-    out.data <- array(NA, dim=dim(MF))
+    out.data <- array(NA, dim=dim(MF[[1]]))
     nrips = dim(out.data)[4]
     #Are we returning a mask of those points where delta beahved as expected?
     if (train_qcmask){
@@ -64,19 +64,32 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     #Nevermind the offset. KD suggested we pass this thingy in from the XML.
     pr_start <- 1
     pr_offset <- 7
-    oh_longer <- length(MF[,,,1,,]) <= length(OH)
+    oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH)
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
-      MF.data <- MF[,,,n,, ,collapse_degen=F]
-      missval.data <- remove.FUDGE.missvals(OH, MH, MF.data, 
+      print(dim(MF))
+      MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
+#       slice.dim <- dim(MF)
+#       slice.dim[4] <- 1
+#       dim(MF.data) <- slice.dim
+#       print(length(MF.data))
+#       print("dims of data before missvals:")
+#       print(dim(OH))
+#       print(dim(MH))
+#       print(dim(MF.data))
+      missval.data <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                             missval.args$minsamplesize, 
                                             missval.args, 
                                             missval.method='distributional')
-      OH.loop <- missval.data$OH
-      MH.loop <- missval.data$MH
-      MF.loop <- missval.data$MF
-      #With delta, DS is always effectively possible - all missing in one 
+      OH.loop <- missval.data$OH[[1]]
+      MH.loop <- missval.data$MH[[1]]
+      MF.loop <- missval.data$MF[[1]]
+# print(str(OH.loop))
+# print(str(MH.loop))
+# print(str(MF.loop))
+# stop('examine this out')
+#With delta, DS is always effectively possible - all missing in one 
       #dataset does not 
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
@@ -85,16 +98,16 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year=pr_start + (n-1) * pr_offset)
         OH.idx <- idx$index
         pr_start <- idx$end
-        delta <- delta.train(MH, MF.data, deltatype, deltaop, status) #ignore0.Delta
-        ds.out <- delta.downscale(delta$delta, OH[OH.idx], deltaop, status)
+        delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #ignore0.Delta
+        ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
       }else{
         #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
         #where n=length(MF.data)/length(OH)
-        out.len <- length(MF.data)
-        in.len <- length(OH)
+        out.len <- length(MF.loop)
+        in.len <- length(OH.loop)
         OH.idx <- c()
         ds.out <- c()
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
@@ -105,9 +118,9 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         ###its arguably a closer match to the behavior above, but it's still a change
         ###from the existing behavior.
         start <- idx$end
-        loop.delta <- delta.train(MH[OH.idx], MF.data, deltatype, deltaop, status)
+        loop.delta <- delta.train(MH.loop[OH.idx], MF.loop, deltatype, deltaop, status)
         #hist.idx
-        ds.out <- delta.downscale(loop.delta$delta, OH[OH.idx], deltaop, status)
+        ds.out <- delta.downscale(loop.delta$delta, OH.loop[OH.idx], deltaop, status)
       }
       tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
                              tmasks$fut.leapmask, 
@@ -119,7 +132,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
       }
       #For both cases, final case is the same: tmp.out indexed back in
       out.data[,,,n,,] <- tmp.out
-      if (train_qcmask & missval.out$mv.retry){
+      if (train_qcmask & missval.data$mv.retry){
         #the below used to store the status return; for now, to keep 
         #consistency with the other, more commonly-used training mask
         #methods, we're replacing that with NA

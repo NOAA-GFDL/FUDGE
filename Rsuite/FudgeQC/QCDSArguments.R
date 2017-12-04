@@ -15,10 +15,12 @@ QCDSArguments <- function(k, ds.method,...){
 QCAdjustArguments <- function(pre_ds, post_ds,
                               is.multivar, is.multi.ens,
                               target.in.predictors,
-                              predictor.vars, target.vars){
+                              predictor.vars, target.vars, ds.method){
   multivar.possible  <- c('PR', 'flag.neg', 'transform')
   multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg', 'BCQM.tail.adj', 'transform', 'simpletailadj', 'cdft_simpletailadj', 'cdft_limtailadj')
   target.req.in.pred <- c('PR', 'SBiasCorr', 'bcsd.correct', 'BCQM.tail.adj','simpletailadj', 'cdft_simpletailadj', 'cdft_limtailadj')
+  #Downscaling method checks
+  simpletailadj.possible <- c("BCQM", 'PARM')
   #Obtain all adjustments that will be performed
   pre.ds.list <- lapply(pre_ds, '[[', 'type')
   post.ds.list <- lapply(post_ds, '[[', 'type')
@@ -54,6 +56,12 @@ QCAdjustArguments <- function(pre_ds, post_ds,
         stop(paste("Error in QCAdjustArguments: one of the vars",
                    paste(t.list$vars, collapse=","), "was not present in the",
                    "predictor or target vars!"))
+      }
+    }
+    if (adj == 'simpletailadj'){
+      if (!(ds.method %in% simpletailadj.possible)){
+        stop(paste("Error in QCAdjustArguments: simpletailadj is not certified for", 
+                   "use with",ds.method,"!"))
       }
     }
     }
