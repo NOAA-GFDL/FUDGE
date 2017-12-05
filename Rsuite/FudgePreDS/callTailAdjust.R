@@ -213,6 +213,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   delta_sample = args$delta_sample
 
   # Would this be more straightforward than switches? -D1A 2017-12-04
+  print(args$tail)
   if (args$tail == "lower") {
     trigger.fxn <- 'min'
     select.cond <- '>='
@@ -247,16 +248,15 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   # CHECKS IF CONDITIONS ARE MET FOR ADJUSTMENT
   if(points.to.be.adjusted){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
-
-    # get the index of the last good point in MF
-    mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-    # get the MF value of the last googd point
-    mf.tmp = MF[mf.idx]
-
     # which method is used?
     adjmethod <- args$adjmethod
 
     if(mf.overlap){
+      # get the index of the last good point in MF
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      # get the MF value of the last googd point
+      mf.tmp = MF[mf.idx]
+      
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
@@ -330,6 +330,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # THE DISTRIUBTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
       # WHERE THE VARIANCE IS ESPECIALLY SMALL
     } else {
+      mf.tmp <- switch(args$tail, upper=MF[1], lower=MF[length(MF)])
       if (args$adjmethod == 'add') {
         print("Selecting mean(OH) - mean(MH)")
         offset = mean(OH) - mean(MH)
@@ -339,7 +340,8 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       #print(mf.tmp)
       #print(adjust.cond)
-      mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
+      #mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
+      mf.cond <- rep(1, length(MF))
       mf.cond <- mf.cond * 4
     }
     #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
