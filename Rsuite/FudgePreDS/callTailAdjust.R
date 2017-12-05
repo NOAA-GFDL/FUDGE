@@ -232,15 +232,20 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   #mf.idx = tail(which(MF <= max(MH)), 1)
 
   # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED? ???
-  #   mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+#     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
   # D1A 2017-12-04: review of implementation, this needs to be "inside" the MF distribution
-  mf.points <- MF <= max(MH, na.rm=TRUE) & MF >= min(MH, na.rm=TRUE)
+	le.upper <- MF <= max(MH, na.rm=TRUE)
+	ge.lower <- MF >= min(MH, na.rm=TRUE)
+  mf.points <- le.upper & ge.lower
+
+# are there...?
+	points.to.be.adjusted <- switch(args$tail, lower=!all(ge.lower), upper=!all(le.upper))
 
   # Do Mh and Mf overlap at all?
   mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
 
   # CHECKS IF CONDITIONS ARE MET FOR ADJUSTMENT
-  if(any(mf.points==TRUE, na.rm=T)){
+  if(points.to.be.adjusted){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
 
     # get the index of the last good point in MF
