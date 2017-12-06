@@ -196,21 +196,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
 # THIS IS THE "SIMPLE TAIL SCHEME" (I.E. FOR BCQM/PARM)
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
-  #'Function for switching from one tail adjustment to another
-  #   trigger.fxn = switch(args$tail,
-  #                        lower='min',
-  #                        upper='max')
-  #   select.cond = switch(args$tail,
-  #                        lower = '>=',
-  #                        upper = '<=')
-  #   adjust.cond = switch(args$tail,
-  #                        lower='<',
-  #                        upper='>')
-  #   delta.by = switch(args$tail,
-  #                     lower=(1),
-  #                     upper=(-1))
-
-  delta_sample = args$delta_sample
 
   # Would this be more straightforward than switches? -D1A 2017-12-04
   if (args$tail == "lower") {
@@ -225,21 +210,20 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     delta.by <- -1
   }
 
-
   mf.rank = rank(MF, ties='first')
-  MF  = sort(MF)
+  MF = sort(MF)
   DS = sort(DS)
   #mf.idx = tail(which(MF <= max(MH)), 1)
 
   # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED? ???
 #     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
   # D1A 2017-12-04: review of implementation, this needs to be "inside" the MF distribution
-	le.upper <- MF <= max(MH, na.rm=TRUE)
-	ge.lower <- MF >= min(MH, na.rm=TRUE)
-  mf.points <- le.upper & ge.lower
+	le.maxMH <- MF <= max(MH, na.rm=TRUE)
+	ge.minMH <- MF >= min(MH, na.rm=TRUE)
+  mf.points <- le.maxMH & ge.minMH
 
 # are there...?
-	points.to.be.adjusted <- switch(args$tail, lower=!all(ge.lower), upper=!all(le.upper))
+	points.to.be.adjusted <- switch(args$tail, lower=!all(ge.minMH), upper=!all(le.maxMH))
 
   # Do Mh and Mf overlap at all?
   mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
@@ -248,16 +232,13 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   if(points.to.be.adjusted){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
 
-    # get the index of the last good point in MF
-    mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-    # get the MF value of the last googd point
-    mf.tmp = MF[mf.idx]
-
-    # which method is used?
-    adjmethod <- args$adjmethod
-
     if(mf.overlap){
-      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+			# get the index of the last good point in MF
+			mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+			# get the MF value of the last googd point
+			mf.tmp = MF[mf.idx]
+
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=args$delta_sample)
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
@@ -269,7 +250,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
       #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
-      if (adjmethod == 'add') {
+      if (args$adjmethod == 'add') {
         #### It's THIS easy for additive!  The rest is for ratio!
         offset <- mean(DS[delta.idx] - MF[delta.idx])
         ####
@@ -321,13 +302,12 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         stop("something is wrong with adjmethod supplied")
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      #print(paste("Delta:", delta))
-      ##get selection
+      ## get selection
       mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
 
       # UNABLE TO PERFORM TAIL ADJUSTMENT -- INSTEAD USING SIMPLE BIAS CORRECTION
-      # THIS ARISES WHEN THE DIFFERENCE IN MEANS BETWEENGCMh & GCMf SI SO LARGE THAT
-      # THE DISTRIUBTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
+      # THIS ARISES WHEN THE DIFFERENCE IN MEANS BETWEENGCMh & GCMf IS SO LARGE THAT
+      # THE DISTRIBUTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
       # WHERE THE VARIANCE IS ESPECIALLY SMALL
     } else {
       if (args$adjmethod == 'add') {
@@ -337,12 +317,8 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         print("Selecting mean(OH)/mean(MH)")
         offset = mean(OH)/mean(MH)
       }
-      #print(mf.tmp)
-      #print(adjust.cond)
-      mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
-      mf.cond <- mf.cond * 4
+      mf.cond <- rep(4, length(MF))
     }
-    #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
     return(list(cond=mf.cond, offset=offset))
   }else{
     print("No adjust")
