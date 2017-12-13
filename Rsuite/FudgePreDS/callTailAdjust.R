@@ -196,7 +196,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
 # THIS IS THE "SIMPLE TAIL SCHEME" (I.E. FOR BCQM/PARM)
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
-
   # Would this be more straightforward than switches? -D1A 2017-12-04
   if (args$tail == "lower") {
     trigger.fxn <- 'min'
@@ -216,14 +215,14 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   #mf.idx = tail(which(MF <= max(MH)), 1)
 
   # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED? ???
-#     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+  #     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
   # D1A 2017-12-04: review of implementation, this needs to be "inside" the MF distribution
-	le.maxMH <- MF <= max(MH, na.rm=TRUE)
-	ge.minMH <- MF >= min(MH, na.rm=TRUE)
+  le.maxMH <- MF <= max(MH, na.rm=TRUE)
+  ge.minMH <- MF >= min(MH, na.rm=TRUE)
   mf.points <- le.maxMH & ge.minMH
 
-# are there...?
-	points.to.be.adjusted <- switch(args$tail, lower=!all(ge.minMH), upper=!all(le.maxMH))
+  # are there...?
+  points.to.be.adjusted <- switch(args$tail, lower=!all(ge.minMH), upper=!all(le.maxMH))
 
   # Do Mh and Mf overlap at all?
   mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
@@ -233,10 +232,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
 
     if(mf.overlap){
-			# get the index of the last good point in MF
-			mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-			# get the MF value of the last googd point
-			mf.tmp = MF[mf.idx]
+      # get the index of the last good point in MF
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      # get the MF value of the last googd point
+      mf.tmp = MF[mf.idx]
 
       delta.idx = seq(from=mf.idx, by=delta.by, length.out=args$delta_sample)
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
@@ -262,9 +261,9 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
 
         # get the indices of the points "inside the tails"
         if (args$tail=='upper') {
-          inside.tail <- seq(min(delta.idx), min(mf.points))
+          inside.tail <- seq(min(which(mf.points)),(min(delta.idx)-1))
         } else if (args$tail=='lower') {
-          inside.tail <- seq(max(delta.idx),  max(mf.points))
+          inside.tail <- seq((max(delta.idx)+1), max(which(mf.points)))
         }
 
         #CEW added 12-12-16; needed to remove negative/0 subscripts
