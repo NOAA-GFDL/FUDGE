@@ -490,13 +490,9 @@ callKDDM <- function(Oh, Mh, Mf, args){
                    ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
                    " uniform. Returning Mf."))
     }
-    if (w==16) {
-            message(paste("norm used is", which.norm))
-#       message(write.csv(DSout))
-      stop()
-    }
     return(DSout)
 }
+
 
 
 # NOTE: GFDL modfified KDDM biascorrect() function includes "na.rm=TRUE" fix for missing ESTCP December bug.
