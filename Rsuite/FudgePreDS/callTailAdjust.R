@@ -347,8 +347,8 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         }else{
           cond.val <- 5
         }
+        cond <- rep(1, length(MF))
       }
-      cond <- rep(4, length(MF))
     }
     #return(list(cond=mf.cond, offset=offset))
   }else{
