@@ -95,6 +95,7 @@ get.fudge.timemask.list <- function(){
       tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
       tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
     }else{
+      print("getting the leapday masks")
       tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
                                                           target.file.end.year_1), 
                                                    OH$metadata[[1]]$dim$time$calendar, 

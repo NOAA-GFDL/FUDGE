@@ -4,8 +4,9 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T,
   #since we currently copy the ENTIRE FILE PATH.
   #time.string: 19790101-20081231
   #valendar: julian
-  noleap.strings <- c("noleap", "NOLEAP", "365", "365-day", 
-                      "360", "360-day")
+  noleap.strings <- c("noleap", "NOLEAP", "365", "365-day", "365_day",
+                      "360", "360-day", "360_day")
+  #print(calendar)
   if ( !(calendar%in%noleap.strings) ){
 #     base.leap.path <- "/archive/esd/PROJECTS/DOWNSCALING/MASKS/timemasks/"
 #     filename <- paste0('maskdays_missingleapdays_', time.string, ".nc")

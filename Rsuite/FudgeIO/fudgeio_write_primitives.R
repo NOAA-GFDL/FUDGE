@@ -44,28 +44,39 @@ WriteNC <-  function(filename,out.data,var.names,
   bnds <- ncdim_def(name="bnds", longname = 'bounds', units='', vals=seq(1:2), create_dimvar=FALSE)
   
   #the metadata vars associated with the dimensions
-  for (v in 1:length(var.data)){
-    var <- names(var.data)[v]
-    if(verbose) { message(paste("defining var", var)) }
-    dimlist <- list()
-    dimnames <- var.data[[var]]$dimnames
-    print(dimnames)
-    if( !dimnames[1] == ""){
-      for (el in dimnames){
-        #If anything but bnds, get corresponding dim from the dim list;
-        #otherwise, use newly-constructed bnds var
-        dimlist[[el]] <- switch(as.character(el), 
-                                "bnds"=bnds, 
-                                dim.list[[as.character(el)]])
-      }
-    }
-    var.dat[[var]] <- ncvar_def(var, #var.data[[v]], #Don't forget to add the data in somewhere 
-                                units=var.data[[var]]$units, #Add check for adding units back in if not present
-                                dim=dimlist, #It should be fine for this to be NULL.
-                                longname = var.data[[var]]$longname, 
-                                prec = var.data[[var]]$prec #This one gave me hives last time.
-    )
+  #the metadata vars associated with the dimensions
+  if(verbose){message("writing metadata variables")}
+  if (length(var.data) > 0){
+    metavars.present <- T
+  }else{
+    metavars.present <- F
   }
+  
+  if (metavars.present){
+    for (v in 1:length(var.data)){
+      var <- names(var.data)[v]
+      if(verbose) { message(paste("defining var", var)) }
+      dimlist <- list()
+      dimnames <- var.data[[var]]$dimnames
+      print(dimnames)
+      if( !dimnames[1] == ""){
+        for (el in dimnames){
+          #If anything but bnds, get corresponding dim from the dim list;
+          #otherwise, use newly-constructed bnds var
+          dimlist[[el]] <- switch(as.character(el), 
+                                  "bnds"=bnds, 
+                                  dim.list[[as.character(el)]])
+        }
+      }
+      var.dat[[var]] <- ncvar_def(var, #var.data[[v]], #Don't forget to add the data in somewhere 
+                                  units=var.data[[var]]$units, #Add check for adding units back in if not present
+                                  dim=dimlist, #It should be fine for this to be NULL.
+                                  longname = var.data[[var]]$longname, 
+                                  prec = var.data[[var]]$prec #This one gave me hives last time.
+      )
+    }
+  }
+  
   if(verbose) { message("creating nc objects") }
   #print(lapply(var.dat, 'summary'))
   nc.obj <- nc_create(filename, var.dat, verbose=FALSE)
@@ -77,19 +88,21 @@ WriteNC <-  function(filename,out.data,var.names,
               varid=var.dat[[loop.varname]], 
               vals=out.data[[loop.varname]], verbose=FALSE)
   }
-  for (v in 1:length(var.data)){
-    loop.var <- names(var.data)[[v]]
-    if(verbose) { message(paste("adding", loop.var, "and attributes")) }  
-    ###This is the code that's giving buggy responses as of 12-16
-    ncvar_put(nc.obj, var.dat[[loop.var]], var.data[[loop.var]]$vals, verbose=FALSE)
-    #Note: failure to include missval as one of the attributes that  doesn't get set 
-    #will result in giving all vars a missing value of 1e30. 
-    all.att.list <- attributes(var.data[[loop.var]])
-    all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "longname", "prec", "dim", "dimids", "missval", 'names'))]
-    if(length(all.att.list) > 0){
-      for (at in 1:length(all.att.list)){
-        #print(paste(loop.var, ":", names(all.att.list)[[at]], "=", all.att.list[[at]]))
-        ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])
+  if (metavars.present){
+    for (v in 1:length(var.data)){
+      loop.var <- names(var.data)[[v]]
+      if(verbose) { message(paste("adding", loop.var, "and attributes")) }  
+      ###This is the code that's giving buggy responses as of 12-16
+      ncvar_put(nc.obj, var.dat[[loop.var]], var.data[[loop.var]]$vals, verbose=FALSE)
+      #Note: failure to include missval as one of the attributes that  doesn't get set 
+      #will result in giving all vars a missing value of 1e30. 
+      all.att.list <- attributes(var.data[[loop.var]])
+      all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "longname", "prec", "dim", "dimids", "missval", 'names'))]
+      if(length(all.att.list) > 0){
+        for (at in 1:length(all.att.list)){
+          #print(paste(loop.var, ":", names(all.att.list)[[at]], "=", all.att.list[[at]]))
+          ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])
+        }
       }
     }
   }
@@ -115,9 +128,9 @@ WriteNC <-  function(filename,out.data,var.names,
       # do not have bnds vars present
       dim.axis <- switch(dim.name, 'time' = 'T', 'lat'='Y', 'lon'='X')
       bnds.name <- paste0(dim.name, "_bnds")
-#       print(bnds.name)
-#       print(names(var.data))
-#       print(bnds.name %in% names(var.data))
+      #       print(bnds.name)
+      #       print(names(var.data))
+      #       print(bnds.name %in% names(var.data))
       if (bnds.name %in% names(var.data)){
         set_att_fun <- function(dim.name, dim.axis, bnds.name, nc.obj){
           ncatt_put(nc.obj, dim.name, 'axis', dim.axis)
