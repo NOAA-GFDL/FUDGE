@@ -63,11 +63,11 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     }
     #Nevermind the offset. KD suggested we pass this thingy in from the XML.
     pr_start <- 1
-    #ens_offset <- 7
-  if (!('ens_offset' %in% names(args))){
-    stop(paste("Error in Delta: latest round of revisions requires ens_offset in xml!"))
+    #oh_offset <- 7
+  if (!('oh_offset' %in% names(args))){
+    stop(paste("Error in Delta: latest round of revisions requires oh_offset in xml!"))
   }else{
-    ens_offset <- args$ens_offset
+    oh_offset <- args$oh_offset
   }
     oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH)
     for (n in 1:nrips){
@@ -100,7 +100,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         #Speciciations for this were created in main driver script when delta ds is used
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=pr_start + (n-1) * ens_offset)
+                                 start_year=pr_start + (n-1) * oh_offset)
         OH.idx <- idx$index
         pr_start <- idx$end
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #ignore0.Delta
@@ -117,7 +117,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         ds.out <- c()
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=1 + (n-1) * ens_offset)
+                                 start_year=1 + (n-1) * oh_offset)
         OH.idx <- idx$index
         ###CHECK THIS LOOPING STRUCTURE WITH 3RD FLOOR. 
         ###its arguably a closer match to the behavior above, but it's still a change
