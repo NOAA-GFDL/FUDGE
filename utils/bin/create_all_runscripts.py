@@ -100,6 +100,8 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#OH directory currently described with /OneD/ appended
 	OH_dir = os.path.dirname(osp.abspath(OH_dir))
 	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
+	##Make sure that .nc is the last part of the string
+	oh_files = [el for el in oh_files if re.search(".nc$", el) is not None]
 	#multivar_target is a hack for getting around alternate  var specifications. 
 	#currently, it's only triggered by MBC; depending on what methods we add, 
 	#that may change.
@@ -114,7 +116,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			#Do a series of replaces on the predictor var dir
 			oh_dir = osp.join(oh_prefix, pred_var) + oh_suffix
 			#print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
-			oh_file = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
+			oh_files = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None] 
+			#Make sure that .nc is the last part of the string
+			oh_file = [el for el in oh_files if re.search(".nc$", el) is not None][0] #should only match ONE
 			oh_files.append(oh_file)
 			dmget_string = dmget_string + "dmget " + oh_file + " \n"		
 	#MH and MF files have an assumption that you can have multiple 
@@ -127,14 +131,18 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		mh_dir = osp.join(MH_dir, pred_var) + idirsuffix
 		print(idirsuffix)
 		print(mh_dir + " , " + mh_timerange)
-		mh_file = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None][0] #should only match ONE
+		mh_files = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None]
+		#Make sure that .nc is the last part of the string
+		mh_file = [el for el in mh_files if re.search(".nc$", el) is not None][0] #should only match ONE
 		mh_files.append(mh_file)
 		dmget_string = dmget_string + "dmget " + mh_file + " \n"
 	dmget_string = dmget_string + "# Get MF data" + "\n"
 	mf_files = []
 	for pred_var in predlist:
 		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
-		mf_file = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None][0]
+		mf_files = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None]
+		#Make sure that .nc is the last part of the string
+		mf_file = [el for el in mf_files if re.search(".nc$", el) is not None][0] #should only match ONE
 		mf_files.append(mf_file)
 		dmget_string = dmget_string + "dmget " + mf_file + " \n"
 	tmask_files = []
