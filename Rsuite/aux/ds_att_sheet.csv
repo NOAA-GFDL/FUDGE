@@ -5,7 +5,7 @@
 "CDFtmod","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","https://cran.r-project.org/web/packages/CDFt/index.html"
 "DeltaSD","OH, MH","MH,MF","MF",,"TRUE","FALSE","distributional","FALSE","delta","squish",,,"spatial,temporal","FALSE","FALSE",
 "BCQM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE",
-"KDDM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","https://github.com/sethmcg/climod"
+"KDDM","MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","temporal","temporal","spatial,temporal","FALSE","FALSE","https://github.com/sethmcg/climod"
 "EDQM","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","Li et.al. 2010"
 "CFQM","OH, MH","MH,MF","MF","OH","TRUE","TRUE","distributional","FALSE","qm","squish",,,"spatial,temporal","FALSE","FALSE",
 "PARM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","TRUE","qm","squish","spatial",,"temporal","FALSE","FALSE","Stoner et.al. 2007"
@@ -13,4 +13,4 @@
 "QDM","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
 "lmAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
 "lmstepAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
-"returnMF","MH, MF","OH, MH","OH","MF","FALSE",FALSE,"distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE","Returning unaltered MF dataset"
+"returnMF","MH, MF","OH, MH","OH","MF","FALSE","FALSE","distributional","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE","Returning unaltered MF dataset"

@@ -5,8 +5,8 @@
 # THIS DOES PRELIMINARY SETUP, LOOPS OVER RIPS & CALLS GENERAL TAIL SCHEME
 # FUNCTION (BELOW)
 
-callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_, 
-                           cutoffs=list(), tmasks=list(time_mask_overlap=F)){
+callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_character_,
+                           cutoffs=list(), tmasks=list(time_mask_overlap=F), missval.args=list()){
   #'Calls a BCSD-style adjustment on quantile-mapped code
   #'based off of the limits to the adjustment of the
   #'MH and MF datasets
@@ -47,11 +47,28 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   } else {
     adjmethod <- test$qc_args$adjmethod
   }
-  arg_list = list(delta_sample = delta_sample, 
-                  triggertype = triggertype, 
+  arg_list = list(delta_sample = delta_sample,
+                  triggertype = triggertype,
                   adjmethod = adjmethod)
   MH <- input$hist.pred[[targ.var]]
   OH <- input$hist.targ[[targ.var]]
+  #Check for OH and MH sample size
+  #note: right now, these are always univariate
+  if ("pr_opts" %in% names(missval.args)){
+#     print("pr_opts found")
+#     print(w)
+#     print(summary(tmasks$OH$masks))
+#     print(summary(tmasks$OH$masks[[1]]))
+#     print(summary(tmasks$MH$masks))
+    oh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$OH, mask=tmasks$OH$masks[[w]])
+    oh_ss <- sum(!is.na(oh_pr))
+    mh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$MH, mask=tmasks$MH$masks[[w]])
+    mh_ss <- sum(!is.na(mh_pr))    
+  }else{
+    #Assume you are temperature-like
+    oh_ss <- sum(!is.na(OH))
+    mh_ss <- sum(!is.na(MH))
+  }
   for(n in 1:nrips){
     MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
     DS.slice <- adjusted.output$ds.out[,,,n,,]
@@ -60,23 +77,26 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
       if(all(c('high_cutoff', 'low_cutoff') %in% names(cutoffs))){
         #cutoffs should be a list containing two named vectors:
         #high_cutoff and low_cutoff
-        arg_list = c(arg_list, list(high_cutoff = cutoffs$high_cutoff[n], 
+        arg_list = c(arg_list, list(high_cutoff = cutoffs$high_cutoff[n],
                                     low_cutoff  = cutoffs$low_cutoff[n]))
         if (triggertype == 'cdft'){
           #limited cdft takes new args
-          arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len, 
+          arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len,
                                        trigger = test$qc_args$trigger))
         }
       }else{
         stop(paste("Error in callTailAdjust: triggertype of cdft",
                    "specified, but high_cutoff attribute not set in cutoffs!"))
       }
+    }else{
+      #The simple tail adjust now takes the oh and mh sample size as args
+      arg_list <- c(arg_list, list(oh_ss = oh_ss, mh_ss = mh_ss))
     }
     #print(arg_list)
-    ds.correct <- tail.correct(model.hist = MH, 
-                               obs.hist = OH, 
-                               model.fut = MF.slice, 
-                               ds.fut = DS.slice, 
+    ds.correct <- tail.correct(model.hist = MH,
+                               obs.hist = OH,
+                               model.fut = MF.slice,
+                               ds.fut = DS.slice,
                                args = arg_list, tmasks=tmasks)
     if(test$qc.mask=='on'){
       ds.correct$mask[ds.correct$mask==0] <- NA
@@ -100,12 +120,15 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
   #Fast wrapper for the more complicated tail_cutoff function
   
   #Added 12-9-16
-  #If you are going to be using overlapping masks, 
+  #If you are going to be using overlapping masks,
   #you need to trim your samples for this method
-  if (tmasks$time_mask_overlap){
-    #print(summary(tmasks))
-    model.fut <- apply.any.mask(tmasks$trim$masks[[w]], model.fut, dim='time')
-  }
+#   if (tmasks$time_mask_overlap){
+#     #print(summary(tmasks))
+#     model.fut <- apply.any.mask(tmasks$trim$masks[[w]], model.fut, dim='time')
+#   }
+  #CEW removed 2017-12-6: as section5.R and the tail adjust currently call this
+  #function (no tmasks, default=list(timas_mask_overlap=F)), this NEVER
+  #gets invoked. Turning off to avoid confusion.
   
   # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,
@@ -117,6 +140,8 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
   cond.missvals <- !is.na(cond.data)
   ds.orig <- ds.fut
   ds.idx <- is.na(ds.orig)
+  #Okay - we need to distinguish between missvals from the masks and missvals
+  #due to wetdays present/absent
   model.hist <- remove.missvals(unlist(model.hist))
   obs.hist <- remove.missvals(unlist(obs.hist))
   model.fut <- remove.missvals(unlist(model.fut))
@@ -130,31 +155,17 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     tmp.mask=rep(0, length(ds.orig))
   } else {
     #Calculate high and low tails
-    
-    # CALL CDFT TAIL FUNCTION [EXTERNAL:  cdft_tail_cutoff.R]
-    #     print('args before triggertype')
-    #     print(args)
     if (args$triggertype == 'cdft'){
       #print('calling upper')
       hitail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
       #print('calling lower')
       lotail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     }else if (args$triggertype == 'cdft_orig'){
-      #print('calling upper')
       hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      #print('calling lower')
       lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     } else {
-      #print('calling upper')
       hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-#       hi.cond <- ds.idx
-#       hi.cond[hi.cond] <- hitail$cond
-#       hitail$cond <- hi.cond
-      #print('calling lower')
       lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
-#       lo.cond <- ds.idx
-#       lo.cond[lo.cond] <- lotail$cond
-#       lotail$cond <- lo.cond
     }
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
@@ -179,11 +190,11 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     }
     ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED?
-    tmp.mask <- (hitail$cond)*2 + lotail$cond
-    tmp.mask[tmp.mask > 4] = 4
+    #tmp.mask <- (hitail$cond)*2 + lotail$cond
+    #CEW commented out - we now distinguish cases up to 6
+    #tmp.mask[tmp.mask > 4] = 4
+    tmp.mask <- hitail$cond + lotail$cond
   }
-  # print(length(ds.orig))
-  # print(length(tmp.mask))
   return(list(ds = ds.orig, mask = (tmp.mask)))
 }
 
@@ -196,50 +207,52 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
 # THIS IS THE "SIMPLE TAIL SCHEME" (I.E. FOR BCQM/PARM)
 
 tail_cutoff <- function(MH, OH, MF, DS, args){
-  #'Function for switching from one tail adjustment to another
-  #'Currently accepts the arguments 'GfGh' and 'OhGh'  # 'OhGh' NO LONGER USED
-  trigger.fxn = switch(args$tail,
-                       lower='min',
-                       upper='max')
-  select.cond = switch(args$tail,
-                       lower = '>=',
-                       upper = '<=')
-  adjust.cond = switch(args$tail,
-                       lower='<',
-                       upper='>')
-  delta_sample = args$delta_sample
-  delta.by = switch(args$tail,
-                    lower=(1),
-                    upper=(-1))
-  
-  
-  # CHECKS FOR TYPE OF TAIL SCHEME -- SEEMS LIKE THIS IS NOT NECESSARY SINCE THIS
-  # FUNCTION ONLY PERTAINS TO THE SIMPLE TYPE -- SHOULD NEVER GET HERE OTHERWISE
-  #   if(args$triggertype=='GfGh'){
+#'Simple tail adjustment (for BCQM/PARM)
+  # Would this be more straightforward than switches? -D1A 2017-12-04
+  if (args$tail == "lower") {
+    trigger.fxn <- 'min'
+    select.cond <- '>='
+    adjust.cond <- '<'
+    delta.by <- 1
+  } else if (args$tail == "upper") {
+    trigger.fxn <- 'max'
+    select.cond <- '<='
+    adjust.cond <- '>'
+    delta.by <- -1
+  }
+
   mf.rank = rank(MF, ties='first')
-  MF  = sort(MF)
+  MF = sort(MF)
   DS = sort(DS)
-  #mf.idx = tail(which(MF <= max(MH)), 1)
-  
-  # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED?
-  mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
-  #     trigger.cond = do.call(adjust.cond, list(do.call(trigger.fxn, list(MF)),
-  #                                              do.call(trigger.fxn, list(MH))))
-  
-  
+
+
+  # CREATE LOGICAL VARIABLE FOR POINTS THAT NEED TO BE ADJUSTED? ???
+  #     mf.points = do.call(select.cond, list(MF, do.call(trigger.fxn, list(MH))))
+  # D1A 2017-12-04: review of implementation, this needs to be "inside" the MF distribution
+  le.maxMH <- MF <= max(MH, na.rm=TRUE)
+  ge.minMH <- MF >= min(MH, na.rm=TRUE)
+  mf.points <- le.maxMH & ge.minMH
+
+  # are there...?
+  points.to.be.adjusted <- switch(args$tail, lower=!all(ge.minMH), upper=!all(le.maxMH))
+  # Do Mh and Mf overlap at all?
   mf.overlap <- max(min(MF),min(MH)) <= min(max(MF),max(MH))
-  #print(trigger.cond)
+  
   # CHECKS IF CONDITIONS ARE MET FOR ADJUSTMENT
-  if(any(mf.points==TRUE, na.rm=T)){
+  if(any(points.to.be.adjusted)){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
-    mf.idx = do.call(trigger.fxn, list(which(mf.points)))
-    #Check on behavior when Max(MH) == max(MF)
-    #do.call(trigger.fxn, list(MH))
-    mf.tmp = MF[mf.idx]
-    ##get delta
+    # which method is used?
+    print(paste("adjusting the", args$tail, "tail"))
     adjmethod <- args$adjmethod
-    if(mf.overlap){
-      delta.idx = seq(from=mf.idx, by=delta.by, length.out=delta_sample)
+    
+    if(mf.overlap & any(mf.points)){
+    #D1A has below version. Check with him? 
+    #if(mf.overlap){
+      # get the index of the last good point in MF
+      mf.idx = do.call(trigger.fxn, list(which(mf.points)))
+      # get the MF value of the last googd point
+      mf.tmp = MF[mf.idx]
+      delta.idx = seq(from=mf.idx, by=delta.by, length.out=args$delta_sample)
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
@@ -251,49 +264,100 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
       #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
-      if (adjmethod == 'add') {
+      if (args$adjmethod == 'add') {
+        #### It's THIS easy for additive!  The rest is for ratio!
         offset <- mean(DS[delta.idx] - MF[delta.idx])
-      } else if (args$adjmethod == 'mult'){ # adjmethod is "mult"
+      } else if (args$adjmethod == 'mult'){
+        ## We will create ratio adjustment. But first!
         ## Check for division by zero or very small number, replace with "largest seen" ratio
-        mult.ifzero <- max(DS[-delta.idx]/MF[-delta.idx])
+        # get the indices of the points "inside the tails"
+        if (args$tail=='upper') {
+          inside.tail <- seq(min(which(mf.points)),(min(delta.idx)-1))
+        } else if (args$tail=='lower') {
+          inside.tail <- seq((max(delta.idx)+1), max(which(mf.points)))
+        }
+        #CEW added 12-12-16; needed to remove negative/0 subscripts
+        if (any(inside.tail < 1)){
+          inside.tail <- inside.tail[inside.tail > 0]
+          if (length(inside.tail) == 0){
+            stop("Error in tail_cutoff: At least one inside index should be greater than 0!")
+          }
+        }
+        # FIND LARGEST RATIO INSIDE TAILS
+        mult.ifzero <- max(DS[inside.tail]/MF[inside.tail], na.rm=TRUE)
+        # CALCULATE ADJUSTMENT RATIO
         mult.vec <- DS[delta.idx]/MF[delta.idx]
-#         if (any(mult.vec > mult.ifzero, na.rm=T)) {
-#           print("Some calculated multipliers were too large, replacing with max inside tails.")
-#           mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
-#         }
+        #CEW added 12-12-16; mult.vec can, in fact, be NA sometimes
+        if (length(mult.vec) == 0){
+          if (length(mult.ifzero) > 0){
+            mult.vec <- mult.ifzero
+          }else{
+            print('Some calculated multiples were NA; returning 1')
+            mult.vec <- 1
+            mult.ifzero <- 1
+          }
+        }
+        if (is.na(mult.vec)){
+          mult.vec <- 9999
+        }
+        if (any(mult.vec > mult.ifzero)) {
+          print("Some calculated multipliers were too large, replacing with max inside tails.")
+          mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
+        }
         offset <- mean(mult.vec)
       } else {
         stop("something is wrong with adjmethod supplied")
       }
-      ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      #print(paste("Delta:", delta))
-      ##get selection
-      mf.cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
-      
-      # UNABLE TO PERFORM TAIL ADJUSTMENT -- INSTEAD USING SIMPLE BIAS CORRECTION
-      # THIS ARISES WHEN THE DIFFERENCE IN MEANS BETWEENGCMh & GCMf SI SO LARGE THAT
-      # THE DISTRIUBTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
-      # WHERE THE VARIANCE IS ESPECIALLY SMALL
-    } else {
-      if (args$adjmethod == 'add') {
-        print("Selecting mean(OH) - mean(MH)")
-        offset = mean(OH) - mean(MH)
-      } else { # alternative correction in "mult" land
-        print("Selecting mean(OH)/mean(MH)")
-        offset = mean(OH)/mean(MH)
+      cond = do.call(adjust.cond, list(MF[mf.rank], mf.tmp))
+      if (args$tail =='upper'){
+        cond.val <- 2
+      }else{
+        cond.val <- 1
       }
-      #print(mf.tmp)
-      #print(adjust.cond)
-      mf.cond <- do.call(select.cond, list(MF[mf.rank], mf.tmp))
-      mf.cond <- mf.cond * 4
+    } else {
+      # UNABLE TO PERFORM TAIL ADJUSTMENT -- INSTEAD USING SIMPLE BIAS CORRECTION
+      # THIS ARISES WHEN THE DIFFERENCE IN MEANS BETWEENGCMh & GCMf IS SO LARGE THAT
+      # THE DISTRIBUTIONS DON'T OVERLAP -- OCCURS SOMETIMES OVER THE ATLANTIC
+      # WHERE THE VARIANCE IS ESPECIALLY SMALL
+      
+      #We are either in the non-overlapping case or the goalpost case, 
+      #(goalpost = all MF values are either < min(MH) or > max(MH))
+      #and in either case the adjustment will be the same
+      if (args$adjmethod == 'add') {
+        #offset = mean(OH) - mean(MH)
+        offset = offset = ( sum(OH) / args$oh_ss ) - ( sum(MH) / args$mh_ss ) 
+      } else { # alternative correction in "mult" land
+        #offset = mean(OH)/mean(MH)
+        offset = (sum(OH) / args$oh_ss ) / ( sum(MH) / args$mh_ss) 
+      }
+#       print(mean(OH)  - mean(MH))
+#       print((sum(OH) / args$oh_ss)  - (sum(MH) / args$mh_ss) )
+#       stop('examine this out')
+      if (mf.overlap){
+        print("Goalpost case")
+        cond = do.call(adjust.cond, list(MF[mf.rank], do.call(trigger.fxn, list(MH))))
+        cond.val <- 6
+      }else{
+        print("Non-overlapping case")
+        cond <- rep(1, length(MF))
+        #This ordering is the reverse of what is present from the tail adjust,
+        #but results in fewer changed values from the prior encoding
+        if (args$tail == 'upper'){
+          cond.val <- 4
+        }else{
+          cond.val <- 5
+        }
+        cond <- rep(1, length(MF))
+      }
     }
-    #DS[MF > mf.tmp] = MF[MF > mf.tmp] - delta
-    return(list(cond=mf.cond, offset=offset))
+    #return(list(cond=mf.cond, offset=offset))
   }else{
     print("No adjust")
     cond=rep(FALSE, length(MF))
     offset=0
-    return(list(cond=cond, offset=offset))
+    cond.val <- 0
+    #return(list(cond=cond, offset=offset))
   }
+return(list(cond = cond * cond.val, offset = offset))
 }
 

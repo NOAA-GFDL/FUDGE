@@ -187,7 +187,8 @@ loop.xy.data <- function(){
                                          MH.window, OH.window, MF.window,
                                          adjust.metadata,
                                          s5.instructions=post_ds_inloop, 
-                                         missval.args=missval.args)
+                                         missval.args=missval.args, 
+                                         prime_predictor=prime_predictor)
               #s3 functions only return data, not metadata
               #(there's only one function that changes metadata, and it is)
               #dealt with by adding elements to the stack
@@ -223,7 +224,8 @@ loop.xy.data <- function(){
                                          fut.pred  = MF.window, 
                                          ds.atts = ds.atts, 
                                          tmasks = tmasks, 
-                                         data.atts = adjust.metadata)
+                                         data.atts = adjust.metadata, 
+                                         missval.args = missval.args)
               ds.out$ds <- tmp.s5$ds.out
               # qc.out <- c(qc.out, tmp.s5$qc)
               #qc.out more complicated; trying to preserve dim information
@@ -266,20 +268,14 @@ loop.xy.data <- function(){
           #Once looping by w complete, do the last s5 adjustment
           #Call the Section 5 Adjustments to be applied to post-downscaled output
           if (verbose){message("Calling outloop Section 5 Adjustments")}
-#           print(s3.outloop)
-#           print(s5.outloop)
-#           print(summary(post.ds[[1]]))
-#           print(summary(post.ds[[2]]))
-#           print(names(post.ds[[1]]$qc_args))
-#           #print(post.ds[[2]]$type)
-#           stop('examine this outptu')
           if(s5.outloop){
             temp.postproc <- callS5Adjustment(post_ds_outloop,
                                               data = output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,, ,drop=F],
                                               hist.pred = MH.slice,
                                               hist.targ = OH.slice,
                                               fut.pred = MF.slice, 
-                                              data.atts = adjust.metadata)
+                                              data.atts = adjust.metadata, 
+                                              missval.args = missval.args)
             #Your return should include a list of two elements - modified ds out, 
             #and a list of qc masks
             #Or rather, once you get a list of qc masks, you return them - 
