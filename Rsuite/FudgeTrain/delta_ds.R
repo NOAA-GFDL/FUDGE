@@ -75,14 +75,6 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
       out.status <- 0
       print(dim(MF))
       MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
-#       slice.dim <- dim(MF)
-#       slice.dim[4] <- 1
-#       dim(MF.data) <- slice.dim
-#       print(length(MF.data))
-#       print("dims of data before missvals:")
-#       print(dim(OH))
-#       print(dim(MH))
-#       print(dim(MF.data))
       missval.data <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                             missval.args$minsamplesize, 
                                             missval.args, 
@@ -90,11 +82,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
       OH.loop <- missval.data$OH[[1]]
       MH.loop <- missval.data$MH[[1]]
       MF.loop <- missval.data$MF[[1]]
-# print(str(OH.loop))
-# print(str(MH.loop))
-# print(str(MF.loop))
-# stop('examine this out')
-#With delta, DS is always effectively possible - all missing in one 
+  #With delta, DS is always effectively possible - all missing in one 
       #dataset does not neccessarily mean that ds can't take place
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
@@ -174,10 +162,22 @@ delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
       #Downscale by difference delta
       delta<-do.call(deltatype, list(delta.fut, na.rm=TRUE))-do.call(deltatype, list(delta.hist, na.rm=TRUE))
     }else if(deltaop=='ratio'){
+      #original, simpler form - need some checks if we're running without ignore0
+      #delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
       #Downscale by percentage delta (never negative, but occasionally NaN)
-      delta<-do.call(deltatype, list(delta.fut,na.rm=TRUE))/do.call(deltatype, list(delta.hist,na.rm=TRUE))
+      delta.fut <- remove.missvals(delta.fut)
+      delta.hist <- remove.missvals(delta.hist)
+      if (all(delta.hist == 0)){
+        print("All 0 in historical; unable to divide, returning delta of 1.")
+        delta <- 1
+      }
+      if (deltatype == 'mean'){
+        delta <- (sum(delta.fut) / length(delta.fut)) / (sum(delta.hist) / length(delta.hist)) 
+      }else if (deltarype == 'median'){
+        stop(paste("Error in Delta: median is not currently considered for "))
+      }
       #Loud warning message for divide-by-0 case
-      if(is.nan(delta)||is.infinite(delta)|| is.na(delta)){
+      if(is.nan(delta)||is.infinite(delta)||is.na(delta)){
         message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
                       "is either NaN or Inf and cannot be processed normally.",
                       "Returning delta of 1 for the calculation."))
