@@ -257,8 +257,13 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
         #print(trigger.fxn)
-        print("Overlap too small of delta_sample; resizing")
+        print("Overlap too small for delta_sample upper; resizing")
         delta.idx <- delta.idx[delta.idx >= 1]
+      }
+      #CEW 2018-01-09: need corresponding fix for the lower tail
+      if(any(delta.idx > length(MF))){
+        print("Overlap too small for delta_sample lower; resizing")
+        delta.idx <- delta.idx[delta.idx <= length(MF)]
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
