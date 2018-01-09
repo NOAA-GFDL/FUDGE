@@ -6,6 +6,6 @@ check_interval = 0
   url = "https://gitlab.gfdl.noaa.gov/ci"
   token = "87b8f15f7e1e22cc3da0170c205d54"
   executor = "shell"
-  builds_dir = "/home/cew/testing/"
+  builds_dir = "/home/Oar.Gfdl.Esd_test/builds/"
   shell = "bash"
   [runners.cache]
