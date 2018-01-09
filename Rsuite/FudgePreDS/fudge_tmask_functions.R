@@ -115,6 +115,11 @@ get.fudge.timemask.list <- function(){
                                                   MF$metadata[[1]]$dim$time$calendar)
     tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
     tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
+#     print(tmask.list$hist.year.div)
+#     print(tmask.list$fut.year.div)
+#     print(tmask.list$nyears_hist)
+#     print(tmask.list$nyears_fut)
+#     stop('examine this output. Does it make sense?')
   }
   ###Set booleans for handy access
   print(paste("Applying overlapping time window masks:", time_mask_overlap))

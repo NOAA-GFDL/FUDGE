@@ -257,9 +257,17 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
         #print(trigger.fxn)
-        print("Overlap too small of delta_sample; resizing")
+        print("Overlap too small for delta_sample upper; resizing")
         delta.idx <- delta.idx[delta.idx >= 1]
       }
+      if ( any(delta.idx > length(MF)) ){
+        print("Overlap to small for delta_sample lower; resizing")
+        delta.idx <- delta.idx[delta.idx <= length(MF)]
+      }
+#       if (any(is.na(delta.idx))){
+#         print("Overlapp too small for delta_sample; resising")
+#         delta.idx <- delta.idx[!is.na(delta.idx)]
+#       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
       #print(paste0("Adjusting tail with ", adjmethod))
@@ -283,11 +291,22 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
             stop("Error in tail_cutoff: At least one inside index should be greater than 0!")
           }
         }
+        #CEW 2018-01-09: Looking at the 
         # FIND LARGEST RATIO INSIDE TAILS
         mult.ifzero <- max(DS[inside.tail]/MF[inside.tail], na.rm=TRUE)
         # CALCULATE ADJUSTMENT RATIO
         mult.vec <- DS[delta.idx]/MF[delta.idx]
         #CEW added 12-12-16; mult.vec can, in fact, be NA sometimes
+        #mult.vec <- mult.vec[!is.na(mult.vec)]
+        #mult.ifzero <- mult.ifzero[!is.na(mult.ifzero)]
+        print("mult.vec:")
+        print(mult.vec)
+        print("mult.ifzero:")
+        print(mult.ifzero)
+        print("delta idx:")
+        print(delta.idx)
+        print(length(DS))
+        print(length(MF))
         if (length(mult.vec) == 0){
           if (length(mult.ifzero) > 0){
             mult.vec <- mult.ifzero
@@ -297,7 +316,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
             mult.ifzero <- 1
           }
         }
-        if (is.na(mult.vec)){
+        if (is.na(mult.vec[1])){
           mult.vec <- 9999
         }
         if (any(mult.vec > mult.ifzero)) {

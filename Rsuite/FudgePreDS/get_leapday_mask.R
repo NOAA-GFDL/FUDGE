@@ -19,6 +19,7 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T,
 #     }else{
       #print("No leapmask found; generating mask on the fly")
       time.values <- get.PCICt.time.series(origin, time.data, calendar)
+      print("Formatting the time data")
       return(make.leapday.mask(time.values))
 #    }
   }else{
@@ -26,10 +27,15 @@ get.leapday.mask <- function(time.string, calendar="julian", gcp=T,
     #a vector of all missing values
     #Honestly, for the period of time that we are going to be using this 
     #hack, we are probably okay doing a naiive assumption of 365 days per year
-    year.str <- sapply(strsplit(time.string, '-'), substr, 1, 4)
-    if ( calendar %in% c("360", "360-day")){
+    #As of December 2017, proven wrong.
+    
+    if ( calendar %in% c("360", "360-day", '360_day')){
+      time.string <- gsub('31-', '30-', time.string)
+      time.string <- gsub('31$', '30', time.string, perl = T)
+      year.str <- sapply(strsplit(time.string, '-'), substr, 1, 4)
         return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 360 ))
     }else{
+      year.str <- sapply(strsplit(time.string, '-'), substr, 1, 4)
         return(rep(1, (as.numeric(year.str[2]) - as.numeric(year.str[1]) + 1) * 365 ))
     }    
   }
@@ -60,6 +66,13 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
   #Gets the location of all Januray 1sts in an input dataset
   #based off of start and end strings
   #i.e. 20951231
+  if ( calendar %in% c("360", "360-day", '360_day')){
+    start_string <- gsub('31-', '30-', start_string)
+    start_string <- gsub('31$', '30', start_string, perl = T)
+    
+    end_string <- gsub('31-', '30-', end_string)
+    end_string <- gsub('31$', '30', end_string, perl = T)
+  }
   start_date <- paste(substr(start_string, 1, 4), 
                       substr(start_string, 5, 6), 
                       substr(start_string, 7, 8), sep="-")
@@ -70,10 +83,12 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
                              get.PCICt.time.series(start_date, 0, calendar))/86400)
   time.vals <- 0:(time_span)
   time.dates <- get.PCICt.time.series(start_date, time.vals, calendar)
-#   print(time_span)
-#   print(time.dates[1:100])
-#   print(format(time.dates, '%m-%d')[1:100])
-  jan.dates <- which(format(time.dates, '%m-%d')=='12-31') #was 01-01
+  if ( calendar %in% c("360", "360-day", '360_day')){
+    #...360-day calendar requires something different because of course it does.
+    jan.dates <- which(format(time.dates, '%m-%d')=='12-30')
+  }else{
+    jan.dates <- which(format(time.dates, '%m-%d')=='12-31') #was 01-01
+  }
   return(jan.dates)
 }
 
