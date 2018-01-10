@@ -1,0 +1,9 @@
+concurrent = 1
+check_interval = 0
+
+[[runners]]
+  name = "esd_test_runner"
+  url = "https://gitlab.gfdl.noaa.gov/ci"
+  token = "29d0640517fe0cc9350c7ea269b4e5"
+  executor = "shell"
+  [runners.cache]
