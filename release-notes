@@ -1,8 +1,7 @@
-<<<<<<< HEAD
-11-21-2017
+01-10-2018
 (cew)
-- Updating pr adjust methods to use 0 + epsilon for trace = zero instead of zero
-=======
+- Bugfix for lastNpts in the simple tail adjustment on the lower tail
+
 12-22-2017
 (cew)
 - regex bugfix in master script creation
@@ -17,7 +16,10 @@
 - Update for ability to use different calendars in OH, MH
 - Fix for order of operations of section 5 adjustments in eqfreq adjmethod; 
 precip adjust goes after the tail adjustment
->>>>>>> i_tail_adj_regex_fix
+
+11-21-2017
+(cew)
+- Updating pr adjust methods to use 0 + epsilon for trace = zero instead of zero
 
 09-25-2017
 (cew)

@@ -2,10 +2,8 @@ concurrent = 1
 check_interval = 0
 
 [[runners]]
-  name = "an_test"
+  name = "esd_test_runner"
   url = "https://gitlab.gfdl.noaa.gov/ci"
-  token = "87b8f15f7e1e22cc3da0170c205d54"
+  token = "29d0640517fe0cc9350c7ea269b4e5"
   executor = "shell"
-  builds_dir = "/home/cew/testing/"
-  shell = "bash"
   [runners.cache]
