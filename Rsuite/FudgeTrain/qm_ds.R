@@ -426,6 +426,10 @@ callKDDM <- function(Oh, Mh, Mf, args){
       pad <- 0
 
       if (var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
+        bctrunc <- FALSE
+        bctrim  <- NULL
+				densfun <- bkde
+
         Oh.yrz <- Oh.all.yrz[oh.mask]
         Mh.yrz <- Mh.all.yrz[mh.mask]
         Mf.yrz <- Mf.all.yrz[mf.mask]
@@ -470,11 +474,17 @@ callKDDM <- function(Oh, Mh, Mf, args){
         folded.OH <- list(subset.OH)
         folded.MH <- list(subset.MH)
         folded.MF <- list(subset.MF)
+        # truncate and trim using lof1d
+        bctrunc <- TRUE
+#         bctrim  <- chauvenet
+#         bctrim  <- lof1d
+        bctrim  <- ptrim
+				densfun <- akde
       }
       # Bias Correct using the climod KDDM routine, return the unlisted array of future values
       # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
       which.norm <- ifelse(args$norm=="none", "identity", args$norm)
-      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm)$fut)
+      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut)
       # If pad was increased to shift data, shift it back
       if(pad != 0) {
         if ( w < half.window ) {
@@ -515,7 +525,7 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
   else {
     nbcd <- rapply(bcdata, normalize, how = "replace", norm = norm)
   }
-  mapping <- distmap(unlist(nbcd$cur), unlist(nbcd$obs), ...)
+  mapping <- distmap.new(unlist(nbcd$cur), unlist(nbcd$obs), ...)
   fixed <- rapply(nbcd, function(x) {
     predict(mapping, x)
   }, how = "replace")
@@ -556,8 +566,177 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
   }
   return(result)
 }
+### BELOW: Can be removed when new version of climod package is installed -djas 2018-01-03
+
+##' Trims the top percentile of values from a vector.
+##'
+##' Because precipitation is heavy-tailed, the process of
+##' constructing a distribution mapping (a \code{\link{distmap}}
+##' object) for precipitation tends to overfit the upper tails.  To
+##' avoid this problem, it is useful in this case to trim extreme
+##' values from the input datasets. This function discards the top
+##' \code{p}% of values from the input vector.
+##'
+##' This function uses the \code{stats::quantile} function to find a
+##' cutoff value.  Because any quantile with probability less than 1
+##' is always less than the maximum value, the function will always
+##' trim the maximum value from x.
+##'
+##' @param x a vector of values.
+##'
+##' @param p the percentage of values to discard.  Defaults to 1%.
+##'
+##' @param ... further arguments passed on to \code{stats::quantile}
+##'
+##' @return The input vector \code{x} with the top \code{p} percent
+##' of values (minimum 1) removed.
+##'
+##' @examples
+##'
+##' set.seed(222)
+##' x <- c(rnorm(20), 2, 5, 10, 50, 100)
+##' print(x)
+##' print(ptrim(x, p=0.10))
+##' print(quantile(x, p=0.9))
+##' @export
+
+ptrim <- function(x, p=0.01, ...){
+  q <- quantile(x, probs=(1-p), ...)
+  x[x < q]
+}
 
 
+
+##' Trims extreme values from a vector based on the local outlier
+##' factor, simplified for the one-dimensional case.
+##'
+##' The local outlier factor (LOF) compares the local density of a
+##' value to the average local density of its k nearest neighbors.  If
+##' the ratio of the densities (the LOF) is significantly higher than
+##' 1, the point is an outlier and can be discarded.  This function
+##' uses a highly simplified calculation to trim outlier values from
+##' the upper tail of 1-dimensional data.
+##'
+##' If length(x) is less than 3*k, the vector is returned unchanged.
+##' See the Wikipedia page for a description of the LOF algorithm:
+##' \url{https://en.wikipedia.org/wiki/Local_outlier_factor}
+##'
+##' @param x A vector of values.
+##'
+##' @param k The number of nearest neighbors to consider.  Also the
+##' number of upper tail values considered as possible outliers.
+##'
+##' @param cutoff The maximum LOF for a value to be retained.
+##'
+##' @return The input vector \code{x} with any of the \code{k} largest
+##' values that have an LOF greater than \code{cutoff} removed.
+##'
+##' @examples
+##'
+##' set.seed(222)
+##' x <- c(-5, rnorm(20), 2, 5, 10, 50, 100)
+##' print(x)
+##' print(lof1d(x))
+##'
+##' @export
+lof1d <- function(x, k=5, cutoff=3){
+
+  if(length(x) < 3*k){warning("lof1d: too few values to calculate 1-D LOF"); return(x)}
+
+  ## To look at the top k values, we need the k nearest neighbors of the
+  ## kth value, and then the k nearest neighbors of each of those, so we
+  ## might need the 3*kth value.
+
+  ox <- order(x, decreasing=TRUE)[1:(3*k)]
+  y <- x[ox]
+
+  ## Find the k nearest neighbors for each value and their indices
+  ## Note: k+1 index because A is an element of y, so first neighbor is self
+
+  knni <- lapply(y, function(A){ order(abs(y-A))[(1:k)+1]})
+  knn  <- lapply(knni, function(i){y[i]})
+
+  ## K-distance = distance from A to its k-th nearest neighbor
+  kdist <- abs(y-sapply(knn, `[`, k))
+
+  ## Reachability distance of A from B = dist from A to B, but at least kd(B).
+  ## Note!  This funciton operates on indices, not values
+  rdist <- function(i,j){max(abs(y[i]-y[j]), kdist[j])}
+
+  ## Local reachability density = inverse of avg rdist(A) *from* its knn
+  N <- length(y)
+  lrd <- sapply(seq(N), function(i){
+    1/mean(sapply(knni[i], function(j){rdist(i,j)}))
+  })
+
+  ## Local outlier factor = avg knn lrd / own lrd
+  lof <- sapply(1:N, function(i){mean(lrd[knni[[i]]]) / lrd[i]})
+
+  ## trim values with LOF > cutoff
+
+  if(any(lof > cutoff)){
+    z <- x[-ox[lof > cutoff]]
+  } else {
+    z <- x
+  }
+
+  return(z)
+
+}
+
+chauvenet <- function(x, upper=TRUE, lower=TRUE){
+
+  n <- length(x) + 1/2
+  mu <- median(x)
+  sig <- mad(x)
+
+  if(lower){ x <- x[!(x < qnorm(1/n, mu, sig))] }
+  if(upper){ x <- x[!(x > qnorm(1-1/n, mu, sig))] }
+
+  return(x)
+}
+
+distmap.new <- function(x, y, densfun = KernSmooth::bkde,
+                        pgrid = ppoints(1000), truncate = FALSE, trim = NULL,
+                        na.rm = TRUE, ...){
+  if(na.rm){
+    x <- x[is.finite(x)]
+    y <- y[is.finite(y)]
+  }
+  stopifnot(is.atomic(x))
+  stopifnot(all(is.finite(x)))
+  stopifnot(is.atomic(y))
+  stopifnot(all(is.finite(y)))
+  stopifnot(is.atomic(pgrid))
+  stopifnot(all(is.finite(pgrid)))
+  stopifnot(all(pgrid >= 0))
+  stopifnot(all(pgrid <= 1))
+  stopifnot(all(diff(pgrid) > 0))
+
+  ############
+  if(!(is.null(trim))){
+    x <- trim(x)
+    y <- trim(y)
+  }
+  ############
+
+  xpdf <- densfun(x, ...)
+  ypdf <- densfun(y, ...)
+  if (truncate){
+    xpdf$y[xpdf$x < min(x)] <- 0
+    ypdf$y[ypdf$x < min(y)] <- 0
+  }
+  xcdf <- pdf2cdf(xpdf)
+  ycdf <- pdf2cdf(ypdf)
+  xq <- splinefun(xcdf$y, xcdf$x, method = "monoH.FC")(pgrid)
+  yq <- splinefun(ycdf$y, ycdf$x, method = "monoH.FC")(pgrid)
+  transfer <- splinefun(xq, yq, method = "monoH.FC")
+  result <- namelist(x, y, pgrid, xpdf, ypdf, xq, yq, transfer)
+  class(result) <- "distmap"
+  return(result)
+}
+
+##### ABOVE ### Can be removed when new version of climod package is installed -djas 2018-01-03
 
 callBCQMv2<-function(LH,CH,CF,args){
   #'Performs an bias-correction quantile mapping on a single variable
