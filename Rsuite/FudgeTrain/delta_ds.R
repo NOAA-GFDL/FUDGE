@@ -115,7 +115,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         ###its arguably a closer match to the behavior above, but it's still a change
         ###from the existing behavior.
         start <- idx$end
-        loop.delta <- delta.train(MH.loop[OH.idx], MF.loop, deltatype, deltaop, status) #
+        loop.delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #
         #hist.idx
         ds.out <- delta.downscale(loop.delta$delta, OH.loop[OH.idx], deltaop, status)
       }
