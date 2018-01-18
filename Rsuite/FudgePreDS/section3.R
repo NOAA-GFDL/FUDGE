@@ -97,7 +97,7 @@ callPRPreproc <- function(test, input, postproc.output,
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-  if (test$pp.args$pr_adjmethod == 'eqfreq'){
+  if (test$pp.args$pr_adjmethod %in% c('eqfreq', 'none')){
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF,
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
                              test$var, prime_predictor,
@@ -127,13 +127,11 @@ callPRPreproc <- function(test, input, postproc.output,
                            MF = tmp.out$pr_args$MF))
   postproc.output$propts <- pr_mod
   }else if (test$pp.args$pr_adjmethod %in% c('exact', 'approx')){
+    
     pr_target <- input$att.list$pr_oh
     nrips <- dim(input$MF[[pr_target]])[4]
     targ_idx <- pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$OH))
     pred_idx <- grepl(paste0("^", pr_target, "\\."), names(input$MH))
-#     print(pred_idx)
-#     print(targ_idx)
-#     print(names(input$OH))
     if (prime_predictor == 'na'){
       prime_predictor = names(input$OH)
     }

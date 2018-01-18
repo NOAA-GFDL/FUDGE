@@ -171,9 +171,10 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
 
 
 callAdjustPrecipS5 <- function(test, input, adjusted.output){
+  
   if (test$qc_args$pr_adjmethod %in% c('exact', 'approx')){
     return(callPRPostproc(test, input, adjusted.output))
-  }else if (test$qc_args$pr_adjmethod == 'eqfreq'){
+  }else if (test$qc_args$pr_adjmethod %in% c('eqfreq', 'none')){
     return(adjust_pr_s5(test, input, adjusted.output))
   }else{
     stop(paste("Error in callAdjustPrecipS5: pr_adjmethod should be one of", 
@@ -257,6 +258,7 @@ callPRPostproc <- function(test, input, adjusted.output){
 pr.postproc <- function(pr.data, pr.units, pr.index, pr.conserve){
   #Internal helper function for reading the pr post-processing function
   #clearly and concisely
+  #Mask by threshold
   out.mask <- MaskPRSeries(pr.data, pr.units, pr.index)
   if(pr.conserve){
     pr.dim <- dim(pr.data)
