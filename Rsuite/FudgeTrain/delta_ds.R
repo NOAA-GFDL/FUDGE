@@ -58,22 +58,26 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     if(!tmasks$time_mask_overlap){
       index.mask <- tmasks$MF$masks[[w]]
     }else{
-      #index.mask <- tmasks$trim$masks[[w]]
-      index.mask <- tmasks$MF$masks[[w]]
+      print("Using non-overlapping index mask")
+      index.mask <- tmasks$trim$masks[[w]]
+      #index.mask <- tmasks$MF$masks[[w]]
     }
     #Nevermind the offset. KD suggested we pass this thingy in from the XML.
     pr_start <- 1
-    #oh_offset <- 7
   if (!('oh_offset' %in% names(args))){
     stop(paste("Error in Delta: latest round of revisions requires oh_offset in xml!"))
   }else{
     oh_offset <- args$oh_offset
   }
-    oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH)
+#...okay, this is downright bizzare. It runs with this bug (which is wrong), 
+#but fails without it?
+    oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH[[1]])
+# print('checking length')
+# print(length(OH[[1]]))
+# print(length(MF[[1]][,,,1,,]))
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
-      print(dim(MF))
       MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
       missval.data <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                             missval.args$minsamplesize, 
@@ -88,7 +92,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         #Speciciations for this were created in main driver script when delta ds is used
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=pr_start + (n-1) * oh_offset)
+                                 start_year= (pr_start + (n-1) * oh_offset) %% tmasks$nyears_hist )
         OH.idx <- idx$index
         pr_start <- idx$end
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #ignore0.Delta
@@ -111,7 +115,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         ###its arguably a closer match to the behavior above, but it's still a change
         ###from the existing behavior.
         start <- idx$end
-        loop.delta <- delta.train(MH.loop[OH.idx], MF.loop, deltatype, deltaop, status)
+        loop.delta <- delta.train(MH.loop[OH.idx], MF.loop, deltatype, deltaop, status) #
         #hist.idx
         ds.out <- delta.downscale(loop.delta$delta, OH.loop[OH.idx], deltaop, status)
       }
@@ -120,9 +124,9 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                              tmasks$OH$masks[[w]][OH.idx],
                              index.mask,
                              ds.out) 
-      if (tmasks$time_mask_overlap){
-        tmp.out <- apply.any.mask(data=tmp.out, mask=tmasks$trim$masks[[w]],dim='time')
-      }
+#       if (tmasks$time_mask_overlap){
+#         tmp.out <- apply.any.mask(data=tmp.out, mask=tmasks$trim$masks[[w]],dim='time')
+#       }
       #For both cases, final case is the same: tmp.out indexed back in
       out.data[,,,n,,] <- tmp.out
       if (train_qcmask & missval.data$mv.retry){

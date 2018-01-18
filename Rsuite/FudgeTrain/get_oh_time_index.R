@@ -15,7 +15,12 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
     }else{
       start_idx <- 1
     }
-    tmp.ndays <- start_idx:hist.year.div[nyears_fut + start_year - 1]
+#     print(start_idx)
+#     print(nyears_fut)
+#     print(start_year)
+#     print(hist.year.div)
+#     print((nyears_fut + start_year - 1) %% nyears_hist)
+    tmp.ndays <- start_idx:hist.year.div[ (nyears_fut + start_year - 1) %% nyears_hist]
     max.ndays <- start_idx:hist.year.div[length(hist.year.div)]
     if (hist.year.div[start_year + nyears_fut - 1] <= hist.year.div[length(hist.year.div)]){
   #  if (start_idx + hist.year.div[start_year] <= hist.year.div[length(hist.year.div)]){
