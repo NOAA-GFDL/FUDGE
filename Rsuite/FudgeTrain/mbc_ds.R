@@ -7,6 +7,10 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
 #   OH <- compress.xy.data(OH)
 #   MH <- compress.xy.data(MH)
 #   MF <- compress.xy.data(MF)
+  if (args$forece_reproducability){
+    seed <- (ival * 100 + jval * 10 + w)
+    set.seed(seed)
+  }
   #Create output data
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
@@ -23,7 +27,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     qc <- NULL
   }
   MF_mask <- missval.args$pr_opts$MF #[[1]]
-tmp.missvals <- missval.args
+  tmp.missvals <- missval.args
   for (n in 1:nrips){
     nval <<- n
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
@@ -175,6 +179,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #It'll work, but we need to have an idea of which vars are getting a unit
   #conversion. 
   #...I'm pretty sure those are globals anyway; we can check.
+  force_reproducability=FALSE
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -227,8 +232,12 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
     jitter.fac <- args[[jitter.name]]
   }
+  if ('force_reproducability' %in% names(args)) {
+    force_reproducability <- ifelse(args$force_reproducability == 'on', TRUE, FALSE)
+  }
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
-              variant=args$variant, var.names=unlist(predictor.vars))
+              variant=args$variant, var.names=unlist(predictor.vars), 
+              force_reproducability = force_reproducability)
   env$ds.args <- return.args
   return(env)
 }
@@ -245,6 +254,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   transform = F
   tform_fxn = 'none'
   ties = 'first'
+  force_reproducability=FALSE
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -291,14 +301,18 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('adjust_trace' %in% names(args)){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }
+  if ('force_reproducability' %in% names(args)) {
+    force_reproducability <- ifelse(args$force_reproducability == 'on', TRUE, FALSE)
+  }
   #Put together MBC-specific args  
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
                       var.names=unlist(predictor.vars), 
-                      adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn)
+                      adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn, 
+                      force_reproducability = force_reproducability)
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize
-  } 
+  }
   env$ds.args <- return.args
   return(env)
 }

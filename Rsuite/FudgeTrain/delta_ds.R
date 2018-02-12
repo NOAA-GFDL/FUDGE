@@ -14,21 +14,16 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     #'  what single value will be used for the difference between the MH and MF
     #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
     #'  the mthod for calculating the delta
-    #'  @param ignore0.Delta, a value of 'on' or 'off' that controls whether to use all days for
-    #'  calculating the delta ('off'), or use only those days for which the delta was greater
-    #'  than zero ('on'). At this point it's a legacy setting; the main ignore0 setting in 
-    #'  the precipiation options sets 0 to missing 
+    #'  @param oh_offset: by how many years to offset Oh between ensemble members.
+    #'  Setting to greater than 0 keeps weather patterns diffrent between ens
+    #'  members
     #'Uses the difference (ratio or subtraction) between MF and MH means or medians to calculate
     #' a delta that is applied to the OH (observational) data
     #'@return SDF: Downscaled Future (Local)
     ########################################
     #Note: preferred behavior is to truncate vectors
     #rather than randomly sampling iff too short.
-    
-    #Use this rather than unlist - unlist removes some dimension data
-#     OH = OH[[1]]
-#     MH = MH[[1]]
-#     MF = MF[[1]]
+
     status=0
     out.data <- array(NA, dim=dim(MF[[1]]))
     nrips = dim(out.data)[4]
@@ -69,12 +64,9 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
   }else{
     oh_offset <- args$oh_offset
   }
-#...okay, this is downright bizzare. It runs with this bug (which is wrong), 
-#but fails without it?
+#CEW: 2 successive bugfixes 2018-01-18 ; length(OH[[1]]) instead of length(OH), 
+#and no longer over-sampling MH when MF is longer than or equal to MH.
     oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH[[1]])
-# print('checking length')
-# print(length(OH[[1]]))
-# print(length(MF[[1]][,,,1,,]))
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
@@ -86,7 +78,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
       OH.loop <- missval.data$OH[[1]]
       MH.loop <- missval.data$MH[[1]]
       MF.loop <- missval.data$MF[[1]]
-  #With delta, DS is always effectively possible - all missing in one 
+      #With delta, DS is always effectively possible - all missing in one 
       #dataset does not neccessarily mean that ds can't take place
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
@@ -101,32 +93,22 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
       }else{
-        #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
-        #where n=length(MF.data)/length(OH)
-        out.len <- length(MF.loop)
-        in.len <- length(OH.loop)
-        OH.idx <- c()
-        ds.out <- c()
         idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
                                  tmasks$hist.year.div, tmasks$fut.year.div, 
                                  start_year=1 + (n-1) * oh_offset)
         OH.idx <- idx$index
-        ###CHECK THIS LOOPING STRUCTURE WITH 3RD FLOOR. 
-        ###its arguably a closer match to the behavior above, but it's still a change
-        ###from the existing behavior.
         start <- idx$end
-        loop.delta <- delta.train(MH.loop[OH.idx], MF.loop, deltatype, deltaop, status) #
-        #hist.idx
+        loop.delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #
         ds.out <- delta.downscale(loop.delta$delta, OH.loop[OH.idx], deltaop, status)
       }
+      #Note that index.delta includes a step applying the time-trimming mask
+      ##print(str(tmasks))
       tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
                              tmasks$fut.leapmask, 
                              tmasks$OH$masks[[w]][OH.idx],
                              index.mask,
-                             ds.out) 
-#       if (tmasks$time_mask_overlap){
-#         tmp.out <- apply.any.mask(data=tmp.out, mask=tmasks$trim$masks[[w]],dim='time')
-#       }
+                             ds.out,
+                             idx$year_div, tmasks$fut.year.div) 
       #For both cases, final case is the same: tmp.out indexed back in
       out.data[,,,n,,] <- tmp.out
       if (train_qcmask & missval.data$mv.retry){
@@ -138,7 +120,8 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                tmasks$fut.leapmask, 
                                tmasks$OH$masks[[w]][OH.idx],
                                index.mask,
-                               qc.out) 
+                               qc.out,
+                               idx$year_div, tmasks$fut.year.div) 
         qc.data[,,,n,,] <- tmp.out
       }
       #}

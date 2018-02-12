@@ -1,3 +1,12 @@
+02-21-2018
+(cew)
+- Adding support for cyling/striding time masks in the Delta code
+- Creating all leapday masks on the fly; removing copy of leapday masks from master
+
+01-18-2018
+- Fixing long-standing maintained bug in Delta for oversampling MH when MH is
+shorter than MF
+
 01-10-2018
 (cew)
 - Bugfix for lastNpts in the simple tail adjustment on the lower tail

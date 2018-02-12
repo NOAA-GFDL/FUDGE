@@ -624,7 +624,7 @@ def main():
 	print "Step 0: Create the unified runcscripts and master runscripts"
 	#First check to see whether the leapday masks need to be copied...
 	ds_info = get_ds_info(method, basedir)
-	copy_leapmasks = ds_info['copy_leapmasks']
+	#copy_leapmasks = ds_info['copy_leapmasks']
 
 	#As of 3-15-17, this needs a check for the 'all' string; turn into coords.
 	i_subset = auxinfo['subsetdict']['i_subset']
@@ -672,7 +672,7 @@ def main():
 	                      spat_mask, target_time_window, hist_time_window, \
 	                      fut_time_window, auxcustom, outdir, target, method, \
 	                      file_j_range, idirsuffix, \
-	                      ds_info['copy_leapmasks'], ds_info['multivar_target'],
+	                      ds_info['multivar_target'],
 	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'])
 	#print('examine runscript output')
 	#sys.exit()

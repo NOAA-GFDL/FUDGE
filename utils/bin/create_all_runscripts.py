@@ -5,7 +5,7 @@ import itertools
 
 def create_all_runscripts(i_start, i_end, i_by, i_offset, 
                          j_start, j_end, j_by, j_offset, 
-                         njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, copy_leapmasks, multivar_target, auxfile, aux_file_list, wallclocktime):
+                         njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, auxfile, aux_file_list, wallclocktime):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	
@@ -161,21 +161,21 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			#dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
 		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n" 
 		dmget_string = dmget_string + tmask_dmget
-		if copy_leapmasks:	
-			#Need a historic and a future leapday mask file
-			leapmask_base = "/archive/esd//PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_missingleapdays_"
-			#Unfortunately, oh_timerange and mf_timerange can have '_ensmbl' tacked onto the end.
-			#That is never going to be present in the leapday masks.
-			#...I don't have to worry about _NOLEAP speficications at this point, 
-			#but that might be something to keep in mind for the future.
-			oh_leap_trange = re.sub("_ensmbl", "", oh_timerange)
-			mf_leap_trange = re.sub("_ensmbl", "", mf_timerange)
-			hist_leapmask = leapmask_base + oh_leap_trange + ".nc"
-			fut_leapmask  = leapmask_base + mf_leap_trange + ".nc"
-			leapmask_files = [hist_leapmask, fut_leapmask]
-			dmget_string = dmget_string + "# Get leapday masks" + "\n"
-			dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
-			dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
+		#if copy_leapmasks:	
+		#	#Need a historic and a future leapday mask file
+		#	leapmask_base = "/archive/esd//PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_missingleapdays_"
+		#	#Unfortunately, oh_timerange and mf_timerange can have '_ensmbl' tacked onto the end.
+		#	#That is never going to be present in the leapday masks.
+		#	#...I don't have to worry about _NOLEAP speficications at this point, 
+		#	#but that might be something to keep in mind for the future.
+		#	oh_leap_trange = re.sub("_ensmbl", "", oh_timerange)
+		#	mf_leap_trange = re.sub("_ensmbl", "", mf_timerange)
+		#	hist_leapmask = leapmask_base + oh_leap_trange + ".nc"
+		#	fut_leapmask  = leapmask_base + mf_leap_trange + ".nc"
+		#	leapmask_files = [hist_leapmask, fut_leapmask]
+		#	dmget_string = dmget_string + "# Get leapday masks" + "\n"
+		#	dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
+		#	dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
 	#And finally, add the files that the aux file specifies
 	#print(aux_file_list)
 	if len(aux_file_list) > 0:
