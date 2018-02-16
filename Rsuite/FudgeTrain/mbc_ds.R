@@ -1,15 +1,16 @@
-
+#'Wrapper function for the FUDGE calls to MBC and QDM, 
+#'since both use the same package and there is similar
+#'argument checking between the two of them
 
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
-  library(MBC)
- # set.seed(8675309)
-#   OH <- compress.xy.data(OH)
-#   MH <- compress.xy.data(MH)
-#   MF <- compress.xy.data(MF)
-  if (args$forece_reproducability){
-    seed <- (ival * 100 + jval * 10 + w)
-    set.seed(seed)
+  if (args$force_reproducibility){
+    #i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
+    #This is meant to enforce reprodcability when we have alternative
+    #subsetting in place.
+    seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
+    #print(paste("seedval:", seedval))
+    set.seed(seedval)
   }
   #Create output data
   out.data <- array(NA, dim=dim(MF[[1]]))
@@ -31,18 +32,12 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   for (n in 1:nrips){
     nval <<- n
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
-#     MF.mask.slice <- lapply(MF_mask, '[', ,,,n,, , drop=F)
-#     tmp.missvals$pr_opts$MF <- MF.mask.slice
     #pr-specific check for now; only do if present
     missval.args$pr_opts$MF <- MF_mask[,,,n,, ,drop=F]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
                                          missval.args$minsamplesize, 
                                          missval.args, 
                                          missval.method='distributional')
-
-#print(summary(missval.out$OH[[1]]))
-#print(summary(missval.out$MH[[1]]))
-#print(summary(missval.out$MF[[1]]))
     
     if (args$adjust_trace){
       adj.thold <- missval.args$pr_opts$adjusted.thold
@@ -179,7 +174,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #It'll work, but we need to have an idea of which vars are getting a unit
   #conversion. 
   #...I'm pretty sure those are globals anyway; we can check.
-  force_reproducability=FALSE
+  force_reproducibility=FALSE
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -232,12 +227,16 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
     jitter.fac <- args[[jitter.name]]
   }
-  if ('force_reproducability' %in% names(args)) {
-    force_reproducability <- ifelse(args$force_reproducability == 'on', TRUE, FALSE)
+  if ('force_reproducibility' %in% names(args)) {
+    force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
+  }else{
+    stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180214", 
+               "force_reproducibility argument ('on' or 'off')", 
+               "is required to be set in the XML for MBC and QDM!"))
   }
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars), 
-              force_reproducability = force_reproducability)
+              force_reproducibility = force_reproducibility)
   env$ds.args <- return.args
   return(env)
 }
@@ -254,7 +253,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   transform = F
   tform_fxn = 'none'
   ties = 'first'
-  force_reproducability=FALSE
+  force_reproducibility=FALSE
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -301,14 +300,18 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('adjust_trace' %in% names(args)){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }
-  if ('force_reproducability' %in% names(args)) {
-    force_reproducability <- ifelse(args$force_reproducability == 'on', TRUE, FALSE)
+  if ('force_reproducibility' %in% names(args)) {
+    force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
+  }else{
+    stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180214", 
+               "force_reproducibility argument ('on' or 'off')", 
+               "is required to be set in the XML for MBC and QDM!"))
   }
   #Put together MBC-specific args  
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
                       var.names=unlist(predictor.vars), 
                       adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn, 
-                      force_reproducability = force_reproducability)
+                      force_reproducibility = force_reproducibility)
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize

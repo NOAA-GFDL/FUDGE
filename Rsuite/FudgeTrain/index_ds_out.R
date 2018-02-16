@@ -38,34 +38,22 @@ index.delta <- function(hist_leapdays, fut_leapdays,
   hist.which <- 1:length(hist_days)
   fut.which <- 1:length(fut_days)
   for (n in 1:length(fut_year_div)){
-#     print(paste("looping by year", n))
-#     print('year divisions')
-#     print(hist_year_div[n])
-#     print(fut_year_div[n])
-# #     print(hist_year_div[1:100])
-# #     print(fut_year_div[1:100])
-# #     stop('examine this output')
     if (n == 1){
       #oh_segment <- hist.which[c(hist_days[1 : hist_year_div[n]])]
       oh_segment <- hist.which[1:hist_year_div[n]]
       mf_segment <- fut.which[1:fut_year_div[n]]
     }else{
-#       oh_segment <- hist.which[c(hist_days[ (hist_year_div[n-1] + 1) : hist_year_div[n]])]
-#       mf_segment <- fut_days[ (fut_year_div[n-1] + 1) : fut_year_div[n]]
       oh_segment <- hist.which[c( (hist_year_div[n-1] + 1) : hist_year_div[n])]
       mf_segment <- fut.which[c( (fut_year_div[n-1] + 1) : fut_year_div[n] )]
     }
     #The two mask length segments should be the same length
-# print('length of current objects:')
-# print(oh_segment)
-# print(mf_segment)
-# print(length(data))
-# print(length(mf_segment))
-    
     #initialize mapped.data based off of length of mf
     mapped.data <- rep(NA, times = length(mf_segment))
     if (is_leapyear(mf_segment) & !is_leapyear(oh_segment)){
-      oh_segment <- c(oh_segment[1:59], NA, oh_segment[60:365])
+      #This is now the leapday repetition step - as of 2017-02-14, 
+      #leapdays are only repeated when there is a conflict between the
+      #leapday modulo in the historical and future.
+      oh_segment <- c(oh_segment[1:59], oh_segment[59], oh_segment[60:365])
       mapped.data <- data[oh_segment]
       
     }else if (is_leapyear(oh_segment) & !is_leapyear(mf_segment)){
@@ -76,11 +64,7 @@ index.delta <- function(hist_leapdays, fut_leapdays,
       #They are exactly the same length, there is no need to worry about 
       #where the pre-masked leapdays are located
       mapped.data <- data[oh_segment]
-    }  
-#     print("status of mapped.data:")
-#     print(summary(as.vector(mapped.data)))
-#     print(length(mapped.data))
-    
+    }      
     #Both segments map to a year of the MF data
     if (n == 1){
       out[ c(1 : fut_year_div[1])] <- mapped.data
@@ -89,10 +73,9 @@ index.delta <- function(hist_leapdays, fut_leapdays,
     }
     #stop('examine this output')
   }
-  #Repeat Feb.28 for Feb. 29
-  fut_leapdays <- which(is.na(fut_leapdays))
-  out[fut_leapdays] <- out[fut_leapdays-1]
-  #stop('examine this otuput')
+#   #Repeat Feb.28 for Feb. 29
+#   fut_leapdays <- which(is.na(fut_leapdays))
+#   out[fut_leapdays] <- out[fut_leapdays-1]
   return(out)
 }
 

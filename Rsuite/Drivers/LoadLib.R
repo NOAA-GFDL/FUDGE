@@ -20,6 +20,7 @@ LoadLib <- function(ds.method){
   }else if (any(sapply(c("MBC", "QDM"), grepl, ds.method))){
     print("importing MBC")
     library(MBC)
+    #library(MBC, lib.loc = '/home/cew/bin/R-3.1.1/library/', logical.return = T)
   }else{
     print("No method-specfic libraries defined in LoadLib.R")  
   }

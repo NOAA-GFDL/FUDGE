@@ -54,14 +54,14 @@ console.args <- commandArgs(TRUE)
 print(console.args)
 # i is longitude index in the netCDF file, j is latitude
 if (length(console.args) > 0){
-  i_idx <- as.numeric(console.args[1])
+  i_idx <<- as.numeric(console.args[1])
   i_max <- as.numeric(console.args[2])
   i_stride <- as.numeric(console.args[3])
-  i_offset <- as.numeric(console.args[4])
-  j_idx <- as.numeric(console.args[5])
+  i_offset <<- as.numeric(console.args[4])
+  j_idx <<- as.numeric(console.args[5])
   j_max <- as.numeric(console.args[6])
   j_stride <- as.numeric(console.args[7])
-  j_offset <- as.numeric(console.args[8])
+  j_offset <<- as.numeric(console.args[8])
   auxfile <- console.args[9]
   copy_from_tmp = console.args[10]
   x.pad <- "NA"
@@ -72,11 +72,11 @@ if (length(console.args) > 0){
   i_idx <- 48 #167 #pr_diff = 37 i800 = 53 #194 #10
   i_max <- 194
   i_stride <- 1
-  i_offset <- 748
+  i_offset <<- 748
   j_idx <- 1
   j_max <- 114
   j_stride <- 114
-  j_offset <- 454
+  j_offset <<- 454
   auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json"
   #auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" ##01 has spatial masks; 05_offset has asymmetric grid
   copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?

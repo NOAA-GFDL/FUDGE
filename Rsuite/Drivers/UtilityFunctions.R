@@ -390,3 +390,26 @@ all.identical <- function(x){
     return(test)
   }
 }
+
+make.cal.vectors <- function(origin, time_data, calendar='julian', julian.day=FALSE){
+  #'Creates a data frame of the same length as your input time_data,
+  #'and returns either two integer columns called Year and JDay,
+  #'which contain the Year and Julian date (day of the year),
+  #'or as three integer columns called Year, Month and Day.
+  
+  date_data  <- get.PCICt.time.series(origin, time_data, calendar)
+  
+  iyear      <- as.integer(format(date_data, "%Y"))
+  imon       <- as.integer(format(date_data, "%m"))
+  idayofmon  <- as.integer(format(date_data, "%d"))
+  idayofyear <- as.integer(format(date_data, "%j"))
+  
+  # Return as data frame
+  if(julian.day=='both') {
+    return(data.frame(Year=iyear, Month=imon, Day=idayofmon, JDay=idayofyear))
+  } else if(julian.day) {
+    return(data.frame(Year=iyear, JDay=idayofyear))
+  } else {
+    return(data.frame(Year=iyear, Month=imon, Day=idayofmon))
+  }
+}
