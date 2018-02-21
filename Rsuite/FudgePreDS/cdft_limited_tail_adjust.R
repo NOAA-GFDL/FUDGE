@@ -19,9 +19,15 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
                   lower=args$low_cutoff,
                   upper=args$high_cutoff)
   #Initialize and sort data
+  if (args$trigger != 'all'){
+    stop(paste("Error in cdft_limited_tail_cutoff: as of fudgetag",
+               "icing-testing-20180219, arguments other than trigger are not", 
+               "supported in the cdft limited tail cutoff!"))
+  }
   ds.cond = do.call(select.cond, list(DS, cutoff))
   ds.order = order(DS) #used to sort from lowest to highest
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
+  #note: earlier versions did not include ties argument, lead to some changed answers
   DS = sort(DS)
   MF = MF[ds.order]
   apply_adjust = T
@@ -45,116 +51,73 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
         ds.idx <- length(DS) - args$tail_len
         args$high_cutoff <- DS[ds.idx]
       }
-    }else{
-      cdft_adjusted=F
-      if (do.call(select.cond, list(do.call(trigger.fxn, list(DS)), cutoff)) && !is.na(cutoff)){
-        cdft_adjusted = T
-      }
-      if(args$trigger=='cdft_tailadj' && cdft_adjusted){
-        #ds.idx <- find_delta_adj(select.cond, DS, MF, cutoff, args)
-        #As of 12-19-16, always adjusting a fixed number of points on the tail
-        #for this type.
-        if (args$tail=='lower'){
-          #if ((ds.idx+1) > args$tail_len){
-            ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
-            ds.cond <- ds.cond[ds.rank]
-            ds.idx <- args$tail_len + 1
-            args$low_cutoff <- DS[ds.idx]
-          #}
-        }else if (args$tail=='upper'){
-          #if ((ds.idx-1) < (length(DS) - args$tail_len)){
-            ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
-            ds.cond <- ds.cond[ds.rank]
-            ds.idx <- length(DS) - args$tail_len
-            args$high_cutoff <- DS[ds.idx]
-          #}
-        }
-      }else if (args$trigger == 'notailadj' && !cdft_adjusted){
-        #No need to check cutoff - there isn't any
-        if (args$tail=='lower'){
-          ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
-          ds.cond <- ds.cond[ds.rank]
-          ds.idx <- args$tail_len + 1
-          args$low_cutoff <- DS[ds.idx]
-        }else if (args$tail=='upper'){
-          ds.cond <- c(rep(F, length(DS)-args$tail_len), rep(T, args$tail_len))
-          ds.cond <- ds.cond[ds.rank]
-          ds.idx <- length(DS) - args$tail_len
-          args$high_cutoff <- DS[ds.idx]
-        }
-      }else{
-        apply_adjust = F
-      }
     }
   }else{
     print("Insufficient data to adjust")
     apply_adjust <- F
   }
-# Now, determine from more complex trigger whether still applies
-#  print('after adjust')
-#  print(apply_adjust)
-#  print(ds.idx)
-if (apply_adjust){
-  delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
-  if (args$adjmethod == 'add'){
-    offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
-  } else if (args$adjmethod == 'mult') {
-    ## Check for division by zero or very small number, replace with "largest seen" ratio
-    opp.tail.cut = switch(args$tail,
-                          upper=args$low_cutoff,
-                          lower=args$high_cutoff)
-    opp.trigger.fxn = switch(args$tail,
-                             upper='min',
-                             lower='max')
-    opp.cond = switch(args$tail,
-                      upper = '<=',
-                      lower = '>=')
-    if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && !is.na(opp.tail.cut)) {
-      opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
-      if (args$tail=='upper'){
-        opp.idx <- opp.indices[length(opp.indices)] + 1
-      }else if (args$tail=='lower'){
-        opp.idx <- opp.indices[1] - 1
+  # Now, determine from more complex trigger whether still applies
+  if (apply_adjust){
+    delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
+    if (args$adjmethod == 'add'){
+      offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
+    } else if (args$adjmethod == 'mult') {
+      ## Check for division by zero or very small number, replace with "largest seen" ratio
+      opp.tail.cut = switch(args$tail,
+                            upper=args$low_cutoff,
+                            lower=args$high_cutoff)
+      opp.trigger.fxn = switch(args$tail,
+                               upper='min',
+                               lower='max')
+      opp.cond = switch(args$tail,
+                        upper = '<=',
+                        lower = '>=')
+      if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && !is.na(opp.tail.cut)) {
+        opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
+        if (args$tail=='upper'){
+          opp.idx <- opp.indices[length(opp.indices)] + 1
+        }else if (args$tail=='lower'){
+          opp.idx <- opp.indices[1] - 1
+        }
+        inside.start <- ds.idx + delta.by*delta_sample
+        inside.tails <- seq(inside.start, opp.idx)
+        mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
+        mult.vec <- DS[delta.idx]/MF[delta.idx]
+        ##Adding missval removal 11-1-2016 - 
+        ##not sure why NaN are present in the first place, but they 
+        ##are being generated now
+        mult.vec <- mult.vec[!is.na(mult.vec)]
+        if (any(mult.vec > mult.ifzero)) {
+          print("Some calculated multipliers were too large, replacing with max inside tails.")
+          mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
+        }
+        offset <- mean(mult.vec)
+      } else {
+        if (args$tail=='upper'){
+          opp.idx <- 1
+        }else if (args$tail=='lower'){
+          opp.idx <- length(DS)
+        }
       }
       inside.start <- ds.idx + delta.by*delta_sample
       inside.tails <- seq(inside.start, opp.idx)
       mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
       mult.vec <- DS[delta.idx]/MF[delta.idx]
-      ##Adding missval removal 11-1-2016 - 
-      ##not sure why NaN are present in the first place, but they 
-      ##are being generated now
-      mult.vec <- mult.vec[!is.na(mult.vec)]
       if (any(mult.vec > mult.ifzero)) {
         print("Some calculated multipliers were too large, replacing with max inside tails.")
         mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
       }
       offset <- mean(mult.vec)
     } else {
-      if (args$tail=='upper'){
-        opp.idx <- 1
-      }else if (args$tail=='lower'){
-        opp.idx <- length(DS)
-      }
+      stop("Something has gone terribly wrong with supplied ADJMETHOD!")
     }
-    inside.start <- ds.idx + delta.by*delta_sample
-    inside.tails <- seq(inside.start, opp.idx)
-    mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
-    mult.vec <- DS[delta.idx]/MF[delta.idx]
-    if (any(mult.vec > mult.ifzero)) {
-      print("Some calculated multipliers were too large, replacing with max inside tails.")
-      mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
-    }
-    offset <- mean(mult.vec)
-  } else {
-    stop("Something has gone terribly wrong with supplied ADJMETHOD!")
+    return(list(cond=ds.cond, offset=offset))
+  }else{
+    print('no adjust')
+    cond = rep(FALSE, length(DS))
+    offset = 0
+    return(list(cond=cond, offset=offset))
   }
-  return(list(cond=ds.cond, offset=offset))
-}else{
-  print('no adjust')
-  cond = rep(FALSE, length(DS))
-  offset = 0
-  return(list(cond=cond, offset=offset))
-}
 }
 
 find_delta_adj <- function(select.cond, DS, MF, cutoff, args){

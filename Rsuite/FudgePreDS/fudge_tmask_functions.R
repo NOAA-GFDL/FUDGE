@@ -79,6 +79,20 @@ get.fudge.timemask.list <- function(){
       time_mask_overlap <- T
     }
   }
+  #Do explicit checks on the members of masks
+  masknames <- names(tmask.list$OH$masks)
+  for (el in names(tmask.list)){
+    if (length(tmask.list[[el]]$masks) != nmasks){
+      stop(paste("Error in get.fudge.timemask.list: the", el, "dataset", 
+                 "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
+    }
+    el_masknames <- names(tmask.list[[el]]$masks)
+    if (any(el_masknames != masknames)){
+      stop(paste("Error in get.fudge.timemask.list: the names of masks in OH and", 
+                 el, "datasets are not identical!"))
+    }
+  }
+  
   ###Do OH-downscaling specific mask-reading
   if (ds.ref$downscale_oh){
     #Create global reference vectors for where leapdays are in the input

@@ -19,7 +19,6 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     #'  members
     #'Uses the difference (ratio or subtraction) between MF and MH means or medians to calculate
     #' a delta that is applied to the OH (observational) data
-    #'@return SDF: Downscaled Future (Local)
     ########################################
     #Note: preferred behavior is to truncate vectors
     #rather than randomly sampling iff too short.
@@ -60,7 +59,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     #Nevermind the offset. KD suggested we pass this thingy in from the XML.
     pr_start <- 1
   if (!('oh_offset' %in% names(args))){
-    stop(paste("Error in Delta: latest round of revisions requires oh_offset in xml!"))
+    stop(paste("Error in Delta: As of icing-testing-20180212, oh_offset required in XML!"))
   }else{
     oh_offset <- args$oh_offset
   }

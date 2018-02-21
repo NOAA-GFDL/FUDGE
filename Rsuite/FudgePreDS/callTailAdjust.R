@@ -60,10 +60,12 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 #     print(summary(tmasks$OH$masks))
 #     print(summary(tmasks$OH$masks[[1]]))
 #     print(summary(tmasks$MH$masks))
-    oh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$OH, mask=tmasks$OH$masks[[w]])
-    oh_ss <- sum(!is.na(oh_pr))
-    mh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$MH, mask=tmasks$MH$masks[[w]])
-    mh_ss <- sum(!is.na(mh_pr))    
+    if (tmasks$apply_tmasks){
+      oh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$OH, mask=tmasks$OH$masks[[w]])
+      oh_ss <- sum(!is.na(oh_pr))
+      mh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$MH, mask=tmasks$MH$masks[[w]])
+      mh_ss <- sum(!is.na(mh_pr))   
+    }
   }else{
     #Assume you are temperature-like
     oh_ss <- sum(!is.na(OH))
