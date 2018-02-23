@@ -31,17 +31,12 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
   #Obtain sort options
   pr_start <- 1
   oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH[[1]])
-#   print(dim(OH[[1]]))
-#   print(dim(MH[[1]]))
-#   print(dim(MF[[1]]))
   for (n in 1:nrips){
     #Determine data to use when indexing against OH
     out.status <- 0
     MF.slice <- list(MF[[1]][,,,n,, ,drop=F])
     names(MF.slice) <- names(MF)
     #Determine if there is sufficient data to downscale at this point
-    #print(str(tmasks))
-    #stop('examine this out')
     if ('pr_opts' %in% names(missval.args)){
       tmp.missval.args <- missval.args
       tmp.missval.args$pr_opts$MF <- missval.args$pr_opts$MF[,,,n,, , drop=F]
@@ -82,12 +77,12 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
                            remove.missvals(OH.slice[OH.idx])) 
       ds.out[ds.idx] <- tmp.out
       indexed.out <- ds.out
-      #out.data[,,,n,,] <- indexed.out
       out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                       tmasks$fut.leapmask, 
                                       tmasks$OH$masks[[w]][OH.idx],
                                       tmasks$MF$masks[[w]],
-                                      indexed.out)
+                                      indexed.out, 
+                                      idx$year_div, tmasks$fut.year.div)
       if (train_qcmask){
         #the below used to store the status return; for now, to keep 
         #consistency with the other, more commonly-used training mask
