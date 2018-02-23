@@ -21,7 +21,7 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   #Initialize and sort data
   if (args$trigger != 'all'){
     stop(paste("Error in cdft_limited_tail_cutoff: as of fudgetag",
-               "icing-testing-20180219, arguments other than trigger are not", 
+               "icing-testing-20180219, arguments for trigger other than 'all' are not", 
                "supported in the cdft limited tail cutoff!"))
   }
   ds.cond = do.call(select.cond, list(DS, cutoff))
