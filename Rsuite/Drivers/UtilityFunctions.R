@@ -109,7 +109,8 @@ adapt.pp.input <- function(mask.list=list('na'), pr_opts=list('na'), ds.ref=list
   if(pr_opts[[1]]!='na'){
     #As of early I, pairwise methods (lm, lmAsync, PARM) all get adjusted from
     #within the twindow loops
-    if (ds.ref$is_pairwise){
+    print(names(ds.ref))
+    if (ds.ref$adjust_pr_in_window){ #formerly is_pairwise
       pr.loc='inloop'
       allow.low.mh <- TRUE
     }else{

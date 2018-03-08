@@ -27,6 +27,7 @@ getDSInfo <- function(ds.method){
                     'multivar_target'= input$multivar_target[ds.idx],
                     'is_qm'          = eval(parse(text=input$is_qm[ds.idx])), 
                     'is_pairwise'    = eval(parse(text=input$is_pairwise[ds.idx])), 
+                    'adjust_pr_in_window' = eval(parse(text=input$adjust_pr_in_window[ds.idx])), 
                     'missval_method' = input$missval_method[ds.idx],
                     'oh_dimlist' = csplit(input$oh_dimlist[ds.idx]), 
                     'mh_dimlist' = csplit(input$mh_dimlist[ds.idx]), 
