@@ -39,6 +39,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	logfile_loc = osp.join(expdict['script.base'], 'log/fudge_postProc_.mfudge_*')
 	nrips = len(expdict['output.path'])
 	print("Number of rips searched for:" + str(nrips))
+	nfiles = nrips * 3 # there are 3 kinds of postproc output that currently get checked for - normal, qcmask and save
 	#Check for whether or not an experiment has a cross-validated companion
 	exp_name = expdict['ds.experiment']
 	isCrossval = False
@@ -81,7 +82,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		else:
 			nsucceed = len([p for p in status_files if re.search('success',p) is not None])
 			print("number of postproc jobs complete: " + str(nsucceed))
-			if nsucceed != nrips:
+			if nsucceed != nfiles:
 				loop_count = loop_count + 1
 				time.sleep(sleeptime)
 			else:
