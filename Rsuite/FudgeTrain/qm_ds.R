@@ -359,6 +359,10 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
 }
 
 set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
+
+  ## make sure KernSmooth loads
+  suppressPackageStartupMessages(library(KernSmooth))
+
   ## KDDM needs to know about the YEARS in each dataset, this processes the time axis and creates factors KDDM can use for its origami
   # 	Oh.time.units <- strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
   Oh.time.origin <-strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][3]
@@ -428,7 +432,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
       if (var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
         bctrunc <- FALSE
         bctrim  <- NULL
-				densfun <- bkde
+        densfun <- eval(parse(text=args$kdetype))
 
         Oh.yrz <- Oh.all.yrz[oh.mask]
         Mh.yrz <- Mh.all.yrz[mh.mask]
@@ -474,17 +478,21 @@ callKDDM <- function(Oh, Mh, Mf, args){
         folded.OH <- list(subset.OH)
         folded.MH <- list(subset.MH)
         folded.MF <- list(subset.MF)
+
         # truncate and trim using lof1d
         bctrunc <- TRUE
-#         bctrim  <- chauvenet
-#         bctrim  <- lof1d
-        bctrim  <- ptrim
-				densfun <- akde
+        #         bctrim  <- chauvenet
+        #         bctrim  <- lof1d
+        # using arg passed in, per Seth McGinnis, this should be 'ptrim'
+        bctrim  <- eval(parse(text=args$bctrim))
+        densfun <- eval(parse(text=args$kdetype))
       }
       # Bias Correct using the climod KDDM routine, return the unlisted array of future values
       # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
       which.norm <- ifelse(args$norm=="none", "identity", args$norm)
+
       kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut)
+
       # If pad was increased to shift data, shift it back
       if(pad != 0) {
         if ( w < half.window ) {
@@ -541,7 +549,7 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
     x
   })
   ## FIX for NA/NaN here...
-  #   adj <- rapply(adj, mean, how = "replace")
+  # adj <- rapply(adj, mean, how = "replace")
   adj <- rapply(adj, mean, how = "replace", na.rm=TRUE)
   adj <- renest(adj)
   shift <- NA
@@ -567,6 +575,7 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
   return(result)
 }
 ### BELOW: Can be removed when new version of climod package is installed -djas 2018-01-03
+
 
 ##' Trims the top percentile of values from a vector.
 ##'
