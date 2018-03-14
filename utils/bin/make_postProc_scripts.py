@@ -59,23 +59,27 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
 		 	pp_runcode = osp.join(pp_dir, "postProc_command_" + str(i+1) + "_" + str(j+1))
 			#would also work by using a -w for ensembles[i] - that would only match on ensembles[i]
 			#as a word, not as a pattern in other words (i.e. the scRIPts problem)
-			pp_statfile_remove = "find " + pp_stat_dir + "/* | grep " + ensembles[i] + " | grep 'status' | xargs rm -rf "
-			pp_checkout_commands = "\n".join(["module load git/2.4.6", 
-											  "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
-			pp_status_commands = "\n".join(["if ( $status == 0 ) then", 
-											"\t touch " + pp_stat_dir + "/" + ensembles[i] + "." + suffix + ".success", 
-											"else", 
-											"\t touch " + pp_stat_dir + "/" + ensembles[i] + "." + suffix + ".failure", 
-											"endif"])																  
+			pp_statfile_check = "find " + pp_stat_dir + "/* | grep " + ensembles[i] + "." + suffix 
+			ppstat = "set ppstat = $status\nif ($ppstat == 1) then"
+			pp_checkout_commands = "\n".join(["\tmodule load git/2.4.6", 
+											  "\teval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
+			pp_status_commands = "\n".join(["\tif ( $status == 0 ) then", 
+											"\t\t touch " + pp_stat_dir + "/" + ensembles[i] + "." + suffix + ".success", 
+											"\telse", 
+											"\t\t touch " + pp_stat_dir + "/" + ensembles[i] + "." + suffix + ".failure", 
+											"\tendif"])			
+			ppstat_end = "endif"													  
 			with open(pp_runcode, 'w') as f:
 				f.write(pp_runcode_header + "\n")
 				f.write("\n" + "echo 'Setting FUDGE environment ...'" + "\n")
-				f.write(pp_statfile_remove + "\n")
+				f.write(pp_statfile_check + "\n")
+				f.write(ppstat + "\n")
 				f.write(pp_checkout_commands + "\n")
-				f.write("source " + pp_source + "\n")
+				f.write("\tsource " + pp_source + "\n")
 				#for el in pp_sourcelist:
 				#	f.write("eval `cat " + el + "`\n")	
-				f.write(pp_status_commands)
+				f.write(pp_status_commands + "\n")
+				f.write(ppstat_end + "\n")
 			#append to list of sourcable files
 			code_list.append(pp_runcode)
 	#print(code_list)	
@@ -84,16 +88,13 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
 		#print(el)
 		os.chmod(el, runmode)				
 	#write the msubwrapper
+	#As of 2018-03-14, removing the removal step from the msubwrapper
 	msub_file = osp.join(pp_dir, 'msubwrapper')
 	msub_text = "#!/bin/tcsh -f \n"
 	msub_text = msub_text + "rm -f " + pp_stat_dir + "/*\n"
 	msub_commands = "\n".join(["msub -d $HOME " + el for el in code_list]) + "\n"
-	msub_text = msub_text + msub_commands + "\n"
-	#print('writing to msub_file ' + msub_file)
-	#print("code_list "+ str(code_list))
-	#print(ensembles)
-	#print(expdict['output.path'])
-	#sys.exit('examine this output')
+	#msub_text = msub_text + msub_commands + "\n"
+	msub_text = msub_commands + "\n"
 	with open(msub_file, 'w') as f: 
 		f.write(msub_text)
 	os.chmod(msub_file, runmode)		

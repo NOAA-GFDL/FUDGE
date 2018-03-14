@@ -46,8 +46,8 @@ def parserWatcher():
 		userinput = "none"
 	parser.add_option("-i", "--file", dest="uinput",help="pass location of fudgeList out/experiment_info.txt" , metavar="FILE")
 	parser.add_option("-m", "--mail", dest="mail",help="pass emailID to which notifications from FUDGE watcher should be sent to ")
-	parser.add_option("-l", "--nloops", dest="nloops",help="pass number of times to loop through to check for output file generations (default: 72 )")
-	parser.add_option("-s", "--sleeptime", dest="sleeptime",help="pass number of minutes to sleep between checks for output file presence; decimals (i.e. 0.5 ) are fine. (Default sleep time: 5 mins)")
+	parser.add_option("-l", "--nloops", dest="nloops",help="pass number of times to loop through to check for output file generations (default: 120 )")
+	parser.add_option("-s", "--sleeptime", dest="sleeptime",help="pass number of minutes to sleep between checks for output file presence; decimals (i.e. 0.5 ) are fine. (Default sleep time: 3 mins)")
 	parser.add_option("-t", "--timeout_after_ppsubmission", dest="timeout",help="pass timeout in minutes (waits until t mins after ppscript is submitted and before quitting the tool (t>0)). (Default timeout: 0 minutes)")
 	parser.add_option('-v', '--verbose',action="store_true",default=True,help="verbose output") 
 	parser.add_option('-d', '--debug',action="store_true",default=False,help="print debug INFO")
@@ -90,9 +90,9 @@ def parserWatcher():
 	if (timeout is None):
 		timeout = 0.0	
 	if (sleeptime is None):
-		sleeptime = 300.0
+		sleeptime = 180.0
 	if (nloops is None):
-		nloops = 72	
+		nloops = 120	
 	
 	def _v_print(sev,verbmsg):
 		if(sev == 0) & (quiet == True):
