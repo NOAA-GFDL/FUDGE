@@ -114,7 +114,8 @@ def runPostProc(exp_info, ds_dir, out_dir, var_suffix, mailid, verbose=False):
 						           exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
 				                   outfiles = ds_vardir, xml = xml_loc)
 					sys.exit(-1)
-				output_files.append(check_anom_resid(ds_file, out_dir, total_exp_name, ds_var, send_to,script_dir, xml_loc))
+				add_anom_to_var = (var_suffix is 'none' or var_suffix is "")
+				output_files.append(check_anom_resid(ds_file, out_dir, total_exp_name, ds_var, send_to,script_dir, xml_loc, add_anom_to_var))
 		else:
 			print('No suffix directory for ' + ds_var + ' found. Moving on to next var.')		
 	output_files = [el for el in output_files if el is not None]
