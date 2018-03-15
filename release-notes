@@ -1,3 +1,11 @@
+03-14-2018
+(cew)
+- Updating postProc to submit _qcmasks jobs in parallel, avoid submitting excess jobs with watcher restart
+
+03-14-2018
+(d1a)
+- Final commit for KDDM. Chain of precip experiments proved pedigree from climod@NCAR to climod@GFDL to FUDGE@GFDL.
+
 02-21-2018
 (cew)
 - Adding support for cyling/striding time masks in the Delta code
@@ -23,7 +31,7 @@ shorter than MF
 11-12-2017
 (cew)
 - Update for ability to use different calendars in OH, MH
-- Fix for order of operations of section 5 adjustments in eqfreq adjmethod; 
+- Fix for order of operations of section 5 adjustments in eqfreq adjmethod;
 precip adjust goes after the tail adjustment
 
 11-21-2017
