@@ -19,14 +19,14 @@ adjust_pr_s5 <- function(test, input, adjusted.output){
     #These steps weren't there before. These need to get added back in as well. 
     OH[[1]][test$qc_args$OH] <- 0
     MH[[prime_predictor]][test$qc_args$MH] <- 0
-    print(dim(test$qc_args$MF))
-    print(dim(MF[[prime_predictor]]))
+    #print(dim(test$qc_args$MF))
+    #print(dim(MF[[prime_predictor]]))
     #stop('examine this out')
     MF[[prime_predictor]][test$qc_args$MF] <- 0
     #Need to add wetdays back into downscaled data
     if (!ds.ref$downscale_oh){
       #non-OH downscaling is straightforward:
-      print(dim(DS))
+      #print(dim(DS))
 #      print(summary(as.vector(DS)))
       DS[test$qc_args$MF] <- 0
 #       print(summary(as.vector(DS)))
