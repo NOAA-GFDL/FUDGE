@@ -98,8 +98,8 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
 
   }
 } else {
-  print('wetday convert:')
-  print(wetday.convert)
+  #print('wetday convert:')
+  #print(wetday.convert)
   loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
   loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
 }
@@ -130,8 +130,8 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
       future.data <- conserve.prseries(future.data, future.wetdays, pool_ens=T)
     }
   }
-print("adjusted.thold:")
-print(adj.thold)
+#print("adjusted.thold:")
+#print(adj.thold)
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays),
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays),
@@ -167,7 +167,7 @@ conserve.prseries <- function(data, mask, pool_ens=F){
     #in which case, conserving over nonspatial points is probably a
     #bad idea
     data.dim <- dim(data)
-    print(paste("dims of data in conserve.prseries:", paste(data.dim, collapse=",")))
+    #print(paste("dims of data in conserve.prseries:", paste(data.dim, collapse=",")))
     for(x in 1:data.dim[1]){
       for(y in 1:data.dim[2]){
         loop.data <- data[x,y,,,,]
@@ -193,7 +193,7 @@ MaskPRSeries <- function(data, units, index){
   #'depending upon the argument passed.
   #'Requires the Udunits2 package to
   #'work.
-  print(paste("Entering masking function with threshold", index))
+  #print(paste("Entering masking function with threshold", index))
   units <- units.CF.convert(units)
   #Set options for determining what qualifies as a 'wet day'
   zero.thold = 0

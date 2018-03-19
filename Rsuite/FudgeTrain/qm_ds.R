@@ -222,12 +222,9 @@ callCFQMv3<-function(LH,CH,CF, args){
      if (ORDERING=="CF"){
        # CHANGE FACTOR ORDERED BY COARSE FUTURE
        temp.CFsorted2<-temp[order(temp$CF),]
-       print(summary(quantile(temp.CFsorted2$LH,prob,na.rm =TRUE)))
        temp.CFsorted2$qLH[1:len.out]<-quantile(temp.CFsorted2$LH,prob,na.rm =TRUE) #Output of length lengthCF
        temp.CFsorted2$ecdfCHqLH[1:len.out]<-ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)) #Output of length lengthCF
        temp.CFsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE) #Output of length lengthCF
-       #print(summary(temp.CFsorted2$index))
-       #print(summary(temp.CFsorted2[order(temp.CFsorted2$index),]))
        temp.CFQM2<-temp.CFsorted2[order(temp.CFsorted2$index),][1:lengthCF,]
        #By this point, it has successfully ordered the first lengthCF members of the output data
      }
@@ -247,7 +244,6 @@ callCFQMv3<-function(LH,CH,CF, args){
        temp.CHsorted2$qCFecdfCHqLH[1:len.out]<-quantile(temp$CF,ecdf(temp$CH)(quantile(temp$LH,prob,na.rm =TRUE)),na.rm =TRUE)
        temp.CFQM2<-temp.CHsorted2[order(temp.CHsorted2$index),][1:lengthCH,]
      }
-     print(summary(temp.CFQM2$qCFecdfCHqLH))
      out[MF.idx] <- temp.CFQM2$qCFecdfCHqLH[1:len.out]
      return(out)
 }

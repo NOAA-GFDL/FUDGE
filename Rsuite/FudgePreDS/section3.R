@@ -166,12 +166,12 @@ callPRPreproc <- function(test, input, postproc.output,
       #note that it is the presence of this mask that
       #leads to the adjustment being performed.
       if(!(ds.ref$downscale_oh)){
-        print(paste('adding future prmask'))
+        #print(paste('adding future prmask'))
         fut.prmask <- temp.out$future$pr_mask
         pr_mod$qc_args$fut.prmask <- fut.prmask
       }else{
         #Assume that you are downsciang on the OH dataset instead; store accordingly
-        print(paste('adding target prmask'))
+        #print(paste('adding target prmask'))
         pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
       }
     }

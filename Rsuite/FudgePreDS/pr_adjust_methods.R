@@ -14,10 +14,7 @@ find.thold.orig <- function(OH.frac, OH.var, MH.var){
 
 find.thold.kd <- function(OH.frac, OH.var, MH.var){
   MH.sort <- sort(MH.var[!is.na(MH.var)], decreasing=T)
-  print(summary(MH.var))
   adj.idx <- floor(OH.frac * length(MH.sort))
-  #   print(adj.idx)
-  #   print(MH.sort[(adj.idx-3):(adj.idx+3)])
   adj.trace <- mean(MH.sort[c(adj.idx, adj.idx + 1)])
   return(adj.trace)
 }
