@@ -10,7 +10,9 @@ LoadLib <- function(ds.method){
   library(plyr)
   #library(abind)
   #library('climod', lib.loc = "/home/d1a/R/x86_64-unknown-linux-gnu-library/3.2/")
-  library(climod)
+  print("loading climod from /app/R-3.2.1/lib64/R/library")
+  library('climod', lib.loc="/app/R-3.2.1/lib64/R/library")
+  #library(climod)
   #Note: This package overloads the '@' assignment for non-s4 objects by assigning
   #attribute editing to that operator. If we starting getting '@' issues, start
   #looking at this load first.
