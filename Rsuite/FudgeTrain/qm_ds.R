@@ -517,7 +517,9 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
         minobs) {
     unfixable <- function(x) {
       x@uncorrectable <- is.finite(x)
-      x + NA
+#       x + NA
+#####  BIG CHANGE HERE, from what McGinnis probably intended to what we normally do.
+      x + 0
     }
     return(rapply(bcdata, unfixable, how = "replace"))
   }
