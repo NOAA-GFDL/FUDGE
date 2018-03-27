@@ -1,3 +1,7 @@
+03-22-2018
+(d1a)
+- Hopefully final release for KDDM with udpated NA handling and QC mask.
+
 03-14-2018
 (cew)
 - Updating postProc to submit _qcmasks jobs in parallel, avoid submitting excess jobs with watcher restart
