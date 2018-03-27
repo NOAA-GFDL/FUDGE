@@ -108,7 +108,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
 	print("concatenated file: " + xy_out)	          
 	#Final step needs to be finalizing some metadata atts
 	#experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
-	if 'exp_info' != 'none':
+	if exp_info != 'none':
 		print("finalizing file metadata")
 		xy_out = finalize_metadata_out(xy_out, exp_info)
 	else:

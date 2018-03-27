@@ -34,10 +34,17 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	
 	#Okay - as of 207-05-09, adding a one-off special case for the synthetic data
 	#cases - as distinguished by the presence of grid0. 
+	is_syn = False
 	if idirsuffix=="/grid0/":
 		print("Adding synthetic data workaround")
 		idirsuffix = idirsuffix + "ZeroD/"
 		j_elements  = [1, 2]
+		is_syn = True
+	if idirsuffix=='/X1-1/':
+		print("Adding other synthetic data workaround")
+		idirsuffix = idirsuffix
+		j_elements  = [1, 2]
+		is_syn = True	
 	
 	### As of 3-15-17, working on script subset changes needed for 
 	### handling entire-grid downscaling and the arbitrary x,y subsets.
@@ -244,9 +251,21 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			#I'm not getting errors about longitude anymore, thoug. That's...probably progress.
 			i_idx = i_offset - (i+1 + i*(i_by-1))
 			j_idx = j_offset - (j+1 + j*(j_by-1))
+			if is_syn:
+				i_idx = 1
+				imax = 1
+				i_by = 1
+				j_idx = 1
+				jmax = 1
+				j_by = 1			
+			else:
+				i_idx = ival - i_offset + 1
+				imax = i_max + 1
+				j_idx = jval - j_offset + 1
+				jmax = j_max + 1
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
-													ival - i_offset + 1, i_max + 1, i_by, i_offset, \
-													jval - j_offset + 1, j_max + 1, j_by, j_offset, auxfile, target_var,outdirs)			
+													i_idx, imax, i_by, i_offset, \
+													j_idx, jmax, j_by, j_offset, auxfile, target_var,outdirs)			
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	
