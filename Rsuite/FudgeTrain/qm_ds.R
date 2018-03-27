@@ -37,7 +37,7 @@ callQM <- function(OH, MH, MF, args, type="",
   #Deleting the more complicated indexing in here and moving that indexing step to just
   #before the addition step *should* solve that particular issue.
   index.mask <- tmasks$MF$masks[[w]]
-  olap <- F
+  olap <- FALSE
   if(train_qcmask){
     if(tmasks$apply_tmasks){
       qc <- mapply(rep, index.mask, nrips)
@@ -78,7 +78,16 @@ callQM <- function(OH, MH, MF, args, type="",
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args)
       )
       # print(length(out))
+
+      if(type=="KDDM" & !is.null(attr(out, "uncorrectable")) & train_qcmask){
+        correctable <- rep(1, length(index.mask))
+        correctable[attr(out, "uncorrectable")] <- NA
+        qc[,,,n,,] <- index.qm(index.mask, correctable, olap)
+        out <- as.numeric(out)
+      }
+
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
+
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
@@ -487,7 +496,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
       # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
       which.norm <- ifelse(args$norm=="none", "identity", args$norm)
 
-      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut)
+      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut[[1]])
 
       # If pad was increased to shift data, shift it back
       if(pad != 0) {
@@ -499,11 +508,18 @@ callKDDM <- function(Oh, Mh, Mf, args){
       }
       # Write the bias corrected results into the DSout array in the unmasked indices and return.
       DSout[mf.mask] <- kddm.bc.out
+
+      if (!is.null(attr(kddm.bc.out,"uncorrectable"))) {
+        DS.out.uncorrectable <- rep(FALSE, length.out=length(DSout))
+        DS.out.uncorrectable[mf.mask] <- attr(kddm.bc.out,"uncorrectable")
+        attr(DSout,"uncorrectable") <- DS.out.uncorrectable
+      }
     } else {
       print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
                    ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
                    " uniform. Returning Mf."))
     }
+
     return(DSout)
 }
 
@@ -517,9 +533,12 @@ gfdl.kddm.biascorrect <- function (bcdata, norm = "zscore", minobs = 10, dmap = 
         minobs) {
     unfixable <- function(x) {
       x@uncorrectable <- is.finite(x)
-      x + NA
+      #       x + NA
+      #####  BIG CHANGE HERE, from what McGinnis probably intended to what we normally do.
+      x + 0
     }
-    return(rapply(bcdata, unfixable, how = "replace"))
+    unfix.out <- rapply(bcdata, unfixable, how = "replace")
+    return(unfix.out)
   }
   if (norm == "boxcox") {
     gamma <- megamma(unlist(bcdata, use.names = FALSE))
