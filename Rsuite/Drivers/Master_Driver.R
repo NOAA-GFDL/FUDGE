@@ -556,6 +556,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                                 #label.validation, label.training,
                                                 predictor.vars, fut.pred.rip.list,
                                                 qc.maskopts$qc.method, missval.args, train.string=train.string)
+      qc.longname <- make.qc.longname(qc.maskopts$qc.method, ds.method, target.var)
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
@@ -578,7 +579,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                  dim.list = dimlist, var.data=varlist,
                                  prec='float', missval=1e20, units="1",
                                  comment=qc.comment.att,
-                                 longname="QC Mask",
+                                 longname=qc.longname,
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals)
 

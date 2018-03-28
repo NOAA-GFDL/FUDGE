@@ -14,12 +14,22 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
   is_qcmask <- !is.na(qc.method)
   if (is_qcmask){
     #This is going to switch based upon the method
-    qc.str.method <- switch(qc.method, 
-                            'qc.train' = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
-                                                " met for ", train.string, ' and missing indicates retry option invoked'),
-                            'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
-                            qc.method
-    )
+    if (qc.method == 'qc.train'){
+      qc.str.method <- switch(ds.method, 
+                              'DeltaSD', 
+                              paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
+                                     " met for ", train.string, ' and missing indicates retry option invoked') )
+    }else{
+      qc.str.method <- switch(qc.method, 
+                              'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
+                              qc.method)
+    }
+#     qc.str.method <- switch(qc.method, 
+#                             'qc.train' = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
+#                                                 " met for ", train.string, ' and missing indicates retry option invoked'),
+#                             'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
+#                             qc.method
+#     )
     print(qc.str.method)
     string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
     string.desc <- paste("This is a QC check related to a downscaled estimate of", ds.var) 
@@ -38,6 +48,21 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
 #                        "predictor(s) used:", paste0(predictor.vars,","), 
 #                        "future predictor rip used:", paste(fut.pred.rips, collapse=","))
   return(paste(string.start, string.main))
+}
+
+make.qc.longname <- function(qc.method, ds.method, ds.var){
+  #'Makes a longname for the qcmask data
+  if (qc.method == 'qc.train'){
+    #secondary check for ds method
+    if (ds.method == 'DeltaSD'){
+      qc.longname <- paste("Delta of", ds.var)
+    }else{
+      qc.longname <- paste("Training qcmask for", ds.var)
+    }
+  }else{
+   qc.longname <- paste("QC mask of", ds.var)
+  }
+  return(qc.longname)
 }
 
 make.fudge.info <- function(tmask.filenames, aux.ref, missval.args, 
