@@ -206,7 +206,7 @@ MaskPRSeries <- function(data, units, index){
                  "and is required for calculating index", index))
     }
   }
-  switch(index,
+  switch(str(index),
          'zero' = return(data > zero.thold),
          'us_trace' = return(data > us.trace.thold),
          'global_trace' = return(data > global.trace.thold),
@@ -235,7 +235,7 @@ convert.pr.threshold <- function(index, units){
       zero.thold=0
     }
   }
-  switch(index,
+  switch(str(index),
          'zero' = return(zero.thold + 2 * .Machine$double.eps),
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
