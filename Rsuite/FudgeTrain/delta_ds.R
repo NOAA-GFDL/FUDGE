@@ -52,7 +52,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     if(!tmasks$time_mask_overlap){
       index.mask <- tmasks$MF$masks[[w]]
     }else{
-      print("Using non-overlapping index mask")
+      #Using non-overlapping index mask
       index.mask <- tmasks$trim$masks[[w]]
       #index.mask <- tmasks$MF$masks[[w]]
     }
