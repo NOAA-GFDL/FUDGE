@@ -41,8 +41,6 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   #Convert the threshold and create the reference mask
   wetday.convert <- convert.pr.threshold(opt.wetday, ref.units)
   ref.wetdays <- ref.data > wetday.convert
-#   print(ref.wetdays[7890:7896])
-#   print(ref.data[7890:7896])
 
   #Initialize the adjusted reference vectors
   if(verbose){print('Initializing reference vectors')}
@@ -50,8 +48,6 @@ AdjustWetdays <- function(ref.data, ref.units=NULL,
   adjust.wetdays <- MaskPRSeries(adjust.data, adjust.units, opt.wetday)
   future.wetdays <- MaskPRSeries(future.data, future.units, opt.wetday)
 
-  #   adjust.wetdays <- adjust.data > wetday.convert
-  #   future.wetdays <- future.data > wetday.convert
 
   ##Loop over all lat/lon points available in the input datasets
   if(verbose){print(paste('Looping over data of dimensions', paste(dim(ref.data), collapse=" ")))}
@@ -98,8 +94,6 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
 
   }
 } else {
-  #print('wetday convert:')
-  #print(wetday.convert)
   loop.adj.wetdays <-    adjust.data[adj.idx] > wetday.convert
   loop.fut.wetdays <-    future.data[fut.idx] > wetday.convert
 }
@@ -130,8 +124,6 @@ if (lopt.drizzle == TRUE  && any(ref.idx)){  #Avoid running if all NA values pre
       future.data <- conserve.prseries(future.data, future.wetdays, pool_ens=T)
     }
   }
-#print("adjusted.thold:")
-#print(adj.thold)
   #Return both data and the mask of adjustments made to that data
   out.list <- list("ref" = list("data"=as.numeric(ref.wetdays)*ref.data, "pr_mask"=ref.wetdays),
                    "adjust" = list("data" = as.numeric(adjust.wetdays)*adjust.data, "pr_mask" = adjust.wetdays),
@@ -167,7 +159,6 @@ conserve.prseries <- function(data, mask, pool_ens=F){
     #in which case, conserving over nonspatial points is probably a
     #bad idea
     data.dim <- dim(data)
-    #print(paste("dims of data in conserve.prseries:", paste(data.dim, collapse=",")))
     for(x in 1:data.dim[1]){
       for(y in 1:data.dim[2]){
         loop.data <- data[x,y,,,,]
@@ -193,7 +184,6 @@ MaskPRSeries <- function(data, units, index){
   #'depending upon the argument passed.
   #'Requires the Udunits2 package to
   #'work.
-  #print(paste("Entering masking function with threshold", index))
   units <- units.CF.convert(units)
   #Set options for determining what qualifies as a 'wet day'
   zero.thold = 0
@@ -206,11 +196,12 @@ MaskPRSeries <- function(data, units, index){
                  "and is required for calculating index", index))
     }
   }
-  switch(str(index),
+  switch(as.character(index),
          'zero' = return(data > zero.thold),
          'us_trace' = return(data > us.trace.thold),
          'global_trace' = return(data > global.trace.thold),
-         return((data > index))) #If own threshold supplied,
+         return((data > index))
+         ) #If own threshold supplied,
   #It is assumed that you know the units
 }
 
@@ -235,7 +226,7 @@ convert.pr.threshold <- function(index, units){
       zero.thold=0
     }
   }
-  switch(str(index),
+  switch(as.character(index),
          'zero' = return(zero.thold + 2 * .Machine$double.eps),
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
