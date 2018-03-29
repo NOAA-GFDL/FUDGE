@@ -15,14 +15,20 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
   if (is_qcmask){
     #This is going to switch based upon the method
     if (qc.method == 'qc.train'){
-      qc.str.method <- switch(ds.method, 
-                              'DeltaSD', 
-                              paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
-                                     " met for ", train.string, ' and missing indicates retry option invoked') )
+      if (ds.method %in% c('DeltaSD')){
+        string.start <- paste("Output produced as the delta used to downscale a given x,y,t location")
+      }else{
+        qc.str.method <- switch(ds.method, 
+                                paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
+                                       " met for ", train.string, ' and missing indicates retry option invoked') )
+        string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
+        
+      }
     }else{
       qc.str.method <- switch(qc.method, 
                               'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
                               qc.method)
+      string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
     }
 #     qc.str.method <- switch(qc.method, 
 #                             'qc.train' = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
@@ -31,7 +37,7 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
 #                             qc.method
 #     )
     print(qc.str.method)
-    string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
+    
     string.desc <- paste("This is a QC check related to a downscaled estimate of", ds.var) 
   }else{
     string.start <- paste("Output produced by downscaling by the", ds.method, "method")
