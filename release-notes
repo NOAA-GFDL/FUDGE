@@ -1,3 +1,11 @@
+03-29-2018
+(cew)
+- Updating qc.train for DeltaSD to return the ratio delta used, tweaking metadata to change, bugfix for the switch statements on pr trace using numeric (non-string) switches
+
+03-27-2018
+(d1a)
+- Updating KDDM qcmasks to keep track of places where KDDM adds NAs and we replace with MF
+
 03-14-2018
 (cew)
 - Updating postProc to submit _qcmasks jobs in parallel, avoid submitting excess jobs with watcher restart
