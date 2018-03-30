@@ -16,7 +16,7 @@ make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfol
     #This is going to switch based upon the method
     if (qc.method == 'qc.train'){
       if (ds.method == 'DeltaSD'){
-        string.start <- paste("Output to document document the delta ratio applied at individual x,y,t locations")
+        string.start <- paste("Output to document the delta ratio applied at individual x,y,t locations")
       }else{
         qc.str.method = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
                             " met for ", train.string, ' and missing indicates retry option invoked')
