@@ -245,6 +245,10 @@ replace.vals<-function(series, tf.index){
 units.CF.convert <- function(unit.string){
   #Performs simple conversions needed between CF-compliant
   #units and the udunits2 package.
-  unitlist<-sub('kg m-2 s-1', "l m-2 s-1", unit.string)
-  #unitlist<-sub('C', "°C", unitlist)
+  if (is.null(unit.string)){
+    unitlist <- NULL
+  }else{
+    unitlist<-sub('kg m-2 s-1', "l m-2 s-1", unit.string)
+  }
+  return(unitlist)
 }
