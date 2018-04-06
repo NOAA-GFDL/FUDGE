@@ -5,7 +5,12 @@ import itertools
 
 def create_all_runscripts(i_start, i_end, i_by, i_offset, 
                          j_start, j_end, j_by, j_offset, 
-                         njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, auxfile, aux_file_list, wallclocktime):
+                         njobs, ncpu, fudgetag, scriptdir, 
+                         OH_dir, MH_dir, MF_dir, 
+                         oh_timerange, mh_timerange, mf_timerange, predlist, 
+                         spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, 
+                         outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, 
+                         auxfile, aux_file_list, wallclocktime):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	
@@ -46,19 +51,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		j_elements  = [1, 2]
 		is_syn = True	
 	
-	### As of 3-15-17, working on script subset changes needed for 
-	### handling entire-grid downscaling and the arbitrary x,y subsets.
-	####don't worry about the njobs parameter for now; it's handled in the subset looping.
-	###mini_start = range(int(i_start), int(i_end), njobs)
-	###mini_end = [el + njobs for el in mini_start]
-	###mini_end = [el if el <= (int(i_end)+1) else (int(i_end)+1) for el in mini_end]
-	###i_offset = int(i_start) - 1
-	###i_max = int(i_end) - i_offset
-	####correct j_range
-	###j_range = re.sub('"', "", j_range)
-	#One of the goals for this was to get away from using gcp-specific operations
-	#As of 1-19-17, wallclocktime defaults to 12 hrs; we can set it higher or lower
-	#in the aux file
 	moab_header = "\n".join(["#!/bin/tcsh ", 
 	                        "#PBS -S /bin/tcsh ", 
 	                        "#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime, 
@@ -86,6 +78,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	spatmask_present = (spatmask != 'na')
 	tmask_present = (OH_tmask != 'na')
 	trim_time_mask_present = (trim_tmask != 'na')
+	files_in_aux = False
 	#do all of your dmgets (requests for files on tape) in the script at once
 	#it is easier on the infrastructure if they are all done at once, since 
 	#odds are some of the files we want are on the same tapes
@@ -94,15 +87,14 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		#Need the file located at one level up from the spatmask dir - 
 		#spatmask itself points only to the OneD dir
 		spatmask_dir = osp.dirname(osp.abspath(spatmask))
-		#print(spatmask)
-		#print(spatmask_dir)
-		#sys.exit()
 		spatmask_file = [osp.join(spatmask_dir, el) for el in os.listdir(spatmask_dir) if re.search('masks', el) is not None][0]
 		dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
 		spatmask_files = [spatmask_file]
 		dmget_string = dmget_string + "dmget " + spatmask_file + " \n" 
 	else:
 		spatmask_files = []	
+		
+		
 	dmget_string = dmget_string + "# Get OH data" + "\n"
 	#OH directory currently described with /OneD/ appended
 	OH_dir = os.path.dirname(osp.abspath(OH_dir))
@@ -132,59 +124,30 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#predictor vars present. At some point, var classification checks
 	#(such is is_spaceless for ENSO data) should go in here	.
 	#MH and MF paths are currently passed in several dirlevels earlier than OH 
-	dmget_string = dmget_string + "# Get MH data" + "\n"
-	mh_files = []
-	for pred_var in predlist:
-		mh_dir = osp.join(MH_dir, pred_var) + idirsuffix
-		print(idirsuffix)
-		print(mh_dir + " , " + mh_timerange)
-		mh_dir_files = [osp.join(mh_dir, el) for el in os.listdir(mh_dir) if re.search(mh_timerange, el) is not None]
-		#Make sure that .nc is the last part of the string
-		mh_file = [el for el in mh_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
-		mh_files.append(mh_file)
-		dmget_string = dmget_string + "dmget " + mh_file + " \n"
-	dmget_string = dmget_string + "# Get MF data" + "\n"
-	mf_files = []
-	for pred_var in predlist:
-		mf_dir = osp.join(MF_dir, pred_var) + idirsuffix
-		mf_dir_files = [osp.join(mf_dir,el) for el in os.listdir(mf_dir) if re.search(mf_timerange, el) is not None]
-		#Make sure that .nc is the last part of the string
-		mf_file = [el for el in mf_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
-		mf_files.append(mf_file)
-		dmget_string = dmget_string + "dmget " + mf_file + " \n"
+		
+	#Switch on this later, when things get added to the aux
+	present_in_aux = False
+	if not present_in_aux:
+		#oh_files,oh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
+		mh_files,mh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MH_dir, trange=mh_timerange, suffix=idirsuffix, is_multivar=True)
+		mf_files,mf_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
+	else:
+		#oh_files, oh_dmget = build_aux_input_paths("")
+		mh_files, mh_dmget = build_aux_input_paths("")
+		mf_files, mf_dmget = build_aux_input_paths("")
+	#For either case, concatenate all the dmget strings together
+	dmget_string = dmget_string + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
+	
 	tmask_files = []
 	leapmask_files = []
 	if tmask_present:
 		tmask_files = [OH_tmask, MH_tmask, MF_tmask]
 		dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
-		#dmget_string = dmget_string + "dmget " + OH_tmask + "\n" 
-		#dmget_string = dmget_string + "# Get MH tmask " + "\n"
-		#dmget_string = dmget_string + "dmget " + MH_tmask + "\n" 
-		#dmget_string = dmget_string + "# Get MF tmask " + "\n"
-		#dmget_string = dmget_string + "dmget " + MF_tmask + "\n" 
 		if trim_time_mask_present:
 			tmask_files.append(trim_tmask)
-			#dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"	
-			#dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
 		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n" 
 		dmget_string = dmget_string + tmask_dmget
-		#if copy_leapmasks:	
-		#	#Need a historic and a future leapday mask file
-		#	leapmask_base = "/archive/esd//PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_missingleapdays_"
-		#	#Unfortunately, oh_timerange and mf_timerange can have '_ensmbl' tacked onto the end.
-		#	#That is never going to be present in the leapday masks.
-		#	#...I don't have to worry about _NOLEAP speficications at this point, 
-		#	#but that might be something to keep in mind for the future.
-		#	oh_leap_trange = re.sub("_ensmbl", "", oh_timerange)
-		#	mf_leap_trange = re.sub("_ensmbl", "", mf_timerange)
-		#	hist_leapmask = leapmask_base + oh_leap_trange + ".nc"
-		#	fut_leapmask  = leapmask_base + mf_leap_trange + ".nc"
-		#	leapmask_files = [hist_leapmask, fut_leapmask]
-		#	dmget_string = dmget_string + "# Get leapday masks" + "\n"
-		#	dmget_string = dmget_string + "dmget " + hist_leapmask + "\n"
-		#	dmget_string = dmget_string + "dmget " + fut_leapmask + "\n"
 	#And finally, add the files that the aux file specifies
-	#print(aux_file_list)
 	if len(aux_file_list) > 0:
 		aux_strlist = ["#Copy files from aux specification"]
 		for el in aux_file_list:
@@ -273,20 +236,44 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
 				#print("writing master to file")
-				runscript_calls = [el + " & \n" for el in runscript_files]
-				runscript_calls = "sleep 10 \n".join(runscript_calls)
+				#runscript_calls = [el + " & \n" for el in runscript_files]
+				#runscript_calls = "sleep 10 \n".join(runscript_calls)
+				auxfile_mod = auxfile
+				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod, 
+				                                        i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
 				with open(master_scriptname, 'w') as f: 
 					f.write(moab_header)
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
 					f.write(outdir_string)
-					f.write("echo 'Beginning calls to runscripts'\n")
-					f.write(runscript_calls) 
-					f.write("wait")			
+					f.write("echo 'Beginning calls to executable'\n")
+					f.write(executable_code) 
+					#f.write("wait")			
 	print('master runscript and mini creation completed')
 	#return(n_tiles)	
-			
+
+def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
+	'''
+	Builds input paths from the components that are present in the XML.
+	'''
+	in_files = []
+	dmget_string = ""
+	for v in in_vars:
+		f_dir = osp.join(in_dir, v) + suffix
+		f_dir_files = [osp.join(f_dir, el) for el in os.listdir(f_dir) if re.search(trange, el) is not None]
+		#the above should match one, and exactly one file. Include a check in here?
+		in_file = [el for el in f_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
+		in_files.append(in_file)
+		dmget_string = dmget_string + "dmget "+ in_file + "\n"
+	return(in_files, dmget_string)
+
+def build_aux_input_paths(dummy_arg):
+	'''
+	Makes the dmget strings and does file copy opts for things that don't exit yet
+	'''
+	return(dummy_arg)
+					
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
 	outdir_string = "# Creating output directories \n"
@@ -382,4 +369,57 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
 		tmp_src = osp.join(runcode_dir, runcode_files[0])
 		shutil.copy2(tmp_src, tmp_dest)	
 	
-                       
+def make_executable_stuff(runscript_files, scriptdir, auxfile_mod, 
+                          ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
+	'''
+	Makes the things that call R code (eventually) in the master.
+	The batch branch sources runscripts with pre-defined x,y locations
+	  Workflow: master -> runscript -> runcode -> Master_Driver
+	The interactive branch is activated when master is called with command-line
+	  arguments, and pops an rstudio terminal with a config file that allows
+	  access to the command-line params that set the x,y locations in the
+	  runscripts.
+	  Workflow: master -> config file -> runcode -> Master_Driver
+	'''
+	runscript_calls = ["\t" + el + " & \n" for el in runscript_files]
+	batch_cmd = "\t sleep 10 \n".join(runscript_calls) + "\twait"
+	#Then, do the code that gets used for the alt running
+	echo_cmd = "<newline> ".join([
+	                      "# clean environment before calls", 
+	                      "rm(list=ls())", 
+	                      "# set twindow parameters",
+	                      "twindows='all'", 
+	                      "# set i and j location",
+	                      "i_idx    <<- " + str(ival), 
+	                      "i_max    <<- " + str(imax), 
+	                      "i_stride <<- " + str(i_by),
+	                      "i_offset <<- " + str(i_offset),
+	                      "j_idx    <<- " + str(jval), 
+	                      "j_max    <<- " + str(jmax), 
+	                      "j_stride <<- " + str(j_by), 
+	                      "j_offset <<- " + str(j_offset),
+	                      "# point to the modified auxfile",
+	                      "auxfile <<- '" + auxfile_mod + "'", 
+	                      "# source the runcode which sources Master_Driver",
+	                      "source('$generic_runcode')"])
+	echo_cmd = '"' + echo_cmd + '"'
+	                      
+	int_cmd = "\n\t".join(["\tmodule load rstudio",
+	                      "module unload R",
+	                      "module load R/3.2.1", 
+	                      "set auxfile_mod = " + auxfile_mod, 
+	                      "set runcode_dir = " + scriptdir + "/" + 'runcode', 
+	                      "set generic_runcode_base = `ls $runcode_dir | head -n 1`",           
+	                      "set generic_runcode = $runcode_dir/$generic_runcode_base", 
+	                      #Below line shouldn't give an error: removes if there, 
+	                      #moves on if not.
+	                      "rm -rf $TMPDIR/command_line_params.R",
+	                      "set r_cmd = " + echo_cmd,
+	                      "set r_header = '<shebang>/bin/Rscript'",
+	                      "echo $r_header | sed -e 's:<shebang>:#\!:g' >> $TMPDIR/command_line_params.R",
+	                      "echo $r_cmd | sed -e 's:<newline>:" + r'\n' + ":g' >> $TMPDIR/command_line_params.R",
+	                      "rstudio $TMPDIR/command_line_params.R &"]
+	                      )
+	#And then, join both commands together with ifelse
+	executable_stuff = "\nset arrlen = $#argv\n\nif ( $arrlen == 0 ) then\n" + batch_cmd + "\nelse\n" + int_cmd + "\nendif"
+	return(executable_stuff)                       

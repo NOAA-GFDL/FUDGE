@@ -66,21 +66,25 @@ if (length(console.args) > 0){
   copy_from_tmp = console.args[10]
   x.pad <- "NA"
 }else{
-  oh_by <- 1 #3
-  mh_by <- 1 #3 #5 #3
-  mf_by <- 1 #3 #5 #3
-  i_idx <- 48 #167 #pr_diff = 37 i800 = 53 #194 #10
-  i_max <- 194
-  i_stride <- 1
-  i_offset <<- 748
-  j_idx <- 1
-  j_max <- 114
-  j_stride <- 114
-  j_offset <<- 454
-  auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json"
-  #auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" ##01 has spatial masks; 05_offset has asymmetric grid
-  copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
-  x.pad <- "NA"
+  current_env = ls()
+  print(current_env)
+  if (!exists('i_idx', inherits=T, envir=globalenv())){
+    stop(paste("Error in Master_Driver: you should be using a config file with", 
+               "command line params if you aren't using command-line args!"))
+#     #These parameters can also be set with the config file in master script
+#     i_idx <- 48 #167 #pr_diff = 37 i800 = 53 #194 #10
+#     i_max <- 194
+#     i_stride <- 1
+#     i_offset <<- 748
+#     j_idx <- 1
+#     j_max <- 114
+#     j_stride <- 114
+#     j_offset <<- 454
+#     auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json"
+#     #auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" ##01 has spatial masks; 05_offset has asymmetric grid
+#     copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
+#     x.pad <- "NA"
+  }
 }
 
 fudge.start.time <- proc.time()[3]
