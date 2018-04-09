@@ -8,6 +8,8 @@ import os,sys
 from os import path as osp
 import json
 import re
+import collections
+from collections import OrderedDict
 
 def get_ds_info(ds_method, FUDGEROOT):
 	#Reads the ds lookup table
@@ -37,7 +39,7 @@ def parse_aux_info(jsonfile):
 	print("Parsing aux file")
 	print(jsonfile)
 	with open(jsonfile, 'r') as jsonfile:
-		jsondict = json.load(jsonfile)
+		jsondict = json.load(jsonfile, object_pairs_hook=OrderedDict)
 		#wallclock time
 		if 'wallclocktime' in jsondict.keys():
 			#R's json converter helpfully wraps everything in lists.
@@ -102,7 +104,7 @@ def parse_aux_info(jsonfile):
 			copy_files = list(set(copy_files))				
 	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 
 			'pp_wallclocktime':pp_wallclocktime,
-	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus})
+	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus}, jsondict)
 	
 def make_aux_input(grid, script_base, targ_var):
 	#Creates an aux info file with g-or-earlier default settings: minifiles, 

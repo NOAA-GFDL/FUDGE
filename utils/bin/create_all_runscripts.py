@@ -2,6 +2,8 @@ import re
 import os, stat, shutil
 from os import path as osp
 import itertools
+import json
+from collections import OrderedDict
 
 def create_all_runscripts(i_start, i_end, i_by, i_offset, 
                          j_start, j_end, j_by, j_offset, 
@@ -10,16 +12,10 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                          oh_timerange, mh_timerange, mf_timerange, predlist, 
                          spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, 
                          outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, 
-                         auxfile, aux_file_list, wallclocktime):
+                         auxfile, aux_file_list, wallclocktime, 
+                         auxdict):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
-	
-	'''
-	print(i_start)
-	print(i_end)
-	print(j_start)
-	print(j_end)
-	'''
 	
 	#which i_indices are we going to be looping over?
 	i_elements = range(int(i_start), int(i_end)+1, i_by)
@@ -78,7 +74,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	spatmask_present = (spatmask != 'na')
 	tmask_present = (OH_tmask != 'na')
 	trim_time_mask_present = (trim_tmask != 'na')
-	files_in_aux = False
 	#do all of your dmgets (requests for files on tape) in the script at once
 	#it is easier on the infrastructure if they are all done at once, since 
 	#odds are some of the files we want are on the same tapes
@@ -91,52 +86,53 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
 		spatmask_files = [spatmask_file]
 		dmget_string = dmget_string + "dmget " + spatmask_file + " \n" 
+		spatmask_path = spatmask_file
 	else:
-		spatmask_files = []	
-		
-		
-	dmget_string = dmget_string + "# Get OH data" + "\n"
-	#OH directory currently described with /OneD/ appended
-	OH_dir = os.path.dirname(osp.abspath(OH_dir))
-	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
-	##Make sure that .nc is the last part of the string
-	oh_files = [el for el in oh_files if re.search(".nc$", el) is not None]
-	#multivar_target is a hack for getting around alternate  var specifications. 
-	#currently, it's only triggered by MBC; depending on what methods we add, 
-	#that may change.
-	if not multivar_target: 
-		for f in oh_files:
-			dmget_string = dmget_string + "dmget " + f + "\n"
-	else:
-		prefix_loc = len(MH_dir.split("/"))
-		oh_prefix = "/".join(OH_dir.split("/")[0:prefix_loc])
-		oh_suffix = idirsuffix
-		for pred_var in predlist:
-			#Do a series of replaces on the predictor var dir
-			oh_dir = osp.join(oh_prefix, pred_var) + oh_suffix
-			#print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
-			oh_dir_files = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None] 
-			#Make sure that .nc is the last part of the string
-			oh_file = [el for el in oh_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
-			oh_files.append(oh_file)
-			dmget_string = dmget_string + "dmget " + oh_file + " \n"		
+		spatmask_files = []
+		spatmask_path = 'none'	
+				
 	#MH and MF files have an assumption that you can have multiple 
 	#predictor vars present. At some point, var classification checks
 	#(such is is_spaceless for ENSO data) should go in here	.
-	#MH and MF paths are currently passed in several dirlevels earlier than OH 
-		
+	#MH and MF paths are currently passed in several dirlevels earlier than OH 	
 	#Switch on this later, when things get added to the aux
 	present_in_aux = False
 	if not present_in_aux:
-		#oh_files,oh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
+		#OH_dir = os.path.dirname(osp.abspath(OH_dir))
+		prefix_loc = len(MH_dir.split("/"))		
+		oh_prefix = "/".join(OH_dir.split("/")[0:prefix_loc])
+		oh_suffix = "/".join(OH_dir.split("/")[(prefix_loc+1):-1])
+		if not multivar_target:
+			oh_vars = [target_var]
+			oh_files,oh_dmget = build_xml_input_paths(oh_vars, oh_prefix, oh_timerange, "/" + oh_suffix, False)
+		else:
+			#Only triggered by MBC; may change later
+			oh_vars = predlist
+			oh_files, oh_dmget = build_xml_input_paths(predlist, oh_prefix, oh_timerange, idirsuffix, True)
 		mh_files,mh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MH_dir, trange=mh_timerange, suffix=idirsuffix, is_multivar=True)
 		mf_files,mf_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
+		#Add modified aux copy & structure addition
+		oh_auxdict = make_aux_entry(oh_vars,  oh_files, stencil=auxdict['OH']['stencil'], geomask=spatmask_path)
+		mh_auxdict = make_aux_entry(predlist, mh_files, stencil=auxdict['MH']['stencil'], geomask=spatmask_path)
+		mf_auxdict = make_aux_entry(predlist, mf_files, stencil=auxdict['MF']['stencil'], geomask=spatmask_path)
+		auxdict['OH'] = oh_auxdict
+		auxdict['MH'] = mh_auxdict
+		auxdict['MF'] = mf_auxdict
+		auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
+		os.makedirs(osp.dirname(auxfile_mod))
+		auxstr = json.dumps(auxdict, indent=4)
+		f = open(auxfile_mod, 'w')
+		print >> f, auxstr
+		f.close()
 	else:
-		#oh_files, oh_dmget = build_aux_input_paths("")
-		mh_files, mh_dmget = build_aux_input_paths("")
-		mf_files, mf_dmget = build_aux_input_paths("")
+		oh_files, oh_dmget = get_aux_input_paths("")
+		mh_files, mh_dmget = get_aux_input_paths("")
+		mf_files, mf_dmget = get_aux_input_paths("")
+		auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
+		os.makedirs(osp.dirname(auxfile_mod))
+		shutil.copyfile(auxfile, auxfile_mod)
 	#For either case, concatenate all the dmget strings together
-	dmget_string = dmget_string + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
+	dmget_string = dmget_string + "# Get OH data " + oh_dmget + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
 	
 	tmask_files = []
 	leapmask_files = []
@@ -199,19 +195,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				runscript_files = []
 			#Since master is created on first (always), can proceed with rest of runscript calls
 			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+"."+i_string+"_"+j_string)
-			###THIS NEEDS TRANLSATION WORK
-			#print("components for R code:")
-			#print([(i + 1 + i*(i_by-1)), i_max, i_by, i_offset, (j+1 + j*(j_by-1)), j_max, j_by, j_offset])
-			#...okay - as of 2017-05-24, testing an indexing bug on teh single minifile cases
-			#by adding 1 to i_offset and j_offset.
-			#runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
-			#										(i+1 + i*(i_by-1)), i_max, i_by, i_offset+1, \
-			#										(j+1 + j*(j_by-1)), j_max, j_by, j_offset+1, auxfile, target_var,outdirs)
-			#Okay...as of 05-25, I think I've identified a bigger issue at stake for 
-			#running the minifile jobs - namely, offset isn't offset exactly.
-			#...welp. As of 6 PM, it's forming the indexes correctly, but the 926th index in the new stuff still seems
-			#to match the 925th in the old. 
-			#I'm not getting errors about longitude anymore, thoug. That's...probably progress.
 			i_idx = i_offset - (i+1 + i*(i_by-1))
 			j_idx = j_offset - (j+1 + j*(j_by-1))
 			if is_syn:
@@ -226,9 +209,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				imax = i_max + 1
 				j_idx = jval - j_offset + 1
 				jmax = j_max + 1
+			#2018-04-09: Need to copy modified auxfile all the time, since that
+			#is where the file paths are.
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
 													i_idx, imax, i_by, i_offset, \
-													j_idx, jmax, j_by, j_offset, auxfile, target_var,outdirs)			
+													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)			
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	
@@ -238,7 +223,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				#print("writing master to file")
 				#runscript_calls = [el + " & \n" for el in runscript_files]
 				#runscript_calls = "sleep 10 \n".join(runscript_calls)
-				auxfile_mod = auxfile
 				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod, 
 				                                        i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
 				with open(master_scriptname, 'w') as f: 
@@ -291,7 +275,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 	
 def create_slice_runscript(i_string, j_string, scriptdir, 
 							i_idx, i_max, i_by, i_offset,
-							j_idx, j_max, j_by, j_offset, auxfile, target_var, outdirs):
+							j_idx, j_max, j_by, j_offset, auxfile_mod, target_var, outdirs):
 	#Creates the runscript code specific to a slice of the grid downscaled 
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
@@ -318,7 +302,7 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	#Okay - this defines the list of runcodes that are going to be run.
 	#i_idx is in the same space as i_max; i is in minifile space.
 	#r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile #+ " &"
-	r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile, 'TRUE'])+ " >>& " + logfile + " &"
+	r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, 'TRUE'])+ " >>& " + logfile + " &"
 	runscript = runscript_header + r_command + "\n" + "wait \n"
 	for outdir in outdirs:
 		runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
@@ -387,9 +371,15 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	echo_cmd = "<newline> ".join([
 	                      "# clean environment before calls", 
 	                      "rm(list=ls())", 
-	                      "# set twindow parameters",
-	                      "twindows='all'", 
-	                      "# set i and j location",
+	                      "# set twindow parameters:",
+	                      "## if not set to 'all', you can set to a number from",
+	                      "## 1:nmasks to run a specific mask",
+	                      "twindow_run <<- 'all'", 
+	                      "# set i and j location:",
+	                      "## idx is the i/j index from which you start,",
+	                      "## stride is the number of indices from that point you step (1 being a single i or j val)",
+	                      "## max is the length of the i/j dimension (DONT EDIT) ",
+	                      "## offset is the i,j offset (DONT EDIT YET - USED FOR FILENAME CONSTRUCTION)",
 	                      "i_idx    <<- " + str(ival), 
 	                      "i_max    <<- " + str(imax), 
 	                      "i_stride <<- " + str(i_by),
@@ -398,14 +388,14 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	                      "j_max    <<- " + str(jmax), 
 	                      "j_stride <<- " + str(j_by), 
 	                      "j_offset <<- " + str(j_offset),
-	                      "# point to the modified auxfile",
+	                      "# point to the modified auxfile (has full file paths)",
 	                      "auxfile <<- '" + auxfile_mod + "'", 
 	                      "# source the runcode which sources Master_Driver",
 	                      "source('$generic_runcode')"])
 	echo_cmd = '"' + echo_cmd + '"'
 	                      
-	int_cmd = "\n\t".join(["\tmodule load rstudio",
-	                      "module unload R",
+	int_cmd = "\n\t".join(["\tmodule load rstudio/0.98.1103",
+	                      "module unload R/2.15.2",
 	                      "module load R/3.2.1", 
 	                      "set auxfile_mod = " + auxfile_mod, 
 	                      "set runcode_dir = " + scriptdir + "/" + 'runcode', 
@@ -418,8 +408,27 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	                      "set r_header = '<shebang>/bin/Rscript'",
 	                      "echo $r_header | sed -e 's:<shebang>:#\!:g' >> $TMPDIR/command_line_params.R",
 	                      "echo $r_cmd | sed -e 's:<newline>:" + r'\n' + ":g' >> $TMPDIR/command_line_params.R",
+	                      "echo 'Command to run R minifile code from the command line:'",
+	                      'echo "rstudio $TMPDIR/command_line_params.R &"',
 	                      "rstudio $TMPDIR/command_line_params.R &"]
 	                      )
 	#And then, join both commands together with ifelse
 	executable_stuff = "\nset arrlen = $#argv\n\nif ( $arrlen == 0 ) then\n" + batch_cmd + "\nelse\n" + int_cmd + "\nendif"
-	return(executable_stuff)                       
+	return(executable_stuff)
+	
+
+def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none'):
+	'''
+	Makes an aux file entry of input data files for one of OH, MH or MF.
+	'''
+	aux_entry = {}
+	for var,f in zip(varnames, files):
+		aux_entry[var] = {'file': f, 
+		                  'is_fixed':'FALSE',
+		                  'stencil': stencil, 
+		                  'geomask': geomask, 
+		                  'tmask':   tmask}
+	#2017-04-06: R code currently looks for stencil under top-level check, 
+	#not under the var names.	                  
+	#aux_entry['stencil'] = stencil
+	return(aux_entry)	                       

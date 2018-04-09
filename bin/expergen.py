@@ -24,6 +24,7 @@ import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 import make_postProc_scripts
 from make_postProc_scripts import make_postProc_scripts
+from collections import OrderedDict
 
 list_title = []
 dictDS_hi = {}
@@ -611,7 +612,8 @@ def main():
 		else:
 			print('making default aux file')
 			auxinput = make_aux_input(output_grid, sbase, target)
-	auxinfo = parse_aux_info(auxinput)
+	#auxinfo is selective reads, auxdict is entire, messy thing
+	auxinfo,auxdict = parse_aux_info(auxinput)
 	#If aux file is not default, aux file overrides XML parameters
 	if auxinfo['njobs'] != 8:
 		njobs = auxinfo['njobs']
@@ -673,7 +675,8 @@ def main():
 	                      fut_time_window, auxcustom, outdir, target, method, \
 	                      file_j_range, idirsuffix, \
 	                      ds_info['multivar_target'],
-	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'])
+	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'], 
+	                      auxdict)
 	#print('examine runscript output')
 	#sys.exit()
 
