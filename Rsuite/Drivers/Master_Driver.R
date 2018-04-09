@@ -187,102 +187,59 @@ if(spat.mask.dir_1!="na"){
   message("no spatial mask included; skipping to next step")
 }
 
-### Now, access input data sets
-message("Reading in target data")
-
-oh_x_subset <- get.FUDGE.subset(aux.ref$OH$idim, i_idx, i_max, i_stride-1)
-oh_y_subset <- get.FUDGE.subset(aux.ref$OH$jdim, j_idx, j_max, j_stride-1)
-if (ds.ref$multivar_target){
-  #Right now, only applies to MBC
-  OH.files <- c()
-  target.indir_1 <- dirname(dirname(dirname(target.indir_1)))
-  for (var in predictor.vars){
-    print(paste("reading target var", var))
-    OH.files <- append(OH.files, get.FUDGE.filepath(target.indir_1,
-                                                    var,target.freq_1,target.model_1,
-                                                    target.scenario_1,grid,
-                                                    target.file.start.year_1,target.file.end.year_1,
-                                                    target.suffix, is_OH = F))
-  }
-  OH <- build.FUDGE.dataset(OH.files, predictor.vars, list(x=oh_x_subset, y=oh_y_subset),
-                            dim=ds.ref$oh_dimlist,
-                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim,
-                            aux.ref$OH$geomask)
-  if (apply_spatmask){
-    spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
-    for (el in names(OH$data)){
-     OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial')
-    }
-  }
-}else{
-  OH.path <- get.FUDGE.filepath(target.indir_1, target.var,target.freq_1,target.model_1,target.scenario_1,grid,
-                                target.file.start.year_1,target.file.end.year_1,
-                                target.suffix, is_OH = T)
-  OH.files <- OH.path
-  OH <- build.FUDGE.dataset(OH.path, target.var, list(x=oh_x_subset, y=oh_y_subset),
-                            dim=ds.ref$oh_dimlist,
-                            x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim,
-                            aux.ref$OH$geomask)
-  if (apply_spatmask){
-    spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
-    for (el in names(OH$data)){
-      OH$data[[el]] <- apply.any.mask(data=OH$data[[el]], mask=spatmask, dim='spatial')
-    }
+########################
+print("Reading OH files")
+OH.files <- unlist(lapply(aux.ref$OH, '[[', 'file'), use.names = F)
+print(OH.files)
+OH.vars <- names(aux.ref$OH)
+oh_x_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$idim, i_idx, i_max, i_stride-1)
+oh_y_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$jdim, j_idx, j_max, j_stride-1)
+OH <- build.FUDGE.dataset(OH.files, OH.vars, list(x=oh_x_subset,y=oh_y_subset), 
+                          dim=ds.ref$oh_dimlist, 
+                          x_by = aux.ref$OH[[1]]$idim, y_by = aux.ref$OH[[1]]$jdim, 
+                          aux.ref$OH[[1]]$geomask)
+if (apply_spatmask){
+  spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
+  for (el in names(OH$data)){
+    OH$data[[el]] <- apply.any.mask(data=OH$data[[1]], mask=spatmask, dim='spatial')
   }
 }
-#Now that we can read in stencils, the below is not
-#going to work anymore. Some of the fixes are down just before
-#the s3-4-5 call; the mroe flexible ones are scattered about.
-#oh.dim <- dim(OH$data[[1]])
 oh.orig.dim <- OH$orig_dims[[1]]
 oh.dim <- dim(OH$data[[1]])
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2],
-                              x.by=aux.ref$OH$idim, y.by=aux.ref$OH$jdim,
+                              x.by=aux.ref$OH[[1]]$idim, y.by=aux.ref$OH[[1]]$jdim,
                               allow_partial=F)
 
-message("Reading in historical predictor data")
-MH.files <- c()
-for (var in predictor.vars){
-  MH.files <- append(MH.files, get.FUDGE.filepath(hist.indir_1,
-                                                  var,hist.freq_1,hist.model_1,
-                                                  hist.scenario_1,grid,
-                                                  hist.file.start.year_1,hist.file.end.year_1,
-                                                  hist.pred.suffix))
-}
-mh_x_subset <- get.FUDGE.subset(aux.ref$MH$idim, i_idx, i_max, i_stride-1)
-mh_y_subset <- get.FUDGE.subset(aux.ref$MH$jdim, j_idx, j_max, j_stride-1)
+message("Reading in MH files")
+MH.files <- unlist(lapply(aux.ref$MH, '[[', 'file'), use.names=F)
+MH.vars <- names(aux.ref$MH)
+mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
+mh_y_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$jdim, j_idx, j_max, j_stride-1)
 MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_subset),
                           dim=ds.ref$mh_dimlist,
-                          x_by=aux.ref$MH$idim, y_by=aux.ref$MH$jdim,
-                          aux.ref$MH$geomask)
+                          x_by=aux.ref$MH[[1]]$idim, y_by=aux.ref$MH[[1]]$jdim,
+                          aux.ref$MH[[1]]$geomask)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, mh_x_subset$subset, mh_y_subset$subset)
   for (el in names(MH$data)){
-    MH$data[[el]] <- apply.any.mask(data=MH$data[[el]], mask=spatmask, dim='spatial')
+    MH$data[[el]] <- apply.any.mask(data=MH$data[[1]], mask=spatmask, dim='spatial')
   }
 }
 mh.orig.dim <- MH$orig_dims[[1]]
 mh.dim <- dim(MH$data[[1]])
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2],
-                              x.by = aux.ref$MH$idim, y.by = aux.ref$MH$jdim,
-                              allow_partial=F)#(aux.ref$ds_handle_missing=='continue'))
-
-message("Reading in future predictor data")
-MF.files <- c()
-for (var in predictor.vars){
-  MF.files <- append(MF.files, get.FUDGE.filepath(fut.indir_1,
-                                                  var,fut.freq_1,fut.model_1,
-                                                  fut.scenario_1,grid,
-                                                  fut.file.start.year_1,fut.file.end.year_1,
-                                                  fut.pred.suffix))
-}
-mf_x_subset <- get.FUDGE.subset(aux.ref$MF$idim, i_idx, i_max, i_stride-1)
-mf_y_subset <- get.FUDGE.subset(aux.ref$MF$jdim, j_idx, j_max, j_stride-1)
+                              x.by = aux.ref$MH[[1]]$idim, y.by = aux.ref$MH[[1]]$jdim,
+                              allow_partial=F)
+message("Reading in MF files")
+MF.files <- unlist(lapply(aux.ref$MF, '[[', 'file'), use.names=F)
+MF.vars <- names(aux.ref$MF)
+mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
+mf_y_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$jdim, j_idx, j_max, j_stride-1)
 MF <- build.FUDGE.dataset(MF.files, predictor.vars,
                           subset=list(x=mf_x_subset, y=mf_y_subset),
                           dim=ds.ref$mf_dimlist,
-                          x_by=aux.ref$MF$idim, y_by=aux.ref$MF$jdim,
-                          aux.ref$MF$geomask)
+                          x_by=aux.ref$MF[[1]]$idim, y_by=aux.ref$MF[[1]]$jdim,
+                          aux.ref$MF[[1]]$geomask)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, mf_x_subset$subset, mf_y_subset$subset)
   for (el in names(MH$data)){
@@ -292,18 +249,13 @@ if (apply_spatmask){
 mf.orig.dim <- MF$orig_dims[[1]]
 mf.dim <- dim(MF$data[[1]])
 mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
-                              x.by=aux.ref$MF$idim, y.by=aux.ref$MF$jdim,
+                              x.by=aux.ref$MF[[1]]$idim, y.by=aux.ref$MF[[1]]$jdim,
                               allow_partial=F)
-
+########################
 out.filename <- GetMiniFileName(target.var,fut.freq_1,ds.experiment,fut.scenario_1,ds.region,
                                 fut.file.start.year_1,fut.file.end.year_1,
                                 i_idx, i_stride, i_offset, i_max, j_idx, j_stride, j_offset, j_max)
 out.filename <- file.path(output.dir, out.filename)
-
-#close spatial mask nc, if using
-# if (!is.null(spat.mask.nc)){
-#   nc_close(spat.mask.nc)
-# }
 
 ###### Set target dataset for blind reference at a later point
 ###### (note: the clever delayed evaluation in getDSInfo() is not working)
@@ -327,7 +279,7 @@ if (!ds.ref$multivar_target){
   targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
   TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.x.subset,y=targ.y.subset),
                               dim=ds.ref$oh_dimlist,
-                              x_by=aux.ref$OH$idim, y_by=aux.ref$OH$jdim,
+                              x_by=aux.ref$OH[[1]]$idim, y_by=aux.ref$OH$jdim,
                               "none")
   ds.coords <- get.loop.indices(targ.dim[1], targ.dim[2],
                                 x.by=1, y.by=1, allow_partial=F)

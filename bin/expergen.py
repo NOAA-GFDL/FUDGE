@@ -24,6 +24,7 @@ import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 import make_postProc_scripts
 from make_postProc_scripts import make_postProc_scripts
+from collections import OrderedDict
 
 list_title = []
 dictDS_hi = {}

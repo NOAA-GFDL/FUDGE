@@ -85,12 +85,12 @@ loop.xy.data <- function(){
       #incomplete grid (because padding); thus, we don't have to worry about
       #taking slices of the stencil for application.
       #print("in process of applying stencil")
-      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
-                         aux.ref$OH$stencil_name)
-      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
-                         aux.ref$MH$stencil_name)
-      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil, 
-                         aux.ref$MF$stencil_name)  
+      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH[[1]]$stencil, 
+                         aux.ref$OH[[1]]$stencil_name)
+      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH[[1]]$stencil, 
+                         aux.ref$MH[[1]]$stencil_name)
+      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF[[1]]$stencil, 
+                         aux.ref$MF[[1]]$stencil_name)  
       
       #Make decision to downscale. Can take one of several forms: 
       #'1) Are any of the datasets missing all timelevels at a given x,y?

@@ -209,9 +209,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				imax = i_max + 1
 				j_idx = jval - j_offset + 1
 				jmax = j_max + 1
+			#2018-04-09: Need to copy modified auxfile all the time, since that
+			#is where the file paths are.
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
 													i_idx, imax, i_by, i_offset, \
-													j_idx, jmax, j_by, j_offset, auxfile, target_var,outdirs)			
+													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)			
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable	
@@ -273,7 +275,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 	
 def create_slice_runscript(i_string, j_string, scriptdir, 
 							i_idx, i_max, i_by, i_offset,
-							j_idx, j_max, j_by, j_offset, auxfile, target_var, outdirs):
+							j_idx, j_max, j_by, j_offset, auxfile_mod, target_var, outdirs):
 	#Creates the runscript code specific to a slice of the grid downscaled 
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
@@ -300,7 +302,7 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	#Okay - this defines the list of runcodes that are going to be run.
 	#i_idx is in the same space as i_max; i is in minifile space.
 	#r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile #+ " &"
-	r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile, 'TRUE'])+ " >>& " + logfile + " &"
+	r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, 'TRUE'])+ " >>& " + logfile + " &"
 	runscript = runscript_header + r_command + "\n" + "wait \n"
 	for outdir in outdirs:
 		runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
@@ -392,8 +394,8 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	                      "source('$generic_runcode')"])
 	echo_cmd = '"' + echo_cmd + '"'
 	                      
-	int_cmd = "\n\t".join(["\tmodule load rstudio",
-	                      "module unload R",
+	int_cmd = "\n\t".join(["\tmodule load rstudio/0.98.1103",
+	                      "module unload R/2.15.2",
 	                      "module load R/3.2.1", 
 	                      "set auxfile_mod = " + auxfile_mod, 
 	                      "set runcode_dir = " + scriptdir + "/" + 'runcode', 
@@ -406,6 +408,8 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	                      "set r_header = '<shebang>/bin/Rscript'",
 	                      "echo $r_header | sed -e 's:<shebang>:#\!:g' >> $TMPDIR/command_line_params.R",
 	                      "echo $r_cmd | sed -e 's:<newline>:" + r'\n' + ":g' >> $TMPDIR/command_line_params.R",
+	                      "echo 'Command to run R minifile code from the command line:'",
+	                      'echo "rstudio $TMPDIR/command_line_params.R &"',
 	                      "rstudio $TMPDIR/command_line_params.R &"]
 	                      )
 	#And then, join both commands together with ifelse
