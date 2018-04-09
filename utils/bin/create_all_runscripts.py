@@ -416,7 +416,6 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	executable_stuff = "\nset arrlen = $#argv\n\nif ( $arrlen == 0 ) then\n" + batch_cmd + "\nelse\n" + int_cmd + "\nendif"
 	return(executable_stuff)
 	
-
 def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none'):
 	'''
 	Makes an aux file entry of input data files for one of OH, MH or MF.

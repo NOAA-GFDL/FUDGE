@@ -226,12 +226,21 @@ convert.pr.threshold <- function(index, units){
       zero.thold=0
     }
   }
+  pr_check_function <- function(x){
+    if (is.numeric(x) && length(x) > 0){
+      return(x)
+    }else{
+      stop(paste("Error in convert.pr.thold: threshold", x, 
+                 "isn't a pre-defined character or a numeric threshold!"))
+    }
+  }
   switch(as.character(index),
          'zero' = return(zero.thold + 2 * .Machine$double.eps),
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
-         return((index))) #If own threshold supplied,
+         return(pr_check_function(index)) #If own threshold supplied,
   #It is assumed that you know the units
+  )
 }
 
 replace.vals<-function(series, tf.index){
