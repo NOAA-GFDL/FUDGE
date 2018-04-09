@@ -102,7 +102,7 @@ def parse_aux_info(jsonfile):
 			copy_files = list(set(copy_files))				
 	return({'copy_files':copy_files, 'wallclocktime':wallclocktime, 
 			'pp_wallclocktime':pp_wallclocktime,
-	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus})
+	        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus}, jsondict)
 	
 def make_aux_input(grid, script_base, targ_var):
 	#Creates an aux info file with g-or-earlier default settings: minifiles, 

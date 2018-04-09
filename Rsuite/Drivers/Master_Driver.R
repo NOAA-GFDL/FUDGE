@@ -22,6 +22,7 @@ stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
 ival <<- 0
 jval <<- 0
    w <<- 0
+
 FUDGE.error.handler.function <- function(){
   #'Prints information needed for debugging/reproducing
   #'in a preoduction context
@@ -64,26 +65,11 @@ if (length(console.args) > 0){
   j_offset <<- as.numeric(console.args[8])
   auxfile <- console.args[9]
   copy_from_tmp = console.args[10]
-  x.pad <- "NA"
+  twindow_run <<- 'all'
 }else{
-  current_env = ls()
-  print(current_env)
   if (!exists('i_idx', inherits=T, envir=globalenv())){
     stop(paste("Error in Master_Driver: you should be using a config file with", 
                "command line params if you aren't using command-line args!"))
-#     #These parameters can also be set with the config file in master script
-#     i_idx <- 48 #167 #pr_diff = 37 i800 = 53 #194 #10
-#     i_max <- 194
-#     i_stride <- 1
-#     i_offset <<- 748
-#     j_idx <- 1
-#     j_max <- 114
-#     j_stride <- 114
-#     j_offset <<- 454
-#     auxfile <- "/home/cew/Code/h_testing/subsample/aux/all_i1_j1.json"
-#     #auxfile <- "/home/cew/Code/h_testing/subsample/aux_files/aux_04.json" ##01 has spatial masks; 05_offset has asymmetric grid
-#     copy_from_tmp <- F #Do you assume that the aux files are located in local tmpdir?
-#     x.pad <- "NA"
   }
 }
 
@@ -94,9 +80,6 @@ ds.ref <- getDSInfo(ds.method)
 message("Getting info from aux file")
 print(auxfile)
 aux.ref <- get_aux_params(auxfile, copy_from_tmp)
-#1-23-17 adding bypass to see if the 'to the left' works
-#Note: this is going to be a bad idea to use on anything but the
-#
 if ("multivar_target" %in% aux.ref){
   ds.ref$multivar_target <- aux.ref$multivar_target
 }

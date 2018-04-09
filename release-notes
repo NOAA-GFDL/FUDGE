@@ -1,3 +1,8 @@
+04-06-2018
+(cew)
+- Adding interactive switches for the master script to run runcodes in rstudio
+- Adding hook for setting single twindow in interactive master switch
+
 03-29-2018
 (cew)
 - Updating qc.train for DeltaSD to return the ratio delta used, tweaking metadata to change, bugfix for the switch statements on pr trace using numeric (non-string) switches

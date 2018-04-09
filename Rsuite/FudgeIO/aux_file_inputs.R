@@ -94,7 +94,12 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   output$climo_source <- aux_list$climo_source
   dataset_names <- c("OH", "MH", "MF")
   for (n in dataset_names){
-    el <- aux_list[[n]]
+    print(n)
+    #2017-04-06: For now, asusme that the stencils are all the same for
+    #each of the vars that are provided. It's not a worse assumption
+    #than what we are working with now.
+    el <- aux_list[[n]][[1]]
+    print(el)
     out <- list()
     out$geomask <- el$geomask
     out <- c(out, read_stencil_data(el$stencil, convert_to_mask=T))
