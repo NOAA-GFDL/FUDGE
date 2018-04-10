@@ -74,7 +74,7 @@ make.fudge.info <- function(tmask.filenames, aux.ref, missval.args,
   #For now, you can assume one per dataset class
   data.class.names <- c("OH", "MH", "MF")
   info_stencils <- paste(paste0(data.class.names, ":", sapply(data.class.names, 
-                                                              function(x,struct){struct[[x]]$stencil_name}, 
+                                                              function(x,struct){struct[[x]][[1]]$stencil_name}, 
                                                               aux.ref)), collapse=",")
   
   #Information on how to handle incomplete x,y data used for ds:

@@ -316,17 +316,32 @@ get_pr_trace <- function(index, units){
       zero.thold=0
     }
   }
+  pr_check_function <- function(x){
+    if (is.numeric(x) && length(x) > 0){
+      return(x)
+    }else{
+      stop(paste0("Error in convert.pr.thold: threshold '", x, 
+                  "' isn't a pre-defined character or a numeric threshold!", 
+                  " Please check quotation marks if passed in via the command line!"))
+    }
+  }
   switch(as.character(index),
          'zero' = return(zero.thold + 2 * .Machine$double.eps),
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
-         return((index))) #If own threshold supplied,
-  #It is assumed that you know the units
+         return(pr_check_function(index)) #If own threshold supplied,
+         #It is assumed that you know the units
+  )
 }
 
 units.CF.convert <- function(unit.string){
   #Performs simple conversions needed between CF-compliant
   #units and the udunits2 package.
-  unitlist<-sub('kg m-2 s-1', "l m-2 s-1", unit.string)
+  if (is.null(unit.string)){
+    unitlist <- NULL
+  }else{
+    unitlist<-sub('kg m-2 s-1', "l m-2 s-1", unit.string)
+  }
+  return(unitlist)
 }
 ################################################################################

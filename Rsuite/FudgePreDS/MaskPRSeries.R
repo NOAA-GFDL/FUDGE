@@ -230,8 +230,9 @@ convert.pr.threshold <- function(index, units){
     if (is.numeric(x) && length(x) > 0){
       return(x)
     }else{
-      stop(paste("Error in convert.pr.thold: threshold", x, 
-                 "isn't a pre-defined character or a numeric threshold!"))
+      stop(paste0("Error in convert.pr.thold: threshold '", x, 
+                  "' isn't a pre-defined character or a numeric threshold!", 
+                  " Please check quotation marks if passed in via the command line!"))
     }
   }
   switch(as.character(index),
@@ -239,16 +240,8 @@ convert.pr.threshold <- function(index, units){
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
          return(pr_check_function(index)) #If own threshold supplied,
-  #It is assumed that you know the units
+         #It is assumed that you know the units
   )
-}
-
-replace.vals<-function(series, tf.index){
-  #Replaces all values for which the index is
-  #true with a NA
-  out<- series
-  out[tf.index==TRUE]<-NA
-  return(out)
 }
 
 units.CF.convert <- function(unit.string){
@@ -260,4 +253,12 @@ units.CF.convert <- function(unit.string){
     unitlist<-sub('kg m-2 s-1', "l m-2 s-1", unit.string)
   }
   return(unitlist)
+}
+
+replace.vals<-function(series, tf.index){
+  #Replaces all values for which the index is
+  #true with a NA
+  out<- series
+  out[tf.index==TRUE]<-NA
+  return(out)
 }

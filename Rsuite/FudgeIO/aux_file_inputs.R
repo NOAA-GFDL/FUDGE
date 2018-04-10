@@ -93,12 +93,18 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   }
   output$climo_source <- aux_list$climo_source
   dataset_names <- c("OH", "MH", "MF")
+  #2018-04-09: Drop in the entire struct for OH, MH and MF.
   for (n in dataset_names){
+    #2017-04-06: For now, asusme that the stencils are all the same for
+    #each of the vars that are provided. It's not a worse assumption
+    #than what we are working with now.
     el <- aux_list[[n]]
     out <- list()
-    out$geomask <- el$geomask
-    out <- c(out, read_stencil_data(el$stencil, convert_to_mask=T))
-    output[[n]] <- out
+    out$geomask <- el[[1]]$geomask
+    for (v in names(el)){
+      el[[v]]<- c(el[[v]], read_stencil_data(el[[v]]$stencil, convert_to_mask=T))
+    }
+    output[[n]] <- el
   }
   return(output)
 }

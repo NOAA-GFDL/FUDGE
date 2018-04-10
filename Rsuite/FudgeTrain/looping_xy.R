@@ -59,6 +59,15 @@ loop.xy.data <- function(){
       OH.dim <- dim(OH.slice[[1]])[1:3]
       MF.dim <- dim(MF.slice[[1]])[4:6]
       nmasks <- tmasks$nmasks
+      if (twindow_run != 'all'){
+        #if you're setting a specific mask, only use that mask
+        nmask_start <- twindow_run
+        nmask_end <- twindow_run
+      }else{
+        #Most of the time, you want to do this
+        nmask_start <- 1
+        nmask_end <- nmasks
+      }
       #nmasks is set by the time mask tools
       #...how should this interact with the main driver? 
       #ds as a target is currently being set by the 
@@ -76,12 +85,12 @@ loop.xy.data <- function(){
       #incomplete grid (because padding); thus, we don't have to worry about
       #taking slices of the stencil for application.
       #print("in process of applying stencil")
-      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH$stencil, 
-                         aux.ref$OH$stencil_name)
-      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH$stencil, 
-                         aux.ref$MH$stencil_name)
-      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF$stencil, 
-                         aux.ref$MF$stencil_name)  
+      OH.slice <- lapply(OH.slice, apply.stencil, aux.ref$OH[[1]]$stencil, 
+                         aux.ref$OH[[1]]$stencil_name)
+      MH.slice <- lapply(MH.slice, apply.stencil, aux.ref$MH[[1]]$stencil, 
+                         aux.ref$MH[[1]]$stencil_name)
+      MF.slice <- lapply(MF.slice, apply.stencil, aux.ref$MF[[1]]$stencil, 
+                         aux.ref$MF[[1]]$stencil_name)  
       
       #Make decision to downscale. Can take one of several forms: 
       #'1) Are any of the datasets missing all timelevels at a given x,y?
@@ -136,7 +145,6 @@ loop.xy.data <- function(){
           post_ds_outloop <- post.ds
           if(s3.outloop){
             message('Applying S3 Adjustment')
-            #  save(file="/work/cew/testing/pr_h_0.R", list=c("OH.slice", "MH.slice", "MF.slice"))
             temp.output <- callS3Adjustment(s3.instructions=pre.ds, 
                                             MH=MH.slice, 
                                             OH=OH.slice,
@@ -163,16 +171,14 @@ loop.xy.data <- function(){
             remove(temp.output)
           }
           #Loop by time window
-          for(w in 1:nmasks){
+          for(w in nmask_start:nmask_end){
             #  for(w in 3:3){
-            if ( (w %% 10 == 0 | w ==1) & j.write) {
+            if ( (w %% 10 == 0 | w ==  nmask_start) & j.write) {
               print(paste("twindow:", w, "/", nmasks))
             }
             w <<- w
             qc.out <- NULL
             if (tmasks$apply_tmask){
-              #             print(str(OH.slice))
-              #             stop('examine call from lapply')
               OH.window <- lapply(OH.slice, "apply.fudge.tmask", tmasks$OH$masks[[w]])
               MH.window <- lapply(MH.slice, "apply.fudge.tmask", tmasks$MH$masks[[w]])
               MF.window <- lapply(MF.slice, "apply.fudge.tmask", tmasks$MF$masks[[w]])
