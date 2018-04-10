@@ -666,6 +666,10 @@ def main():
 		j_offset = jdict[output_grid]
 	except KeyError:
 		j_offset = 1
+	#Add the commands to create the components for the DS entry in the aux file
+	ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario, 
+	                                "<RIP>",
+	                                ds_region, fut_file_start_time, fut_file_end_time)	                               
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
@@ -676,7 +680,7 @@ def main():
 	                      file_j_range, idirsuffix, \
 	                      ds_info['multivar_target'],
 	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'], 
-	                      auxdict)
+	                      auxdict, ds_minifile)
 	#print('examine runscript output')
 	#sys.exit()
 
@@ -884,5 +888,19 @@ def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_
 		#	print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
 			exists = True
 	return exists
+	
+#Looking at minifile name generation
+def get_minifile_name(var, freq, exp_name, scenario, rip, region, tstart, tend):
+	'''
+	Makes minifile names as they would normally have appeared in the R code.
+	Trying to move away from some xml dependencies in R.
+	'''
+	#scenario is weird - rought time periodd / emissions + '_$rip'
+	scen_split = re.split("_", scenario)
+	root_filename = "_".join([var, freq, exp_name, scen_split[0], rip, region, tstart, tend])
+	suffix = ".I<ISTART>-<IEND>_J<JSTART>-<JEND>.nc"
+	mini_name = root_filename + suffix
+	return(mini_name)
+		
 if __name__ == '__main__':
     main()
