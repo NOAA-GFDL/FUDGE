@@ -181,7 +181,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	'''
 	
-	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) for el in auxdict['DS']['rips']]
+	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] for el in auxdict['DS']['rips']]
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	
 	#Finally, start opts that need to loop by index available
