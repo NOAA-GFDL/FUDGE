@@ -55,11 +55,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   #Check for OH and MH sample size
   #note: right now, these are always univariate
   if ("pr_opts" %in% names(missval.args)){
-#     print("pr_opts found")
-#     print(w)
-#     print(summary(tmasks$OH$masks))
-#     print(summary(tmasks$OH$masks[[1]]))
-#     print(summary(tmasks$MH$masks))
     if (tmasks$apply_tmasks){
       oh_pr <- apply.fudge.tmask(data=missval.args$pr_opts$OH, mask=tmasks$OH$masks[[w]])
       oh_ss <- sum(!is.na(oh_pr))
@@ -94,7 +89,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
       #The simple tail adjust now takes the oh and mh sample size as args
       arg_list <- c(arg_list, list(oh_ss = oh_ss, mh_ss = mh_ss))
     }
-    #print(arg_list)
     ds.correct <- tail.correct(model.hist = MH,
                                obs.hist = OH,
                                model.fut = MF.slice,
@@ -244,7 +238,7 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   if(any(points.to.be.adjusted)){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
     # which method is used?
-    print(paste("adjusting the", args$tail, "tail"))
+    #print(paste("adjusting the", args$tail, "tail"))
     adjmethod <- args$adjmethod
     
     if(mf.overlap & any(mf.points)){
@@ -362,7 +356,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
     }
     #return(list(cond=mf.cond, offset=offset))
   }else{
-    print("No adjust")
     cond=rep(FALSE, length(MF))
     offset=0
     cond.val <- 0

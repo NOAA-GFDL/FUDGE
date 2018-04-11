@@ -1,3 +1,8 @@
+04-10-2018
+(cew)
+- All file paths for OH, MH and MF are read in from modified aux file, not created independently by R code
+- R no longer independently creates output minifile paths
+
 04-06-2018
 (cew)
 - Adding interactive switches for the master script to run runcodes in rstudio

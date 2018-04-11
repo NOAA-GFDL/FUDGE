@@ -19,6 +19,8 @@ WriteNC <-  function(filename,out.data,var.names,
   
   #Expected form of out.data is a named list with array elements that all have the 
   #same dimensions. 
+  #print(mode(out.data))
+
   if ( !mode(out.data)=='list' ){
     test.data <- list()
     test.data[[var.names]] <- out.data

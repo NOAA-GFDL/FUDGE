@@ -13,9 +13,13 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                          spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, 
                          outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, 
                          auxfile, aux_file_list, wallclocktime, 
-                         auxdict):
+                         auxdict, ds_minifile):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
+	
+	##print(outdir_string)
+	##print(idirsuffix)
+	##sys.exit('examine this output')
 	
 	#which i_indices are we going to be looping over?
 	i_elements = range(int(i_start), int(i_end)+1, i_by)
@@ -115,9 +119,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		oh_auxdict = make_aux_entry(oh_vars,  oh_files, stencil=auxdict['OH']['stencil'], geomask=spatmask_path)
 		mh_auxdict = make_aux_entry(predlist, mh_files, stencil=auxdict['MH']['stencil'], geomask=spatmask_path)
 		mf_auxdict = make_aux_entry(predlist, mf_files, stencil=auxdict['MF']['stencil'], geomask=spatmask_path)
+		ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0])
 		auxdict['OH'] = oh_auxdict
 		auxdict['MH'] = mh_auxdict
 		auxdict['MF'] = mf_auxdict
+		auxdict['DS'] = ds_auxdict
 		auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
 		os.makedirs(osp.dirname(auxfile_mod))
 		auxstr = json.dumps(auxdict, indent=4)
@@ -163,15 +169,20 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#Add code for creating common output directories 
 	#(copy opts for each minifile/slice take place within runscript
 	#as well as writing of script status files)
+	'''
 	#Current string in form of blank_outdir#(blank_rip)#rip1,rip2,rip3	
 	outdir_opts = outdir_string.split("#")
-	#The parenthesies made sense in c-shell, but pythons' sub functions are PICKY
+	#The parenthesis made sense in c-shell, but pythons' sub functions are PICKY
 	outrip_patt = "\$\(RIP\)"
 	out_rips = outdir_opts[2].split(",")
 	outdirs = []
 	for rip in out_rips:
 		outdirs.append(re.sub(outrip_patt, rip, outdir_opts[0]))
-	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
+	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
+	'''
+	
+	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] for el in auxdict['DS']['rips']]
+	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	
 	#Finally, start opts that need to loop by index available
 	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
@@ -220,9 +231,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
-				#print("writing master to file")
-				#runscript_calls = [el + " & \n" for el in runscript_files]
-				#runscript_calls = "sleep 10 \n".join(runscript_calls)
 				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod, 
 				                                        i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
 				with open(master_scriptname, 'w') as f: 
@@ -230,7 +238,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
-					f.write(outdir_string)
+					f.write(outdir_cmd)
 					f.write("echo 'Beginning calls to executable'\n")
 					f.write(executable_code) 
 					#f.write("wait")			
@@ -431,4 +439,31 @@ def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none',
 	#2017-04-06: R code currently looks for stencil under top-level check, 
 	#not under the var names.	                  
 	#aux_entry['stencil'] = stencil
-	return(aux_entry)	                       
+	return(aux_entry)
+	
+#And make the output dict for the json file
+def make_ds_aux_entry(out_file, outdir, var):
+	'''
+	Makes an output dict for the aux file. 
+	'''
+	outdir_opts = outdir.split("#")
+	outdir_path = "/".join(re.split('/', outdir_opts[0].rstrip('/'))[:-1])
+	riplist = outdir_opts[2].split(",")
+	if (riplist[0] == 'na'):
+		riplist = [outdir_path.split("/")[-5]]
+	#The parenthesis made sense in c-shell, but pythons' sub functions are PICKY
+	outrip_patt = "\$\(RIP\)"
+	outdir_path = re.sub(outrip_patt, '<RIP>', outdir_path)
+	#	
+	out_subdir = re.split('/', outdir_opts[0].rstrip('/'))[-1]
+	out_vars = [var]
+	#Edit this when we start adding more in the way of supplementary output writing
+	out_supp = [var + '_qcmask']
+	out_rips = riplist	
+	dsdict = {'out_dir' : outdir_path, 
+	          'out_file' : out_file,
+	          'out_subdir' : out_subdir, 
+	          'out_supp' : out_supp,
+	          'vars' : out_vars, 
+	          'rips' : out_rips}
+	return(dsdict)		                       
