@@ -396,6 +396,10 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   #   env$num.years.Mh <- length(levels(env$Mh.all.yrz))
   #   env$num.years.Mf <- length(levels(env$Mf.all.yrz))
 
+  if (!("kdetype" %in% names(args)) | args$kdetype=="bkde"){
+    env$args$kdetype <- "KernSmooth::bkde"
+  }
+
   return(env)
 }
 
