@@ -1,3 +1,9 @@
+04-12-2018
+(d1a)
+- bugfix for kddm bkde xml specification
+(cew)
+- LoadLib only source of library loads in R code
+
 04-10-2018
 (cew)
 - All file paths for OH, MH and MF are read in from modified aux file, not created independently by R code
@@ -15,6 +21,10 @@
 03-27-2018
 (d1a)
 - Updating KDDM qcmasks to keep track of places where KDDM adds NAs and we replace with MF
+
+03-22-2018
+(d1a)
+- Hopefully final release for KDDM with udpated NA handling and QC mask.
 
 03-14-2018
 (cew)
