@@ -1,3 +1,9 @@
+04-12-2018
+(d1a)
+- bugfix for kddm bkde xml specification
+(cew)
+- LoadLib only source of library loads in R code
+
 03-22-2018
 (d1a)
 - Hopefully final release for KDDM with udpated NA handling and QC mask.
