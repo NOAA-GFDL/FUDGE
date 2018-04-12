@@ -101,6 +101,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#MH and MF paths are currently passed in several dirlevels earlier than OH 	
 	#Switch on this later, when things get added to the aux
 	present_in_aux = False
+	if any([el == 'files_in_aux' for el in auxdict.keys()]):
+		if auxdict['files_in_aux'] == 'TRUE':
+			present_in_aux = True
 	if not present_in_aux:
 		#OH_dir = os.path.dirname(osp.abspath(OH_dir))
 		prefix_loc = len(MH_dir.split("/"))		
@@ -131,9 +134,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		print >> f, auxstr
 		f.close()
 	else:
-		oh_files, oh_dmget = get_aux_input_paths("")
-		mh_files, mh_dmget = get_aux_input_paths("")
-		mf_files, mf_dmget = get_aux_input_paths("")
+		oh_files, oh_dmget = get_aux_input_paths(auxdict['OH'])
+		mh_files, mh_dmget = get_aux_input_paths(auxdict['MH'])
+		mf_files, mf_dmget = get_aux_input_paths(auxdict['MF'])
 		auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
 		os.makedirs(osp.dirname(auxfile_mod))
 		shutil.copyfile(auxfile, auxfile_mod)
@@ -466,4 +469,12 @@ def make_ds_aux_entry(out_file, outdir, var):
 	          'out_supp' : out_supp,
 	          'vars' : out_vars, 
 	          'rips' : out_rips}
-	return(dsdict)		                       
+	return(dsdict)		 
+	
+def get_aux_input_paths(auxdict):
+	'''
+	Gets the relevant file paths from an entry in the aux file; makes dmeget strings
+	'''
+	file_list = [auxdict[el]['file'] for el in auxdict.keys()]
+	dmget_string = "\n".join(["dmget " + el for el in file_list])
+	return(file_list, dmget_string)	                      

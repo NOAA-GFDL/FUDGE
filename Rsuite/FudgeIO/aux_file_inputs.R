@@ -91,6 +91,11 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   if ('multivar_target' %in% names(aux_list)){
     output$multivar_target <- aux_list$multivar_target
   }
+  if ('file_format' %in% names(aux_list)){
+    output$file_format <- aux_list$file_format
+  }else{
+    output$file_format <- 'netcdf'
+  }
   output$climo_source <- aux_list$climo_source
   dataset_names <- c("OH", "MH", "MF")
   #2018-04-09: Drop in the entire struct for OH, MH and MF.

@@ -130,7 +130,7 @@ if(!exists('pre_ds')){ #put better check in here once you are done with the test
 #   fut.pred.rip.list <- unlist(strsplit(fut.scenario_1, "_"))[2]
 # }
 
-#2018-04-10: Changing mroe information to come in via aux
+#2018-04-10: Changing more information to come in via aux
 fut.pred.rip.list <- aux.ref$DS$rips
 
 #Initialize instructions for pre- and post-ds adjustment
@@ -190,6 +190,8 @@ if(spat.mask.dir_1!="na"){
 }
 
 ########################
+#2018-04-11 : now checking on how to read in csv data
+#via the file_format parameter in the aux file
 print("Reading OH files")
 OH.files <- unlist(lapply(aux.ref$OH, '[[', 'file'), use.names = F)
 if (copy_from_tmp){
@@ -201,7 +203,8 @@ oh_y_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$jdim, j_idx, j_max, j_stride-1)
 OH <- build.FUDGE.dataset(OH.files, OH.vars, list(x=oh_x_subset,y=oh_y_subset), 
                           dim=ds.ref$oh_dimlist, 
                           x_by = aux.ref$OH[[1]]$idim, y_by = aux.ref$OH[[1]]$jdim, 
-                          aux.ref$OH[[1]]$geomask)
+                          aux.ref$OH[[1]]$geomask, 
+                          file_format = aux.ref$file_format)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, oh_x_subset$subset, oh_y_subset$subset)
   for (el in names(OH$data)){
@@ -438,7 +441,7 @@ for (r in 1:length(fut.pred.rip.list)){
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],
-                            target.var,
+                            aux.ref$DS$vars, #formerly target.var
                             dim.list=dimlist,
                             var.data=varlist,
                             prec='float',
@@ -454,12 +457,12 @@ for (r in 1:length(fut.pred.rip.list)){
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){
     ##Created waaay back at the beginning, as part of the QC functions
-    for (var in target.var){
+    for (var in aux.ref$DS$vars){
       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
       
       #Substitute to get mask output directory
-      qc_filename <- sub(paste0(target.var, '_'), paste0(qc.var, '_'), loop_filename)
+      qc_filename <- sub(paste0(var, '_'), paste0(qc.var, '_'), loop_filename)
       qc_filepath = file.path(loop_outdirs[2], qc_filename)
     
       message(paste('attempting to write to', qc_filename))
