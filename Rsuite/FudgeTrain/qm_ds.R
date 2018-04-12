@@ -12,14 +12,14 @@ callQM <- function(OH, MH, MF, args, type="",
   #'For now, even methods that can do the training once
   #'all do training within looping by ensemble.
   #'
-
+  
   #Note: pr adjustments now effectively require this to be called before
   #the retry options can work properly.
-
+  
   #   OH.data <- compress.xy.data(OH)
   #   MH.data <- compress.xy.data(MH)
   #   MF.data <- compress.xy.data(MF)
-
+  
   #Prepare output and indexing
   out.data <- array(NA, dim=dim(MF[[1]]))
   nrips <- dim(out.data)[4]
@@ -63,11 +63,11 @@ callQM <- function(OH, MH, MF, args, type="",
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
       mf.missing <- sum(is.na(MF.slice))
-
+      
       args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
       args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
       args$is.uniform.Mf <- length(unique(MF.slice[!is.na(MF.slice)])) <= 1
-
+      
       train.stat <- missval.out$missval.status
       out <- switch(type,
                     'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
@@ -78,16 +78,16 @@ callQM <- function(OH, MH, MF, args, type="",
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args)
       )
       # print(length(out))
-
+      
       if(type=="KDDM" & !is.null(attr(out, "uncorrectable")) & train_qcmask){
         correctable <- rep(1, length(index.mask))
         correctable[attr(out, "uncorrectable")] <- NA
         qc[,,,n,,] <- index.qm(index.mask, correctable, olap)
         out <- as.numeric(out)
       }
-
+      
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
-
+      
       if(missval.out$mv.retry & train_qcmask){
         #Double-check on pr settings for this - are there different settings
         #for retry and insufficient points?
@@ -113,7 +113,7 @@ callEDQMv2<-function(LH,CH,CF,args){
     #'@param CF: Coarse Future (a.k.a GCM future)
     #'Contains no other arguments in the args parameter.
     #'@citation Li et. al. 2010
-
+    
     #Unlist data from its input form
     #CH <- unlist(CH)
     CH <- CH[!is.na(CH)]
@@ -121,30 +121,30 @@ callEDQMv2<-function(LH,CH,CF,args){
     CF.idx <- !is.na(CF)
     cf.present <- sum(!is.na(CF))
     CF <- CF[!is.na(CF)]
-
+    
     lengthCH<-length(CH)
     lengthLH<-length(LH)
     lengthCF<-length(CF)
-
-
+    
+    
     #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
     maxdim=max(c(lengthCH, lengthCF, lengthLH))
-
+    
     # first define vector with probabilities [0,1]
     prob<-seq(0.001,0.999,length.out=cf.present)
-
+    
     # initialize data.frame
     temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
                      qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
                      EquiDistant=rep(NA,maxdim))
-
+    
     SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
                     LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),
                     EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
     temp$CF[1:lengthCF]<-CF
     temp$CH[1:lengthCH]<-CH
     temp$LH[1:lengthLH]<-LH
-
+    
     temp.CFsorted<-temp[order(temp$CF),]
     #Combine needed to deal with cases where CH longer than CF
     if (maxdim-cf.present > 0){
@@ -152,7 +152,7 @@ callEDQMv2<-function(LH,CH,CF,args){
     }else{
       temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
     }
-
+    
     temp.CFsorted$qLHecdfCFqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
     temp.CFsorted$qCHecdfCFqCF[1:cf.present]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
     # EQUIDISTANT CDF (Li et al. 2010)
@@ -194,7 +194,7 @@ callCFQMv3<-function(LH,CH,CF, args){
      MF.idx <- !is.na(CF)
      out <- rep(NA, length(MF.idx))
      CF <- CF[MF.idx]
-
+     
      lengthCH<-length(CH)
      lengthLH<-length(LH)
      lengthCF<-length(CF)
@@ -210,21 +210,21 @@ callCFQMv3<-function(LH,CH,CF, args){
      #if (lengthCF<lengthCH) mindim=lengthCF else mindim=lengthCH
      maxdim=max(c(lengthCH, lengthCF, lengthLH))
      mindim=min(c(lengthCH, lengthCF, lengthLH))
-
+     
      #lengthCFna<-length(which(!is.na(CF))) # count number of obs without NA
      #lengthCHna<-length(which(!is.na(CH)))
-
+     
      #if (lengthCFna<lengthCHna) mindimNA=lengthCFna else mindimNA=lengthCHna
      mindim=min(c(sum(!is.na(CF)), sum(!is.na(CH)), sum(!is.na(LH))))
-
+     
      # first define vector with probabilities [0,1]
      prob<-seq(0.001,0.999,length.out=len.out) #lengthCF
-
+     
      # initialize data.frame
      temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
                       LH=rep(NA,maxdim),qLH=rep(NA,maxdim),ecdfCHqLH=rep(NA,maxdim),qCFecdfCHqLH=rep(NA,maxdim))
      SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),CFQM=rep(NA,maxdim))
-
+     
      SDF$CF[1:lengthCF]<-temp$CF[1:lengthCF]<-CF
      SDF$CH[1:lengthCH]<-temp$CH[1:lengthCH]<-CH
      SDF$LH[1:lengthLH]<-temp$LH[1:lengthLH]<-LH
@@ -268,9 +268,9 @@ CFQM_futa <- function(OH, MH, MF, args){
 }
 
 CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
-
+  
   oh_longer <- ifelse(length(OH) > length(MF), T, F)
-
+  
   #Prepare indexing mask
   if (tmasks$time_mask_overlap){
     index.mask <- tmasks$trim$masks[[w]]
@@ -279,7 +279,7 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
     index.mask <- tmasks$MF$masks[[w]]
     olap=F
   }
-
+  
   #print(str(tmasks))
   #Do the sample size adjustment as your initial step
   if (oh_longer){
@@ -313,13 +313,13 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
     MH <- MH[OH.idx]
     OH <- OH[OH.idx]
   }
-
+  
   #Create OH mapped to MH
   prob <- seq(0.001,0.999,length.out=sum(!is.na(OH)))
   OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
   #map MF
   ds <- quantile(MF, OH.mapped.to.MH, na.rm=T)
-
+  
   #And finally, do the indexing according to the
   #delta method
   #print(str(tmasks))
@@ -341,7 +341,7 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
   Mh <- Mh[!is.na(Mh)]
   Mf.orig <- Mf
   Mf <- Mf[!(Mf.nas <- is.na(Mf))]
-
+  
   if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
     n.max <- max(length(Oh), length(Mh))
     tau <- c(0, (1:n.max)/(n.max+1), 1)
@@ -360,14 +360,11 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
                  " uniform. Returning Mf."))
     return(Mf.orig)
   }
-
+  
 }
 
 set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
-
-  ## make sure KernSmooth loads
-  suppressPackageStartupMessages(library(KernSmooth))
-
+  
   ## KDDM needs to know about the YEARS in each dataset, this processes the time axis and creates factors KDDM can use for its origami
   # 	Oh.time.units <- strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
   Oh.time.origin <-strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][3]
@@ -375,14 +372,14 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   Oh.time.cal[tolower(Oh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
   Oh.time.vals <- OH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
   env$Oh.all.yrz <- as.factor(format(as.PCICt(Oh.time.vals*60*60*24, origin=Oh.time.origin, cal=Oh.time.cal), "%Y"))
-
+  
   # 	Mh.time.units <- strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
   Mh.time.origin <-strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][3]
   Mh.time.cal <- MH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
   Mh.time.cal[tolower(Mh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
   Mh.time.vals <- MH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
   env$Mh.all.yrz <- as.factor(format(as.PCICt(Mh.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
-
+  
   # 	Mf.time.units <- strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
   Mf.time.origin <-strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][3]
   Mf.time.cal <- MF$metadata[[1]]$dim$time$calendar    # : chr "noleap"
@@ -390,16 +387,20 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   Mf.time.vals <- MF$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
   env$Mf.all.yrz <- as.factor(format(as.PCICt(Mf.time.vals*60*60*24, origin=Mf.time.origin, cal=Mf.time.cal), "%Y"))
   env$mf.yr.length <- sum(Mf.all.yrz==levels(Mf.all.yrz)[2])
-
+  
   # Find the number of years in each data set
   #   env$num.years.Oh <- length(levels(env$Oh.all.yrz))
   #   env$num.years.Mh <- length(levels(env$Mh.all.yrz))
   #   env$num.years.Mf <- length(levels(env$Mf.all.yrz))
-
-  if (!("kdetype" %in% names(args)) | args$kdetype=="bkde"){
-    env$args$kdetype <- "KernSmooth::bkde"
+  
+  if (!("kdetype" %in% names(args))){
+    env$ds.args$kdetype <- "KernSmooth::bkde"
+  }else{
+    if (args$kdetype=="bkde"){
+      env$ds.args$kdetype <- "KernSmooth::bkde"
+    }
   }
-
+  
   return(env)
 }
 
@@ -412,13 +413,13 @@ callKDDM <- function(Oh, Mh, Mf, args){
     #'@param norm: Choice of normalization technique. Contained in args parameter.
     #'Contains no other arguments in the args parameter.
     #' Not valid for pr variables or julian calendar. When updated, remove check in line 351 of MasterDriver.R
-
+    
     if (!(args$norm %in% c("boxcox", "zscore", "none"))) {
       stop(paste('KDDM norm must be one of {"zscore", "boxcox", "none"}'))
     }
     # Prepare Downscaled output array the same as Mf
     DSout <- Mf
-
+    
     if (!args$is.uniform.Oh & !args$is.uniform.Mh ) {
       # Prepare Downscaled output array of NAs the same dimension as Mf
       DSout <- DSout + NA
@@ -435,14 +436,14 @@ callKDDM <- function(Oh, Mh, Mf, args){
       subset.OH <- as.vector(Oh)[oh.mask]
       subset.MH <- as.vector(Mh)[mh.mask]
       subset.MF <- as.vector(Mf)[mf.mask]
-
+      
       pad <- 0
-
+      
       if (var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
         bctrunc <- FALSE
         bctrim  <- NULL
         densfun <- eval(parse(text=args$kdetype))
-
+        
         Oh.yrz <- Oh.all.yrz[oh.mask]
         Mh.yrz <- Mh.all.yrz[mh.mask]
         Mf.yrz <- Mf.all.yrz[mf.mask]
@@ -451,7 +452,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
         # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
         half.window <- ceiling(window.width/2)
         # Initialize a padding variable to shift December data across the boundary if necessary.
-
+        
         # If the first or last NAs are the first or last array entry, then mask does not wrap.
         if ( (pad1 <- min(which(!mf.mask)) - 1) == 0 |
                (pad2 <- length(mf.mask) - max(which(!mf.mask))) == 0 |
@@ -487,7 +488,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
         folded.OH <- list(subset.OH)
         folded.MH <- list(subset.MH)
         folded.MF <- list(subset.MF)
-
+        
         # truncate and trim using lof1d
         bctrunc <- TRUE
         #         bctrim  <- chauvenet
@@ -499,9 +500,9 @@ callKDDM <- function(Oh, Mh, Mf, args){
       # Bias Correct using the climod KDDM routine, return the unlisted array of future values
       # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
       which.norm <- ifelse(args$norm=="none", "identity", args$norm)
-
+      
       kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut[[1]])
-
+      
       # If pad was increased to shift data, shift it back
       if(pad != 0) {
         if ( w < half.window ) {
@@ -512,7 +513,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
       }
       # Write the bias corrected results into the DSout array in the unmasked indices and return.
       DSout[mf.mask] <- kddm.bc.out
-
+      
       if (!is.null(attr(kddm.bc.out,"uncorrectable"))) {
         DS.out.uncorrectable <- rep(FALSE, length.out=length(DSout))
         DS.out.uncorrectable[mf.mask] <- attr(kddm.bc.out,"uncorrectable")
@@ -523,7 +524,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
                    ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
                    " uniform. Returning Mf."))
     }
-
+    
     return(DSout)
 }
 
@@ -668,59 +669,59 @@ ptrim <- function(x, p=0.01, ...){
 ##'
 ##' @export
 lof1d <- function(x, k=5, cutoff=3){
-
+  
   if(length(x) < 3*k){warning("lof1d: too few values to calculate 1-D LOF"); return(x)}
-
+  
   ## To look at the top k values, we need the k nearest neighbors of the
   ## kth value, and then the k nearest neighbors of each of those, so we
   ## might need the 3*kth value.
-
+  
   ox <- order(x, decreasing=TRUE)[1:(3*k)]
   y <- x[ox]
-
+  
   ## Find the k nearest neighbors for each value and their indices
   ## Note: k+1 index because A is an element of y, so first neighbor is self
-
+  
   knni <- lapply(y, function(A){ order(abs(y-A))[(1:k)+1]})
   knn  <- lapply(knni, function(i){y[i]})
-
+  
   ## K-distance = distance from A to its k-th nearest neighbor
   kdist <- abs(y-sapply(knn, `[`, k))
-
+  
   ## Reachability distance of A from B = dist from A to B, but at least kd(B).
   ## Note!  This funciton operates on indices, not values
   rdist <- function(i,j){max(abs(y[i]-y[j]), kdist[j])}
-
+  
   ## Local reachability density = inverse of avg rdist(A) *from* its knn
   N <- length(y)
   lrd <- sapply(seq(N), function(i){
     1/mean(sapply(knni[i], function(j){rdist(i,j)}))
   })
-
+  
   ## Local outlier factor = avg knn lrd / own lrd
   lof <- sapply(1:N, function(i){mean(lrd[knni[[i]]]) / lrd[i]})
-
+  
   ## trim values with LOF > cutoff
-
+  
   if(any(lof > cutoff)){
     z <- x[-ox[lof > cutoff]]
   } else {
     z <- x
   }
-
+  
   return(z)
-
+  
 }
 
 chauvenet <- function(x, upper=TRUE, lower=TRUE){
-
+  
   n <- length(x) + 1/2
   mu <- median(x)
   sig <- mad(x)
-
+  
   if(lower){ x <- x[!(x < qnorm(1/n, mu, sig))] }
   if(upper){ x <- x[!(x > qnorm(1-1/n, mu, sig))] }
-
+  
   return(x)
 }
 
@@ -740,14 +741,14 @@ distmap.new <- function(x, y, densfun = KernSmooth::bkde,
   stopifnot(all(pgrid >= 0))
   stopifnot(all(pgrid <= 1))
   stopifnot(all(diff(pgrid) > 0))
-
+  
   ############
   if(!(is.null(trim))){
     x <- trim(x)
     y <- trim(y)
   }
   ############
-
+  
   xpdf <- densfun(x, ...)
   ypdf <- densfun(y, ...)
   if (truncate){
@@ -777,21 +778,21 @@ callBCQMv2<-function(LH,CH,CF,args){
      #' Note: Even though there is no training step on this method, and no
      #' intention of implementing multivar downscaling for the QM methods,
      #' they need to be named to fit into the new indexing scheme.
-
+     
      #Unlist data from its input form
      #     CH <- unlist(CH)
      lengthCH<-length(CH)
      lengthLH<-length(LH)
      lengthCF<-length(CF)
-
+     
      # if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
      maxdim=max(c(lengthCH, lengthCF, lengthLH))
-
+     
      # first define vector with probabilities [0,1]
      #previously, prob was lengthCF
      cf.present <- sum(!is.na(CF))
      prob<-seq(0.001,0.999,length.out=cf.present)
-
+     
      # initialize data.frame
      #index used ot be 1:lengthCF; doing 1:maxdim instead
      #c(seq(1,lengthCF), rep(NA,maxdim-lengthCF))

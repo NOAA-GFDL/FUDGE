@@ -24,7 +24,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   #' round, specifying if and how to round the output in accordance with prior
   #'   arrm teachnique (defaults to FALSE)
   
-  library(splines) #needed for the training, but might be present in base install now.
   #any general pooling steps go in here - keep in mind, 
   #the aarm training code assumes a single vector for the training
   #and future data. 
