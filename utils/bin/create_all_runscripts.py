@@ -181,7 +181,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	'''
 	
-	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] for el in auxdict['DS']['rips']]
+	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	
 	#Finally, start opts that need to loop by index available
@@ -323,8 +323,8 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	#Note: right now, for a given script job, all J are going to be identical.
 	outstr = []
 	outstr.append('echo `ls "$TMPDIR/' + outdir + '"`')
-	outstr.append('echo gcp "$TMPDIR/' + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir + '"')	
-	outstr.append("gcp $TMPDIR/" + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir)
+	outstr.append('echo gcp "$TMPDIR/' + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir + '"')	
+	outstr.append("gcp $TMPDIR/" + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
 	outstr.append("\t touch " + outdir + "/.mini.success")
@@ -333,8 +333,8 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	outstr.append('endif')
 	#Now do the same for the qc mask file
 	out_mask_dir = outdir + "/" + target_var + "_qcmask/"
-	outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "*."+i_string+"_"+j_string + ".nc " + out_mask_dir + '"')
-	outstr.append("gcp $TMPDIR/" + out_mask_dir + "*."+i_string+"_"+j_string + ".nc " + out_mask_dir)
+	outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "/*."+i_string+"_"+j_string + ".nc " + out_mask_dir + '"')
+	outstr.append("gcp $TMPDIR/" + out_mask_dir + "/*."+i_string+"_"+j_string + ".nc " + out_mask_dir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
 	outstr.append("\t touch " + out_mask_dir + "/.mini.success")

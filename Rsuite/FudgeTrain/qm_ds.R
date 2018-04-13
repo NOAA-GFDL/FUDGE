@@ -262,7 +262,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
       
       pad <- 0
       
-      if (var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
+      if (target.var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
         bctrunc <- FALSE
         bctrim  <- NULL
         densfun <- eval(parse(text=args$kdetype))
