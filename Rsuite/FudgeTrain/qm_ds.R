@@ -442,8 +442,8 @@ callKDDM <- function(Oh, Mh, Mf, args){
       if (target.var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
         bctrunc <- FALSE
         bctrim  <- NULL
-        densfun <- eval(parse(text="KernSmooth::bkde"))
-print("hard-wired densfun=KernSmooth::bkde for temps")
+        densfun <- eval(parse(text=args$kdetype))
+print("kdetype from args restored")
         Oh.yrz <- Oh.all.yrz[oh.mask]
         Mh.yrz <- Mh.all.yrz[mh.mask]
         Mf.yrz <- Mf.all.yrz[mf.mask]
