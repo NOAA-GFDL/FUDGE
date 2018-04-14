@@ -501,7 +501,7 @@ print("hard-wired densfun=KernSmooth::bkde for temps")
       # NOTE: Using GFDL modfified KDDM biascorrect() function.  When NCAR updates, this can be changed back.
       which.norm <- ifelse(args$norm=="none", "identity", args$norm)
 
-      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut[[1]])
+      kddm.bc.out <- unlist(gfdl.kddm.biascorrect(list(obs=folded.OH, cur=folded.MH, fut=folded.MF), norm=which.norm, truncate=bctrunc, trim=bctrim, densfun=densfun)$fut)
 
       # If pad was increased to shift data, shift it back
       if(pad != 0) {
