@@ -15,7 +15,6 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
 #   MH.data <- compress.xy.data(MH)
 #   MF.data <- compress.xy.data(MF)
   
-  print('in lmAsync')
   targ.var <- names(OH.data)
   nrips <- dim(MF.data[[1]])[4]
   out.data <- array(NA, dim=dim(MF.data[[1]]))
