@@ -9,11 +9,7 @@ QCTimeMask<-function(time.mask.obj, run=FALSE){
   ####TODO: Get the read functions to add to the filename as an attribute when reading in files, 
   ####which is probably going to require an edit to the OpenNC and readNC functions...
 
-#   library(ncdf4)
-#   library(PCICt)
   message("Checking time windowing mask")
-  #   thisnc <- nc_open(mask.nc)
-  #   time.mask.obj <- ReadMaskNC(thisnc)
   time.length <- length(time.mask.obj$masks[[1]])
   ###Pre-allocaate vector and loop over the available masks
   #print(time.length)

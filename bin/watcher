@@ -237,9 +237,15 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 ############# check if postProc_call is False	
 	if(postProc_call == False):
 		minilogs = os.path.join(script_base.split(":")[1], "log")
+		outdir = [output_path.split(",")][0]
+		outdir = outdir[0].split(':')[-1]
+		outfiles = [os.path.join(outdir, f) for f in os.listdir(outdir) if os.path.isfile(os.path.join(outdir, f))]
+		print(outfiles)
+		outfiles = [f for f in outfiles if re.search("nc", f) is not None]
+		outfiles = "output.path:" + outfiles[0]
 		send_status_email("success", 'complete', exp_name, \
 		                   traceback="",
-		                   mailid=mailid, logfiles = minilogs, exp_info_file=uinput, outfiles=[output_path.split(",")][0], 
+		                   mailid=mailid, logfiles = minilogs, exp_info_file=uinput, outfiles=outfiles, 
 		                   note = "Please note: postproc was not run on this job, probably due to one minfile being present in the XML.")
 		sys.exit("Quitting watcher, number of minifiles not enough to proceed with postProc")
 
