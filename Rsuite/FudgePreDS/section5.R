@@ -232,7 +232,8 @@ callPRPostproc <- function(test, input, adjusted.output){
                                       tmasks$fut.leapmask, 
                                       rep(1, oh.timelen), 
                                       rep(1, mf.timelen), 
-                                      obs.prmask[,,,1,,])
+                                      obs.prmask[,,,1,,], 
+                                      tmasks$idx_year_div,tmasks$fut.year.div)
         #obs.prmask right now does not support more than one
         #ensemble member.
         adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0

@@ -86,6 +86,8 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year= (pr_start + (n-1) * oh_offset) %% tmasks$nyears_hist )
         OH.idx <- idx$index
         pr_start <- idx$end
+        tmasks$idx_year_div <- idx$year_div
+        tmasks <<- tmasks
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #ignore0.Delta
         ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
@@ -97,6 +99,8 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year=1 + (n-1) * oh_offset)
         OH.idx <- idx$index
         start <- idx$end
+        tmasks$idx_year_div <- idx$year_div
+        tmasks <<- tmasks
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #
         ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
       }
@@ -120,20 +124,6 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                idx$year_div, tmasks$fut.year.div) 
         qc.data[,,,n,,] <- tmp.out        
       }      
-#       if (train_qcmask & missval.data$mv.retry){
-#         #the below used to store the status return; for now, to keep 
-#         #consistency with the other, more commonly-used training mask
-#         #methods, we're replacing that with NA
-#         qc.out <- ds.out * NA
-#         tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
-#                                tmasks$fut.leapmask, 
-#                                tmasks$OH$masks[[w]][OH.idx],
-#                                index.mask,
-#                                qc.out,
-#                                idx$year_div, tmasks$fut.year.div) 
-#         qc.data[,,,n,,] <- tmp.out
-#       }
-      #}
     }
     return(list(ds=out.data, qc=qc.data))
 }
