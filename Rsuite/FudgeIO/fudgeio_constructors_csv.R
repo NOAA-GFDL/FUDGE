@@ -21,7 +21,7 @@ build.fudge.object.csv <- function(file_list, var_list, dimlist){
     #make required metadata
     meta_list <- list('standard_name' = v,
                       'long_name' = v,
-                      'units' = 'completely_fake_units',
+                      'units' = 1,
                       'rips' = 'fakerip', 
                       'frequency' = 'day',
                       'calendar' = 'noleap', #is this reasonable?
@@ -34,6 +34,8 @@ build.fudge.object.csv <- function(file_list, var_list, dimlist){
     fudge_metadata[[v]] <- meta_list
     #For now, assume that there are exactly 3 things we might look for: 
     #time, lat and lon
+    fudge_metadata[[v]][['dim']] <- list()
+    fudge_metadata[[v]][['vars']] <- list()
     if ('spatial' %in% dimlist){
       #dims
       spat_data <- ObtainSpatialAxes(key='dummy', 
@@ -52,9 +54,40 @@ build.fudge.object.csv <- function(file_list, var_list, dimlist){
                                   units="days since 0000-01-01",
                                   calendar="none", 
                                   verbose=FALSE)
-      fudge_metadata[[v]][['dim']] <- time_data$dim
-      fudge_metadata[[v]][['vars']] <- time_data$vars
+      fudge_metadata[[v]][['dim']] <- c(fudge_metadata[[v]][['dim']], list('time' = time_data$dim))
+      fudge_metadata[[v]][['vars']] <- c(fudge_metadata[[v]][['vars']], time_data$vars)
     }
   }
+  
+  #Add metadata properties of var based off of lookup table
+  var_classification <- T
+  if (var_classification){
+    #print('var clasification added')
+    var.table <- paste0(FUDGEROOT, "Rsuite/aux/var_att_sheet.csv")
+    if (! file.exists(var.table)){
+      stop(paste("Error in build.fudge.object.csv: var_classification was true, but", 
+                 var.table, "was not found!"))
+    }else{
+      #open table
+      input <- read.csv(var.table, header=T, stringsAsFactors=F)
+      table_varnames <- input$var_name
+      properties <- c('is_precip')
+      defaults <- list(is_precip = F)
+      for (v in var_list){
+        if (! v %in% table_varnames){
+          print(paste(v, 'not found in lookup table; using defaults'))
+          for (el in properties){
+            fudge_metadata[[v]][[el]] <- defaults[[el]]
+          }
+        }else{
+          var_idx <- which(table_varnames==v)
+          for (el in properties){
+            fudge_metadata[[v]][[el]] <- input[[el]][[var_idx]]
+          }
+        }
+      }
+    }
+  }
+  
   return(list(data=fudge_data, metadata=fudge_metadata))
 }

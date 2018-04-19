@@ -350,10 +350,13 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #Okay - from now on, we also need to set a default prime_predictor;
   #the lm() and MBC(0 family of methods may reset this value)
   #print(str(as.list(match.call())))
-  env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
+  #commenting out 2018-04-19 - not all methods need this
+  #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
+  env$prime_predictor <- paste0(MH.vars, ".0.0")
   default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
   if (! (ds.method %in% default.methods)){
-    env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
+    #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
+    env$prime_predictor <- paste0(MH.vars, ".0.0")
   }else{
     env <- switch(ds.method,
            'MBC' = set.MBC.defaults(args, ..., env=env),
@@ -426,7 +429,11 @@ for (r in 1:length(fut.pred.rip.list)){
   label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')  
   message('writing global attributes')
-  global_att_list <- make.fudge.globals()
+  if (aux.ref$file_format == 'netcdf'){
+    global_att_list <- make.fudge.globals()
+  }else{
+    global_att_list <- list('fakemeta' = "metadata att that doesn't need to exist")
+  }
   
   if (ds.ref$target != "MF"){
     if (ds.method == "KDDM") {
@@ -440,6 +447,13 @@ for (r in 1:length(fut.pred.rip.list)){
     dimlist <- TARG$metadata[[1]]$dim
     varlist <- TARG$metadata[[1]]$vars
   }
+  
+  global_clone_file = NA
+  clone_globals = F
+  if (aux.ref$file_format != 'csv'){
+    global_clone_file = OH.files[[1]]
+    clone_globals = T
+  }
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],
@@ -447,14 +461,14 @@ for (r in 1:length(fut.pred.rip.list)){
                             dim.list=dimlist,
                             var.data=varlist,
                             prec='float',
-                            units=OH$metadata[[target.var]]$units,
-                            longname=paste(OH$metadata[[target.var]]$long_name),
-                            standard_name=paste(OH$metadata[[target.var]]$long_name),
+                            units=OH$metadata[[OH.vars[1]]]$units,
+                            longname=paste(OH$metadata[[OH.vars[1]]]$long_name),
+                            standard_name=paste(OH$metadata[[OH.vars[1]]]$long_name),
                             global_overwrite=global_att_list,
-                            global_clone_file = OH.files[[1]],
-                            clone_globals=T, clone_all=F,
+                            global_clone_file = global_clone_file,
+                            clone_globals=clone_globals, clone_all=F,
                             clone_include="frequency",clone_exclude="climatology",
-                            verbose=F
+                            verbose=T
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){
@@ -491,128 +505,13 @@ for (r in 1:length(fut.pred.rip.list)){
                                  prec='float', missval=1e20, units="1",
                                  comment=qc.comment.att,
                                  longname=qc.longname,
-                                 standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
+                                 standard_name = paste("QC mask of", OH$metadata[[OH.vars[1]]]$long_name),
                                  global_overwrite=qc.globals)
       
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
   }  
 }
-# 
-# #Output file destinations should be saved and printed for later reference
-# #But there can be some debate about how best to do that
-# out.file.list <- rep(list(NA), length(fut.pred.rip.list))
-# names(out.file.list) <- unlist(fut.pred.rip.list)
-# 
-# for (r in 1:length(fut.pred.rip.list)){
-#   rip = fut.pred.rip.list[r]
-#   #substitute instances of future predictor rip for the current rip
-#   loop.out.filename <- sub('r[[:digit:]][[:alpha:]]*[[:digit:]]*i[[:digit:]]p[[:digit:]]',
-#                            rip,out.filename, perl = T)
-#   loop.out.filename <- sub('$(RIP)', rip, loop.out.filename, fixed = T)
-#   #Write Global attributes to downscaled netcdf
-#   label.training <- paste(hist.model_1,".",hist.scenario_1,".",hist.train.start.year_1,"-",hist.train.end.year_1,sep='')
-#   label.validation <- paste(fut.model_1,".",fut.scenario_1,".",fut.train.start.year_1,"-",fut.train.end.year_1,sep='')
-# 
-#   message('writing global attributes')
-#   global_att_list <- make.fudge.globals()
-#   ##For now, assume that we are sticking with LM-style training;
-#   ##spatial coords from OH, time/ensemble coords from MH
-#   ##...man, this is going to take close to forever - you also need
-#   ## to get the target data & metadata from the input files.
-#   ## Which implies that you set oh.dimlist, mh.dimlist
-#   ## and mf.dimlist at the beginning of the entire exercise.
-#   if (ds.ref$target != "MF"){
-# 		if (ds.method == "KDDM") {
-# 			dimlist <- MF$metadata[[1]]$dim
-# 			varlist <- MF$metadata[[1]]$vars
-# 		} else {
-# 			dimlist <- c(TARG$metadata[[1]]$dim,  MF$metadata[[1]]$dim)
-# 			varlist <- c(TARG$metadata[[1]]$vars, MF$metadata[[1]]$vars)
-# 		}
-#   }else{
-#     dimlist <- TARG$metadata[[1]]$dim
-#     varlist <- TARG$metadata[[1]]$vars
-#   }
-#   ##############################################################################
-#   message(paste("Writing to file", loop.out.filename))
-#   #tmp.ds <- aperm(ds$ds, c(1,2,3,5,6,4))
-#   ds.out.filename = WriteNC(loop.out.filename, ds$ds[,,,r,, , drop=F],
-#                             target.var,
-#                             dim.list=dimlist,
-#                             var.data=varlist,
-#                             prec='float', #Swapped from double Dec. 2015
-#                             units=OH$metadata[[target.var]]$units,
-#                             longname=paste(OH$metadata[[target.var]]$long_name),
-#                             standard_name=paste(OH$metadata[[target.var]]$long_name),
-#                             global_overwrite=global_att_list,
-#                             global_clone_file = OH.files[[1]],
-#                             clone_globals=T, clone_all=F,
-#                             clone_include="frequency",clone_exclude="climatology",
-#                             verbose=F
-#   )
-#   message(paste('Downscaled output file:',ds.out.filename,sep=''))
-#   if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){
-#     ##Created waaay back at the beginning, as part of the QC functions
-#     for (var in target.var){
-#       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
-#       qc.var <- paste(var, 'qcmask', sep="_")
-#       #Sunstitute to get mask output directory
-#       #There are two setps - one to add _qcmask to the output directory after OneD;
-#       #the next, to correct the filename
-#       qc.file <- sub('OneD/', paste0('OneD/', qc.var, '/'), loop.out.filename)
-#       qc.filename <- sub(var, qc.var, basename(qc.file))
-#       qc.file <- file.path(dirname(qc.file), qc.filename)
-# 
-#       ###Check to make sure that it is possible to create the qc file; create dirs if not
-#       message("Attempting creation of QC file")
-#       message(qc.file)
-#       exists <- file.create(qc.file)
-#       if(!exists){
-#         print("ERROR! Dir creation script not beahving as expected!")
-#       }
-#       message(paste('attempting to write to', qc.file))
-#       qc.comment <- get.qc.comment(qc.maskopts$qc.method, ds.method)
-#       qc.comment.att <- list()
-#       qc.comment.att[[qc.var]] <- qc.comment
-#       qc.globals <- global_att_list
-#       #qc.globals$info <- ""
-#       qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,
-#                                                 ds.experiment,
-#                                                 #label.validation, label.training,
-#                                                 predictor.vars, fut.pred.rip.list,
-#                                                 qc.maskopts$qc.method, missval.args, train.string=train.string)
-#       qc.longname <- make.qc.longname(qc.maskopts$qc.method, ds.method, target.var)
-#       qc.globals$climatology <- NA
-#       qc.list <- list()
-#       qc.list[[qc.var]] <- ds$qc
-#       qc.dimlist <- dimlist
-#       qc.varlist <- varlist
-#       ### Commenting out the save-specific adaptations as of 2017-05-11
-#       #  qc.dimlist$time <- save.time.dim
-#       #  qc.varlist$time_bnds <- save.time.bnds
-#       #  out.array <- list('pr_trace' = pr_trace, 'OH_ss' = OH_ss, "MH_ss" = MH_ss, "MF_ss" = MF_ss)
-#       #  out.varnames <- c("pr_trace", 'OH_ss', "MH_ss", "MF_ss")
-#       #  print(lapply(lapply(out.array, '[', ,,,r,, ,drop=F), 'dim'))
-#       #  print(out.varnames)
-#       #qc.comment.att <- list("pr_trace" = "adjusted trace pr for MH and MF",
-#       #                   "OH_ss" = "sample size of OH before downscaling",
-#       #                   "MH_ss" = "sample size of MH before downscaling",
-#       #                   "MF_ss" = "sample size of MF before downscaling")
-#       qc.list <- list()
-#       qc.list[[qc.var]] <- ds$qc
-#       qc.out.filename  = WriteNC(qc.file, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,
-#                                  dim.list = dimlist, var.data=varlist,
-#                                  prec='float', missval=1e20, units="1",
-#                                  comment=qc.comment.att,
-#                                  longname=qc.longname,
-#                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
-#                                  global_overwrite=qc.globals)
-# 
-#       message(paste('QC Mask output file:',qc.out.filename,sep=''))
-#     }
-#   }
-# }
 
 #As a final step, print basic profiling information to the logfile
 profileFUDGERun()
