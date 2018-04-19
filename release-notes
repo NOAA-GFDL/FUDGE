@@ -1,3 +1,7 @@
+04-19-2017
+(cew)
+- Alternative csv input path via the auxfile added for running small synthetic cases
+
 04-12-2018
 (d1a)
 - bugfix for kddm bkde xml specification
