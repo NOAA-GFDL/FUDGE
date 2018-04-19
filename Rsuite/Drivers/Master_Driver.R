@@ -225,10 +225,11 @@ if (copy_from_tmp){
 MH.vars <- names(aux.ref$MH)
 mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
 mh_y_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$jdim, j_idx, j_max, j_stride-1)
-MH <- build.FUDGE.dataset(MH.files, predictor.vars, list(x=mh_x_subset,y=mh_y_subset),
+MH <- build.FUDGE.dataset(MH.files, MH.vars, list(x=mh_x_subset,y=mh_y_subset),
                           dim=ds.ref$mh_dimlist,
                           x_by=aux.ref$MH[[1]]$idim, y_by=aux.ref$MH[[1]]$jdim,
-                          aux.ref$MH[[1]]$geomask)
+                          aux.ref$MH[[1]]$geomask, 
+                          file_format = aux.ref$file_format)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, mh_x_subset$subset, mh_y_subset$subset)
   for (el in names(MH$data)){
@@ -248,11 +249,12 @@ if (copy_from_tmp){
 MF.vars <- names(aux.ref$MF)
 mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
 mf_y_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$jdim, j_idx, j_max, j_stride-1)
-MF <- build.FUDGE.dataset(MF.files, predictor.vars,
+MF <- build.FUDGE.dataset(MF.files, MF.vars,
                           subset=list(x=mf_x_subset, y=mf_y_subset),
                           dim=ds.ref$mf_dimlist,
                           x_by=aux.ref$MF[[1]]$idim, y_by=aux.ref$MF[[1]]$jdim,
-                          aux.ref$MF[[1]]$geomask)
+                          aux.ref$MF[[1]]$geomask, 
+                          file_format = aux.ref$file_format)
 if (apply_spatmask){
   spatmask <- ReadSpatialMask(spatmask.file, mf_x_subset$subset, mf_y_subset$subset)
   for (el in names(MH$data)){

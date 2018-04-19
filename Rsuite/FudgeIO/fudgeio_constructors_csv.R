@@ -12,6 +12,8 @@ build.fudge.object.csv <- function(file_list, var_list, dimlist){
   for (v in var_list){
     #Get data in csv file
     csv_all <- read.csv(file_list, header = T, sep = ",")
+    print(head(csv_all))
+    print(paste("Obtaining var", v))
     v_data <- csv_all[[v]]
     var_len <- length(v_data)
     dim(v_data) <- c(1,1,1,1,1,var_len)
@@ -34,7 +36,7 @@ build.fudge.object.csv <- function(file_list, var_list, dimlist){
     #time, lat and lon
     if ('spatial' %in% dimlist){
       #dims
-      spat_data <- ObtainSpatialAxes(key='mean', 
+      spat_data <- ObtainSpatialAxes(key='dummy', 
                                      lat.dim.vals=c(1),
                                      lat.units="",
                                      lat.bnds.vals=NA,

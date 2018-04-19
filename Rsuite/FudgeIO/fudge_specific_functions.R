@@ -20,10 +20,15 @@ build.FUDGE.dataset <- function(data.path, varlist, subset, dim,
   #Sptaial masks get more complicated - stepping stone towards having multiple
   #spatial masks for multiple vars
   if (length(geomasks) > 0){
-    apply_geomasks=T
-    if (length(geomasks)==1 && length(varlist) > 1){
-      message("Repeating geomask for all vars in dataset")
-      geomasks <- rep(geomasks[[1]], length(varlist))
+    if (file_format == 'netcdf'){
+      apply_geomasks=T
+      if (length(geomasks)==1 && length(varlist) > 1){
+        message("Repeating geomask for all vars in dataset")
+        geomasks <- rep(geomasks[[1]], length(varlist))
+      }
+    }else{
+      #We will not want to use geomasks if workign with csv data
+      apply_geomasks <- F
     }
   }else{
     apply_geomasks=F

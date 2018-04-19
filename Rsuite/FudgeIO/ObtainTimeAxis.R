@@ -7,7 +7,7 @@
 #'@requires ncdf4
 ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required', verbose=FALSE,
                            time.factor = "", time.vals = "", time.bnds = "", units = "", 
-                           adapt.end.factors=F){
+                           adapt.end.factors=F, prec='double'){
   
   if(verbose){print(paste('using key', key))}
   
@@ -30,7 +30,10 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
       clim.nc <- nc_open(clim.file)
       calendar.string <- switch(calendar, 
                                 "julian"="JULIAN", 
+                                "standard" = "JULIAN",
                                 "noleap"='NOLEAP', 
+                                '365_day' = 'NOLEAP',
+                                '365' = 'NOLEAP',
                                 stop(paste("Error in ObtainTimeAxis: calendar", calendar, "not supported.")))
       time.string <- switch(key, 
                             "mon"="MONTH", 
@@ -55,6 +58,25 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
       dim(clim.bounds) <- c(length(time.edges)-1, 2)
       time.bounds <- aperm(time.bounds, c(2,1))
       clim.bounds <- aperm(clim.bounds, c(2,1))
+      time.bnds <- create.fudge.metavar.object('time.bnds', time.bounds, 
+                                               prec=prec, dimnames=c('bnds', 'time'), 
+                                               longname='time axis boundaries', 
+                                               units=units)
+      attributes(time.bnds) <- c(list('units' = units, 
+                                      'dimids' = "bnds,time", 
+                                      'prec' = prec, 
+                                      'longname' = "time axis boundaries"), 
+                                 attributes(time.bnds))
+      clim.bnds <- create.fudge.metavar.object('clim.bnds', clim.bounds, 
+                                               prec=prec, dimnames=c('bnds', 'time'), 
+                                               longname='time axis boundaries', 
+                                               units=units)
+      attributes(clim.bnds) <- c(list('units' = units, 
+                                      'dimids' = "bnds,time", 
+                                      'prec' = prec, 
+                                      'longname' = "time axis boundaries"), 
+                                 attributes(clim.bnds))
+      return(list('dim' = time.dim, 'vars' = list('time_bnds' = time.bnds, 'clim_bnds'=clim.bnds)))
     }else if(key=='factor'){
       #if there is a factor key, search for the factor var
       #search for factor, time.vals
@@ -85,12 +107,12 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
                               calendar=calendar, 
                               longname="time")
         time.bnds <- create.fudge.metavar.object('time.bnds', time.bnds.vals, 
-                                                 prec='double', dimnames=c('bnds', 'time'), 
+                                                 prec=prec, dimnames=c('bnds', 'time'), 
                                                  longname='time axis boundaries', 
                                                  units=units)
         attributes(time.bnds) <- c(list('units' = units, 
                                       'dimids' = "bnds,time", 
-                                      'prec' = "double", 
+                                      'prec' = prec, 
                                       'longname' = "time axis boundaries"), 
                                    attributes(time.bnds))
         return(list('dim' = time.dim, 'vars' = list('time_bnds' = time.bnds)))
@@ -114,6 +136,22 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
       #Climatology bounds variable
       clim.bounds <- c((time.bounds[1,] + time.range[1]), 
                        time.bounds[2,] + time.range[2])
+    }else if(key=='360_day'){
+      time.dim <- ncdim_def(name=name, 
+                            vals=seq(from=0.5, by=1, length.out=360), 
+                            unlim=TRUE,
+                            units='days since 0000-01-01', 
+                            create_dimvar=TRUE, 
+                            calendar='360_day', 
+                            longname="time")
+      time.bounds <- c(seq(0, by=1, length.out=360), 
+                       seq(1, by=1, length.out=360))
+      dim(time.bounds) <- c(360,2)
+      #time bounds variable
+      time.bounds <- aperm(time.bounds, c(2,1))
+      #Climatology bounds variable
+      clim.bounds <- c((time.bounds[1,] + time.range[1]), 
+                       time.bounds[2,] + time.range[2])
     }else if(key=='values'){
       #Keep in mind you have a set of values that are used
       time.dim <- ncdim_def(name=name, 
@@ -129,24 +167,24 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
       stop(paste("Error in ObtainTimeAxis: please check your key to make sure that it matches one of the allowed strings!"))
     }
     time.bounds <- create.fudge.metavar.object('time.bnds', time.bounds, 
-                                               prec='double', dimnames=c('bnds', 'time'), 
+                                               prec=prec, dimnames=c('bnds', 'time'), 
                                                longname='time axis boundaries', 
                                                units=time.dim$units)
     attributes(time.bounds) <- c(list('units' = time.dim$units, 
                                     'dimids' = "bnds,time", 
-                                    'prec' = "double", 
+                                    'prec' = prec,
                                     'longname' = "time axis boundaries"), 
                                  attributes(time.bounds))
     #These are needed for some cases
     if(!is.null(clim.bounds)){
       #climatology bounds
       clim.bounds <- create.fudge.metavar.object('clim.bnds', clim.bounds, 
-                                                 prec='double', dimnames=c('bnds', 'time'), 
+                                                 prec=prec, dimnames=c('bnds', 'time'), 
                                                  longname='climatology axis boundaries', 
                                                  units=time.dim$units)
       attributes(clim.bounds) <- c(list('units' = time.dim$units, 
                                       'dimids' = "bnds,time", 
-                                      'prec' = "double", 
+                                      'prec' = prec,
                                       'longname' = "climatology axis boundaries"), 
                                    attributes(clim.bounds))
       var.list <- list('time_bnds' = time.bounds, 'climatology_bounds' = clim.bounds)
@@ -174,12 +212,12 @@ ObtainTimeAxis <- function(key, calendar, name="time", time.range='not_required'
       stop(paste("Error in ObtainTimeAxis: You need either a numeric or character key argument!"))
     }
     time.bounds.var <- create.fudge.metavar.object('time.bnds', time.bounds, 
-                                                   prec='double', dimnames=c('bnds', 'time'), 
+                                                   prec=prec, dimnames=c('bnds', 'time'), 
                                                    longname='time axis boundaries', 
                                                    units=time.dim$units)
     attributes(time.bounds) <- c(list('units' = time.dim$units, 
                                     'dimids' = "bnds,time", 
-                                    'prec' = "double", 
+                                    'prec' = prec,
                                     'longname' = "time axis boundaries"), 
                                  attributes(time.bounds))
   }
