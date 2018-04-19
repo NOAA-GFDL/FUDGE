@@ -1,4 +1,5 @@
 import re
+import sys
 import os, stat, shutil
 from os import path as osp
 import itertools
@@ -41,12 +42,12 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#cases - as distinguished by the presence of grid0. 
 	is_syn = False
 	if idirsuffix=="/grid0/":
-		print("Adding synthetic data workaround")
-		idirsuffix = idirsuffix + "ZeroD/"
+		print("Adding synthetic data workaround for grid0")
+		idirsuffix = idirsuffix + "/ZeroD/"
 		j_elements  = [1, 2]
 		is_syn = True
 	if idirsuffix=='/X1-1/':
-		print("Adding other synthetic data workaround")
+		print("Adding other synthetic data workaround for X1-1")
 		idirsuffix = idirsuffix
 		j_elements  = [1, 2]
 		is_syn = True	
@@ -111,7 +112,10 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		oh_suffix = "/".join(OH_dir.split("/")[(prefix_loc+1):-1])
 		if not multivar_target:
 			oh_vars = [target_var]
-			oh_files,oh_dmget = build_xml_input_paths(oh_vars, oh_prefix, oh_timerange, "/" + oh_suffix, False)
+			if not is_syn:
+				oh_files,oh_dmget = build_xml_input_paths(oh_vars, oh_prefix, oh_timerange, "/" + oh_suffix, False)
+			else:
+				oh_files,oh_dmget = build_xml_input_paths(oh_vars, oh_prefix, oh_timerange, idirsuffix, False)
 		else:
 			#Only triggered by MBC; may change later
 			oh_vars = predlist
@@ -258,8 +262,15 @@ def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
 		f_dir = osp.join(in_dir, v) + suffix
 		f_dir_files = [osp.join(f_dir, el) for el in os.listdir(f_dir) if re.search(trange, el) is not None]
 		#the above should match one, and exactly one file. Include a check in here?
-		in_file = [el for el in f_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
-		in_files.append(in_file)
+		try:
+			in_file = [el for el in f_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
+			in_files.append(in_file)
+		except IndexError:
+			print("directory: " + f_dir)
+			print("suffix: " + suffix)
+			print("trange: " + trange)
+			print("No files found with " + trange + " in " + f_dir + "; check path construction!")
+			sys.exit(1)
 		dmget_string = dmget_string + "dmget "+ in_file + "\n"
 	return(in_files, dmget_string)
 
