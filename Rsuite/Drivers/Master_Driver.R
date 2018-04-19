@@ -352,11 +352,11 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #print(str(as.list(match.call())))
   #commenting out 2018-04-19 - not all methods need this
   #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
-  env$prime_predictor <- paste0(MH.vars, ".0.0")
+  env$prime_predictor <- paste0(MH.vars[1], ".0.0")
   default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
   if (! (ds.method %in% default.methods)){
     #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
-    env$prime_predictor <- paste0(MH.vars, ".0.0")
+    env$prime_predictor <- paste0(MH.vars[1], ".0.0")
   }else{
     env <- switch(ds.method,
            'MBC' = set.MBC.defaults(args, ..., env=env),
