@@ -155,10 +155,7 @@ callEDQMv2<-function(LH,CH,CF,args){
 
 
 callBCQMv4 <- function(Oh, Mh, Mf, args) {
-  #   if (w == 1){
-  #     save(file='/home/cew/Code/testing/BCQMv4_pr.R',
-  #          list=c('Oh', 'Mh', 'Mf', 'args'))
-  #   }
+
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]

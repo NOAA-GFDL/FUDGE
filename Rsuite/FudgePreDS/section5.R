@@ -460,10 +460,6 @@ callMapMFOrder <- function(test, input, adjusted.output){
   #'blindingly obvious should be sufficient for now.
   out.list <- adjusted.output
   nrips <- dim(input$fut.pred[[1]])[4]
-  #   print(summary(input$fut.pred[[1]]))
-  #   stop('examine this out')
-  #   save(file="/home/cew/Code/testing/test_out.R", 
-  #        list=c("input", 'out.list'))
   for (n in 1:nrips){
     #input$fut.pred
     MF.rip <- input$fut.pred[[1]][,,,n,,]

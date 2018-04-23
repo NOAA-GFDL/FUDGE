@@ -75,16 +75,12 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       }
     }
   }else{
-    #If there is not enough data to downscale, the 
+    #If there is not enough data to downscale, change qcmask
     print("downscaling not possible at this point")
     if(train_qcmask){
       qc = array(NA, dim=dim(MF.data[[1]]))
     }
   }
-#  print("downscaled output:")
-#  print(summary(as.vector(out.data)))
-#  save(file="/work/cew/testing/h_pr_3.R", list=c('out.data'))
-#   stop('examine output')
   return(list(ds=out.data, qc=qc))
 }
 

@@ -182,7 +182,6 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   #'For comparison, please consult the original CDFt code located in the
   #'CRAN repository.
   #'
-  #save(file='/home/cew/Code/testing/test_out.R', list=c('ObsRp', 'DataGp', 'DataGf', 'npas', 'dev'))
   mO = mean(ObsRp)
   mGp = mean(DataGp)
   DataGp2 = DataGp + (mO - mGp)
