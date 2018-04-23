@@ -332,10 +332,13 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
 }
 
 callBCQMv4 <- function(Oh, Mh, Mf, args) {
-  #   if (w == 1){
-  #     save(file='/home/cew/Code/testing/BCQMv4_pr.R',
-  #          list=c('Oh', 'Mh', 'Mf', 'args'))
-  #   }
+  #' Modified BCQM in light of observations of QDM()
+  #' This is a version of the bias-corrected quantile mapping method, updated 
+  #' to produce less of a step function effect with quantile windows.
+  #' For more information on the general method, please consult 
+  #' Ho, C-K., D. B. Stephenson, M. Collins, C. A. T. Ferro, and S. J. Brown, 2012: Calibration strategies: A source of additional uncertainty in climate change projections. Bull. Amer. Meteor. Soc., 93(1), 21-26, doi:10.1175/2011BAMS3110.1.
+  #' and the ESD wiki page
+
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
