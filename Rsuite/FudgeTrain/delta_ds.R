@@ -86,7 +86,8 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year= (pr_start + (n-1) * oh_offset) %% tmasks$nyears_hist )
         OH.idx <- idx$index
         pr_start <- idx$end
-        tmasks$idx_year_div <- idx$year_div
+        tmasks$idx_year_div[[n]] <- idx$year_div
+        tmasks$OH_idx[[n]] <- OH.idx
         tmasks <<- tmasks
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #ignore0.Delta
         ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
@@ -99,7 +100,8 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year=1 + (n-1) * oh_offset)
         OH.idx <- idx$index
         start <- idx$end
-        tmasks$idx_year_div <- idx$year_div
+        tmasks$idx_year_div[[n]] <- idx$year_div
+        tmasks$OH_idx[[n]] <- OH.idx
         tmasks <<- tmasks
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #
         ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
