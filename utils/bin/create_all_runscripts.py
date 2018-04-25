@@ -267,7 +267,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 					f.write("wait")			
 	print('master runscript and mini creation completed')
 	#return(n_tiles)	
-			
+
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
 	outdir_string = "# Creating output directories \n"

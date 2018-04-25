@@ -52,7 +52,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
     if(!tmasks$time_mask_overlap){
       index.mask <- tmasks$MF$masks[[w]]
     }else{
-      print("Using non-overlapping index mask")
+      #Using non-overlapping index mask
       index.mask <- tmasks$trim$masks[[w]]
       #index.mask <- tmasks$MF$masks[[w]]
     }
@@ -86,6 +86,9 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year= (pr_start + (n-1) * oh_offset) %% tmasks$nyears_hist )
         OH.idx <- idx$index
         pr_start <- idx$end
+        tmasks$idx_year_div[[n]] <- idx$year_div
+        tmasks$OH_idx[[n]] <- OH.idx
+        tmasks <<- tmasks
         delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #ignore0.Delta
         ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
@@ -97,8 +100,11 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                                  start_year=1 + (n-1) * oh_offset)
         OH.idx <- idx$index
         start <- idx$end
-        loop.delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #
-        ds.out <- delta.downscale(loop.delta$delta, OH.loop[OH.idx], deltaop, status)
+        tmasks$idx_year_div[[n]] <- idx$year_div
+        tmasks$OH_idx[[n]] <- OH.idx
+        tmasks <<- tmasks
+        delta <- delta.train(MH.loop, MF.loop, deltatype, deltaop, status) #
+        ds.out <- delta.downscale(delta$delta, OH.loop[OH.idx], deltaop, status)
       }
       #Note that index.delta includes a step applying the time-trimming mask
       ##print(str(tmasks))
@@ -110,20 +116,16 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
                              idx$year_div, tmasks$fut.year.div) 
       #For both cases, final case is the same: tmp.out indexed back in
       out.data[,,,n,,] <- tmp.out
-      if (train_qcmask & missval.data$mv.retry){
-        #the below used to store the status return; for now, to keep 
-        #consistency with the other, more commonly-used training mask
-        #methods, we're replacing that with NA
-        qc.out <- ds.out * NA
+      if (train_qcmask){
+        qc.out <- rep(1, length(ds.out)) * delta$delta
         tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                tmasks$fut.leapmask, 
                                tmasks$OH$masks[[w]][OH.idx],
                                index.mask,
                                qc.out,
                                idx$year_div, tmasks$fut.year.div) 
-        qc.data[,,,n,,] <- tmp.out
-      }
-      #}
+        qc.data[,,,n,,] <- tmp.out        
+      }      
     }
     return(list(ds=out.data, qc=qc.data))
 }

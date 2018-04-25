@@ -59,6 +59,9 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
                                  start_year=pr_start)
         OH.idx <- idx$index
         pr_start <- idx$end
+        tmasks$idx_year_div[[n]] <- idx$year_div
+        tmasks$OH_idx[[n]] <- OH.idx
+        tmasks <<- tmasks
         #ds is now indexed by a subset of the OH timeseries; if using non-noleap
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
@@ -70,6 +73,9 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
                                  start_year=1)
         OH.idx <- idx$index
         pr_start <- idx$end
+        tmasks$idx_year_div[[n]] <- idx$year_div
+        tmasks$OH_idx[[n]] <- OH.idx
+        tmasks <<- tmasks
       }
       ds.idx <- !is.na(OH.slice[OH.idx])
       ds.out <- rep(NA, length(ds.idx))

@@ -211,28 +211,30 @@ callPRPostproc <- function(test, input, adjusted.output){
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-        if (oh.timelen >= mf.timelen){
-          #If more samples in OH, index by nyears present
-          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                   tmasks$hist.year.div, tmasks$fut.year.div, 
-                                   start_year=start)
-          OH.idx <- idx$index
-          start <- idx$end
-        }else{
-          #If more samples in MF, repeat mask until it matches length of MF sample;
-          #repeat for each ensemble
-          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                   tmasks$hist.year.div, tmasks$fut.year.div, 
-                                   start_year=1)
-          OH.idx <- idx$index         
-        }
+#         if (oh.timelen >= mf.timelen){
+#           #If more samples in OH, index by nyears present
+#           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+#                                    tmasks$hist.year.div, tmasks$fut.year.div, 
+#                                    start_year=start)
+#           OH.idx <- idx$index
+#           start <- idx$end
+#         }else{
+#           #If more samples in MF, repeat mask until it matches length of MF sample;
+#           #repeat for each ensemble
+#           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+#                                    tmasks$hist.year.div, tmasks$fut.year.div, 
+#                                    start_year=1)
+#           OH.idx <- idx$index         
+#         }
         #After either step is complete, index the mask to the future timseries
         #using index.delta
+        OH.idx <- tmasks$OH_idx[[n]]
         loop.ds.prmask <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                       tmasks$fut.leapmask, 
                                       rep(1, oh.timelen), 
                                       rep(1, mf.timelen), 
-                                      obs.prmask[,,,1,,])
+                                      obs.prmask[,,,1,,], 
+                                      tmasks$idx_year_div[[n]],tmasks$fut.year.div)
         #obs.prmask right now does not support more than one
         #ensemble member.
         adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
@@ -348,18 +350,22 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred,
                                                "[[", 'var')==targ.var]
+    #print(summary(as.vector(adjusted.output$ds.out)))
     ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]],
                                obs.hist = input$hist.targ,
                                model.fut = input$fut.pred[[fut.pred]],
                                obs.fut = adjusted.output$ds.out,
                                sample_size = sample_size)
+    #print(summary(as.vector(ds.correct)))
     if(test$qc.mask=='on'){
       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out)),
                        1, 0)
+      #print(summary(as.vector(qc.tmp)))
       non.missing <- which(qc.tmp==0)
       ds.tmp <- ifelse(ds.correct==as.numeric(adjusted.output$ds.out),
                        1, NA)
       qc.tmp[non.missing] <- ds.tmp[non.missing]
+      #print(summary(as.vector(qc.tmp)))
       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
     if(test$adjust.out=='on'){
@@ -408,6 +414,10 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #ds.vars <- names(adjusted.output$ds.out)
   
   ds.var <- names(input$hist.targ)
+#   print(str(input))
+#   print(str(adjusted.output))
+#   print(summary(as.vector(adjusted.output$ds.out)))
+#   stop('examine this output')
   out.list <- adjusted.output
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args
@@ -483,7 +493,20 @@ callMapMFOrder <- function(test, input, adjusted.output){
     #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
     x <- out.list$ds.out[,,,n,,]
     y <- MF.rip
+# print(summary(x))
+# print(length(x))
+# print(summary(y))
+# print(length(y))
     out.list$ds.out[,,,n,,] <- sort(x)[rank(y)]
+#print(summary(out.list$ds.out[,,,n,,]))
+#stop('examine this output')
+
+#         plot(tlev, input$fut.pred[[1]][,,,n,,], #ylim=c(0,0.0008), 
+#              lty=2,
+#              main=paste("rank for ens", n))
+#         plot(tlev, out.list$ds.out[,,,n,,], col='red')
+#         ds.sort <- sort.ds.out
+#         lines(tlev, ds.sort[MF.rank], col='blue')
   }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
