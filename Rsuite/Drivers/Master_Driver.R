@@ -456,12 +456,10 @@ start.time <- proc.time()
 #For now, make this a global to simplify data being copied
 tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
-#names(tmasks) <- c('MH', "OH", "MF", 'trim')
-# print(summary(pre.ds.train))
-# print(summary(post.ds.train))
-# stop('examine this out')
+
 ds <- loop.xy.data()
-#ds <- list(ds=MF$data[[1]])
+#ds <- list(ds=array(NA, dim=mf.dim), qc=array(NA, dim=mf.dim))
+
 print('summary of ds:')
 print(summary(ds))
 message("FUDGE downscaling ends")
@@ -546,7 +544,7 @@ for (r in 1:length(fut.pred.rip.list)){
         print("ERROR! Dir creation script not beahving as expected!")
       }
       message(paste('attempting to write to', qc.file))
-      qc.comment <- get.qc.comment(qc.maskopts$qc.method)
+      qc.comment <- get.qc.comment(qc.maskopts$qc.method, ds.method)
       qc.comment.att <- list()
       qc.comment.att[[qc.var]] <- qc.comment
       qc.globals <- global_att_list
@@ -556,6 +554,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                                 #label.validation, label.training,
                                                 predictor.vars, fut.pred.rip.list,
                                                 qc.maskopts$qc.method, missval.args, train.string=train.string)
+      qc.longname <- make.qc.longname(qc.maskopts$qc.method, ds.method, target.var)
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
@@ -578,7 +577,7 @@ for (r in 1:length(fut.pred.rip.list)){
                                  dim.list = dimlist, var.data=varlist,
                                  prec='float', missval=1e20, units="1",
                                  comment=qc.comment.att,
-                                 longname="QC Mask",
+                                 longname=qc.longname,
                                  standard_name = paste("QC mask of", OH$metadata[[target.var]]$long_name),
                                  global_overwrite=qc.globals)
 

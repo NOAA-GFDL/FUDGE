@@ -106,6 +106,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 			outdir = osp.dirname(expdict['output.path'][0])
 			outdir_contents = os.listdir(outdir)	
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
+			outfiles.sort()
 			if len(outfiles) < 1:
 				print("Error in ppWatcher: No files found in " + outdir + " !")
 				sys.exit(1)

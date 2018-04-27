@@ -166,8 +166,8 @@ get.dim.names <- function(env=parent.frame()){
   #What I want this function to do is return the 
   #possible vals of each dim name to the parent
   #environment.
-  env$x.dims <- c('x', 'i', 'lon', 'longitude') #'none'
-  env$y.dims <- c('y', 'j', 'lat', 'latitude')
+  env$x.dims <- c('x', 'X','i', 'lon', 'longitude') #'none'
+  env$y.dims <- c('y', 'Y','j', 'lat', 'latitude')
   env$z.dims <- c('z', 'p', 'k','plevel', 'plev', 'height')
   env$time.dims <- c('time')
   env$ens.dims <- c('m', 'ensmem', 'ensemble', 'ens')

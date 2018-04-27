@@ -1,3 +1,17 @@
+
+04-27-2018
+(cew)
+- Updating library loading to make package location more transparent (user repo vs system repo)
+- bugfix for cfqm, delta indexing with ignore0 turned on; butfix for path construction of synthetic data in OH in expergen create_all_runscripts
+
+03-29-2018
+(cew)
+- Updating qc.train for DeltaSD to return the ratio delta used, tweaking metadata to change, bugfix for the switch statements on pr trace using numeric (non-string) switches
+
+03-27-2018
+(d1a)
+- Updating KDDM qcmasks to keep track of places where KDDM adds NAs and we replace with MF
+
 03-22-2018
 (d1a)
 - Hopefully final release for KDDM with udpated NA handling and QC mask.

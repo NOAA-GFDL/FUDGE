@@ -117,6 +117,7 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
       #For both cases, final case is the same: tmp.out indexed back in
       out.data[,,,n,,] <- tmp.out
       if (train_qcmask){
+      	#qcmask is now the delta applied at a given x,y,t
         qc.out <- rep(1, length(ds.out)) * delta$delta
         tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                tmasks$fut.leapmask, 

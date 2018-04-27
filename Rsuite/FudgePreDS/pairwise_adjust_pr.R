@@ -316,7 +316,7 @@ get_pr_trace <- function(index, units){
       zero.thold=0
     }
   }
-  switch(index,
+  switch(as.character(index),
          'zero' = return(zero.thold + 2 * .Machine$double.eps),
          'us_trace' = return(us.trace.thold),
          'global_trace' = return(global.trace.thold),
