@@ -30,7 +30,7 @@ fulljob:
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
   - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
-  tags:
-  - analysis
+ tags:
+  - analysis 
  #only:
  # - i_master
