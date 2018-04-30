@@ -20,16 +20,16 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   delta.by = switch(args$tail,
                     lower=(1),
                     upper=(-1))
-  cutoff = switch(args$tail,
-                  lower=args$low_cutoff,
-                  upper=args$high_cutoff)
+#   cutoff = switch(args$tail,
+#                   lower=args$low_cutoff,
+#                   upper=args$high_cutoff)
   #Initialize and sort data
   if (args$trigger != 'all'){
     stop(paste("Error in limited_tail_cutoff: as of fudgetag",
                "icing-testing-20180219, arguments for trigger other than 'all' are not", 
                "supported in the cdft limited tail cutoff!"))
   }
-  ds.cond = do.call(select.cond, list(DS, cutoff))
+#  ds.cond = do.call(select.cond, list(DS, cutoff))
   ds.order = order(DS) #used to sort from lowest to highest
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
   #note: earlier versions did not include ties argument, lead to some changed answers
