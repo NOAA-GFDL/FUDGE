@@ -31,7 +31,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   } else {
     delta_sample <- test$qc_args$lastNpts
   }
-  triggertypes <- c('GfGh', 'cdft', 'cdft_orig') # 'OhGh'
+  triggertypes <- c('GfGh', 'limited', 'cdft_orig') # 'OhGh'
   if(is.na(triggertype)){
     stop(paste("Error in callTailAdjust: triggertype must be specified!"))
   } else if(!(triggertype %in% triggertypes)) {
