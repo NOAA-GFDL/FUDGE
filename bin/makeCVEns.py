@@ -107,15 +107,15 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 		#Each f in all_outfiles should either contain _qcmask or not contain _qcmask
 		for lst in all_outfiles:
 			if re.search("_qcmask", lst[0]) is not None:
-				if any([re.search("_qcmask", el) for el in lst is None]):
+				if any(re.search("_qcmask", el) is None for el in lst):
 					print("Error in makeExpEns: tried to concatenate incompatible files:")
 					print(lst)
 					sys.exit(100)
 			else:
-				if any([re.search("_qcmask", el) for el in lst is not None]):
+				if any(re.search("_qcmask", el) is not None for el in lst):
 					print("Error in makeExpEns: tried to concatenate incompatible files:")
 					print(lst)			
-					sys.exit(100)		
+					sys.exit(100)	
 		#Add entries to dictionary, after sorting:
 		print(all_outfiles)
 		for flist in all_outfiles:
