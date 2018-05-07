@@ -114,8 +114,10 @@ def runPostProc(exp_info, ds_dir, out_dir, var_suffix, mailid, verbose=False):
 						           exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
 				                   outfiles = ds_vardir, xml = xml_loc)
 					sys.exit(-1)
-				#print(var_suffix)
-				add_anom_to_var = (var_suffix is 'none' or var_suffix is "")
+				#Note: python 'is' checks to see if same object, '==' checks for same value
+				#'is' works within the list comprehensions, but == works outside
+				add_anom_to_var = ( (var_suffix == 'none') or (var_suffix == "") )
+				#print("add_anom_to_var, is_ds:")
 				#print(add_anom_to_var)
 				output_files.append(check_anom_resid(ds_file, out_dir, total_exp_name, ds_var, send_to,script_dir, xml_loc, add_anom_to_var))
 		else:
@@ -144,6 +146,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
 				copy_file = anom_file
 			else:
 				print("Copying qc file to final destination")
+				print("using var " + var)
 				climvar = re.sub('Anom', '', var)
 				copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
 		elif ("Detr" in var):
