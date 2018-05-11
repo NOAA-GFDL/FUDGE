@@ -3,37 +3,37 @@ import os, stat, shutil
 from os import path as osp
 import itertools
 
-def create_all_runscripts(i_start, i_end, i_by, i_offset, 
-                         j_start, j_end, j_by, j_offset, 
+def create_all_runscripts(i_start, i_end, i_by, i_offset,
+                         j_start, j_end, j_by, j_offset,
                          njobs, ncpu, fudgetag, scriptdir, OH_dir, MH_dir, MF_dir, oh_timerange, mh_timerange, mf_timerange, predlist, spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, auxfile, aux_file_list, wallclocktime):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
-	
+
 	'''
 	print(i_start)
 	print(i_end)
 	print(j_start)
 	print(j_end)
 	'''
-	
+
 	#which i_indices are we going to be looping over?
 	i_elements = range(int(i_start), int(i_end)+1, i_by)
 	i_elements.append(int(i_end)+1)
 	i_elements = list(set(i_elements))
-	i_elements = sorted(i_elements)	
+	i_elements = sorted(i_elements)
 	#i_offset = int(i_start)  - 1
-	i_max = int(i_end) - i_offset	
+	i_max = int(i_end) - i_offset
 	#which j indices are we going to be looping over?
 	j_elements = range(int(j_start), int(j_end),j_by)
 	j_elements.append(int(j_end)+1)
 	j_elements = list(set(j_elements))
-	j_elements = sorted(j_elements)	
+	j_elements = sorted(j_elements)
 	#j_offset = int(j_start)  - 1
 	j_max = int(j_end) - j_offset
 	#sys.exit("Examine this out")
-	
+
 	#Okay - as of 207-05-09, adding a one-off special case for the synthetic data
-	#cases - as distinguished by the presence of grid0. 
+	#cases - as distinguished by the presence of grid0.
 	is_syn = False
 	if idirsuffix=="/grid0/":
 		print("Adding synthetic data workaround")
@@ -44,9 +44,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		print("Adding other synthetic data workaround")
 		idirsuffix = idirsuffix
 		j_elements  = [1, 2]
-		is_syn = True	
-	
-	### As of 3-15-17, working on script subset changes needed for 
+		is_syn = True
+
+	### As of 3-15-17, working on script subset changes needed for
 	### handling entire-grid downscaling and the arbitrary x,y subsets.
 	####don't worry about the njobs parameter for now; it's handled in the subset looping.
 	###mini_start = range(int(i_start), int(i_end), njobs)
@@ -59,27 +59,27 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#One of the goals for this was to get away from using gcp-specific operations
 	#As of 1-19-17, wallclocktime defaults to 12 hrs; we can set it higher or lower
 	#in the aux file
-	moab_header = "\n".join(["#!/bin/tcsh ", 
-	                        "#PBS -S /bin/tcsh ", 
-	                        "#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime, 
-	                        "#PBS -r y ", 
-	                        '#PBS -j oe ', 
-	                        '#PBS -N fudge_master ', 
-	                        '#PBS -E ', 
+	moab_header = "\n".join(["#!/bin/tcsh ",
+	                        "#PBS -S /bin/tcsh ",
+	                        "#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime,
+	                        "#PBS -r y ",
+	                        '#PBS -j oe ',
+	                        '#PBS -N fudge_master ',
+	                        '#PBS -E ',
 	                        #Swapping out 2017-05-31. Apparently, the curly brackets are
 	                        #an unsupported feature? See Tim emails.
-	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',  
-	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)', 
+	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
+	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
 	                        "#PBS -q batch "]) + "\n"
-	#The path to the checkout script is hard-coded, and probably going to 
+	#The path to the checkout script is hard-coded, and probably going to
 	#stay that way for now; the load of git is DEFINETLY needed if the
-	#checkout script is going to be used.                        
+	#checkout script is going to be used.
 	module_loads = "\n".join(['module load R',
 	                          'module load gcp',
 	                          'module load netcdf',
 	                          'module load nco',
 	                          'module load git/2.4.6',
-	                          'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"                        
+	                          'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
 	#Okay, now define the set of files that you will work with
 	#(no more minifiles=all files are the same for each job slice)
 	#first, checking for the presence of the optional files
@@ -87,11 +87,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	tmask_present = (OH_tmask != 'na')
 	trim_time_mask_present = (trim_tmask != 'na')
 	#do all of your dmgets (requests for files on tape) in the script at once
-	#it is easier on the infrastructure if they are all done at once, since 
+	#it is easier on the infrastructure if they are all done at once, since
 	#odds are some of the files we want are on the same tapes
 	dmget_string = ""
 	if spatmask_present:
-		#Need the file located at one level up from the spatmask dir - 
+		#Need the file located at one level up from the spatmask dir -
 		#spatmask itself points only to the OneD dir
 		spatmask_dir = osp.dirname(osp.abspath(spatmask))
 		#print(spatmask)
@@ -100,19 +100,19 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		spatmask_file = [osp.join(spatmask_dir, el) for el in os.listdir(spatmask_dir) if re.search('masks', el) is not None][0]
 		dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
 		spatmask_files = [spatmask_file]
-		dmget_string = dmget_string + "dmget " + spatmask_file + " \n" 
+		dmget_string = dmget_string + "dmget " + spatmask_file + " \n"
 	else:
-		spatmask_files = []	
+		spatmask_files = []
 	dmget_string = dmget_string + "# Get OH data" + "\n"
 	#OH directory currently described with /OneD/ appended
 	OH_dir = os.path.dirname(osp.abspath(OH_dir))
 	oh_files = [osp.join(OH_dir,el) for el in os.listdir(OH_dir) if re.search(oh_timerange, el) is not None]
 	##Make sure that .nc is the last part of the string
 	oh_files = [el for el in oh_files if re.search(".nc$", el) is not None]
-	#multivar_target is a hack for getting around alternate  var specifications. 
-	#currently, it's only triggered by MBC; depending on what methods we add, 
+	#multivar_target is a hack for getting around alternate  var specifications.
+	#currently, it's only triggered by MBC; depending on what methods we add,
 	#that may change.
-	if not multivar_target: 
+	if not multivar_target:
 		for f in oh_files:
 			dmget_string = dmget_string + "dmget " + f + "\n"
 	else:
@@ -123,15 +123,15 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			#Do a series of replaces on the predictor var dir
 			oh_dir = osp.join(oh_prefix, pred_var) + oh_suffix
 			#print([osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None])
-			oh_dir_files = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None] 
+			oh_dir_files = [osp.join(oh_dir, el) for el in os.listdir(oh_dir) if re.search(mh_timerange, el) is not None]
 			#Make sure that .nc is the last part of the string
 			oh_file = [el for el in oh_dir_files if re.search(".nc$", el) is not None][0] #should only match ONE
 			oh_files.append(oh_file)
-			dmget_string = dmget_string + "dmget " + oh_file + " \n"		
-	#MH and MF files have an assumption that you can have multiple 
+			dmget_string = dmget_string + "dmget " + oh_file + " \n"
+	#MH and MF files have an assumption that you can have multiple
 	#predictor vars present. At some point, var classification checks
 	#(such is is_spaceless for ENSO data) should go in here	.
-	#MH and MF paths are currently passed in several dirlevels earlier than OH 
+	#MH and MF paths are currently passed in several dirlevels earlier than OH
 	dmget_string = dmget_string + "# Get MH data" + "\n"
 	mh_files = []
 	for pred_var in predlist:
@@ -157,23 +157,23 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	if tmask_present:
 		tmask_files = [OH_tmask, MH_tmask, MF_tmask]
 		dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
-		#dmget_string = dmget_string + "dmget " + OH_tmask + "\n" 
+		#dmget_string = dmget_string + "dmget " + OH_tmask + "\n"
 		#dmget_string = dmget_string + "# Get MH tmask " + "\n"
-		#dmget_string = dmget_string + "dmget " + MH_tmask + "\n" 
+		#dmget_string = dmget_string + "dmget " + MH_tmask + "\n"
 		#dmget_string = dmget_string + "# Get MF tmask " + "\n"
-		#dmget_string = dmget_string + "dmget " + MF_tmask + "\n" 
+		#dmget_string = dmget_string + "dmget " + MF_tmask + "\n"
 		if trim_time_mask_present:
 			tmask_files.append(trim_tmask)
-			#dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"	
+			#dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"
 			#dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
-		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n" 
+		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n"
 		dmget_string = dmget_string + tmask_dmget
-		#if copy_leapmasks:	
+		#if copy_leapmasks:
 		#	#Need a historic and a future leapday mask file
 		#	leapmask_base = "/archive/esd//PROJECTS/DOWNSCALING/MASKS/timemasks/maskdays_missingleapdays_"
 		#	#Unfortunately, oh_timerange and mf_timerange can have '_ensmbl' tacked onto the end.
 		#	#That is never going to be present in the leapday masks.
-		#	#...I don't have to worry about _NOLEAP speficications at this point, 
+		#	#...I don't have to worry about _NOLEAP speficications at this point,
 		#	#but that might be something to keep in mind for the future.
 		#	oh_leap_trange = re.sub("_ensmbl", "", oh_timerange)
 		#	mf_leap_trange = re.sub("_ensmbl", "", mf_timerange)
@@ -189,7 +189,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		aux_strlist = ["#Copy files from aux specification"]
 		for el in aux_file_list:
 			aux_strlist.append("dmget " + el)
-		dmget_string = "\n".join(aux_strlist)			
+		dmget_string = "\n".join(aux_strlist)
 	#do all of your gcps next
 	gcp_string = "# Copy all input files to $TMPDIR (-cd option creates input directories) " + "\n"
 	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files + aux_file_list
@@ -197,14 +197,14 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	print(file_list)
 	for f in file_list:
 		gcp_string = gcp_string + "mkdir -p $TMPDIR/" + os.path.dirname(f) + " \n"
-		gcp_string = gcp_string + "gcp --sync --verbose " + f + " $TMPDIR/" + f + " \n"
-	gcp_string = gcp_string + "echo 'Copy operations complete.' \n"	
+		gcp_string = gcp_string + make_gcp_cmd(f, "$TMPDIR/"+f)
+	gcp_string = gcp_string + "echo 'Copy operations complete.' \n"
 	gcp_string = gcp_string + "sleep 10 \n"
-		
-	#Add code for creating common output directories 
+
+	#Add code for creating common output directories
 	#(copy opts for each minifile/slice take place within runscript
 	#as well as writing of script status files)
-	#Current string in form of blank_outdir#(blank_rip)#rip1,rip2,rip3	
+	#Current string in form of blank_outdir#(blank_rip)#rip1,rip2,rip3
 	outdir_opts = outdir_string.split("#")
 	#The parenthesies made sense in c-shell, but pythons' sub functions are PICKY
 	outrip_patt = "\$\(RIP\)"
@@ -213,15 +213,15 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	for rip in out_rips:
 		outdirs.append(re.sub(outrip_patt, rip, outdir_opts[0]))
 	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
-	
+
 	#Finally, start opts that need to loop by index available
-	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
+	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
 	#print(j_elements)
 	n_tiles = 0
 	for j in range(0, len(j_elements)-1):
 		jval = j_elements[j]
 		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
-		#j_max and j_by are passed in already; they are numeric	
+		#j_max and j_by are passed in already; they are numeric
 		for i in range(0, len(i_elements)-1):
 			ival = i_elements[i]
 			n_tiles = n_tiles + 1
@@ -232,7 +232,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				if end_idx > len(i_elements) - 1:
 					end_idx  = len(i_elements) - 1
 				i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
-				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)	
+				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)
 				runscript_files = []
 			#Since master is created on first (always), can proceed with rest of runscript calls
 			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+"."+i_string+"_"+j_string)
@@ -244,10 +244,10 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			#runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
 			#										(i+1 + i*(i_by-1)), i_max, i_by, i_offset+1, \
 			#										(j+1 + j*(j_by-1)), j_max, j_by, j_offset+1, auxfile, target_var,outdirs)
-			#Okay...as of 05-25, I think I've identified a bigger issue at stake for 
+			#Okay...as of 05-25, I think I've identified a bigger issue at stake for
 			#running the minifile jobs - namely, offset isn't offset exactly.
 			#...welp. As of 6 PM, it's forming the indexes correctly, but the 926th index in the new stuff still seems
-			#to match the 925th in the old. 
+			#to match the 925th in the old.
 			#I'm not getting errors about longitude anymore, thoug. That's...probably progress.
 			i_idx = i_offset - (i+1 + i*(i_by-1))
 			j_idx = j_offset - (j+1 + j*(j_by-1))
@@ -257,7 +257,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				i_by = 1
 				j_idx = 1
 				jmax = 1
-				j_by = 1			
+				j_by = 1
 			else:
 				i_idx = ival - i_offset + 1
 				imax = i_max + 1
@@ -265,27 +265,37 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				jmax = j_max + 1
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
 													i_idx, imax, i_by, i_offset, \
-													j_idx, jmax, j_by, j_offset, auxfile, target_var,outdirs)			
+													j_idx, jmax, j_by, j_offset, auxfile, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
-			os.chmod(runscript_name, runmode)	#f now executable	
+			os.chmod(runscript_name, runmode)	#f now executable
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
 				#print("writing master to file")
 				runscript_calls = [el + " & \n" for el in runscript_files]
 				runscript_calls = "sleep 10 \n".join(runscript_calls)
-				with open(master_scriptname, 'w') as f: 
+				with open(master_scriptname, 'w') as f:
 					f.write(moab_header)
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
 					f.write(outdir_string)
 					f.write("echo 'Beginning calls to runscripts'\n")
-					f.write(runscript_calls) 
-					f.write("wait")			
+					f.write(runscript_calls)
+					f.write("wait")
 	print('master runscript and mini creation completed')
-	#return(n_tiles)	
+	#return(n_tiles)
+
+def make_gcp_cmd(sourcefile, destfile):
+	#Wraps a gcp command in a status checker; exits script with error if fails
+	gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
+	gcp_echo = "echo '" + gcp_cmd + "'"
+	stat_cmd = "\n".join(["if ($status != 0) then",
+	                     "\t echo 'Error in runscript: gcp from " + sourcefile + " to " + destfile + " failed!'",
+						 "\t exit 99",
+						 "endif"])
+	return(gcp_cmd + "\n" + gcp_echo + "\n" + stat_cmd + "\n")
 
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
@@ -301,11 +311,11 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 		outdir_string = outdir_string + "mkdir -p " + out + qcmaskdir + "\n"
 		outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
 	return(outdir_string)
-	
-def create_slice_runscript(i_string, j_string, scriptdir, 
+
+def create_slice_runscript(i_string, j_string, scriptdir,
 							i_idx, i_max, i_by, i_offset,
 							j_idx, j_max, j_by, j_offset, auxfile, target_var, outdirs):
-	#Creates the runscript code specific to a slice of the grid downscaled 
+	#Creates the runscript code specific to a slice of the grid downscaled
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
 	#these differently is not going to hurt.
@@ -313,13 +323,13 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	# j_range: 'J454_576'
 	runscript_log = osp.join(scriptdir, 'log') + "/ind.${MOAB_JOBNAME}.${MOAB_JOBID}"
 	runscript_header = "\n".join(['#!/bin/tcsh',
-	                              '#PBS -S /bin/csh', 
-	                              '#PBS -l nodes=1:ppn=1,walltime=6:00:00', 
-	                              '#PBS -j oe', 
+	                              '#PBS -S /bin/csh',
+	                              '#PBS -l nodes=1:ppn=1,walltime=6:00:00',
+	                              '#PBS -j oe',
 	                              '#PBS -r y ',
 	                              '#PBS -o ' + runscript_log,
 	                              '#PBS -N fudge_run',
-	                              '#PBS -E', 
+	                              '#PBS -E',
 	                              '#PBS -q batch']) + "\n"
 	exp_name = scriptdir.split("/")[-1]
 	if(exp_name==''):
@@ -336,15 +346,15 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	for outdir in outdirs:
 		runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
 	return(runscript)
-	
+
 def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	#Makes the copy operations for the output of the R code
-	#Currently assumes a single file of _qcmask output; 
+	#Currently assumes a single file of _qcmask output;
 	#when we get to writing coordinates, this needs to be updated
 	#Note: right now, for a given script job, all J are going to be identical.
 	outstr = []
 	outstr.append('echo `ls "$TMPDIR/' + outdir + '"`')
-	outstr.append('echo gcp "$TMPDIR/' + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir + '"')	
+	outstr.append('echo gcp "$TMPDIR/' + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir + '"')
 	outstr.append("gcp $TMPDIR/" + outdir + "*."+i_string+"_"+j_string + ".nc " + outdir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
@@ -362,14 +372,14 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	outstr.append("else")
 	outstr.append("\t touch " + out_mask_dir + "/.mini.fail")
 	outstr.append('endif')
-	return("\n".join(outstr) + "\n")	
-	
+	return("\n".join(outstr) + "\n")
+
 def awful_runcode_hack(runcode_dir, runscript_dir):
-	#I don't want to have to tinker with something that we're planning on 
+	#I don't want to have to tinker with something that we're planning on
 	#replacing during this flavor or the next. For now, it's not much of
 	#a stretch to copy some of the runcodes to a location that fits the
-	#expected pattern in the runscripts.	
-	runscript_files = [el for el in os.listdir(runscript_dir) if re.search("script", el) is not None]	
+	#expected pattern in the runscripts.
+	runscript_files = [el for el in os.listdir(runscript_dir) if re.search("script", el) is not None]
 	runcode_files = [el for el in os.listdir(runcode_dir) if re.search("code", el) is not None]
 	runscript_patterns = [re.split("\.", el)[-1] for el in runscript_files if (re.split("\.", el)[-1]).count('-') == 2]
 	#print(runscript_patterns)
@@ -380,6 +390,4 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
 		tmp_file[-1] = patt
 		tmp_dest = osp.join(runcode_dir, ".".join(tmp_file))
 		tmp_src = osp.join(runcode_dir, runcode_files[0])
-		shutil.copy2(tmp_src, tmp_dest)	
-	
-                       
+		shutil.copy2(tmp_src, tmp_dest)
