@@ -508,6 +508,9 @@ def main():
 	print "Status emails will be sent to: " + NEMSemail1
 	msub = options.msub
 	print "Will jobs be automatically submitted? " + str(msub)
+	if (options.run_watcher and not options.msub):
+		print("Error in expergen: option run-watcher should only be used with msub!")
+		sys.exit(1)
 	if(os.path.exists(options.uinput)):
 		uinput = options.uinput
 		print "XML input: " + uinput
