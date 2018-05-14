@@ -24,6 +24,10 @@ import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 import make_postProc_scripts
 from make_postProc_scripts import make_postProc_scripts
+import watcher
+from watcher import runWatcher #,_v_print
+import fudgeUtils
+from fudgeUtils import read_exp_info_file
 
 list_title = []
 dictDS_hi = {}
@@ -488,12 +492,8 @@ def main():
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
 	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
-#	parser.add_option('--OH-by', action='store', dest='oh_by', default=1,
-#	                   help="number of x and y indices to loop by when splitting OH data into y-slices")
-#	parser.add_option('--MH-by', action='store', dest='mh_by', default=1,
-#	                   help="number of x and y indices to loop by when splitting MH data into y-slices")
-#	parser.add_option('--MF-by', action='store', dest='mf_by', default=1,
-#	                   help="number of x and y indices to loop by when splitting MF data into y-slices")
+	parser.add_option('--run-watcher', action='store_true', dest='run_watcher', default=False,
+	                   help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
 
 	(options, args) = parser.parse_args()
 	#CEW edits 3-3 for clarity (and only haing to search env vars once)
@@ -845,9 +845,18 @@ def main():
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
 
 	if(NEMSemail1 != "none"):
-	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
+		print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
 	else:
-	   print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+		print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+
+	if options.run_watcher:
+		print("Invoking watcher script immediately")
+		expinfo = sbase + "/experiment_info.txt"
+		expdict = read_exp_info_file(expinfo)
+		#Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
+		runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
+
+
 ####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
     ##Sample:
