@@ -261,15 +261,8 @@ loop.xy.data <- function(){
           }#Loop by w complete
           ##bring together all time levels
           for (el in names(output)){
-            #tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), sum, na.rm=T)
-            #  
-            #  print(dim(output[[el]]))
-            #  print(summary(output[[el]]))
             tmp.out <- apply(output[[el]], c(1,2,3,4,5,6), na.sum)
-            #print('adding over temporary output')
             output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- tmp.out
-            #print(paste("summary of", el))
-            #print(summary(as.vector(output.all[[el]][ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,])))
           }
           #Once looping by w complete, do the last s5 adjustment
           #Call the Section 5 Adjustments to be applied to post-downscaled output
@@ -295,8 +288,6 @@ loop.xy.data <- function(){
             }
             remove(temp.postproc)
           }
-          #        print(summary(as.vector(output.all$ds[ds.x.start, ds.y.start, ,,,])))
-          #        stop('examine output - the tail adjust is giving weird and wonky values')
         }
       }#prime_predictor present
       if ( (jval == y.len) & i.write) {

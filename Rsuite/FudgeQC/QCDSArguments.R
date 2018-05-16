@@ -17,8 +17,8 @@ QCAdjustArguments <- function(pre_ds, post_ds,
                               target.in.predictors,
                               predictor.vars, target.vars, ds.method){
   multivar.possible  <- c('PR', 'flag.neg', 'transform')
-  multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg', 'BCQM.tail.adj', 'transform', 'simpletailadj', 'cdft_simpletailadj', 'cdft_limtailadj')
-  target.req.in.pred <- c('PR', 'SBiasCorr', 'bcsd.correct', 'BCQM.tail.adj','simpletailadj', 'cdft_simpletailadj', 'cdft_limtailadj')
+  multi_ens.possible <- c('PR', 'SBiasCorr', 'flag.neg', 'BCQM.tail.adj', 'transform', 'simpletailadj', 'cdft_simpletailadj', 'cdft_limtailadj', 'limtailadj')
+  target.req.in.pred <- c('PR', 'SBiasCorr', 'bcsd.correct', 'BCQM.tail.adj','simpletailadj', 'cdft_simpletailadj', 'cdft_limtailadj', 'limtailadj')
   #Downscaling method checks
   simpletailadj.possible <- c("BCQM", 'PARM')
   #Obtain all adjustments that will be performed

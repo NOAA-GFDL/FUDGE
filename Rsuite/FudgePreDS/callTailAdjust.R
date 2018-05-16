@@ -31,7 +31,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   } else {
     delta_sample <- test$qc_args$lastNpts
   }
-  triggertypes <- c('GfGh', 'cdft', 'cdft_orig') # 'OhGh'
+  triggertypes <- c('GfGh', 'limited', 'cdft_orig') # 'OhGh'
   if(is.na(triggertype)){
     stop(paste("Error in callTailAdjust: triggertype must be specified!"))
   } else if(!(triggertype %in% triggertypes)) {
@@ -70,21 +70,20 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
     DS.slice <- adjusted.output$ds.out[,,,n,,]
     #Check for attributes
-    if(triggertype == 'cdft' || triggertype=='cdft_orig'){
+    if(triggertype=='cdft_orig'){
       if(all(c('high_cutoff', 'low_cutoff') %in% names(cutoffs))){
         #cutoffs should be a list containing two named vectors:
         #high_cutoff and low_cutoff
         arg_list = c(arg_list, list(high_cutoff = cutoffs$high_cutoff[n],
                                     low_cutoff  = cutoffs$low_cutoff[n]))
-        if (triggertype == 'cdft'){
-          #limited cdft takes new args
-          arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len,
-                                       trigger = test$qc_args$trigger))
-        }
       }else{
-        stop(paste("Error in callTailAdjust: triggertype of cdft",
+        stop(paste("Error in callTailAdjust: triggertype of cdft_orig",
                    "specified, but high_cutoff attribute not set in cutoffs!"))
       }
+    }else if (triggertype == 'limited'){
+      #limited cdft takes new args
+      arg_list <- c(arg_list, list(tail_len = test$qc_args$tail_len,
+                                   trigger = 'all'))
     }else{
       #The simple tail adjust now takes the oh and mh sample size as args
       arg_list <- c(arg_list, list(oh_ss = oh_ss, mh_ss = mh_ss))
@@ -130,7 +129,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
   cond.data = switch(args$triggertype,
                      'GfGh' = model.fut,
                      'cdft_orig' = model.fut,
-                     'cdft' = model.fut)
+                     'limited' = model.fut)
   
   # PREPARE DATA
   cond.missvals <- !is.na(cond.data)
@@ -151,11 +150,9 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     tmp.mask=rep(0, length(ds.orig))
   } else {
     #Calculate high and low tails
-    if (args$triggertype == 'cdft'){
-      #print('calling upper')
-      hitail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      #print('calling lower')
-      lotail = cdft_limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+    if (args$triggertype == 'limited'){
+      hitail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      lotail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
     }else if (args$triggertype == 'cdft_orig'){
       hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
       lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))

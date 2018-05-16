@@ -95,6 +95,7 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 		print(kdict['inPath1'])
 		outpaths = [kdict['inPath1'] , kdict['inPath2']]
 		all_outfiles =  [[f for f in os.listdir(p) if osp.isfile(osp.join(p, f))] for p in outpaths]
+		all_outfiles = [sorted(lst) for lst in all_outfiles]
 		num_files = [len(flist) for flist in all_outfiles]
 		if (num_files.count(num_files[0]) != len(num_files)):
 			print("Error in makeCVEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs.")
@@ -103,6 +104,18 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 			print("Error in makeCVEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")
 			sys.exit(1)	
 		all_outfiles = zip(*all_outfiles)
+		#Each f in all_outfiles should either contain _qcmask or not contain _qcmask
+		for lst in all_outfiles:
+			if re.search("_qcmask", lst[0]) is not None:
+				if any(re.search("_qcmask", el) is None for el in lst):
+					print("Error in makeExpEns: tried to concatenate incompatible files:")
+					print(lst)
+					sys.exit(100)
+			else:
+				if any(re.search("_qcmask", el) is not None for el in lst):
+					print("Error in makeExpEns: tried to concatenate incompatible files:")
+					print(lst)			
+					sys.exit(100)	
 		#Add entries to dictionary, after sorting:
 		print(all_outfiles)
 		for flist in all_outfiles:

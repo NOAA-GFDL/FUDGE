@@ -23,17 +23,26 @@ import ppWatcher
 from ppWatcher import runPPWatcher
 from fudgeUtils import read_exp_info_file
 
+global quiet
+global debug
+global traceback
+global verbose
+
+quiet = True
+debug = False
+traceback = False
+verbose = True
+
 def parserWatcher():
 	verbose = False #default
-	debug = False
-	traceback = False
-	quiet = True	
-	timeout = None	
+
+	#quiet = True
+	timeout = None
 	sleeptime = None
 	nloops = None
 	mailid = None
 	verbopt = 0
-	sev = 0		
+	sev = 0
 	usage = "\n############################################################################\n"
 	parser = OptionParser(usage)
 	usage = usage + "Eg. watcher -i /home/a1r/cew/experiment_info.txt -t 5 \n"
@@ -49,7 +58,7 @@ def parserWatcher():
 	parser.add_option("-l", "--nloops", dest="nloops",help="pass number of times to loop through to check for output file generations (default: 120 )")
 	parser.add_option("-s", "--sleeptime", dest="sleeptime",help="pass number of minutes to sleep between checks for output file presence; decimals (i.e. 0.5 ) are fine. (Default sleep time: 3 mins)")
 	parser.add_option("-t", "--timeout_after_ppsubmission", dest="timeout",help="pass timeout in minutes (waits until t mins after ppscript is submitted and before quitting the tool (t>0)). (Default timeout: 0 minutes)")
-	parser.add_option('-v', '--verbose',action="store_true",default=True,help="verbose output") 
+	parser.add_option('-v', '--verbose',action="store_true",default=True,help="verbose output")
 	parser.add_option('-d', '--debug',action="store_true",default=False,help="print debug INFO")
 	parser.add_option('--traceback',action="store_true",default=False,help="print traceback INFO,typically more info than debug")
 	parser.add_option('--quiet',action="store_true",default=False,help="silent run, except for error reporting (True by default)" )
@@ -59,10 +68,10 @@ def parserWatcher():
 		if(opts == 'uinput'):
 			uinput = vals
 		if(opts == 'timeout'):
-			if(timeout is not None): 
+			if(timeout is not None):
 				timeout = (float)(vals)
 		if(opts == 'verbose'):
-			if (vals == True):	
+			if (vals == True):
 				verbose = vals
 				sev = 1
 				verbopt = 1
@@ -74,7 +83,7 @@ def parserWatcher():
 		if(opts == 'traceback'):
 			if (vals == True):
 				traceback = vals
-				sev = 3	
+				sev = 3
 				verbopt = 1
 		if(opts == 'sleeptime'):
 			if (vals is not None):
@@ -82,34 +91,31 @@ def parserWatcher():
 					sleeptime = (float)(vals) * 60
 				else:
 					print "Please set a positive number for sleeptime-", sleeptime
-					sys.exit(-1)		
+					sys.exit(-1)
 		if(opts == 'nloops'):
 			nloops = vals
 		if(opts == 'mail'):
 			mailid = vals
 	if (timeout is None):
-		timeout = 0.0	
+		timeout = 0.0
 	if (sleeptime is None):
 		sleeptime = 180.0
 	if (nloops is None):
-		nloops = 120	
-	
-	def _v_print(sev,verbmsg):
-		if(sev == 0) & (quiet == True):
-			#we do nothing 
-			_v_print = lambda *a: None  # do-nothing function
-		elif (sev == 1) & ((verbose == True) | (debug == True) | (traceback == True)):
-			print verbmsg 
-		elif (sev == 2) & ((debug == True) | (traceback == True)):
-		    print verbmsg
-		elif(sev == 3) & (traceback == True):	
-		    print verbmsg
-	global v_print
-	v_print = _v_print
+		nloops = 120
 	v_print(1,"experiment_info.txt: "+uinput)
-
 	v_print(1,"Default timeout to quit"+ (str)(timeout)+" minute")
 	runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev, expdict)
+
+def v_print(sev,verbmsg):
+	if(sev == 0) & (quiet == True):
+		#we do nothing
+		_v_print = lambda *a: None  # do-nothing function
+	elif (sev == 1) & ((verbose == True) | (debug == True) | (traceback == True)):
+		print verbmsg
+	elif (sev == 2) & ((debug == True) | (traceback == True)):
+	    print verbmsg
+	elif(sev == 3) & (traceback == True):
+	    print verbmsg
 
 def asciiParser(uinput):
 	op = False #not yet spotted output_path
@@ -122,19 +128,19 @@ def asciiParser(uinput):
 	script_base = "undefined"
 	target = "undefined"
 	qc_mask = "undefined"
-				
+
 	f = open(uinput, 'r')
 	for line in f:
 		line = line.strip()
-		if(line.startswith('minifile.I.start:')):	
+		if(line.startswith('minifile.I.start:')):
 			minifile_i_start = line.split('minifile.I.start:')[1]
-		if(line.startswith('minifile.I.end:')):	
+		if(line.startswith('minifile.I.end:')):
 			minifile_i_end = line.split('minifile.I.end:')[1]
 		if(line.startswith('output.path:')):
 			output_path = line
 		op  = True
 		if(op == True) & (spatmask == False):
-			if not ":" in line: 
+			if not ":" in line:
 				output_path = output_path+","+line
 		if(line.startswith('spat.mask.path_1:')):
 			spatmask  = True
@@ -143,10 +149,10 @@ def asciiParser(uinput):
 		if(line.startswith('target:')):
 			target = line
 		if(line.startswith('qc.mask')):
-			qc_mask = line	
+			qc_mask = line
 		#CEW edit 5-25
 		if(line.startswith("ds.experiment")):
-			ds_exp = line	
+			ds_exp = line
 	f.close()
 	if ((minifile_i_start == "undefined") | (minifile_i_end == "undefined") | (output_path == "undefined") | (spatmask == "undefined") | (script_base == "undefined") | (target == "undefined") | (qc_mask == "undefined")):
 		print("\033[1;31m One of the fields from your input file is missing. Please check if minifile.I.start,minifile.I.end,output.path,spat.mask.path_1,script.base,target,q.mask are all available in your input file. Program quitting now..\033[1;m")
@@ -158,12 +164,12 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
 	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask,exp_name = asciiParser(uinput)
 
-	#if < 2 minifile length, postProc should not be called. 
+	#if < 2 minifile length, postProc should not be called.
 	if (((int)(minifile_i_end) - (int)(minifile_i_start)) == 0):
 		postProc_call = False
-	v_print(2, "INFO: parsed from input file -"+ minifile_i_start+"\n"+minifile_i_end+"\n"+output_path+"\n"+script_base) #debug 
+	v_print(2, "INFO: parsed from input file -"+ minifile_i_start+"\n"+minifile_i_end+"\n"+output_path+"\n"+script_base) #debug
 	#Obtain exp_cnt from the number of jobs in the runscript
-	#exp_cnt = int(minifile_i_end) - int(minifile_i_start) + 1 
+	#exp_cnt = int(minifile_i_end) - int(minifile_i_start) + 1
 	exp_cnt = len([el for el in os.listdir(osp.join(script_base[12:], 'runscript')) if re.search("script", el) is not None])
 	print(exp_cnt)
 	#sys.exit("examine experiment count")
@@ -174,16 +180,16 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 	#print(output_path)
 	#print(dirs_output)
 	#print(expdict['output.path'])
-	#sys.exit('examine this out - is there more than one el?')	
+	#sys.exit('examine this out - is there more than one el?')
 	qc_mask_bool = qc_mask.split(':')[1]
 	target = target.split(':')[1]
 	exp_name = exp_name.split(':')[1]
-	#will be nice to have target also in experiment_info.txt 
-	ctr = 0 
+	#will be nice to have target also in experiment_info.txt
+	ctr = 0
 	#based on status while loop through the following with sleep to check minifile existence
 	#when checker is  a success msub the ppscript (even if one outpath is only complete at that time and wait for the rest, notify via email)
-	#cretcode = 1 
-	nloop_start = 0 
+	#cretcode = 1
+	nloop_start = 0
 	#for out in list_output:
 	retcode = 1
 	while ((retcode != 0) & (retcode != -13)): # | (len(list_output)!=0)) ) &( (retcode != -13))):
@@ -191,17 +197,17 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 		#TODO include retcode2 somehow in the following
 		#while ((retcode != 0) & (retcode != -13)): # | (len(list_output)!=0)) ) &( (retcode != -13))):
 		for out in list_output:
-			v_print(1,"INFO: loop --"+(str)(nloop_start+1)) 
+			v_print(1,"INFO: loop --"+(str)(nloop_start+1))
 			v_print(3,"return after a loop"+(str)(retcode))
 			v_print(2,"length of output.path"+(str)(len(list_output)))
-			v_print(2,"nloops"+"<="+(str)(nloop_start)) 
+			v_print(2,"nloops"+"<="+(str)(nloop_start))
 			if ((int)(nloops) <= (int)(nloop_start)):
 		 		subject = "fudge notification- watcher/failure"
 		 		text = "Your watcher has timed out. postProc cannot be submitted at this time. \n\nExperiment_info.txt for reference-\n"+uinput
 				text = text + "\n Please contact Aparna and Carolyn for assistance"
 				notifyUser(mailid,subject,text)
 				sys.exit("Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start))
-			v_print(1, "checker to run on the file ") 
+			v_print(1, "checker to run on the file ")
 			retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt,spath=script_base)
 			if (qc_mask_bool == 'on'):
 				v_print(1, "qc_mask seems to be on, checker to run on qc_mask")
@@ -209,50 +215,46 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 				retcode2 = checker.checker(outmask,exp_cnt,"warning",verbose=verbopt)
 		#print retcode
 				if (retcode3 == 0) & (retcode2 == 0):
-					v_print(1,"Both ds output and mask output seem to be available") 
+					v_print(1,"Both ds output and mask output seem to be available")
 					#cprint "pop ", ctr
 					#com list_output.pop(ctr)
-					ctr = ctr - 1	
+					ctr = ctr - 1
 					retcode = 0
 				else:
 					if(retcode2 != 0):
 						retcode = retcode2
-						v_print(2,"Mask file(s) to be assessed") 
+						v_print(2,"Mask file(s) to be assessed")
 					else:
 						retcode = retcode3
 						v_print(2,"DS output to be assessed")
 				v_print(2,"RETURN CODE "+ (str)(retcode))
 			if(qc_mask_bool == 'off'):
 				if (retcode3 == 0):
-					retcode = 0 
+					retcode = 0
 					#clist_output.pop(ctr)
-					ctr = ctr - 1 
+					ctr = ctr - 1
 				else:
-					retcode = retcode3 
+					retcode = retcode3
 					ctr = ctr+1
 		v_print(1,"Sleep between loops to initiate "+(str)(sleeptime))
 		time.sleep(sleeptime)
 		nloop_start = nloop_start + 1
-		  #cnloop_start = nloop_start + 1  
-############# check if postProc_call is False	
+		  #cnloop_start = nloop_start + 1
+############# check if postProc_call is False
 	if(postProc_call == False):
 		minilogs = os.path.join(script_base.split(":")[1], "log")
-		outdir = [output_path.split(",")][0]
-		outdir = outdir[0].split(':')[-1]
-		outfiles = [os.path.join(outdir, f) for f in os.listdir(outdir) if os.path.isfile(os.path.join(outdir, f))]
-		print(outfiles)
-		outfiles = [f for f in outfiles if re.search("nc", f) is not None]
-		outfiles = "output.path:" + outfiles[0]
+		mini_outdir = [output_path.split(",")][0]
+		mini_files = [osp.join(mini_outdir, el) for el in os.listdir(mini_outdir) if re.search("nc$", el) is not None]
 		send_status_email("success", 'complete', exp_name, \
 		                   traceback="",
-		                   mailid=mailid, logfiles = minilogs, exp_info_file=uinput, outfiles=outfiles, 
+		                   mailid=mailid, logfiles = minilogs, exp_info_file=uinput, outfiles=mini_files,
 		                   note = "Please note: postproc was not run on this job, probably due to one minfile being present in the XML.")
 		sys.exit("Quitting watcher, number of minifiles not enough to proceed with postProc")
 
 	if (retcode == 0) | (len(list_output)==0):
 		v_print(1,"Running "+script_base+"/postProc/msubwrapper" +" for PP job submission")
 		script_base = script_base.split(':')[1]
-		wscript = script_base+"/postProc/msubwrapper"	
+		wscript = script_base+"/postProc/msubwrapper"
 		p = subprocess.Popen(wscript,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 		output, errors = p.communicate()
 		if(p.returncode != 0):
@@ -263,8 +265,8 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 
 	v_print(1,"time to quit program"+ (str)(timeout) +"mins")
 	ppwaittime = timeout * 60
-	time.sleep(ppwaittime) 
-	if (retcode == -13 ): #when mini.fail is out there 
+	time.sleep(ppwaittime)
+	if (retcode == -13 ): #when mini.fail is out there
 		 minilogs,mini_indices = get_bad_minfiles(os.path.join(script_base.split(":")[1], "log"))
 		 send_status_email("failure", 'R code', exp_name, \
 		                   traceback="One or more minfiles failed to write; sample indices include " + ",".join(mini_indices), \
@@ -275,7 +277,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
 		 #runPPWatcher(uinput, waittime, nrips)
 		 runPPWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev)
-		 
+
 def get_bad_minfiles(logpath):
 	#Gets j-indices of all minfiles that have an error message in logfile
 	#at the R code level
@@ -294,26 +296,26 @@ def get_bad_minfiles(logpath):
 					logfiles.append(mfile)
 	if(len(indices) > 10):
 		indices = indices[0:4] + indices[-5:-1]
-		logfiles = logfiles[0:4] + logfiles[-5:-1]				
-	return(logfiles, indices)			 
-	
+		logfiles = logfiles[0:4] + logfiles[-5:-1]
+	return(logfiles, indices)
+
 def notifyUser(mailid,subject,text):
 	uinfo = os.environ.get('USER')
 	hostnam = "princeton.rdhpcs.noaa.gov"
 	# email header
-	send_from = uinfo+"@"+hostnam 
+	send_from = uinfo+"@"+hostnam
 	send_to = mailid
-	text = text + "\n \nDO NOT REPLY TO THIS AUTOMATED EMAIL" 
+	text = text + "\n \nDO NOT REPLY TO THIS AUTOMATED EMAIL"
 	msg = MIMEMultipart()
-	msg['From'] = send_from # 
+	msg['From'] = send_from #
 	msg['To'] = mailid
-	msg['Date'] = formatdate(localtime=True) 
+	msg['Date'] = formatdate(localtime=True)
 	msg['Subject'] = subject
 	msg.attach( MIMEText(text))
 	if (mailid is not None):
 		smtp = smtplib.SMTP("localhost")
 		smtp.sendmail(send_from, send_to, msg.as_string())
-		smtp.close()	
-						
+		smtp.close()
+
 if __name__ == '__main__':
    parserWatcher()

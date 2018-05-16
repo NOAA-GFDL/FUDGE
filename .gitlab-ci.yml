@@ -27,8 +27,10 @@ fulljob:
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME`
   - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
   - datestr=`date +%Y%m%d-%H%M`
-  - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
+  - PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
-  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest
+  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
+ tags:
+  - analysis 
  #only:
  # - i_master

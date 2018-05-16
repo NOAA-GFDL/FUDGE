@@ -51,8 +51,8 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
                   'BCQM.tail.adj' = callBCSDCorrect(test, out$input, out$adjusted.output),
                   'simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, triggertype='GfGh', missval.args=missval.args, tmasks=tmasks),
-                  'cdft_limtailadj' = callTailAdjust(test, out$input, out$adjusted.output, 
-                                                     triggertype='cdft', cutoffs=ds.atts),
+                  'limtailadj'    = callTailAdjust(test, out$input, out$adjusted.output, 
+                                                     triggertype='limited', cutoffs=ds.atts),
                   'cdft_simpletailadj' = callTailAdjust(test, out$input, out$adjusted.output, 
                                                         triggertype='cdft_orig', cutoffs=ds.atts),
                   'backtransform' = callPRBacktransfrom(test, out$input, out$adjusted.output),
@@ -211,29 +211,30 @@ callPRPostproc <- function(test, input, adjusted.output){
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-        if (oh.timelen >= mf.timelen){
-          #If more samples in OH, index by nyears present
-          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                   tmasks$hist.year.div, tmasks$fut.year.div, 
-                                   start_year=start)
-          OH.idx <- idx$index
-          start <- idx$end
-        }else{
-          #If more samples in MF, repeat mask until it matches length of MF sample;
-          #repeat for each ensemble
-          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                   tmasks$hist.year.div, tmasks$fut.year.div, 
-                                   start_year=1)
-          OH.idx <- idx$index         
-        }
+#         if (oh.timelen >= mf.timelen){
+#           #If more samples in OH, index by nyears present
+#           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+#                                    tmasks$hist.year.div, tmasks$fut.year.div, 
+#                                    start_year=start)
+#           OH.idx <- idx$index
+#           start <- idx$end
+#         }else{
+#           #If more samples in MF, repeat mask until it matches length of MF sample;
+#           #repeat for each ensemble
+#           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
+#                                    tmasks$hist.year.div, tmasks$fut.year.div, 
+#                                    start_year=1)
+#           OH.idx <- idx$index         
+#         }
         #After either step is complete, index the mask to the future timseries
         #using index.delta
+        OH.idx <- tmasks$OH_idx[[n]]
         loop.ds.prmask <- index.delta(tmasks$hist.leapmask[OH.idx], 
                                       tmasks$fut.leapmask, 
                                       rep(1, oh.timelen), 
                                       rep(1, mf.timelen), 
                                       obs.prmask[,,,1,,], 
-                                      tmasks$idx_year_div,tmasks$fut.year.div)
+                                      tmasks$idx_year_div[[n]],tmasks$fut.year.div)
         #obs.prmask right now does not support more than one
         #ensemble member.
         adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
@@ -460,10 +461,6 @@ callMapMFOrder <- function(test, input, adjusted.output){
   #'blindingly obvious should be sufficient for now.
   out.list <- adjusted.output
   nrips <- dim(input$fut.pred[[1]])[4]
-  #   print(summary(input$fut.pred[[1]]))
-  #   stop('examine this out')
-  #   save(file="/home/cew/Code/testing/test_out.R", 
-  #        list=c("input", 'out.list'))
   for (n in 1:nrips){
     #input$fut.pred
     MF.rip <- input$fut.pred[[1]][,,,n,,]

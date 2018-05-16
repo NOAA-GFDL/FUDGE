@@ -230,9 +230,13 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('force_reproducibility' %in% names(args)) {
     force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
   }else{
-    stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180214", 
-               "force_reproducibility argument ('on' or 'off')", 
-               "is required to be set in the XML for MBC and QDM!"))
+    if (args$type == 'mult'){
+      stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180510", 
+                 "force_reproducibility argument ('on' or 'off')", 
+                 "is required to be set in the XML for MBC and QDM when type == 'mult'!"))
+    }else{
+      force_reproducibility <- FALSE
+    }
   }
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars), 
@@ -303,9 +307,13 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('force_reproducibility' %in% names(args)) {
     force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
   }else{
-    stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180214", 
-               "force_reproducibility argument ('on' or 'off')", 
-               "is required to be set in the XML for MBC and QDM!"))
+    if (args$type == 'mult'){
+      stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180510", 
+                 "force_reproducibility argument ('on' or 'off')", 
+                 "is required to be set in the XML for MBC and QDM when type == 'mult'!"))
+    }else{
+      force_reproducibility <- FALSE
+    }
   }
   #Put together MBC-specific args  
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 

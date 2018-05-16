@@ -20,25 +20,24 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	##print(outdir_string)
 	##print(idirsuffix)
 	##sys.exit('examine this output')
-	
 	#which i_indices are we going to be looping over?
 	i_elements = range(int(i_start), int(i_end)+1, i_by)
 	i_elements.append(int(i_end)+1)
 	i_elements = list(set(i_elements))
-	i_elements = sorted(i_elements)	
+	i_elements = sorted(i_elements)
 	#i_offset = int(i_start)  - 1
-	i_max = int(i_end) - i_offset	
+	i_max = int(i_end) - i_offset
 	#which j indices are we going to be looping over?
 	j_elements = range(int(j_start), int(j_end),j_by)
 	j_elements.append(int(j_end)+1)
 	j_elements = list(set(j_elements))
-	j_elements = sorted(j_elements)	
+	j_elements = sorted(j_elements)
 	#j_offset = int(j_start)  - 1
 	j_max = int(j_end) - j_offset
 	#sys.exit("Examine this out")
-	
+
 	#Okay - as of 207-05-09, adding a one-off special case for the synthetic data
-	#cases - as distinguished by the presence of grid0. 
+	#cases - as distinguished by the presence of grid0.
 	is_syn = False
 	if idirsuffix=="/grid0/":
 		print("Adding synthetic data workaround")
@@ -60,18 +59,18 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	                        '#PBS -E ', 
 	                        #Swapping out 2017-05-31. Apparently, the curly brackets are
 	                        #an unsupported feature? See Tim emails.
-	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',  
-	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)', 
+	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
+	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
 	                        "#PBS -q batch "]) + "\n"
-	#The path to the checkout script is hard-coded, and probably going to 
+	#The path to the checkout script is hard-coded, and probably going to
 	#stay that way for now; the load of git is DEFINETLY needed if the
-	#checkout script is going to be used.                        
+	#checkout script is going to be used.
 	module_loads = "\n".join(['module load R',
 	                          'module load gcp',
 	                          'module load netcdf',
 	                          'module load nco',
 	                          'module load git/2.4.6',
-	                          'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"                        
+	                          'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
 	#Okay, now define the set of files that you will work with
 	#(no more minifiles=all files are the same for each job slice)
 	#first, checking for the presence of the optional files
@@ -79,11 +78,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	tmask_present = (OH_tmask != 'na')
 	trim_time_mask_present = (trim_tmask != 'na')
 	#do all of your dmgets (requests for files on tape) in the script at once
-	#it is easier on the infrastructure if they are all done at once, since 
+	#it is easier on the infrastructure if they are all done at once, since
 	#odds are some of the files we want are on the same tapes
 	dmget_string = ""
 	if spatmask_present:
-		#Need the file located at one level up from the spatmask dir - 
+		#Need the file located at one level up from the spatmask dir -
 		#spatmask itself points only to the OneD dir
 		spatmask_dir = osp.dirname(osp.abspath(spatmask))
 		spatmask_file = [osp.join(spatmask_dir, el) for el in os.listdir(spatmask_dir) if re.search('masks', el) is not None][0]
@@ -139,7 +138,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		shutil.copyfile(auxfile, auxfile_mod)
 	#For either case, concatenate all the dmget strings together
 	dmget_string = dmget_string + "# Get OH data " + oh_dmget + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
-	
 	tmask_files = []
 	leapmask_files = []
 	if tmask_present:
@@ -147,14 +145,16 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
 		if trim_time_mask_present:
 			tmask_files.append(trim_tmask)
-		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n" 
+			#dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"
+			#dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
+		tmask_dmget = "dmget " + " ".join(tmask_files)	 + "\n"
 		dmget_string = dmget_string + tmask_dmget
 	#And finally, add the files that the aux file specifies
 	if len(aux_file_list) > 0:
 		aux_strlist = ["#Copy files from aux specification"]
 		for el in aux_file_list:
 			aux_strlist.append("dmget " + el)
-		dmget_string = "\n".join(aux_strlist)			
+		dmget_string = "\n".join(aux_strlist)
 	#do all of your gcps next
 	gcp_string = "# Copy all input files to $TMPDIR (-cd option creates input directories) " + "\n"
 	file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files + aux_file_list
@@ -162,36 +162,30 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	print(file_list)
 	for f in file_list:
 		gcp_string = gcp_string + "mkdir -p $TMPDIR/" + os.path.dirname(f) + " \n"
-		gcp_string = gcp_string + "gcp --sync --verbose " + f + " $TMPDIR/" + f + " \n"
-	gcp_string = gcp_string + "echo 'Copy operations complete.' \n"	
+		gcp_string = gcp_string + make_gcp_cmd(f, "$TMPDIR/"+f)
+	gcp_string = gcp_string + "echo 'Copy operations complete.' \n"
 	gcp_string = gcp_string + "sleep 10 \n"
-		
-	#Add code for creating common output directories 
+
+	#Add code for creating common output directories
 	#(copy opts for each minifile/slice take place within runscript
 	#as well as writing of script status files)
 	'''
 	#Current string in form of blank_outdir#(blank_rip)#rip1,rip2,rip3	
-	outdir_opts = outdir_string.split("#")
-	#The parenthesis made sense in c-shell, but pythons' sub functions are PICKY
-	outrip_patt = "\$\(RIP\)"
-	out_rips = outdir_opts[2].split(",")
-	outdirs = []
-	for rip in out_rips:
-		outdirs.append(re.sub(outrip_patt, rip, outdir_opts[0]))
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	'''
 	
 	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
-	
+	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
+
 	#Finally, start opts that need to loop by index available
-	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )	
+	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
 	#print(j_elements)
 	n_tiles = 0
 	for j in range(0, len(j_elements)-1):
 		jval = j_elements[j]
 		j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
-		#j_max and j_by are passed in already; they are numeric	
+		#j_max and j_by are passed in already; they are numeric
 		for i in range(0, len(i_elements)-1):
 			ival = i_elements[i]
 			n_tiles = n_tiles + 1
@@ -202,7 +196,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				if end_idx > len(i_elements) - 1:
 					end_idx  = len(i_elements) - 1
 				i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
-				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)	
+				master_scriptname = osp.join(scriptdir, 'master', 'master_script_'+i_master_string+'_'+j_string)
 				runscript_files = []
 			#Since master is created on first (always), can proceed with rest of runscript calls
 			runscript_name = osp.join(scriptdir, 'runscript', "script."+target_var+"."+ds_method+"."+i_string+"_"+j_string)
@@ -214,7 +208,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				i_by = 1
 				j_idx = 1
 				jmax = 1
-				j_by = 1			
+				j_by = 1
 			else:
 				i_idx = ival - i_offset + 1
 				imax = i_max + 1
@@ -227,7 +221,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)			
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
-			os.chmod(runscript_name, runmode)	#f now executable	
+			os.chmod(runscript_name, runmode)	#f now executable
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
@@ -280,8 +274,8 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 		outdir_string = outdir_string + "mkdir -p " + out + qcmaskdir + "\n"
 		outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
 	return(outdir_string)
-	
-def create_slice_runscript(i_string, j_string, scriptdir, 
+
+def create_slice_runscript(i_string, j_string, scriptdir,
 							i_idx, i_max, i_by, i_offset,
 							j_idx, j_max, j_by, j_offset, auxfile_mod, target_var, outdirs):
 	#Creates the runscript code specific to a slice of the grid downscaled 
@@ -292,13 +286,13 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	# j_range: 'J454_576'
 	runscript_log = osp.join(scriptdir, 'log') + "/ind.${MOAB_JOBNAME}.${MOAB_JOBID}"
 	runscript_header = "\n".join(['#!/bin/tcsh',
-	                              '#PBS -S /bin/csh', 
-	                              '#PBS -l nodes=1:ppn=1,walltime=6:00:00', 
-	                              '#PBS -j oe', 
+	                              '#PBS -S /bin/csh',
+	                              '#PBS -l nodes=1:ppn=1,walltime=6:00:00',
+	                              '#PBS -j oe',
 	                              '#PBS -r y ',
 	                              '#PBS -o ' + runscript_log,
 	                              '#PBS -N fudge_run',
-	                              '#PBS -E', 
+	                              '#PBS -E',
 	                              '#PBS -q batch']) + "\n"
 	exp_name = scriptdir.split("/")[-1]
 	if(exp_name==''):
@@ -315,10 +309,10 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	for outdir in outdirs:
 		runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
 	return(runscript)
-	
+
 def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	#Makes the copy operations for the output of the R code
-	#Currently assumes a single file of _qcmask output; 
+	#Currently assumes a single file of _qcmask output;
 	#when we get to writing coordinates, this needs to be updated
 	#Note: right now, for a given script job, all J are going to be identical.
 	outstr = []
@@ -341,14 +335,14 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	outstr.append("else")
 	outstr.append("\t touch " + out_mask_dir + "/.mini.fail")
 	outstr.append('endif')
-	return("\n".join(outstr) + "\n")	
-	
+	return("\n".join(outstr) + "\n")
+
 def awful_runcode_hack(runcode_dir, runscript_dir):
-	#I don't want to have to tinker with something that we're planning on 
+	#I don't want to have to tinker with something that we're planning on
 	#replacing during this flavor or the next. For now, it's not much of
 	#a stretch to copy some of the runcodes to a location that fits the
-	#expected pattern in the runscripts.	
-	runscript_files = [el for el in os.listdir(runscript_dir) if re.search("script", el) is not None]	
+	#expected pattern in the runscripts.
+	runscript_files = [el for el in os.listdir(runscript_dir) if re.search("script", el) is not None]
 	runcode_files = [el for el in os.listdir(runcode_dir) if re.search("code", el) is not None]
 	runscript_patterns = [re.split("\.", el)[-1] for el in runscript_files if (re.split("\.", el)[-1]).count('-') == 2]
 	#print(runscript_patterns)
@@ -467,3 +461,4 @@ def make_ds_aux_entry(out_file, outdir, var):
 	          'vars' : out_vars, 
 	          'rips' : out_rips}
 	return(dsdict)		                       
+

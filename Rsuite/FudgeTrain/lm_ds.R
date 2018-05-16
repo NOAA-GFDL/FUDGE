@@ -81,10 +81,6 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       qc = array(NA, dim=dim(MF.data[[1]]))
     }
   }
-#  print("downscaled output:")
-#  print(summary(as.vector(out.data)))
-#  save(file="/work/cew/testing/h_pr_3.R", list=c('out.data'))
-#   stop('examine output')
   return(list(ds=out.data, qc=qc))
 }
 

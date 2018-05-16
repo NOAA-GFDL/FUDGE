@@ -108,6 +108,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	outpaths = [osp.dirname(p) for p in expdict['output.path']]
 	print outpaths
 	all_outfiles =  [[f for f in os.listdir(p) if osp.isfile(osp.join(p, f))] for p in outpaths]
+	all_outfiles = [sorted(lst) for lst in all_outfiles]
 	num_files = [len(flist) for flist in all_outfiles]
 	if (num_files.count(num_files[0]) != len(num_files)):
 		print("Error in makeExpEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs.")
@@ -115,6 +116,18 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	elif (num_files[0]==0):
 		print("Error in makeExpEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")		
 	all_outfiles = zip(*all_outfiles)
+	#Each f in all_outfiles should either contain _qcmask or not contain _qcmask
+	for lst in all_outfiles:
+		if re.search("_qcmask", lst[0]) is not None:
+			if any(re.search("_qcmask", el) is None for el in lst):
+				print("Error in makeExpEns: tried to concatenate incompatible files:")
+				print(lst)
+				sys.exit(100)
+		else:
+			if any(re.search("_qcmask", el) is not None for el in lst):
+				print("Error in makeExpEns: tried to concatenate incompatible files:")
+				print(lst)			
+				sys.exit(100)
 	print("all_outfiles:")
 	print(all_outfiles)
 	ens_list = []

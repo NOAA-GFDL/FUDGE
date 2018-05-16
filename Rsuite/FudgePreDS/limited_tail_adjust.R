@@ -1,7 +1,12 @@
-cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
-  #Edited 9-30 to add two new arguments: 
+limited_tail_cutoff <- function(MH, OH, MF, DS, args){
+  #'Section 5 adjustment method for adjusting a specific # of points on the
+  #'tail of the distribution. 
+  #'
+  #Edited 9-30-2016 to add two new arguments: 
   #trigger, which specifies an alternative trigger for the tail adjust
   #len_tail, which specifies how many points the trigger affects
+  #Edited  2018-04-27 to remove CDFt-specific checks; other edits took place
+  #in January of the same year
   trigger.fxn = switch(args$tail,
                        lower='min',
                        upper='max')
@@ -15,16 +20,16 @@ cdft_limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   delta.by = switch(args$tail,
                     lower=(1),
                     upper=(-1))
-  cutoff = switch(args$tail,
-                  lower=args$low_cutoff,
-                  upper=args$high_cutoff)
+#   cutoff = switch(args$tail,
+#                   lower=args$low_cutoff,
+#                   upper=args$high_cutoff)
   #Initialize and sort data
   if (args$trigger != 'all'){
-    stop(paste("Error in cdft_limited_tail_cutoff: as of fudgetag",
+    stop(paste("Error in limited_tail_cutoff: as of fudgetag",
                "icing-testing-20180219, arguments for trigger other than 'all' are not", 
                "supported in the cdft limited tail cutoff!"))
   }
-  ds.cond = do.call(select.cond, list(DS, cutoff))
+#  ds.cond = do.call(select.cond, list(DS, cutoff))
   ds.order = order(DS) #used to sort from lowest to highest
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
   #note: earlier versions did not include ties argument, lead to some changed answers
