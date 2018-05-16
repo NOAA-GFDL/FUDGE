@@ -1,4 +1,16 @@
-<<<<<<< HEAD
+05-14-2018
+(cew)
+- Workflow updates for FUDGE: gcps in master script check/return status to account for DTN issues, option to run watcher from expergen for synthetic data, better reporting on filenames at end of workflow
+
+05-10-2018
+(cew)
+- updating checks in MBC/QDM to only require forcing reproducibility when mult is specified
+
+04-27-2018
+(cew)
+- Updating library loading to make package location more transparent (user repo vs system repo)
+- bugfix for cfqm, delta indexing with ignore0 turned on; butfix for path construction of synthetic data in OH in expergen create_all_runscripts
+
 04-12-2018
 (d1a)
 - bugfix for kddm bkde xml specification
@@ -14,16 +26,6 @@
 (cew)
 - Adding interactive switches for the master script to run runcodes in rstudio
 - Adding hook for setting single twindow in interactive master switch
-=======
-05-10-2018
-(cew)
-- updating checks in MBC/QDM to only require forcing reproducibility when mult is specified
-
-04-27-2018
-(cew)
-- Updating library loading to make package location more transparent (user repo vs system repo)
-- bugfix for cfqm, delta indexing with ignore0 turned on; butfix for path construction of synthetic data in OH in expergen create_all_runscripts
->>>>>>> i_fudge_workflow_updates
 
 03-29-2018
 (cew)
