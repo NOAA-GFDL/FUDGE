@@ -259,7 +259,19 @@ def build_aux_input_paths(dummy_arg):
 	Makes the dmget strings and does file copy opts for things that don't exit yet
 	'''
 	return(dummy_arg)
-					
+
+def make_gcp_cmd(sourcefile, destfile):
+	'''
+	Wraps a gcp command in a status checker; exits with an error if that command fails
+	'''
+	gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
+	gcp_echo = "echo '" + gcp_cmd + "'"
+	stat_cmd = "\n".join(["if ($status != 0) then",
+	                     "\t echo 'Error in runscript: gcp from " + sourcefile + " to " + destfile + " failed!'",
+						 "\t exit 99",
+						 "endif"])
+	return(gcp_cmd + "\n" + gcp_echo + "\n" + stat_cmd + "\n")
+						
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
 	outdir_string = "# Creating output directories \n"
