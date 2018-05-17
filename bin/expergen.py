@@ -907,7 +907,7 @@ def get_minifile_name(var, freq, exp_name, scenario, rip, region, tstart, tend):
 	Makes minifile names as they would normally have appeared in the R code.
 	Trying to move away from some xml dependencies in R.
 	'''
-	#scenario is weird - rought time periodd / emissions + '_$rip'
+	#scenario is weird - rough time period / emissions + '_$rip'
 	scen_split = re.split("_", scenario)
 	tstring = str(tstart) + "-" + str(tend)
 	root_filename = "_".join([var, freq, exp_name, scen_split[0], rip, region, tstring])
