@@ -5,7 +5,7 @@
 #outputs a concatenated file to the dir
 #specified
 
-import expergen 
+#import expergen 
 import fudgeList
 import fudgeUtils
 from fudgeUtils import gcp,tstamp

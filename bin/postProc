@@ -1,7 +1,7 @@
 #!/bin/python
 
 #starting to mess around with the modified postProc workflow
-import expergen 
+#import expergen 
 import fudgeList
 import fudgeUtils
 from fudgeUtils import gcp,tstamp
