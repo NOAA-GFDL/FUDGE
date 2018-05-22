@@ -3,7 +3,8 @@
 """fudgeList.py: Prints out a summary log experiment_info file for the corresponding experiment XML."""
 __author__ = "A.Radhakrishnan"
 
-import expergen 
+#import expergen
+import listVars
 import os,sys,subprocess
 from subprocess import PIPE
 import optparse
@@ -12,12 +13,12 @@ import shlex
 cnt = 0
 def fudgeVer():
         try:
-		#fudgeversion = 'fudge/'+os.environ['BRANCH'] 
+		#fudgeversion = 'fudge/'+os.environ['BRANCH']
 		fudgeversion = 'fudge/'+os.environ['FUDGETAG']
-		print "version",fudgeversion        
+		print "version",fudgeversion
 	except:
 		fudgeversion = "<undefined>"
-		
+
 	return fudgeversion
 def fudgeList(verbose=False):
      #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
@@ -29,11 +30,11 @@ def fudgeList(verbose=False):
      parser = OptionParser(usage)
 
      try:
-	userinput 
+	userinput
 	uinput = userinput
      except:
-#	 print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.." 	
-	 userinput = "none"	
+#	 print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
+	 userinput = "none"
      parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
      parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
 
@@ -50,15 +51,15 @@ def fudgeList(verbose=False):
                 if(opts == 'sumlogloc'):
                          sumlogloc = vals
 		if(opts == 'force'):
-			force = vals 
+			force = vals
                 if(opts == 'fversion'):
-			print "fudge version retriever.."	
-                        fudgeversion = fudgeVer() 
+			print "fudge version retriever.."
+                        fudgeversion = fudgeVer()
 			print fudgeversion
-     if uinput is None:	
+     if uinput is None:
         uinput = userinput
      if sumlogloc is None:
-	sys.exit("Please provide -o location_of_summarylog_output and try again.Quitting now..") 		
+	sys.exit("Please provide -o location_of_summarylog_output and try again.Quitting now..")
      if not os.path.exists(uinput):
                         print "ERROR Invalid XML path.Quitting. Please use -h for help ",uinput
                         sys.exit()
@@ -70,37 +71,37 @@ def fudgeList(verbose=False):
            print "ERROR: BASEDIR environment variable not set"
 	   sys.exit(1)
      print "==============================runtime log from parser==================================================="
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklist,idirsuffix = expergen.listVars(uinput,basedir=basedir,pp=True) 
-     print "=================================================================================="		
-     #print "QC_MASK ",qc_switch	
-     #print "lons",lons,"lone",lone	
-     basedire = basedir	
+     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklist,idirsuffix = listVars.listVars(uinput,basedir=basedir,pp=True)
+     print "=================================================================================="
+     #print "QC_MASK ",qc_switch
+     #print "lons",lons,"lone",lone
+     basedire = basedir
      esdMethod = method
-     varname = target 
+     varname = target
      #### split and put in list ####
      list_pred = predictor.split(',')
-     #print list_pred  	
+     #print list_pred
      #####
      if(spat_mask == "na"):
 	grid = "na"
-     else:	
+     else:
      	grid = spat_mask+"../"+region+".nc"
      region = ds_region
      outrec = outdir.split('_')
-     #amip = outrec[0] 
+     #amip = outrec[0]
      #fut = outrec[1]
      #print "amip outdir", amip
      #print "fut outdir", fut
      suff = ".nc"
-     cond = 1 
-     indir = fut_pred_dir 
+     cond = 1
+     indir = fut_pred_dir
      freq = fut_freq
      exper_rip = fut_scenario
      scenario = exper_rip.split('_')[0]
-     ens = exper_rip.split('_')[1]	
+     ens = exper_rip.split('_')[1]
      ver = dversion
-     predModel = fut_model 	
-     indir = outdir #Our mini op from dscaling is the input to PP  
+     predModel = fut_model
+     indir = outdir #Our mini op from dscaling is the input to PP
      obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
 
 
@@ -127,33 +128,33 @@ def fudgeList(verbose=False):
 				if(ready is "yes"):
                                                 	logop = open(sumlogloc, 'w')
 						######### what do we want to write in summary log ########
- 
+
 							ascii = "ds.experiment:"+expconfig
 							ascii = ascii+"\n"+"xml.path:"+os.path.abspath(uinput)+"\n"
 							ascii = ascii+"FUDGE.version:"+fudgeversion+"\n"
 							ascii = ascii+"region:"+region+"\n"
 					                ascii = ascii+"minifile.I.start:"+lons+"\n"
-                                                        ascii = ascii+"minifile.I.end:"+lone+"\n" 	
-						        ascii = ascii+"qc.mask:"+qc_switch+"\n" 
+                                                        ascii = ascii+"minifile.I.end:"+lone+"\n"
+						        ascii = ascii+"qc.mask:"+qc_switch+"\n"
                                                         ascii = ascii+"target:"+target+"\n"
 							delim="_"
-						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"-"+target_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")	
-							target_file = delim.join(target_parts)	
+						        target_parts = (target,target_freq,target_model,target_scenario,output_grid,target_file_start_time+"-"+target_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
+							target_file = delim.join(target_parts)
 							target_inpath_1=os.path.normpath(target_dir)+"/"+target_file
 							ascii = ascii+"target.inpath_1:"+target_inpath_1+"\n"
-							n_plist = 0 
+							n_plist = 0
 							for plist in list_pred:
-							  n_plist = n_plist + 1 
+							  n_plist = n_plist + 1
 						          plist = plist.strip()
                                                           #print "predictor",n_plist
                                                           hist_parts = (plist,hist_freq,hist_model,hist_scenario,output_grid,hist_file_start_time+"-"+hist_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
                                                           hist_file = delim.join(hist_parts)
 
 #####dict test
-					                  histdict = {} 
+					                  histdict = {}
         						  histdict["hist.inpath_"+str(n_plist)]=os.path.normpath(hist_pred_dir+"/"+plist)+idirsuffix+hist_file
 						          for hkey,hval in histdict.iteritems():
-							    ascii = ascii+str(hkey)+":"+hval+"\n"	
+							    ascii = ascii+str(hkey)+":"+hval+"\n"
 
 ##########
                                                           fut_parts = (plist,fut_freq,fut_model,fut_scenario,output_grid,fut_file_start_time+"-"+fut_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
@@ -168,12 +169,12 @@ def fudgeList(verbose=False):
                                                           #cfut_inpath_1=os.path.normpath(fut_pred_dir)+"/"+plist+"/"+idirsuffix+"/"+fut_file
                                                           #cascii = ascii+"fut.inpath_1:"+fut_inpath_1+"\n"
 						        listout = []
-							property = {} 
+							property = {}
      						        listfacet = outdir.split('#')
      							if (listfacet[1] == "na"):
                 					      listout.append(listfacet[0])
 							else:
-#### start property resolution 
+#### start property resolution
 						           property[listfacet[1]] = listfacet[2]
 						           unres_outdir = listfacet[0]
 
@@ -186,21 +187,21 @@ def fudgeList(verbose=False):
                                                                 listout.append(unres_outdir.replace(pname,lnew))
 #### end property resolution
 						        output_path = ""
-				                        for outdir in listout: 
+				                        for outdir in listout:
 							   if(output_path != ""):
 						           	output_path = output_path +"\n"+ os.path.normpath(outdir)
 							   else:
-                                                                output_path = output_path + os.path.normpath(outdir) 	
+                                                                output_path = output_path + os.path.normpath(outdir)
 							ascii = ascii+"output.path:"+output_path+"\n"
 							spat_mask_path_1 = os.path.normpath(grid)
                                                         ascii = ascii+"spat.mask.path_1:"+spat_mask_path_1+"\n"
 							ascii = ascii+"target.time.window:"+target_time_window+"\n"
 							ascii = ascii+"hist.time.window:"+hist_time_window+"\n"
-							ascii = ascii+"fut.time.window:"+fut_time_window+"\n"  
+							ascii = ascii+"fut.time.window:"+fut_time_window+"\n"
 							ascii = ascii+"target.train.start.year_1:"+target_train_start_time+"\n"
 							ascii = ascii+"target.train.end.year_1:"+target_train_end_time+"\n"
                                                         ascii = ascii+"hist.train.start.year_1:"+hist_train_start_time+"\n"
-							ascii = ascii+"hist.train.end.year_1:"+hist_train_end_time+"\n" 
+							ascii = ascii+"hist.train.end.year_1:"+hist_train_end_time+"\n"
                                                         ascii = ascii+"fut.train.start.year_1:"+fut_train_start_time+"\n"
                                                         ascii = ascii+"fut.train.end.year_1:"+fut_train_end_time+"\n"
 						        ascii = ascii+"script.base:"+os.path.normpath(sbase)
@@ -210,8 +211,8 @@ def fudgeList(verbose=False):
 
 					###### end writing to summary log file #########
 							if (verbose):
-								print "----------Summary Log File: ", sumlogloc 	
-	
+								print "----------Summary Log File: ", sumlogloc
+
 
 
 
@@ -221,18 +222,18 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
                                         filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
 #                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
 
-				#	print "test test",filedire,filename	
-                                        if not os.path.exists(filedire+"/"+filename):                
-                                           exists = False  
+				#	print "test test",filedire,filename
+                                        if not os.path.exists(filedire+"/"+filename):
+                                           exists = False
                                         else:
-					   if (force == True):	
-					   	print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"	
+					   if (force == True):
+					   	print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"
 						exists = False
 					   else:
 						exists = True
 						print "ERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now.."
 					print filename
-				        return exists		
+				        return exists
 
 if __name__ == '__main__':
     fudgeList()

@@ -1,4 +1,4 @@
-import expergen 
+#import expergen 
 import fudgeList
 import fudgeUtils
 from fudgeUtils import gcp,tstamp
@@ -18,8 +18,8 @@ from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 import netCDF4
-from netCDF4 import Dataset		
-	
+from netCDF4 import Dataset
+
 def makeExpEns():
 	#Input parsing and arg checking for main body of code
 	usage = "usage: %prog [-p project -e exp_name] [-i input] [--anom_only_ens] [--verbose]"
@@ -36,7 +36,7 @@ def makeExpEns():
 		print("Error in makeExpEns: one of the options -i -p -e should be non-missing!")
 		sys.exit(1)
 	if(options.anom_only_ens and options.rec_only_ens):
-		print("Error in makeExpEns: only one of --anom_only_ens and --reconstruct_only_ens should be specficied!")	
+		print("Error in makeExpEns: only one of --anom_only_ens and --reconstruct_only_ens should be specficied!")
 	if (options.input!="NA"):
 		if not osp.exists(options.input):
 			print("Error in makeExpEns: file " + options.input + " not found!")
@@ -51,17 +51,17 @@ def makeExpEns():
 		if not osp.exists(infile):
 			print("Error in makeExpEns: file " + infile + " not found! Please re-examine directory structure or use -i to point to a file directly.")
 			sys.exit(1)
-		expdict = read_exp_info_file(infile)	
+		expdict = read_exp_info_file(infile)
 	else:
 		print("Error in makeExpEns: either --input or --project and --exp_name must be provided!")
 		sys.exit(1)
-	verbose = options.verbose	
+	verbose = options.verbose
 	sev = options.sev
 	runMakeExpEns(expdict, options.anom_only_ens, options.rec_only_ens, verbose, sev)
-	
-def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=False, sev=1):	
+
+def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=False, sev=1):
 	###main script
-	#Performs steps over all ensembles that count as part of the 
+	#Performs steps over all ensembles that count as part of the
 	#standardization process (such as collecting into ensemble files for the experiment)
 	#obtain environment variables
 	basedir = os.environ.get('BASEDIR')
@@ -85,7 +85,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		print("Error in makeExpEns: epochs" +  ",".join(epochs) +  "in output dirs should be identical!")
 		sys.exit(1)
 	else:
-		epoch = epochs[0]	
+		epoch = epochs[0]
 	climvar = expdict['target']
 	exp_name = expdict["ds.experiment"]
 	isAnom=False
@@ -94,17 +94,17 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		print("This var may be an anomaly var")
 		if(anom_only_ens):
 			print("however, since anom_only_ens is set, the anom + clim data will not be searched for")
-		else:	
+		else:
 			isAnom=True
 	if ("Detr" in climvar):
 		print("This var may be a detrended var")
 		if(anom_only_ens):
 			print("however, since anom_only_ens is set, the trend and detrended data will not be searched for")
-		else:	
-			isTrend=True		
-	rip_suffix = rips[1][-4:]				
+		else:
+			isTrend=True
+	rip_suffix = rips[1][-4:]
 	out_rip = "r1to" + str(len(expdict['output.path'])) + rip_suffix
-	#Create ensembles of the data from this experiment:	
+	#Create ensembles of the data from this experiment:
 	outpaths = [osp.dirname(p) for p in expdict['output.path']]
 	print outpaths
 	all_outfiles =  [[f for f in os.listdir(p) if osp.isfile(osp.join(p, f))] for p in outpaths]
@@ -114,7 +114,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		print("Error in makeExpEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs.")
 		sys.exit(1)
 	elif (num_files[0]==0):
-		print("Error in makeExpEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")		
+		print("Error in makeExpEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")
 	all_outfiles = zip(*all_outfiles)
 	#Each f in all_outfiles should either contain _qcmask or not contain _qcmask
 	for lst in all_outfiles:
@@ -126,7 +126,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		else:
 			if any(re.search("_qcmask", el) is not None for el in lst):
 				print("Error in makeExpEns: tried to concatenate incompatible files:")
-				print(lst)			
+				print(lst)
 				sys.exit(100)
 	print("all_outfiles:")
 	print(all_outfiles)
@@ -135,7 +135,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 		outfile = call_ens_creation(flist,climvar,rips,rip_string,out_rip,\
 				exp_name,epoch,trange_string,isAnom,isTrend,rec_only_ens,verbose, sev)
-		ens_list = ens_list + outfile		
+		ens_list = ens_list + outfile
 	#When everything is over, add the list of output ensemble files to the experiment_info.txt files
 	#in all locations.
 	if(len([e for e in ens_list if e is not None]) == 0):
@@ -147,14 +147,14 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	outens_loc = [osp.join(("/").join(p.split("/")[0:len(p.split("/"))-3]),"experiment_info.txt") for p in ens_list]
 	outens_loc = list(set(outens_loc))
 	outpaths_all = sbase_loc + outpath_loc + outens_loc
-	tmpfile = osp.join(tdir, "experiment_info.txt")	
+	tmpfile = osp.join(tdir, "experiment_info.txt")
 	ens_list = ens_namemap(ens_list)
 	#ens_list_ii = [n,ens for e in range(0, len(en_list)) if not None]
 	#append_str = "\n" +"#"*80 + '\n' + 'ensemble.files:' + "\n".join(ens_list)
 	append_str = "\n####" + " Downscaled ensemble output " +"#"*47 +"\n"+"\n".join(ens_list)+"\n"
-	#fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+expdict['xml.path']+" -o "+tmpfile 
+	#fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+expdict['xml.path']+" -o "+tmpfile
 	#f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-	#out, err = f.communicate() 
+	#out, err = f.communicate()
 	shutil.copy2(sbase_loc[0], tmpfile)
 	with open(tmpfile, 'a') as f:
 		f.write(append_str)
@@ -162,12 +162,12 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		gcp(tmpfile, out, False, False, sev > 1) #verbose, verbose
 	print("Modified experiment.info files copied to all locations:")
 	print("\n".join(outpaths_all))
-	return("\n\t".join(ens_list))							
-	
+	return("\n\t".join(ens_list))
+
 def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
-						trange_string,isAnom=False, isTrend=False,recOnly=False,verbose=False, sev=1):	
-	#Given a list of files and some handy metadata information, 
-	#calls a simple anomaly addition script to generate the 
+						trange_string,isAnom=False, isTrend=False,recOnly=False,verbose=False, sev=1):
+	#Given a list of files and some handy metadata information,
+	#calls a simple anomaly addition script to generate the
 	#flist = [osp.join(p,f) for p,f in zip(outpaths,flist)]
 	basedir = os.environ.get('BASEDIR')
 	tdir = os.environ.get('TMPDIR')
@@ -197,7 +197,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		if not recOnly:
 			outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
 		else:
-			outfile_anom = []	
+			outfile_anom = []
 		print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
 		anom_files = [re.sub("Anom","",f) for f in flist]
 		climvar = re.sub("Anom", "", climvar)
@@ -208,7 +208,7 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		if not recOnly:
 			outfile_anom = call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
 		else:
-			outfile_anom = []	
+			outfile_anom = []
 		print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
 		print(climvar)
 		print(vname)
@@ -221,9 +221,9 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		print(orig_clim)
 		print(anom_files)
 		outfile_clim = call_ens_creation(anom_files,orig_var,rips,rip_string,out_rip,exp_name,epoch,trange_string,False)
-		return(outfile_clim + outfile_anom)		
+		return(outfile_clim + outfile_anom)
 	#Generate output file by doing a series of find-and-replace regexes on outdir
-	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]	
+	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]
 	outfile = re.sub(current_rip, out_rip, flist[0])
 	outfile = re.sub("\.nc$", "_ensmbl.nc", outfile)
 	print("Output file location: " + outfile)
@@ -231,9 +231,9 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 		print("Making " + osp.dirname(outfile))
 		os.makedirs(osp.dirname(outfile))
 	#tmp_outfile = osp.join(tdir, outfile.lstrip("/"))
-	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())			
-	#Finally, call the ensemble generation code:	
-	ens_min = basedir + "utils/s7/ens_min.csh"	
+	tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())
+	#Finally, call the ensemble generation code:
+	ens_min = basedir + "utils/s7/ens_min.csh"
 	ens_command = " ".join(["tcsh -f ",ens_min, tmp_outfile, vname, rip_string, exp_name, epoch, trange_string, orig_inFiles, inFiles, 'Exp'])
 	#Dev edit - trying to debug the labeling process
 	p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
@@ -251,9 +251,9 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 			print(str(err0))
 		gcp(tmp_outfile, outfile, False, verbose, sev > 1)
 		return([outfile])
-		
-def ens_namemap(ens_list): 
-	#Sorts the esemble files into the order in which they should be written 
+
+def ens_namemap(ens_list):
+	#Sorts the esemble files into the order in which they should be written
 	#to the experiment_info.txt file, since dicts are unordered.
 	ens_loc = copy.copy(ens_list)
 	ens_names = ['qc.ensemble','save.ensemble', 'ds.ensemble']
@@ -276,19 +276,19 @@ def ens_namemap(ens_list):
 				ens_indexed.append(appendstr)
 			elif re.search("Detr", ens_loc[match_indices[0]]) is not None:
 				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
-				ens_indexed.append(appendstr)				
+				ens_indexed.append(appendstr)
 			else:
 				appendstr = all_ens_names[e] + ":" + ens_loc[match_indices[0]]
-				ens_indexed.append(appendstr)	
+				ens_indexed.append(appendstr)
 			del ens_loc[match_indices[0]]
 			print(ens_indexed)
 		elif matchlen != 0:
 			print("Error in ens_namemap: match in " + str(matchlen)+" locations in " + ",".join(ens_list))
-			sys.exit(1)	
-	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_total_order)) if re.search(ens_total_order[e],x) is not None][0])					
-	return(out)	
-							 
-			 			 
+			sys.exit(1)
+	out = sorted(ens_indexed, key=lambda x: [e for e in range(0,len(ens_total_order)) if re.search(ens_total_order[e],x) is not None][0])
+	return(out)
+
+
 if __name__ == '__main__':
 	print(sys.argv)
-	makeExpEns()		
+	makeExpEns()
