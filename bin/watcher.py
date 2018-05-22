@@ -243,8 +243,8 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 ############# check if postProc_call is False
 	if(postProc_call == False):
 		minilogs = os.path.join(script_base.split(":")[1], "log")
-		mini_outdir = [output_path.split(",")][0]
-		mini_files = [osp.join(mini_outdir, el) for el in os.listdir(mini_outdir) if re.search("nc$", el) is not None]
+		mini_outdir = [el.split(":")[-1] for el in output_path.split(",")][0]
+		mini_files = [osp.join(mini_outdir, el) for el in os.listdir(mini_outdir) if re.search("nc$", el) is not None][0]
 		send_status_email("success", 'complete', exp_name, \
 		                   traceback="",
 		                   mailid=mailid, logfiles = minilogs, exp_info_file=uinput, outfiles=mini_files,
