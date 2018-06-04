@@ -858,13 +858,16 @@ def main():
 		print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
 	else:
 		print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
-
+	
+	#Script exit options - needs to exit with 0
 	if options.run_watcher:
 		print("Invoking watcher script immediately")
 		expinfo = sbase + "/experiment_info.txt"
 		expdict = read_exp_info_file(expinfo)
 		#Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
 		runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
+	else:
+		sys.exit(0)
 
 
 ####################################################################################
