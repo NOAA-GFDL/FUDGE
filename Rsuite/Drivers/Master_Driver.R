@@ -85,11 +85,8 @@ if ("multivar_target" %in% aux.ref){
   ds.ref$multivar_target <- aux.ref$multivar_target
 }
 
-message("Checking downscaling arguments")
+#Settings args (general) to ds.args (specific)
 ds.args <<- args
-QCDSArguments(k=k.fold, ds.method = ds.method, args=ds.args,
-              is.multivar=(length(predictor.vars) > 1),
-              is.multi_ens=(length(fut.pred.rip.list) > 1))
 
 message("Checking the missing value arguments")
 missval.args <- getMissvalArgs(ds.args, ds.ref$missval_method)
@@ -316,6 +313,16 @@ train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)], collapse=
 #Create list of time masks for application
 message("Reading in and checking time windowing masks")
 tmask.list <- get.fudge.timemask.list()
+#For now, make this a global to simplify data being copied
+tmasks <<- tmask.list #global assign due to missval retry functions in ds step
+
+message("Checking downscaling arguments")
+is.multi_ens = length(fut.pred.rip.list) > 1
+is.multivar = length(predictor.vars) > 1
+QCDSArguments(k=k.fold, ds.method = ds.method, args=ds.args,
+              is.multivar=is.multivar,
+              is.multi_ens=is.multi_ens, 
+              tmasks=tmasks, ds.experiment = ds.experiment)
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
@@ -381,10 +388,6 @@ set.ds.defaults(ds.method, ds.args, predictor.vars=predictor.vars,
 message("FUDGE training begins...")
 message(paste("Starting at:", Sys.time()))
 start.time <- proc.time()
-
-#For now, make this a global to simplify data being copied
-tmasks <<- tmask.list #global assign due to missval retry functions in ds step
-
 
 ds <- loop.xy.data()
 #ds <- list(ds=array(NA, dim=mf.dim), qc=array(NA, dim=mf.dim))

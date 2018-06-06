@@ -33,4 +33,17 @@ def get_comment_specs(xml):
 						pp_spec_dict[patt] = fmatch.partition(" ")[0]	
 	#if len(pp_spec_dict) != 3:
 	#	print "Error in get_pp_specs: there should either be 3 matches or 0 matches!"
-	return(pp_spec_dict)								
+	return(pp_spec_dict)	
+	
+def get_exp_check_tag(xml):
+	'''
+	Gets the experiment check tag from the xml
+	'''
+	exp_check = None
+	with open(xml, 'r') as f:
+		for line in f.readlines():
+			linematch = re.search('<exp_check>', line)
+			if linematch is not None:
+				#Capture contents of tag
+				exp_check = re.search("exp_check>(.*)<",line).group(1)					
+	return(exp_check)

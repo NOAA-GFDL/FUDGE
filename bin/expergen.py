@@ -19,7 +19,7 @@ from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
 from create_all_runscripts import awful_runcode_hack
-from get_comment_specs import get_comment_specs
+from get_comment_specs import get_comment_specs, get_exp_check_tag
 import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 import make_postProc_scripts
@@ -669,6 +669,13 @@ def main():
 		j_offset = jdict[output_grid]
 	except KeyError:
 		j_offset = 1
+	#2018-06-06: Adding check between the experiment check and expconfig
+	#for purposes of checking kfold cross-valdiation
+	exp_check = get_exp_check_tag(uinput)
+	if exp_check is not None:
+		if (exp_check != expconfig):
+			print("Error in expergen: constructed exp_config " + expconfig + " and xml exp_check tag " + exp_check + " did not match!")
+			sys.exit(1)
 	#Add the commands to create the components for the DS entry in the aux file
 	ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
 	                                "<RIP>",

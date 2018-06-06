@@ -4,11 +4,56 @@
 #'Relies upon variables set in DSMethodInformation.R
 #'Does not return anything at present.
 
-QCDSArguments <- function(k, ds.method,...){
+QCDSArguments <- function(k, ds.method, ...){
   #Check for cross-validation conflict
-  if(k > 1 && !crossval.possible){
-    stop(paste("Cross-Validation Conflict Error: Method", ds.method,
-               "does not support cross-validaton. Check documentation for more details."))
+  #if(k > 1 && !crossval.possible){
+  #  stop(paste("Cross-Validation Conflict Error: Method", ds.method,
+  #             "does not support cross-validaton. Check documentation for more details."))
+  #}
+  #New check for cross-validation conflict:
+  if (is.multi_ens){
+    if (k > 1){
+      stop(paste("Error in QCDSArguments: k of ", k, "is not", 
+                 "supported for multi-ensemble data!"))
+    }
+  }else{
+    if (k > 1){
+      #Check construction of tmasks
+      if (tmasks$apply_tmasks){
+        tmask_types = c('OH', 'MH', 'MF', 'trim')
+        k_tmask <- function(tmask_name){
+          #All between 'kfold' and '.nc'
+          kt <- gsub(".*kfold\\s*|\\.nc", "", tmask_name)
+          if (is.numeric(as.integer(kt))){
+            return(as.numeric(kt))
+          }else{
+            return(-1)
+          }
+        }
+        #...check construction of 'olap' in the tmask names
+        for (tname in tmask_types){
+          k_tmp <- k_tmask(tmasks$filenames[[tname]])
+          if (k_tmp != k){
+            stop(paste("Error in QCDSArguments: the ", tname, 
+                       "tmask", tmasks$filenames[[tname]], 
+                       'did not match the kfold of the input', 
+                       k_tmp, "!"))
+          }
+        }
+      }
+      #check construction of experiment names
+      exp_pos = regexpr('K[0-9]{2}', ds.experiment)
+      exp_name_kfold = as.numeric(substr(ds.experiment, exp_pos + 1, exp_pos + 2))
+      print("checks on experiment name kfold")
+      print(ds.experiment)
+      print(exp_name_kfold)
+      print(k)
+      if (exp_name_kfold != k){
+        dtop(paste("Error in QCDSArguments: the kfold in the experiment name", 
+                   ds.experiment, ',namely,', exp_name_kfold, 
+                   "did not match the kfold of the input", k, '!'))
+      }
+    }
   }
 }
 
