@@ -1,3 +1,7 @@
+06-06-2018
+(cew)
+- Adding support for cross-validation via tmasks for a single-ensemble case
+
 05-14-2018
 (cew)
 - Workflow updates for FUDGE: gcps in master script check/return status to account for DTN issues, option to run watcher from expergen for synthetic data, better reporting on filenames at end of workflow
