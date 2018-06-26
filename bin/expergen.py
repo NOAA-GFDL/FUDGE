@@ -655,12 +655,14 @@ def main():
 	         'SCCSC0p1'  : 181,
 	         'RR'   : 181,
 	         'grid0': 0,
-	         'NEUSA': 1}
+	         'NEUSA': 1, 
+	         'NEUSA0p1': 425}
 	jdict = {'US48' : 454,
 	         'SCCSC0p1'  : 31,
 	         'RR'   : 31,
 	         'grid0': 0,
-	         'NEUSA': 1}
+	         'NEUSA': 1, 
+	         'NEUSA0p1': 127}	         
 	try:
 		i_offset = idict[output_grid]
 	except KeyError:
