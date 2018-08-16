@@ -24,7 +24,9 @@ QCDSArguments <- function(k, ds.method, ...){
         k_tmask <- function(tmask_name){
           #All between 'kfold' and '.nc'
           kt <- gsub(".*kfold\\s*|\\.nc", "", tmask_name)
-          if (is.numeric(as.integer(kt))){
+          #Further refine to get only numeric characters
+          kt <- gsub("[^0-9]", "", kt)
+          if (!is.na(as.integer(kt))){
             return(as.numeric(kt))
           }else{
             return(-1)
