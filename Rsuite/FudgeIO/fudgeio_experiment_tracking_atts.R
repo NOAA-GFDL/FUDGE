@@ -8,8 +8,13 @@ get.MF.experiment.atts <- function(in.file){
   scenario = 'none'
   dataset = 'none'
   in.nc <- nc_open(in.file)
+  is_HIRAM <- F
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
-  is_PM <- exp_name$hasatt
+  if (exp_name$hasatt){
+    if (grepl('HIRAM', exp_name$value)){
+      is_HIRAM = T
+    }
+  }
   is_CORDEX = F
   proj_att = ncatt_get(in.nc, 0, 'project_id')
   if (proj_att$hasatt){
@@ -17,7 +22,7 @@ get.MF.experiment.atts <- function(in.file){
         is_CORDEX = TRUE
     }
   }
-  if(is_PM){
+  if(is_HIRAM){
     #Get dataset name
     tmp.split <- strsplit(exp_name$value, "_")
     #If there are 5 elements, scenario is last 2; 
@@ -55,8 +60,13 @@ get.OH.experiment.atts <- function(in.file){
   #is_PM <- grepl(strsplit(in.file, "/")[[1]][7], "^NCPP", perl=T)
   #is_cbay tas_day_TPLM2_historical_r0i0p0_NEUSA_19860101-20151231.I*_J1-41.nc
   in.nc <- nc_open(in.file)
+  is_HIRAM <- F
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
-  is_PM <- exp_name$hasatt
+  if (exp_name$hasatt){
+    if (grepl('HIRAM', exp_name$value)){
+      is_HIRAM = T
+    }
+  }
   is_CORDEX = F
   proj_att = ncatt_get(in.nc, 0, 'project_id')
   if (proj_att$hasatt){
@@ -65,7 +75,7 @@ get.OH.experiment.atts <- function(in.file){
     }
   }
   is_cbay <- strsplit(basename(in.file), "_")[[1]][3] == 'TPLM2'
-  if(is_PM){
+  if(is_HIRAM){
     #Get dataset name
     #dataset <- ncatt_get(in.nc, 0, 'model_id')$value
     tmp.split <- strsplit(exp_name$value, "_")

@@ -1,3 +1,7 @@
+08-17-2018
+(cew)
+- Bugfix for checking for PM/HIRAM data when parsing the ds_MF_source from metadata
+
 08-16-2018
 (cew)
 - Bugfix for determining kfold in from filename via regex
