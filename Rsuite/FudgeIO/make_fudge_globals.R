@@ -104,12 +104,19 @@ get.git.branch <- function(git.dir, verbose=FALSE){
   if(verbose){message("Getting git branch information")}
   branch.default <- "Branch timeout; no info returned"
   commit.default <- "Commit timeout; no info returned"
+  #Addressing issue 2018-08: branch.string doesn't give info if we're 
+  #on a tag. We need another string for commit information.
+  #It prints an error to stdout, but doesn't cause code to fail.
   branch.string <- system2('git', 
                            c('-C', git.dir, 'symbolic-ref HEAD --short'), 
                            stdout=T)
-  commit.string <- system2('git', 
+  tag.string <- system2('git', 
                            c('-C', git.dir, 
                              'describe --always --tag'), 
                            stdout=T)
-  return(paste(branch.string, commit.string))
+  hash.string <- system2('git', 
+                         c('-C', git.dir, 
+                           'show --line | head | cut -d " " -f 1'), 
+                         stdout=T)
+  return(paste(branch.string, tag.string, hash.string))
 }
