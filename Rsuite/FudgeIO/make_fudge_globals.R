@@ -116,7 +116,7 @@ get.git.branch <- function(git.dir, verbose=FALSE){
                            stdout=T)
   hash.string <- system2('git', 
                          c('-C', git.dir, 
-                           'show --line | head | cut -d " " -f 1'), 
+                           'show --oneline | head | cut -d " " -f 1'), 
                          stdout=T)
   return(paste(branch.string, tag.string, hash.string))
 }

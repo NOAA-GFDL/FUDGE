@@ -10,8 +10,9 @@ get.MF.experiment.atts <- function(in.file){
   in.nc <- nc_open(in.file)
   is_HIRAM <- F
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
+  print(exp_name)
   if (exp_name$hasatt){
-    if (grepl('HIRAM', exp_name$value)){
+    if (grepl('HIRAM', exp_name$value, ignore.case = T)){
       is_HIRAM = T
     }
   }
@@ -22,6 +23,7 @@ get.MF.experiment.atts <- function(in.file){
         is_CORDEX = TRUE
     }
   }
+  print(is_HIRAM)
   if(is_HIRAM){
     #Get dataset name
     tmp.split <- strsplit(exp_name$value, "_")
@@ -63,7 +65,7 @@ get.OH.experiment.atts <- function(in.file){
   is_HIRAM <- F
   exp_name <- ncatt_get(in.nc, 0, 'gfdl_experiment_name')
   if (exp_name$hasatt){
-    if (grepl('HIRAM', exp_name$value)){
+    if (grepl('HIRAM', exp_name$value, ignore.case=T)){
       is_HIRAM = T
     }
   }
@@ -75,6 +77,7 @@ get.OH.experiment.atts <- function(in.file){
     }
   }
   is_cbay <- strsplit(basename(in.file), "_")[[1]][3] == 'TPLM2'
+  print(is_HIRAM)
   if(is_HIRAM){
     #Get dataset name
     #dataset <- ncatt_get(in.nc, 0, 'model_id')$value
