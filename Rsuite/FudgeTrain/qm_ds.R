@@ -323,9 +323,9 @@ CFQM_hista <- function(OH, MH, MF, args, tmasks, start_year){
 
 callBCQMv4 <- function(Oh, Mh, Mf, args) {
   #' Modified BCQM in light of observations of QDM()
-  #' This is a version of the bias-corrected quantile mapping method, updated 
+  #' This is a version of the bias-corrected quantile mapping method, updated
   #' to produce less of a step function effect with quantile windows.
-  #' For more information on the general method, please consult 
+  #' For more information on the general method, please consult
   #' Ho, C-K., D. B. Stephenson, M. Collins, C. A. T. Ferro, and S. J. Brown, 2012: Calibration strategies: A source of additional uncertainty in climate change projections. Bull. Amer. Meteor. Soc., 93(1), 21-26, doi:10.1175/2011BAMS3110.1.
   #' and the ESD wiki page
 
@@ -364,27 +364,28 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   Oh.time.cal <- OH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
   Oh.time.cal[tolower(Oh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
   Oh.time.vals <- OH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Oh.all.yrz <- as.factor(format(as.PCICt(Oh.time.vals*60*60*24, origin=Oh.time.origin, cal=Oh.time.cal), "%Y"))
+  env$Oh.all.yrz <- (format(as.PCICt(Oh.time.vals*60*60*24, origin=Oh.time.origin, cal=Oh.time.cal), "%Y"))
 
   # 	Mh.time.units <- strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
   Mh.time.origin <-strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][3]
   Mh.time.cal <- MH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
   Mh.time.cal[tolower(Mh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
   Mh.time.vals <- MH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Mh.all.yrz <- as.factor(format(as.PCICt(Mh.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
+  env$Mh.all.yrz <- (format(as.PCICt(Mh.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
 
   # 	Mf.time.units <- strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
   Mf.time.origin <-strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][3]
   Mf.time.cal <- MF$metadata[[1]]$dim$time$calendar    # : chr "noleap"
   Mf.time.cal[tolower(Mf.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
   Mf.time.vals <- MF$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Mf.all.yrz <- as.factor(format(as.PCICt(Mf.time.vals*60*60*24, origin=Mf.time.origin, cal=Mf.time.cal), "%Y"))
-  env$mf.yr.length <- sum(Mf.all.yrz==levels(Mf.all.yrz)[2])
+  env$Mf.all.yrz <- (format(as.PCICt(Mf.time.vals*60*60*24, origin=Mf.time.origin, cal=Mf.time.cal), "%Y"))
+  #   env$mf.yr.length <- sum(Mf.all.yrz==levels(Mf.all.yrz)[2])
+  env$mf.yr.length <- median(table(Mf.all.yrz))
 
   # Find the number of years in each data set
-  #   env$num.years.Oh <- length(levels(env$Oh.all.yrz))
-  #   env$num.years.Mh <- length(levels(env$Mh.all.yrz))
-  #   env$num.years.Mf <- length(levels(env$Mf.all.yrz))
+  #   env$num.years.Oh <- length(unique(env$Oh.all.yrz))
+  #   env$num.years.Mh <- length(unique(env$Mh.all.yrz))
+  #   env$num.years.Mf <- length(unique(env$Mf.all.yrz))
 
   if (!("kdetype" %in% names(args))){
     env$ds.args$kdetype <- "KernSmooth::bkde"
@@ -431,6 +432,46 @@ callKDDM <- function(Oh, Mh, Mf, args){
       subset.MF <- as.vector(Mf)[mf.mask]
 
       pad <- 0
+      # CHECK for Dec/Jan overlap implying need for padding
+      # Create relative window-width indices
+      #       pad1.relative.indices <- (1:half.window)-half.window
+      #       pad2.relative.indices <- 1:(half.window-1)
+      #       #Check those indices for MH and MF masks on each side
+      #       pad1 <- max(sum(mh.mask[mf.yr.length + pad1.relative.indices]), sum(mf.mask[mf.yr.length + pad1.relative.indices]))
+      #       pad2 <- max(sum(mh.mask[mf.yr.length + pad2.relative.indices]), sum(mf.mask[mf.yr.length + pad1.relative.indices]))
+
+      # otherwise, the smaller side should be padded
+      #       pad <- abs(c(pad1, pad2))[padside <- which.max(c(pad1, pad2))]
+      #           message(paste("Adjusting for 31DEC/1JAN overlap.",
+      #                         ifelse(padside==2,"Left","Right"),
+      #                         "side padded with",pad,"NAs"))
+
+      ####################
+      ## Need a better way to KNOW window width
+      ####################
+      # Find the time window width
+      #         window.width <- sum(mf.mask[1:mf.yr.length])
+      window.width <- max(sum(mh.mask[1:mf.yr.length]), sum(mf.mask[1:mf.yr.length]))
+      ####################
+#       print(paste("window width ", window.width, "and w ", w))
+      # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
+      half.window <- ceiling(window.width/2)
+
+      if (window.width != mf.yr.length) {
+        mh.jan.check <- sum(mh.mask[1:window.width])
+        mh.dec.check <- sum(mh.mask[(mf.yr.length - window.width):mf.yr.length])
+        if (mh.jan.check > 0 & mh.dec.check > 0) {
+          pad <- min(mh.jan.check, mh.dec.check)
+          padside <- which.min(c(mh.jan.check, mh.dec.check))
+        }
+
+        mf.jan.check <- sum(mf.mask[1:window.width])
+        mf.dec.check <- sum(mf.mask[(mf.yr.length - window.width):mf.yr.length])
+        if (mf.jan.check > 0 & mf.dec.check > 0) {
+          pad <- min(mf.jan.check, mf.dec.check)
+          padside <- which.min(c(mf.jan.check, mf.dec.check))
+        }
+      }
 
       if (target.var != "pr") { # then we have to fold it up and deal with Dec31/Jan1 overlap
         bctrunc <- FALSE
@@ -440,26 +481,30 @@ callKDDM <- function(Oh, Mh, Mf, args){
         Oh.yrz <- Oh.all.yrz[oh.mask]
         Mh.yrz <- Mh.all.yrz[mh.mask]
         Mf.yrz <- Mf.all.yrz[mf.mask]
-        # Find the time window width
-        window.width <- sum(mf.mask[1:mf.yr.length])
-        # Find the width of a half of the time window, to determine closeness to Dec31/Jan1 boundary.
-        half.window <- ceiling(window.width/2)
-        # Initialize a padding variable to shift December data across the boundary if necessary.
 
+
+        # Initialize a padding variable to shift December data across the boundary if necessary.
         # If the first or last NAs are the first or last array entry, then mask does not wrap.
-        if ( (pad1 <- min(which(!mf.mask)) - 1) == 0 |
-               (pad2 <- length(mf.mask) - max(which(!mf.mask))) == 0 |
-               window.width == mf.yr.length) {
-          # If either pad is zero, Dec31/Jan1 boundary is not an issue, fold vector into lists of window.width length
+        #         ####################
+        #         if ( (pad1 <- min(which(!mf.mask)) - 1) == 0 |
+        #                (pad2 <- length(mf.mask) - max(which(!mf.mask))) == 0 |
+        #                window.width == mf.yr.length) {
+        #           ####################
+        # if ( (pad2 <- w - half.window) >= 0  |
+        #        (pad1 <- w + half.window - mf.yr.length) >= 0 |
+        #        window.width == mf.yr.length ) {
+
+        if ( pad == 0 ) {
+          # If pad is 0 then Dec31/Jan1 boundary is not an issue, fold vector into lists of window.width length
           folded.OH <- tapply(subset.OH, Oh.yrz, list)
           folded.MH <- tapply(subset.MH, Mh.yrz, list)
           folded.MF <- tapply(subset.MF, Mf.yrz, list)
+          #           Oh.yrz <<- Oh.yrz
+#           print(paste("pad is", pad))
+#           print(paste("the length of Oh.yrz is", length(unlist(Oh.yrz)), "for",ival,jval))
+#           print(paste("the length of subset.OH is", length(unlist(subset.OH)), "for",ival,jval))
+
         } else {
-          # otherwise, the smaller side should be padded
-          pad <- c(pad1, pad2)[padside <- which.min(c(pad1, pad2))]
-          #           message(paste("Adjusting for 31DEC/1JAN overlap.",
-          #                         ifelse(padside==2,"Left","Right"),
-          #                         "side padded with",pad,"NAs"))
           NApads <- as.factor(rep(NA,pad))
           # If window is beginning of year...
           if (padside == 1) {
@@ -472,6 +517,12 @@ callKDDM <- function(Oh, Mh, Mf, args){
             Mh.yrz <- unlist(list(Mh.yrz[-c(1:pad)], NApads))
             Mf.yrz <- unlist(list(Mf.yrz[-c(1:pad)], NApads))
           }
+          #           Oh.yrz <<- Oh.yrz
+#           print(paste("pad is", pad))
+#           print(paste("padside is", padside))
+#           print(paste("the length of Oh.yrz is", length(unlist(Oh.yrz)), "for",ival,jval))
+#           print(paste("the length of subset.OH is", length(unlist(subset.OH)), "for",ival,jval))
+
           folded.OH <- tapply(subset.OH, Oh.yrz, list)
           folded.MH <- tapply(subset.MH, Mh.yrz, list)
           folded.MF <- tapply(subset.MF, Mf.yrz, list)
