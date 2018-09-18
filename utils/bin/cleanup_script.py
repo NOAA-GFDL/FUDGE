@@ -80,7 +80,7 @@ def count_suffix(path):
 	else:
 		return(0)
 
-def clean_prior_experiments(xml, basedir, opt):
+def clean_prior_experiments(xml, scriptdir, basedir, opt):
 #Clobbers or moves the script directories and all output directories,
 #depending on the settings of the xml passed in
 	#Good news! Expergen checks for running on a workstation versus the analysis
@@ -123,14 +123,15 @@ def clean_prior_experiments(xml, basedir, opt):
 		print("\033[1;43mWarning in cleanup_script! The cross-validated ensembles " +
 		      "generated with this experiment will not be regenerated " +
 		      "automatically! Run other member of experiment to regenerate.\033[1;m ")
-	#if(re.search('anom', targvar) is not None):
-	#	anomaddpaths = get_anomadd_paths(outdirs)
-	#	dirpaths.append(anomaddpaths)
-	#	if is_ensemble:
-	#		dirpaths.append(get_ensemble_path(anomaddpaths, rip_list))
-	#	#if is_crossval:
-	#	#	dirpaths.append(get_crossval_paths(anomaddpaths))
-	print "Starting cleanup file operations"
+	print "Starting cleanup file operations with opt " + opt
+	if opt=='exit':
+		exist_dirs = [el for el in dirpaths if os.path.exists(el)]
+		if len(exist_dirs) > 0:
+			print("Error in clean_prior_experiments: one or more directories that would " + 
+			      "be written to by the current experiment already exist. Please " + 
+			      "clean up directories and re-run.")
+			print("Directories that exist: " + "\n\t".join(exist_dirs))
+			sys.exit(1)
 	if opt=='erase':
 		for el in dirpaths:
 			if os.path.exists(el):

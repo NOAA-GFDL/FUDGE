@@ -1,3 +1,7 @@
+09-18-2018
+(cew)
+- the ifpreexist behavior moved legacy logic to cleanup_script.py; script can now handle the scripts/ directory being moved separately from the experiment directory
+
 08-17-2018
 (cew)
 - Bugfix for checking for PM/HIRAM data when parsing the ds_MF_source from metadata

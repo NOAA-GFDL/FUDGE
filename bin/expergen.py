@@ -352,8 +352,9 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	preexist = checkTags(dictParams,'preexist')
 	#TODO add preexist as another return variable
 	#print "preexist"+preexist
+	force = True
 	if(preexist == 'exit'):
-		force = False
+		force = True
 	elif(preexist == 'erase'):
 		force = True
 	elif(preexist == 'move'):
@@ -437,10 +438,13 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 					break
 	    if(force == True):
 		overwrite = True
-		if(preexist == 'move'):
-			global preexist_glob
-			preexist_glob = 'move'
-			#print "preexist turned ON................"
+		global preexist_glob
+		preexist_glob = preexist
+		## CEW edit 2018-09-14
+		#if(preexist == 'move'):
+		#	global preexist_glob
+		#	preexist_glob = 'move'
+		#	#print "preexist turned ON................"
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
 	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
 	    target_model = dict_target['model']
@@ -557,29 +561,13 @@ def main():
 	#########  call listVars() #############################################################
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
 
-		######### call script creators..  #######################################################
-	############################### 1 ###############################################################
-	#  make.code.tmax.sh 1 748 756 /vftmp/Aparna.Radhakrishnan/pid15769 outdir 1979 2008 tasmax
 
-	# If the runscript directory already exists, please quit
-	#/home/a1r/gitlab/cew/fudge2014///scripts/tasmax/35txa-CDFt-A00X01K02
-	#scriptdir = [sbase+"/master",sbase+"/runcode",sbase+"/runscript"]
-	#print(scriptdir)
 	sd = sbase
-	#for sd in scriptdir:
-	if(os.path.exists(sd)):
-		if os.listdir(sd):
-			if (overwrite == False):
-				print '\033[1;41mERROR: Scripts Directory already exists. Clean up using cleanup_script and try again please -or- (Use <ifpreexist>erase</ifpreexist> if output/scripts already exist and you want to override this and let expergen run the cleanup_script for you; Use <ifpreexist>move</ifpreexist> to move existing output)\033[1;m',sd
-				print "\033[1;41mERROR code -6: script directory already exists.Check --\033[1;m",scriptdir
-				sys.exit(-6)
-			if (overwrite == True):
-				print "\033[1;43mWarning: Scripts Directory already exists. But, since <ifpreexist> has different settings, cleanup utility will handle this\033[1;m "
-				print "Now invoking cleanup utility..........."
-				clean_prior_experiments(uinput, basedir, preexist_glob)
-	else:
-		print "scriptdir "+sd+" does not exist. Looks like a clean slate "
-
+	#Check for prior experiment creation
+	#Note that this component can exit with an error
+	print("preexist behavior: " + preexist_glob)
+	clean_prior_experiments(uinput, sd, basedir, preexist_glob)
+	
 	##Create the scripts subdirectories
 	subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
 	for el in subdirs:
