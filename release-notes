@@ -2,6 +2,10 @@
 (cew)
 - the ifpreexist behavior moved legacy logic to cleanup_script.py; script can now handle the scripts/ directory being moved separately from the experiment directory
 
+09-17-2018
+(d1a)
+Modification to KDDM cross-validation via tmasks to better account for data folding across years within KDDM
+
 08-17-2018
 (cew)
 - Bugfix for checking for PM/HIRAM data when parsing the ds_MF_source from metadata
