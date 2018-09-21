@@ -549,7 +549,7 @@ callKDDM <- function(Oh, Mh, Mf, args){
 
       # If pad was increased to shift data, shift it back
       if(pad != 0) {
-        if ( w < half.window ) {
+        if ( padside == 2 ) {
           kddm.bc.out <- c(kddm.bc.out, rep(NA,pad))
         } else {
           kddm.bc.out <- c(rep(NA,pad), kddm.bc.out)
