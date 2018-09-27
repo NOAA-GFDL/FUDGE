@@ -740,6 +740,9 @@ def main():
 	################ step 6 fudgeList invocation ##############################################
 	slogloc = sbase+"/"+"experiment_info.txt"
 	fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+	indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+	if any([re.search('Pwl', el) is not None for el in indirs]):
+		fcmd += ' --parse-j-style'
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate()
 	#print "Summary Log File: ", slogloc

@@ -33,8 +33,9 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=Fa
 		shutil.copy2(infile, outfile)
 	return(outfile)		
 	
-def read_exp_info_file(exp_info):
+def read_exp_info_file(exp_info, convert_to_j = True):
 	#Reads data formatted in the general form of an experiment info file
+	print(exp_info)
 	expdict = {}
 	with open(exp_info, 'r') as infile:
 		for line in infile:
@@ -56,7 +57,14 @@ def read_exp_info_file(exp_info):
 				expdict[key] =  entry
 	#Bugfix to make sure that single rips are always written as a list
 	if isinstance(expdict['output.path'], basestring):
-		expdict['output.path'] = [expdict['output.path']]			
+		expdict['output.path'] = [expdict['output.path']]
+	#Edit to create check in right location for j-style parsing
+	tmp = expdict['output.path']
+	oned_dirs = ['OneD', 'ZeroD', 'grid0']
+	if not any([re.search(el, tmp[0]) is not None for el in oned_dirs]):
+		expdict['output.path'] = [el + '/OneD' for el in expdict['output.path']]
+	#	for t in range(len(tmp)):
+	#		tmp[t] = [osp.join(tmp[t], o) for o in os.listdir(tmp[t]) if osp.isdir(osp.join(tmp[t], o)) and o in oned_dirs]
 	return expdict	
 	
 def tstamp():
