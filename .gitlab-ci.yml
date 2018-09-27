@@ -2,11 +2,16 @@
 stages:
  - test_mini
  - test_full
+ 
+before_script:
+ - module load git
 
 minijob:
  # This step is meant to run the minifile tests. 
  stage: test_mini
  script:
+  - echo "loading git"
+  - module load git/2.4.6
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
   #Note: we're using an outdated version at the lab; this is normally commit sha
@@ -21,7 +26,10 @@ minijob:
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
-  - analysis 
+  - analysis
+ variables:
+  CI_DEBUG_TRACE: "true"
+
   
 fulljob:
  stage: test_full
@@ -35,6 +43,6 @@ fulljob:
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
   - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
  tags:
-  - analysis 
- #only:
- # - i_master
+  - analysis
+ variables:
+  CI_DEBUG_TRACE: "true"  

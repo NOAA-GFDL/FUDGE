@@ -133,6 +133,8 @@ def fudgeList(verbose=False):
     ascii = ascii+"target:"+target+"\n"
     j_parse = options.parse_j
     if (j_parse):
+        print("parsing according to j")
+        print(list_pred)
         OH_vars = [target]
         MH_vars = list_pred
         MF_vars = list_pred

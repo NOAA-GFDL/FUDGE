@@ -726,16 +726,8 @@ def main():
 	##################################### 4 ############################################
 	# copy xml to configs dir
 	cdir = sbase+"/config/"
-#	try:
-#	  os.mkdir(cdir)
-#	except:
-#	  print "Unable to create dir. Dir may exist already", cdir
 	shutil.copy2(uinput, cdir)
 	shutil.copy2(auxinput, cdir)
-	#print "Config XML and aux file saved in ",cdir
-	#print "RunScripts will be saved under:",sbase
-	##Copy environment config file
-	#print("Copying environment info to "+sd+"environment_info.csh")
 	shutil.copy2(env_file, sd+ "/environment_info.csh")
 	################ step 6 fudgeList invocation ##############################################
 	slogloc = sbase+"/"+"experiment_info.txt"
@@ -745,24 +737,13 @@ def main():
 		fcmd += ' --parse-j-style'
 	f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
 	out, err = f.communicate()
-	#print "Summary Log File: ", slogloc
 
 	auxloc = sbase + "/config/" + osp.basename(auxinput)
 	shutil.copy2(auxinput, auxloc)
-	#print("Aux file location: " + auxloc)
 
 	with open(slogloc, 'a') as f:
 		f.write("\naux:" + os.path.abspath(auxinput))
 		f.write("\nNEMSemail:" + NEMSemail1)
-	#sys.exit(1)
-
-	# Create emergency backstop directory for capturing status files when
-	# permissions are an issue
-#	statdir = sbase + "/status"
-#	try:
-#		os.mkdir(statdir)
-#	except:
-#		print("Directory " + statdir + " may already exist")
 
 ############### crte ppscript #################
 	print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
