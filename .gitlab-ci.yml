@@ -7,8 +7,10 @@ minijob:
  # This step is meant to run the minifile tests. 
  stage: test_mini
  script:
+  - module use -a /home/esd/local/modulefiles
+  - module purge
+  - module load esd/env
   #Note: we're using an outdated version at the lab; this is normally commit sha
-  - module load git/2.4.6
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
   #The below does not work. Calling entire thing, rather than alias.
@@ -25,6 +27,9 @@ minijob:
 fulljob:
  stage: test_full
  script:
+  - module use -a /home/esd/local/modulefiles
+  - module purge
+  - module load esd/env 
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
   - datestr=`date +%Y%m%d-%H%M`
