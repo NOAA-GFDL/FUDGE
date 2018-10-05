@@ -151,6 +151,62 @@ def send_status_email(status,step,exp_name,mailid, \
 	print(mailid)
 	print(subject)
 	print(text)						
-	notifyUser(mailid, subject,text)		
+	notifyUser(mailid, subject,text)
+	
+def get_nc_dim_lengths(nc_file, dimnames):
+	#Gets the length of a named dimension from an input netcdf file.
+	#Assumes that your system has ncdump available.
+	#Yes, this is a bit faster than reading into Python
+	# -C 8 is an attempt to get a newline behind every dim
+	#
+	#GFDL-specific code for checking tape migration
+	dm_cmd = 'dmls -l ' + nc_file
+	p0 = subprocess.Popen(dm_cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+	out0,err0 = p0.communicate()
+	if p0.returncode == 0:
+		if re.search('(OFL)', out0) is not None:
+			p0 = subprocess.Popen("dmget " + nc_file,
+			                     shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+			out0,err0 = p0.communicate()
+	else:
+		print("Error in get_nc_dim_length: file " + nc_file + " not found on disk or tape!")
+		sys.exit(1)
+	if isinstance(dimnames, basestring):
+		dimnames = [dimnames]
+	#system command with ncdump
+	sys_cmd = "ncdump -h "+nc_file+" | grep -C 8 'dimensions:'"
+	p1 = subprocess.Popen(sys_cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+	out1,err1=p1.communicate()
+	if p1.returncode != 0:
+		print(sys_cmd)
+		print(out1)
+		print(err1)
+		sys.exit(1)
+	#get dimnames
+	coords = {}
+	for d in dimnames:
+		tmpstr = re.search(d + " \= (.*?)\n",out1).group(0)
+		cdim = re.search(r'\d+',tmpstr).group(0)
+		coords[d] = int(cdim)
+	return(coords)
+
+def get_offsets(nc_file):
+	#Gets the value of any dimensions named '*_offset' in the
+	#input netcdf file.
+	offsets = ['i_offset', 'j_offset']
+	offdict = {}
+	#system command with ncdump
+	for offset in offsets:
+		sys_cmd = "ncdump -v " + offset + " " + nc_file+" | grep " + offset + " = "
+		p1 = subprocess.Popen(sys_cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+		out1,err1=p1.communicate()
+		#If your return code is not 0, you probably didn't get a hit for the offset name
+		if p1.returncode == 0:
+			tmpstr = re.search(d + " \= (.*?)",out1).group(0)
+			offval = re.search(r'\d+',tmpstr).group(0)
+			offdict[offset] = int(offval)
+		else:
+			offdict[offset] = 1
+	return(offdict)			
 
 						 

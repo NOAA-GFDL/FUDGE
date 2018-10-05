@@ -5,8 +5,16 @@ import itertools
 import json
 from collections import OrderedDict
 
-def create_all_runscripts(i_start, i_end, i_by, i_offset, 
-                         j_start, j_end, j_by, j_offset, 
+def create_idx_elements(start, end, by):
+	#Creates elements for splitting into master scripts / runscripts
+	#by iterating
+	els = range(start, end, by)
+	els.append(int(end) + 1)
+	els = list(set(els))
+	return(els)
+
+def create_all_runscripts(i_start, i_end, i_by,
+                         j_start, j_end, j_by, output_grid,
                          njobs, ncpu, fudgetag, scriptdir, 
                          OH_dir, MH_dir, MF_dir, 
                          oh_timerange, mh_timerange, mf_timerange, predlist, 
@@ -16,25 +24,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                          auxdict, ds_minifile):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
-	
-	##print(outdir_string)
-	##print(idirsuffix)
-	##sys.exit('examine this output')
-	#which i_indices are we going to be looping over?
-	i_elements = range(int(i_start), int(i_end)+1, i_by)
-	i_elements.append(int(i_end)+1)
-	i_elements = list(set(i_elements))
-	i_elements = sorted(i_elements)
-	#i_offset = int(i_start)  - 1
-	i_max = int(i_end) - i_offset
-	#which j indices are we going to be looping over?
-	j_elements = range(int(j_start), int(j_end),j_by)
-	j_elements.append(int(j_end)+1)
-	j_elements = list(set(j_elements))
-	j_elements = sorted(j_elements)
-	#j_offset = int(j_start)  - 1
-	j_max = int(j_end) - j_offset
-	#sys.exit("Examine this out")
 
 	#Okay - as of 207-05-09, adding a one-off special case for the synthetic data
 	#cases - as distinguished by the presence of grid0.
@@ -57,9 +46,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	                        '#PBS -j oe ', 
 	                        '#PBS -N fudge_master ', 
 	                        '#PBS -E ', 
-	                        #Swapping out 2017-05-31. Apparently, the curly brackets are
-	                        #an unsupported feature? See Tim emails.
-	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
 	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
 	                        "#PBS -q batch "]) + "\n"
 	#The path to the checkout script is hard-coded, and probably going to
@@ -177,10 +163,38 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
+	
+	print(auxdict['OH'])	
+	i_elements = create_idx_elements(int(i_start), int(i_end), int(i_by))
+	j_elements = create_idx_elements(int(j_start), int(j_end), int(j_by))
+	#ddict = get_nc_dim_lengths(auxdict['OH'], ['lon', 'lat'])
+	idict = {'US48' : 748,
+	         'SCCSC0p1'  : 181,
+	         'RR'   : 181,
+	         'grid0': 0,
+	         'NEUSA': 1, 
+	         'NEUSA0p1': 425}
+	jdict = {'US48' : 454,
+	         'SCCSC0p1'  : 31,
+	         'RR'   : 31,
+	         'grid0': 0,
+	         'NEUSA': 1, 
+	         'NEUSA0p1': 127}	 
+	try:
+		i_offset = idict[output_grid]
+		j_offset = jdict[output_grid]
+	except KeyError:
+		#Try to get offset by dumping a file
+		print("One or more offsets not found in lookup table; querying file")
+		print("Be warned: this may involve a dmget and take a while")
+		odict = get_offsets(auxdict['OH']['file'])
+		i_offset = odict['i_offset']
+		j_offset = odict['j_offset']
+	i_max = int(i_end) - int(i_offset)
+	j_max = int(j_end) - int(j_offset)
 
 	#Finally, start opts that need to loop by index available
 	runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
-	#print(j_elements)
 	n_tiles = 0
 	for j in range(0, len(j_elements)-1):
 		jval = j_elements[j]
