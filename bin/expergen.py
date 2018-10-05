@@ -639,6 +639,26 @@ def main():
 	mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
 	predlist = predictor.split(",")
 	print("Calling create_all_runscripts")
+	idict = {'US48' : 748,
+	         'SCCSC0p1'  : 181,
+	         'RR'   : 181,
+	         'grid0': 0,
+	         'NEUSA': 1, 
+	         'NEUSA0p1': 425}
+	jdict = {'US48' : 454,
+	         'SCCSC0p1'  : 31,
+	         'RR'   : 31,
+	         'grid0': 0,
+	         'NEUSA': 1, 
+	         'NEUSA0p1': 127}	         
+	try:
+		i_offset = idict[output_grid]
+	except KeyError:
+		i_offset = 1
+	try:
+		j_offset = jdict[output_grid]
+	except KeyError:
+		j_offset = 1
 	#2018-06-06: Adding check between the experiment check and expconfig
 	#for purposes of checking kfold cross-valdiation
 	exp_check = get_exp_check_tag(uinput)
@@ -650,14 +670,14 @@ def main():
 	ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
 	                                "<RIP>",
 	                                ds_region, fut_file_start_time, fut_file_end_time)
-	create_all_runscripts(lons, lone, i_subset, 
-						  lats, late, j_subset, output_grid,
-						  njobs, ncpus, fudgetag, sbase, 
-	                      target_dir, hist_pred_dir, fut_pred_dir,
-	                      oh_timerange, mh_timerange, mf_timerange, predlist, 
-	                      spat_mask, target_time_window, hist_time_window, 
-	                      fut_time_window, auxcustom, outdir, target, method, 
-	                      file_j_range, idirsuffix, 
+	create_all_runscripts(lons, lone, i_subset, i_offset, \
+						  lats, late, j_subset, j_offset, \
+						  njobs, ncpus, fudgetag, sbase, \
+	                      target_dir, hist_pred_dir, fut_pred_dir,\
+	                      oh_timerange, mh_timerange, mf_timerange, predlist, \
+	                      spat_mask, target_time_window, hist_time_window, \
+	                      fut_time_window, auxcustom, outdir, target, method, \
+	                      file_j_range, idirsuffix, \
 	                      ds_info['multivar_target'],
 	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
 	                      auxdict, ds_minifile)

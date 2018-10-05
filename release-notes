@@ -1,7 +1,3 @@
-10-05-2018
-(cew)
-- Updating subsetting behavior for grids not in lookup table; if not found in lookup, alternative of querying file for i and j offset
-
 09-18-2018
 (cew)
 - the ifpreexist behavior moved legacy logic to cleanup_script.py; script can now handle the scripts/ directory being moved separately from the experiment directory

@@ -116,7 +116,6 @@ def make_aux_input(grid, script_base, targ_var):
 	         'SCCSC0p1'  : 140, 
 	         'RR'   : 140, 
 	         'grid0': 1, 
-	         'X1-1' : 1,
 	         'NEUSA': 41, 
 	         'ESTCPconus': 114}
 	if grid in jdict.keys():
@@ -124,11 +123,6 @@ def make_aux_input(grid, script_base, targ_var):
 		aux_scriptname = script_base + "/default_mini_"+grid+".json"
 		print(aux_scriptname)
 	else:
-		## It's probably not *unreasonable* to require an aux file
-		##for new file stuff
-		##Get the j dimension of file by dumping and looking for a lat dimension
-		#ddict = get_nc_dim_lengths()
-		#aux_scriptname = script_base + "/default_mini_"+grid+".json"
 		print("Error in make_aux_info: grid, " + grid + " not in jdict!")
 		sys.exit(1)	         
 	i_subset = '"i_subset": [1]'          + ","
