@@ -893,6 +893,9 @@ def get_minifile_name(var, freq, exp_name, scenario, rip, region, tstart, tend):
 	'''
 	#scenario is weird - rough time period / emissions + '_$rip'
 	scen_split = re.split("_", scenario)
+	#_ensbl is stuck to the end of tend, when it takes place
+	tend_split = re.split("_", tend)
+	tend = tend_split[0]
 	tstring = str(tstart) + "-" + str(tend)
 	root_filename = "_".join([var, freq, exp_name, scen_split[0], rip, region, tstring])
 	suffix = ".I<ISTART>-<IEND>_J<JSTART>-<JEND>.nc"
