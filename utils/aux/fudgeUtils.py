@@ -13,10 +13,13 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=Fa
 		outfile = osp.join(tdir,infile.lstrip("/"))
 	if timestamp: 
 		outfile  = outfile +"." + tstamp()	
+	#Make sure that the output directory exists
+	if not osp.isdir(osp.basename(osp.abspath(outfile).rstrip("/") + "/")):
+		os.makedirs(osp.basename(osp.abspath(outfile).rstrip("/") + "/"))
 	if gcp_verbose:
-		command = "gcp -v -cd " + infile + " " + outfile
+		command = "gcp -v " + infile + " " + outfile
 	else:
-		command = "gcp -cd " + infile + " " + outfile
+		command = "gcp " + infile + " " + outfile
 	if verbose:	
 		print(command)
 	modulepath = "source /usr/local/Modules/default/init/sh"	
