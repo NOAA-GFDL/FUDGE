@@ -159,6 +159,7 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 	with open(tmpfile, 'a') as f:
 		f.write(append_str)
 	for out in outpaths_all:
+		print("Copying " + tmpfile + " " + out)
 		gcp(tmpfile, out, False, False, sev > 1) #verbose, verbose
 	print("Modified experiment.info files copied to all locations:")
 	print("\n".join(outpaths_all))
@@ -225,7 +226,8 @@ def call_ens_creation(flist,climvar,rips,rip_string,out_rip,exp_name,epoch,
 	#Generate output file by doing a series of find-and-replace regexes on outdir
 	current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]
 	outfile = re.sub(current_rip, out_rip, flist[0])
-	outfile = re.sub("\.nc$", "_ensmbl.nc", outfile)
+	if (re.search('_ensmbl.nc', outfile) is None): 
+		outfile = re.sub("\.nc$", "_ensmbl.nc", outfile)
 	print("Output file location: " + outfile)
 	if not osp.exists(osp.dirname(outfile)):
 		print("Making " + osp.dirname(outfile))
