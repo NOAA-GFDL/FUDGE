@@ -14,8 +14,9 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=Fa
 	if timestamp: 
 		outfile  = outfile +"." + tstamp()	
 	#Make sure that the output directory exists
-	if not osp.isdir(osp.basename(osp.abspath(outfile).rstrip("/") + "/")):
-		os.makedirs(osp.basename(osp.abspath(outfile).rstrip("/") + "/"))
+	outdir = osp.dirname(osp.abspath(outfile)).rstrip("/") + "/"
+	if not osp.isdir(outdir):
+		os.makedirs(outdir)
 	if gcp_verbose:
 		command = "gcp -v " + infile + " " + outfile
 	else:
