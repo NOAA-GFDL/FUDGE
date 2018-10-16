@@ -142,9 +142,9 @@ def runMakeExpEns(expdict, anom_only_ens=False, rec_only_ens=False, verbose=Fals
 		print("No ensemble output produced; exiting")
 		sys.exit(0)
 	print("Ensemble files " + ",".join(ens_list) + " written to file")
-	sbase_loc = [osp.join(expdict['script.base'], "experiment_info.txt")]
-	outpath_loc = [osp.join(("/").join(p.split("/")[0:len(p.split("/"))-3]),"experiment_info.txt") for p in expdict['output.path']]
-	outens_loc = [osp.join(("/").join(p.split("/")[0:len(p.split("/"))-3]),"experiment_info.txt") for p in ens_list]
+	sbase_loc = [osp.join(expdict['script.base'] + "/", "experiment_info.txt")]
+	outpath_loc = [osp.join(("/").join(p.split("/")[0:len(p.split("/"))-3]) + "/","experiment_info.txt") for p in expdict['output.path']]
+	outens_loc = [osp.join(("/").join(p.split("/")[0:len(p.split("/"))-3]) + "/","experiment_info.txt") for p in ens_list]
 	outens_loc = list(set(outens_loc))
 	outpaths_all = sbase_loc + outpath_loc + outens_loc
 	tmpfile = osp.join(tdir, "experiment_info.txt")

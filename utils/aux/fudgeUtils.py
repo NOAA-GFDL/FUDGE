@@ -5,7 +5,7 @@ from os import path as osp
 from subprocess import PIPE
 import re
 
-def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=False):
+def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=True):
 	#Wrapper for GFDL's GCP function
 	#for copying from /archive to /vftmp
 	if (outfile=='TMPDIR'):

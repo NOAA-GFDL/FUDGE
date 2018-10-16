@@ -148,12 +148,13 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		#experiment info files
 		#Make a permanent fix later; this is going to react oddly with the 
 		#cross-validation settings
-		outfile_exp_info = ["/".join(el.split("/")[:-3]) + "/experiment_info.txt" for el in outfiles.split("\n")]
-		outfile_exp_info = [el.split(":")[-1] for el in outfile_exp_info]
+		outfile_exp_info_dirs = ["/".join(el.split("/")[:-3]) for el in outfiles.split("\n")]
+		outfile_exp_info_dirs = [el.split(":")[-1] for el in outfile_exp_info_dirs]
+		outfile_exp_info = [osp.join(el, 'experiment_info.txt') if osp.isdir(el) for el in outfile_exp_info_dirs]
 		script_exp_info = [infile]
 		#print(outfiles)
-		#print("outfile exp_info + script exp_info:")
-		#print(outfile_exp_info + script_exp_info)
+		print("outfile exp_info + script exp_info:")
+		print(outfile_exp_info + script_exp_info)
 		write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')	
 		##Added 9-28: get profiling info, write to file
 		print("File cleanup operations in progress")

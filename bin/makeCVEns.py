@@ -160,15 +160,10 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
 	for el in alldirs:
 		exp_info_file = osp.join(el, "experiment_info.txt")
 		print(exp_info_file)
-		with open(exp_info_file, 'a') as f:
-			f.write(ens_string)	
-	#exp_info_file = osp.join(scriptdir1, "experiment_info.txt")
-	#with open(exp_info_file, 'a') as f:
-	#	f.write(ens_string)
-	#for el in scriptdirs + dsdirs + ds_ensdirs + cv_dirs:	
-	#	print el
-	#	gcp(exp_info_file, osp.join(el, "experiment_info.txt"))			
-	#return("\n".join(["".join(["\t"] + list(el)) for el in ens_title]))	
+		if osp.isfile(exp_info_file):
+			print("Editing " + exp_info_file + " in place for xml apending.")
+			with open(exp_info_file, 'a') as f:
+				f.write(ens_string)		
 	return("\t" + "\n\t".join(ens_list))	
 	
 def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_string,
