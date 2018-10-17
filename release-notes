@@ -1,3 +1,8 @@
+10-15-2018
+(cew)
+- bugfix for two _ensmbl strings located in output ensemble filenames
+- bugfix for gcp -cd producing output directories named for filenames; dir creation is now explicit in python and gcp does not use -cd. More diagnostic prints for copy operations are also printed.
+
 09-18-2018
 (cew)
 - the ifpreexist behavior moved legacy logic to cleanup_script.py; script can now handle the scripts/ directory being moved separately from the experiment directory

@@ -5,7 +5,7 @@ from os import path as osp
 from subprocess import PIPE
 import re
 
-def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=False):
+def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=True):
 	#Wrapper for GFDL's GCP function
 	#for copying from /archive to /vftmp
 	if (outfile=='TMPDIR'):
@@ -13,10 +13,14 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=Fa
 		outfile = osp.join(tdir,infile.lstrip("/"))
 	if timestamp: 
 		outfile  = outfile +"." + tstamp()	
+	#Make sure that the output directory exists
+	outdir = osp.dirname(osp.abspath(outfile)).rstrip("/") + "/"
+	if not osp.isdir(outdir):
+		os.makedirs(outdir)
 	if gcp_verbose:
-		command = "gcp -v -cd " + infile + " " + outfile
+		command = "gcp -v " + infile + " " + outfile
 	else:
-		command = "gcp -cd " + infile + " " + outfile
+		command = "gcp " + infile + " " + outfile
 	if verbose:	
 		print(command)
 	modulepath = "source /usr/local/Modules/default/init/sh"	
