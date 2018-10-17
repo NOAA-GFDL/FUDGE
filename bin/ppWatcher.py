@@ -150,7 +150,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		#cross-validation settings
 		outfile_exp_info_dirs = ["/".join(el.split("/")[:-3]) for el in outfiles.split("\n")]
 		outfile_exp_info_dirs = [el.split(":")[-1] for el in outfile_exp_info_dirs]
-		outfile_exp_info = [osp.join(el, 'experiment_info.txt') if osp.isdir(el) for el in outfile_exp_info_dirs]
+		outfile_exp_info = [osp.join(el, 'experiment_info.txt') for el in outfile_exp_info_dirs if osp.isdir(el) ]
 		script_exp_info = [infile]
 		#print(outfiles)
 		print("outfile exp_info + script exp_info:")
