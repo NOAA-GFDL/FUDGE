@@ -5,18 +5,18 @@ import itertools
 import json
 from collections import OrderedDict
 
-def create_all_runscripts(i_start, i_end, i_by, i_offset, 
-                         j_start, j_end, j_by, j_offset, 
-                         njobs, ncpu, fudgetag, scriptdir, 
-                         OH_dir, MH_dir, MF_dir, 
-                         oh_timerange, mh_timerange, mf_timerange, predlist, 
-                         spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask, 
-                         outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target, 
-                         auxfile, aux_file_list, wallclocktime, 
-                         auxdict, ds_minifile):
+def create_all_runscripts(i_start, i_end, i_by, i_offset,
+						 j_start, j_end, j_by, j_offset,
+						 njobs, ncpu, fudgetag, scriptdir,
+						 OH_dir, MH_dir, MF_dir,
+						 oh_timerange, mh_timerange, mf_timerange, predlist,
+						 spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask,
+						 outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
+						 auxfile, aux_file_list, wallclocktime,
+						 auxdict, ds_minifile):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
-	
+
 	##print(outdir_string)
 	##print(idirsuffix)
 	##sys.exit('examine this output')
@@ -48,29 +48,29 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		print("Adding other synthetic data workaround")
 		idirsuffix = idirsuffix
 		j_elements  = [1, 2]
-		is_syn = True	
-	
-	moab_header = "\n".join(["#!/bin/tcsh ", 
-	                        "#PBS -S /bin/tcsh ", 
-	                        "#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime, 
-	                        "#PBS -r y ", 
-	                        '#PBS -j oe ', 
-	                        '#PBS -N fudge_master ', 
-	                        '#PBS -E ', 
-	                        #Swapping out 2017-05-31. Apparently, the curly brackets are
-	                        #an unsupported feature? See Tim emails.
-	                        #'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
-	                        '#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
-	                        "#PBS -q batch "]) + "\n"
+		is_syn = True
+
+	moab_header = "\n".join(["#!/bin/tcsh ",
+							"#PBS -S /bin/tcsh ",
+							"#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime,
+							"#PBS -r y ",
+							'#PBS -j oe ',
+							'#PBS -N fudge_master ',
+							'#PBS -E ',
+							#Swapping out 2017-05-31. Apparently, the curly brackets are
+							#an unsupported feature? See Tim emails.
+							#'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
+							'#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
+							"#PBS -q batch "]) + "\n"
 	#The path to the checkout script is hard-coded, and probably going to
 	#stay that way for now; the load of git is DEFINETLY needed if the
 	#checkout script is going to be used.
 	module_loads = "\n".join(['module load R',
-	                          'module load gcp',
-	                          'module load netcdf',
-	                          'module load nco',
-	                          'module load git/2.4.6',
-	                          'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
+							  'module load gcp',
+							  'module load netcdf',
+							  'module load nco',
+							  'module load git/2.4.6',
+							  'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
 	#Okay, now define the set of files that you will work with
 	#(no more minifiles=all files are the same for each job slice)
 	#first, checking for the presence of the optional files
@@ -88,21 +88,21 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		spatmask_file = [osp.join(spatmask_dir, el) for el in os.listdir(spatmask_dir) if re.search('masks', el) is not None][0]
 		dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
 		spatmask_files = [spatmask_file]
-		dmget_string = dmget_string + "dmget " + spatmask_file + " \n" 
+		dmget_string = dmget_string + "dmget " + spatmask_file + " \n"
 		spatmask_path = spatmask_file
 	else:
 		spatmask_files = []
-		spatmask_path = 'none'	
-				
-	#MH and MF files have an assumption that you can have multiple 
+		spatmask_path = 'none'
+
+	#MH and MF files have an assumption that you can have multiple
 	#predictor vars present. At some point, var classification checks
 	#(such is is_spaceless for ENSO data) should go in here	.
-	#MH and MF paths are currently passed in several dirlevels earlier than OH 	
+	#MH and MF paths are currently passed in several dirlevels earlier than OH
 	#Switch on this later, when things get added to the aux
-	present_in_aux = False
+	present_in_aux = auxdict['files_in_aux']
 	if not present_in_aux:
 		#OH_dir = os.path.dirname(osp.abspath(OH_dir))
-		prefix_loc = len(MH_dir.split("/"))		
+		prefix_loc = len(MH_dir.split("/"))
 		oh_prefix = "/".join(OH_dir.split("/")[0:prefix_loc])
 		oh_suffix = "/".join(OH_dir.split("/")[(prefix_loc+1):-1])
 		if not multivar_target:
@@ -130,9 +130,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		print >> f, auxstr
 		f.close()
 	else:
-		oh_files, oh_dmget = get_aux_input_paths("")
-		mh_files, mh_dmget = get_aux_input_paths("")
-		mf_files, mf_dmget = get_aux_input_paths("")
+		oh_files, oh_dmget = build_aux_input_paths(auxdict['OH'])
+		mh_files, mh_dmget = build_aux_input_paths(auxdict['MH'])
+		mf_files, mf_dmget = build_aux_input_paths(auxdict['MF'])
 		auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
 		os.makedirs(osp.dirname(auxfile_mod))
 		shutil.copyfile(auxfile, auxfile_mod)
@@ -170,10 +170,10 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#(copy opts for each minifile/slice take place within runscript
 	#as well as writing of script status files)
 	'''
-	#Current string in form of blank_outdir#(blank_rip)#rip1,rip2,rip3	
+	#Current string in form of blank_outdir#(blank_rip)#rip1,rip2,rip3
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	'''
-	
+
 	outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
 	outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
 	outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
@@ -218,26 +218,26 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 			#is where the file paths are.
 			runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
 													i_idx, imax, i_by, i_offset, \
-													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)			
+													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
 			os.chmod(runscript_name, runmode)	#f now executable
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
 				#Prepare to write all accululated data to file
-				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod, 
-				                                        i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
-				with open(master_scriptname, 'w') as f: 
+				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
+														i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
+				with open(master_scriptname, 'w') as f:
 					f.write(moab_header)
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
 					f.write(outdir_cmd)
 					f.write("echo 'Beginning calls to executable'\n")
-					f.write(executable_code) 
-					#f.write("wait")			
+					f.write(executable_code)
+					#f.write("wait")
 	print('master runscript and mini creation completed')
-	#return(n_tiles)	
+	#return(n_tiles)
 
 def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
 	'''
@@ -254,11 +254,18 @@ def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
 		dmget_string = dmget_string + "dmget "+ in_file + "\n"
 	return(in_files, dmget_string)
 
-def build_aux_input_paths(dummy_arg):
+def build_aux_input_paths(aux_subset):
 	'''
-	Makes the dmget strings and does file copy opts for things that don't exit yet
+	Makes the dmget strings and does file copy opts for a subset of the aux
+	dictionary - one of the OH,MH,MF subsets
 	'''
-	return(dummy_arg)
+	in_files = []
+	dmget_string = ""
+	for v in aux_subset.keys():
+		in_file = aux_subset[v]['file']
+		in_files.append(in_file)
+		dmget_string += 'dmget ' + in_file + "\n"
+	return(in_files, dmget_string)
 
 def make_gcp_cmd(sourcefile, destfile):
 	'''
@@ -267,11 +274,11 @@ def make_gcp_cmd(sourcefile, destfile):
 	gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
 	gcp_echo = "echo '" + gcp_cmd + "'"
 	stat_cmd = "\n".join(["if ($status != 0) then",
-	                     "\t echo 'Error in runscript: gcp from " + sourcefile + " to " + destfile + " failed!'",
+						 "\t echo 'Error in runscript: gcp from " + sourcefile + " to " + destfile + " failed!'",
 						 "\t exit 99",
 						 "endif"])
 	return(gcp_cmd + "\n" + gcp_echo + "\n" + stat_cmd + "\n")
-						
+
 def create_outdir_string(outdirs, scriptdir, target_var):
 	#Wrapper for making the outdir creation commands
 	outdir_string = "# Creating output directories \n"
@@ -290,7 +297,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 def create_slice_runscript(i_string, j_string, scriptdir,
 							i_idx, i_max, i_by, i_offset,
 							j_idx, j_max, j_by, j_offset, auxfile_mod, target_var, outdirs):
-	#Creates the runscript code specific to a slice of the grid downscaled 
+	#Creates the runscript code specific to a slice of the grid downscaled
 	#by the R code
 	#Technically only the shebang is needed, but extra info in the event that we ever split
 	#these differently is not going to hurt.
@@ -298,14 +305,14 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	# j_range: 'J454_576'
 	runscript_log = osp.join(scriptdir, 'log') + "/ind.${MOAB_JOBNAME}.${MOAB_JOBID}"
 	runscript_header = "\n".join(['#!/bin/tcsh',
-	                              '#PBS -S /bin/csh',
-	                              '#PBS -l nodes=1:ppn=1,walltime=6:00:00',
-	                              '#PBS -j oe',
-	                              '#PBS -r y ',
-	                              '#PBS -o ' + runscript_log,
-	                              '#PBS -N fudge_run',
-	                              '#PBS -E',
-	                              '#PBS -q batch']) + "\n"
+								  '#PBS -S /bin/csh',
+								  '#PBS -l nodes=1:ppn=1,walltime=6:00:00',
+								  '#PBS -j oe',
+								  '#PBS -r y ',
+								  '#PBS -o ' + runscript_log,
+								  '#PBS -N fudge_run',
+								  '#PBS -E',
+								  '#PBS -q batch']) + "\n"
 	exp_name = scriptdir.split("/")[-1]
 	if(exp_name==''):
 		exp_name = scriptdir.split("/")[-2]
@@ -329,7 +336,7 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
 	#Note: right now, for a given script job, all J are going to be identical.
 	outstr = []
 	outstr.append('echo `ls "$TMPDIR/' + outdir + '"`')
-	outstr.append('echo gcp "$TMPDIR/' + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir + '"')	
+	outstr.append('echo gcp "$TMPDIR/' + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir + '"')
 	outstr.append("gcp $TMPDIR/" + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir)
 	outstr.append("set ostat = $?")
 	outstr.append("if ( $ostat == 0 ) then")
@@ -365,10 +372,10 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
 		tmp_file[-1] = patt
 		tmp_dest = osp.join(runcode_dir, ".".join(tmp_file))
 		tmp_src = osp.join(runcode_dir, runcode_files[0])
-		shutil.copy2(tmp_src, tmp_dest)	
-	
-def make_executable_stuff(runscript_files, scriptdir, auxfile_mod, 
-                          ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
+		shutil.copy2(tmp_src, tmp_dest)
+
+def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
+						  ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
 	'''
 	Makes the things that call R code (eventually) in the master.
 	The batch branch sources runscripts with pre-defined x,y locations
@@ -383,74 +390,74 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	batch_cmd = "\t sleep 10 \n".join(runscript_calls) + "\twait"
 	#Then, do the code that gets used for the alt running
 	echo_cmd = "<newline> ".join([
-	                      "# clean environment before calls", 
-	                      "rm(list=ls())", 
-	                      "# set twindow parameters:",
-	                      "## if not set to 'all', you can set to a number from",
-	                      "## 1:nmasks to run a specific mask",
-	                      "twindow_run <<- 'all'", 
-	                      "# set i and j location:",
-	                      "## idx is the i/j index from which you start,",
-	                      "## stride is the number of indices from that point you step (1 being a single i or j val)",
-	                      "## max is the length of the i/j dimension (DONT EDIT) ",
-	                      "## offset is the i,j offset (DONT EDIT YET - USED FOR FILENAME CONSTRUCTION)",
-	                      "i_idx    <<- " + str(ival), 
-	                      "i_max    <<- " + str(imax), 
-	                      "i_stride <<- " + str(i_by),
-	                      "i_offset <<- " + str(i_offset),
-	                      "j_idx    <<- " + str(jval), 
-	                      "j_max    <<- " + str(jmax), 
-	                      "j_stride <<- " + str(j_by), 
-	                      "j_offset <<- " + str(j_offset),
-	                      "# point to the modified auxfile (has full file paths)",
-	                      "auxfile <<- '" + auxfile_mod + "'", 
-	                      "# source the runcode which sources Master_Driver",
-	                      "source('$generic_runcode')"])
+						  "# clean environment before calls",
+						  "rm(list=ls())",
+						  "# set twindow parameters:",
+						  "## if not set to 'all', you can set to a number from",
+						  "## 1:nmasks to run a specific mask",
+						  "twindow_run <<- 'all'",
+						  "# set i and j location:",
+						  "## idx is the i/j index from which you start,",
+						  "## stride is the number of indices from that point you step (1 being a single i or j val)",
+						  "## max is the length of the i/j dimension (DONT EDIT) ",
+						  "## offset is the i,j offset (DONT EDIT YET - USED FOR FILENAME CONSTRUCTION)",
+						  "i_idx    <<- " + str(ival),
+						  "i_max    <<- " + str(imax),
+						  "i_stride <<- " + str(i_by),
+						  "i_offset <<- " + str(i_offset),
+						  "j_idx    <<- " + str(jval),
+						  "j_max    <<- " + str(jmax),
+						  "j_stride <<- " + str(j_by),
+						  "j_offset <<- " + str(j_offset),
+						  "# point to the modified auxfile (has full file paths)",
+						  "auxfile <<- '" + auxfile_mod + "'",
+						  "# source the runcode which sources Master_Driver",
+						  "source('$generic_runcode')"])
 	echo_cmd = '"' + echo_cmd + '"'
-	                      
+
 	int_cmd = "\n\t".join(["\tmodule load rstudio/0.98.1103",
-	                      "module unload R/2.15.2",
-	                      "module load R/3.2.1", 
-	                      "set auxfile_mod = " + auxfile_mod, 
-	                      "set runcode_dir = " + scriptdir + "/" + 'runcode', 
-	                      "set generic_runcode_base = `ls $runcode_dir | head -n 1`",           
-	                      "set generic_runcode = $runcode_dir/$generic_runcode_base", 
-	                      #Below line shouldn't give an error: removes if there, 
-	                      #moves on if not.
-	                      "rm -rf $TMPDIR/command_line_params.R",
-	                      "set r_cmd = " + echo_cmd,
-	                      "set r_header = '<shebang>/bin/Rscript'",
-	                      "echo $r_header | sed -e 's:<shebang>:#\!:g' >> $TMPDIR/command_line_params.R",
-	                      "echo $r_cmd | sed -e 's:<newline>:" + r'\n' + ":g' >> $TMPDIR/command_line_params.R",
-	                      "echo 'Command to run R minifile code from the command line:'",
-	                      'echo "rstudio $TMPDIR/command_line_params.R &"',
-	                      "rstudio $TMPDIR/command_line_params.R &"]
-	                      )
+						  "module unload R/2.15.2",
+						  "module load R/3.2.1",
+						  "set auxfile_mod = " + auxfile_mod,
+						  "set runcode_dir = " + scriptdir + "/" + 'runcode',
+						  "set generic_runcode_base = `ls $runcode_dir | head -n 1`",
+						  "set generic_runcode = $runcode_dir/$generic_runcode_base",
+						  #Below line shouldn't give an error: removes if there,
+						  #moves on if not.
+						  "rm -rf $TMPDIR/command_line_params.R",
+						  "set r_cmd = " + echo_cmd,
+						  "set r_header = '<shebang>/bin/Rscript'",
+						  "echo $r_header | sed -e 's:<shebang>:#\!:g' >> $TMPDIR/command_line_params.R",
+						  "echo $r_cmd | sed -e 's:<newline>:" + r'\n' + ":g' >> $TMPDIR/command_line_params.R",
+						  "echo 'Command to run R minifile code from the command line:'",
+						  'echo "rstudio $TMPDIR/command_line_params.R &"',
+						  "rstudio $TMPDIR/command_line_params.R &"]
+						  )
 	#And then, join both commands together with ifelse
 	executable_stuff = "\nset arrlen = $#argv\n\nif ( $arrlen == 0 ) then\n" + batch_cmd + "\nelse\n" + int_cmd + "\nendif"
 	return(executable_stuff)
-	
-	
+
+
 def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none'):
 	'''
 	Makes an aux file entry of input data files for one of OH, MH or MF.
 	'''
 	aux_entry = {}
 	for var,f in zip(varnames, files):
-		aux_entry[var] = {'file': f, 
-		                  'is_fixed':'FALSE',
-		                  'stencil': stencil, 
-		                  'geomask': geomask, 
-		                  'tmask':   tmask}
-	#2017-04-06: R code currently looks for stencil under top-level check, 
-	#not under the var names.	                  
+		aux_entry[var] = {'file': f,
+						  'is_fixed':'FALSE',
+						  'stencil': stencil,
+						  'geomask': geomask,
+						  'tmask':   tmask}
+	#2017-04-06: R code currently looks for stencil under top-level check,
+	#not under the var names.
 	#aux_entry['stencil'] = stencil
 	return(aux_entry)
-	
+
 #And make the output dict for the json file
 def make_ds_aux_entry(out_file, outdir, var):
 	'''
-	Makes an output dict for the aux file. 
+	Makes an output dict for the aux file.
 	'''
 	outdir_opts = outdir.split("#")
 	outdir_path = "/".join(re.split('/', outdir_opts[0].rstrip('/'))[:-1])
@@ -460,17 +467,16 @@ def make_ds_aux_entry(out_file, outdir, var):
 	#The parenthesis made sense in c-shell, but pythons' sub functions are PICKY
 	outrip_patt = "\$\(RIP\)"
 	outdir_path = re.sub(outrip_patt, '<RIP>', outdir_path)
-	#	
+	#
 	out_subdir = re.split('/', outdir_opts[0].rstrip('/'))[-1]
 	out_vars = [var]
 	#Edit this when we start adding more in the way of supplementary output writing
 	out_supp = [var + '_qcmask']
-	out_rips = riplist	
-	dsdict = {'out_dir' : outdir_path, 
-	          'out_file' : out_file,
-	          'out_subdir' : out_subdir, 
-	          'out_supp' : out_supp,
-	          'vars' : out_vars, 
-	          'rips' : out_rips}
-	return(dsdict)		                       
-
+	out_rips = riplist
+	dsdict = {'out_dir' : outdir_path,
+			  'out_file' : out_file,
+			  'out_subdir' : out_subdir,
+			  'out_supp' : out_supp,
+			  'vars' : out_vars,
+			  'rips' : out_rips}
+	return(dsdict)
