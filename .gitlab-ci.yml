@@ -20,7 +20,7 @@ minijob:
   #- alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
   - datestr=`date +%Y%m%d-%H%M`
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
-  - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
+  - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
   - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
  #only:
  # - tags,master,i_gitlab-ci-new

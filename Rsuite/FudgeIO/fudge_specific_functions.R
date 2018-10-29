@@ -2,19 +2,33 @@
 #grouping of functions that are only going to be used by FUDGE;
 #includes padding subset data into larger chunks for looping
 
-build.FUDGE.dataset <- function(data.path, varlist, subset, dim, x_by, y_by, geomasks=c(), dim.pad='NA'){
+build.FUDGE.dataset <- function(data.path, varlist, subset, dim, 
+                                x_by, y_by, geomasks=c(), 
+                                dim.pad='NA', 
+                                file_format = 'netcdf'){
   #Wrapper function for reading in and verifying input data.
   #calls build.fudge.object (general io constructor)
   #and then pads the result with chosen pad, if the subset overlaps the end of the dataset
-  out <- build.fudge.object(data.path, var=varlist, subset=lapply(subset, '[[', 'subset'), dim=dim, 
-                            var_classification=T)
+  if (file_format == 'netcdf'){
+    out <- build.fudge.object(data.path, var=varlist, subset=lapply(subset, '[[', 'subset'), dim=dim, 
+                              var_classification=T)
+  }else if (file_format == 'csv'){
+    out <- build.fudge.object.csv(data.path, var=varlist, dim=dim)
+  }else{
+    stop(paste("Error in build.FUDGE.dataset: file format", file_fomat, 'is unknown!'))
+  }
   #Sptaial masks get more complicated - stepping stone towards having multiple
   #spatial masks for multiple vars
   if (length(geomasks) > 0){
-    apply_geomasks=T
-    if (length(geomasks)==1 && length(varlist) > 1){
-      message("Repeating geomask for all vars in dataset")
-      geomasks <- rep(geomasks[[1]], length(varlist))
+    if (file_format == 'netcdf'){
+      apply_geomasks=T
+      if (length(geomasks)==1 && length(varlist) > 1){
+        message("Repeating geomask for all vars in dataset")
+        geomasks <- rep(geomasks[[1]], length(varlist))
+      }
+    }else{
+      #We will not want to use geomasks if workign with csv data
+      apply_geomasks <- F
     }
   }else{
     apply_geomasks=F

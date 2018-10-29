@@ -40,6 +40,10 @@ Modification to KDDM cross-validation via tmasks to better account for data fold
 - Updating library loading to make package location more transparent (user repo vs system repo)
 - bugfix for cfqm, delta indexing with ignore0 turned on; butfix for path construction of synthetic data in OH in expergen create_all_runscripts
 
+04-19-2017
+(cew)
+- Alternative csv input path via the auxfile added for running small synthetic cases
+
 04-12-2018
 (d1a)
 - bugfix for kddm bkde xml specification

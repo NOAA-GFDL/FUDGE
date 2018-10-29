@@ -75,7 +75,7 @@ callLMAll <- function(OH, MH, MF, args, ds.method='lm',
       }
     }
   }else{
-    #If there is not enough data to downscale, the 
+    #If there is not enough data to downscale, change qcmask
     print("downscaling not possible at this point")
     if(train_qcmask){
       qc = array(NA, dim=dim(MF.data[[1]]))
