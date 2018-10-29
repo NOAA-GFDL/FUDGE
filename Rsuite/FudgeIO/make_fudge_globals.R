@@ -26,6 +26,7 @@ make.fudge.globals <- function(){
   fudge.MF.atts <- get.MF.experiment.atts(MF$metadata[[1]]$filename)
   fudge.file.atts <- get.FUDGE.file.atts(OH$metadata, MH$metadata, MF$metadata)
   atts.all <- c(fudge.info.atts, fudge.OH.atts, fudge.MF.atts, fudge.file.atts)
+  r_version = sessionInfo()[['R.version']][['version.string']]
   #Hey, check on this - is it working as intended?
   #Updating with OH clone for seasonal forecasts 2017-07-17
 #   print(aux_ref$climo_source)
@@ -44,7 +45,8 @@ make.fudge.globals <- function(){
                             #'climatology' = fudge.climatology, 
                             'realizations' = paste(fut.pred.rip.list, collapse=","), 
                             'fudgetag' = fudgetag, 
-                            'ds_downscaling_method' = ds.ref$method), 
+                            'ds_downscaling_method' = ds.ref$method, 
+                            'r_version' = r_version), 
                        atts.all)
   #Check for attributes that may not be present
   #climatology and trend
