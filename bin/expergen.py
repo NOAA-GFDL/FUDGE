@@ -566,24 +566,12 @@ def main():
 	#Check for prior experiment creation
 	#Note that this component can exit with an error
 	print("preexist behavior: " + preexist_glob)
-	clean_prior_experiments(uinput, sd, basedir, preexist_glob)
+	#2018-10-31: The cleanup opts work weirdly with the csv workflow. We're less
+	#fixed in where we write files, but the freedom can be ...not good. 
+	#Adding switch for the csv workflow in here; implies that we read in the aux
+	#file before doing anything with the moving experiments.
 	
-	##Create the scripts subdirectories
-	subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
-	for el in subdirs:
-		subdir = osp.join(sbase,el)
-		if not osp.exists(subdir):
-			os.makedirs(subdir)
-
-	##CEW edit 10-2016 for the multi-pt ds params
-		#CEW edit 10-2016: check for the presence of the 3 'by' tags in the XML; if
-	#they are not present, set to 1. These get used in the runcode creation
-	#for setting command-line parameters.
-	#by_params = get_npts_by(uinput)
-	#mh_by = str(by_params[0]) #OH
-	#oh_by = str(by_params[1]) #MH
-	#mf_by = str(by_params[2])#MF
-		### As of 10-13, get the ncpus and njobs specifications from the XML
+	#Get aux specs
 	specdict = get_comment_specs(uinput)
 	njobs = int(specdict['njobs'])
 	ncpus = int(specdict['ncpus'])
@@ -610,8 +598,20 @@ def main():
 		njobs = auxinfo['njobs']
 	if auxinfo['ncpus'] != 2:
 		ncpus = auxinfo['ncpus']
-
-
+		
+	#Now, FINALLY, do the cleanup opts
+	is_csv = False
+	if 'file_format' in auxdict.keys():
+		if auxdict['file_format'] == 'csv':
+			is_csv = True
+	clean_prior_experiments(uinput, sd, basedir, preexist_glob, is_csv)
+	
+	##Create the scripts subdirectories
+	subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
+	for el in subdirs:
+		subdir = osp.join(sbase,el)
+		if not osp.exists(subdir):
+			os.makedirs(subdir)
 
 	#############################################################
 	print "Step 0: Create the unified runcscripts and master runscripts"

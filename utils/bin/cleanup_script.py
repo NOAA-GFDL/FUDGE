@@ -51,9 +51,12 @@ def get_crossval_paths(cv_paths):
 		cv_outpaths.append(loop_path)
 	return(cv_outpaths)
 
-def get_file_paths(path):
-	#go up 3 levels
-	return(("/").join(re.split("/", path)[:-4]))
+def get_file_paths(path, is_csv = False):
+	#go up 3 levels, unless in csv workflow (anything goes)
+	if not is_csv:
+		return(("/").join(re.split("/", path)[:-4]))
+	else:
+		return(path)
 
 def get_anomadd_paths(anomvar, path):
 	targvar = re.sub("anom", '', anomvar)
@@ -80,7 +83,7 @@ def count_suffix(path):
 	else:
 		return(0)
 
-def clean_prior_experiments(xml, scriptdir, basedir, opt):
+def clean_prior_experiments(xml, scriptdir, basedir, opt, is_csv):
 #Clobbers or moves the script directories and all output directories,
 #depending on the settings of the xml passed in
 	#Good news! Expergen checks for running on a workstation versus the analysis
@@ -99,7 +102,7 @@ def clean_prior_experiments(xml, scriptdir, basedir, opt):
 		outdirs = []
 		for rip in rip_list:
 			outdirs.append(re.sub(out_components[1], rip, out_components[0]))
-		outdirs = [get_file_paths(f) for f in outdirs]
+		outdirs = [get_file_paths(f, is_csv) for f in outdirs]
 	#Script path
 	scriptpath = output[54]
 	targvar = output[25]
@@ -124,8 +127,14 @@ def clean_prior_experiments(xml, scriptdir, basedir, opt):
 		      "generated with this experiment will not be regenerated " +
 		      "automatically! Run other member of experiment to regenerate.\033[1;m ")
 	print "Starting cleanup file operations with opt " + opt
+	exist_dirs = [el for el in dirpaths if os.path.exists(el)]
+	if len(exist_dirs) > 0 and is_csv:
+		print("Error in clean_prior_experiments: csv experiments don't enforce dir structure. " + 
+		      "Please manually clean up the components of this experiment - right now, " + 
+		      "it's a guard against unexpected file deletion/moving.")
+		print("\n\t".join(exist_dirs))
+		sys.exit(1)
 	if opt=='exit':
-		exist_dirs = [el for el in dirpaths if os.path.exists(el)]
 		if len(exist_dirs) > 0:
 			print("Error in clean_prior_experiments: one or more directories that would " + 
 			      "be written to by the current experiment already exist. Please " + 
