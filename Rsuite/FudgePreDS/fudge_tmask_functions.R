@@ -97,9 +97,13 @@ get.fudge.timemask.list <- function(){
   if (ds.ref$downscale_oh){
     #Create global reference vectors for where leapdays are in the input
     #historical and future datasets
+    has_calendar = TRUE
     if (!apply_tmasks){
       warning(paste("Warning in get.fudge.tmask.list: you should use a tmask if", 
                   "working with delta and/or CFQM!"))
+      print(MF$metadata[[1]]$dim$time$calendar)
+      tmask.list$OH$masks[[1]] <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
+      if (MF$metadata[[1]]$dim$time$calendar != "none"){      
       fut.tseries <- get.PCICt.time.series(MF$metadata[[1]]$dim$time$units, 
                                            MF$metadata[[1]]$dim$time$vals, 
                                            MF$metadata[[1]]$dim$time$calendar)
@@ -108,6 +112,12 @@ get.fudge.timemask.list <- function(){
                                             OH$metadata[[1]]$dim$time$calendar)
       tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
       tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
+      }else{
+      	#This case is used for the synthetic data - no leapdays to be found.
+      	has_calendar = FALSE
+      	tmask.list$hist.leapmask <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
+      	tmask.list$fut.leapmask <- rep(1, length(MF$metadata[[1]]$dim$time$vals))
+      }
     }else{
       print("getting the leapday masks")
       tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
@@ -121,14 +131,21 @@ get.fudge.timemask.list <- function(){
                                                   origin = MF$metadata[[1]]$dim$time$units,
                                                   time.data=MF$metadata[[1]]$dim$time$vals)
     }
-    tmask.list$hist.year.div <- get.year.divisions(target.file.start.year_1, 
+    if (has_calendar){
+        tmask.list$hist.year.div <- get.year.divisions(target.file.start.year_1, 
                                                    target.file.end.year_1, 
                                                    OH$metadata[[1]]$dim$time$calendar)
-    tmask.list$fut.year.div <- get.year.divisions(fut.file.start.year_1, 
+      tmask.list$fut.year.div <- get.year.divisions(fut.file.start.year_1, 
                                                   fut.file.end.year_1, 
                                                   MF$metadata[[1]]$dim$time$calendar)
-    tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
-    tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
+      tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
+      tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
+    }else{
+    	tmask.list$hist.year.div <- length(tmask.list$hist.leapmask)
+    	tmask.list$fut.year.div <- length(tmask.list$fut.leapmask)
+    	tmask.list$nyears_hist <- 1
+    	tmask.list$nyears_fut <- 1
+    }
 #     print(tmask.list$hist.year.div)
 #     print(tmask.list$fut.year.div)
 #     print(tmask.list$nyears_hist)

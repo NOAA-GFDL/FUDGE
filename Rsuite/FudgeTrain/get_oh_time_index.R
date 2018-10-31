@@ -78,7 +78,7 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
       oh_year_div <- hist.year.div[1:(nyears_fut + start_year - 1)]
     }
     start_year <- ((start_year  + nyears_fut) %% nyears_hist)
-  }else{
+  }else if ( !(hist.year.div[1] == 0 & start_year == 0) ){
     #If you are repeating OH samples to make up MF
     #....this should be based off of YEARS, not simple indices
     #And you are going to be working on these as a function of the 
@@ -105,12 +105,12 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
                                         )})))
       oh_year_div <- oh_year_div[1:length(fut.year.div)]
     }
+  }else{
+    #This is a case for synthetic data only - assumed that your year divs are the same
+    OH.idx = 1
+    start_year = 1
+    oh_year_div = 0
   }
-#   print("checking on oh_year_div:")
-#   print(length(oh_year_div))
-#   print(oh_year_div[1:110])
-#   print(c(hist.year.div[1:idx.remain] + (hist.max * num.rep))[1:110])
-#   stop('examine this out')
-#   print(hist.year.div[1:idx.remain] + (hist.max * num.rep))
+  
   return(list(index=OH.idx, end=start_year, year_div=oh_year_div))
 }
