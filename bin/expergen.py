@@ -51,7 +51,7 @@ idirsuffix = ""
 global mutli
 def checkTags(dictParams,key):
 		if(dictParams.has_key(key)):
-	       	 	val = dictParams[key]
+					val = dictParams[key]
 		else:
 			if(key == 'oroot'):
 				print "output root tag is being deprecated from darkchocolate."
@@ -125,8 +125,8 @@ def parse_outdir(out_dir,property):
 					break;
 	if(replace != ""):
 	 if (out_dir  != ""):
-	     list_new_out_dir = replace.split(",")
-	     for lnew in list_new_out_dir:
+		 list_new_out_dir = replace.split(",")
+		 for lnew in list_new_out_dir:
 		listout.append(out_dir.replace(pname,lnew))
 	#print "test",pname,new_out_dir,listout
 	if(replace == "") & (expect_property == 1):
@@ -134,7 +134,7 @@ def parse_outdir(out_dir,property):
 		print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
 	if (replace == "") & (expect_property == 0):
 		replace ="na"
- 	if not bool(property):
+	 if not bool(property):
 	 list_subs = out_dir+"#na#na"
 	else:
 	 list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
@@ -212,7 +212,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		except:
 			dversion='' #dversion deprecated
 	#print "----Downscaling XML template-", uinput
-      #  print "----Force Override existing output Flag-", force
+	  #  print "----Force Override existing output Flag-", force
 	###################################
 	print "Input from XML"
 	print "########################"
@@ -240,7 +240,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	fut_file_start_time = checkTags(dictParams,'fut_file_start_time')
 	fut_file_end_time = checkTags(dictParams,'fut_file_end_time')
 	fut_time_window = checkTags(dictParams,'fut_time_window')
- 	fut_time_trim_mask = checkTags(dictParams,'fut_time_trim_mask')
+	 fut_time_trim_mask = checkTags(dictParams,'fut_time_trim_mask')
 	######## use auxcustom ############
 	auxcustom = fut_time_trim_mask
 	###########################################
@@ -267,7 +267,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		proj = checkTags(dictParams,'project')
 		project_ID = checkTags(dictParams,'project_ID')
 		series = checkTags(dictParams,'series') #experiment series
- 		#experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
+		 #experiment,dsold_region = naming.constructExpname(proj,target,series,method,kfold,basedir)
 		experiment,dsold_region = naming.constructExpname(project_ID,target_ID,series,method,kfold,basedir,dumb="yes")
 	#####################################################
 	params = checkTags(dictParams,'params')
@@ -290,10 +290,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		splitparams = params.split(';')
 		#TODO support multiple auxfiles in custom
 		for par in splitparams:
-	    		getpar = par.split('=')
-	    		val = getpar[1]
-	    		if (val.startswith( "'/archive" )):
-	    			#print "file to be gcpied to vftmp: ",val
+				getpar = par.split('=')
+				val = getpar[1]
+				if (val.startswith( "'/archive" )):
+					#print "file to be gcpied to vftmp: ",val
 				auxcustom1 = val
 			#print "auxcustom1:",auxcustom1
 	#projectRoot = checkTags(dictParams,'oroot')
@@ -371,11 +371,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 			sys.exit()
 	else:
 	   if(file_j_range != ''):
-	   	dsuffix=file_j_range
+		   dsuffix=file_j_range
 		dim1 = dim
 	#comment out RR a1r	dim = output_grid+"/"+dim1
 	   else:
-	   	sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
+		   sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
 	#print(dim1)
 	############ target get dir info ########################
 	dict_target,listt = getFacets(target_id,target,dim,'target_id',output_grid)
@@ -403,40 +403,40 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	#print "idirsuffix",idirsuffix
 	#### get outdir #####
 	if(out_dir != 'na'):
-	    category = 'downscaled'
-	    instit="NOAA-GFDL"
-	    predModel = dict_fut['model']
-	    freq = dict_fut['freq']
-	    realm = dict_fut['realm']
-	    mip = dict_fut['mip']
-	    pversion = dict_fut['ver']
-	    dmodel = method
-	    dexper = dict_fut['expname']
-	    ens = dict_fut['rip']
-	    predictand = target
-	    #dversion from command line args. default value is v20120422
-	    if (out_dir == 'na'):
+		category = 'downscaled'
+		instit="NOAA-GFDL"
+		predModel = dict_fut['model']
+		freq = dict_fut['freq']
+		realm = dict_fut['realm']
+		mip = dict_fut['mip']
+		pversion = dict_fut['ver']
+		dmodel = method
+		dexper = dict_fut['expname']
+		ens = dict_fut['rip']
+		predictand = target
+		#dversion from command line args. default value is v20120422
+		if (out_dir == 'na'):
 #Commenting the following since xmlGen now constructs outpath and is already set in xml
-	    	outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
-	    else:
+			outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
+		else:
 		outdir = out_dir
-	    #experiment in the above is expconfig that's constructed
-	    #print "Output directory is :",outdir
-	    #print "Script directory is:",sbase
+		#experiment in the above is expconfig that's constructed
+		#print "Output directory is :",outdir
+		#print "Script directory is:",sbase
 #new
-	    if (pp == False):
-		    	for lon in range(int(lons),int(lone)):
+		if (pp == False):
+				for lon in range(int(lons),int(lone)):
 				exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
-			 	if (exists == True) & (force == False):
+				 if (exists == True) & (force == False):
 					print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
 					sys.exit(-7)
-			 	if (exists == True) & (force == True):
+				 if (exists == True) & (force == True):
 					print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
-			       # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
+				   # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
 					global overwrite
 					overwrite = True
 					break
-	    if(force == True):
+		if(force == True):
 		overwrite = True
 		global preexist_glob
 		preexist_glob = preexist
@@ -446,27 +446,27 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		#	preexist_glob = 'move'
 		#	#print "preexist turned ON................"
 #	    return targetdir1,hist_pred_dir1,fut_pred_dir1
-	    target_scenario = dict_target['exp']+"_"+dict_target['rip']
-	    target_model = dict_target['model']
-	    #CEW edit for testing purposes mip to freq
-	    target_freq = dict_target['freq']
-	    target_ver = dict_target['ver']
-	    hist_scenario = dict_hist['exp']+"_"+dict_hist['rip']
-	    hist_freq = dict_hist['freq'] #CEW edit to test
-	    hist_model = dict_hist['model']
-	    fut_scenario = dict_fut['exp']+"_"+dict_fut['rip']
-	    fut_model = dict_fut['model']
-	    fut_freq = dict_fut['freq'] #CEW edit mip to freq
-	    tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
-	    ### add those suffix in
+		target_scenario = dict_target['exp']+"_"+dict_target['rip']
+		target_model = dict_target['model']
+		#CEW edit for testing purposes mip to freq
+		target_freq = dict_target['freq']
+		target_ver = dict_target['ver']
+		hist_scenario = dict_hist['exp']+"_"+dict_hist['rip']
+		hist_freq = dict_hist['freq'] #CEW edit to test
+		hist_model = dict_hist['model']
+		fut_scenario = dict_fut['exp']+"_"+dict_fut['rip']
+		fut_model = dict_fut['model']
+		fut_freq = dict_fut['freq'] #CEW edit mip to freq
+		tstamp = str(datetime.datetime.now().date())+"."+str(datetime.datetime.now().time())
+		### add those suffix in
 
-	    hist_file_end_time = hist_file_end_time+hist_suffix
-	    fut_file_end_time = fut_file_end_time+fut_suffix
-	    target_file_end_time = target_file_end_time+target_suffix
-	    return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix
+		hist_file_end_time = hist_file_end_time+hist_suffix
+		fut_file_end_time = fut_file_end_time+fut_suffix
+		target_file_end_time = target_file_end_time+target_suffix
+		return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix
 ############end of listVars######################
 def main():
-    #################### args parsing ############
+	#################### args parsing ############
 	help = "#################Usage:(run from AN nodes)##################\n dsTemplater -i <input XML> \n "
 	help = help + "Example 1: expergen -i dstemplate.xml \n "
 	help = help + "Example 2: expergen -i examples/dstemplate.60lo0FUTURE.xml \n"
@@ -498,7 +498,7 @@ def main():
 	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
 	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
 	parser.add_option('--run-watcher', action='store_true', dest='run_watcher', default=False,
-	                   help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+					   help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
 
 	(options, args) = parser.parse_args()
 	#CEW edits 3-3 for clarity (and only haing to search env vars once)
@@ -506,8 +506,8 @@ def main():
 		try:
 			NEMSemail1 = os.environ["NEMSemail"]
 		except KeyError:
-   				print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
-   				NEMSemail1 = 'none'
+				   print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
+				   NEMSemail1 = 'none'
 	else:
 		NEMSemail1 = options.mail
 	print "Status emails will be sent to: " + NEMSemail1
@@ -567,10 +567,10 @@ def main():
 	#Note that this component can exit with an error
 	print("preexist behavior: " + preexist_glob)
 	#2018-10-31: The cleanup opts work weirdly with the csv workflow. We're less
-	#fixed in where we write files, but the freedom can be ...not good. 
+	#fixed in where we write files, but the freedom can be ...not good.
 	#Adding switch for the csv workflow in here; implies that we read in the aux
 	#file before doing anything with the moving experiments.
-	
+
 	#Get aux specs
 	specdict = get_comment_specs(uinput)
 	njobs = int(specdict['njobs'])
@@ -579,39 +579,48 @@ def main():
 	#You don't need to parse any of these, but you do need to get a list of the
 	#copy-able files (and possibly a wallclock time parameter)
 	#If no aux was specified as --aux
+	is_csv = False
 	if search_xml_aux:
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']
 			if(os.path.exists(auxinput)):
 				auxinput = os.path.abspath(auxinput)
+				#auxinfo is selective reads, auxdict is entire, messy thing
+				auxinfo,auxdict = parse_aux_info(auxinput)
+				if 'file_format' in auxdict.keys():
+					if auxdict['file_format'] == 'csv':
+						is_csv = True
 			else:
 				print("Error in expergen: aux input from xml, "+ auxinput + " does not exist on this filesystem!")
 				print("Please use --aux input for other aux or remove from xml.")
 				sys.exit(1)
 		else:
-			print('making default aux file')
-			auxinput = make_aux_input(output_grid, sbase, target)
-	#auxinfo is selective reads, auxdict is entire, messy thing
-	auxinfo,auxdict = parse_aux_info(auxinput)
-	#If aux file is not default, aux file overrides XML parameters
-	if auxinfo['njobs'] != 8:
-		njobs = auxinfo['njobs']
-	if auxinfo['ncpus'] != 2:
-		ncpus = auxinfo['ncpus']
-		
-	#Now, FINALLY, do the cleanup opts
-	is_csv = False
-	if 'file_format' in auxdict.keys():
-		if auxdict['file_format'] == 'csv':
-			is_csv = True
+			create_default_aux = True
+			is_csv = False
+
+	#Now, FINALLY, do the cleanup opts. Convoluted order above is due
+	#to the fact that the kind of experiment (production or csv)
+	#has an effect on the way experiments are run.
 	clean_prior_experiments(uinput, sd, basedir, preexist_glob, is_csv)
-	
+
 	##Create the scripts subdirectories
 	subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
 	for el in subdirs:
 		subdir = osp.join(sbase,el)
 		if not osp.exists(subdir):
 			os.makedirs(subdir)
+	#Need to do this after dirs are created - interferes with the process
+	#of cleaning up experiments otherwise.
+	if create_default_aux:
+		print('making default aux file')
+		auxinput = make_aux_input(output_grid, sbase, target)
+		#auxinfo is selective reads, auxdict is entire, messy thing
+		auxinfo,auxdict = parse_aux_info(auxinput)
+	#If aux file is not default, aux file overrides XML parameters
+	if auxinfo['njobs'] != 8:
+		njobs = auxinfo['njobs']
+	if auxinfo['ncpus'] != 2:
+		ncpus = auxinfo['ncpus']
 
 	#############################################################
 	print "Step 0: Create the unified runcscripts and master runscripts"
@@ -640,17 +649,17 @@ def main():
 	predlist = predictor.split(",")
 	print("Calling create_all_runscripts")
 	idict = {'US48' : 748,
-	         'SCCSC0p1'  : 181,
-	         'RR'   : 181,
-	         'grid0': 0,
-	         'NEUSA': 1, 
-	         'NEUSA0p1': 425}
+			 'SCCSC0p1'  : 181,
+			 'RR'   : 181,
+			 'grid0': 0,
+			 'NEUSA': 1,
+			 'NEUSA0p1': 425}
 	jdict = {'US48' : 454,
-	         'SCCSC0p1'  : 31,
-	         'RR'   : 31,
-	         'grid0': 0,
-	         'NEUSA': 1, 
-	         'NEUSA0p1': 127}	         
+			 'SCCSC0p1'  : 31,
+			 'RR'   : 31,
+			 'grid0': 0,
+			 'NEUSA': 1,
+			 'NEUSA0p1': 127}
 	try:
 		i_offset = idict[output_grid]
 	except KeyError:
@@ -668,19 +677,19 @@ def main():
 			sys.exit(1)
 	#Add the commands to create the components for the DS entry in the aux file
 	ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
-	                                "<RIP>",
-	                                ds_region, fut_file_start_time, fut_file_end_time)
+									"<RIP>",
+									ds_region, fut_file_start_time, fut_file_end_time)
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
-	                      target_dir, hist_pred_dir, fut_pred_dir,\
-	                      oh_timerange, mh_timerange, mf_timerange, predlist, \
-	                      spat_mask, target_time_window, hist_time_window, \
-	                      fut_time_window, auxcustom, outdir, target, method, \
-	                      file_j_range, idirsuffix, \
-	                      ds_info['multivar_target'],
-	                      auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-	                      auxdict, ds_minifile)
+						  target_dir, hist_pred_dir, fut_pred_dir,\
+						  oh_timerange, mh_timerange, mf_timerange, predlist, \
+						  spat_mask, target_time_window, hist_time_window, \
+						  fut_time_window, auxcustom, outdir, target, method, \
+						  file_j_range, idirsuffix, \
+						  ds_info['multivar_target'],
+						  auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
+						  auxdict, ds_minifile)
 	#print('examine runscript output')
 	#sys.exit()
 
@@ -769,8 +778,8 @@ def main():
 	msub_mail_command = ""
 	if (NEMSemail1!='none'):
 	 if msubmail==1:
-	 	mail_command = "-m " + NEMSemail1 + " "
-	 	msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
+		 mail_command = "-m " + NEMSemail1 + " "
+		 msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
 
 	#print(sbase+"/postProc/aux/")
 	if (multi == "on"):
@@ -839,7 +848,7 @@ def main():
 		print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
 	else:
 		print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
-	
+
 	#Script exit options - needs to exit with 0
 	if options.run_watcher:
 		print("Invoking watcher script immediately")
@@ -853,17 +862,17 @@ def main():
 
 ####################################################################################
 def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,dmodel,predictand,ds_region,dim,dversion):
-    ##Sample:
-    #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc
+	##Sample:
+	#${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc
 
-    print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."
-    if(projectRoot == 'na'):
+	print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."
+	if(projectRoot == 'na'):
 	print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
-    dexperonly = dexper.split("_")[0]
-    if(freq == ""):
+	dexperonly = dexper.split("_")[0]
+	if(freq == ""):
 	freq = mip
-    stdoutdir = projectRoot+"/"+category+"/"+instit+"/"+predModel+"/"+dexperonly+"/"+freq+"/"+realm+"/"+mip+"/"+ens+"/"+pversion+"/"+dmodel+"/"+predictand+"/"+ds_region+"/"+dim+"/"+dversion+"/"
-    return stdoutdir
+	stdoutdir = projectRoot+"/"+category+"/"+instit+"/"+predModel+"/"+dexperonly+"/"+freq+"/"+realm+"/"+mip+"/"+ens+"/"+pversion+"/"+dmodel+"/"+predictand+"/"+ds_region+"/"+dim+"/"+dversion+"/"
+	return stdoutdir
 
 #def checkExisting(dire,lon,Jsuffix,variable,freq,method,scenario,ens,start_year_s1,end_year_s1,fileid):
 def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_year_s1,end_year_s1,fileid,region):
@@ -903,4 +912,4 @@ def get_minifile_name(var, freq, exp_name, scenario, rip, region, tstart, tend):
 	return(mini_name)
 
 if __name__ == '__main__':
-    main()
+	main()
