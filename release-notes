@@ -1,6 +1,11 @@
+11-06-2018
+(cew)
+- updates to .gitlab-ci.yml for new regtest location
+- order-of-operations change for moving csv experiments
+
 10-31-2018
 (cew)
-- Updates to delta and CFQM to work mor egracefully with synthetic data in the csv workflow
+- Updates to delta and CFQM to work more gracefully with synthetic data in the csv workflow
 
 10-15-2018
 (cew)

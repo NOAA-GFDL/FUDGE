@@ -127,17 +127,17 @@ def parse_outdir(out_dir,property):
 	 if (out_dir  != ""):
 		 list_new_out_dir = replace.split(",")
 		 for lnew in list_new_out_dir:
-		listout.append(out_dir.replace(pname,lnew))
+			 listout.append(out_dir.replace(pname,lnew))
 	#print "test",pname,new_out_dir,listout
 	if(replace == "") & (expect_property == 1):
 		replace = "na"
 		print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
 	if (replace == "") & (expect_property == 0):
 		replace ="na"
-	 if not bool(property):
-	 list_subs = out_dir+"#na#na"
+	if not bool(property):
+		 list_subs = out_dir+"#na#na"
 	else:
-	 list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
+		list_subs = out_dir+"#"+pname+"#"+replace # for use in shell arr
 	return list_subs,listout
 
 
@@ -240,7 +240,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	fut_file_start_time = checkTags(dictParams,'fut_file_start_time')
 	fut_file_end_time = checkTags(dictParams,'fut_file_end_time')
 	fut_time_window = checkTags(dictParams,'fut_time_window')
-	 fut_time_trim_mask = checkTags(dictParams,'fut_time_trim_mask')
+	fut_time_trim_mask = checkTags(dictParams,'fut_time_trim_mask')
 	######## use auxcustom ############
 	auxcustom = fut_time_trim_mask
 	###########################################
@@ -293,8 +293,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 				getpar = par.split('=')
 				val = getpar[1]
 				if (val.startswith( "'/archive" )):
-					#print "file to be gcpied to vftmp: ",val
-				auxcustom1 = val
+					auxcustom1 = val
 			#print "auxcustom1:",auxcustom1
 	#projectRoot = checkTags(dictParams,'oroot')
 	global rootdir
@@ -372,7 +371,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	else:
 	   if(file_j_range != ''):
 		   dsuffix=file_j_range
-		dim1 = dim
+		   dim1 = dim
 	#comment out RR a1r	dim = output_grid+"/"+dim1
 	   else:
 		   sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
@@ -419,25 +418,24 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #Commenting the following since xmlGen now constructs outpath and is already set in xml
 			outdir = getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,ens,pversion,experiment,predictand,ds_region,dim1,"")
 		else:
-		outdir = out_dir
+			outdir = out_dir
 		#experiment in the above is expconfig that's constructed
 		#print "Output directory is :",outdir
 		#print "Script directory is:",sbase
 #new
 		if (pp == False):
-				for lon in range(int(lons),int(lone)):
+			for lon in range(int(lons),int(lone)):
 				exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
-				 if (exists == True) & (force == False):
+				if (exists == True) & (force == False):
 					print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
 					sys.exit(-7)
-				 if (exists == True) & (force == True):
+				if (exists == True) & (force == True):
 					print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
-				   # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
 					global overwrite
 					overwrite = True
 					break
-		if(force == True):
-		overwrite = True
+				if(force == True):
+					overwrite = True
 		global preexist_glob
 		preexist_glob = preexist
 		## CEW edit 2018-09-14
@@ -584,6 +582,7 @@ def main():
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']
 			if(os.path.exists(auxinput)):
+				create_default_aux = False
 				auxinput = os.path.abspath(auxinput)
 				#auxinfo is selective reads, auxdict is entire, messy thing
 				auxinfo,auxdict = parse_aux_info(auxinput)
@@ -867,21 +866,18 @@ def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,en
 
 	print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."
 	if(projectRoot == 'na'):
-	print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
-	dexperonly = dexper.split("_")[0]
+		print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
+		dexperonly = dexper.split("_")[0]
 	if(freq == ""):
-	freq = mip
+		freq = mip
 	stdoutdir = projectRoot+"/"+category+"/"+instit+"/"+predModel+"/"+dexperonly+"/"+freq+"/"+realm+"/"+mip+"/"+ens+"/"+pversion+"/"+dmodel+"/"+predictand+"/"+ds_region+"/"+dim+"/"+dversion+"/"
 	return stdoutdir
 
 #def checkExisting(dire,lon,Jsuffix,variable,freq,method,scenario,ens,start_year_s1,end_year_s1,fileid):
 def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_year_s1,end_year_s1,fileid,region):
-
 	## to check if the given directory structure and ffilenams already exist in the file system.  Even if there is a single output file that already exists, the program quits. Use ifpreexist erase to force overwriting.-tasmin_day_RRtnp1-CDFt-B38atL01K00_rcp85_r1i1p1_r1i1p1_RR_20060101-20991231.I369_"J31-170".nc
-
 	#filename  out.file1_a <- paste(variable,'_',freq,'_',method,'_',scenario1,'_',ens,'_',start_year_s1,'-',end_year_s1,fileid,sep='')
-#checkExisting(outdir,lon,dsuffix,target,freq,dmodel,dexper,ens,fut_train_start_time,fut_train_end_time,'mini')
-
+	#checkExisting(outdir,lon,dsuffix,target,freq,dmodel,dexper,ens,fut_train_start_time,fut_train_end_time,'mini')
 	exists = False
 	if(os.path.exists(dire)):
 		#print "Warning Warning---------Output directory",dire,"already exists"

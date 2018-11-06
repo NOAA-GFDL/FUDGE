@@ -15,14 +15,15 @@ minijob:
   - module load esd/env
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
-  - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
+  - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
   #The below does not work. Calling entire thing, rather than alias.
   #- alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
   - datestr=`date +%Y%m%d-%H%M`
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
-  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest
+  - set -x
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
@@ -38,12 +39,13 @@ fulljob:
   - module use -a /home/esd/local/modulefiles
   - module load esd/env 
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
-  - source /home/cew/Code/FUDGE_regtests/reg_config_file_bash
+  - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
   - datestr=`date +%Y%m%d-%H%M`
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
-  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 30
+  - set -x
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 30
  tags:
   - analysis
 # variables:
