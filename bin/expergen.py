@@ -491,9 +491,9 @@ def main():
 	parser.add_option("-i", "--file", dest="uinput",
 	help="pass location of XML template", metavar="FILE")
 	parser.add_option("-a", "--aux", default="none",dest="auxinput", help="pass location of auxilary JSON input for stencil, mask, subset and other specificaions. If not set in XML or by command line, a default aux will be created.")
-	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
+	parser.add_option("--sbatch",action="store_true",default=False, help="Automatically submit the master runscripts using SLURM's sbatch command. Default is set to FALSE")
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")
-	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
+	parser.add_option("--sbatchmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
 	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
 	parser.add_option('--run-watcher', action='store_true', dest='run_watcher', default=False,
 					   help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
@@ -509,9 +509,9 @@ def main():
 	else:
 		NEMSemail1 = options.mail
 	print "Status emails will be sent to: " + NEMSemail1
-	msub = options.msub
+	msub = options.sbatch
 	print "Will jobs be automatically submitted? " + str(msub)
-	if (options.run_watcher and not options.msub):
+	if (options.run_watcher and not options.sbatch):
 		print("Error in expergen: option run-watcher should only be used with msub!")
 		sys.exit(1)
 	if(os.path.exists(options.uinput)):
@@ -814,14 +814,14 @@ def main():
 		#os.chmod(msubwrap.name, 0744)
 		#msub -m ae -M <email> script
 	print "----------------------------------------"
-	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
+	print "\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 job submission (if applicable) ##############################################
 	print "Starting step 5: job submission"
 	if msubmail == 1 and NEMSemail1 != 'none':
-			msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
+			msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
 	else:
-		msub_string = "msub -d $HOME "
+		msub_string = "sbatch "
 	master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
 	msub_cmd = "module load moab; "
 	for el in master_scripts:
@@ -839,7 +839,7 @@ def main():
 		print "5 - completed"
 	print "-----------"
 	if not msub:
-		print "--msub not set on command line. To submit jobs at a later point, please use the following:"
+		print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
 		print "\033[1;95m"+msub_cmd+"\033[1;m"
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
 

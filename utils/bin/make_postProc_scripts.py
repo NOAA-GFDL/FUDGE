@@ -33,14 +33,11 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
 		pp_sourcelist = []
 		for j,suffix in zip(range(0, len(suffix_list)), suffix_list):
 			pp_runcode_header = "\n".join(["#!/bin/tcsh", 
-								   "#PBS -S /bin/tcsh", 
-								   "#PBS -l nodes=1:ppn=2,walltime="+str(runtime),
-								   "#PBS -r y",
-								   "#PBS -j oe", 
-								   "#PBS -N fudge_postProc_" + str(i+1) + "_" + str(j+1), 
-								   "#PBS -E", 
-								   "#PBS -o " + pp_log_dir + "/fudge_postProc_.m${MOAB_JOBNAME}.${MOAB_JOBID}", 
-								   "#PBS -q batch"])
+								   "#SBATCH -c 2",
+								   '#SBATCH -t '+str(runtime),
+								   "#SBATCH -J fudge_postProc_" + str(i+1) + "_" + str(j+1), 
+								   "#SBATCH -o " + pp_log_dir + "/fudge_postProc_.%x.%j", 
+								   "#SBATCH -p batch"])
 			#make the sourcable code (command-line arg)
 			pp_source = osp.join(pp_source_dir, "postProc_source_" + str(i+1) + "_" + str(j+1))
 			out_dir = osp.dirname(ds_dir.rstrip("/"))
@@ -93,7 +90,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
 	msub_file = osp.join(pp_dir, 'msubwrapper')
 	msub_text = "#!/bin/tcsh -f \n"
 	msub_text = msub_text + "rm -f " + pp_stat_dir + "/*\n"
-	msub_commands = "\n".join(["msub -d $HOME " + el for el in code_list]) + "\n"
+	msub_commands = "\n".join(["sbatch " + el for el in code_list]) + "\n"
 	#msub_text = msub_text + msub_commands + "\n"
 	msub_text = msub_commands + "\n"
 	with open(msub_file, 'w') as f: 

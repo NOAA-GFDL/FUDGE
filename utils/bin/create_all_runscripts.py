@@ -51,18 +51,12 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		j_elements  = [1, 2]
 		is_syn = True
 
-	moab_header = "\n".join(["#!/bin/tcsh ",
-							"#PBS -S /bin/tcsh ",
-							"#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime,
-							"#PBS -r y ",
-							'#PBS -j oe ',
-							'#PBS -N fudge_master ',
-							'#PBS -E ',
-							#Swapping out 2017-05-31. Apparently, the curly brackets are
-							#an unsupported feature? See Tim emails.
-							#'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
-							'#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
-							"#PBS -q batch "]) + "\n"
+	slurm_header = "\n".join(['#!/bin/tcsh',
+								  '#SBATCH -c ' + str(ncpu),
+								  '#SBATCH -t '+wallclocktime,
+								  '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
+								  '#SBATCH -J fudge_master',
+								  '#SBATCH -p batch']) + "\n"
 	#The path to the checkout script is hard-coded, and probably going to
 	#stay that way for now; the load of git is DEFINETLY needed if the
 	#checkout script is going to be used.
@@ -235,7 +229,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 														i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
 				with open(master_scriptname, 'w') as f:
-					f.write(moab_header)
+					f.write(slurm_header)
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
@@ -317,16 +311,13 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	#these differently is not going to hurt.
 	# i: 1:194
 	# j_range: 'J454_576'
-	runscript_log = osp.join(scriptdir, 'log') + "/ind.${MOAB_JOBNAME}.${MOAB_JOBID}"
+	runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
 	runscript_header = "\n".join(['#!/bin/tcsh',
-								  '#PBS -S /bin/csh',
-								  '#PBS -l nodes=1:ppn=1,walltime=6:00:00',
-								  '#PBS -j oe',
-								  '#PBS -r y ',
-								  '#PBS -o ' + runscript_log,
-								  '#PBS -N fudge_run',
-								  '#PBS -E',
-								  '#PBS -q batch']) + "\n"
+								  '#SBATCH -c 1',
+								  '#SBATCH -t walltime=6:00:00',
+								  '#SBATCH -o ' + runscript_log,
+								  '#SBATCH -J fudge_run',
+								  '#SBATCH -p batch']) + "\n"
 	exp_name = scriptdir.split("/")[-1]
 	if(exp_name==''):
 		exp_name = scriptdir.split("/")[-2]
@@ -493,5 +484,4 @@ def make_ds_aux_entry(out_file, outdir, var):
 			  'out_supp' : out_supp,
 			  'vars' : out_vars,
 			  'rips' : out_rips}
-	return(dsdict)		 
-	
+	return(dsdict)
