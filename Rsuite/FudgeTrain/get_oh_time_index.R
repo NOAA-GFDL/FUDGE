@@ -107,10 +107,9 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
     }
   }else{
     #This is a case for synthetic data only - assumed that your year divs are the same
-    OH.idx = 1
+    OH.idx = 1:fut.year.div
     start_year = 1
     oh_year_div = 0
-  }
-  
+  }  
   return(list(index=OH.idx, end=start_year, year_div=oh_year_div))
 }

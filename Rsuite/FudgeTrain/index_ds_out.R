@@ -33,8 +33,16 @@ index.delta <- function(hist_leapdays, fut_leapdays,
   #    oh.idx <- ds$oh.idx 
   ###This assumes that you feed in a single ensemble of data at a time
   out <- rep(NA, length(tmasks$MF$masks[[w]]))
-  hist_days <- (!is.na(hist_leapdays) & !is.na(hist_mask))
-  fut_days <- (!is.na(fut_leapdays) & !is.na(fut_mask))
+  if (!is.null(hist_mask)){
+    hist_days <- (!is.na(hist_leapdays) & !is.na(hist_mask))
+    }else{
+    hist_days <- !is.na(hist_leapdays)
+	}
+  if (!is.null(fut_mask)){
+    fut_days <- (!is.na(fut_leapdays) & !is.na(fut_mask))
+    }else{
+    fut_days <- !is.na(fut_leapdays)
+    }
   hist.which <- 1:length(hist_days)
   fut.which <- 1:length(fut_days)
   for (n in 1:length(fut_year_div)){
