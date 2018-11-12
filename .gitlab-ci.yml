@@ -27,7 +27,7 @@ minijob:
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
-  - analysis,gfdl
+  - analysis
 # variables:
 #  CI_DEBUG_TRACE: "true"
 
