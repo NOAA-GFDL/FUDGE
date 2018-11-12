@@ -578,6 +578,7 @@ def main():
 	#copy-able files (and possibly a wallclock time parameter)
 	#If no aux was specified as --aux
 	is_csv = False
+	create_default_aux = False
 	if search_xml_aux:
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']
