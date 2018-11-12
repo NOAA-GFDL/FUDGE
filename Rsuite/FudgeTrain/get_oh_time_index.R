@@ -78,7 +78,7 @@ get.OH.time.index <- function(nyears_hist, nyears_fut, hist.year.div, fut.year.d
       oh_year_div <- hist.year.div[1:(nyears_fut + start_year - 1)]
     }
     start_year <- ((start_year  + nyears_fut) %% nyears_hist)
-  }else if ( !(hist.year.div[1] == 0 & start_year == 0) ){
+  }else if ( !(hist.year.div[1] == 0 & start_year %in% c(0,1) ) ){
     #If you are repeating OH samples to make up MF
     #....this should be based off of YEARS, not simple indices
     #And you are going to be working on these as a function of the 
