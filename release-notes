@@ -1,3 +1,7 @@
+11-10-2018
+(cew)
+- tweaking workflow to run with slurm rather than moab; tweaking gitlab-ci to use slurm-based workflow for regtests
+
 11-06-2018
 (cew)
 - updates to .gitlab-ci.yml for new regtest location
