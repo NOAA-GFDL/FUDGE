@@ -116,6 +116,7 @@ def make_aux_input(grid, script_base, targ_var):
 	         'SCCSC0p1'  : 140, 
 	         'RR'   : 140, 
 	         'grid0': 1, 
+	         'X1-1' : 1,
 	         'NEUSA': 41, 
 	         'ESTCPconus': 114}
 	if grid in jdict.keys():
