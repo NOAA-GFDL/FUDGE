@@ -1,0 +1,9 @@
+ ! NOAA/PMEL TMAP
+ ! PyFERRET v7.02 (beta/optim)
+ ! Linux 2.6.32-642.6.1.el6.x86_64 - 10/25/16
+ ! 13-Nov-18 09:46     
+
+USE "coads_climatology"
+LOAD ..varnames
+shade sst[t=@ave]
+FRAME/FILE=test_climo.png

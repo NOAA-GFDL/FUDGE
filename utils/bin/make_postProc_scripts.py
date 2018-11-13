@@ -48,14 +48,14 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
 			with open(pp_source, 'w') as f:
 				f.write('set echo\n')
 				f.write(pp_source_text)
-                f.write('\n') #slurm posix standard
+				f.write('\n') #slurm posix standard
 			#pp_sourcelist.append(pp_source)
 			#trying to get permissions right
 			#os.chmod(pp_source, runmode)
 			##append to list of sourcable files
 			#source_list.append(pp_source)
 			#make the complicated postProc runcode
-		 	pp_runcode = osp.join(pp_dir, "postProc_command_" + str(i+1) + "_" + str(j+1))
+			pp_runcode = osp.join(pp_dir, "postProc_command_" + str(i+1) + "_" + str(j+1))
 			#would also work by using a -w for ensembles[i] - that would only match on ensembles[i]
 			#as a word, not as a pattern in other words (i.e. the scRIPts problem)
 			pp_statfile_check = "find " + pp_stat_dir + "/* | grep " + ensembles[i] + "." + suffix

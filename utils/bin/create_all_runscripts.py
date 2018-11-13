@@ -222,7 +222,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
-                f.write('\n') #needed for slurm POSIX standard
+				f.write('\n') #needed for slurm POSIX standard
 			os.chmod(runscript_name, runmode)	#f now executable
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
@@ -237,7 +237,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 					f.write(outdir_cmd)
 					f.write("echo 'Beginning calls to executable'\n")
 					f.write(executable_code)
-                    f.write('\n') #needed for the slurm POSIX standard - final terminator
+					f.write('\n') #needed for the slurm POSIX standard - final terminator
 					#f.write("wait")
 	print('master runscript and mini creation completed')
 	#return(n_tiles)
