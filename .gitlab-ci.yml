@@ -23,7 +23,7 @@ minijob:
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
