@@ -19,6 +19,9 @@ from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
 from create_all_runscripts import awful_runcode_hack
+from create_all_runscripts import build_xml_input_paths
+import get_dim_info
+from get_dim_info import get_nc_var_vals
 from get_comment_specs import get_comment_specs, get_exp_check_tag
 import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
@@ -649,25 +652,59 @@ def main():
 	predlist = predictor.split(",")
 	print("Calling create_all_runscripts")
 	idict = {'US48' : 748,
+	         #'US480p1'   : 7, #not 6
 			 'SCCSC0p1'  : 181,
 			 'RR'   : 181,
 			 'grid0': 0,
 			 'NEUSA': 1,
 			 'NEUSA0p1': 425}
 	jdict = {'US48' : 454,
+	         #'US480p1'   : 5, #not 4
 			 'SCCSC0p1'  : 31,
 			 'RR'   : 31,
 			 'grid0': 0,
 			 'NEUSA': 1,
 			 'NEUSA0p1': 127}
+	OH_file = ""
 	try:
 		i_offset = idict[output_grid]
 	except KeyError:
-		i_offset = 1
+		#i_offset = 1
+		#Technically, this isn't the i_offset in the file - 
+		#it's the i_offset in the XML, which indicates what
+		#to start counting from. If there's no i_offset, 
+		#we start counting from 1. 
+		if not is_csv:
+			print("getting i_offset from OH file")
+			prefix_loc = len(hist_pred_dir.split("/"))
+			oh_prefix = "/".join(target_dir.split("/")[0:prefix_loc])
+			oh_files,oh_dmget = build_xml_input_paths(predlist, oh_prefix, oh_timerange, idirsuffix, True)
+			OH_file = oh_files[0]
+			i_offset = get_nc_var_vals(OH_file, 'i_offset')['i_offset']
+			if i_offset == []:
+				i_offset = 1
+			else:
+				i_offset = i_offset[0] + 1
+		else:
+			i_offset = 1
 	try:
 		j_offset = jdict[output_grid]
 	except KeyError:
-		j_offset = 1
+		#j_offset = 1
+		print("getting j_offset from OH file")
+		if not is_csv:
+			if OH_file == "":
+				prefix_loc = len(hist_pred_dir.split("/"))
+				oh_prefix = "/".join(target_dir.split("/")[0:prefix_loc])
+				oh_files,oh_dmget = build_xml_input_paths(predlist, oh_prefix, oh_timerange, idirsuffix, True)
+				OH_file = oh_files[0]
+			j_offset = get_nc_var_vals(OH_file, 'j_offset')['j_offset']
+			if j_offset == []:
+				j_offset = 1
+			else:
+				j_offset = j_offset[0] + 1	
+		else:
+			j_offset = 1
 	#2018-06-06: Adding check between the experiment check and expconfig
 	#for purposes of checking kfold cross-valdiation
 	exp_check = get_exp_check_tag(uinput)

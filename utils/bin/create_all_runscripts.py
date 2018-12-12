@@ -17,6 +17,13 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 						 auxdict, ds_minifile):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
+	print(i_start)
+	print(i_end)
+	print(i_offset)
+	print(j_start)
+	print(j_end)
+	print(j_offset)
+	#sys.exit(1)
 
 	##print(outdir_string)
 	##print(idirsuffix)
