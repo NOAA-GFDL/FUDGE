@@ -618,7 +618,8 @@ def main():
 		print('making default aux file')
 		auxinput = make_aux_input(output_grid, sbase, target)
 		#auxinfo is selective reads, auxdict is entire, messy thing
-		auxinfo,auxdict = parse_aux_info(auxinput)
+	print("auxinput: " + auxinput)	
+	auxinfo,auxdict = parse_aux_info(auxinput)
 	#If aux file is not default, aux file overrides XML parameters
 	if auxinfo['njobs'] != 8:
 		njobs = auxinfo['njobs']
@@ -674,6 +675,7 @@ def main():
 		#it's the i_offset in the XML, which indicates what
 		#to start counting from. If there's no i_offset, 
 		#we start counting from 1. 
+		print("output_grid: " + output_grid)
 		if not is_csv:
 			print("getting i_offset from OH file")
 			prefix_loc = len(hist_pred_dir.split("/"))
@@ -716,6 +718,26 @@ def main():
 	ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
 									"<RIP>",
 									ds_region, fut_file_start_time, fut_file_end_time)
+	print(auxcustom)
+	#test_params = [params,outdir,dversion,dexper,expconfig,tstamp,ds_region,target_ver,
+	#               auxcustom,qc_mask,qc_varname,qc_type,adjust_out,
+	#               sbase,pr_opts,masklists,idirsuffix]
+	#test_names = ['params','outdir','dversion','dexper','expconfig','tstamp','ds_region','target_ver',
+	#               'auxcustom','qc_mask','qc_varname','qc_type','adjust_out',
+	#               'sbase','pr_opts','masklists','idirsuffix']
+	#for name,param in zip(test_names,test_params):
+	#	print(name + ": " + param)
+	
+	#params from the xml parsing are the ds params	
+	param_split = re.split(",", params)
+	ds_method_params = {}
+	for p in param_split:
+		pvals = re.split("=", p)
+		pvals[1] = re.sub("'", "", pvals[1])
+		if len(pvals) > 1:
+			ds_method_params[pvals[0]] = pvals[1]	
+	print(ds_method_params)	
+	#sys.exit(1)								
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
@@ -726,7 +748,7 @@ def main():
 						  file_j_range, idirsuffix, \
 						  ds_info['multivar_target'],
 						  auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-						  auxdict, ds_minifile)
+						  auxdict, ds_minifile, ds_method_params)
 	#print('examine runscript output')
 	#sys.exit()
 

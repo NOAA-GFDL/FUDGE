@@ -14,7 +14,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 						 spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask,
 						 outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
 						 auxfile, aux_file_list, wallclocktime,
-						 auxdict, ds_minifile):
+						 auxdict, ds_minifile, ds_method_params):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
 	print(i_start)
@@ -102,9 +102,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#MH and MF paths are currently passed in several dirlevels earlier than OH
 	#Switch on this later, when things get added to the aux
 	present_in_aux = False
+	print(auxdict.keys())
 	if any([el == 'files_in_aux' for el in auxdict.keys()]):
 		if auxdict['files_in_aux'] == 'TRUE':
 			present_in_aux = True
+	print("files present in aux: " + str(present_in_aux))		
 	if not present_in_aux:
 		#OH_dir = os.path.dirname(osp.abspath(OH_dir))
 		prefix_loc = len(MH_dir.split("/"))
@@ -123,9 +125,13 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		mh_files,mh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MH_dir, trange=mh_timerange, suffix=idirsuffix, is_multivar=True)
 		mf_files,mf_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
 		#Add modified aux copy & structure addition
-		oh_auxdict = make_aux_entry(oh_vars,  oh_files, stencil=auxdict['OH']['stencil'], geomask=spatmask_path)
-		mh_auxdict = make_aux_entry(predlist, mh_files, stencil=auxdict['MH']['stencil'], geomask=spatmask_path)
-		mf_auxdict = make_aux_entry(predlist, mf_files, stencil=auxdict['MF']['stencil'], geomask=spatmask_path)
+		if ('prime_var' in ds_method_params.keys()):
+			prime_var = ds_method_params['prime_var']
+		else:
+			prime_var = 'fakevar'
+		oh_auxdict = make_aux_entry(oh_vars,  oh_files, stencil=auxdict['OH']['stencil'], geomask=spatmask_path, tmask=OH_tmask, prime_var=prime_var)
+		mh_auxdict = make_aux_entry(predlist, mh_files, stencil=auxdict['MH']['stencil'], geomask=spatmask_path, tmask=MH_tmask, prime_var=prime_var)
+		mf_auxdict = make_aux_entry(predlist, mf_files, stencil=auxdict['MF']['stencil'], geomask=spatmask_path, tmask=MF_tmask, prime_var=prime_var)
 		ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0])
 		auxdict['OH'] = oh_auxdict
 		auxdict['MH'] = mh_auxdict
@@ -452,14 +458,16 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	return(executable_stuff)
 
 
-def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none'):
+def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none', prime_var='fakevar'):
 	'''
 	Makes an aux file entry of input data files for one of OH, MH or MF.
 	'''
 	aux_entry = {}
 	for var,f in zip(varnames, files):
+		is_prime = "TRUE" if var == prime_var else "FALSE"  
 		aux_entry[var] = {'file': f,
 						  'is_fixed':'FALSE',
+						  'is_prime': is_prime,
 						  'stencil': stencil,
 						  'geomask': geomask,
 						  'tmask':   tmask}
