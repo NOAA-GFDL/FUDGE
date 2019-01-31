@@ -14,16 +14,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 						 spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask,
 						 outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
 						 auxfile, aux_file_list, wallclocktime,
-						 auxdict, ds_minifile, ds_method_params):
+						 auxdict, ds_minifile):
 	#Creates master and single-slice miniifles for a FUDGE job
 	#if --msub is included, also submits jobs at the end of everything
-	print(i_start)
-	print(i_end)
-	print(i_offset)
-	print(j_start)
-	print(j_end)
-	print(j_offset)
-	#sys.exit(1)
 
 	##print(outdir_string)
 	##print(idirsuffix)
@@ -58,12 +51,18 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		j_elements  = [1, 2]
 		is_syn = True
 
-	slurm_header = "\n".join(['#!/bin/tcsh',
-								  '#SBATCH -c ' + str(ncpu),
-								  '#SBATCH -t '+wallclocktime,
-								  '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
-								  '#SBATCH -J fudge_master',
-								  '#SBATCH -p batch']) + "\n"
+	moab_header = "\n".join(["#!/bin/tcsh ",
+							"#PBS -S /bin/tcsh ",
+							"#PBS -l nodes=1:ppn="+str(ncpu)+",walltime="+wallclocktime,
+							"#PBS -r y ",
+							'#PBS -j oe ',
+							'#PBS -N fudge_master ',
+							'#PBS -E ',
+							#Swapping out 2017-05-31. Apparently, the curly brackets are
+							#an unsupported feature? See Tim emails.
+							#'#PBS -o ' + scriptdir+'/log/'+'fudge.${MOAB_JOBNAME}.${MOAB_JOBID}',
+							'#PBS -o ' + scriptdir+'/log/'+'fudge.$(JOBNAME).$(JOBID)',
+							"#PBS -q batch "]) + "\n"
 	#The path to the checkout script is hard-coded, and probably going to
 	#stay that way for now; the load of git is DEFINETLY needed if the
 	#checkout script is going to be used.
@@ -102,11 +101,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 	#MH and MF paths are currently passed in several dirlevels earlier than OH
 	#Switch on this later, when things get added to the aux
 	present_in_aux = False
-	print(auxdict.keys())
 	if any([el == 'files_in_aux' for el in auxdict.keys()]):
 		if auxdict['files_in_aux'] == 'TRUE':
 			present_in_aux = True
-	print("files present in aux: " + str(present_in_aux))		
 	if not present_in_aux:
 		#OH_dir = os.path.dirname(osp.abspath(OH_dir))
 		prefix_loc = len(MH_dir.split("/"))
@@ -125,13 +122,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 		mh_files,mh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MH_dir, trange=mh_timerange, suffix=idirsuffix, is_multivar=True)
 		mf_files,mf_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
 		#Add modified aux copy & structure addition
-		if ('prime_var' in ds_method_params.keys()):
-			prime_var = ds_method_params['prime_var']
-		else:
-			prime_var = 'fakevar'
-		oh_auxdict = make_aux_entry(oh_vars,  oh_files, stencil=auxdict['OH']['stencil'], geomask=spatmask_path, tmask=OH_tmask, prime_var=prime_var)
-		mh_auxdict = make_aux_entry(predlist, mh_files, stencil=auxdict['MH']['stencil'], geomask=spatmask_path, tmask=MH_tmask, prime_var=prime_var)
-		mf_auxdict = make_aux_entry(predlist, mf_files, stencil=auxdict['MF']['stencil'], geomask=spatmask_path, tmask=MF_tmask, prime_var=prime_var)
+		oh_auxdict = make_aux_entry(oh_vars,  oh_files, stencil=auxdict['OH']['stencil'], geomask=spatmask_path)
+		mh_auxdict = make_aux_entry(predlist, mh_files, stencil=auxdict['MH']['stencil'], geomask=spatmask_path)
+		mf_auxdict = make_aux_entry(predlist, mf_files, stencil=auxdict['MF']['stencil'], geomask=spatmask_path)
 		ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0])
 		auxdict['OH'] = oh_auxdict
 		auxdict['MH'] = mh_auxdict
@@ -235,7 +228,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 													j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)
 			with open(runscript_name, 'w') as f:
 				f.write(runscript_code)
-				f.write('\n') #needed for slurm POSIX standard
 			os.chmod(runscript_name, runmode)	#f now executable
 			runscript_files.append(runscript_name)
 			if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
@@ -243,14 +235,13 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
 				executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 														i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
 				with open(master_scriptname, 'w') as f:
-					f.write(slurm_header)
+					f.write(moab_header)
 					f.write(module_loads)
 					f.write(dmget_string)
 					f.write(gcp_string)
 					f.write(outdir_cmd)
 					f.write("echo 'Beginning calls to executable'\n")
 					f.write(executable_code)
-					f.write('\n') #needed for the slurm POSIX standard - final terminator
 					#f.write("wait")
 	print('master runscript and mini creation completed')
 	#return(n_tiles)
@@ -326,13 +317,16 @@ def create_slice_runscript(i_string, j_string, scriptdir,
 	#these differently is not going to hurt.
 	# i: 1:194
 	# j_range: 'J454_576'
-	runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
+	runscript_log = osp.join(scriptdir, 'log') + "/ind.${MOAB_JOBNAME}.${MOAB_JOBID}"
 	runscript_header = "\n".join(['#!/bin/tcsh',
-								  '#SBATCH -c 1',
-								  '#SBATCH -t walltime=6:00:00',
-								  '#SBATCH -o ' + runscript_log,
-								  '#SBATCH -J fudge_run',
-								  '#SBATCH -p batch']) + "\n"
+								  '#PBS -S /bin/csh',
+								  '#PBS -l nodes=1:ppn=1,walltime=6:00:00',
+								  '#PBS -j oe',
+								  '#PBS -r y ',
+								  '#PBS -o ' + runscript_log,
+								  '#PBS -N fudge_run',
+								  '#PBS -E',
+								  '#PBS -q batch']) + "\n"
 	exp_name = scriptdir.split("/")[-1]
 	if(exp_name==''):
 		exp_name = scriptdir.split("/")[-2]
@@ -458,16 +452,14 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
 	return(executable_stuff)
 
 
-def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none', prime_var='fakevar'):
+def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'], stencil='none', tmask='none', geomask='none'):
 	'''
 	Makes an aux file entry of input data files for one of OH, MH or MF.
 	'''
 	aux_entry = {}
 	for var,f in zip(varnames, files):
-		is_prime = "TRUE" if var == prime_var else "FALSE"  
 		aux_entry[var] = {'file': f,
 						  'is_fixed':'FALSE',
-						  'is_prime': is_prime,
 						  'stencil': stencil,
 						  'geomask': geomask,
 						  'tmask':   tmask}
@@ -501,4 +493,5 @@ def make_ds_aux_entry(out_file, outdir, var):
 			  'out_supp' : out_supp,
 			  'vars' : out_vars,
 			  'rips' : out_rips}
-	return(dsdict)
+	return(dsdict)		 
+	

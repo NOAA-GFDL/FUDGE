@@ -19,9 +19,6 @@ from get_npts_by import get_npts_by
 import create_all_runscripts
 from create_all_runscripts import create_all_runscripts
 from create_all_runscripts import awful_runcode_hack
-from create_all_runscripts import build_xml_input_paths
-import get_dim_info
-from get_dim_info import get_nc_var_vals
 from get_comment_specs import get_comment_specs, get_exp_check_tag
 import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
@@ -494,9 +491,9 @@ def main():
 	parser.add_option("-i", "--file", dest="uinput",
 	help="pass location of XML template", metavar="FILE")
 	parser.add_option("-a", "--aux", default="none",dest="auxinput", help="pass location of auxilary JSON input for stencil, mask, subset and other specificaions. If not set in XML or by command line, a default aux will be created.")
-	parser.add_option("--sbatch",action="store_true",default=False, help="Automatically submit the master runscripts using SLURM's sbatch command. Default is set to FALSE")
+	parser.add_option("--msub", "--msub",action="store_true",default=False, help="Automatically submit the master runscripts using msub.Default is set to FALSE")
 	parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")
-	parser.add_option("--sbatchmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
+	parser.add_option("--msubmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
 	parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
 	parser.add_option('--run-watcher', action='store_true', dest='run_watcher', default=False,
 					   help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
@@ -512,9 +509,9 @@ def main():
 	else:
 		NEMSemail1 = options.mail
 	print "Status emails will be sent to: " + NEMSemail1
-	msub = options.sbatch
+	msub = options.msub
 	print "Will jobs be automatically submitted? " + str(msub)
-	if (options.run_watcher and not options.sbatch):
+	if (options.run_watcher and not options.msub):
 		print("Error in expergen: option run-watcher should only be used with msub!")
 		sys.exit(1)
 	if(os.path.exists(options.uinput)):
@@ -581,7 +578,6 @@ def main():
 	#copy-able files (and possibly a wallclock time parameter)
 	#If no aux was specified as --aux
 	is_csv = False
-	create_default_aux = False
 	if search_xml_aux:
 		if specdict['aux'] != "none":
 			auxinput = specdict['aux']
@@ -618,8 +614,7 @@ def main():
 		print('making default aux file')
 		auxinput = make_aux_input(output_grid, sbase, target)
 		#auxinfo is selective reads, auxdict is entire, messy thing
-	print("auxinput: " + auxinput)	
-	auxinfo,auxdict = parse_aux_info(auxinput)
+		auxinfo,auxdict = parse_aux_info(auxinput)
 	#If aux file is not default, aux file overrides XML parameters
 	if auxinfo['njobs'] != 8:
 		njobs = auxinfo['njobs']
@@ -653,60 +648,25 @@ def main():
 	predlist = predictor.split(",")
 	print("Calling create_all_runscripts")
 	idict = {'US48' : 748,
-	         #'US480p1'   : 7, #not 6
 			 'SCCSC0p1'  : 181,
 			 'RR'   : 181,
 			 'grid0': 0,
 			 'NEUSA': 1,
 			 'NEUSA0p1': 425}
 	jdict = {'US48' : 454,
-	         #'US480p1'   : 5, #not 4
 			 'SCCSC0p1'  : 31,
 			 'RR'   : 31,
 			 'grid0': 0,
 			 'NEUSA': 1,
 			 'NEUSA0p1': 127}
-	OH_file = ""
 	try:
 		i_offset = idict[output_grid]
 	except KeyError:
-		#i_offset = 1
-		#Technically, this isn't the i_offset in the file - 
-		#it's the i_offset in the XML, which indicates what
-		#to start counting from. If there's no i_offset, 
-		#we start counting from 1. 
-		print("output_grid: " + output_grid)
-		if not is_csv:
-			print("getting i_offset from OH file")
-			prefix_loc = len(hist_pred_dir.split("/"))
-			oh_prefix = "/".join(target_dir.split("/")[0:prefix_loc])
-			oh_files,oh_dmget = build_xml_input_paths(predlist, oh_prefix, oh_timerange, idirsuffix, True)
-			OH_file = oh_files[0]
-			i_offset = get_nc_var_vals(OH_file, 'i_offset')['i_offset']
-			if i_offset == []:
-				i_offset = 1
-			else:
-				i_offset = i_offset[0] + 1
-		else:
-			i_offset = 1
+		i_offset = 1
 	try:
 		j_offset = jdict[output_grid]
 	except KeyError:
-		#j_offset = 1
-		print("getting j_offset from OH file")
-		if not is_csv:
-			if OH_file == "":
-				prefix_loc = len(hist_pred_dir.split("/"))
-				oh_prefix = "/".join(target_dir.split("/")[0:prefix_loc])
-				oh_files,oh_dmget = build_xml_input_paths(predlist, oh_prefix, oh_timerange, idirsuffix, True)
-				OH_file = oh_files[0]
-			j_offset = get_nc_var_vals(OH_file, 'j_offset')['j_offset']
-			if j_offset == []:
-				j_offset = 1
-			else:
-				j_offset = j_offset[0] + 1	
-		else:
-			j_offset = 1
+		j_offset = 1
 	#2018-06-06: Adding check between the experiment check and expconfig
 	#for purposes of checking kfold cross-valdiation
 	exp_check = get_exp_check_tag(uinput)
@@ -718,26 +678,6 @@ def main():
 	ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
 									"<RIP>",
 									ds_region, fut_file_start_time, fut_file_end_time)
-	print(auxcustom)
-	#test_params = [params,outdir,dversion,dexper,expconfig,tstamp,ds_region,target_ver,
-	#               auxcustom,qc_mask,qc_varname,qc_type,adjust_out,
-	#               sbase,pr_opts,masklists,idirsuffix]
-	#test_names = ['params','outdir','dversion','dexper','expconfig','tstamp','ds_region','target_ver',
-	#               'auxcustom','qc_mask','qc_varname','qc_type','adjust_out',
-	#               'sbase','pr_opts','masklists','idirsuffix']
-	#for name,param in zip(test_names,test_params):
-	#	print(name + ": " + param)
-	
-	#params from the xml parsing are the ds params	
-	param_split = re.split(",", params)
-	ds_method_params = {}
-	for p in param_split:
-		pvals = re.split("=", p)
-		pvals[1] = re.sub("'", "", pvals[1])
-		if len(pvals) > 1:
-			ds_method_params[pvals[0]] = pvals[1]	
-	print(ds_method_params)	
-	#sys.exit(1)								
 	create_all_runscripts(lons, lone, i_subset, i_offset, \
 						  lats, late, j_subset, j_offset, \
 						  njobs, ncpus, fudgetag, sbase, \
@@ -748,7 +688,7 @@ def main():
 						  file_j_range, idirsuffix, \
 						  ds_info['multivar_target'],
 						  auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-						  auxdict, ds_minifile, ds_method_params)
+						  auxdict, ds_minifile)
 	#print('examine runscript output')
 	#sys.exit()
 
@@ -874,14 +814,14 @@ def main():
 		#os.chmod(msubwrap.name, 0744)
 		#msub -m ae -M <email> script
 	print "----------------------------------------"
-	print "\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
+	print "\033[1;42m You can also use this msubwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
 	print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
 ################ step 5 job submission (if applicable) ##############################################
 	print "Starting step 5: job submission"
 	if msubmail == 1 and NEMSemail1 != 'none':
-			msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
+			msub_string = "msub -d $HOME -m ae -M " + NEMSemail1 + " "
 	else:
-		msub_string = "sbatch "
+		msub_string = "msub -d $HOME "
 	master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
 	msub_cmd = "module load moab; "
 	for el in master_scripts:
@@ -899,7 +839,7 @@ def main():
 		print "5 - completed"
 	print "-----------"
 	if not msub:
-		print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
+		print "--msub not set on command line. To submit jobs at a later point, please use the following:"
 		print "\033[1;95m"+msub_cmd+"\033[1;m"
 	print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
 

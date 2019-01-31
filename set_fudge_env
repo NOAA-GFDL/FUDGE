@@ -23,7 +23,8 @@ module load R/3.2.1
 module load git/2.4.6
 module load nco/4.3.1
 module load gcp
-module load slurm
+module load moab
+#module load slurm
 
 #needed for role accnt
 module load globus

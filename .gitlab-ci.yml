@@ -22,9 +22,9 @@ minijob:
   - datestr=`date +%Y%m%d-%H%M`
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
-  #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
+  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100
+  #- python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
@@ -45,9 +45,9 @@ fulljob:
   - datestr=`date +%Y%m%d-%H%M`
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
-  #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
+  - python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 300
+  #- python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 300
  tags:
   - analysis
 # variables:
