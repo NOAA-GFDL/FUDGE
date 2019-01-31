@@ -14,3 +14,4 @@
 "lmAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
 "lmstepAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
 "returnMF","MH, MF","OH, MH","OH","MF","FALSE","FALSE","distributional","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE","Returning unaltered MF dataset"
+"BCMM","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE",
