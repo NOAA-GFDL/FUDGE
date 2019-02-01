@@ -65,7 +65,8 @@ callQM <- function(OH, MH, MF, args, type="",
                     'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
                     #Note: CFQM is now called from CallDSMethod
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args),
-                    'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args)
+                    'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args),
+                    'BCMM' = callBCMM(OH.slice, MH.slice, MF.slice, args)
       )
       # print(length(out))
 
@@ -866,4 +867,3 @@ callBCQMv2<-function(LH,CH,CF,args){
        return(CF)
      }
 }
-

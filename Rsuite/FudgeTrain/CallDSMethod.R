@@ -46,6 +46,7 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
                    #'MBC'     = callMBC(OH, MH, MF, ds.args, ds.method="MBC", tmasks, train_qcmask),
                    'QDM'     = callMBC(OH, MH, MF, ds.args, ds.method="QDM", tmasks, train_qcmask),
                    'CFQM'    = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
+                   'BCMM'    = callQM(OH, MH, MF, ds.args, type='BCMM', missval.args, tmasks, train_qcmask),
                    'returnMF'   = ds.MF.function(OH, MH, MF, ds.args),
                    ReturnDownscaleError(method)
   )
