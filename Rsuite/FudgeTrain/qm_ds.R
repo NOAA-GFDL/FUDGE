@@ -357,11 +357,12 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
 }
 
 callBCMM <- function(Oh, Mh, Mf, args){
-  #' Function for calculating bias between Mh and obs and applying said bias
-  #' to the future dataset.
+  #' Function for calculating and correcting model bias. 
+  #' Bias is calculated between Mh and obs and subtracted from the
+  #' future dataset.
   #' It's effectively delta but for the future time period.
-  bias = mean(Oh, na.rm=T) - mean(Mh, na.rm=T)
-  DS = Mf + bias
+  bias = mean(Mh, na.rm=T) - mean(Oh, na.rm=T)
+  DS = Mf - bias
   return(DS)
 }
 
