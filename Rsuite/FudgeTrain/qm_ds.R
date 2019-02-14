@@ -65,7 +65,8 @@ callQM <- function(OH, MH, MF, args, type="",
                     'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
                     #Note: CFQM is now called from CallDSMethod
                     'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args),
-                    'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args)
+                    'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args),
+                    'BCMM' = callBCMM(OH.slice, MH.slice, MF.slice, args)
       )
       # print(length(out))
 
@@ -353,7 +354,16 @@ callBCQMv4 <- function(Oh, Mh, Mf, args) {
                  " uniform. Returning Mf."))
     return(Mf.orig)
   }
+}
 
+callBCMM <- function(Oh, Mh, Mf, args){
+  #' Function for calculating and correcting model bias. 
+  #' Bias is calculated between Mh and obs and subtracted from the
+  #' future dataset.
+  #' It's effectively delta but for the future time period.
+  bias = mean(Mh, na.rm=T) - mean(Oh, na.rm=T)
+  DS = Mf - bias
+  return(DS)
 }
 
 set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
@@ -858,4 +868,3 @@ callBCQMv2<-function(LH,CH,CF,args){
        return(CF)
      }
 }
-

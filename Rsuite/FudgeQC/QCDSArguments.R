@@ -26,16 +26,21 @@ QCDSArguments <- function(k, ds.method, ...){
           kt <- gsub(".*kfold\\s*|\\.nc", "", tmask_name)
           #Further refine to get only numeric characters
           kt <- gsub("[^0-9]", "", kt)
-          if (!is.na(as.integer(kt))){
-            return(as.numeric(kt))
+          if (!is.null(kt)){
+            return(0)
           }else{
-            return(-1)
+            print(kt)
+            if (!is.na(as.integer(kt))){
+              return(as.numeric(kt))
+            }else{
+              return(-1)
+            }
           }
         }
         #...check construction of 'olap' in the tmask names
         for (tname in tmask_types){
           k_tmp <- k_tmask(tmasks$filenames[[tname]])
-          if (k_tmp != k){
+          if (k_tmp != k && k_tmp != 0){
             stop(paste("Error in QCDSArguments: the ", tname, 
                        "tmask", tmasks$filenames[[tname]], 
                        'did not match the kfold of the input', 
