@@ -112,6 +112,7 @@ def make_aux_input(grid, script_base, targ_var):
 	#As of 2017-07-18, also checks for modified aux settings and objects 
 	#if trying to implement default using them.
 	print("Making default aux file")
+	auxdict = OrderedDict()
 	jdict = {'US48' : 114, 
 	         'SCCSC0p1'  : 140, 
 	         'RR'   : 140, 
@@ -125,38 +126,58 @@ def make_aux_input(grid, script_base, targ_var):
 		print(aux_scriptname)
 	else:
 		print("Error in make_aux_info: grid, " + grid + " not in jdict!")
-		sys.exit(1)	         
-	i_subset = '"i_subset": [1]'          + ","
-	j_subset = '"j_subset": [' + jv + ']' + ","
-	tile_olap = '"tile_olap": [0]'        + ","
-	#Most of the specs are not going to change unless you use stencils
-	#...which is why it's probably safe to set the default wallclocktime
-	#to 2 hours rather than 12, as we have been using forever.
-	main_text = "\n".join(['"geomask_names": [""],',
-                           '"ds_handle_missing": ["continue"],',
-                           '"wallclocktime": ["6:00:00"],',
-                           '"pp_wallclocktime": ["6:00:00"],',
-                           '"OH": {',
-                           '    "stencil": ["none"],',
-                           '    "geomask": ["none"]',
-                           '},',
-                           '"MH": {',
-                           '    "stencil": ["none"],',
-                           '    "geomask": ["none"]',
-                           '},',
-                           '"MF": {',
-                           '    "stencil": ["none"],',
-                           '    "geomask": ["none"]',
-                           '}'])
-	print(targ_var)
+		sys.exit(1)
+	
+	auxdict['grid'] = grid	
+	auxdict['i_subset'] = 1
+	auxdict["j_subset"] = jv
+	auxdict["tile_olap"] = 0
+	auxdict["ds_handle_missing"] = "continue"
+	auxdict["wallclocktime"] = "6:00:00"
+	auxdict["pp_wallclocktime"] = "6:00:00"
+	auxdict["files_in_aux"] = "FALSE"
+	auxdict["file_format"] = "netcdf"
 	if re.search('Anom', targ_var) is not None:
 		print("Error in make_aux_input: if using an anomaly var " + targ_var + \
 		      " user specification of climo_source in aux file is required!")
 		sys.exit(1)
 	else:    
-		meta_text = '"climo_source":["MF"],'                           
-	aux_text = "\n".join(["{", i_subset, j_subset, tile_olap, meta_text, main_text, "}"])
-	with open(aux_scriptname, 'w') as f: 
-		f.write(aux_text)
+		auxdict["climo_source"] = "MF"
+	#For now, we're keeping the initialization for these here - 
+	#it simplifies some of the copying workflow later.
+	file_types = ["OH", "MH", "MF"]
+	filedict = OrderedDict(stencil='none', geomask='none')
+	for f in file_types:
+		auxdict[f] = filedict
+
+	#Most of the specs are not going to change unless you use stencils
+	#...which is why it's probably safe to set the default wallclocktime
+	#to 2 hours rather than 12, as we have been using forever.   
+	aux_text = json.dumps(auxdict, indent=4)
+	f = open(aux_scriptname, 'w')
+	print >> f, aux_text
+	f.close()
 	return(aux_scriptname)							
-			
+	
+def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
+                             ds_method, ds_arg_string, ds_region):
+	#Function for parsing and adding ds_experiment_like stuff to the
+	#auxdict. This is not intended to be read in from a properly-formatted 
+	#files_in_aux auxfile at this time; that step comes later.
+	#auxdict is an OrderedDict; keep other formatting in mind.
+	auxdict["njobs"] = njobs
+	auxdict["ncpus"] = ncpus
+	auxdict["ds_experiment_name"] = experiment_name
+	dsdict = OrderedDict()
+	#if no params are used, we just get 'na'
+	if ds_arg_string != 'na':
+		ds_argsplit = re.split(",", ds_arg_string)
+		for arg in ds_argsplit:
+			argpair = re.split("=", arg)
+			dsdict[argpair[0]] = argpair[1]
+	auxdict["ds_method"] = dsdict
+	auxdict["kfold"] = kfold
+	#...I'm sticking this in here because I'm not sure where else to put it;
+	#I'm actually not sure whether it gets used. Mark as a to-do item?
+	auxdict["ds_region"] = ds_region
+	return(auxdict)			
