@@ -1,9 +1,7 @@
 #Genereal code for getting ds method attributes from an external spreadsheet
 #with known formatting
 
-getDSInfo <- function(ds.method){
-#  ds_sheet = "/home/cew/Code/h_testing//FudgeIO_reboot//ds_sheet//ds_att_sheet.csv"
-  #ds_sheet = "/home/cew/Code/fudge/Rsuite/aux/ds_att_sheet.csv"
+getDSInfo <- function(ds.method, ds.args, kfold){
   ds_sheet = file.path(FUDGEROOT, "/Rsuite/aux/ds_att_sheet.csv")
   input <- read.csv(ds_sheet, header=T, stringsAsFactors=F)
   method.names <- input$method_name
@@ -13,9 +11,6 @@ getDSInfo <- function(ds.method){
     
   }
   ds.idx <- which(ds.method == method.names)
-  print(method.names)
-  print(ds.idx)
-  print(names(input))
   ds.object <- list('method'         = ds.method, 
                     'downscale_oh'   = eval(parse(text=input$downscale_oh[ds.idx])),
                     'predictors'     = csplit(input$predictor_datasets[ds.idx]), 
@@ -47,6 +42,8 @@ getDSInfo <- function(ds.method){
 #                'MF' = 'mf.dim')
 #   delayedAssign('targ.dim', eval(parse(text='oh.dim')), 
 #                 eval.env=globalenv(), assign.env=globalenv())
+  ds.object[['args']] = ds.args
+  ds.object['kfold'] = kfold
   return(ds.object)
 }
 

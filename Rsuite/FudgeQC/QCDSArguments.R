@@ -11,6 +11,7 @@ QCDSArguments <- function(k, ds.method, ...){
   #             "does not support cross-validaton. Check documentation for more details."))
   #}
   #New check for cross-validation conflict:
+  print(as.list(match.call()))
   if (is.multi_ens){
     if (k > 1){
       stop(paste("Error in QCDSArguments: k of ", k, "is not", 

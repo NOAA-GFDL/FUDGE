@@ -175,7 +175,8 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
 		for arg in ds_argsplit:
 			argpair = re.split("=", arg)
 			dsdict[argpair[0]] = argpair[1]
-	auxdict["ds_method"] = dsdict
+	auxdict["ds_method"] = ds_method
+	auxdict["ds_args"] = dsdict
 	auxdict["kfold"] = kfold
 	#...I'm sticking this in here because I'm not sure where else to put it;
 	#I'm actually not sure whether it gets used. Mark as a to-do item?

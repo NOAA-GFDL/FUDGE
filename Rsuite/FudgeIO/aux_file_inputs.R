@@ -113,6 +113,10 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   }
   #2018-04-10: adding the writes of the ds output to the file.
   output['DS'] <- aux_list['DS']
+  #2019-02-20: adding entries for downscaling method, args and kfold
+  output['ds_method'] = aux_list['ds_method']
+  output['ds_args'] = aux_list['ds_args']
+  output['kfold'] = aux_list['kfold']
   return(output)
 }
 
