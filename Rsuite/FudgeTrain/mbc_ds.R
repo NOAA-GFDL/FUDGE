@@ -324,7 +324,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize
   }
-  env$ds.args <- return.args
+  env$ds.ref$args <- return.args
   return(env)
 }
 

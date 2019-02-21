@@ -212,8 +212,8 @@ loop.xy.data <- function(){
             #           if (all(is.na(MH.window[[1]]))){
             #             stop('examine this output - MH is all NA after s3 opts')
             #           }
-            tmp.ds <- callDSMethod(ds.method, 
-                                   OH.window, MH.window, MF.window, ds.args, 
+            tmp.ds <- callDSMethod(ds.ref$method, 
+                                   OH.window, MH.window, MF.window, ds.ref$args, 
                                    missvals=ds.ref$missval_method, 
                                    missval.args=missval.args,
                                    train_qcmask=train_qcmask,

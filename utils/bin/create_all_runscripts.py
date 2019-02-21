@@ -18,6 +18,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     #Creates master and single-slice miniifles for a FUDGE job
     #if --msub is included, also submits jobs at the end of everything
 
+    #We should be running this with environmental variable basedir
+    basedir = os.environ.get('BASEDIR')
+
     ##print(outdir_string)
     ##print(idirsuffix)
     ##sys.exit('examine this output')
@@ -237,7 +240,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             runscript_files.append(runscript_name)
             if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
                 #Prepare to write all accululated data to file
-                executable_code = make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
+                executable_code = make_executable_stuff(runscript_files, basedir, auxfile_mod,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
@@ -391,17 +394,17 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
         tmp_src = osp.join(runcode_dir, runcode_files[0])
         shutil.copy2(tmp_src, tmp_dest)
 
-def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
+def make_executable_stuff(runscript_files, basedir, auxfile_mod,
                           ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
     '''
     Makes the things that call R code (eventually) in the master.
     The batch branch sources runscripts with pre-defined x,y locations
-      Workflow: master -> runscript -> runcode -> Master_Driver
+      Workflow: master -> runscript -> Master_Driver with command-line args
     The interactive branch is activated when master is called with command-line
       arguments, and pops an rstudio terminal with a config file that allows
       access to the command-line params that set the x,y locations in the
       runscripts.
-      Workflow: master -> config file -> runcode -> Master_Driver
+      Workflow: master -> config file -> Master_Driver without command-line args
     '''
     runscript_calls = ["\t" + el + " & \n" for el in runscript_files]
     batch_cmd = "\t sleep 10 \n".join(runscript_calls) + "\twait"
@@ -429,16 +432,17 @@ def make_executable_stuff(runscript_files, scriptdir, auxfile_mod,
                           "# point to the modified auxfile (has full file paths)",
                           "auxfile <<- '" + auxfile_mod + "'",
                           "# source the runcode which sources Master_Driver",
-                          "source('$generic_runcode')"])
+                          "source('$master_driver')"])
     echo_cmd = '"' + echo_cmd + '"'
 
     int_cmd = "\n\t".join(["\tmodule load rstudio/0.98.1103",
                           "module unload R/2.15.2",
                           "module load R/3.2.1",
                           "set auxfile_mod = " + auxfile_mod,
-                          "set runcode_dir = " + scriptdir + "/" + 'runcode',
-                          "set generic_runcode_base = `ls $runcode_dir | head -n 1`",
-                          "set generic_runcode = $runcode_dir/$generic_runcode_base",
+                          #"set runcode_dir = " + scriptdir + "/" + 'runcode',
+                          #"set generic_runcode_base = `ls $runcode_dir | head -n 1`",
+                          #"set generic_runcode = $runcode_dir/$generic_runcode_base",
+                          "set master_driver = " + basedir + "/Rsuite/Drivers/Master_Driver.R",
                           #Below line shouldn't give an error: removes if there,
                           #moves on if not.
                           "rm -rf $TMPDIR/command_line_params.R",

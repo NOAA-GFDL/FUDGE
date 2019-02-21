@@ -160,7 +160,8 @@ def make_aux_input(grid, script_base, targ_var):
 	return(aux_scriptname)							
 	
 def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
-                             ds_method, ds_arg_string, ds_region):
+                             ds_method, ds_arg_string, 
+                             output_grid, ds_region):
 	#Function for parsing and adding ds_experiment_like stuff to the
 	#auxdict. This is not intended to be read in from a properly-formatted 
 	#files_in_aux auxfile at this time; that step comes later.
@@ -174,11 +175,20 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
 		ds_argsplit = re.split(",", ds_arg_string)
 		for arg in ds_argsplit:
 			argpair = re.split("=", arg)
-			dsdict[argpair[0]] = argpair[1]
+			#filter out quotes
+			arg_strip = re.sub("'", "", argpair[1])
+			dsdict[argpair[0]] = arg_strip
 	auxdict["ds_method"] = ds_method
 	auxdict["ds_args"] = dsdict
 	auxdict["kfold"] = kfold
 	#...I'm sticking this in here because I'm not sure where else to put it;
 	#I'm actually not sure whether it gets used. Mark as a to-do item?
+	#Both versions get used in creation of downscaled output paths
+	#(...which xmlgen does for us, frankly)
+	#and creation of comment attribute metadata.
+	#ds_region also gets used to make minifile names.
+	#Theoretically, ds_region is the smaller area (like a spatial mask),
+	#and output_grid the larger; in practice, we've let the distinction slip.
 	auxdict["ds_region"] = ds_region
+	auxdict["output_grid"] = output_grid
 	return(auxdict)			

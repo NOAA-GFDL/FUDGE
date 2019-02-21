@@ -117,6 +117,10 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   output['ds_method'] = aux_list['ds_method']
   output['ds_args'] = aux_list['ds_args']
   output['kfold'] = aux_list['kfold']
+  #...and args needed for metadata:
+  output['ds_experiment_name'] = aux_list['ds_experiment_name']
+  output['ds_region'] = aux_list['ds_region']
+  output['output_grid'] = aux_list['output_grid']
   return(output)
 }
 

@@ -146,7 +146,7 @@ set.CFQM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     }
   }
   env$s5.outloop <- apply.s5
-  env$ds.args <- return.args
+  env$ds.ref$args <- return.args
   env$post.ds <- post.ds
   return(env)
 }

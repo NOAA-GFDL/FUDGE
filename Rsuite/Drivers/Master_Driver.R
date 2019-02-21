@@ -100,9 +100,9 @@ predictor.vars = names(aux.ref$MH)
 message("Checking input predictor var order")
 predictor.vars <- fix.var.order(predictor.vars, target.var)
 
-if (mask.list=='na'){
+#if (mask.list=='na'){
   mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
-}
+#}
 
 ##Call the code that converts the instructions for section 3 and section 5
 if(!exists('pre_ds')){ #put better check in here once you are done with the testing
@@ -361,8 +361,8 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
 }
 message("Checking for default ds arguments (requires var units)")
 set.ds.defaults(ds.ref$method, ds.ref$args, predictor.vars=predictor.vars,
-                pre.ds.train=pre.ds.train,
-                ds.ref=ds.ref, aux.ref=aux.ref,
+                          pre.ds.train=pre.ds.train,
+                          ds.ref=ds.ref, aux.ref=aux.ref,
                 env=environment())
 
 # print(prime_predictor)
@@ -403,7 +403,7 @@ jend <- jstart + j_stride - 1
 locstring <- paste0("I", istart, '-', iend, '_J', jstart, "-", jend)
 
 tmp_filename <- sub('I<ISTART>-<IEND>_J<JSTART>-<JEND>', locstring, tmp_filename)
-for (r in 1:length(fut.pred.rip.list)){
+for (r in 1:length(aux.ref$DS$rips)){
   rip <- fut.pred.rip.list[r]
   #First do the filename, then the output dir
   loop_filename <- sub("<RIP>", rip, tmp_filename)
@@ -418,7 +418,7 @@ for (r in 1:length(fut.pred.rip.list)){
   }
   
   if (ds.ref$target != "MF"){
-    if (ds.method == "KDDM") {
+    if (ds.ref$method == "KDDM") {
       dimlist <- MF$metadata[[1]]$dim
       varlist <- MF$metadata[[1]]$vars
     } else {
@@ -464,16 +464,16 @@ for (r in 1:length(fut.pred.rip.list)){
       qc_filepath = file.path(loop_outdirs[2], qc_filename)
       
       message(paste('attempting to write to', qc_filename))
-      qc.comment <- get.qc.comment(qc.maskopts$qc.method, ds.method)
+      qc.comment <- get.qc.comment(qc.maskopts$qc.method, ds.ref$method)
       qc.comment.att <- list()
       qc.comment.att[[qc.var]] <- qc.comment
       qc.globals <- global_att_list
       
-      qc.globals$comments <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold,
-                                                ds.experiment,
-                                                predictor.vars, fut.pred.rip.list,
+      qc.globals$comments <- make.fudge.comment(ds.ref$method, target.var, grid, ds.region, aux.ref$kfold,
+                                                aux.ref$ds_experiment_name,
+                                                predictor.vars, aux.ref$DS$rips,
                                                 qc.maskopts$qc.method, missval.args, train.string=train.string)
-      qc.longname <- make.qc.longname(qc.maskopts$qc.method, ds.method, target.var)
+      qc.longname <- make.qc.longname(qc.maskopts$qc.method, ds.ref$method, target.var)
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc

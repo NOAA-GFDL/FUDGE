@@ -559,6 +559,11 @@ def main():
 	#########  call listVars() #############################################################
 	output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
 	
+	print(auxcustom)
+	print(masklists)
+	print(pr_opts)
+	sys.exit(1)
+
 	sd = sbase
 	#Check for prior experiment creation
 	#Note that this component can exit with an error
@@ -621,13 +626,15 @@ def main():
 	if auxinfo['ncpus'] != 2:
 		ncpus = auxinfo['ncpus']
 	#############################################################
-	#Add downscaling method parameters to auxfile - for the moment, 
+	#Add downscaling method parameters to auxfile - for the moment,
 	#we intend to write them out to file, not read them in from file.
 	#...but that is flexible, and that can change.
-	auxdict = add_ds_params_to_auxdict(auxdict, njobs, ncpus, expconfig, kfold, method, params, ds_region)
-	
+	auxdict = add_ds_params_to_auxdict(auxdict, njobs, ncpus,
+									   expconfig, kfold, method, params,
+									   output_grid, ds_region)
+
 	print(auxdict)
-	
+
 	#############################################################
 	print "Step 0: Create the unified runcscripts and master runscripts"
 	#First check to see whether the leapday masks need to be copied...
