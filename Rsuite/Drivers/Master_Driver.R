@@ -50,8 +50,7 @@ FUDGE.error.handler.function <- function(){
 options(error=FUDGE.error.handler.function,
         warn = 1, showErrorCalls=TRUE)
 
-#------- Add libraries -------------
-LoadLib(ds.method)
+
 
 ################################################################################
 console.args <- commandArgs(TRUE)
@@ -89,6 +88,9 @@ if ("multivar_target" %in% aux.ref){
 
 message("Setting downscaling method information")
 ds.ref <- getDSInfo(aux.ref$ds_method, aux.ref$ds_args, aux.ref$kfold)
+
+#------- Add libraries -------------
+LoadLib(ds.ref$method)
 
 message("Checking the missing value arguments")
 missval.args <- getMissvalArgs(ds.ref$args, ds.ref$missval_method)
