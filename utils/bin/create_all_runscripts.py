@@ -19,7 +19,8 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     #if --msub is included, also submits jobs at the end of everything
 
     #We should be running this with environmental variable basedir
-    basedir = os.environ.get('BASEDIR')
+    #...but we may not need this call to it
+    #basedir = os.environ.get('BASEDIR')
 
     ##print(outdir_string)
     ##print(idirsuffix)
@@ -232,7 +233,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             #is where the file paths are.
             runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
                                                     i_idx, imax, i_by, i_offset, \
-                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs, basedir)
+                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n') #needed for slurm POSIX standard
@@ -337,7 +338,7 @@ def create_slice_runscript(i_string, j_string, scriptdir,
     exp_name = scriptdir.split("/")[-1]
     if(exp_name==''):
         exp_name = scriptdir.split("/")[-2]
-    master_driver = basedir + "/Rsuite/Drivers/Master_Driver.R"
+    master_driver = "${BASEDIR}/Rsuite/Drivers/Master_Driver.R"
     #runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + "." + i_string + "_" +j_string
     logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+"."+ i_string + "_" +j_string
     #print(runcode)
@@ -444,7 +445,7 @@ def make_executable_stuff(runscript_files, basedir, auxfile_mod,
                           #"set runcode_dir = " + scriptdir + "/" + 'runcode',
                           #"set generic_runcode_base = `ls $runcode_dir | head -n 1`",
                           #"set generic_runcode = $runcode_dir/$generic_runcode_base",
-                          "set master_driver = " + basedir + "/Rsuite/Drivers/Master_Driver.R",
+                          "set master_driver = ${BASEDIR}/Rsuite/Drivers/Master_Driver.R",
                           #Below line shouldn't give an error: removes if there,
                           #moves on if not.
                           "rm -rf $TMPDIR/command_line_params.R",
