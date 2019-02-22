@@ -241,7 +241,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             runscript_files.append(runscript_name)
             if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
                 #Prepare to write all accululated data to file
-                executable_code = make_executable_stuff(runscript_files, basedir, auxfile_mod,
+                executable_code = make_executable_stuff(runscript_files, auxfile_mod,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
@@ -321,7 +321,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 def create_slice_runscript(i_string, j_string, scriptdir,
                             i_idx, i_max, i_by, i_offset,
                             j_idx, j_max, j_by, j_offset,
-                            auxfile_mod, target_var, outdirs, basedir):
+                            auxfile_mod, target_var, outdirs):
     #Creates the runscript code specific to a slice of the grid downscaled
     #by the R code
     #Technically only the shebang is needed, but extra info in the event that we ever split
@@ -397,7 +397,7 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
         tmp_src = osp.join(runcode_dir, runcode_files[0])
         shutil.copy2(tmp_src, tmp_dest)
 
-def make_executable_stuff(runscript_files, basedir, auxfile_mod,
+def make_executable_stuff(runscript_files, auxfile_mod,
                           ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
     '''
     Makes the things that call R code (eventually) in the master.
