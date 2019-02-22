@@ -232,7 +232,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             #is where the file paths are.
             runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
                                                     i_idx, imax, i_by, i_offset, \
-                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)
+                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs, basedir)
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n') #needed for slurm POSIX standard
@@ -319,7 +319,8 @@ def create_outdir_string(outdirs, scriptdir, target_var):
 
 def create_slice_runscript(i_string, j_string, scriptdir,
                             i_idx, i_max, i_by, i_offset,
-                            j_idx, j_max, j_by, j_offset, auxfile_mod, target_var, outdirs):
+                            j_idx, j_max, j_by, j_offset,
+                            auxfile_mod, target_var, outdirs, basedir):
     #Creates the runscript code specific to a slice of the grid downscaled
     #by the R code
     #Technically only the shebang is needed, but extra info in the event that we ever split
@@ -336,14 +337,15 @@ def create_slice_runscript(i_string, j_string, scriptdir,
     exp_name = scriptdir.split("/")[-1]
     if(exp_name==''):
         exp_name = scriptdir.split("/")[-2]
-    runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + "." + i_string + "_" +j_string
+    master_driver = basedir + "/Rsuite/Drivers/Master_Driver.R"
+    #runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + "." + i_string + "_" +j_string
     logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+"."+ i_string + "_" +j_string
     #print(runcode)
     #print(logfile)
     #Okay - this defines the list of runcodes that are going to be run.
     #i_idx is in the same space as i_max; i is in minifile space.
     #r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile #+ " &"
-    r_command = "Rscript " + runcode + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, 'TRUE'])+ " >>& " + logfile + " &"
+    r_command = "Rscript " + master_driver + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, 'TRUE'])+ " >>& " + logfile + " &"
     runscript = runscript_header + r_command + "\n" + "wait \n"
     for outdir in outdirs:
         runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
@@ -431,7 +433,7 @@ def make_executable_stuff(runscript_files, basedir, auxfile_mod,
                           "j_offset <<- " + str(j_offset),
                           "# point to the modified auxfile (has full file paths)",
                           "auxfile <<- '" + auxfile_mod + "'",
-                          "# source the runcode which sources Master_Driver",
+                          "# Source Master_Driver for the R code",
                           "source('$master_driver')"])
     echo_cmd = '"' + echo_cmd + '"'
 

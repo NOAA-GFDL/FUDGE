@@ -13,7 +13,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   targ.var <- names(input$hist.targ)
   arg.names <- names(test$qc_args)
   nrips <- dim(adjusted.output$ds.out)[4]
-  if (test$qc.mask=='on'){
+  if (test$make_qc_mask){
     adjusted.output$qc.mask <- array(NA, dim=dim(adjusted.output$ds.out))
   }
   if('ignore0'%in%arg.names){
@@ -93,13 +93,13 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
                                model.fut = MF.slice,
                                ds.fut = DS.slice,
                                args = arg_list, tmasks=tmasks)
-    if(test$qc.mask=='on'){
+    if(test$make_qc_mask){
       ds.correct$mask[ds.correct$mask==0] <- NA
       adjusted.output$qc.mask[,,,n,,] <- ds.correct$mask
     }
-    if(test$adjust.out=='on'){
+    #assume always adjusting
       adjusted.output$ds.out[,,,n,,] <- as.numeric(ds.correct$ds)
-    }
+    
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }

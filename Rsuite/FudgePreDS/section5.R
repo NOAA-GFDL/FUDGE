@@ -45,7 +45,7 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'sdev2' = callSdev2(test, out$input, out$adjusted.output),
                   'SBiasCorr' = callSBCorr(test, out$input, out$adjusted.output),
                   'flag.neg' = callFlagNegativeValues(test, out$input, out$adjusted.output),
-                  'PR' = callAdjustPrecipS5(test, out$input, out$adjusted.output),
+                  'pr_out' = callAdjustPrecipS5(test, out$input, out$adjusted.output),
                   'Nothing' = callNoMethod(test, out$input, out$adjusted.output),
                   'add.one' = callAddOne(test, out$input, out$adjusted.output),
                   'add.five' = callAddFive(test, out$input, out$adjusted.output),
@@ -95,16 +95,15 @@ callSdev <- function(test, input, adjusted.output){
   mask.vec <- ifelse( (out.comp <= abs(adjusted.output$ds.out-mean)),
                       yes=1, no=NA)
   out.list <- adjusted.output #Everything should be returned as-is, unless something neat happens
-  if(test$qc.mask=='on'){
+  if(test$make_qc_mask){
     out.list$qc.mask <- mask.vec
   }
-  if(test$adjust.out=='on'){
+  #Fom now on, we assume we are always adjusting
     adjust.vec <- ifelse( (is.na(mask.vec)),
                           yes=ifelse( (1==sign(out.mean-adjusted.output$ds.out)),
                                       out.mean-out.comp, out.mean+out.comp ),
                           no=adjusted.output$ds.out)
     out.list$ds.out <- adjust.vec
-  }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
@@ -139,13 +138,12 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
     mask.vec <- ifelse( (botlim <= (tmp.diff) &
                            (tmp.diff) < toplim),
                         yes=1, no=NA)
-    if(test$qc.mask=='on'){
+    if(test$make_qc_mask){
       out.list$qc.mask[[ds.var]] <- mask.vec
     }
-    if(test$adjust.out=='on'){
+   #assume always adjusting
       adjust.vec <- ifelse( (is.na(mask.vec)), yes=fut.targ, no=adjusted.output$ds.out)
       out.list$ds.out <- adjust.vec
-    }
   }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
@@ -157,7 +155,7 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
   #Initialize output structure
   out.list <- adjusted.output
   mask.vec <- ifelse(adjusted.output$ds.out >= 0, yes=1, no=0)
-  if(test$qc.mask=='on'){
+  if(test$make_qc_mask){
     print('adding qc mask in flag.neg')
     out.list$qc.mask <- mask.vec
     dim(out.list$qc.mask) <- dim(adjusted.output$ds.out)
@@ -211,21 +209,6 @@ callPRPostproc <- function(test, input, adjusted.output){
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-#         if (oh.timelen >= mf.timelen){
-#           #If more samples in OH, index by nyears present
-#           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-#                                    tmasks$hist.year.div, tmasks$fut.year.div, 
-#                                    start_year=start)
-#           OH.idx <- idx$index
-#           start <- idx$end
-#         }else{
-#           #If more samples in MF, repeat mask until it matches length of MF sample;
-#           #repeat for each ensemble
-#           idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-#                                    tmasks$hist.year.div, tmasks$fut.year.div, 
-#                                    start_year=1)
-#           OH.idx <- idx$index         
-#         }
         #After either step is complete, index the mask to the future timseries
         #using index.delta
         OH.idx <- tmasks$OH_idx[[n]]
@@ -247,14 +230,10 @@ callPRPostproc <- function(test, input, adjusted.output){
                              pr.units = input$data.atts$pr_oh_units, 
                              pr.index = test$qc_args$thold, 
                              pr.conserve = (test$qc_args$conserve=='on'))
-  #print(summary(as.vector(adjusted.pr$ds.out)))
-  #stop('examine s5 out')
   adjusted.output$ds.out <- adjusted.pr$ds.out
-  if(test$qc.mask=='on'){
+  if(test$make_qc_mask){
     adjusted.output$qc.mask <- get.xy.center(adjusted.output$qc.mask)
   }
-#print(summary(as.vector(adjusted.output$ds.out)))
-#stop('examine return from s5')
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 
@@ -296,7 +275,7 @@ callAddOne <- function(test, input, adjusted.output){
     if(test$adjust.out=='on'){
       adjusted.output$ds.out <- (adjusted.output$ds.out + 1)
     }
-    if(test$qc.mask=='on'){
+    if(test$make_qc_mask){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
   }
@@ -317,7 +296,7 @@ callAddFive <- function(test, input, adjusted.output){
     if(test$adjust.out=='on'){
       adjusted.output$ds.out <- (adjusted.output$ds.out + 5)
     }
-    if(test$qc.mask=='on'){
+    if(test$make_qc_mask){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
   }
@@ -350,14 +329,12 @@ callBCSDCorrect <- function(test, input, adjusted.output){
     fut.pred <- ds.var
     hist.pred <- names(input$hist.pred)[lapply(input$data.atts$hist.pred,
                                                "[[", 'var')==targ.var]
-    #print(summary(as.vector(adjusted.output$ds.out)))
     ds.correct <- bcsd.correct(model.hist = input$hist.pred[[hist.pred]],
                                obs.hist = input$hist.targ,
                                model.fut = input$fut.pred[[fut.pred]],
                                obs.fut = adjusted.output$ds.out,
                                sample_size = sample_size)
-    #print(summary(as.vector(ds.correct)))
-    if(test$qc.mask=='on'){
+    if(test$make_qc_mask){
       qc.tmp <- ifelse(mapply(both.na, ds.correct, as.numeric(adjusted.output$ds.out)),
                        1, 0)
       #print(summary(as.vector(qc.tmp)))
@@ -368,9 +345,9 @@ callBCSDCorrect <- function(test, input, adjusted.output){
       #print(summary(as.vector(qc.tmp)))
       adjusted.output$qc.mask[[ds.var]] <- qc.tmp
     }
-    if(test$adjust.out=='on'){
+    #assume always adjusting
       adjusted.output$ds.out <- as.numeric(ds.correct)
-    }
+    
   }
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
@@ -414,10 +391,6 @@ callPRBacktransfrom <- function(test, input, adjusted.output){
   #ds.vars <- names(adjusted.output$ds.out)
   
   ds.var <- names(input$hist.targ)
-#   print(str(input))
-#   print(str(adjusted.output))
-#   print(summary(as.vector(adjusted.output$ds.out)))
-#   stop('examine this output')
   out.list <- adjusted.output
   if(!is.null(test$qc_args$arg)){
     #If there are arguments to the transform, make the call with the args

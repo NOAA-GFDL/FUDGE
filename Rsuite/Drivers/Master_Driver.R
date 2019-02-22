@@ -101,46 +101,62 @@ message("Checking input predictor var order")
 predictor.vars <- fix.var.order(predictor.vars, target.var)
 
 #if (mask.list=='na'){
-  mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
+#  mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
 #}
 
-##Call the code that converts the instructions for section 3 and section 5
-if(!exists('pre_ds')){ #put better check in here once you are done with the testing
-  message('Conversion of pre- and post- downscaling adjustment input')
-  if(exists('pr_opts')){
-    pp.out <- adapt.pp.input(mask.list, pr_opts, ds.ref)
-  }else{
-    pp.out <- adapt.pp.input(mask.list)
-  }
-  pre_ds <- pp.out$pre_ds
-  post_ds <- pp.out$post_ds
-  train_qcmask <- pp.out$train_qcmask
-}
+# ##Call the code that converts the instructions for section 3 and section 5
+# if(!exists('pre_ds')){ #put better check in here once you are done with the testing
+#   message('Conversion of pre- and post- downscaling adjustment input')
+#   if(exists('pr_opts')){
+#     pp.out <- adapt.pp.input(mask.list, pr_opts, ds.ref)
+#   }else{
+#     pp.out <- adapt.pp.input(mask.list)
+#   }
+#   pre_ds <- pp.out$pre_ds
+#   post_ds <- pp.out$post_ds
+#   train_qcmask <- pp.out$train_qcmask
+# }
 
 #2018-04-10: Changing more information to come in via aux
 fut.pred.rip.list <- aux.ref$DS$rips
-
-#Initialize instructions for pre- and post-ds adjustment
 message("Checking pre- and post-downscaling adjustments")
-post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
-post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
-qc.maskopts <- qc.mask.check(post.ds.train, post.ds, train_qcmask)
-pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
-pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
-#Generate metadata references for the pre- and post-processing functions
-#Things that contain an ADJUSTMENT
-post_ds_adj_tmp <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
-post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
-post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
-post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
-##Initialize a few globals for looping in loop.xy()
-s3.outloop <- length(pre.ds) > 0
-s3.inloop <- length(pre.ds.train) > 0
-#training qc makss are their own thing
-s5.inloop <- length(post_ds_inloop) > 0
-s5.outloop <- length(post_ds_outloop) > 0
-#And finally, check to see if a training (minsamplesize) qc mask
-train_qcmask <- 'qc.train' %in% sapply(mask.list, '[[', 'type')
+pre_ds <- aux.ref$s3
+post_ds <- aux.ref$s5
+pre.ds <- pre_ds$outloop
+pre.ds.train <- pre_ds$inloop
+post.ds <- post_ds$outloop
+post.ds.train <- post_ds$inloop
+s3.inloop <- length(pre_ds$inloop) > 0
+s3.outloop <- length(pre_ds$outloop) > 0
+s5.inloop <- length(post_ds$inloop) > 0
+s5.outloop <- length(post_ds$outloop) > 0
+train_qcmask <- aux.ref$return_qcmask_from_ds
+ 
+# ('qc.inloop'=(inloop.count > 0), 'qc.outloop'=(outloop.count > 0), 
+#                 'qc.method'=qc.method, 
+#                 'qc.args'=qc.args)
+
+# #Initialize instructions for pre- and post-ds adjustment
+# 
+# post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
+# post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
+# qc.maskopts <- qc.mask.check(post.ds.train, post.ds, train_qcmask)
+# pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
+# pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
+# #Generate metadata references for the pre- and post-processing functions
+# #Things that contain an ADJUSTMENT
+# post_ds_adj_tmp <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
+# post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
+# post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
+# post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
+# ##Initialize a few globals for looping in loop.xy()
+# s3.outloop <- length(pre.ds) > 0
+# s3.inloop <- length(pre.ds.train) > 0
+# #training qc makss are their own thing
+# s5.inloop <- length(post_ds_inloop) > 0
+# s5.outloop <- length(post_ds_outloop) > 0
+# #And finally, check to see if a training (minsamplesize) qc mask
+# train_qcmask <- 'qc.train' %in% sapply(mask.list, '[[', 'type')
 
 #Adapt some of the parameters being set by the f-to-g bridge code
 if(!exists('pr_opts')){
@@ -453,8 +469,7 @@ for (r in 1:length(aux.ref$DS$rips)){
                             verbose=T
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
-  if(qc.maskopts$qc.inloop || qc.maskopts$qc.outloop || train_qcmask){
-    ##Created waaay back at the beginning, as part of the QC functions
+  if (aux.ref$make_qcmask){
     for (var in aux.ref$DS$vars){
       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
@@ -464,16 +479,16 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc_filepath = file.path(loop_outdirs[2], qc_filename)
       
       message(paste('attempting to write to', qc_filename))
-      qc.comment <- get.qc.comment(qc.maskopts$qc.method, ds.ref$method)
+      qc.comment <- get.qc.comment(aux.ref$qc_method, ds.ref$method)
       qc.comment.att <- list()
       qc.comment.att[[qc.var]] <- qc.comment
       qc.globals <- global_att_list
       
-      qc.globals$comments <- make.fudge.comment(ds.ref$method, target.var, grid, ds.region, aux.ref$kfold,
+      qc.globals$comments <- make.fudge.comment(ds.ref$method, target.var, aux.ref$output_grid, aux.ref$ds_region, aux.ref$kfold,
                                                 aux.ref$ds_experiment_name,
                                                 predictor.vars, aux.ref$DS$rips,
-                                                qc.maskopts$qc.method, missval.args, train.string=train.string)
-      qc.longname <- make.qc.longname(qc.maskopts$qc.method, ds.ref$method, target.var)
+                                                aux.ref$qc_method, missval.args, train.string=train.string)
+      qc.longname <- make.qc.longname(aux.ref$qc_method, ds.ref$method, target.var)
       qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
@@ -491,7 +506,7 @@ for (r in 1:length(aux.ref$DS$rips)){
       
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
-  }  
+  } 
 }
 
 #As a final step, print basic profiling information to the logfile

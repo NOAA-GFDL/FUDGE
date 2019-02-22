@@ -50,7 +50,7 @@ loop.xy.data <- function(){
       ds.y.start <- ds.coords$y.start[jval]
       ds.y.end   <- ds.coords$y.end[jval]
       ds.names <- "ds"
-      qc.mask.names <- qc.maskopts$qc.method
+      qc.mask.names <- aux.ref$qc_method
       if(!is.null(qc.mask.names)){
         qc.mask.names <- 'qc'
       }
@@ -192,7 +192,7 @@ loop.xy.data <- function(){
               tmp.s3 <- callS3Adjustment(pre.ds.train, 
                                          MH.window, OH.window, MF.window,
                                          adjust.metadata,
-                                         s5.instructions=post_ds_inloop, 
+                                         s5.instructions=post.ds.train, 
                                          missval.args=missval.args, 
                                          prime_predictor=prime_predictor)
               #s3 functions only return data, not metadata
@@ -283,7 +283,7 @@ loop.xy.data <- function(){
             #           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
             #             stop('examine the coords - this is leading to issues')
             #           }
-            if(qc.maskopts$qc.outloop){
+            if(aux.ref$make_qcmask && aux.ref$qc_loc == 'outloop'){
               output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
             }
             remove(temp.postproc)
