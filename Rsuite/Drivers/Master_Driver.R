@@ -80,7 +80,8 @@ if (length(console.args) > 0){
 fudge.start.time <- proc.time()[3]
 
 message("Getting info from aux file")
-print(auxfile)
+#need to load json parser before other lo=ib loads
+library(jsonlite)
 aux.ref <- get_aux_params(auxfile, copy_from_tmp)
 if ("multivar_target" %in% aux.ref){
   ds.ref$multivar_target <- aux.ref$multivar_target

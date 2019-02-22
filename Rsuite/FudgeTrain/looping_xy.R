@@ -206,7 +206,7 @@ loop.xy.data <- function(){
                 s5.inloop <- TRUE
               }
             }else{
-              window.post_ds_inloop <- post_ds_inloop
+              window.post_ds_inloop <- post.ds.train
             }      
             #Call the downscaling method
             #           if (all(is.na(MH.window[[1]]))){

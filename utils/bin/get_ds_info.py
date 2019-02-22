@@ -212,7 +212,7 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
     '''
     adjust_dict = {}
     s3_inloop = []; s3_outloop = []; s5_inloop = []; s5_outloop = [];
-    make_qcmasks = False
+    make_qcmask = False
     qc_method = 'none'; qc_loc = 'none'
 
     if pr_opts != 'na':
@@ -324,10 +324,10 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
                 optdict[elsplit[0]] = as_num(re.sub("'", "", elsplit[1]))
             adjust_dict[masktype] = make_adjust(masktype, target_var,
                                                 'inloop', optdict, method_qcmask)
-    #TODO: this should include a check to make sure there isn't more than one
-    #qcmask present
-    #also needs to include a check on whehter
-    make_qcmask = method_qcmask
+        #TODO: this should include a check to make sure there isn't more than one
+        #qcmask present
+        #also needs to include a check on whehter
+        make_qcmask = method_qcmask
     #Intent here is to separate out options that operate within looping by
     #time window and outside of looping by time window
     s3 = OrderedDict()

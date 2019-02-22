@@ -723,7 +723,8 @@ def main():
 	make_code_cmd = make_code_cmd+" "+str(target_file_start_time)+" "+str(target_file_end_time)+" "+str(target_train_start_time)+" "+str(target_train_end_time)+" "+str(target_scenario)+" "+str(target_model)+" "+target_freq+" "+str(target_dir)+" "+str(target_time_window)
 	make_code_cmd = make_code_cmd+" "+str(method)+" "+str(expconfig)+" "+str(kfold)+" '"+str(outdir)+"' "+str(tstamp)+" "+'na'+" "+basedir+" "+str(lone)
 
-	print "Step 1: R code starters generation ..in progress"
+	#2019-02-22: commenting out R runcode steps for testing
+	##print "Step 1: R code starters generation ..in progress"
 	#p = subprocess.Popen('tcsh -c "'+make_code_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 
 	params_new =  '"'+str(params)+'\"'
@@ -733,19 +734,19 @@ def main():
 	#print(make_code_cmd)
 	#p = subprocess.Popen(make_code_cmd +" "+params_new,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 	#cprint make_code_cmd
-	p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-	output, errors = p.communicate()
-	if(p.returncode != 0):
-	 print "Step1:!!!! FAILED !!!!, please contact developer."
-	 print output, errors
-	 sys.exit(0)
+	##p = subprocess.Popen(make_code_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+	##output, errors = p.communicate()
+	##if(p.returncode != 0):
+	## print "Step1:!!!! FAILED !!!!, please contact developer."
+	## print output, errors
+	## sys.exit(0)
 	#print output, errors
 	#cprint "----Log-----"
 	#print output,errors
 	###############################################################################################
-	print "1- completed\n"
-	print("Copying runcodes to modified locations from general runscript mods")
-	awful_runcode_hack(osp.join(sbase, "runcode"), osp.join(sbase, "runscript"))
+	##print "1- completed\n"
+	##print("Copying runcodes to modified locations from general runscript mods")
+	##awful_runcode_hack(osp.join(sbase, "runcode"), osp.join(sbase, "runscript"))
 	#print "debug............msub turned ",msub
 	############################### 2 ################################################################
 	##################################### 4 ############################################
