@@ -278,8 +278,8 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       if ('transform' %in% pre.ds.types){
         transform <- T
         tform.idx <- which(pre.ds.types=='transform')
-        tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$pp.args$transform, 
-                              pre.ds.train[[tform.idx]]$pp.args$arg)
+        tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$qc_args$transform, 
+                              pre.ds.train[[tform.idx]]$qc_args$arg)
         if (is.null(tform_fxn[[2]])){
           trace <- do.call(tform_fxn[[1]], list(trace))
         }else{

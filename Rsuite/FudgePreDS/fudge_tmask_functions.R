@@ -109,57 +109,60 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
     has_calendar = TRUE
     if (!apply_tmasks){
       warning(paste("Warning in get.fudge.tmask.list: you should use a tmask if", 
-                  "working with delta and/or CFQM!"))
+                    "working with delta and/or CFQM unless you are working with", 
+                    "synthetic data!"))
       print(MF$metadata[[1]]$dim$time$calendar)
       tmask.list$OH$masks[[1]] <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
       if (MF$metadata[[1]]$dim$time$calendar != "none"){      
-      fut.tseries <- get.PCICt.time.series(MF$metadata[[1]]$dim$time$units, 
-                                           MF$metadata[[1]]$dim$time$vals, 
-                                           MF$metadata[[1]]$dim$time$calendar)
-      hist.tseries <- get.PCICt.time.series(OH$metadata[[1]]$dim$time$units, 
-                                            OH$metadata[[1]]$dim$time$vals, 
-                                            OH$metadata[[1]]$dim$time$calendar)
-      tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
-      tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
+        fut.tseries <- get.PCICt.time.series(MF$metadata[[1]]$dim$time$units, 
+                                             MF$metadata[[1]]$dim$time$vals, 
+                                             MF$metadata[[1]]$dim$time$calendar)
+        hist.tseries <- get.PCICt.time.series(OH$metadata[[1]]$dim$time$units, 
+                                              OH$metadata[[1]]$dim$time$vals, 
+                                              OH$metadata[[1]]$dim$time$calendar)
+        tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
+        tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
+        OH_years <- get_tmask_years(OH$metadata[[1]]$filename)
+        MF_years <- get_tmask_years(MF$metadata[[1]]$filename)
       }else{
-      	#This case is used for the synthetic data - no leapdays to be found.
-      	has_calendar = FALSE
-      	tmask.list$hist.leapmask <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
-      	tmask.list$fut.leapmask <- rep(1, length(MF$metadata[[1]]$dim$time$vals))
+        #This case is used for the synthetic data - no leapdays to be found.
+        has_calendar = FALSE
+        tmask.list$hist.leapmask <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
+        tmask.list$fut.leapmask <- rep(1, length(MF$metadata[[1]]$dim$time$vals))
       }
     }else{
       print("getting the leapday masks")
-      tmask.list$hist.leapmask <- get.leapday.mask(paste0(target.file.start.year_1, "-", 
-                                                          target.file.end.year_1), 
+      OH_years <- get_tmask_years(tmask.filenames$OH)
+      MF_years <- get_tmask_years(tmask.filenames$MF)
+      tmask.list$hist.leapmask <- get.leapday.mask(OH_years$yearstring,
                                                    OH$metadata[[1]]$dim$time$calendar, 
                                                    origin=OH$metadata[[1]]$dim$time$units,
                                                    time.data=OH$metadata[[1]]$dim$time$vals)
-      tmask.list$fut.leapmask <- get.leapday.mask(paste0(fut.file.start.year_1, "-", 
-                                                         fut.file.end.year_1), 
+      tmask.list$fut.leapmask <- get.leapday.mask(MF_years$yearstring,
                                                   MF$metadata[[1]]$dim$time$calendar, 
                                                   origin = MF$metadata[[1]]$dim$time$units,
                                                   time.data=MF$metadata[[1]]$dim$time$vals)
     }
     if (has_calendar){
-        tmask.list$hist.year.div <- get.year.divisions(target.file.start.year_1, 
-                                                   target.file.end.year_1, 
-                                                   OH$metadata[[1]]$dim$time$calendar)
-      tmask.list$fut.year.div <- get.year.divisions(fut.file.start.year_1, 
-                                                  fut.file.end.year_1, 
-                                                  MF$metadata[[1]]$dim$time$calendar)
+      tmask.list$hist.year.div <- get.year.divisions(OH_years$start, 
+                                                     OH_years$end, 
+                                                     OH$metadata[[1]]$dim$time$calendar)
+      tmask.list$fut.year.div <- get.year.divisions(MF_years$start, 
+                                                    MF_years$end, 
+                                                    MF$metadata[[1]]$dim$time$calendar)
       tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
       tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
     }else{
-    	tmask.list$hist.year.div <- length(tmask.list$hist.leapmask)
-    	tmask.list$fut.year.div <- length(tmask.list$fut.leapmask)
-    	tmask.list$nyears_hist <- 1
-    	tmask.list$nyears_fut <- 1
+      tmask.list$hist.year.div <- length(tmask.list$hist.leapmask)
+      tmask.list$fut.year.div <- length(tmask.list$fut.leapmask)
+      tmask.list$nyears_hist <- 1
+      tmask.list$nyears_fut <- 1
     }
-#     print(tmask.list$hist.year.div)
-#     print(tmask.list$fut.year.div)
-#     print(tmask.list$nyears_hist)
-#     print(tmask.list$nyears_fut)
-#     stop('examine this output. Does it make sense?')
+    #     print(tmask.list$hist.year.div)
+    #     print(tmask.list$fut.year.div)
+    #     print(tmask.list$nyears_hist)
+    #     print(tmask.list$nyears_fut)
+    #     stop('examine this output. Does it make sense?')
   }
   ###Set booleans for handy access
   print(paste("Applying overlapping time window masks:", time_mask_overlap))
@@ -191,5 +194,23 @@ check_mask_olap <- function(data.list){
     out <- out + data.list[[n]]
   } 
   return(any(out > 1))
+}
+
+get_tmask_years <- function(tmask_file){
+  #Builds the strings that govern tmask start and end dates from
+  #an esd-standard tmask name. Technically, also works with filenames. 
+  tmask_name <- basename(tmask_file)
+  tmask_split <- unlist(strsplit(tmask_file, '_'))
+  tstring <- tmask_split[sapply(tmask_split, function(x){grepl('-', x, fixed=T)})]
+  if (length(tstring) > 1){
+    #Then tstring is the one that is only 8 + 1 + 8 chars long
+    tstring <- tstring[sapply(tstring, function(x){nchar(x) == 17})]
+  }
+  #This will either have only 8 char. with a - in the end or have a .nc at end
+  out <- list()
+  out$start <- substr(tstring, 1, 4)# first 4
+  out$end <- substr(tstring, 10, 13) #last 4 after the dash
+  out$yearstring <- paste0(out$start, '-', out$end)
+  return(out)
 }
 

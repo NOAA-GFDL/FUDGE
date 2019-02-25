@@ -12,7 +12,7 @@ make.fudge.globals <- function(){
   fudge.insitute.id <- paste("NOAA/GFDL")
   fudgetag = FUDGETAG
   fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG, FUDGEROOT)
-  fudge.comment <- make.fudge.comment(aux.ref$ds_experiment_name, target.var, 
+  fudge.comment <- make.fudge.comment(aux.ref$ds_method, target.var, 
                                       aux.ref$output_grid, aux.ref$ds_region, aux.ref$kfold, 
                                       aux.ref$ds_experiment_name, 
                                       #label.validation, label.training, 

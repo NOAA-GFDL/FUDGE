@@ -398,8 +398,8 @@ start.time <- proc.time()
 ds <- loop.xy.data()
 #ds <- list(ds=array(NA, dim=mf.dim), qc=array(NA, dim=mf.dim))
 
-print('summary of ds:')
-print(summary(ds))
+#print('summary of ds:')
+#print(summary(ds))
 message("FUDGE downscaling ends")
 message(paste("FUDGE downscaling took", proc.time()[1]-start.time[1], "seconds to run"))
 
