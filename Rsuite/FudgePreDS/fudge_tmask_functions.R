@@ -11,7 +11,7 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   apply_tmasks = T
   nmasks <- 1
   #tmask.list.names <- c("train.pred", "train.targ", "fut.pred")
-  tmask.list.names <- c("MH", "OH", "MF")
+  tmask.list.names <- c("OH", "MH","MF")
   tmask.filenames <- list()
   for (ftype in tmask.list.names){
     #Note: we only get one tmask per dataset type now, though we support
