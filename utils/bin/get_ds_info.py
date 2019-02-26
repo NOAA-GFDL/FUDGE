@@ -283,7 +283,7 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
             #s5_inloop = ['transform'] + s5_inloop
             adjust_dict['transform'] = make_adjust('transform', tform_vars, 'inloop',
                                                    {'transform': prdict['transform'],
-                                                   'arg':prdict['arg'], 'vars': tform_vars},
+                                                   'arg':as_num(prdict['arg']), 'vars': tform_vars},
                                                    False)
         #Precip creates section 3 and section 5 adjustments
         #The s3 opt is the first thing that happens, but the s5 opt comes before

@@ -123,6 +123,7 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   output['output_grid'] = aux_list['output_grid']
   #2019-02-22:...and last but definetly not least, the s3/s5 args.
   output['s3'] = aux_list['s3']
+  #Add a special case for the parsing of 
   output['s5'] = aux_list['s5']
   output['return_qcmask_from_ds'] = aux_list['return_qcmask_from_ds']
   output['make_qcmask'] = aux_list['make_qcmask']

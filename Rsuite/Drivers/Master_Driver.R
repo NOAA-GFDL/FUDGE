@@ -101,22 +101,6 @@ predictor.vars = names(aux.ref$MH)
 message("Checking input predictor var order")
 predictor.vars <- fix.var.order(predictor.vars, target.var)
 
-#if (mask.list=='na'){
-#  mask.list <- list(list(type='na', qc.mask='off', adjust.out='off'))
-#}
-
-# ##Call the code that converts the instructions for section 3 and section 5
-# if(!exists('pre_ds')){ #put better check in here once you are done with the testing
-#   message('Conversion of pre- and post- downscaling adjustment input')
-#   if(exists('pr_opts')){
-#     pp.out <- adapt.pp.input(mask.list, pr_opts, ds.ref)
-#   }else{
-#     pp.out <- adapt.pp.input(mask.list)
-#   }
-#   pre_ds <- pp.out$pre_ds
-#   post_ds <- pp.out$post_ds
-#   train_qcmask <- pp.out$train_qcmask
-# }
 
 #2018-04-10: Changing more information to come in via aux
 fut.pred.rip.list <- aux.ref$DS$rips
@@ -128,16 +112,21 @@ if ('pr_in' %in% names(pre_ds$outloop)){
   namevec <- names(pre_ds$outloop)
   namevec[namevec == 'pr_in'] = 'PR'
   names(pre_ds$outloop) <- namevec
-}
-if ('pr_out' %in% names(post_ds$outloop)){
-  namevec <- names(pre_ds$outloop)
+  namevec <- names(post_ds$outloop)
   namevec[namevec == 'pr_out'] = 'PR'
-  names(pre_ds$outloop) <- namevec
+  names(post_ds$outloop) <- namevec
+}else if ('pr_in' %in% names(pre_ds$inloop)){
+  namevec <- names(pre_ds$inloop)
+  namevec[namevec == 'pr_in'] = 'PR'
+  names(pre_ds$inloop) <- namevec
+  namevec <- names(post_ds$inloop)
+  namevec[namevec == 'pr_out'] = 'PR'
+  names(post_ds$outloop) <- namevec 
 }
 #And finally, the transform
 if ('transform' %in% names(pre_ds$inloop)){
- if (pre_ds$inloop$transform$qc_args == 0.333333333333333){
-   pre_ds$inloop$transform$qc_args = 1/3
+ if (pre_ds$inloop$transform$qc_args$arg == 0.333333333333333){
+   pre_ds$inloop$transform$qc_args$arg = 1/3
  } 
 }
 pre.ds <- pre_ds$outloop
@@ -149,32 +138,6 @@ s3.outloop <- length(pre_ds$outloop) > 0
 s5.inloop <- length(post_ds$inloop) > 0
 s5.outloop <- length(post_ds$outloop) > 0
 train_qcmask <- aux.ref$return_qcmask_from_ds
- 
-# ('qc.inloop'=(inloop.count > 0), 'qc.outloop'=(outloop.count > 0), 
-#                 'qc.method'=qc.method, 
-#                 'qc.args'=qc.args)
-
-# #Initialize instructions for pre- and post-ds adjustment
-# 
-# post.ds <- compact(lapply(post_ds, index.a.list, 'loc', 'outloop'))
-# post.ds.train <- compact(lapply(post_ds, index.a.list, 'loc', 'inloop'))
-# qc.maskopts <- qc.mask.check(post.ds.train, post.ds, train_qcmask)
-# pre.ds <- compact(lapply(pre_ds, index.a.list, 'loc', 'outloop'))
-# pre.ds.train <- compact(lapply(pre_ds, index.a.list, 'loc', 'inloop'))
-# #Generate metadata references for the pre- and post-processing functions
-# #Things that contain an ADJUSTMENT
-# post_ds_adj_tmp <- compact(lapply(post_ds, index.a.list, 'adjust.out', 'on'))
-# post_ds_inloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'inloop'))
-# post_ds_outloop <- compact(lapply(post_ds_adj_tmp, index.a.list,'loc', 'outloop'))
-# post_ds_adj <- c(post_ds_inloop, post_ds_outloop)
-# ##Initialize a few globals for looping in loop.xy()
-# s3.outloop <- length(pre.ds) > 0
-# s3.inloop <- length(pre.ds.train) > 0
-# #training qc makss are their own thing
-# s5.inloop <- length(post_ds_inloop) > 0
-# s5.outloop <- length(post_ds_outloop) > 0
-# #And finally, check to see if a training (minsamplesize) qc mask
-# train_qcmask <- 'qc.train' %in% sapply(mask.list, '[[', 'type')
 
 #Adapt some of the parameters being set by the f-to-g bridge code
 if(!exists('pr_opts')){
