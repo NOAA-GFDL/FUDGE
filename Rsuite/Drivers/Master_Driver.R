@@ -119,7 +119,7 @@ if ('pr_in' %in% names(pre_ds$outloop)){
   namevec <- names(pre_ds$inloop)
   namevec[namevec == 'pr_in'] = 'PR'
   names(pre_ds$inloop) <- namevec
-  namevec <- names(post_ds$inloop)
+  namevec <- names(post_ds$outloop)
   namevec[namevec == 'pr_out'] = 'PR'
   names(post_ds$outloop) <- namevec 
 }
