@@ -16,10 +16,10 @@ if (TMPDIR == ""){
 }  
 
 ########### Library calls, source necessary functions ################
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), full.names=TRUE), source);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''), full.names=TRUE), source);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), full.names=TRUE), source);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), full.names=TRUE), source);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE));
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE));
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE));
 source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
 source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
 
@@ -123,6 +123,23 @@ fut.pred.rip.list <- aux.ref$DS$rips
 message("Checking pre- and post-downscaling adjustments")
 pre_ds <- aux.ref$s3
 post_ds <- aux.ref$s5
+##Messy metadata checks - trying to restore legacy behavior
+if ('pr_in' %in% names(pre_ds$outloop)){
+  namevec <- names(pre_ds$outloop)
+  namevec[namevec == 'pr_in'] = 'PR'
+  names(pre_ds$outloop) <- namevec
+}
+if ('pr_out' %in% names(post_ds$outloop)){
+  namevec <- names(pre_ds$outloop)
+  namevec[namevec == 'pr_out'] = 'PR'
+  names(pre_ds$outloop) <- namevec
+}
+#And finally, the transform
+if ('transform' %in% names(pre_ds$inloop)){
+ if (pre_ds$inloop$transform$qc_args == 0.333333333333333){
+   pre_ds$inloop$transform$qc_args = 1/3
+ } 
+}
 pre.ds <- pre_ds$outloop
 pre.ds.train <- pre_ds$inloop
 post.ds <- post_ds$outloop

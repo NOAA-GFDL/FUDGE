@@ -208,9 +208,9 @@ get_tmask_years <- function(tmask_file){
   }
   #This will either have only 8 char. with a - in the end or have a .nc at end
   out <- list()
-  out$start <- substr(tstring, 1, 4)# first 4
-  out$end <- substr(tstring, 10, 13) #last 4 after the dash
-  out$yearstring <- paste0(out$start, '-', out$end)
+  out$start <- substr(tstring, 1, 8)# first 8
+  out$end <- substr(tstring, 10, 17) #last 8 after the dash
+  out$yearstring <- tstring #paste0(out$start, '-', out$end)
   return(out)
 }
 

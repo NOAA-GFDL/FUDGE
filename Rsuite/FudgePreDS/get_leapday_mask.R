@@ -79,6 +79,10 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
   end_date <- paste(substr(end_string, 1, 4), 
                     substr(end_string, 5, 6), 
                     substr(end_string, 7, 8), sep="-")
+  print("in get.year.divisions")
+  print(start_string)
+  print(start_date)
+  print(end_date)
   time_span <- as.numeric((get.PCICt.time.series(end_date, 0, calendar) - 
                              get.PCICt.time.series(start_date, 0, calendar))/86400)
   time.vals <- 0:(time_span)

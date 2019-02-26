@@ -222,7 +222,7 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
             argpair = re.split("=", arg)
             #filter out quotes
             arg_strip = re.sub("'", "", argpair[1])
-            prdict[argpair[0]] = as_num(arg_strip)
+            prdict[argpair[0]] = as_num(arg_strip) #no longer casting as numeric
         #Now separate out args into pre_ds and post_ds components
         pre_ds = ['pr_adjmethod', 'pr_threshold_in', 'pr_freqadj_in', 'pr_conserve_in', 'ignore0']
         pre_ds_default = ['exact', None, None, False]
