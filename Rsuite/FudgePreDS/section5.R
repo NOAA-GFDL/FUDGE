@@ -161,11 +161,11 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
     dim(out.list$qc.mask) <- dim(adjusted.output$ds.out)
     out.list$qc.mask[mask.vec==0] <- NA
   }
-  if(test$adjust.out=='on'){
+  #if(test$adjust.out=='on'){
     adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out)
     dim(adjust.vec) <- dim(adjusted.output$ds.out)
     out.list$ds.out <- adjust.vec
-  }
+  #}
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
@@ -193,6 +193,8 @@ callPRPostproc <- function(test, input, adjusted.output){
   }
   if (test$qc_args$ignore0=='on'){
     message(paste('Applying wetday mask to ds output'))
+    print(str(test$qc_args))
+    print(ds.ref$downscale_oh)
     if (!ds.ref$downscale_oh){
       #non-OH downscaling is straightforward:
       #get center of possible 9-point mask and apply to ds output
@@ -272,9 +274,9 @@ callAddOne <- function(test, input, adjusted.output){
     ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
     #Find arguments to pre-processing function
     #There are no arguments to be applied
-    if(test$adjust.out=='on'){
+    #if(test$adjust.out=='on'){
       adjusted.output$ds.out <- (adjusted.output$ds.out + 1)
-    }
+    #}
     if(test$make_qc_mask){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
@@ -293,9 +295,9 @@ callAddFive <- function(test, input, adjusted.output){
     ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
     #Find arguments to pre-processing function
     #There are no arguments to be applied
-    if(test$adjust.out=='on'){
+    #if(test$adjust.out=='on'){
       adjusted.output$ds.out <- (adjusted.output$ds.out + 5)
-    }
+    #}
     if(test$make_qc_mask){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }

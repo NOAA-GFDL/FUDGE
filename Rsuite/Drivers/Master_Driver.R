@@ -107,28 +107,28 @@ fut.pred.rip.list <- aux.ref$DS$rips
 message("Checking pre- and post-downscaling adjustments")
 pre_ds <- aux.ref$s3
 post_ds <- aux.ref$s5
-##Messy metadata checks - trying to restore legacy behavior
-if ('pr_in' %in% names(pre_ds$outloop)){
-  namevec <- names(pre_ds$outloop)
-  namevec[namevec == 'pr_in'] = 'PR'
-  names(pre_ds$outloop) <- namevec
-  namevec <- names(post_ds$outloop)
-  namevec[namevec == 'pr_out'] = 'PR'
-  names(post_ds$outloop) <- namevec
-}else if ('pr_in' %in% names(pre_ds$inloop)){
-  namevec <- names(pre_ds$inloop)
-  namevec[namevec == 'pr_in'] = 'PR'
-  names(pre_ds$inloop) <- namevec
-  namevec <- names(post_ds$outloop)
-  namevec[namevec == 'pr_out'] = 'PR'
-  names(post_ds$outloop) <- namevec 
-}
-#And finally, the transform
-if ('transform' %in% names(pre_ds$inloop)){
- if (pre_ds$inloop$transform$qc_args$arg == 0.333333333333333){
-   pre_ds$inloop$transform$qc_args$arg = 1/3
- } 
-}
+# ##Messy metadata checks - trying to restore legacy behavior
+# if ('pr_in' %in% names(pre_ds$outloop)){
+#   namevec <- names(pre_ds$outloop)
+#   namevec[namevec == 'pr_in'] = 'PR'
+#   names(pre_ds$outloop) <- namevec
+#   namevec <- names(post_ds$outloop)
+#   namevec[namevec == 'pr_out'] = 'PR'
+#   names(post_ds$outloop) <- namevec
+# }else if ('pr_in' %in% names(pre_ds$inloop)){
+#   namevec <- names(pre_ds$inloop)
+#   namevec[namevec == 'pr_in'] = 'PR'
+#   names(pre_ds$inloop) <- namevec
+#   namevec <- names(post_ds$inloop)
+#   namevec[namevec == 'pr_out'] = 'PR'
+#   names(post_ds$inloop) <- namevec 
+# }
+# #And finally, the transform
+# if ('transform' %in% names(pre_ds$inloop)){
+#  if (pre_ds$inloop$transform$qc_args$arg == 0.333333333333333){
+#    pre_ds$inloop$transform$qc_args$arg = 1/3
+#  } 
+# }
 pre.ds <- pre_ds$outloop
 pre.ds.train <- pre_ds$inloop
 post.ds <- post_ds$outloop
