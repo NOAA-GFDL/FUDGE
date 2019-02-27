@@ -17,6 +17,7 @@ minijob:
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  - echo $REG_BASEDIR
   #The below does not work. Calling entire thing, rather than alias.
   #- alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
   - datestr=`date +%Y%m%d-%H%M`
