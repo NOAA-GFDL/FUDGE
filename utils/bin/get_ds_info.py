@@ -213,7 +213,7 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
     adjust_dict = {}
     s3_inloop = []; s3_outloop = []; s5_inloop = []; s5_outloop = [];
     make_qcmask = False
-    qc_method = 'none'; qc_loc = 'none'
+    qc_method = 'none'; qc_loc = 'none'; flag_neg_in_propts = False
 
     if pr_opts != 'na':
         prdict = OrderedDict()
@@ -250,6 +250,12 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
         #Here's the point where you start specifying 'defaults' -
         #settings we've kept from legacy XML that we need to keep an eye out for.
         pairwise_ds = ['PARM', 'lm', 'lmstep']
+        #And check for an alt specification of flag.neg that we've kept
+        if 'flag.neg' in krdict.keys():
+            flag_neg_in_propts = True
+            s5_outloop = s5_outloop + ['flag.neg']
+            adjust_dict['flag.neg'] = make_adjust('flag.neg', 'pr', 'outloop',
+                                                   {'none':'none'}, False)
         #You place the preciptation options as the first thing that you do when
         #you start downscaling, and the last thing you complete when the process
         #ends
@@ -302,6 +308,9 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
             qc_method = 'qc.train'
         elif masktype == 'flag.neg':
             #flag.neg can effectively be either a pr opt OR a s3/s5 option.
+            if flag_neg_in_propts:
+                print("Error in parsing s3/s5 opts: flag.neg was specified in propts and the qcmask!")
+                sys.exit(1)
             s5_outloop = s5_outloop + ['flag.neg']
             method_qcmask = ("qc.mask='on'" in mask_optsplit)
             qc_method = 'flag.neg' if method_qcmask else 'none'
