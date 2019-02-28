@@ -251,7 +251,7 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
         #settings we've kept from legacy XML that we need to keep an eye out for.
         pairwise_ds = ['PARM', 'lm', 'lmstep']
         #And check for an alt specification of flag.neg that we've kept
-        if 'flag.neg' in prdict.keys():
+        if 'flag_neg' in prdict.keys():
             flag_neg_in_propts = True
             s5_outloop = s5_outloop + ['flag.neg']
             adjust_dict['flag.neg'] = make_adjust('flag.neg', 'pr', 'outloop',
