@@ -63,10 +63,14 @@ make.fudge.info <- function(tmask.filenames, aux.ref, missval.args,
                           "inputs had at least", missval.args$minsamplesize, 
                           "non-missing value(s);")
   #Downscaling method
-  if(ds.args[[1]]=='na'){
-    fudge.argstring <- "default settings"
+  if (length(ds.args) > 0){
+    if(ds.args[[1]]=='na'){
+      fudge.argstring <- "default settings"
+    }else{
+      fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
+    }
   }else{
-    fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
+    fudge.argstring <- 'na'
   }
   info_ds <- paste0(ds.method, " : (", paste(fudge.argstring), ")")
   
