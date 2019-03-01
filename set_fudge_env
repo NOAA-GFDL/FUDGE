@@ -27,4 +27,4 @@ module load slurm
 
 #needed for role accnt
 module load globus
-set s8_tag = sec8-20171102
+set s8_tag = sec8-20190301
