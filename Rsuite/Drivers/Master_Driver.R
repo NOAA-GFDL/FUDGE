@@ -94,7 +94,8 @@ ds.ref <- getDSInfo(aux.ref$ds_method, aux.ref$ds_args, aux.ref$kfold)
 LoadLib(ds.ref$method)
 
 message("Checking the missing value arguments")
-missval.args <- getMissvalArgs(aux.ref, ds.ref$missval_method)
+print(aux.ref$minsamplesize)
+missval.args <- getMissvalArgs(aux.ref$minsamplesize, ds.ref$missval_method)
 
 target.var = names(aux.ref$OH)
 predictor.vars = names(aux.ref$MH)
