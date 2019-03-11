@@ -179,7 +179,8 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
             dsdict[argpair[0]] = as_num(arg_strip)
         if 'minsamplesize' in dsdict.keys():
             minsamplesize = dsdict['minsamplesize']
-            del dsdict["minsamplesize"]
+            #Turning off delete for the moment; trying to get metadata right
+            #del dsdict["minsamplesize"]
     auxdict["ds_method"] = ds_method
     auxdict["ds_args"] = dsdict
     auxdict["kfold"] = kfold
