@@ -21,20 +21,16 @@ def get_ds_info(ds_method, FUDGEROOT):
         for row in reader:
             if row['method_name'] == ds_method:
                 ds_match = True
-                downscale_oh = (row['downscale_oh']=='TRUE')
-                multivar_target = (row['multivar_target']=='TRUE')
-                multivar_possible = (row['multivar_possible']=='TRUE')
-                adjust_pr_in_window = (row['adjust_pr_in_window']=='TRUE')
-
+                #No longer returning a subset of the dictionary in question
+                for k in row.keys():
+                    if row[k] in ["TRUE", "FALSE"]:
+                        row[k] = (row[k] == 'TRUE')
+                #Replace method_name with ds_method
+                row['ds_method'] = row.pop('method_name')
+                return(row)
     if ds_match is False:
         print("Error in get_ds_info: Method " + ds_method + " not found in ds_att_sheet.csv!")
         sys.exit(1)
-    else:
-        return({'ds_method':ds_method,
-                'copy_leapmasks':downscale_oh,
-                'multivar_target':multivar_target,
-                'multivar_possible':multivar_possible,
-                'adjust_pr_in_window': adjust_pr_in_window})
 
 def parse_aux_info(jsonfile):
     #Reads the aux file; returns bits that we are interested in
@@ -172,6 +168,7 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
     auxdict["ncpus"] = ncpus
     auxdict["ds_experiment_name"] = experiment_name
     dsdict = OrderedDict()
+    minsamplesize = 1
     #if no params are used, we just get 'na'
     if ds_arg_string != 'na':
         ds_argsplit = re.split(",", ds_arg_string)
@@ -180,9 +177,13 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
             #filter out quotes
             arg_strip = re.sub("'", "", argpair[1])
             dsdict[argpair[0]] = as_num(arg_strip)
+        if 'minsamplesize' in dsdict.keys():
+            minsamplesize = dsdict['minsamplesize']
+            del dsdict["minsamplesize"]
     auxdict["ds_method"] = ds_method
     auxdict["ds_args"] = dsdict
     auxdict["kfold"] = kfold
+    auxdict['minsamplesize'] = minsamplesize
     #...I'm sticking this in here because I'm not sure where else to put it;
     #I'm actually not sure whether it gets used. Mark as a to-do item?
     #Both versions get used in creation of downscaled output paths
