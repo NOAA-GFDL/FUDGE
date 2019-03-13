@@ -370,32 +370,25 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
 
   ## KDDM needs to know about the YEARS in each dataset, this processes the time axis and creates factors KDDM can use for its origami
   # 	Oh.time.units <- strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
-  Oh.time.origin <-strsplit(OH$metadata[[1]]$dim$time$units, " ")[[1]][3]
-  Oh.time.cal <- OH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
-  Oh.time.cal[tolower(Oh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
-  Oh.time.vals <- OH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Oh.all.yrz <- (format(as.PCICt(Oh.time.vals*60*60*24, origin=Oh.time.origin, cal=Oh.time.cal), "%Y"))
-
-  # 	Mh.time.units <- strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
-  Mh.time.origin <-strsplit(MH$metadata[[1]]$dim$time$units, " ")[[1]][3]
-  Mh.time.cal <- MH$metadata[[1]]$dim$time$calendar    # : chr "noleap"
-  Mh.time.cal[tolower(Mh.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
-  Mh.time.vals <- MH$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Mh.all.yrz <- (format(as.PCICt(Mh.time.vals*60*60*24, origin=Mh.time.origin, cal=Mh.time.cal), "%Y"))
-
-  # 	Mf.time.units <- strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][1]       # : chr "days since 1961-01-01 00:00"
-  Mf.time.origin <-strsplit(MF$metadata[[1]]$dim$time$units, " ")[[1]][3]
-  Mf.time.cal <- MF$metadata[[1]]$dim$time$calendar    # : chr "noleap"
-  Mf.time.cal[tolower(Mf.time.cal) %in% c('julian', 'gregorian', 'proleptic_gregorian', 'standard')] <- "gregorian"
-  Mf.time.vals <- MF$metadata[[1]]$dim$time$vals         #: num [1:9125(1d)] 7300 7302 7302 7304 7304 ...
-  env$Mf.all.yrz <- (format(as.PCICt(Mf.time.vals*60*60*24, origin=Mf.time.origin, cal=Mf.time.cal), "%Y"))
-  #   env$mf.yr.length <- sum(Mf.all.yrz==levels(Mf.all.yrz)[2])
-  env$mf.yr.length <- median(table(Mf.all.yrz))
-
-  # Find the number of years in each data set
-  #   env$num.years.Oh <- length(unique(env$Oh.all.yrz))
-  #   env$num.years.Mh <- length(unique(env$Mh.all.yrz))
-  #   env$num.years.Mf <- length(unique(env$Mf.all.yrz))
+  
+  #Year separation isn't essential for non-precip data; 
+  #for the moment, it's probably okay to ignore pr case, assume all cal-less data 
+  #is tasmax
+  if (OH$metadata[[1]]$dim$time$calendar != 'none'){
+    OH.time <- OH$metadata[[1]]$dim$time
+    env$OH.all.yrz <- format(get.PCICt.time.series(Oh.time$units, Oh.time$vals, Oh.time$calendar), "%Y")
+    Mh.time <- MH$metadata[[1]]$dim$time
+    env$MH.all.yrz <- format(get.PCICt.time.series(Mh.time$units, Mh.time$vals, Mh.time$calendar), "%Y")
+    Mf.time <- MF$metadata[[1]]$dim$time
+    env$MF.all.yrz <- format(get.PCICt.time.series(Mf.time$units, Mf.time$vals, Mf.time$calendar), "%Y")
+    env$mf.yr.length <- median(table(Mf.all.yrz))
+  }else{
+    #This can describe the csv case; run with synthetic data
+    env$OH.all.yrz <- rep(1000, length(OH$metadata[[1]]$dim$time$values))
+    env$MH.all.yrz <- rep(1000, length(MH$metadata[[1]]$dim$time$values))
+    env$MF.all.yrz <- rep(1000, length(MF$metadata[[1]]$dim$time$values))
+    env$mf.yr.length <- length(MF$metadata[[1]]$dim$time$values)
+  }
 
   if (!("kdetype" %in% names(args))){
     env$ds.ref$args$kdetype <- "KernSmooth::bkde"

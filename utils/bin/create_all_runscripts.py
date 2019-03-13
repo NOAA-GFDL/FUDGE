@@ -192,6 +192,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
     outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
     outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
+    meta_tmp = "$TMPDIR/meta_file.json"
+    meta_final = osp.join(scriptdir, "meta_file.json")
+    meta_command = make_meta_command(auxfile_mod, meta_final)
 
     #Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP |stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
@@ -233,7 +236,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             #is where the file paths are.
             runscript_code = create_slice_runscript(i_string, j_string, scriptdir, \
                                                     i_idx, imax, i_by, i_offset, \
-                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, target_var,outdirs)
+                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, meta_tmp, target_var,outdirs)
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n') #needed for slurm POSIX standard
@@ -241,7 +244,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             runscript_files.append(runscript_name)
             if i %njobs == (njobs-1) or i == (len(i_elements) - 2):
                 #Prepare to write all accululated data to file
-                executable_code = make_executable_stuff(runscript_files, auxfile_mod,
+                executable_code = make_executable_stuff(runscript_files, auxfile_mod, meta_tmp,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
@@ -249,12 +252,24 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                     f.write(dmget_string)
                     f.write(gcp_string)
                     f.write(outdir_cmd)
+                    f.write(meta_command)
                     f.write("echo 'Beginning calls to executable'\n")
                     f.write(executable_code)
                     f.write('\n') #needed for the slurm POSIX standard - final terminator
                     #f.write("wait")
     print('master runscript and mini creation completed')
     #return(n_tiles)
+
+def make_meta_command(auxfile_mod, meta_final):
+    #Makes the metadata commands that can be run as a standalone tool
+    meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
+                              "set meta_final = " + meta_final,
+                             "set meta_tmp = $TMPDIR/meta_file.json",
+                             "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp",
+                             "if ( ! -e $meta_final ) then",
+                             "  gcp $meta_tmp $meta_final",
+                             "endif"])
+    return(meta_command + "\n")
 
 def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
     '''
@@ -318,10 +333,7 @@ def create_outdir_string(outdirs, scriptdir, target_var):
         outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
     return(outdir_string)
 
-def create_slice_runscript(i_string, j_string, scriptdir,
-                            i_idx, i_max, i_by, i_offset,
-                            j_idx, j_max, j_by, j_offset,
-                            auxfile_mod, target_var, outdirs):
+def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, meta_file, target_var, outdirs):
     #Creates the runscript code specific to a slice of the grid downscaled
     #by the R code
     #Technically only the shebang is needed, but extra info in the event that we ever split
@@ -346,7 +358,7 @@ def create_slice_runscript(i_string, j_string, scriptdir,
     #Okay - this defines the list of runcodes that are going to be run.
     #i_idx is in the same space as i_max; i is in minifile space.
     #r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile #+ " &"
-    r_command = "Rscript " + master_driver + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, 'TRUE'])+ " >>& " + logfile + " &"
+    r_command = "Rscript " + master_driver + " " + " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, meta_file, 'TRUE'])+ " >>& " + logfile + " &"
     runscript = runscript_header + r_command + "\n" + "wait \n"
     for outdir in outdirs:
         runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
@@ -397,7 +409,7 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
         tmp_src = osp.join(runcode_dir, runcode_files[0])
         shutil.copy2(tmp_src, tmp_dest)
 
-def make_executable_stuff(runscript_files, auxfile_mod,
+def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
                           ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
     '''
     Makes the things that call R code (eventually) in the master.
@@ -433,7 +445,9 @@ def make_executable_stuff(runscript_files, auxfile_mod,
                           "j_stride <<- " + str(j_by),
                           "j_offset <<- " + str(j_offset),
                           "# point to the modified auxfile (has full file paths)",
-                          "auxfile <<- '" + auxfile_mod + "'",
+                          "auxfile  <<- '" + auxfile_mod + "'",
+                          "# point to the metadata file",
+                          "metafile <<- '" + meta_final + "'",
                           "# Source Master_Driver for the R code",
                           "source('$master_driver')"])
     echo_cmd = '"' + echo_cmd + '"'

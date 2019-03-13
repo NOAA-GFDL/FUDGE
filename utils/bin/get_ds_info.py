@@ -167,6 +167,8 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
     auxdict["njobs"] = njobs
     auxdict["ncpus"] = ncpus
     auxdict["ds_experiment_name"] = experiment_name
+    auxdict["files_in_aux"] = "FALSE"
+    auxdict["file_format"] = "netcdf"
     dsdict = OrderedDict()
     minsamplesize = 1
     #if no params are used, we just get 'na'

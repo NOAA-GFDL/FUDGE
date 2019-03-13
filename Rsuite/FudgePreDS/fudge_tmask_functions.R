@@ -144,6 +144,7 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
                                                   time.data=MF$metadata[[1]]$dim$time$vals)
     }
     if (has_calendar){
+      print("getting year divisions")
       tmask.list$hist.year.div <- get.year.divisions(OH_years$start, 
                                                      OH_years$end, 
                                                      OH$metadata[[1]]$dim$time$calendar)
@@ -152,6 +153,9 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
                                                     MF$metadata[[1]]$dim$time$calendar)
       tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
       tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
+#       print(tmask.list$nyears_hist)
+#       print(tmask.list$nyears_fut)
+#       stop('examine this output')
     }else{
       tmask.list$hist.year.div <- length(tmask.list$hist.leapmask)
       tmask.list$fut.year.div <- length(tmask.list$fut.leapmask)
@@ -197,6 +201,22 @@ check_mask_olap <- function(data.list){
 }
 
 get_tmask_years <- function(tmask_file){
+  #Gets the year ranges that the data uses
+  tmask_nc <- nc_open(tmask_file)
+  tmask_time <- ncvar_get(tmask_nc, 'time')
+  tmask_cal <- ncatt_get(tmask_nc, 'time', 'calendar')$value
+  tmask_units <- ncatt_get(tmask_nc, 'time', 'units')$value
+  nc_close(tmask_nc)
+  trange <- get.PCICt.time.range(tmask_units, tmask_time, tmask_cal)
+  yrs <- format(trange, '%Y%m%d')
+  out <- list()
+  out$start <- yrs[1]
+  out$end <- yrs[2]
+  out$yearstring <- paste0(yrs[1], "-", yrs[2])
+  return(out)
+}
+
+parse_tmask_years <- function(tmask_file){
   #Builds the strings that govern tmask start and end dates from
   #an esd-standard tmask name. Technically, also works with filenames. 
   tmask_name <- basename(tmask_file)

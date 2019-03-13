@@ -66,7 +66,8 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
   #Gets the location of all Januray 1sts in an input dataset
   #based off of start and end strings
   #i.e. 20951231
-  if ( calendar %in% c("360", "360-day", '360_day')){
+  get.cal.strings()
+  if ( calendar %in% cal360.strings){
     start_string <- gsub('31-', '30-', start_string)
     start_string <- gsub('31$', '30', start_string, perl = T)
     
@@ -79,15 +80,11 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
   end_date <- paste(substr(end_string, 1, 4), 
                     substr(end_string, 5, 6), 
                     substr(end_string, 7, 8), sep="-")
-  print("in get.year.divisions")
-  print(start_string)
-  print(start_date)
-  print(end_date)
   time_span <- as.numeric((get.PCICt.time.series(end_date, 0, calendar) - 
                              get.PCICt.time.series(start_date, 0, calendar))/86400)
   time.vals <- 0:(time_span)
-  time.dates <- get.PCICt.time.series(start_date, time.vals, calendar)
-  if ( calendar %in% c("360", "360-day", '360_day')){
+  time.dates <- get.PCICt.time.series(paste("days since", start_date), time.vals, calendar)
+  if ( calendar %in% cal360.strings){
     #...360-day calendar requires something different because of course it does.
     jan.dates <- which(format(time.dates, '%m-%d')=='12-30')
   }else{
@@ -96,17 +93,17 @@ get.year.divisions <- function(start_string, end_string, calendar='julian'){
   return(jan.dates)
 }
 
-get.PCICt.time.series <- function(origin, time.data, calendar){
-  #Returns a fast and dirty date conversion into the PCICt time
-  #series format, whcih contains noleap data
-  julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
-  if(calendar%in%julian.strings){
-    calendar <- 'gregorian'
-  }
-  seconds.per.day <- 86400
-  origin <- sub("days since ", "", origin)
-  origin <- sub(" 00:00:00", "", origin)
-  print(origin)
-  origin.pcict <- as.PCICt(origin, calendar)
-  return(origin.pcict + (time.data * seconds.per.day))
-}
+# get.PCICt.time.series <- function(origin, time.data, calendar){
+#   #Returns a fast and dirty date conversion into the PCICt time
+#   #series format, whcih contains noleap data
+#   julian.strings <- c("JULIAN", 'julian', "Julian", 'gregorian', 'proleptic_gregorian', 'standard', 'STANDARD', 'Standard')
+#   if(calendar%in%julian.strings){
+#     calendar <- 'gregorian'
+#   }
+#   seconds.per.day <- 86400
+#   origin <- sub("days since ", "", origin)
+#   origin <- sub(" 00:00:00", "", origin)
+#   print(origin)
+#   origin.pcict <- as.PCICt(origin, calendar)
+#   return(origin.pcict + (time.data * seconds.per.day))
+# }

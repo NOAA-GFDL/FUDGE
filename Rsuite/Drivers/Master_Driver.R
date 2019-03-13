@@ -67,7 +67,8 @@ if (length(console.args) > 0){
   j_stride <- as.numeric(console.args[7])
   j_offset <<- as.numeric(console.args[8])
   auxfile <- console.args[9]
-  copy_from_tmp = console.args[10]
+  metafile <- console.args[10]
+  copy_from_tmp = console.args[11]
   twindow_run <<- 'all'
 }else{
   if (!exists('i_idx', inherits=T, envir=globalenv())){
@@ -108,28 +109,6 @@ fut.pred.rip.list <- aux.ref$DS$rips
 message("Checking pre- and post-downscaling adjustments")
 pre_ds <- aux.ref$s3
 post_ds <- aux.ref$s5
-# ##Messy metadata checks - trying to restore legacy behavior
-# if ('pr_in' %in% names(pre_ds$outloop)){
-#   namevec <- names(pre_ds$outloop)
-#   namevec[namevec == 'pr_in'] = 'PR'
-#   names(pre_ds$outloop) <- namevec
-#   namevec <- names(post_ds$outloop)
-#   namevec[namevec == 'pr_out'] = 'PR'
-#   names(post_ds$outloop) <- namevec
-# }else if ('pr_in' %in% names(pre_ds$inloop)){
-#   namevec <- names(pre_ds$inloop)
-#   namevec[namevec == 'pr_in'] = 'PR'
-#   names(pre_ds$inloop) <- namevec
-#   namevec <- names(post_ds$inloop)
-#   namevec[namevec == 'pr_out'] = 'PR'
-#   names(post_ds$inloop) <- namevec 
-# }
-# #And finally, the transform
-# if ('transform' %in% names(pre_ds$inloop)){
-#  if (pre_ds$inloop$transform$qc_args$arg == 0.333333333333333){
-#    pre_ds$inloop$transform$qc_args$arg = 1/3
-#  } 
-# }
 pre.ds <- pre_ds$outloop
 pre.ds.train <- pre_ds$inloop
 post.ds <- post_ds$outloop
@@ -140,13 +119,13 @@ s5.inloop <- length(post_ds$inloop) > 0
 s5.outloop <- length(post_ds$outloop) > 0
 train_qcmask <- aux.ref$return_qcmask_from_ds
 
-#Adapt some of the parameters being set by the f-to-g bridge code
+# #Adapt some of the parameters being set by the f-to-g bridge code
 if(!exists('pr_opts')){
   f.list <- override.f.defaults(ds.ref$args)
 }else{
   f.list <- override.f.defaults(ds.ref$args, pr_opts)
 }
-min.present <- f.list$threshold
+# min.present <- f.list$threshold
 ds.ref$args <- f.list$args
 
 #Then, check that the s3 and s5 adjustments you are performing make sense in
@@ -159,6 +138,9 @@ QCAdjustArguments(pre_ds, post_ds,
                   is.multi.ens=is_multi_ens,
                   target.in.predictors = (target.var%in%predictor.vars),
                   predictor.vars, target.var, ds.ref$method)
+
+#Read in metadata parameters from metafile
+meta_list <- fromJSON(metafile)
 
 ########################
 #2018-04-11 : now checking on how to read in csv data
@@ -409,11 +391,11 @@ for (r in 1:length(aux.ref$DS$rips)){
   loop_filepath = file.path(loop_outdirs[1], loop_filename)
   #Metadata-related things
   message('writing global attributes')
-  if (aux.ref$file_format == 'netcdf'){
-    global_att_list <- make.fudge.globals()
-  }else{
-    global_att_list <- list('fakemeta' = "metadata att that doesn't need to exist")
-  }
+#   if (aux.ref$file_format == 'netcdf'){
+#     global_att_list <- make.fudge.globals()
+#   }else{
+#     global_att_list <- list('fakemeta' = "metadata att that doesn't need to exist")
+#   }
   
   if (ds.ref$target != "MF"){
     if (ds.ref$method == "KDDM") {
@@ -444,7 +426,7 @@ for (r in 1:length(aux.ref$DS$rips)){
                             units=OH$metadata[[OH.vars[1]]]$units,
                             longname=paste(OH$metadata[[OH.vars[1]]]$long_name),
                             standard_name=paste(OH$metadata[[OH.vars[1]]]$long_name),
-                            global_overwrite=global_att_list,
+                            global_overwrite=meta_list$globals,
                             global_clone_file = global_clone_file,
                             clone_globals=clone_globals, clone_all=F,
                             clone_include="frequency",clone_exclude="climatology",
@@ -461,17 +443,12 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc_filepath = file.path(loop_outdirs[2], qc_filename)
       
       message(paste('attempting to write to', qc_filename))
-      qc.comment <- get.qc.comment(aux.ref$qc_method, ds.ref$method)
-      qc.comment.att <- list()
-      qc.comment.att[[qc.var]] <- qc.comment
-      qc.globals <- global_att_list
+      qc_comment <- meta_list$vars[[qc.var]][['comment']]
+      qc_longname <- meta_list$vars[[qc.var]][['longname']]
+      qc_globals <- meta_list$globals
+      qc_globals$comment <- meta_list$vars[[qc.var]][['global']][['comment']]
+      qc_globals$climatology <- NA
       
-      qc.globals$comments <- make.fudge.comment(ds.ref$method, target.var, aux.ref$output_grid, aux.ref$ds_region, aux.ref$kfold,
-                                                aux.ref$ds_experiment_name,
-                                                predictor.vars, aux.ref$DS$rips,
-                                                aux.ref$qc_method, missval.args, train.string=train.string)
-      qc.longname <- make.qc.longname(aux.ref$qc_method, ds.ref$method, target.var)
-      qc.globals$climatology <- NA
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
       qc.dimlist <- dimlist
@@ -481,10 +458,9 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc.out.filename  = WriteNC(qc_filepath, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,
                                  dim.list = dimlist, var.data=varlist,
                                  prec='float', missval=1e20, units="1",
-                                 comment=qc.comment.att,
-                                 longname=qc.longname,
-                                 standard_name = paste("QC mask of", OH$metadata[[OH.vars[1]]]$long_name),
-                                 global_overwrite=qc.globals)
+                                 comment=qc_comment,
+                                 longname=qc_longname,
+                                 global_overwrite=qc_globals)
       
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
     }
