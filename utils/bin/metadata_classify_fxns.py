@@ -66,9 +66,9 @@ def classify_data(vfile, verbose=False):
     #For remaining atts, there are 3 components: has_attname, has_attname_of_value
     classval = ['HIRAM',  'CORDEX', 'CMIP-6',
                 'Livneh', 'Prism', 'Daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA']
-    attnames = ['gfdl_experiment_name', 'CORDEX', 'conventions',
+    attnames = ['gfdl_experiment_name', 'project_id', 'conventions',
                 'title', 'title', 'title', 'model_id', 'title', 'title', 'title', 'title']
-    attgrep = ['HIRAM', "", 'CMIP-6',
+    attgrep = ['HIRAM', "CORDEX", 'CMIP-6',
                'livneh', 'prism', 'daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA']
     if vclass == "Unclassified":
         with Dataset(vfile, 'r') as nc_obj:
@@ -109,6 +109,7 @@ def get_attributes(vfile, vclass, verbose):
                 atts = nc_obj.__dict__
                 attdict['scenario'] = atts['experiment_id']
                 attlist = ['model_id', 'experiment', 'realization']
+                att_reg = ["", "", "_(r[:num:])"]
                 attdict['orig_experiment'] = " ".join([str(atts[a]) for a in attlist])
             return(attdict)
         elif vclass in ["GFDL-FLORB01-p2FA"]:
@@ -140,7 +141,7 @@ def get_attributes(vfile, vclass, verbose):
                 sys.exit(1)
             '''
         elif vclass == "CORDEX":
-            model_dataset = atts_['model_id']
+            model_dataset = atts['model_id']
             drive_dataset = atts['driving_model_id']
             attdict['dataset'] = model_dataset + "_driven_by_" + drive_dataset
             attdict['scenario'] = atts['experiment_id']

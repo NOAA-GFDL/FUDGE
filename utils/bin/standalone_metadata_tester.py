@@ -45,6 +45,8 @@ def parseScriptArgs():
     parser.add_option("--is-strict", dest='is_strict', action='store_true', default=False, help="Whether the strictest standard of metadata parsing should be used for the tool. If set, errors in metadata classification will lead to a failure of the tool.")
     parser.add_option("--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
     (options, args) = parser.parse_args()
+    if not options.output:
+        parser.error("--output specification is required!")
     if options.aux_input == 'none':
         #Check that input file is xml
         #parse XML
@@ -65,9 +67,9 @@ def parseScriptArgs():
         ds_info = get_ds_info(auxdict['ds_method'], BASEDIR)
     #make_fudge_metadata takes as its args a modified auxdict - i.e. an auxfile
     #with all the stuff that the R code would need to run in it.
-    make_fudge_metadata(auxdict, ds_info, options.output, is_running_standalone = options.is_standalone, is_strict = options.is_strict)
+    make_fudge_metadata(auxdict, ds_info, options.output, is_running_standalone = options.is_standalone, is_strict = options.is_strict, verbose=options.verbose)
 
-def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = False, is_strict = True):
+def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = False, is_strict = True, verbose=False):
     '''
     Parses and builds fudge metadata attributes, given a list of config parameters.
     General structure looks like this:
@@ -125,7 +127,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     prime_var = auxdict['OH'].keys()[0]
     OH_file = auxdict['OH'][prime_var]['file']
     MF_file = auxdict['MF'][prime_var]['file']
-    gd,pd = get_experiment_metadata(gd,pd,OH_file, MF_file, running_standalone=is_running_standalone, is_strict=True, verbose=False)
+    gd,pd = get_experiment_metadata(gd,pd,OH_file, MF_file, running_standalone=is_running_standalone, is_strict=True, verbose=verbose)
     #Get the info options
     gd['ds_downscaling_method'] = ds_info['ds_method']
     gd['info_ds'] = generate_fxn_arglist({'d1' : {'type': ds_info['ds_method'], 'args': auxdict['ds_args']}}, True)
@@ -152,7 +154,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         qc_var = prime_var + "_qcmask"
         qc_comment = make_qc_comment(auxdict['qc_method'], auxdict['ds_method'], BASEDIR)
         qc_longname = make_qc_longname(auxdict['qc_method'], auxdict['ds_method'], prime_var)
-        global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips)
+        global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips, str(auxdict['minsamplesize']))
         vd[qc_var] = {"longname": qc_longname,
                       "comment": qc_comment,
                       "globals": {"comment": global_comment}}
@@ -184,7 +186,6 @@ def generate_fxn_arglist(arglist, is_ds=False):
 def make_arglist(argd, is_ds):
     #Dict describing a s3/s5 adjustment or a ds method. Contains an args subdict
     #that describes the args the fxn takes.
-    print(argd)
     head = "" if is_ds else "fxn "
     argn = 'args' if is_ds else "qc_args"
     fxargs = argd[argn]
@@ -228,7 +229,6 @@ def get_filename_atts(data_struct):
     #otherwise, sorts alphabetically
     f_out = []
     for k in data_struct.keys():
-        print(data_struct[k])
         fname = data_struct[k]['file']
         if data_struct[k]['is_prime']:
             f_out = [osp.basename(fname)] + f_out
@@ -297,7 +297,7 @@ def make_global_comment(ds_method, var, region, grid, kfold, exp_name, train_dat
     main = make_main_comment(region, grid, kfold, exp_name, desc, train_data, predictor_vars, fut_rips)
     return(start + main)
 
-def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_name, train_data, predictor_vars, fut_rips):
+def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_name, train_data, predictor_vars, fut_rips, minsamplesize):
     #Makes global comment for qc vars; some switches based on qc method
     make_start = True
     if qc_method == 'qc.train':
@@ -305,7 +305,7 @@ def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_n
             make_start = False
             start = "Output to document the delta ratio applied at individual x,y,twindow locations "
         else:
-            qc_str = "where 1=minsamplesize requirements (n>" + minsamplesize + ") met for " + train_string + " and missing indicates retry option invoked"
+            qc_str = "where 1=minsamplesize requirements (n>" + minsamplesize + ") met for " + train_data + " and missing indicates retry option invoked"
     elif qc_method == "tail.adjust":
         qc_str = "where 1=tail adjustment took place and missing indicates it did not"
     else:
