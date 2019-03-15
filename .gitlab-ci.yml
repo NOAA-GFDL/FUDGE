@@ -14,10 +14,11 @@ minijob:
   - module purge 
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
-  #- module load slurm
+  ##- module load slurm
   - module list
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  - module list
   - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
   - echo $REG_BASEDIR
   #The below does not work. Calling entire thing, rather than alias.
