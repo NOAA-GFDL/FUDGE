@@ -11,9 +11,10 @@ minijob:
  stage: test_mini
  script:
   - echo "loading ESD environment"
+  - module purge 
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
-  - module load slurm
+  #- module load slurm
   - module list
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
@@ -39,6 +40,7 @@ fulljob:
  stage: test_full
  script:
   - echo "loading ESD environment"
+  - module purge 
   - module use -a /home/esd/local/modulefiles
   - module load esd/env 
   - module load slurm
