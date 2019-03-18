@@ -207,7 +207,7 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   #note that the adjustment gets added to the TOP of the stack
   backtform <- list(type='backtransform',
                     adjust.out='on',
-                    qc.mask='off',
+                    make_qc_mask=FALSE,
                     loc='present', #shouldn't need to be set;
                     #should be added to the current s5 list and executed
                     #accordingly; check to see whether this needs new entries

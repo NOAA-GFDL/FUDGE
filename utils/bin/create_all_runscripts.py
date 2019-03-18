@@ -267,12 +267,12 @@ def make_meta_command(auxfile_mod, meta_final):
                              "set meta_tmp = $TMPDIR/meta_file.json",
                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose --is-strict",
                              "set meta_status = $status",
-                             "if ( $meta_status != 0 ) then"
+                             "if ( $meta_status == 0 ) then",
                              "  if ( ! -e $meta_final ) then",
                              "    gcp $meta_tmp $meta_final",
                              "  endif",
                              "else",
-                             " echo 'Error in standalone_metadata_tester: Metadata operations failed!'"
+                             " echo 'Error in standalone_metadata_tester: Metadata operations failed!'",
                              " exit 1",
                              "endif"])
     return(meta_command + "\n")

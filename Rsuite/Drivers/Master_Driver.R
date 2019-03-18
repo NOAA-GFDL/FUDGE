@@ -119,8 +119,13 @@ s5.inloop <- length(post_ds$inloop) > 0
 s5.outloop <- length(post_ds$outloop) > 0
 train_qcmask <- aux.ref$return_qcmask_from_ds
 
+pr_is_adjusted <- 'pr_in' %in% names(pre_ds)
+if (pr_is_adjusted){
+  pr_opts <- pre_ds$qc_args
+}
+
 # #Adapt some of the parameters being set by the f-to-g bridge code
-if(!exists('pr_opts')){
+if(pr_is_adjusted){
   f.list <- override.f.defaults(ds.ref$args)
 }else{
   f.list <- override.f.defaults(ds.ref$args, pr_opts)
@@ -292,11 +297,14 @@ QCDSArguments(k=aux.ref$kfold, ds.method = ds.ref$method, args=ds.ref$args,
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
-if (!exists('pr_opts')){
-  adjust.metadata <<- get.adjust.metadata(OH, MH, MF)
-}else{
+if (pr_is_adjusted){
   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts=pr_opts)
+}else{
+  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
 }
+
+#print(str(adjust.metadata))
+#stop('examine this output')
 
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.
