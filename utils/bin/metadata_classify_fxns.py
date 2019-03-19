@@ -105,12 +105,24 @@ def get_attributes(vfile, vclass, verbose):
         #The FLOR case needs more attention; however, we're not running those
         #right now, so that's a lower priority
         if vclass in ['CCSM4', 'MIROC5', "MPI-ESM-LR"]:
+            fname = osp.basename(vfile)
+            fsplit = re.split("_", fname)
             with Dataset(vfile, 'r') as nc_obj:
                 atts = nc_obj.__dict__
                 attdict['scenario'] = atts['experiment_id']
                 attlist = ['model_id', 'experiment', 'realization']
-                att_reg = ["", "", "_(r[:num:])"]
-                attdict['orig_experiment'] = " ".join([str(atts[a]) for a in attlist])
+                #att_reg = ["", "", "_(r[:num:])"]
+                att_idx = [2,3,4]
+                #Adding a workaround for some of our climatology cases - they
+                #might no thave a rip in the metadata
+                alist = []
+                for a,idx in zip(attlist, att_idx):
+                    if a in atts.keys():
+                        alist.append(str(atts[a]))
+                    else:
+                        alist.append(str(fsplit[idx]))
+                #attdict['orig_experiment'] = " ".join([str(atts[a]) for a in attlist])
+                attdict['orig_experiment'] = " ".join(alist)
             return(attdict)
         elif vclass in ["GFDL-FLORB01-p2FA"]:
             with Dataset(vfile, 'r') as nc_obj:
