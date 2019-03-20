@@ -31,7 +31,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     # i_offset = int(i_start)  - 1
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
-    j_elements = range(int(j_start), int(j_end),j_by)
+    j_elements = range(int(j_start), int(j_end), j_by)
     j_elements.append(int(j_end)+1)
     j_elements = list(set(j_elements))
     j_elements = sorted(j_elements)
@@ -53,11 +53,11 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
         j_elements = [1, 2]
         is_syn = True
 
-    slurm_header = "\n".join(['# !/bin/tcsh',
-                                  '# SBATCH -t '+wallclocktime,
-                                  '# SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
-                                  '# SBATCH -J fudge_master',
-                                  '# SBATCH -p batch']) + "\n"
+    slurm_header = "\n".join(['#!/bin/tcsh',
+                              '#SBATCH -t '+wallclocktime,
+                              '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
+                              '#SBATCH -J fudge_master',
+                               '#SBATCH -p batch']) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
@@ -109,16 +109,31 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
         if not multivar_target:
             oh_vars = [target_var]
             if not is_syn:
-                oh_files,oh_dmget = build_xml_input_paths(oh_vars, oh_prefix, oh_timerange, "/" + oh_suffix, False)
+                oh_files, oh_dmget = build_xml_input_paths(oh_vars, oh_prefix,
+                                                           oh_timerange,
+                                                           "/" + oh_suffix,
+                                                           False)
             else:
-                oh_files,oh_dmget = build_xml_input_paths(oh_vars, oh_prefix, oh_timerange, idirsuffix, False)
+                oh_files, oh_dmget = build_xml_input_paths(oh_vars, oh_prefix,
+                                                           oh_timerange,
+                                                           idirsuffix, False)
         else:
             # Only triggered by MBC; may change later
             oh_vars = predlist
-            oh_files, oh_dmget = build_xml_input_paths(predlist, oh_prefix, oh_timerange, idirsuffix, True)
-        mh_files,mh_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MH_dir, trange=mh_timerange, suffix=idirsuffix, is_multivar=True)
-        mf_files,mf_dmget = build_xml_input_paths(in_vars=predlist, in_dir=MF_dir, trange=mf_timerange, suffix=idirsuffix, is_multivar=True)
-        # Set placeholder hooks for the is_prime and is_fixed qualities for the vars
+            oh_files, oh_dmget = build_xml_input_paths(predlist, oh_prefix,
+                                                       oh_timerange,
+                                                       idirsuffix, True)
+        mh_files, mh_dmget = build_xml_input_paths(in_vars=predlist,
+                                                   in_dir=MH_dir,
+                                                   trange=mh_timerange,
+                                                   suffix=idirsuffix,
+                                                   is_multivar=True)
+        mf_files, mf_dmget = build_xml_input_paths(in_vars=predlist,
+                                                   in_dir=MF_dir,
+                                                   trange=mf_timerange,
+                                                   suffix=idirsuffix,
+                                                   is_multivar=True)
+        # Set hooks for is_prime and is_fixed qualities for the vars
         oh_prime = oh_fixed = [False for el in oh_vars]
         mh_prime = mh_fixed = [False for el in predlist]
         mf_prime = mf_fixed = [False for el in predlist]
@@ -162,7 +177,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             tmask_files.append(trim_tmask)
             # dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"
             # dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
-        tmask_dmget = "dmget " + " ".join(tmask_files)     + "\n"
+        tmask_dmget = "dmget " + " ".join(tmask_files) + "\n"
         dmget_string = dmget_string + tmask_dmget
     # And finally, add the files that the aux file specifies
     if len(aux_file_list) > 0:
@@ -360,12 +375,12 @@ def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_
     # i: 1:194
     # j_range: 'J454_576'
     runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
-    runscript_header = "\n".join(['# !/bin/tcsh',
-                                  '# SBATCH -c 1',
-                                  '# SBATCH -t walltime=6:00:00',
-                                  '# SBATCH -o ' + runscript_log,
-                                  '# SBATCH -J fudge_run',
-                                  '# SBATCH -p batch']) + "\n"
+    runscript_header = "\n".join(['#!/bin/tcsh',
+                                  '#SBATCH -c 1',
+                                  '#SBATCH -t walltime=6:00:00',
+                                  '#SBATCH -o ' + runscript_log,
+                                  '#SBATCH -J fudge_run',
+                                  '#SBATCH -p batch']) + "\n"
     exp_name = scriptdir.split("/")[-1]
     if(exp_name==''):
         exp_name = scriptdir.split("/")[-2]

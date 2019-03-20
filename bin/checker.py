@@ -22,7 +22,7 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0, spath="na"):
        if (os.path.exists(path+"/.mini.fail")):
 	  	  print "\033[1;31m .mini.fail found in output dir, postProc cannot be executed. \033[1;m" 
 	  	  return -13	  
-       elif spath != 'na' and (os.path.exists(spath +"status/.mini.fail" or os.path.exists(spath +"status/.meta.fail")):
+       elif spath != 'na' and ( os.path.exists(spath +"status/.mini.fail") or os.path.exists(spath +"status/.meta.fail") ):
 	  	  print "\033[1;31m .mini.fail or .meta.fail found in script dir, postProc cannot be executed. \033[1;m"
 	  	  return -13				  	  
        elif (os.path.exists(path+"/.mini.success")):
