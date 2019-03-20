@@ -205,6 +205,7 @@ def get_climatology_atts(auxdict, var, is_running_standalone):
     elif clim_source == "OH":
         clim_source = auxdict['OH'][var]['file']
     else:
+        print("Error in standalone_metadata_tester.py: climo_source was not set in the auxdict!")
         sys.exit(1)
     #this is probably present in tmpdir already, if calling from workflow;
     #otherwise, do a copy.
@@ -259,6 +260,9 @@ def get_stencil_atts(auxdict):
     stencil_list = []
     for k in keys:
         stencils = [auxdict[k][v]['stencil'] for v in auxdict[k]]
+        for n in range(len(stencils)):
+            if type(stencils[n]) is list:
+                stencils[n] = stencils[n][0]
         stencils = list(set(stencils))
         stencil_list.append(k + ":" + ",".join(stencils))
     return(",".join(stencil_list))

@@ -28,6 +28,8 @@ def get_experiment_metadata(gd,pd,OH_file, MF_file, running_standalone=False, is
     pd['ds_MF_scenario'] = mf_class
     gd['title'] = mf_dict['orig_experiment'] + " downscaled by FUDGE " + gd['fudgetag'] + " " + gd['ds_experiment_name']
     pd['title'] = mf_class
+    print(gd)
+    print(pd)
     return(gd, pd)
 
 def get_file_metadata(vfile, dtype="MF", is_strict = True, verbose=False):
@@ -139,6 +141,7 @@ def get_attributes(vfile, vclass, verbose):
             attdict['orig_experiment'] = atts['model_id'] + " " + atts['experiment_id']
             attdict['dataset'] = atts['model_id']
             attdict['scenario'] = atts['experiment_id']
+            print(attdict)
             '''
             exp_name = atts['ds_experiment_name']
             exp_split = re.split("_", exp_name)

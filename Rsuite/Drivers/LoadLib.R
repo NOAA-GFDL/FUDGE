@@ -5,8 +5,8 @@ LoadLib <- function(ds.method){
   
   libs <- .libPaths()
   sys_lib <- libs[length(libs)]
-  usr_libs <- c('/home/d1a/R/x86_64-unknown-linux-gnu-library/3.2/', 
-                '/home/cew/R/x86_64-unknown-linux-gnu-library/3.2/')
+  usr_libs <- c('/home/d1a/R/x86_64-unknown-linux-gnu-library/3.4/', 
+                '/home/cew/R/x86_64-unknown-linux-gnu-library/3.4/')
   
   libWrapper <- function(pkg, pkg_lib='none'){
     #'Wrapper for loading library functions.
@@ -44,7 +44,7 @@ LoadLib <- function(ds.method){
     libWrapper("MBC")
     #library(MBC, lib.loc = '/home/cew/bin/R-3.1.1/library/', logical.return = T)
   }else if (grepl('KDDM', ds.method)){
-    libWrapper("climod")
+    libWrapper("climod", lib.loc = '/home/cew/R/x86_64-unknown-linux-gnu-library/3.4/')
     #Note: This package overloads the '@' assignment for non-s4 objects by assigning
     #attribute editing to that operator. If we starting getting '@' issues, start
     #looking at this load first.
