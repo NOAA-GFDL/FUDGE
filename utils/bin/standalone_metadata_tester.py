@@ -200,10 +200,12 @@ def make_arglist(argd, is_ds):
 def get_climatology_atts(auxdict, var, is_running_standalone):
     #Gets the attributes that you'd need for writing trend/climatology metadata
     clim_source = auxdict['climo_source']
+    if type(clim_source) is list:
+        clim_source = clim_source[0]
     if clim_source == "MF":
         clim_file = auxdict['MF'][var]['file']
     elif clim_source == "OH":
-        clim_source = auxdict['OH'][var]['file']
+        clim_file = auxdict['OH'][var]['file']
     else:
         print("Error in standalone_metadata_tester.py: climo_source was not set in the auxdict!")
         sys.exit(1)

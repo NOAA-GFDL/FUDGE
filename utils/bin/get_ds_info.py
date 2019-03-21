@@ -237,7 +237,7 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
                 if d is not None:
                     print("Warning for transform in add_s3_s5_params_to_auxdict: value " + k +
                       "not found in args!")
-                    print("Using legacy code default of " + d)
+                    print("Using legacy code default of " + str(d))
                     prdict[k] = d
                 else:
                     print("Error found in add_s3_s5_params_to_auxdict: param " +

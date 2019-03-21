@@ -376,17 +376,18 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   #is tasmax
   if (OH$metadata[[1]]$dim$time$calendar != 'none'){
     Oh.time <- OH$metadata[[1]]$dim$time
-    env$OH.all.yrz <- format(get.PCICt.time.series(Oh.time$units, Oh.time$vals, Oh.time$calendar), "%Y")
+    env$Oh.all.yrz <- format(get.PCICt.time.series(Oh.time$units, Oh.time$vals, Oh.time$calendar), "%Y")
     Mh.time <- MH$metadata[[1]]$dim$time
-    env$MH.all.yrz <- format(get.PCICt.time.series(Mh.time$units, Mh.time$vals, Mh.time$calendar), "%Y")
+    env$Mh.all.yrz <- format(get.PCICt.time.series(Mh.time$units, Mh.time$vals, Mh.time$calendar), "%Y")
     Mf.time <- MF$metadata[[1]]$dim$time
-    env$MF.all.yrz <- format(get.PCICt.time.series(Mf.time$units, Mf.time$vals, Mf.time$calendar), "%Y")
-    env$mf.yr.length <- median(table(env$Mf.all.yrz))
+    MF.all.yrz <- format(get.PCICt.time.series(Mf.time$units, Mf.time$vals, Mf.time$calendar), "%Y")
+    env$Mf.all.yrz <- MF.all.yrz
+    env$mf.yr.length <- median(table(MF.all.yrz))
   }else{
     #This can describe the csv case; run with synthetic data
-    env$OH.all.yrz <- rep(1000, length(OH$metadata[[1]]$dim$time$values))
-    env$MH.all.yrz <- rep(1000, length(MH$metadata[[1]]$dim$time$values))
-    env$MF.all.yrz <- rep(1000, length(MF$metadata[[1]]$dim$time$values))
+    env$Oh.all.yrz <- rep(1000, length(OH$metadata[[1]]$dim$time$values))
+    env$Mh.all.yrz <- rep(1000, length(MH$metadata[[1]]$dim$time$values))
+    env$Mf.all.yrz <- rep(1000, length(MF$metadata[[1]]$dim$time$values))
     env$mf.yr.length <- length(MF$metadata[[1]]$dim$time$values)
   }
 
