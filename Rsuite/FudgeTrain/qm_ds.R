@@ -375,7 +375,7 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
   #for the moment, it's probably okay to ignore pr case, assume all cal-less data 
   #is tasmax
   if (OH$metadata[[1]]$dim$time$calendar != 'none'){
-    OH.time <- OH$metadata[[1]]$dim$time
+    Oh.time <- OH$metadata[[1]]$dim$time
     env$OH.all.yrz <- format(get.PCICt.time.series(Oh.time$units, Oh.time$vals, Oh.time$calendar), "%Y")
     Mh.time <- MH$metadata[[1]]$dim$time
     env$MH.all.yrz <- format(get.PCICt.time.series(Mh.time$units, Mh.time$vals, Mh.time$calendar), "%Y")
