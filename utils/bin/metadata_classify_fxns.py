@@ -69,11 +69,11 @@ def classify_data(vfile, verbose=False):
         vclass = "CBAY"
     # For remaining atts, there are 3 components: class, has_attname, has_attname_of_value
     classval = ['HIRAM',  'CORDEX', 'CMIP-6',
-                'Livneh', 'Prism', 'Daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA']
+                'Livneh', 'Prism', 'Daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'KB_SYN']
     attnames = ['gfdl_experiment_name', 'project_id', 'conventions',
-                'title', 'title', 'title', 'model_id', 'title', 'title', 'title', 'title']
+                'title', 'title', 'title', 'model_id', 'title', 'title', 'title', 'title', 'experiment_id']
     attgrep = ['HIRAM', "CORDEX", 'CMIP-6',
-               'livneh', 'prism', 'daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA']
+               'livneh', 'prism', 'daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'QUANTILEMAP']
     if vclass == "Unclassified":
         with Dataset(vfile, 'r') as nc_obj:
             v_attnames = nc_obj.__dict__.keys()
@@ -105,6 +105,12 @@ def get_attributes(vfile, vclass, verbose):
     if vclass == "CBAY":
         attdict['dataset'] = "TPLM2"
         return(attdict)
+    elif vclass == 'KB_SYN':
+        with Dataset(vfile, 'r') as nc_obj:
+            atts = atts = nc_obj.__dict__
+        attdict['dataset'] = atts['model_id']
+        attdict['scenario'] = atts['experiment_id']
+        attdict['orig_experiment'] = atts['model_id'] + " " + atts['experiment_id']
     elif vclass in title_datasets:
         attdict['dataset'] = vclass
         # The FLOR case needs more attention; however, we're not running those

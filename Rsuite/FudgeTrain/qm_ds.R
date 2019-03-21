@@ -381,7 +381,7 @@ set.KDDM.defaults <- function(args, ..., env=parent.frame()) {
     env$MH.all.yrz <- format(get.PCICt.time.series(Mh.time$units, Mh.time$vals, Mh.time$calendar), "%Y")
     Mf.time <- MF$metadata[[1]]$dim$time
     env$MF.all.yrz <- format(get.PCICt.time.series(Mf.time$units, Mf.time$vals, Mf.time$calendar), "%Y")
-    env$mf.yr.length <- median(table(Mf.all.yrz))
+    env$mf.yr.length <- median(table(env$Mf.all.yrz))
   }else{
     #This can describe the csv case; run with synthetic data
     env$OH.all.yrz <- rep(1000, length(OH$metadata[[1]]$dim$time$values))
