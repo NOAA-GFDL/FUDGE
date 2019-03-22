@@ -207,7 +207,7 @@ loop.xy.data <- function(){
               }
             }else{
               window.post_ds_inloop <- post.ds.train
-            }      
+            }
             #Call the downscaling method
             #           if (all(is.na(MH.window[[1]]))){
             #             stop('examine this output - MH is all NA after s3 opts')

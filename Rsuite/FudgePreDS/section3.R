@@ -99,7 +99,7 @@ callPRPreproc <- function(test, input, postproc.output,
   if (test$qc_args$pr_adjmethod %in% c('eqfreq', 'none')){
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF,
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
-                             test$var, prime_predictor,
+                             test$apply_var, prime_predictor,
                              test$qc_args$thold, lopt.drizzle, lopt.conserve, ignore0, allow_lower_mh=TRUE)
   #'Okay, this is going to need some work on how to transmit the unit conversions
   #'from in here
