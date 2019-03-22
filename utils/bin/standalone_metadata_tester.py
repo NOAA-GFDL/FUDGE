@@ -109,8 +109,10 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd['ds_experiment_name'] = auxdict['ds_experiment_name']
     p0 = subprocess.Popen("R --version", shell=True, stdout=PIPE, stderr=PIPE)
     out0,err0 = p0.communicate()
-    gd['r_version'] = re.split(" --", out0)[0]
-    gd['python_version'] = re.split("\n", sys.version)[0]
+    # I'm turning off R and python version for the moment, since they
+    # create too many false positives when doing comaprisons.
+    # gd['r_version'] = re.split(" --", out0)[0]
+    # gd['python_version'] = re.split("\n", sys.version)[0]
     #Filenames of data
     gd['filenames_OH'] = get_filename_atts(auxdict['OH'])
     gd['filenames_MH'] = get_filename_atts(auxdict['MH'])
