@@ -12,7 +12,9 @@ sys.path.append(osp.join(BASEDIR, 'utils/aux'))
 from fudgeUtils import gcp
 
 
-def get_experiment_metadata(gd,pd,OH_file, MF_file, running_standalone=False, is_strict=True, verbose=False):
+def get_experiment_metadata(gd, pd, OH_file, MF_file, ds_experiment_name,
+                            running_standalone=False, is_strict=True,
+                            verbose=False):
     # Sets up parsing for OH and MF experiment attributes, based off of classification.
     if running_standalone:
         OH_file = gcp(OH_file, verbose=verbose)
@@ -27,7 +29,7 @@ def get_experiment_metadata(gd,pd,OH_file, MF_file, running_standalone=False, is
     pd['ds_MF_source'] = mf_class
     gd['ds_MF_scenario'] = mf_dict['scenario']
     pd['ds_MF_scenario'] = mf_class
-    gd['title'] = mf_dict['orig_experiment'] + " downscaled by FUDGE " + gd['fudgetag'] + " " + gd['ds_experiment_name']
+    gd['title'] = mf_dict['orig_experiment'] + " downscaled by FUDGE " + gd['fudgetag'] + " " + ds_experiment_name
     pd['title'] = mf_class
     print(gd)
     print(pd)
@@ -154,23 +156,31 @@ def get_attributes(vfile, vclass, verbose):
     with Dataset(vfile, 'r') as nc_obj:
         atts = nc_obj.__dict__
         if vclass == "HIRAM":
-            attdict['orig_experiment'] = atts['model_id'] + " " + atts['experiment_id']
-            attdict['dataset'] = atts['model_id']
-            attdict['scenario'] = atts['experiment_id']
-            print(attdict)
-            '''
-            exp_name = atts['ds_experiment_name']
-            exp_split = re.split("_", exp_name)
-            if len(exp_split) == 5:
-                attdict['dataset'] = exp_split[3]
-                attdict['scenario'] = "_".join(exp_split[0:2])
-            elif len(exp_split) == 3:
-                attdict['dataset'] = exp_split[2]
-                attdict['scenario'] = "_".join(exp_split[0:1])
+            if 'ds_experiment_name' in atts.keys():
+                exp_name = atts['ds_experiment_name']
+                exp_split = re.split("_", exp_name)
+                if len(exp_split) == 5:
+                    attdict['dataset'] = exp_split[3]
+                    attdict['scenario'] = "_".join(exp_split[0:2])
+                elif len(exp_split) == 3:
+                    attdict['dataset'] = exp_split[2]
+                    attdict['scenario'] = "_".join(exp_split[0:1])
+                else:
+                    print("Error in get_attributes: parse of hiram had too many elements!")
+                    sys.exit(1)
             else:
-                print("Error in get_attributes: parse of hiram had too many elements!")
-                sys.exit(1)
-            '''
+                attdict['dataset'] = atts['model_id']
+                attdict['scenario'] = atts['experiment_id']
+            #Second parse is neccessary to replace old functionality
+            attdict['orig_experiment'] = atts['model_id'] + " " + atts['experiment_id']
+            search_patt = 'GFDL-HIRAM-C360-COARSENED'
+            if re.search(search_patt, attdict['orig_experiment']) is not None:
+                scen = atts['experiment_id']
+                scendict = {'sst2030': 'RCFP 4.5', 'stt2090': 'RCP 8.5'}
+                physdict = {'1': 'ESM', '2': 'CM3'}
+                exp = " ".join(['GFDL-HIRAM', scendict[scen],
+                                physdict[str(atts['physics'])], scen])
+                attdict['orig_experiment'] += exp
         elif vclass == "CORDEX":
             model_dataset = atts['model_id']
             drive_dataset = atts['driving_model_id']
@@ -185,10 +195,11 @@ def get_attributes(vfile, vclass, verbose):
 
 
 def send_test(testname, OH_file, MF_file):
-    gd = {'fudgetag': 'tag-' + testname,
-         'ds_experiment_name': 'exp_' + testname}
+    gd = {'fudgetag': 'tag-' + testname}
     pd = {}
-    md = get_experiment_metadata(gd, pd, OH_file, MF_file, True, True, True)
+    exp = "experiment-"+testname
+    md = get_experiment_metadata(gd, pd, exp, OH_file, MF_file,
+                                 True, True, True)
     meta_text = json.dumps(md, indent=2)
     print(meta_text)
     print("\n")

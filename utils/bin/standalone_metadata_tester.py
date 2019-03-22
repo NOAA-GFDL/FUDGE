@@ -53,6 +53,7 @@ def parseScriptArgs():
         #make rudimentary aux file
         #parse rudimentary aux file, getting auxdict
         #add ds params to auxdict
+        auxdict = {}
         auxdict = add_ds_params_to_auxdict(auxdict, njobs, ncpus,
                                            expconfig, kfold, method, params,
                                            output_grid, ds_region)
@@ -97,21 +98,22 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     title = "" #initializing title here, because title gets added sooner
     gd['title'] = title
     gd['institution'] = "NOAA/GFDL (201 Forrestal Rd, Princeton, NJ, 08540)"
-    gd['insitute_id'] = "NOAA/GFDL"
+    gd['institute_id'] = "NOAA/GFDL"
     gd['comment'] = "" #same deal for comment
     ##I think this should include this, but its not there yet
     ##gd['references'] = ds_info['reference']
     gd['realizations'] = ",".join(auxdict['DS']['rips'])
-    #This is not included in the struct - shoudl it be?
+    #This is not included in the struct - should it be?
     fudgetag = os.environ.get('FUDGETAG')
     gd['fudgetag'] = fudgetag
     gd['ds_downscaling_method'] = auxdict['ds_method']
-    gd['ds_experiment_name'] = auxdict['ds_experiment_name']
+    ## Similar false positive issue compared to the one below
+    # gd['ds_experiment_name'] = auxdict['ds_experiment_name']
     p0 = subprocess.Popen("R --version", shell=True, stdout=PIPE, stderr=PIPE)
     out0,err0 = p0.communicate()
     # I'm turning off R and python version for the moment, since they
     # create too many false positives when doing comaprisons.
-    # gd['r_version'] = re.split(" --", out0)[0]
+    gd['r_version'] = re.split(" --", out0)[0]
     # gd['python_version'] = re.split("\n", sys.version)[0]
     #Filenames of data
     gd['filenames_OH'] = get_filename_atts(auxdict['OH'])
@@ -129,10 +131,14 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     prime_var = auxdict['OH'].keys()[0]
     OH_file = auxdict['OH'][prime_var]['file']
     MF_file = auxdict['MF'][prime_var]['file']
-    gd,pd = get_experiment_metadata(gd,pd,OH_file, MF_file, running_standalone=is_running_standalone, is_strict=True, verbose=verbose)
+    gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
+                                     auxdict['ds_experiment_name'],
+                                     running_standalone=is_running_standalone,
+                                     is_strict=True, verbose=verbose)
     #Get the info options
     gd['ds_downscaling_method'] = ds_info['ds_method']
-    gd['info_ds'] = generate_fxn_arglist({'d1' : {'type': ds_info['ds_method'], 'args': auxdict['ds_args']}}, True)
+    gd['info_ds'] = generate_fxn_arglist({'d1': {'type': ds_info['ds_method'],
+                                         'args': auxdict['ds_args']}}, True)
     gd['info_pre_ds'] = generate_fxn_arglist(merge_dicts(auxdict['s3']['outloop'], auxdict['s3']['inloop']))
     gd['info_post_ds'] = generate_fxn_arglist(merge_dicts(auxdict['s5']['inloop'], auxdict['s5']['outloop']))
     gd['info_tmask'] = get_tmask_atts(auxdict)
@@ -144,7 +150,12 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     predictor_vars = ",".join(auxdict['MF'].keys())
     train_string = ds_info['train_datasets']
     fut_rips = ",".join(auxdict['DS']['rips'])
-    gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips)
+    gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var,
+                                        auxdict['ds_region'],
+                                        auxdict['output_grid'],
+                                        auxdict['kfold'],
+                                        auxdict['ds_experiment_name'],
+                                        train_string, predictor_vars, fut_rips)
     #Climatology and trend are more complicated - depending on the workflow,
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
