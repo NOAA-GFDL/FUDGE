@@ -205,10 +205,20 @@ def make_arglist(argd, is_ds):
     argstring = ""
     type = "PR" if argd['type'] in ["pr_in", "pr_out"] else argd['type']
     if len(fxargs) > 0:
-        argstring = head + argd['type'] + ": (" + ", ".join([k + "=" + str(fxargs[k]) for k in fxargs.keys()]) + ")"
+        argstring = head + argd['type'] + " : (" + ",".join([k + "=" + arg_tostring(fxargs[k]) for k in sorted(fxargs.keys())]) + ")"
     else:
-        argstring = head + argd['type'] + ": ('default settings')"
+        argstring = head + argd['type'] + " : (default settings)"
     return(argstring)
+
+
+def arg_tostring(arg):
+    # Converts a list or single el into a string:
+    if type(arg) is list:
+        ret = "(" + ",".join([str(k) for k in arg]) + ")"
+    else:
+        ret = str(arg)
+    return(ret)
+
 
 def get_climatology_atts(auxdict, var, is_running_standalone):
     #Gets the attributes that you'd need for writing trend/climatology metadata
@@ -258,15 +268,22 @@ def get_tmask_atts(ds):
     #elements are dicts with a tmask att.
     keys = ['OH', 'MH', 'MF']
     tmasks_all = []
+    miss_count = 0
     for k in keys:
         subset = ds[k]
         vars = subset.keys()
         tmasks = [subset[v]['tmask'] for v in vars]
-        tmasks_all.append(k + ":" + ",".join(list(set(tmasks))))
-    #Conditional statement for the indexing tmask
+        tmask_set = list(set(tmasks))
+        if tmask_set[0] == 'na':
+            miss_count += 1
+        tmasks_all.append(k + ":" + ",".join([osp.basename(el) for el in tmask_set]))
+    # Conditional statement for the indexing tmask
     if ds['DS']['indexing_tmask'] != "na":
         tmasks_all.append("trim : " + ds['DS']['indexing_tmask'])
-    return("; ".join(tmasks_all))
+    if miss_count == 3:
+        return("none_used")
+    else:
+        return("; ".join(tmasks_all))
 
 def get_stencil_atts(auxdict):
     #Works off of a subset dictionary for OH, MH, MF;

@@ -240,8 +240,6 @@ loop.xy.data <- function(){
                 qc.out <- tmp.s5$qc
               }
             }
-            # print(summary(as.vector(ds.out$ds)))
-            # stop('examine this output')
             #...hm. Is it possible to adapt that OU code that included window
             #as an extra dimension and include it for multiple qc masks?
             combine.out <- list(ds=ds.out$ds, qc=qc.out)

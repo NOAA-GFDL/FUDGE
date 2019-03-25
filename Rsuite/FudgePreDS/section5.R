@@ -193,8 +193,6 @@ callPRPostproc <- function(test, input, adjusted.output){
   }
   if (test$qc_args$ignore0=='on'){
     message(paste('Applying wetday mask to ds output'))
-    print(str(test$qc_args))
-    print(ds.ref$downscale_oh)
     if (!ds.ref$downscale_oh){
       #non-OH downscaling is straightforward:
       #get center of possible 9-point mask and apply to ds output

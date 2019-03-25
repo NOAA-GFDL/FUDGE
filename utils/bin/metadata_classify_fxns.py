@@ -4,6 +4,8 @@ from os import path as osp
 import json
 import netCDF4
 from netCDF4 import Dataset
+from optparse import OptionParser
+import ConfigParser
 BASEDIR = os.environ.get('BASEDIR')
 if BASEDIR is None:
     print("Error in metadata setup: no version of fudge is checked out! Please check out a jamoca-or-later version of fudge.")
@@ -27,12 +29,12 @@ def get_experiment_metadata(gd, pd, OH_file, MF_file, ds_experiment_name,
     mf_dict, mf_class = get_file_metadata(MF_file, 'MF', is_strict, verbose)
     gd['ds_MF_source'] = mf_dict['dataset']
     pd['ds_MF_source'] = mf_class
-    gd['ds_MF_scenario'] = mf_dict['scenario']
-    pd['ds_MF_scenario'] = mf_class
+    # I briefly called this ds_MF_scenario; switching back
+    # to maintain backwards-compatability
+    gd['ds_scenario'] = mf_dict['scenario']
+    pd['ds_scenario'] = mf_class
     gd['title'] = mf_dict['orig_experiment'] + " downscaled by FUDGE " + gd['fudgetag'] + " " + ds_experiment_name
     pd['title'] = mf_class
-    print(gd)
-    print(pd)
     return(gd, pd)
 
 
@@ -84,9 +86,16 @@ def classify_data(vfile, verbose=False):
                     print(" ".join([nm, sch, cval]))
                     #print(nm)
                     #print(v_attnames)
-                if nm in v_attnames:
+                # Account for case-insensitve search
+                # i.e. conventions and Conventions
+                v_search = [el for el in nc_obj.__dict__.keys()
+                            if re.search(nm, el, re.IGNORECASE) is not None]
+                if len(v_search) > 0:
+                    sch_nm = v_search[0] if len(v_search) == 1 else nm
+                    # if nm in v_attnames:
                     if sch != "":
-                        v_att = nc_obj.__dict__[nm]
+                        # Next 2 lines are for case-insensitve search
+                        v_att = nc_obj.__dict__[sch_nm]
                         v_search = re.search(sch, v_att, re.IGNORECASE)
                         if verbose: print(sch + " " + v_att); print(v_search)
                         if v_search is not None:
@@ -156,15 +165,18 @@ def get_attributes(vfile, vclass, verbose):
     with Dataset(vfile, 'r') as nc_obj:
         atts = nc_obj.__dict__
         if vclass == "HIRAM":
-            if 'ds_experiment_name' in atts.keys():
-                exp_name = atts['ds_experiment_name']
+            if 'gfdl_experiment_name' in atts.keys():
+                exp_name = atts['gfdl_experiment_name']
                 exp_split = re.split("_", exp_name)
+                print(exp_name)
+                print(exp_split)
                 if len(exp_split) == 5:
-                    attdict['dataset'] = exp_split[3]
-                    attdict['scenario'] = "_".join(exp_split[0:2])
+                    attdict['scenario'] = exp_split[3]
+                    attdict['dataset'] = "_".join([exp_split[0],
+                                                   exp_split[1], exp_split[2]])
                 elif len(exp_split) == 3:
-                    attdict['dataset'] = exp_split[2]
-                    attdict['scenario'] = "_".join(exp_split[0:1])
+                    attdict['scenario'] = exp_split[2]
+                    attdict['dataset'] = "_".join([exp_split[0], exp_split[1]])
                 else:
                     print("Error in get_attributes: parse of hiram had too many elements!")
                     sys.exit(1)
@@ -178,9 +190,12 @@ def get_attributes(vfile, vclass, verbose):
                 scen = atts['experiment_id']
                 scendict = {'sst2030': 'RCFP 4.5', 'stt2090': 'RCP 8.5'}
                 physdict = {'1': 'ESM', '2': 'CM3'}
-                exp = " ".join(['GFDL-HIRAM', scendict[scen],
-                                physdict[str(atts['physics'])], scen])
-                attdict['orig_experiment'] += exp
+                try:
+                    exp = " ".join(['GFDL-HIRAM', scendict[str(scen)],
+                                    physdict[str(atts['physics'])], scen])
+                    attdict['orig_experiment'] += exp
+                except KeyError:
+                    attdict['orig_experiment'] = atts['model_id'] + " " + atts['experiment_id']
         elif vclass == "CORDEX":
             model_dataset = atts['model_id']
             drive_dataset = atts['driving_model_id']
@@ -194,12 +209,12 @@ def get_attributes(vfile, vclass, verbose):
     return(attdict)
 
 
-def send_test(testname, OH_file, MF_file):
+def send_test(testname, OH_file, MF_file, verbose=True):
     gd = {'fudgetag': 'tag-' + testname}
     pd = {}
     exp = "experiment-"+testname
-    md = get_experiment_metadata(gd, pd, exp, OH_file, MF_file,
-                                 True, True, True)
+    md = get_experiment_metadata(gd, pd, OH_file, MF_file, exp,
+                                 True, True, verbose)
     meta_text = json.dumps(md, indent=2)
     print(meta_text)
     print("\n")
@@ -242,14 +257,32 @@ def run_classify_tests():
     print("metadata test cases complete.")
 
 
+def parse_meta_args():
+    '''
+    Parses the commandline metadata args and returns --help output
+    '''
+    usage = "usage: %prog --OH oh_file.nc --MF mf_file.nc" + \
+            "[--testtype 'commandline']"
+    parser = OptionParser(usage=usage, version='jamoca')
+    parser.add_option("--OH", help="Path to a file with OH data. Metadata will be taken from the file in the way that OH attributes normally are.")
+    parser.add_option("--MF", help="Path to a file with MF data. Metadata will be taken from the file in the way that MF attributes normally are.")
+    parser.add_option("--testtype", default='test', help="Placeholder to show how experiment name and fudgetag interact with metadata. If not set, defaults to 'test'")
+    parser.add_option("-v","--verbose", action='store_true', default=False, help="Whether to print extra diagnostic output; defaults to False")
+    options,args = parser.parse_args()
+    print(options)
+    print(options.testtype)
+    send_test(testname=options.testtype, OH_file=options.OH, MF_file=options.MF, verbose=options.verbose)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        if (len(sys.argv) != 2):
+        if (len(sys.argv) >= 2):
             # First arg is OH, second arg is MF
             # assume that you will have to copy them
-            send_test("commandline", sys.argv[1], sys.argv[2])
+            # send_test("commandline", sys.argv[1], sys.argv[2])
+            parse_meta_args()
         else:
-            print("Error in metadata_clasify_fxns: you need two args!")
+            print("Error in metadata_clasify_fxns: you need at least two args!")
             sys.exit(1)
     else:
         # Call the pre-written tests

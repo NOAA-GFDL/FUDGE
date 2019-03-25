@@ -43,7 +43,6 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                                    'att.list'=adjust.metadata),
                         s5.list=s5.instructions,
                         missval.args=missval.args)
-  #print(paste("lenght of section 3 instructions:", length(s3.instructions)))
   for(element in 1:length(s3.instructions)){
     test <- s3.instructions[[element]]
     #Note that BOTH ELEMENTS get returned for the adjusted output.
@@ -165,12 +164,10 @@ callPRPreproc <- function(test, input, postproc.output,
       #note that it is the presence of this mask that
       #leads to the adjustment being performed.
       if(!(ds.ref$downscale_oh)){
-        #print(paste('adding future prmask'))
         fut.prmask <- temp.out$future$pr_mask
         pr_mod$qc_args$fut.prmask <- fut.prmask
       }else{
         #Assume that you are downsciang on the OH dataset instead; store accordingly
-        #print(paste('adding target prmask'))
         pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
       }
     }
@@ -221,7 +218,6 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   for (datatype in names(input)){
     if (datatype %in% c("OH", "MH", "MF")){
       for (varname in names(input[[datatype]])){
-        #print(varname)
         grep.var <- sapply(transform.vars,
                            function(x){grepl(paste0("^", x, "\\."),
                                              varname, perl=T)})
