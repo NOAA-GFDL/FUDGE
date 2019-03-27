@@ -69,8 +69,9 @@ def classify_data(vfile, verbose=False):
     vclass = "Unclassified"
     # First do classification based off of filename (only one case so far)
     fsplit = re.split("_", osp.basename(vfile))
-    if (fsplit[2] == 'TPLM2'):
-        vclass = "CBAY"
+    if len(fsplit) > 2:
+        if (fsplit[2] == 'TPLM2'):
+            vclass = "CBAY"
     # For remaining atts, there are 3 components: class, has_attname, has_attname_of_value
     classval = ['HIRAM',  'CORDEX', 'CMIP-6',
                 'Livneh', 'Prism', 'Daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'KB_SYN']
