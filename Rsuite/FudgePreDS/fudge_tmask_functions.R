@@ -179,16 +179,35 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
 }
 
 
+# apply.fudge.tmask <- function(data, mask){
+#   #Fast and dirty adaptation of apply.any.mask
+#   #for use with 6-dimensional output
+#   #print('applying tmask')
+#   data <- aperm(data, c(6,1,2,3,4,5))
+#   data.dim <- dim(data)
+#   result <- rep(mask, length.out=length(data)) * as.vector(data)
+#   dim(result) <- data.dim
+#   return(aperm(result, c(2,3,4,5,6,1)))
+# }
+
 apply.fudge.tmask <- function(data, mask){
-  #Fast and dirty adaptation of apply.any.mask
-  #for use with 6-dimensional output
-  #print('applying tmask')
-  data <- aperm(data, c(6,1,2,3,4,5))
-  data.dim <- dim(data)
-  result <- rep(mask, length.out=length(data)) * as.vector(data)
-  dim(result) <- data.dim
-  return(aperm(result, c(2,3,4,5,6,1)))
+  #'Rewriting the above with lessons from the section 8 tools - 
+  #'we get slightly better performance with a broadcast rather than an aperm
+  if (length(data) == length(mask)){
+    result <- mask * data
+  }else{
+    data.dim <- dim(data)
+    result <- tmask.repeat(mask, data.dim) * data
+  }
+  return(result)
 }
+
+tmask.repeat <- function(tmask, dims){
+  tmask.array <- sapply(tmask, rep, times=prod(dims[-length(dims)]))
+  dim(tmask.array) <- dims
+  return(tmask.array)
+}
+
 
 check_mask_olap <- function(data.list){
   #'Checks the masks for overlapping along the time axis
