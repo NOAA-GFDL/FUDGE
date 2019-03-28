@@ -193,10 +193,11 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
 apply.fudge.tmask <- function(data, mask){
   #'Rewriting the above with lessons from the section 8 tools - 
   #'we get slightly better performance with a broadcast rather than an aperm
+  data.dim <- dim(data)
   if (length(data) == length(mask)){
-    result <- mask * data
+    result <- as.vector(data) * as.vector(mask)
+    dim(result) <- data.dim
   }else{
-    data.dim <- dim(data)
     result <- tmask.repeat(mask, data.dim) * data
   }
   return(result)
