@@ -14,7 +14,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                           spatmask, OH_tmask, MH_tmask, MF_tmask, trim_tmask,
                           outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
                           auxfile, aux_file_list, wallclocktime,
-                          auxdict, ds_minifile):
+                          auxdict, ds_minifile, experiment_name):
     '''
     # Creates master and single-slice miniifles for a FUDGE job
     # if --msub is included, also submits jobs at the end of everything
@@ -56,7 +56,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     slurm_header = "\n".join(['#!/bin/tcsh',
                               '#SBATCH -t '+wallclocktime,
                               '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
-                              '#SBATCH -J fudge_master',
+                              #'#SBATCH -J fudge_master',
                                '#SBATCH -p batch']) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
@@ -229,7 +229,8 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                 if end_idx > len(i_elements) - 1:
                     end_idx = len(i_elements) - 1
                 i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
-                master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + i_master_string + '_' + j_string)
+                idx_string = i_master_string + '_' + j_string
+                master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
                 runscript_files = []
             # Since master is created on first (always), can proceed with rest of runscript calls
             runscript_name = osp.join(scriptdir, 'runscript', "script." + target_var + "." + ds_method + "." + i_string + "_" + j_string)
@@ -263,6 +264,8 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
+                    f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
+                    #f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
                     f.write(dmget_string)
                     f.write(gcp_string)

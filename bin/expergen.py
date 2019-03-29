@@ -705,7 +705,7 @@ def main():
                           file_j_range, idirsuffix, \
                           ds_info['multivar_target'],
                           auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-                          auxdict, ds_minifile)
+                          auxdict, ds_minifile, expconfig)
     #print('examine runscript output')
     #sys.exit()
     #############################################################

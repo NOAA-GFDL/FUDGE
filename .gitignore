@@ -16,3 +16,4 @@ Regression_tests/
 .nfs00000000e8a05cd2000001bc
 builds/
 gitlab-runner
+gmon.out

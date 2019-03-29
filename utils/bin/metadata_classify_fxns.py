@@ -21,6 +21,14 @@ def get_experiment_metadata(gd, pd, OH_file, MF_file, ds_experiment_name,
     if running_standalone:
         OH_file = gcp(OH_file, verbose=verbose)
         MF_file = gcp(MF_file, verbose=verbose)
+    # Check for OH, MF being csv files
+    if all([el.endswith(".csv") for el in [OH_file, MF_file]]):
+        print("Inputs are csv-based; returning defaults")
+        gd['ds_OH_source'] = pd['ds_OH_source'] = 'csv'
+        gd['ds_MF_source'] = pd['ds_MF_source'] = 'csv'
+        gd['ds_scenario'] = pd['ds_scenario'] = 'csv'
+        gd['title'] = "Downscaled " + gd['fudgetag'] + " " + ds_experiment_name
+        return(gd, pd)
     # Parse and add OH
     oh_dict, oh_class = get_file_metadata(OH_file, 'OH', is_strict, verbose)
     gd['ds_OH_source'] = oh_dict['dataset']
