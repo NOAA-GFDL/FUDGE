@@ -540,46 +540,47 @@ def main():
 
     parse_xml = False
     create_default_aux = False
-    if re.search('xml$', options.uinput) is not None and osp.exists(options.uinput):
-        print("XML input: " + options.uinput)
-        parse_xml = True
-        # TODO: parse this for preexist settings
-        tmp = listVars(options.uinput, basedir, msub)
-        outdir = tmp[27]
-        outdirs,rip_list = parse_outdirs_from_xml(outdir)
-        #Obtain rip information from xml
-        scriptdir = tmp[54]
-        # targvar = tmp[25] #This is never used right now
-        is_csv = False
-        # I don't remember why this is passed as a global.
-        # It's bad, but it goes away soon.
-        preexist = preexist_glob
-        # Check XML for aux specs
-        specdict = get_comment_specs(options.uinput)
-        auxfile = specdict['aux']
-        if auxfile != "none":
-            if(os.path.exists(auxfile)):
-                create_default_aux = False
-                auxfile = os.path.abspath(auxfile)
-                '''
-                #auxinfo is selective reads, auxdict is entire, messy thing
-                auxinfo, auxdict = parse_aux_info(auxinput)
-                if 'file_format' in auxdict.keys():
-                    if auxdict['file_format'] == 'csv':
-                        is_csv = True
-                '''
-            else:
-                print("Error in expergen: aux input from xml, " + auxfile +
-                      " does not exist on this filesystem!")
-                print("Please use --aux input for other aux or remove from xml.")
-                sys.exit(1)
-        else:
-            create_default_aux = True
+    if re.search('xml$', options.uinput) is not None and options.uinput != "none":
+        if osp.exists(options.uinput):
+            print("XML input: " + options.uinput)
+            parse_xml = True
+            # TODO: parse this for preexist settings
+            tmp = listVars(options.uinput, basedir, msub)
+            outdir = tmp[27]
+            outdirs,rip_list = parse_outdirs_from_xml(outdir)
+            #Obtain rip information from xml
+            scriptdir = tmp[54]
+            # targvar = tmp[25] #This is never used right now
             is_csv = False
-    else:
-        print("Error in expergen: xml input " + options.uinput + " was " +
-              " badly formed or not found. Please check input!")
-        sys.exit(1)
+            # I don't remember why this is passed as a global.
+            # It's bad, but it goes away soon.
+            preexist = preexist_glob
+            # Check XML for aux specs
+            specdict = get_comment_specs(options.uinput)
+            auxfile = specdict['aux']
+            if auxfile != "none":
+                if(os.path.exists(auxfile)):
+                    create_default_aux = False
+                    auxfile = os.path.abspath(auxfile)
+                    '''
+                    #auxinfo is selective reads, auxdict is entire, messy thing
+                    auxinfo, auxdict = parse_aux_info(auxinput)
+                    if 'file_format' in auxdict.keys():
+                        if auxdict['file_format'] == 'csv':
+                            is_csv = True
+                    '''
+                else:
+                    print("Error in expergen: aux input from xml, " + auxfile +
+                          " does not exist on this filesystem!")
+                    print("Please use --aux input for other aux or remove from xml.")
+                    sys.exit(1)
+            else:
+                create_default_aux = True
+                is_csv = False
+        else:
+            print("Error in expergen: xml input " + options.uinput + " was " +
+                  " badly formed or not found. Please check input!")
+            sys.exit(1)
 
     if osp.exists(options.auxinput):
         # Note: this can be in json or yaml
@@ -688,11 +689,15 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
-            with open(auxinput, 'r') as f:
-                auxdict = json.loads(auxinput)
+            with open(osp.abspath(auxinput), 'r') as f:
+                auxdict = json.load(f)
         else:
+            print("Error in expergen: non-json input not supported until the helpdesk ticket is done")
+            sys.exit(1)
+            '''
             with open(auxinput, 'r') as f:
                 auxdict = yaml.load(f)
+            '''
         #TODO: add an auxdict consistency-checking function
         #check_auxdict_consistency(auxdict)
         # For both of these, auxinpyt is a subset with some faster access props.
@@ -701,13 +706,21 @@ def generate_experiment(parse_xml, create_default_aux,
                    'copy_files': "",
                    'wallclocktime': "",
                    'pp_wallclocktime': ""}
-        ds_info = get_ds_info(method, basedir)
+        ds_info = get_ds_info(auxdict['ds_method'], basedir)
         lons = lone = i_subset = i_offset = 0
         lats = late = j_subset = j_offset = 0
+        target_dir = hist_pred_dir = fut_pred_dir = ""
+        spat_mask = ""
+        target_time_window = hist_time_window = fut_time_window = auxcustom = ""
         oh_timerange = "" #str(target_file_start_time) + "-" + str(target_file_end_time)
         mh_timerange = "" #str(hist_file_start_time) + "-" + str(hist_file_end_time)
         mf_timerange = "" #str(fut_file_start_time) + "-" + str(fut_file_end_time)
         predlist = "" #predictor.split(",")
+        output_grid = auxdict['output_grid']
+        njobs = auxdict['njobs']
+        ncpus = auxdict['ncpus']
+        outdir = auxdict['DS']['out_dir']
+        target = method = file_j_range = idirsuffix = ""
 
     #############################################################
     print("Step 0: Create the unified runcscripts and master runscripts")
