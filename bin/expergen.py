@@ -12,8 +12,9 @@ from os import path as osp
 import re
 import optparse
 from optparse import OptionParser
+import json
 import cleanup_script
-from cleanup_script import clean_prior_experiments
+from cleanup_script import clean_prior_experiments, parse_outdirs_from_xml
 import get_npts_by
 from get_npts_by import get_npts_by
 import create_all_runscripts
@@ -465,48 +466,61 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         return output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,experiment,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix
 ############end of listVars######################
 def main():
-    #################### args parsing ############
-    help = "#################Usage:(run from AN nodes)##################\n dsTemplater -i <input XML> \n "
-    help = help + "Example 1: expergen -i dstemplate.xml \n "
-    help = help + "Example 2: expergen -i examples/dstemplate.60lo0FUTURE.xml \n"
-    #print usage
+    '''
+    Main method for program. Basic consistency checks on input,
+    controls experiment preexist settings.
+    '''
+    # First, check platform
+    system, node, release, version, machine = os.uname()
+    if(node.startswith('pp')):
+        print "Running on PP(PAN) node", node
+    if(node.startswith('an')):
+        print "Running on AN(PAN) node", node
+    else:
+        print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please log in to analysis nodes to run expergen. \033[1;m",node
+        sys.exit(-5)
+
+    # Then, check environment variables
     basedir = os.environ.get('BASEDIR')
     if(basedir is None):
-       print "Warning: BASEDIR environment variable not set"
-    ##### get version BRANCH info ######################
-    branch = os.environ.get('BRANCH')
+        print("Error in expergen: no BASEDIR set! Is a fudge version checked out?")
+        sys.exit(1)
     fudgetag = os.environ.get('FUDGETAG')
     env_file = os.environ.get('FUDGE_ENV')
-    if branch is None and fudgetag is None:
-        print("Error in expergen: One of BRANCH or FUDGETAG must be set! Please load a module or check out a tag.")
-        exit(1)
-    else:
-        if branch is None:
-            branch = "NA"
-        if fudgetag is None:
-            fudgetag = "NA"
-       #print "Warning: BRANCH env variable not set. BRANCH will be set to undefined"
-       #branch = "undefined"
-    ####################################################
-    parser = OptionParser(usage=help)
-    parser.add_option("-i", "--file", dest="uinput",
-    help="pass location of XML template", metavar="FILE")
-    parser.add_option("-a", "--aux", default="none",dest="auxinput", help="pass location of auxilary JSON input for stencil, mask, subset and other specificaions. If not set in XML or by command line, a default aux will be created.")
-    parser.add_option("--sbatch",action="store_true",default=False, help="Automatically submit the master runscripts using SLURM's sbatch command. Default is set to FALSE")
-    parser.add_option("-m", "--mail",action="store", dest="mail",default="none", help="Pass user email for notifications from tools like postProc (this is optional)")
-    parser.add_option("--sbatchmail", action='store_true', dest='msubmail', default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
-    parser.add_option("--statmail", action='store_true', dest='statmail', default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
-    parser.add_option('--run-watcher', action='store_true', dest='run_watcher', default=False,
-                       help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+    if fudgetag is None:
+        print("Error in expergen: FUDGETAG must be set! Please load a module or check out a tag.")
+        sys.exit(1)
 
+    use = '''
+          Expergen usage (two cases:)
+          expergen -i path_to_xml.xml [--sbatch --run-watcher --mail --sbatchmail]
+          expergen -a path_to_aux.json [-a path_to_aux.yml --sbatch --run-watcher --mail --sbatchmail]
+          '''
+    parser = OptionParser(usage=use)
+    parser.add_option("-i", "--file", dest="uinput", default='none',
+                      help="Path to XML file used as input. Should not be set if --aux is used.", metavar="FILE")
+    parser.add_option("-a", "--aux", default="none",dest="auxinput",
+                      help="pass location of auxilary JSON/YAML alternative input specifications. Not expected for production use yet; if set, no xml should be used.")
+    parser.add_option("--sbatch",action="store_true",default=False,
+                      help="Automatically submit the master runscripts using SLURM's sbatch command. Default is set to FALSE")
+    parser.add_option("-m", "--mail", action="store",
+                     dest="mail", default="none",
+                     help="Pass user email for notifications from tools like postProc (this is optional)")
+    parser.add_option("--sbatchmail", action='store_true', dest='msubmail',
+                      default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
+    parser.add_option("--statmail", action='store_true', dest='statmail',
+                      default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
+    parser.add_option('--run-watcher', action='store_true', dest='run_watcher',
+                       default=False,
+                       help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
     (options, args) = parser.parse_args()
-    #CEW edits 3-3 for clarity (and only haing to search env vars once)
+
     if(options.mail=="none"):
         try:
             NEMSemail1 = os.environ["NEMSemail"]
         except KeyError:
-                   print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
-                   NEMSemail1 = 'none'
+            print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
+            NEMSemail1 = 'none'
     else:
         NEMSemail1 = options.mail
     print "Status emails will be sent to: " + NEMSemail1
@@ -515,29 +529,78 @@ def main():
     if (options.run_watcher and not options.sbatch):
         print("Error in expergen: option run-watcher should only be used with msub!")
         sys.exit(1)
-    if(os.path.exists(options.uinput)):
-        uinput = options.uinput
-        print "XML input: " + uinput
-    else:
-        print "XML input " + options.uinput + "not found!"
-        print "Please pass a valid input XML filename with the -i argument and try again. See -h for syntax. Quitting now.."
-        sys.exit()
-    #1-19-17: aux input
-    #5-1-17: default aux input
-    if(os.path.exists(options.auxinput)):
-        auxinput = os.path.abspath(options.auxinput)
-        search_xml_aux = False
-        print "JSON input: " + auxinput
-    else:
-        print "JSON input " + options.auxinput + "not found!"
-        if (options.auxinput == "none"):
-            print("Aux file will be searched for in XML (or a default will be created)")
-            search_xml_aux = True
-        else:
-            print "Please pass a valid input JSON filename with the -i argument and try again. See -h for syntax. Quitting now.."
-            sys.exit()
+    # xml and aux input specifications
+    inputs = [options.uinput, options.auxinput]
+    if all([el is "none" for el in inputs]):
+        print("Error in expergen: one of -i or --aux must be specified!")
+        sys.exit(1)
+    elif all([el is not "none" for el in inputs]):
+        print("Error in expergen: only one of -i or --aux should be set!")
+        sys.exit(1)
 
-    #Similar edits for the
+    parse_xml = False
+    create_default_aux = False
+    if re.search('xml$', options.uinput) is not None and osp.exists(options.uinput):
+        print("XML input: " + options.uinput)
+        parse_xml = True
+        # TODO: parse this for preexist settings
+        tmp = listVars(options.uinput, basedir, msub)
+        outdir = tmp[27]
+        outdirs,rip_list = parse_outdirs_from_xml(outdir)
+        #Obtain rip information from xml
+        scriptdir = tmp[54]
+        # targvar = tmp[25] #This is never used right now
+        is_csv = False
+        # I don't remember why this is passed as a global.
+        # It's bad, but it goes away soon.
+        preexist = preexist_glob
+        # Check XML for aux specs
+        specdict = get_comment_specs(options.uinput)
+        auxfile = specdict['aux']
+        if auxfile != "none":
+            if(os.path.exists(auxfile)):
+                create_default_aux = False
+                auxfile = os.path.abspath(auxfile)
+                '''
+                #auxinfo is selective reads, auxdict is entire, messy thing
+                auxinfo, auxdict = parse_aux_info(auxinput)
+                if 'file_format' in auxdict.keys():
+                    if auxdict['file_format'] == 'csv':
+                        is_csv = True
+                '''
+            else:
+                print("Error in expergen: aux input from xml, " + auxfile +
+                      " does not exist on this filesystem!")
+                print("Please use --aux input for other aux or remove from xml.")
+                sys.exit(1)
+        else:
+            create_default_aux = True
+            is_csv = False
+    else:
+        print("Error in expergen: xml input " + options.uinput + " was " +
+              " badly formed or not found. Please check input!")
+        sys.exit(1)
+
+    if osp.exists(options.auxinput):
+        # Note: this can be in json or yaml
+        print("Aux input: " + options.auxinput)
+        print("Aux will be used for all inputs; DO NOT CALL POSTPROC")
+        parse_xml = False
+        auxfile = options.auxinput
+        auxinfo, auxdict = parse_aux_info(options.auxinput)
+        outdirs = auxdict['DS']['out_dir']
+        rip_list = auxdict['DS']['rips']
+        if re.search("<RIP>", outdirs) is not None:
+            outdirs = [re.sub("<RIP>", el, outdirs) for el in rip_list]
+        else:
+            outdirs = [outdirs]
+        scriptdir = auxdict['script_settings']['scriptdir']
+        preexist = auxdict['cleanup_settings']['if_preexist']
+        is_csv = True if auxdict['file_format'] == 'csv' else False
+    elif options.auxinput is not "none":
+        print("Error in expergen: aux input " + options.auxinput + " was " +
+              " not found. Please check input!")
+        sys.exit(1)
 
     #CEW edits 6-30 for msub mail verbosity settings
     msubmail = 0
@@ -545,124 +608,110 @@ def main():
         msubmail = 1
     statmail = options.statmail
 
+    #Finally, clean experiments if they already exist
+    ##clean_prior_experiments(uinput, sd, basedir, preexist_glob, is_csv)
+    clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, preexist, is_csv)
+    # Ask MJN: are these settings still used?
+    #njobs = int(specdict['njobs'])
+    #ncpus = int(specdict['ncpus'])
+    generate_experiment(parse_xml, create_default_aux,
+                        options.uinput, auxfile, NEMSemail1,
+                        basedir, fudgetag, env_file, msub, scriptdir,
+                        msubmail, statmail, options.run_watcher)
 
-#########if platform is not PAN, disable expergen at this time 11/14/2014 ###############
-    system,node,release,version,machine = os.uname()
-    if(node.startswith('pp')):
-        print "Running on PP(PAN) node", node
-    if(node.startswith('an')):
-        print "Running on AN(PAN) node", node
-    else:
-         print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run expergen. \033[1;m",node
-         sys.exit(-5)
 
-#########################################################################################
-    #########  call listVars() #############################################################
-    output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
-
-    #print(auxcustom)
-    #print(masklists)
-    #print(pr_opts)
-    #sys.exit(1)
-
-    sd = sbase
-    #Check for prior experiment creation
-    #Note that this component can exit with an error
-    print("preexist behavior: " + preexist_glob)
-    #2018-10-31: The cleanup opts work weirdly with the csv workflow. We're less
-    #fixed in where we write files, but the freedom can be ...not good.
-    #Adding switch for the csv workflow in here; implies that we read in the aux
-    #file before doing anything with the moving experiments.
-
-    #Get aux specs
-    specdict = get_comment_specs(uinput)
-    njobs = int(specdict['njobs'])
-    ncpus = int(specdict['ncpus'])
-    #And as of 1-19-17, get the aux file specifications from the options
-    #You don't need to parse any of these, but you do need to get a list of the
-    #copy-able files (and possibly a wallclock time parameter)
-    #If no aux was specified as --aux
-    is_csv = False
-    create_default_aux = False
-    if search_xml_aux:
-        if specdict['aux'] != "none":
-            auxinput = specdict['aux']
-            if(os.path.exists(auxinput)):
-                create_default_aux = False
-                auxinput = os.path.abspath(auxinput)
-                #auxinfo is selective reads, auxdict is entire, messy thing
-                auxinfo,auxdict = parse_aux_info(auxinput)
-                if 'file_format' in auxdict.keys():
-                    if auxdict['file_format'] == 'csv':
-                        is_csv = True
-            else:
-                print("Error in expergen: aux input from xml, "+ auxinput + " does not exist on this filesystem!")
-                print("Please use --aux input for other aux or remove from xml.")
-                sys.exit(1)
-        else:
-            create_default_aux = True
-            is_csv = False
-
-    #Now, FINALLY, do the cleanup opts. Convoluted order above is due
-    #to the fact that the kind of experiment (production or csv)
-    #has an effect on the way experiments are run.
-    clean_prior_experiments(uinput, sd, basedir, preexist_glob, is_csv)
-
-    ##Create the scripts subdirectories
+def generate_experiment(parse_xml, create_default_aux,
+                        uinput, auxinput, NEMSemail1,
+                        basedir, fudgetag, env_file, msub,
+                        sbase, msubmail, statmail, run_watcher):
+    '''
+    After the consistency checks, parses config (xml or aux) to get params.
+    Then, generates master and runscripts, submitting if needed.
+    '''
+    #First, create experiment directories. Note that this assumes
+    #you've cleaned up your experiment beforehand:
     subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
     for el in subdirs:
         subdir = osp.join(sbase,el)
         if not osp.exists(subdir):
             os.makedirs(subdir)
-    #Need to do this after dirs are created - interferes with the process
-    #of cleaning up experiments otherwise.
-    if create_default_aux:
-        print('making default aux file')
-        auxinput = make_aux_input(output_grid, sbase, target)
-        #auxinfo is selective reads, auxdict is entire, messy thing
+
+    if parse_xml:
+        output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
+
+        #Need to do this after dirs are created - interferes with the process
+        #of cleaning up experiments otherwise.
+        njobs = 8
+        ncpus = 2
+        if create_default_aux:
+            print('making default aux file')
+            auxinput = make_aux_input(output_grid, sbase, target)
+            #auxinfo is selective reads, auxdict is entire, messy thing
         auxinfo,auxdict = parse_aux_info(auxinput)
-    #If aux file is not default, aux file overrides XML parameters
-    if auxinfo['njobs'] != 8:
-        njobs = auxinfo['njobs']
-    if auxinfo['ncpus'] != 2:
-        ncpus = auxinfo['ncpus']
-    #############################################################
-    #Add downscaling method parameters to auxfile - for the moment,
-    #we intend to write them out to file, not read them in from file.
-    #...but that is flexible, and that can change.
-    auxdict = add_ds_params_to_auxdict(auxdict, njobs, ncpus,
-                                       expconfig, kfold, method, params,
-                                       output_grid, ds_region)
-
-    #First check to see whether the leapday masks need to be copied...
-    ds_info = get_ds_info(method, basedir)
-    auxdict = add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, method, ds_info, target)
-    print(auxdict)
-
-    #############################################################
-    print "Step 0: Create the unified runcscripts and master runscripts"
-
-    #copy_leapmasks = ds_info['copy_leapmasks']
-
-    #As of 3-15-17, this needs a check for the 'all' string; turn into coords.
-    i_subset = auxinfo['subsetdict']['i_subset']
-    j_subset = auxinfo['subsetdict']['j_subset']
-    if i_subset == 'all':
-        i_subset = (int(lone)-int(lons)) + 1
+        #If aux file is not default, aux file overrides XML parameters
+        if auxinfo['njobs'] != 8:
+            njobs = auxinfo['njobs']
+        if auxinfo['ncpus'] != 2:
+            ncpus = auxinfo['ncpus']
+        auxdict = add_ds_params_to_auxdict(auxdict, njobs, ncpus,
+                                           expconfig, kfold, method, params,
+                                           output_grid, ds_region)
+        ds_info = get_ds_info(method, basedir)
+        auxdict = add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, method, ds_info, target)
+        # Set up vars needed for runscript creation
+        oh_timerange = str(target_file_start_time) + "-" + str(target_file_end_time)
+        mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
+        mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
+        predlist = predictor.split(",")
+        #As of 3-15-17, this needs a check for the 'all' string; turn into coords.
+        i_subset = auxinfo['subsetdict']['i_subset']
+        j_subset = auxinfo['subsetdict']['j_subset']
+        if i_subset == 'all':
+            i_subset = (int(lone)-int(lons)) + 1
+        else:
+            i_subset = int(i_subset)
+        if j_subset == 'all':
+            j_subset = (int(late)-int(lats)) + 1
+        else:
+            j_subset = int(j_subset)
+        #2018-06-06: Adding check between the experiment check and expconfig
+        #for purposes of checking kfold cross-valdiation
+        exp_check = get_exp_check_tag(uinput)
+        if exp_check is not None:
+            if (exp_check != expconfig):
+                print("Error in expergen: constructed exp_config " + expconfig + " and xml exp_check tag " + exp_check + " did not match!")
+                sys.exit(1)
+        #Add the commands to create the components for the DS entry in the aux file
+        ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
+                                        "<RIP>",
+                                        ds_region, fut_file_start_time, fut_file_end_time)
     else:
-        i_subset = int(i_subset)
-    if j_subset == 'all':
-        j_subset = (int(late)-int(lats)) + 1
-    else:
-        j_subset = int(j_subset)
-    #print(copy_leapmasks)
-    #print('examine runscript output')
-    #sys.exit()
-    #Then, make the runscripts
-    oh_timerange = str(target_file_start_time) + "-" + str(target_file_end_time)
-    mh_timerange = str(hist_file_start_time) + "-" + str(hist_file_end_time)
-    mf_timerange = str(fut_file_start_time) + "-" + str(fut_file_end_time)
-    predlist = predictor.split(",")
+        # read in auxdict, which can be in json or yaml
+        if re.search('json$', auxinput) is not None:
+            with open(auxinput, 'r') as f:
+                auxdict = json.loads(auxinput)
+        else:
+            with open(auxinput, 'r') as f:
+                auxdict = yaml.load(f)
+        #TODO: add an auxdict consistency-checking function
+        #check_auxdict_consistency(auxdict)
+        # For both of these, auxinpyt is a subset with some faster access props.
+        auxinfo = {'subsetdict': {'i_subset': "",
+                                  'j_subset': ""},
+                   'copy_files': "",
+                   'wallclocktime': "",
+                   'pp_wallclocktime': ""}
+        ds_info = get_ds_info(method, basedir)
+        lons = lone = i_subset = i_offset = 0
+        lats = late = j_subset = j_offset = 0
+        oh_timerange = "" #str(target_file_start_time) + "-" + str(target_file_end_time)
+        mh_timerange = "" #str(hist_file_start_time) + "-" + str(hist_file_end_time)
+        mf_timerange = "" #str(fut_file_start_time) + "-" + str(fut_file_end_time)
+        predlist = "" #predictor.split(",")
+
+    #############################################################
+    print("Step 0: Create the unified runcscripts and master runscripts")
+
     print("Calling create_all_runscripts")
     idict = {'US48' : 748,
              'SCCSC0p1'  : 181,
@@ -684,25 +733,16 @@ def main():
         j_offset = jdict[output_grid]
     except KeyError:
         j_offset = 1
-    #2018-06-06: Adding check between the experiment check and expconfig
-    #for purposes of checking kfold cross-valdiation
-    exp_check = get_exp_check_tag(uinput)
-    if exp_check is not None:
-        if (exp_check != expconfig):
-            print("Error in expergen: constructed exp_config " + expconfig + " and xml exp_check tag " + exp_check + " did not match!")
-            sys.exit(1)
-    #Add the commands to create the components for the DS entry in the aux file
-    ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
-                                    "<RIP>",
-                                    ds_region, fut_file_start_time, fut_file_end_time)
-    create_all_runscripts(lons, lone, i_subset, i_offset, \
-                          lats, late, j_subset, j_offset, \
-                          njobs, ncpus, fudgetag, sbase, \
-                          target_dir, hist_pred_dir, fut_pred_dir,\
-                          oh_timerange, mh_timerange, mf_timerange, predlist, \
-                          spat_mask, target_time_window, hist_time_window, \
-                          fut_time_window, auxcustom, outdir, target, method, \
-                          file_j_range, idirsuffix, \
+
+
+    create_all_runscripts(lons, lone, i_subset, i_offset,
+                          lats, late, j_subset, j_offset,
+                          njobs, ncpus, fudgetag, sbase,
+                          target_dir, hist_pred_dir, fut_pred_dir,
+                          oh_timerange, mh_timerange, mf_timerange, predlist,
+                          spat_mask, target_time_window, hist_time_window,
+                          fut_time_window, auxcustom, outdir, target, method,
+                          file_j_range, idirsuffix,
                           ds_info['multivar_target'],
                           auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
                           auxdict, ds_minifile, expconfig)
@@ -713,7 +753,7 @@ def main():
     cdir = sbase+"/config/"
     shutil.copy2(uinput, cdir)
     shutil.copy2(auxinput, cdir)
-    shutil.copy2(env_file, sd+ "/environment_info.csh")
+    shutil.copy2(env_file, sbase + "/environment_info.csh")
     ################ step 6 fudgeList invocation ##############################################
     slogloc = sbase+"/"+"experiment_info.txt"
     fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
@@ -737,19 +777,7 @@ def main():
     msubwrapper = []
     #CEW edit 6-30 for better status file monitoring when queue is full
     msubwrapper.append("rm -f " + sbase + "postProc/ppStatus/*")
-    print "multi output (Writing to multiple output directories) ....",multi
-    #if cmd line -m is passsed use that, otherwise use following
-    #CEW edit 3-3
-
-    '''
-    if (NEMSemail1 == "none"):
-          print "debug bde................", NEMSemail1
-          try:
-            NEMSemail1 = os.environ["NEMSemail"]
-            print "Notification email set to .......", NEMSemail1
-          except KeyError:
-            NEMSemail1 = "none"
-     '''
+    print("multi output (Writing to multiple output directories) ...." + multi)
     mail_command = ""
     msub_mail_command = ""
     if (NEMSemail1!='none'):
@@ -826,7 +854,7 @@ def main():
         print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
 
     #Script exit options - needs to exit with 0
-    if options.run_watcher:
+    if run_watcher:
         print("Invoking watcher script immediately")
         expinfo = sbase + "/experiment_info.txt"
         expdict = read_exp_info_file(expinfo)

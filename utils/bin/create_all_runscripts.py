@@ -167,7 +167,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
         os.makedirs(osp.dirname(auxfile_mod))
         shutil.copyfile(auxfile, auxfile_mod)
     # For either case, concatenate all the dmget strings together
-    dmget_string = dmget_string + "# Get OH data " + oh_dmget + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
+    dmget_string = dmget_string + "# Get OH data\n" + oh_dmget + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
     tmask_files = []
     leapmask_files = []
     if tmask_present:
@@ -285,11 +285,13 @@ def make_meta_command(auxfile_mod, meta_final, scriptdir):
                               "set meta_tmp = $TMPDIR/meta_file.json",
                               "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose --is-strict",
                               "set meta_status = $status",
+                              'echo "status of meta call: $meta_status"',
                               "if ( $meta_status == 0 ) then",
                               "  if ( ! -f $meta_final ) then",
                               "  " + make_gcp_cmd("$meta_tmp", meta_final,
                                                   indent="    ",
                                                   newline_end = False),
+                              "  sleep 10",
                               "  endif",
                               "else",
                               "  echo 'Error in standalone_metadata_tester: Metadata operations failed!'",

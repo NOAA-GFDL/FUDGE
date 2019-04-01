@@ -101,14 +101,17 @@ def parse_outdirs_from_xml(outdir_string):
         outdirs = [get_file_paths(f, is_csv=False) for f in outdirs]
     else:
         outdirs = [outdir_string]
-    return(outdirs)
+        out_split = outdir_string.split("/")
+        rip_list = [out_split[-3]]
+    return(outdirs,rip_list)
 
-def clean_prior_experiments(xml, scriptdir, basedir, opt, is_csv):
+def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv):
 #Clobbers or moves the script directories and all output directories,
 #depending on the settings of the xml passed in
 #Good news! Expergen checks for running on a workstation versus the analysis
 #nodes. This check should be safe.
 #Check for being on an analysis node:
+    '''
     output = listVars.listVars(xml, basedir)
     outdir = output[27]
     if re.search("#", outdir) is not None: #Check to see how this handles on single-rip datasets
@@ -127,10 +130,11 @@ def clean_prior_experiments(xml, scriptdir, basedir, opt, is_csv):
     scriptpath = output[54]
     targvar = output[25]
     #Ensemble obtain
+    '''
     is_ensemble = False
     is_crossval = False
     cv_warn=False
-    dirpaths = [scriptpath] + outdirs
+    dirpaths = [scriptdir] + outdirs
     if len(outdirs) > 1:
         is_ensemble = True
         dirpaths.append(get_ensemble_path(outdirs, rip_list))
