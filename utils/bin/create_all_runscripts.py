@@ -6,7 +6,57 @@ import json
 from collections import OrderedDict
 
 
-def create_all_runscripts(i_start, i_end, i_by, i_offset,
+def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
+                          j_start, j_end, j_by, j_offset,
+                          auxdict, auxfile, scriptdir, fudgetag):
+    '''
+    Creates runscripts (with dmget commands) based off of the aux input files -
+    all files are present already
+    '''
+    # TODO:
+    #So for each element we are interested, set up a dmget command
+    dataset_names = ['OH', 'MH', 'MF']
+    data_files = []
+    for dname in dataset_names:
+        data_files += [auxdict[dname][el]['file'] for el in auxdict[dname].keys()]
+    #None of these are going to be 'none':
+    dmget = "# Data files:\n" + "\n".join(["dmget " + el for el in data_files]) + "\n"
+    tmasks = []
+    for dname in dataset_names:
+        tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
+    if auxdict['DS']['indexing_tmask'] != 'na':
+        tmasks.append(auxdict['DS']['indexing_tmask'])
+    tmasks = list(set(tmasks))
+    tmasks = [el for el in tmasks if el != 'na']
+    if len(tmasks) > 0:
+        dmget += "# Time mask files:\n" + "\n".join(["dmget " + el for el in tmasks]) + "\n"
+    geomasks = []
+    for dname in dataset_names:
+        geomasks += [auxdict[dname][el]['geomask'] for el in auxdict[dname].keys()]
+    geomasks = list(set(geomasks))
+    geomasks = [el for el in geomasks if el != 'none']
+    if len(geomasks) > 0:
+        dmget += "# Spatial mask files:\n" + "\n".join(["dmget " + el for el in geomasks]) + "\n"
+    # Create the gcps for the script
+    file_list = data_files + geomasks + tmasks
+    mkdir_commands = ["mkdir -p $TMPDIR/" + osp.dirname(el) for el in file_list]
+    gcp_commands = [make_gcp_cmd(el, "$TMPDIR/" + el) for el in file_list]
+    gcp_str = "# gcp commands\n"
+    for el, em in zip(mkdir_commands, gcp_commands):
+        gcp_str += el + "\n" + em + "\n"
+    # Copy your auxfile to a final resting location:
+    auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
+    os.makedirs(osp.dirname(auxfile_mod))
+    shutil.copyfile(auxfile, auxfile_mod)
+
+    # And finally, do the looping by index and writing of master and runscripts.
+    make_master_and_runscripts(i_start, i_end, i_by, i_offset,
+                              j_start, j_end, j_by, j_offset,
+                              auxdict['OH'].keys()[0], True,
+                              dmget, gcp_str, auxdict, auxfile_mod, scriptdir, fudgetag)
+
+
+def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           njobs, ncpu, fudgetag, scriptdir,
                           OH_dir, MH_dir, MF_dir,
@@ -16,31 +66,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                           auxfile, aux_file_list, wallclocktime,
                           auxdict, ds_minifile, experiment_name):
     '''
-    # Creates master and single-slice miniifles for a FUDGE job
-    # if --msub is included, also submits jobs at the end of everything
-
-    # We should be running this with environmental variable basedir
-    # ...but we may not need this call to it
-    # basedir = os.environ.get('BASEDIR')
+    Creates runscripts (with dmget commands) based off of the xml input files -
+    we need to build files from xml components
     '''
-    # which i_indices are we going to be looping over?
-    i_elements = range(int(i_start), int(i_end)+1, i_by)
-    i_elements.append(int(i_end)+1)
-    i_elements = list(set(i_elements))
-    i_elements = sorted(i_elements)
-    # i_offset = int(i_start)  - 1
-    i_max = int(i_end) - i_offset
-    # which j indices are we going to be looping over?
-    j_elements = range(int(j_start), int(j_end), j_by)
-    j_elements.append(int(j_end)+1)
-    j_elements = list(set(j_elements))
-    j_elements = sorted(j_elements)
-    # j_offset = int(j_start)  - 1
-    j_max = int(j_end) - j_offset
-    # sys.exit("Examine this out")
-
-    # Okay - as of 207-05-09, adding a one-off special case for the synthetic data
-    # cases - as distinguished by the presence of grid0.
     is_syn = False
     if idirsuffix == "/grid0/":
         print("Adding synthetic data workaround for grid0")
@@ -52,30 +80,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
         idirsuffix = idirsuffix
         j_elements = [1, 2]
         is_syn = True
-
-    slurm_header = "\n".join(['#!/bin/tcsh',
-                              '#SBATCH -t '+wallclocktime,
-                              '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
-                              #'#SBATCH -J fudge_master',
-                               '#SBATCH -p batch']) + "\n"
-    # The path to the checkout script is hard-coded, and probably going to
-    # stay that way for now; the load of git is DEFINETLY needed if the
-    # checkout script is going to be used.
-    module_loads = "\n".join(['module load R',
-                              'module load gcp',
-                              'module load netcdf',
-                              'module load nco',
-                              'module load git/2.4.6',
-                              'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
-    # Okay, now define the set of files that you will work with
-    # (no more minifiles=all files are the same for each job slice)
-    # first, checking for the presence of the optional files
     spatmask_present = (spatmask != 'na')
     tmask_present = (OH_tmask != 'na')
     trim_time_mask_present = (trim_tmask != 'na')
-    # do all of your dmgets (requests for files on tape) in the script at once
-    # it is easier on the infrastructure if they are all done at once, since
-    # odds are some of the files we want are on the same tapes
     dmget_string = ""
     if spatmask_present:
         # Need the file located at one level up from the spatmask dir -
@@ -91,85 +98,9 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     else:
         spatmask_files = []
         spatmask_path = 'none'
+        tmask_files = []
 
-    # MH and MF files have an assumption that you can have multiple
-    # predictor vars present. At some point, var classification checks
-    # (such is is_spaceless for ENSO data) should go in here    .
-    # MH and MF paths are currently passed in several dirlevels earlier than OH
-    # Switch on this later, when things get added to the aux
-    present_in_aux = False
-    if any([el == 'files_in_aux' for el in auxdict.keys()]):
-        if auxdict['files_in_aux'] == 'TRUE':
-            present_in_aux = True
-    if not present_in_aux:
-        # OH_dir = os.path.dirname(osp.abspath(OH_dir))
-        prefix_loc = len(MH_dir.split("/"))
-        oh_prefix = "/".join(OH_dir.split("/")[0:prefix_loc])
-        oh_suffix = "/".join(OH_dir.split("/")[(prefix_loc+1):-1])
-        if not multivar_target:
-            oh_vars = [target_var]
-            if not is_syn:
-                oh_files, oh_dmget = build_xml_input_paths(oh_vars, oh_prefix,
-                                                           oh_timerange,
-                                                           "/" + oh_suffix,
-                                                           False)
-            else:
-                oh_files, oh_dmget = build_xml_input_paths(oh_vars, oh_prefix,
-                                                           oh_timerange,
-                                                           idirsuffix, False)
-        else:
-            # Only triggered by MBC; may change later
-            oh_vars = predlist
-            oh_files, oh_dmget = build_xml_input_paths(predlist, oh_prefix,
-                                                       oh_timerange,
-                                                       idirsuffix, True)
-        mh_files, mh_dmget = build_xml_input_paths(in_vars=predlist,
-                                                   in_dir=MH_dir,
-                                                   trange=mh_timerange,
-                                                   suffix=idirsuffix,
-                                                   is_multivar=True)
-        mf_files, mf_dmget = build_xml_input_paths(in_vars=predlist,
-                                                   in_dir=MF_dir,
-                                                   trange=mf_timerange,
-                                                   suffix=idirsuffix,
-                                                   is_multivar=True)
-        # Set hooks for is_prime and is_fixed qualities for the vars
-        oh_prime = oh_fixed = [False for el in oh_vars]
-        mh_prime = mh_fixed = [False for el in predlist]
-        mf_prime = mf_fixed = [False for el in predlist]
-        # Add modified aux copy & structure addition
-        oh_auxdict = make_aux_entry(oh_vars,  oh_files, oh_prime, oh_fixed,
-                                    stencil=auxdict['OH']['stencil'],
-                                    geomask=spatmask_path, tmask=OH_tmask)
-        mh_auxdict = make_aux_entry(predlist, mh_files, mh_prime, mh_fixed,
-                                    stencil=auxdict['MH']['stencil'],
-                                    geomask=spatmask_path, tmask=MH_tmask)
-        mf_auxdict = make_aux_entry(predlist, mf_files, mf_prime, mf_fixed,
-                                    stencil=auxdict['MF']['stencil'],
-                                    geomask=spatmask_path, tmask=MF_tmask)
-        ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0],
-                                       tmask=trim_tmask)
-        auxdict['OH'] = oh_auxdict
-        auxdict['MH'] = mh_auxdict
-        auxdict['MF'] = mf_auxdict
-        auxdict['DS'] = ds_auxdict
-        auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
-        os.makedirs(osp.dirname(auxfile_mod))
-        auxstr = json.dumps(auxdict, indent=4)
-        f = open(auxfile_mod, 'w')
-        print >> f, auxstr
-        f.close()
-    else:
-        oh_files, oh_dmget = build_aux_input_paths(auxdict['OH'])
-        mh_files, mh_dmget = build_aux_input_paths(auxdict['MH'])
-        mf_files, mf_dmget = build_aux_input_paths(auxdict['MF'])
-        auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
-        os.makedirs(osp.dirname(auxfile_mod))
-        shutil.copyfile(auxfile, auxfile_mod)
-    # For either case, concatenate all the dmget strings together
-    dmget_string = dmget_string + "# Get OH data\n" + oh_dmget + "# Get MH data\n" + mh_dmget + "# Get MF data\n" + mf_dmget
     tmask_files = []
-    leapmask_files = []
     if tmask_present:
         tmask_files = [OH_tmask, MH_tmask, MF_tmask]
         dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
@@ -179,15 +110,71 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
             # dmget_string = dmget_string + "dmget " + trim_tmask + "\n"
         tmask_dmget = "dmget " + " ".join(tmask_files) + "\n"
         dmget_string = dmget_string + tmask_dmget
-    # And finally, add the files that the aux file specifies
-    if len(aux_file_list) > 0:
-        aux_strlist = ["# Copy files from aux specification"]
-        for el in aux_file_list:
-            aux_strlist.append("dmget " + el)
-        dmget_string = "\n".join(aux_strlist)
-    # do all of your gcps next
+
+    # MH and MF files have an assumption that you can have multiple
+    # predictor vars present. At some point, var classification checks
+    # (such is is_spaceless for ENSO data) should go in here    .
+    # MH and MF paths are currently passed in several dirlevels earlier than OH
+    prefix_loc = len(MH_dir.split("/"))
+    oh_prefix = "/".join(OH_dir.split("/")[0:prefix_loc])
+    oh_suffix = "/".join(OH_dir.split("/")[(prefix_loc+1):-1])
+    if not multivar_target:
+        oh_vars = [target_var]
+        if not is_syn:
+            oh_files, oh_dmget = build_xml_input_paths(oh_vars, oh_prefix,
+                                                       oh_timerange,
+                                                       "/" + oh_suffix,
+                                                       False)
+        else:
+            oh_files, oh_dmget = build_xml_input_paths(oh_vars, oh_prefix,
+                                                       oh_timerange,
+                                                       idirsuffix, False)
+    else:
+        # Only triggered by MBC; may change later
+        oh_vars = predlist
+        oh_files, oh_dmget = build_xml_input_paths(predlist, oh_prefix,
+                                                   oh_timerange,
+                                                   idirsuffix, True)
+    mh_files, mh_dmget = build_xml_input_paths(in_vars=predlist,
+                                               in_dir=MH_dir,
+                                               trange=mh_timerange,
+                                               suffix=idirsuffix,
+                                               is_multivar=True)
+    mf_files, mf_dmget = build_xml_input_paths(in_vars=predlist,
+                                               in_dir=MF_dir,
+                                               trange=mf_timerange,
+                                               suffix=idirsuffix,
+                                               is_multivar=True)
+    # Set hooks for is_prime and is_fixed qualities for the vars
+    oh_prime = oh_fixed = [False for el in oh_vars]
+    mh_prime = mh_fixed = [False for el in predlist]
+    mf_prime = mf_fixed = [False for el in predlist]
+    # Add modified aux copy & structure addition
+    oh_auxdict = make_aux_entry(oh_vars,  oh_files, oh_prime, oh_fixed,
+                                stencil=auxdict['OH']['stencil'],
+                                geomask=spatmask_path, tmask=OH_tmask)
+    mh_auxdict = make_aux_entry(predlist, mh_files, mh_prime, mh_fixed,
+                                stencil=auxdict['MH']['stencil'],
+                                geomask=spatmask_path, tmask=MH_tmask)
+    mf_auxdict = make_aux_entry(predlist, mf_files, mf_prime, mf_fixed,
+                                stencil=auxdict['MF']['stencil'],
+                                geomask=spatmask_path, tmask=MF_tmask)
+    ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0],
+                                   tmask=trim_tmask)
+    auxdict['OH'] = oh_auxdict
+    auxdict['MH'] = mh_auxdict
+    auxdict['MF'] = mf_auxdict
+    auxdict['DS'] = ds_auxdict
+    auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
+    os.makedirs(osp.dirname(auxfile_mod))
+    auxstr = json.dumps(auxdict, indent=4)
+    with open(auxfile_mod, 'w') as f:
+        #Alternate write syntax
+        f.write(auxstr)
+        f.close()
+    #Make your gcp commands
     gcp_string = "# Copy all input files to $TMPDIR (-cd option creates input directories) " + "\n"
-    file_list = leapmask_files + spatmask_files + tmask_files + oh_files + mh_files + mf_files + aux_file_list
+    file_list = spatmask_files + tmask_files + oh_files + mh_files + mf_files + aux_file_list
     print("file_list:")
     print(file_list)
     for f in file_list:
@@ -196,20 +183,65 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
     gcp_string = gcp_string + "echo 'Copy operations complete.' \n"
     gcp_string = gcp_string + "sleep 10 \n"
 
-    '''
-    # Add code for creating common output directories
-    # (copy opts for each minifile/slice take place within runscript
-    # as well as writing of script status files)
-    # Current string in form of blank_outdir# (blank_rip)# rip1,rip2,rip3
-    outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
-    '''
+    # And finally, do the looping by index and writing of master and runscripts.
+    make_master_and_runscripts(i_start, i_end, i_by, i_offset,
+                              j_start, j_end, j_by, j_offset,
+                              target_var, is_syn,
+                              dmget_string, gcp_string, auxdict, auxfile_mod, scriptdir, fudgetag)
 
+
+def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
+                          j_start, j_end, j_by, j_offset,
+                          target_var, is_syn,
+                          dmget_string, gcp_string, auxdict, auxfile_mod, scriptdir, fudgetag):
+    '''
+    Common commands for making the runscript and runcodes from the auxdict.
+    Note that this now implies that the auxdict contains the scriptdir.
+    '''
+        # which i_indices are we going to be looping over?
+    i_elements = range(int(i_start), int(i_end)+1, i_by)
+    i_elements.append(int(i_end)+1)
+    i_elements = list(set(i_elements))
+    i_elements = sorted(i_elements)
+    # i_offset = int(i_start)  - 1
+    i_max = int(i_end) - i_offset
+    # which j indices are we going to be looping over?
+    j_elements = range(int(j_start), int(j_end), j_by)
+    j_elements.append(int(j_end)+1)
+    j_elements = list(set(j_elements))
+    j_elements = sorted(j_elements)
+    # j_offset = int(j_start)  - 1
+    j_max = int(j_end) - j_offset
+    # sys.exit("Examine this out")
+
+    if is_syn:
+        j_elements = [1,2]
+
+    njobs = auxdict['njobs']
+    ncpus = auxdict['ncpus']
+
+    slurm_header = "\n".join(['#!/bin/tcsh',
+                              '#SBATCH -t '+auxdict['wallclocktime'],
+                              '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
+                              #'#SBATCH -J fudge_master',
+                               '#SBATCH -p batch']) + "\n"
+    # The path to the checkout script is hard-coded, and probably going to
+    # stay that way for now; the load of git is DEFINETLY needed if the
+    # checkout script is going to be used.
+    module_loads = "\n".join(['module load R',
+                              'module load gcp',
+                              'module load netcdf',
+                              'module load nco',
+                              'module load git/2.4.6',
+                              'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
+    #Commmands for making/manipulating file paths
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
     outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
     outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
     meta_tmp = "$TMPDIR/meta_file.json"
     meta_final = osp.join(scriptdir, "meta_file.json")
     meta_command = make_meta_command(auxfile_mod, meta_final, scriptdir)
+    experiment_name = auxdict['ds_experiment_name']
 
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
@@ -233,7 +265,7 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                 master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
                 runscript_files = []
             # Since master is created on first (always), can proceed with rest of runscript calls
-            runscript_name = osp.join(scriptdir, 'runscript', "script." + target_var + "." + ds_method + "." + i_string + "_" + j_string)
+            runscript_name = osp.join(scriptdir, 'runscript', "script." + target_var + "." + auxdict['ds_method'] + "." + i_string + "_" + j_string)
             i_idx = i_offset - (i+1 + i*(i_by-1))
             j_idx = j_offset - (j+1 + j*(j_by-1))
             if is_syn:
@@ -276,7 +308,6 @@ def create_all_runscripts(i_start, i_end, i_by, i_offset,
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
                     # f.write("wait")
     print('master runscript and mini creation completed')
-    # return(n_tiles)
 
 def make_meta_command(auxfile_mod, meta_final, scriptdir):
     # Makes the metadata commands that can be run as a standalone tool

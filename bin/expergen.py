@@ -16,21 +16,16 @@ import json
 import cleanup_script
 from cleanup_script import clean_prior_experiments, parse_outdirs_from_xml
 import get_npts_by
-from get_npts_by import get_npts_by
-import create_all_runscripts
-from create_all_runscripts import create_all_runscripts
-from create_all_runscripts import awful_runcode_hack
+from create_all_runscripts import create_auxfile_runscripts
+from create_all_runscripts import create_xml_runscripts
 from get_comment_specs import get_comment_specs, get_exp_check_tag
-import get_ds_info
 from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
 from get_ds_info import add_ds_params_to_auxdict, add_s3_s5_params_to_auxdict
-import make_postProc_scripts
 from make_postProc_scripts import make_postProc_scripts
 from collections import OrderedDict
-import watcher
 from watcher import runWatcher #,_v_print
-import fudgeUtils
 from fudgeUtils import read_exp_info_file
+from get_grid_params import get_grid_params
 
 list_title = []
 dictDS_hi = {}
@@ -686,6 +681,39 @@ def generate_experiment(parse_xml, create_default_aux,
         ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
                                         "<RIP>",
                                         ds_region, fut_file_start_time, fut_file_end_time)
+        print("Calling create_xml_runscripts")
+        idict = {'US48' : 748,
+                 'SCCSC0p1'  : 181,
+                 'RR'   : 181,
+                 'grid0': 0,
+                 'NEUSA': 1,
+                 'NEUSA0p1': 425}
+        jdict = {'US48' : 454,
+                 'SCCSC0p1'  : 31,
+                 'RR'   : 31,
+                 'grid0': 0,
+                 'NEUSA': 1,
+                 'NEUSA0p1': 127}
+        try:
+            i_offset = idict[output_grid]
+        except KeyError:
+            i_offset = 1
+        try:
+            j_offset = jdict[output_grid]
+        except KeyError:
+            j_offset = 1
+        print("Step 0: Create the unified runcscripts and master runscripts")
+        create_xml_runscripts(lons, lone, i_subset, i_offset,
+                              lats, late, j_subset, j_offset,
+                              njobs, ncpus, fudgetag, sbase,
+                              target_dir, hist_pred_dir, fut_pred_dir,
+                              oh_timerange, mh_timerange, mf_timerange, predlist,
+                              spat_mask, target_time_window, hist_time_window,
+                              fut_time_window, auxcustom, outdir, target, method,
+                              file_j_range, idirsuffix,
+                              ds_info['multivar_target'],
+                              auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
+                              auxdict, ds_minifile, expconfig)
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -700,77 +728,35 @@ def generate_experiment(parse_xml, create_default_aux,
             '''
         #TODO: add an auxdict consistency-checking function
         #check_auxdict_consistency(auxdict)
-        # For both of these, auxinpyt is a subset with some faster access props.
-        auxinfo = {'subsetdict': {'i_subset': "",
-                                  'j_subset': ""},
-                   'copy_files': "",
-                   'wallclocktime': "",
-                   'pp_wallclocktime': ""}
         ds_info = get_ds_info(auxdict['ds_method'], basedir)
-        lons = lone = i_subset = i_offset = 0
-        lats = late = j_subset = j_offset = 0
-        target_dir = hist_pred_dir = fut_pred_dir = ""
-        spat_mask = ""
-        target_time_window = hist_time_window = fut_time_window = auxcustom = ""
-        oh_timerange = "" #str(target_file_start_time) + "-" + str(target_file_end_time)
-        mh_timerange = "" #str(hist_file_start_time) + "-" + str(hist_file_end_time)
-        mf_timerange = "" #str(fut_file_start_time) + "-" + str(fut_file_end_time)
-        predlist = "" #predictor.split(",")
-        output_grid = auxdict['output_grid']
-        njobs = auxdict['njobs']
-        ncpus = auxdict['ncpus']
-        outdir = auxdict['DS']['out_dir']
-        target = method = file_j_range = idirsuffix = ""
+        i_subset = auxdict['i_subset']
+        j_subset = auxdict['j_subset']
+        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+        # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
+        multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
+        # same for the pp_wallclocktime - this should get added to the aux dict
+        auxinfo = {'pp_wallclocktime': '5:00:00'}
+        print("Step 0: Create the unified runcscripts and master runscripts")
+        create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
+                                  j_s, j_e, j_subset, j_off,
+                                  auxdict, auxinput, sbase, fudgetag)
 
-    #############################################################
-    print("Step 0: Create the unified runcscripts and master runscripts")
-
-    print("Calling create_all_runscripts")
-    idict = {'US48' : 748,
-             'SCCSC0p1'  : 181,
-             'RR'   : 181,
-             'grid0': 0,
-             'NEUSA': 1,
-             'NEUSA0p1': 425}
-    jdict = {'US48' : 454,
-             'SCCSC0p1'  : 31,
-             'RR'   : 31,
-             'grid0': 0,
-             'NEUSA': 1,
-             'NEUSA0p1': 127}
-    try:
-        i_offset = idict[output_grid]
-    except KeyError:
-        i_offset = 1
-    try:
-        j_offset = jdict[output_grid]
-    except KeyError:
-        j_offset = 1
-
-
-    create_all_runscripts(lons, lone, i_subset, i_offset,
-                          lats, late, j_subset, j_offset,
-                          njobs, ncpus, fudgetag, sbase,
-                          target_dir, hist_pred_dir, fut_pred_dir,
-                          oh_timerange, mh_timerange, mf_timerange, predlist,
-                          spat_mask, target_time_window, hist_time_window,
-                          fut_time_window, auxcustom, outdir, target, method,
-                          file_j_range, idirsuffix,
-                          ds_info['multivar_target'],
-                          auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-                          auxdict, ds_minifile, expconfig)
-    #print('examine runscript output')
-    #sys.exit()
-    #############################################################
     # copy xml to configs dir
     cdir = sbase+"/config/"
-    shutil.copy2(uinput, cdir)
+    if uinput is not "none":
+        shutil.copy2(uinput, cdir)
     shutil.copy2(auxinput, cdir)
     shutil.copy2(env_file, sbase + "/environment_info.csh")
     ################ step 6 fudgeList invocation ##############################################
     slogloc = sbase+"/"+"experiment_info.txt"
     fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
-    indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+    if uinput is not "none":
+        indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+    else:
+        indirs = []
+        dnames = ['OH', 'MH', 'MF']
+        for d in dnames:
+            indirs += [osp.dirname(auxdict[d][el]['file']) for el in auxdict[d].keys()]
     if any([re.search('Pwl', el) is not None for el in indirs]):
         fcmd += ' --parse-j-style'
     f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
@@ -805,7 +791,11 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
      suffix = ['']
      listrips = ['na']
-     listrips = [copyprop]
+     if parse_xml:
+         listrips = [copyprop]
+         listrips = copyprop.split(",")
+     else:
+         listrips = auxdict['DS']['rips']
 
     if not os.path.exists(sbase+"/postProc/aux/"):
         os.makedirs(sbase+"/postProc/aux/")
@@ -822,18 +812,19 @@ def generate_experiment(parse_xml, create_default_aux,
         open(sbase+"/postProc/verb/verbose.true", 'a').close()
     else:
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
-    #CEW edits 3-21-2017:
-    #Making new tool for generating postProc scripts
-    print("Making postproc scripts")
-    listrips = copyprop.split(",")
-    #print("script-making command:")
-    make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
-        #Note: may need to include commands on the nemsemail as well
-        #os.chmod(msubwrap.name, 0744)
-        #msub -m ae -M <email> script
-    print "----------------------------------------"
-    print "\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
-    print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+
+    if parse_xml:
+        print("Making postproc scripts")
+        make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
+        print "----------------------------------------"
+        print "\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
+        print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
+    else:
+        print("NOT making postProc scripts!!")
+        print("This experiment was run from an aux file; the postProc workflow needs the experiment_info.txt file")
+        print("and there is currently no good substitution in the auxfile workflow!")
+        print("However, for the csv workflow (which is the primary reason for using this right now)")
+        print("you wre not going to use postProc anyway.")
 ################ step 5 job submission (if applicable) ##############################################
     print "Starting step 5: job submission"
     if msubmail == 1 and NEMSemail1 != 'none':
@@ -859,20 +850,25 @@ def generate_experiment(parse_xml, create_default_aux,
     if not msub:
         print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
         print "\033[1;95m"+msub_cmd+"\033[1;m"
-    print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
-
-    if(NEMSemail1 != "none"):
-        print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
-    else:
-        print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+    if parse_xml:
+        print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
+        if(NEMSemail1 != "none"):
+            print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
+        else:
+            print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
 
     #Script exit options - needs to exit with 0
     if run_watcher:
-        print("Invoking watcher script immediately")
-        expinfo = sbase + "/experiment_info.txt"
-        expdict = read_exp_info_file(expinfo)
-        #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
-        runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
+        if parse_xml:
+            print("Invoking watcher script immediately")
+            expinfo = sbase + "/experiment_info.txt"
+            expdict = read_exp_info_file(expinfo)
+            #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
+            runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
+        else:
+            print("run_watcher option is not compatible with the csv workflow yet!")
+            print('There is not a good substitute for the experiment_info file in the FUDGE workflow.')
+            print('However, you CAN run this experiment in debug mode if you want to.')
     else:
         sys.exit(0)
 
