@@ -2,16 +2,16 @@
 stages:
  - test_mini
  - test_full
- 
+
 before_script:
  - module load git
 
 minijob:
- # This step is meant to run the minifile tests. 
+ # This step is meant to run the minifile tests.
  stage: test_mini
  script:
   - echo "loading ESD environment"
-  - module purge 
+  - module purge
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
   ##- module load slurm
@@ -28,7 +28,7 @@ minijob:
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 60 --compare-opt 'all'
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 60 --compare-opt 'data'
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
@@ -36,14 +36,14 @@ minijob:
 # variables:
 #  CI_DEBUG_TRACE: "true"
 
-  
+
 fulljob:
  stage: test_full
  script:
   - echo "loading ESD environment"
-  - module purge 
+  - module purge
   - module use -a /home/esd/local/modulefiles
-  - module load esd/env 
+  - module load esd/env
   - module load slurm
   - module list
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
@@ -53,7 +53,7 @@ fulljob:
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'data'
  tags:
   - analysis
 # variables:
