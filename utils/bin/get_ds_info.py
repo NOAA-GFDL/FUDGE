@@ -12,7 +12,16 @@ import collections
 from collections import OrderedDict
 
 def get_ds_info(ds_method, FUDGEROOT):
-    #Reads the ds lookup table
+    #Reads the ds lookup table; prints errors if deprecated vs not found
+    '''
+    dep_methods = ['EDQM']
+    dep_vers = ["jamoca"]
+    for meth, vers in dep_methods, dep_vers:
+        if ds_method == meth:
+            print("Error in get_ds_info! ds_method " + ds_method + " is not supported for fudge version " + vers + "-or-later!")
+            print("Please pick a different method or run with an earlier version of FUDGE!")
+            sys.exit(1)
+    '''
     ds_table = osp.join(FUDGEROOT, "Rsuite/aux/ds_att_sheet.csv")
     with open(ds_table, 'r') as dstab:
         reader = csv.DictReader(dstab)
@@ -47,6 +56,7 @@ def parse_aux_info(jsonfile):
                 wallclocktime = jsondict['wallclocktime']
         else:
             wallclocktime='6:00:00'
+        jsondict['wallclocktime'] = wallclocktime
         #pp wallclocktime
         if 'pp_wallclocktime' in jsondict.keys():
             if isinstance(jsondict['pp_wallclocktime'], list):
@@ -55,6 +65,7 @@ def parse_aux_info(jsonfile):
                 pp_wallclocktime = jsondict['pp_wallclocktime']
         else:
             pp_wallclocktime = '6:00:00'
+        jsondict['pp_wallclocktime'] = pp_wallclocktime
         #njobs and ncpus parameters:
         if 'njobs' in jsondict.keys():
             njob_tmp = jsondict['njobs']
@@ -64,6 +75,7 @@ def parse_aux_info(jsonfile):
                 njobs = njob_tmp
         else:
             njobs = 8
+        jsondict['njobs'] = njobs
         if 'ncpus' in jsondict.keys():
             ncpus_tmp = jsondict['ncpus']
             if isinstance(ncpus_tmp, list):
@@ -72,6 +84,7 @@ def parse_aux_info(jsonfile):
                 ncpus = ncpus_tmp
         else:
             ncpus = 2
+        jsondict['ncpus'] = ncpus
         #Subsets in i and j that we are interested in
         defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}
         subsetdict = {}
@@ -85,6 +98,7 @@ def parse_aux_info(jsonfile):
             else:
                 #default if not present in json
                 subsetdict[k] = jsondict[k]
+            jsondict[k] = subsetdict[k]
         #files that can be copied
         copy_elements = ['stencil', 'geomask']
         copy_files = []
