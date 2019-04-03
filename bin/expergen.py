@@ -26,6 +26,7 @@ from collections import OrderedDict
 from watcher import runWatcher #,_v_print
 from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
+from check_aux_consistency import check_aux_consistency
 
 list_title = []
 dictDS_hi = {}
@@ -535,10 +536,16 @@ def main():
 
     parse_xml = False
     create_default_aux = False
-    if re.search('xml$', options.uinput) is not None and options.uinput != "none":
+    is_xml = re.search('xml$', options.uinput) is not None
+    parse_xml = is_xml
+    is_json = re.search('json$', options.auxinput)
+    if not is_xml and not is_json:
+        print("Error in expergen: either --input was not xml or --aux was not json!")
+        sys.exit(1)
+
+    if is_xml and options.uinput != "none":
         if osp.exists(options.uinput):
             print("XML input: " + options.uinput)
-            parse_xml = True
             # TODO: parse this for preexist settings
             tmp = listVars(options.uinput, basedir, msub)
             outdir = tmp[27]
@@ -581,7 +588,6 @@ def main():
         # Note: this can be in json or yaml
         print("Aux input: " + options.auxinput)
         print("Aux will be used for all inputs; DO NOT CALL POSTPROC")
-        parse_xml = False
         auxfile = options.auxinput
         auxinfo, auxdict = parse_aux_info(options.auxinput)
         outdirs = auxdict['DS']['out_dir']
@@ -731,11 +737,13 @@ def generate_experiment(parse_xml, create_default_aux,
                 auxdict = yaml.load(f)
             '''
         #TODO: add an auxdict consistency-checking function
-        #check_auxdict_consistency(auxdict)
+        check_aux_consistency(auxdict)
         ds_info = get_ds_info(auxdict['ds_method'], basedir)
         i_subset = auxdict['i_subset']
         j_subset = auxdict['j_subset']
         i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+        #Set expconfig for use in the final print
+        expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
         multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
         # same for the pp_wallclocktime - this should get added to the aux dict
@@ -860,6 +868,9 @@ def generate_experiment(parse_xml, create_default_aux,
             print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
         else:
             print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+
+    print("It is possible to cancel all jobs belonging to this experiment with the following command:")
+    print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
 
     #Script exit options - needs to exit with 0
     if run_watcher:

@@ -296,8 +296,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
-                    f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
-                    #f.write("#SBATCH -J " + experiment_name + "\n")
+                    #f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
+                    f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
                     f.write(dmget_string)
                     f.write(gcp_string)
