@@ -197,7 +197,7 @@ def get_attributes(vfile, vclass, verbose):
             search_patt = 'GFDL-HIRAM-C360-COARSENED'
             if re.search(search_patt, attdict['orig_experiment']) is not None:
                 scen = atts['experiment_id']
-                scendict = {'sst2030': 'RCFP 4.5', 'stt2090': 'RCP 8.5'}
+                scendict = {'sst2030': 'RCFP 4.5', 'sst2090': 'RCP 8.5'}
                 physdict = {'1': 'ESM', '2': 'CM3'}
                 try:
                     exp = " ".join(['GFDL-HIRAM', scendict[str(scen)],
