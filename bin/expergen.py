@@ -798,16 +798,18 @@ def generate_experiment(parse_xml, create_default_aux,
          msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
 
     #print(sbase+"/postProc/aux/")
+    '''
     if (multi == "on"):
      suffix = ['suff1','suff2','suff3']
      listrips = []
     else:
      suffix = ['']
      listrips = ['na']
-     if parse_xml:
+     '''
+    if parse_xml:
          listrips = [copyprop]
          listrips = copyprop.split(",")
-     else:
+    else:
          listrips = auxdict['DS']['rips']
 
     if not os.path.exists(sbase+"/postProc/aux/"):
