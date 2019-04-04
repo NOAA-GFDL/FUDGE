@@ -15,6 +15,8 @@ minijob:
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
   ##- module load slurm
+  - module unload python/2.7.12
+  - module load python/2.7.12_np
   - module list
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
@@ -44,7 +46,8 @@ fulljob:
   - module purge
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
-  - module load slurm
+  - module unload python/2.7.12
+  - module load python/2.7.12_np
   - module list
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
