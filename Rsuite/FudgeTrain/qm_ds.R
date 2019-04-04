@@ -1,8 +1,7 @@
 #qm_ds.R
 #Contains a wrapper/setup method (callQM)
 #and several quantile mapping methods
-#(BCQM, CFQM, EDQM)
-#CFQMv2 is kept for reference purposes - it's been repalced by v3
+#(BCQM, CFQM, QDM)
 
 callQM <- function(OH, MH, MF, args, type="",
                    missval.args, tmasks, train_qcmask=F){
@@ -64,7 +63,6 @@ callQM <- function(OH, MH, MF, args, type="",
       out <- switch(type,
                     'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
                     #Note: CFQM is now called from CallDSMethod
-                    'EDQM' = callEDQMv2(OH.slice, MH.slice, MF.slice, args),
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args),
                     'BCMM' = callBCMM(OH.slice, MH.slice, MF.slice, args)
       )
@@ -94,64 +92,6 @@ callQM <- function(OH, MH, MF, args, type="",
   }
   #stop('examine idx returned')
   return(list(ds=out.data, qc=qc))
-}
-
-callEDQMv2<-function(LH,CH,CF,args){
-  #'Performs an equidistant correction adjustment on a single variable
-  #'over the historical period, in order to generate downscaled data.
-  #'@param LH: Local Historical (a.k.a. observations)
-    #'@param CH: Coarse Historical (a.k.a. GCM historical)
-    #'@param CF: Coarse Future (a.k.a GCM future)
-    #'Contains no other arguments in the args parameter.
-    #'@citation Li et. al. 2010
-
-    #Unlist data from its input form
-    #CH <- unlist(CH)
-    CH <- CH[!is.na(CH)]
-    LH <- LH[!is.na(LH)]
-    CF.idx <- !is.na(CF)
-    cf.present <- sum(!is.na(CF))
-    CF <- CF[!is.na(CF)]
-
-    lengthCH<-length(CH)
-    lengthLH<-length(LH)
-    lengthCF<-length(CF)
-
-
-    #if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-    maxdim=max(c(lengthCH, lengthCF, lengthLH))
-
-    # first define vector with probabilities [0,1]
-    prob<-seq(0.001,0.999,length.out=cf.present)
-
-    # initialize data.frame
-    temp<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                     qLHecdfCFqCF=rep(NA,maxdim),qCHecdfCFqCF=rep(NA,maxdim),
-                     EquiDistant=rep(NA,maxdim))
-
-    SDF<-data.frame(index=seq(1,maxdim),CF=rep(NA,maxdim),CH=rep(NA,maxdim),
-                    LH=rep(NA,maxdim),CFQM=rep(NA,maxdim),BCQM=rep(NA,maxdim),
-                    EDQM=rep(NA,maxdim),ERQM=rep(NA,maxdim))
-    temp$CF[1:lengthCF]<-CF
-    temp$CH[1:lengthCH]<-CH
-    temp$LH[1:lengthLH]<-LH
-
-    temp.CFsorted<-temp[order(temp$CF),]
-    #Combine needed to deal with cases where CH longer than CF
-    if (maxdim-cf.present > 0){
-      temp.CFsorted$ecdfCFqCF<- c(ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)), rep(NA, (maxdim-cf.present)))
-    }else{
-      temp.CFsorted$ecdfCFqCF<-ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE))
-    }
-
-    temp.CFsorted$qLHecdfCFqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-    temp.CFsorted$qCHecdfCFqCF[1:cf.present]<-quantile(temp$CH,ecdf(temp$CF)(quantile(temp$CF,prob,na.rm =TRUE)),na.rm =TRUE)
-    # EQUIDISTANT CDF (Li et al. 2010)
-    temp.CFsorted$EquiDistant<-temp.CFsorted$CF+ temp.CFsorted$qLHecdfCFqCF-temp.CFsorted$qCHecdfCFqCF
-    temp<-temp.CFsorted[order(temp.CFsorted$index),]
-    ds.out <- rep(NA, length(CF.idx))
-    ds.out[CF.idx] <- temp$EquiDistant[1:lengthCF]
-    return(ds.out)
 }
 
 callCFQMv3<-function(LH,CH,CF, args){
