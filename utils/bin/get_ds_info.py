@@ -10,6 +10,7 @@ import json
 import re
 import collections
 from collections import OrderedDict
+#import yaml
 
 def get_ds_info(ds_method, FUDGEROOT):
     #Reads the ds lookup table; prints errors if deprecated vs not found
@@ -40,13 +41,34 @@ def get_ds_info(ds_method, FUDGEROOT):
     if ds_match is False:
         print("Error in get_ds_info: Method " + ds_method + " not found in ds_att_sheet.csv!")
         sys.exit(1)
+'''
+def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+    # Taken from https://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+    class OrderedLoader(Loader):
+        pass
+    def construct_mapping(loader, node):
+        loader.flatten_mapping(node)
+        return object_pairs_hook(loader.construct_pairs(node))
+    OrderedLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        construct_mapping)
+    return yaml.load(stream, OrderedLoader)
+'''
 
-def parse_aux_info(jsonfile):
+def parse_aux_info(infile):
     #Reads the aux file; returns bits that we are interested in
     print("Parsing aux file")
-    print(jsonfile)
-    with open(jsonfile, 'r') as jsonfile:
-        jsondict = json.load(jsonfile, object_pairs_hook=OrderedDict)
+    print(infile)
+    with open(infile, 'r') as f:
+        if re.search('json$', infile) is not None:
+            jsondict = json.load(f, object_pairs_hook=OrderedDict)
+            '''
+        elif re.search('ml$', infile) is not None:
+            jsondict = ordered_load(f, yaml.SafeLoader)
+            '''
+        else:
+            print("Error in parse_aux_input: input " + infile + " is not json!")
+            sys.exit(1)
         #wallclock time
         if 'wallclocktime' in jsondict.keys():
             #R's json converter helpfully wraps everything in lists.

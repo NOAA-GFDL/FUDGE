@@ -9,7 +9,7 @@ if ($status != 0) then
 	module load R/3.2.1
 endif
 
-module load python/2.7.12
+module load python/2.7.12_np
 
 ##module unload R #leads to messy memory stack trace
 module unload R/2.15.2

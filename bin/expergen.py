@@ -538,7 +538,8 @@ def main():
     create_default_aux = False
     is_xml = re.search('xml$', options.uinput) is not None
     parse_xml = is_xml
-    is_json = re.search('json$', options.auxinput)
+    is_json = re.search('json$', options.auxinput) is not None
+    #is_yaml = any([re.search(el, options.auxinput) for el in ['yaml$', 'yml$'] is not None])
     if not is_xml and not is_json:
         print("Error in expergen: either --input was not xml or --aux was not json!")
         sys.exit(1)
@@ -868,6 +869,11 @@ def generate_experiment(parse_xml, create_default_aux,
             print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
         else:
             print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+    else:
+        print("Path to master script for experiment:")
+        mdir = osp.join(sbase, 'master')
+        mpath = osp.join(mdir, os.listdir(mdir)[0])
+        print("\033[1;42m" + mpath + "\033[1;m")
 
     print("It is possible to cancel all jobs belonging to this experiment with the following command:")
     print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
