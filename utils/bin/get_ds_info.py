@@ -14,15 +14,13 @@ from collections import OrderedDict
 
 def get_ds_info(ds_method, FUDGEROOT):
     #Reads the ds lookup table; prints errors if deprecated vs not found
-    '''
-    dep_methods = ['EDQM']
-    dep_vers = ["jamoca"]
-    for meth, vers in dep_methods, dep_vers:
+    depc_methods = ['EDQM']
+    depc_vers = ["jamoca"]
+    for meth, vers in depc_methods, depc_vers:
         if ds_method == meth:
             print("Error in get_ds_info! ds_method " + ds_method + " is not supported for fudge version " + vers + "-or-later!")
             print("Please pick a different method or run with an earlier version of FUDGE!")
             sys.exit(1)
-    '''
     ds_table = osp.join(FUDGEROOT, "Rsuite/aux/ds_att_sheet.csv")
     with open(ds_table, 'r') as dstab:
         reader = csv.DictReader(dstab)
