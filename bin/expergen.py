@@ -509,6 +509,8 @@ def main():
     parser.add_option('--run-watcher', action='store_true', dest='run_watcher',
                        default=False,
                        help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+    parser.add_option('--not-strict-metadata', action='store_true', default=False,
+                      dest='not_strict', help="Whether to continue with a FUDGE experiment if the metadata parser could not get the attributes needed to classify input from the netcdf files. Defaults to false, which exits with an error if classification fails. For csv files this option is effectively always set, since csv files don't have the metadata we use.")
     (options, args) = parser.parse_args()
 
     if(options.mail=="none"):
@@ -620,13 +622,14 @@ def main():
     generate_experiment(parse_xml, create_default_aux,
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
-                        msubmail, statmail, options.run_watcher)
+                        msubmail, statmail, options.run_watcher, options.not_strict)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
-                        sbase, msubmail, statmail, run_watcher):
+                        sbase, msubmail, statmail, run_watcher,
+                        not_strict_metadata):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -724,7 +727,7 @@ def generate_experiment(parse_xml, create_default_aux,
                               file_j_range, idirsuffix,
                               ds_info['multivar_target'],
                               auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-                              auxdict, ds_minifile, expconfig)
+                              auxdict, ds_minifile, expconfig, not_strict_metadata)
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -752,7 +755,8 @@ def generate_experiment(parse_xml, create_default_aux,
         print("Step 0: Create the unified runcscripts and master runscripts")
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
-                                  auxdict, auxinput, sbase, fudgetag)
+                                  auxdict, auxinput, sbase, fudgetag,
+                                  not_strict_metadata)
 
     # copy xml to configs dir
     cdir = sbase+"/config/"
