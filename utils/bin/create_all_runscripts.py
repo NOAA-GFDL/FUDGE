@@ -315,7 +315,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
 def make_meta_command(auxfile_mod, meta_final, scriptdir, not_strict_metadata):
     # Makes the metadata commands that can be run as a standalone tool
-    strict_str = "" if not_strict_metadata else " --is_strict"
+    strict_str = "" if not_strict_metadata else " --is-strict"
     meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
                               "set meta_final = " + meta_final,
                               "set meta_tmp = $TMPDIR/meta_file.json",
