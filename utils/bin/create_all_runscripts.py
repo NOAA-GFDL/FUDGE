@@ -227,7 +227,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               '#SBATCH -t '+auxdict['wallclocktime'],
                               '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
                               #'#SBATCH -J fudge_master',
-                               '#SBATCH -p batch']) + "\n"
+                              '#SBATCH -c ' + str(ncpus),
+                              '#SBATCH -p batch']) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
