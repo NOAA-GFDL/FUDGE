@@ -9,7 +9,7 @@ if ($status != 0) then
 	module load R/3.2.1
 endif
 
-module load python/2.7.12_np
+module load python/2.7.12
 
 ##module unload R #leads to messy memory stack trace
 module unload R/2.15.2
@@ -25,4 +25,4 @@ module load slurm
 
 #needed for role accnt
 module load globus
-set s8_tag = sec8-20171102
+set s8_tag = sec8-20190409

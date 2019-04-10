@@ -70,7 +70,7 @@ def parseScriptArgs():
     #with all the stuff that the R code would need to run in it.
     make_fudge_metadata(auxdict, ds_info, options.output, is_running_standalone = options.is_standalone, is_strict = options.is_strict, verbose=options.verbose)
 
-def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = False, is_strict = True, verbose=False):
+def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = False, is_strict = False, verbose=False):
     '''
     Parses and builds fudge metadata attributes, given a list of config parameters.
     General structure looks like this:
@@ -134,7 +134,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
-                                     is_strict=True, verbose=verbose)
+                                     is_strict=is_strict, verbose=verbose)
     #Get the info options
     gd['ds_downscaling_method'] = ds_info['ds_method']
     gd['info_ds'] = generate_fxn_arglist({'d1': {'type': ds_info['ds_method'],
