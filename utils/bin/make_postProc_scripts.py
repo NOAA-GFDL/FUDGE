@@ -36,7 +36,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
         pp_sourcelist = []
         for j,suffix in zip(range(0, len(suffix_list)), suffix_list):
             pp_runcode_header = "\n".join(["#!/bin/tcsh",
-                                   "#SBATCH -c 2",
+                                   "#SBATCH -c 6",
                                    '#SBATCH -t '+str(runtime),
                                    "#SBATCH -J fudge_postProc_" + str(i+1) + "_" + str(j+1),
                                    "#SBATCH -o " + pp_log_dir + "/fudge_postProc_.%x.%j",
