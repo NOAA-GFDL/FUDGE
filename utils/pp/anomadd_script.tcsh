@@ -28,6 +28,7 @@ set clim_file = $TMPDIR/$clim_file
 
 set climanom_tmp = $TMPDIR/$climanom_file
 mkdir -p `dirname $climanom_tmp`
+mkidr -p `dirname $climanom_file`
 
 ncrename -h -v "$anom_var,$clim_var" -O $anom_file
 # note to self: need header pad
