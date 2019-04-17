@@ -94,7 +94,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
     msub_file = osp.join(pp_dir, 'msubwrapper')
     msub_text = "#!/bin/tcsh -f \n"
     msub_text = msub_text + "rm -f " + pp_stat_dir + "/*\n"
-    msub_commands = "\n".join(["sbatch " + el for el in code_list]) + "\n"
+    msub_commands = "\n".join(["sbatch " + el + " --exclusive" for el in code_list]) + "\n"
     #msub_text = msub_text + msub_commands + "\n"
     msub_text = msub_commands + "\n"
     with open(msub_file, 'w') as f:
