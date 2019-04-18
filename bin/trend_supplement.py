@@ -83,11 +83,6 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
     #note: need to remove 'Detr' AND the method afterwards
     trend_detr_var = var.split('Detr')[0]
     trend_detr_file = re.sub(var,trend_detr_var,detr_file)
-    print(final_out_dir)
-    print(exp_name)
-    print(var)
-    print(trend_detr_var)
-    print(trend_detr_file)
     with Dataset(detr_file, 'r') as nc_obj:
         try:
             trend = nc_obj.__dict__['trend']
@@ -142,15 +137,14 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
         trend_detr_file_out = osp.join(tdir, trend_detr_file.lstrip("/"))
         if not osp.exists(osp.dirname(trend_detr_file_out)):
             os.makedirs(osp.dirname(trend_detr_file_out))
-        print(trend_file)
         trend_file_out = gcp(trend_file, 'TMPDIR')
-        #print(trend_detr_file)
         detr_file_out = gcp(detr_file,'TMPDIR')
+        trend_var = re.split("_", osp.basename(trend_file))[0]
         #s8_orig = os.environ["S8_PATH"]
         s8_fudge = os.environ["FUDGE_S8_LOC"]
         os.environ["S8_PATH"] = s8_fudge
         #r_command = "Rscript " + s8_fudge + "/AddResid.R --trend " + str(trend_file_out) + " --resid " + str(detr_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --prof 3"
-        residadd_command = "tcsh $BASEDIR/utils/pp/residadd_script.tcsh " + " ".join([var, var + "Resid",trend_detr_var,
+        residadd_command = "tcsh $BASEDIR/utils/pp/residadd_script.tcsh " + " ".join([trend_detr_var, var, trend_var, 
                                                                                       detr_file_out, trend_file_out, trend_detr_file_out])
         print("Calling anomaly addition")
         print(residadd_command)
@@ -158,7 +152,7 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
             p = subprocess.Popen(residadd_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except:
             print("Error in subprocess call to resid addition! Please examine call in more detail.")
-            print(residadd_cimmand)
+            print(residadd_command)
             os.environ["S8_PATH"] = s8_orig
             sys.exit(1)
             if(mailid is not None):

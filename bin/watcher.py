@@ -192,7 +192,8 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 	nloop_start = 0
 	#for out in list_output:
 	retcode = 1
-	while ((retcode != 0) & (retcode != -13)): # | (len(list_output)!=0)) ) &( (retcode != -13))):
+	continue_watcher = True
+	while continue_watcher: # | (len(list_output)!=0)) ) &( (retcode != -13))):
 		#retcode = 1
 		#TODO include retcode2 somehow in the following
 		#while ((retcode != 0) & (retcode != -13)): # | (len(list_output)!=0)) ) &( (retcode != -13))):
@@ -236,10 +237,11 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 				else:
 					retcode = retcode3
 					ctr = ctr+1
-		v_print(1,"Sleep between loops to initiate "+(str)(sleeptime))
-		time.sleep(sleeptime)
-		nloop_start = nloop_start + 1
-		  #cnloop_start = nloop_start + 1
+		continue_watcher = (retcode != 0) & (retcode != -13)
+		if continue_watcher:
+			v_print(1,"Sleep between loops to initiate "+(str)(sleeptime))
+			time.sleep(sleeptime)
+			nloop_start = nloop_start + 1
 ############# check if postProc_call is False
 	if(postProc_call == False):
 		minilogs = os.path.join(script_base.split(":")[1], "log")

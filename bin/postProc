@@ -166,7 +166,7 @@ def process_file(exp_info, file_patt, in_dir, out_dir, n_expected_files, force_o
         sys.exit()
     #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
     #in that case, the modified workflow should just copy the file.
-    cat_file = concatenate_files(in_dir, file_patt, out_dir, exp_info, force_overwrite)
+    cat_file = concatenate_files(in_dir, file_patt, out_dir, exp_info)
     #And finally, set your metadata.
     #Note: this is now done in the cat step, to avoid copying to tmpdir more than once
     #out_file = set_FUDGE_metadata(out_file, exp_info)

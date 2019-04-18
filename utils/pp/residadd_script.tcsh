@@ -6,21 +6,12 @@ module load nco
 module load gcp
 
 
-set var = ""
-set resid_var = ""
-set trend_var = ""
-set resid_file = ""
-set trend_file = ""
-set trendresid_file = ""
-
-set var = "tasmin"
-set resid_file = "/archive/Oar.Gfdl.Esd_test/PROJECTS/DOWNSCALING/MACAdev/downscaled/GFDL-ESM2M/rcp85/day/atmos/GFDL-ESM2Mdetr1981-2099PwlSm21St1Ww31rcp85/r1i1p1/v20120228/MACAdevtndetrcap1-QDM-D1A48L01K00/tasminDetr/US480p1/tasminDetr_day_MACAdevtndetrcap1-QDM-D1A48L01K00_rcp85_r1i1p1_US480p1_20060101-20991231.nc"
-set trend_file = "/archive/Oar.Gfdl.Esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP5/GFDL-ESM2M/rcp85/day/atmos/GFDL-ESM2Mtrend1981-2099PwlSm21St1Ww31rcp85/r1i1p1/v20120228/tasminTrendPwl/US480p1/tasminTrendPwl_day_GFDL-ESM2M_rcp85_r1i1p1_base1981-2099PwlSm21St1Ww31rcp85_20060101-20991231.nc"
-set trendresid_file = "/work/cew/testing/fudge_resid/resid_test_01.nc"
-#Note: this implies we need to set trend var, resid var, in script
-#or do a more active deduction (like split on var and pass that)
-set resid_var = "${var}Detr"
-set trend_var = "${var}TrendPwl"
+set var = $1
+set resid_var = $2
+set trend_var = $3
+set resid_file = $4
+set trend_file = $5
+set trendresid_file = $6
 
 gcp -cd $resid_file $TMPDIR/$resid_file
 set resid_file = $TMPDIR/$resid_file

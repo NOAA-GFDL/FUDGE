@@ -30,6 +30,7 @@ set out_fname = `basename $outfile`
 set tmp_outfile = $tdir/$out_fname
 ##If the files have a record dimension, then the record dimension needs to go first when
 #ncrcat is called.
+echo "writing $tmp_outfile"
 
 ##If, however, there is not a record dimension and you use ncrcat, you need
 #to make a record dimension your last dimension, know where that dimension
@@ -48,7 +49,7 @@ end
 
 #Concatenate the temporary permuted files
 #echo "ncrcat"
-echo "ncrcat -h $tdir/scratch/tmpfile*.nc $tdir/all_unperm_out.nc"
+#echo "ncrcat -h $tdir/scratch/tmpfile*.nc $tdir/all_unperm_out.nc"
 ncrcat -h -O $tdir/scratch/tmpfile*.nc $tdir/all_unperm_out.nc
 
 #Permute concantenated file
