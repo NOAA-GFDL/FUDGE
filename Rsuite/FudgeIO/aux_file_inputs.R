@@ -113,6 +113,23 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   }
   #2018-04-10: adding the writes of the ds output to the file.
   output['DS'] <- aux_list['DS']
+  #2019-02-20: adding entries for downscaling method, args and kfold
+  output['ds_method'] = aux_list['ds_method']
+  output['ds_args'] = aux_list['ds_args']
+  output['kfold'] = aux_list['kfold']
+  output['minsamplesize'] = aux_list['minsamplesize']
+  #...and args needed for metadata:
+  output['ds_experiment_name'] = aux_list['ds_experiment_name']
+  output['ds_region'] = aux_list['ds_region']
+  output['output_grid'] = aux_list['output_grid']
+  #2019-02-22:...and last but definetly not least, the s3/s5 args.
+  output['s3'] = aux_list['s3']
+  #Add a special case for the parsing of 
+  output['s5'] = aux_list['s5']
+  output['return_qcmask_from_ds'] = aux_list['return_qcmask_from_ds']
+  output['make_qcmask'] = aux_list['make_qcmask']
+  output['qc_method'] = aux_list['qc_method']
+  output['qc_loc'] = aux_list['qc_loc']
   return(output)
 }
 

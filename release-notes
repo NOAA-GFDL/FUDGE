@@ -1,3 +1,17 @@
+04-19-2019
+(cew)
+- Local scripts for residuals addition added; scripts use nco utilities for lower memory footprint / faster cpu time with large (22 GB) files
+
+04-06-2019
+(cew)
+- Standalone metadata tool (utils/bin/standalone_metadata_tester.py) for writing out metadata attributes before downscaling; minor-to-moderate metadata changes as a result
+- FUDGE R code now relies on full auxfiles only for determining DS params (no runcodes)
+- New expergen options for determining whether metadata failues should lead to experiment failures
+- More support for downscaling csv files via the auxfile workflow
+- Better batch job naming to support cancelling all jobs from a single experiment
+- EDQM removed from DS options (we run with QDM now)
+- version package information is stored under folder pckg_reqs/
+
 11-10-2018
 (cew)
 - tweaking workflow to run with slurm rather than moab; tweaking gitlab-ci to use slurm-based workflow for regtests

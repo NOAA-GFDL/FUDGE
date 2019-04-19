@@ -1,256 +1,250 @@
 #!/bin/python
 
 #starting to mess around with the modified postProc workflow
-#import expergen 
-import fudgeList
-import fudgeUtils
 from fudgeUtils import gcp,tstamp
 from fudgeUtils import read_exp_info_file
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
-import argparse
-import shlex
-import smtplib
 import re
-import optparse
 from optparse import OptionParser
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
-import netCDF4
-from netCDF4 import Dataset	
 import traceback
-import fudgeUtils
 from fudgeUtils import send_status_email
-import concatenate_file
-from concatenate_file import concatenate_files	
-import trend_supplement
+from concatenate_file import concatenate_files
 from trend_supplement import callCopyToTrendDetr, callAddResid
-import clim_supplement
 from clim_supplement import callCopyToAnomClim, callAddAnom
 
 def postProc():
-	#Input parsing and arg checking for main body of code
-	usage = "usage: %prog [-e exp_info_file] [-d ds_dir] [-o output_dir] [-s suffix] [-m --mail] [--verbose]"
-	parser = OptionParser(usage=usage, version='makeExpEns 1.0')
-	parser.add_option("-e", "--exp_info_file", dest="exp_info_file", help="Path to a standardized experiment_info.txt file. Will be used to get most information about the experiment that produced the files to concatenate.")
-	parser.add_option("-d", "--ds_dir", dest="ds_dir", help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
-	parser.add_option("-o", "--output_dir", action="store", help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
-	parser.add_option("-s", "--suffix", action='store', default='none', help="Suffix to search for on the output variable ($var_$suffix). If 'none' or '', no suffix is added; if 'all', all known suffixes are searched for.")
-	parser.add_option("-m","--mail", action="store", default=None, help="If set, the destination to which to send email status messages. Note that this depends in part on the initial expergen experiment settings.")
-	parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
-	(options, args) = parser.parse_args()
-	#Make sure the ds_dir, output_dir, exist
-	if not osp.exists(options.ds_dir):
-		sys.exit(1)
-	if not osp.exists(options.output_dir):
-		sys.exit(1)	
-	#Make sure the experiment_info file exists
-	if not osp.exists(options.exp_info_file):
-		sys.exit(1)	
-	#Do the slightly complicated checking of the mail arguments
-	if options.mail is not None:
-		#Note: we no longer get this variable from the environment at any point.
-		uemail = options.mail
-	else:
-		uemail = "na"
-		
-	verbose = options.verbose	
-	runPostProc(options.exp_info_file, options.ds_dir, options.output_dir, options.suffix, uemail, verbose)
+    #Input parsing and arg checking for main body of code
+    usage = "usage: %prog [-e exp_info_file] [-d ds_dir] [-o output_dir] [-s suffix] [-m --mail] [--verbose]"
+    parser = OptionParser(usage=usage, version='makeExpEns 1.0')
+    parser.add_option("-e", "--exp_info_file", dest="exp_info_file",
+                      help="Path to a standardized experiment_info.txt file. Will be used to get most information about the experiment that produced the files to concatenate.")
+    parser.add_option("-d", "--ds_dir", dest="ds_dir",
+                      help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
+    parser.add_option("-o", "--output_dir", action="store",
+                      help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
+    parser.add_option("-s", "--suffix", action='store', default='none',
+                      help="Suffix to search for on the output variable ($var_$suffix). If 'none' or '', no suffix is added; if 'all', all known suffixes are searched for.")
+    parser.add_option("-m","--mail", action="store", default=None,
+                      help="If set, the destination to which to send email status messages. Note that this depends in part on the initial expergen experiment settings.")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
+    (options, args) = parser.parse_args()
+    #Make sure the ds_dir, output_dir, exist
+    if not osp.exists(options.ds_dir):
+        sys.exit(1)
+    if not osp.exists(options.output_dir):
+        sys.exit(1)
+    #Make sure the experiment_info file exists
+    if not osp.exists(options.exp_info_file):
+        sys.exit(1)
+    #Do the slightly complicated checking of the mail arguments
+    if options.mail is not None:
+        #Note: we no longer get this variable from the environment at any point.
+        uemail = options.mail
+    else:
+        uemail = "na"
+
+    verbose = options.verbose
+    runPostProc(options.exp_info_file, options.ds_dir, options.output_dir, options.suffix, uemail, verbose)
 
 def runPostProc(exp_info, ds_dir, out_dir, var_suffix, mailid, verbose=False):
-	#Clearer wrapper describing what the postProc function does.
-	#Still trying to duplicate old functionality; should really be called once
-	#for each ensemble member.
-	expdict = read_exp_info_file(exp_info)
-	total_exp_name = expdict['ds.experiment']
-	script_dir = expdict['script.base']
-	var = expdict['target']
-	xml_loc = expdict['xml.path']	
-	send_to = mailid
-	
-	output_files = [] #can end being up to 4 elements long
-	
-	#Expect one output file per runscript
-	n_expected_files = len([f for f in os.listdir(osp.join(script_dir, "runscript")) if re.search("script", f) is not None])
-	
-	#Determine how many ds vars we are looking for
-	#note: anom + resid is a special case; always searched for
-	if var_suffix == 'all':
-		ds_vars = [var, var + "_qcmask", var + "_save"]
-		ds_dirs = [ds_dir, osp.join(ds_dir, var + "_qcmask". osp.join(ds_dir, var + "_save"))]
-	elif var_suffix == 'none' or var_suffix == "":
-		ds_vars = [var]
-		ds_dirs = [ds_dir]
-	else:
-		ds_vars = [var + "_" + var_suffix]
-		ds_dirs = [osp.join(ds_dir, var + "_" + var_suffix)] 
-	print(ds_vars)
-	print(ds_dirs)
-	#Loop over available ds_vars and ds_dirs
-	for ds_var,ds_vardir in zip(ds_vars, ds_dirs):
-		#Always process the downscaled data (located in ds dir)
-		#which is passed in as a script arg
-		#ds_dir = osp.join(out_dir, "OneD")
-		
-		#Only call the above bits if the dir which you are checking exists.
-		if osp.exists(ds_vardir):
-			ds_files = [f for f in os.listdir(ds_vardir) if re.search("\.nc", f) is not None]
-			n_ds_files = len(ds_files)
-			if n_ds_files > 0:
-				try:
-					#(exp_info, file_patt, in_dir, out_dir, n_expected_files)
-					file_patt = ds_files[0].split(".")[0]
-					ds_file = process_file(exp_info, file_patt, ds_vardir, out_dir, n_expected_files)
-					output_files.append(ds_file)			
-				except:
-					print(traceback.format_exc())
-					send_status_email("failure", 'postProc', total_exp_name, \
-				                   traceback="One or more ds minifiles may be absent for the specified region", \
-				                   mailid=send_to, logfiles = [os.path.join(script_dir, "fudge_postProc.mfudge_postProc*")], \
-						           exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
-				                   outfiles = ds_vardir, xml = xml_loc)
-					sys.exit(-1)
-				#Note: python 'is' checks to see if same object, '==' checks for same value
-				#'is' works within the list comprehensions, but == works outside
-				add_anom_to_var = ( (var_suffix == 'none') or (var_suffix == "") )
-				#print("add_anom_to_var, is_ds:")
-				#print(add_anom_to_var)
-				output_files.append(check_anom_resid(ds_file, out_dir, total_exp_name, ds_var, send_to,script_dir, xml_loc, add_anom_to_var))
-		else:
-			print('No suffix directory for ' + ds_var + ' found. Moving on to next var.')		
-	output_files = [el for el in output_files if el is not None]
-	print("Concatenation operations complete." + "\n")
-	for el in output_files:
-		print "\t" + el
-	sys.exit(0)	
-				
+    #Clearer wrapper describing what the postProc function does.
+    #Still trying to duplicate old functionality; should really be called once
+    #for each ensemble member.
+    expdict = read_exp_info_file(exp_info)
+    total_exp_name = expdict['ds.experiment']
+    script_dir = expdict['script.base']
+    var = expdict['target']
+    xml_loc = expdict['xml.path']
+    send_to = mailid
 
-def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput, is_ds=False):	
-	#Checks for whether you need to call the anom addition or trend addition scripts; 
-	#calls them and returns the output file, if needed.
-	#note: uinput is the xml
-	copy_file = None
-	add_strings  = ["Anom", 'Detr']
-	if any([el in var for el in add_strings]):
-		#Copy operations are predictable, and called by everything
-		#You need to do the add operations (note: adds here include copies. Yes, it's weird.)	
-		if ("Anom" in var):
-			if is_ds:
-				print "Calling the anomaly addition script"
-				anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
-				print(osp.dirname(anom_file))
-				copy_file = anom_file
-			else:
-				print("Copying qc file to final destination")
-				print("using var " + var)
-				climvar = re.sub('Anom', '', var)
-				copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
-		elif ("Detr" in var):
-			if is_ds:
-				print "Calling the trend/resid addition script"
-				anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)	
-				climvar = re.sub('Detr', '', var)
-			else:	
-				print("Copying qc file to final destination")
-				copy_file = callCopyToTrendDetr(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)	
-	else:
-		print "None of " + ",".join(add_strings)," found in var; no adding/trending operations take place."	
-	return(copy_file)			
+    output_files = [] #can end being up to 4 elements long
 
-def process_file(exp_info, file_patt, in_dir, out_dir, n_expected_files):
-	#Changes that we need in this step in order to duplicate past functionality.
-	#No region masks needed.
-	#determine the number of files expected
-	nfiles = len([f for f in os.listdir(in_dir) if re.search("\.nc", f) is not None])
-	#are there that many .nc files in the directory where you expected to see them?
-	if nfiles != n_expected_files:
-		print("Error in process_file: wrong number of files in",in_dir, "!")
-		sys.exit()
-	#If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
-	#in that case, the modified workflow should just copy the file.
-	cat_file = concatenate_files(in_dir, file_patt, out_dir, exp_info)		
-	#And finally, set your metadata. 
-	#Note: this is now done in the cat step, to avoid copying to tmpdir more than once
-	#out_file = set_FUDGE_metadata(out_file, exp_info)		
-	return(cat_file)
+    #Expect one output file per runscript
+    n_expected_files = len([f for f in os.listdir(osp.join(script_dir, "runscript")) if re.search("script", f) is not None])
+
+    #Determine how many ds vars we are looking for
+    #note: anom + resid is a special case; always searched for
+    if var_suffix == 'all':
+        ds_vars = [var, var + "_qcmask", var + "_save"]
+        ds_dirs = [ds_dir, osp.join(ds_dir, var + "_qcmask". osp.join(ds_dir, var + "_save"))]
+    elif var_suffix == 'none' or var_suffix == "":
+        ds_vars = [var]
+        ds_dirs = [ds_dir]
+    else:
+        ds_vars = [var + "_" + var_suffix]
+        ds_dirs = [osp.join(ds_dir, var + "_" + var_suffix)]
+    print(ds_vars)
+    print(ds_dirs)
+    #Loop over available ds_vars and ds_dirs
+    for ds_var,ds_vardir in zip(ds_vars, ds_dirs):
+        #Always process the downscaled data (located in ds dir)
+        #which is passed in as a script arg
+        #ds_dir = osp.join(out_dir, "OneD")
+
+        #Only call the above bits if the dir which you are checking exists.
+        if osp.exists(ds_vardir):
+            ds_files = [f for f in os.listdir(ds_vardir) if re.search("\.nc", f) is not None]
+            n_ds_files = len(ds_files)
+            if n_ds_files > 0:
+                try:
+                    #(exp_info, file_patt, in_dir, out_dir, n_expected_files)
+                    file_patt = ds_files[0].split(".")[0]
+                    ds_file = process_file(exp_info, file_patt, ds_vardir,
+                                           out_dir, n_expected_files)
+                    output_files.append(ds_file)
+                except:
+                    print(traceback.format_exc())
+                    send_status_email("failure", 'postProc', total_exp_name, \
+                                   traceback="One or more ds minifiles may be absent for the specified region", \
+                                   mailid=send_to, logfiles = [os.path.join(script_dir, "fudge_postProc.mfudge_postProc*")], \
+                                   exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
+                                   outfiles = ds_vardir, xml = xml_loc)
+                    sys.exit(-1)
+                #Note: python 'is' checks to see if same object, '==' checks for same value
+                #'is' works within the list comprehensions, but == works outside
+                add_anom_to_var = ( (var_suffix == 'none') or (var_suffix == "") )
+                #print("add_anom_to_var, is_ds:")
+                #print(add_anom_to_var)
+                output_files.append(check_anom_resid(ds_file, out_dir, total_exp_name, ds_var, send_to,script_dir, xml_loc, add_anom_to_var))
+        else:
+            print('No suffix directory for ' + ds_var + ' found. Moving on to next var.')
+    output_files = [el for el in output_files if el is not None]
+    print("Concatenation operations complete." + "\n")
+    for el in output_files:
+        print "\t" + el
+    sys.exit(0)
+
+
+def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput, is_ds=False):
+    #Checks for whether you need to call the anom addition or trend addition scripts;
+    #calls them and returns the output file, if needed.
+    #note: uinput is the xml
+    copy_file = None
+    add_strings  = ["Anom", 'Detr']
+    if any([el in var for el in add_strings]):
+        #Copy operations are predictable, and called by everything
+        #You need to do the add operations (note: adds here include copies. Yes, it's weird.)
+        if ("Anom" in var):
+            if is_ds:
+                print "Calling the anomaly addition script"
+                anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+                print(osp.dirname(anom_file))
+                copy_file = anom_file
+            else:
+                print("Copying qc file to final destination")
+                print("using var " + var)
+                climvar = re.sub('Anom', '', var)
+                copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
+        elif ("Detr" in var):
+            if is_ds:
+                print "Calling the trend/resid addition script"
+                anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+                climvar = re.sub('Detr', '', var)
+            else:
+                print("Copying qc file to final destination")
+                copy_file = callCopyToTrendDetr(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
+    else:
+        print "None of " + ",".join(add_strings)," found in var; no adding/trending operations take place."
+    return(copy_file)
+
+def process_file(exp_info, file_patt, in_dir, out_dir, n_expected_files, force_overwrite=False):
+    #Changes that we need in this step in order to duplicate past functionality.
+    #No region masks needed.
+    #determine the number of files expected
+    pres_files = [osp.join(in_dir, f) for f in os.listdir(in_dir) if re.search("\.nc", f) is not None]
+    nfiles = len(pres_files)
+    #are there that many .nc files in the directory where you expected to see them?
+    if nfiles != n_expected_files:
+        print("Error in process_file: wrong number of files in",in_dir, "!")
+        sys.exit()
+    #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
+    #in that case, the modified workflow should just copy the file.
+    cat_file = concatenate_files(in_dir, file_patt, out_dir, exp_info)
+    #And finally, set your metadata.
+    #Note: this is now done in the cat step, to avoid copying to tmpdir more than once
+    #out_file = set_FUDGE_metadata(out_file, exp_info)
+    return(cat_file)
 
 def process_mask_file(exp_info, file_patt, out_dir):
-	#Okay...steps are roughly as follows:
-	mask_region_files = [] 
-	#For each of the mask directories:
-	region_mask_dirs = [osp.join(out_dir, el) for el in osp.listfiles(out_dir) if re.search('mask', el) is not None]
-	for maskdir in region_mask_dirs:
-		maskpath = osp.join(outdir, maskdir)
-		spatpath = osp.join(maskpath, "SpatSubset")
-		#file_patt probably needs to be edited - would that include the
-		#mask information in the name?
-		#determine the number of files expected
-		nfiles = len([f for f in os.listdir(spatpath) if re.search("\.nc", f) is not None])
-		#are there that many .nc files in the directory where you expected to see them?
-		if nfiles != expected_files:
-			print("Error in process_file: wrong number of files in",spatpath, "!")
-		#If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
-		#in that case, the modified workflow should just copy the file.
-		mask_file = concatenate_files(spatpath, file_patt, maskdir)
-		#note: mask_file is already copied to maskdir
-		mask_region_files.append(mask_file)
-	#...upon further inspection, it looks like ncbo isn't going to work readily - 
-	#ncflint mentions what we'd want it to do as one of the available options, 
-	#but it's not implemented. Hm.
-	if len(mask_region_files) > 1:
-		#add the mask files using the utility you wrote to do the thing
-		out_file = combine_masked_files(mask_region_files)
-	else:
-		#This should be the most common case
-		out_file = mask_region_files[1]
-	#And finally, set your metadata. 
-	out_file = set_FUDGE_metadata(out_file, exp_info)		
-	return(out_file)	
+    #Okay...steps are roughly as follows:
+    mask_region_files = []
+    #For each of the mask directories:
+    region_mask_dirs = [osp.join(out_dir, el) for el in osp.listfiles(out_dir) if re.search('mask', el) is not None]
+    for maskdir in region_mask_dirs:
+        maskpath = osp.join(outdir, maskdir)
+        spatpath = osp.join(maskpath, "SpatSubset")
+        #file_patt probably needs to be edited - would that include the
+        #mask information in the name?
+        #determine the number of files expected
+        nfiles = len([f for f in os.listdir(spatpath) if re.search("\.nc", f) is not None])
+        #are there that many .nc files in the directory where you expected to see them?
+        if nfiles != expected_files:
+            print("Error in process_file: wrong number of files in",spatpath, "!")
+        #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
+        #in that case, the modified workflow should just copy the file.
+        mask_file = concatenate_files(spatpath, file_patt, maskdir)
+        #note: mask_file is already copied to maskdir
+        mask_region_files.append(mask_file)
+    #...upon further inspection, it looks like ncbo isn't going to work readily -
+    #ncflint mentions what we'd want it to do as one of the available options,
+    #but it's not implemented. Hm.
+    if len(mask_region_files) > 1:
+        #add the mask files using the utility you wrote to do the thing
+        out_file = combine_masked_files(mask_region_files)
+    else:
+        #This should be the most common case
+        out_file = mask_region_files[1]
+    #And finally, set your metadata.
+    out_file = set_FUDGE_metadata(out_file, exp_info)
+    return(out_file)
 
 
 def proc_all_files(exp_info, out_dir):
-	#Look for 3 different kinds of input files
-	#(data, qcmask_data, save_data)
-	#_qcmask data is written in a separate file; we don't have the 
-	#same stuff in place for the save data yet, but it's probably going to 
-	#go there
-	#Stuff we need to make this operation: 
-	#variable of interest
-	#output location
-	#How many files we expect to have in the x and y subsets
-	#...so one way to look at the $var_qcmask and $var_save files is that 
-	#they are strings to search for in the naming file patterns. 
-	#..so in the absence of a --qcmask tag added, how does it determine if there
-	#are qcmask inputs that need to be processed?
-	#answer: check for the qcmask dirs in a separate call. Make one for the 
-	#main body function, and one for the qcmasks. One for the saves as well, 
-	#once you get to that point.
-	
-	supp_strings = ['qcmask', 'save']
-	#Anomaly copy/add switches
-	add_strings  = ["Anom", 'Detr']
-	for el in patterns:
-		#Assume the output always needs addition
-		cat_file = process_file(exp_info, el, out_dir, n_expected_files)
-		if any(add_strings in var):
-			if not any(supp_strings) in var:
-				#You need to do the add operations (note: adds here include copies. Yes, it's weird.)
-				if ("Anom" in var):
-					print "Calling the anomaly addition script"
-					anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
-				elif ("Detr" in var):
-					print "Calling the trend addition script"
-					anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
-			#Copy operations are predictable, and called by everything
-			if ("Anom" in var):
-				copy_file = callCopyToAnomClim(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
-			elif ("Detr" in var):
-				copy_file = callCopyToTrendDetr(final_out_dir, total_exp_name, var, send_to, sbase, uinput)	
+    #Look for 3 different kinds of input files
+    #(data, qcmask_data, save_data)
+    #_qcmask data is written in a separate file; we don't have the
+    #same stuff in place for the save data yet, but it's probably going to
+    #go there
+    #Stuff we need to make this operation:
+    #variable of interest
+    #output location
+    #How many files we expect to have in the x and y subsets
+    #...so one way to look at the $var_qcmask and $var_save files is that
+    #they are strings to search for in the naming file patterns.
+    #..so in the absence of a --qcmask tag added, how does it determine if there
+    #are qcmask inputs that need to be processed?
+    #answer: check for the qcmask dirs in a separate call. Make one for the
+    #main body function, and one for the qcmasks. One for the saves as well,
+    #once you get to that point.
+
+    supp_strings = ['qcmask', 'save']
+    #Anomaly copy/add switches
+    add_strings  = ["Anom", 'Detr']
+    for el in patterns:
+        #Assume the output always needs addition
+        cat_file = process_file(exp_info, el, out_dir, n_expected_files)
+        if any(add_strings in var):
+            if not any(supp_strings) in var:
+                #You need to do the add operations (note: adds here include copies. Yes, it's weird.)
+                if ("Anom" in var):
+                    print "Calling the anomaly addition script"
+                    anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+                elif ("Detr" in var):
+                    print "Calling the trend addition script"
+                    anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+            #Copy operations are predictable, and called by everything
+            if ("Anom" in var):
+                copy_file = callCopyToAnomClim(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+            elif ("Detr" in var):
+                copy_file = callCopyToTrendDetr(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
 
 if __name__ == '__main__':
-	print(sys.argv)
-	postProc()	
+    print(sys.argv)
+    postProc()

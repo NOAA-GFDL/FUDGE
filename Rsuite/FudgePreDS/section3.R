@@ -43,16 +43,14 @@ callS3Adjustment<-function(s3.instructions=list('na'),
                                    'att.list'=adjust.metadata),
                         s5.list=s5.instructions,
                         missval.args=missval.args)
-  #print(paste("lenght of section 3 instructions:", length(s3.instructions)))
   for(element in 1:length(s3.instructions)){
     test <- s3.instructions[[element]]
     #Note that BOTH ELEMENTS get returned for the adjusted output.
     #The transforms may have elements that will depend on the conditions of the initial transform,
     #and the order of the backtransform is going to be dependant on the order of the elements
     #that go into it.
-    #print(test$type)
     adjusted.list <- switch(test$type,
-                            'PR' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list,
+                            'pr_in' = callPRPreproc(test, adjusted.list$input, adjusted.list$s5.list,
                                                  adjusted.list$missval.args, prime_predictor),
                             'transform' = callPRTransform(test, adjusted.list$input, adjusted.list$s5.list,
                                                           adjusted.list$missval.args),
@@ -72,20 +70,20 @@ callPRPreproc <- function(test, input, postproc.output,
   ##Revising 4-14 for the
   #att_table in input$att.list, and is further organized by MH, OH and MF
 
-  pr.names <- (names(test$pp.args))
+  pr.names <- (names(test$qc_args))
   #Obtain function args
   if('thold'%in%pr.names && 'freqadj'%in%pr.names && 'conserve'%in%pr.names){
-    threshold   =  test$pp.args$thold
-    lopt.drizzle  = ( test$pp.args$freqadj =='on')
-    lopt.conserve = ( test$pp.args$conserve =='on')
+    threshold   =  test$qc_args$thold
+    lopt.drizzle  = ( test$qc_args$freqadj =='on')
+    lopt.conserve = ( test$qc_args$conserve =='on')
   }else{
     stop(paste("Precipitation Pre-Processing Argument Error: one or more of pr_threshold_in,
                pr_freqadj_in, or pr_conserve_in not present in arguments to precipitation
                pre-processing function."))
   }
   if('ignore0'%in%pr.names){
-    ignore0 = (test$pp.args$ignore0=='on')
-    pr_mod <- postproc.output$propts #Used later to add masks for later application
+    ignore0 = (test$qc_args$ignore0=='on')
+    pr_mod <- postproc.output$pr_out #Used later to add masks for later application
   }else{
     message("Assuming that an old XML is being used; default behavior in place")
     ignore0=FALSE
@@ -97,11 +95,11 @@ callPRPreproc <- function(test, input, postproc.output,
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
-  if (test$pp.args$pr_adjmethod %in% c('eqfreq', 'none')){
+  if (test$qc_args$pr_adjmethod %in% c('eqfreq', 'none')){
   tmp.out <- AdjustPRPoints(input$OH, input$MH, input$MF,
                              input$att.list$pr_oh_units, input$att.list$pr_mh_units[[1]], input$att.list$pr_mf_units[[1]],
-                             test$var, prime_predictor,
-                             test$pp.args$thold, lopt.drizzle, lopt.conserve, ignore0, allow_lower_mh=TRUE)
+                             test$apply_var, prime_predictor,
+                             test$qc_args$thold, lopt.drizzle, lopt.conserve, ignore0, allow_lower_mh=TRUE)
   #'Okay, this is going to need some work on how to transmit the unit conversions
   #'from in here
   input$OH <- tmp.out$OH
@@ -125,8 +123,8 @@ callPRPreproc <- function(test, input, postproc.output,
                       list(OH = tmp.out$pr_args$OH,
                            MH = tmp.out$pr_args$MH,
                            MF = tmp.out$pr_args$MF))
-  postproc.output$propts <- pr_mod
-  }else if (test$pp.args$pr_adjmethod %in% c('exact', 'approx')){
+  postproc.output$pr_out <- pr_mod
+  }else if (test$qc_args$pr_adjmethod %in% c('exact', 'approx')){
     
     pr_target <- input$att.list$pr_oh
     nrips <- dim(input$MF[[pr_target]])[4]
@@ -141,7 +139,7 @@ callPRPreproc <- function(test, input, postproc.output,
                               opt.wetday=threshold,
                               lopt.drizzle=lopt.drizzle,
                               lopt.conserve=lopt.conserve,
-                              adj.method=test$pp.args$pr_adjmethod,
+                              adj.method=test$qc_args$pr_adjmethod,
                               zero.to.na=FALSE) #formerly set by apply.0.mask; used elsewhere now)
     input$OH[[prime_predictor]] <- temp.out$ref$data   #only a single target variable
     input$MH[[prime_predictor]] <- temp.out$adjust$data
@@ -166,12 +164,10 @@ callPRPreproc <- function(test, input, postproc.output,
       #note that it is the presence of this mask that
       #leads to the adjustment being performed.
       if(!(ds.ref$downscale_oh)){
-        #print(paste('adding future prmask'))
         fut.prmask <- temp.out$future$pr_mask
         pr_mod$qc_args$fut.prmask <- fut.prmask
       }else{
         #Assume that you are downsciang on the OH dataset instead; store accordingly
-        #print(paste('adding target prmask'))
         pr_mod$qc_args$targ.prmask <-  temp.out$ref$pr_mask
       }
     }
@@ -184,7 +180,7 @@ callPRPreproc <- function(test, input, postproc.output,
                                   adjusted.thold = temp.out$adjusted.thold,
                                   prime_predictor = prime_predictor)
     if(ignore0){
-      postproc.output$propts <- pr_mod
+      postproc.output$pr_out <- pr_mod
     }
   }
   missval.args <<- missval.args
@@ -198,17 +194,17 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   #data into a more gaussian form
 
   #Insert check for presence of transfrom in here at a later point
-  tform <- test$pp.args$transform
+  tform <- test$qc_args$transform
   ds.var <- names(input$OH)
-  transform.vars <- test$pp.args$vars
+  transform.vars <- test$qc_args$vars
 
   #Do a basic check for the presence of the variables you want to check
-  t.fxn <- return.t.fxn(tform, test$pp.args$arg)
+  t.fxn <- return.t.fxn(tform, test$qc_args$arg)
   #Insert saving of t.fxn in the section 5 list in this bit
   #note that the adjustment gets added to the TOP of the stack
   backtform <- list(type='backtransform',
                     adjust.out='on',
-                    qc.mask='off',
+                    make_qc_mask=FALSE,
                     loc='present', #shouldn't need to be set;
                     #should be added to the current s5 list and executed
                     #accordingly; check to see whether this needs new entries
@@ -222,7 +218,6 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
   for (datatype in names(input)){
     if (datatype %in% c("OH", "MH", "MF")){
       for (varname in names(input[[datatype]])){
-        #print(varname)
         grep.var <- sapply(transform.vars,
                            function(x){grepl(paste0("^", x, "\\."),
                                              varname, perl=T)})
@@ -253,6 +248,9 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
 return.t.fxn <- function(tform, arg){
   #'Helper function for returning a transform from a transform
   #'arg - now gets used by pr transforms AND MBC
+  if (is.na(suppressWarnings(as.numeric(arg)))){
+    arg = eval(parse(text=arg))
+  }
   out <- switch(tform,
                 'log' = list('log', NULL, 'exp', NULL), #log base e
                 'log10' = list('log10', NULL, 'exp10', NULL), #log base 10

@@ -63,10 +63,14 @@ make.fudge.info <- function(tmask.filenames, aux.ref, missval.args,
                           "inputs had at least", missval.args$minsamplesize, 
                           "non-missing value(s);")
   #Downscaling method
-  if(ds.args[[1]]=='na'){
-    fudge.argstring <- "default settings"
+  if (length(ds.args) > 0){
+    if(ds.args[[1]]=='na'){
+      fudge.argstring <- "default settings"
+    }else{
+      fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
+    }
   }else{
-    fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
+    fudge.argstring <- 'na'
   }
   info_ds <- paste0(ds.method, " : (", paste(fudge.argstring), ")")
   
@@ -90,25 +94,10 @@ make.fudge.info <- function(tmask.filenames, aux.ref, missval.args,
     info_tmask <- 'none_used'
   }
   #info pre_ds
-  generate_s3s5_arglist <- function(arglist, argname='pp.args'){
-    #Creates formatted list of args for keeping track of metadata attributes
-    if (length(arglist)!=0){
-      info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
-                                  paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
-                                  sep=":"), 
-                    collapse=";")
-      info <- gsub('\"', "", info)
-      info <- gsub('list', "", info)
-      info <- gsub('na', "", info)
-    }else{
-      info <- "none specified"
-    }
-    return(info)
-  }
   #Okay - this bit right here is sort of horribly ad-hoc.
   #but it looks like it will work to get the 3^5 experiments out.
-  info_pre_ds <- generate_s3s5_arglist(pre_ds, 'pp.args')
-  info_post_ds <- generate_s3s5_arglist(post_ds, 'qc_args')
+  info_pre_ds <- generate_s3s5_arglist(c(pre_ds$outloop, pre_ds$inloop), 'qc_args')
+  info_post_ds <- generate_s3s5_arglist(c(post_ds$inloop, post_ds$outloop), 'qc_args')
   return(list(info_ds = info_ds, 
               info_pre_ds = info_pre_ds, 
               info_post_ds = info_post_ds, 
@@ -158,4 +147,20 @@ get.qc.comment <- function(qc.method, ds.method){
     }
   }
   return(qc.comment)
+}
+
+generate_s3s5_arglist <- function(arglist, argname='qc_args'){
+  #Creates formatted list of args for keeping track of metadata attributes
+  if (length(arglist)!=0){
+    info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
+                                paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
+                                sep=":"), 
+                  collapse=";")
+    info <- gsub('\"', "", info)
+    info <- gsub('list', "", info)
+    info <- gsub('na', "", info)
+  }else{
+    info <- "none specified"
+  }
+  return(info)
 }

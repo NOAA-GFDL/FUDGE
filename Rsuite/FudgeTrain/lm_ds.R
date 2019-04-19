@@ -196,7 +196,7 @@ set.lmstep.defaults <- function(args, ..., env){
   }else{
     prime_predictor <<- get.prime.predictor(predictor.vars[1], aux.ref) 
     return_args <- c(args, list(prime_predictor=prime_predictor))
-    env$ds.args <- return_args
+    env$ds.ref$args <- return_args
     env$prime_predictor <- prime_predictor
   }
   return(env)

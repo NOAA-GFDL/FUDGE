@@ -2,21 +2,27 @@
 stages:
  - test_mini
  - test_full
- 
+
 before_script:
  - module load git
 
 minijob:
- # This step is meant to run the minifile tests. 
+ # This step is meant to run the minifile tests.
  stage: test_mini
  script:
   - echo "loading ESD environment"
+  - module purge
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
-  - module load slurm
+  ##- module load slurm
+  - module unload python/2.7.12
+  - module load python/2.7.12_np
+  - module list
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  - module list
   - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  - echo $REG_BASEDIR
   #The below does not work. Calling entire thing, rather than alias.
   #- alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
   - datestr=`date +%Y%m%d-%H%M`
@@ -24,7 +30,7 @@ minijob:
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 60 --compare-opt 'all'
  #only:
  # - tags,master,i_gitlab-ci-new
  tags:
@@ -32,14 +38,17 @@ minijob:
 # variables:
 #  CI_DEBUG_TRACE: "true"
 
-  
+
 fulljob:
  stage: test_full
  script:
   - echo "loading ESD environment"
+  - module purge
   - module use -a /home/esd/local/modulefiles
-  - module load esd/env 
-  - module load slurm
+  - module load esd/env
+  - module unload python/2.7.12
+  - module load python/2.7.12_np
+  - module list
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
   - datestr=`date +%Y%m%d-%H%M`
@@ -47,7 +56,7 @@ fulljob:
   - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
   - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 300
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
  tags:
   - analysis
 # variables:

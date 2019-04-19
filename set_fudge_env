@@ -9,14 +9,12 @@ if ($status != 0) then
 	module load R/3.2.1
 endif
 
-module load python/2.7.3
+module load python/2.7.12
 
 ##module unload R #leads to messy memory stack trace
-#module load R/2.15.2
 module unload R/2.15.2
-module load R/3.2.1
-#module unload R/3.2.1
-#module load R/3.4.4
+module load R/3.4.4
+#module load R/3.2.1
 
 ##module unload git  #leads to messy memory stack trace
 ##module load git/2.4.6 #leads to segfault
@@ -27,4 +25,5 @@ module load slurm
 
 #needed for role accnt
 module load globus
-set s8_tag = sec8-20190301
+set s8_tag = sec8-20190415
+

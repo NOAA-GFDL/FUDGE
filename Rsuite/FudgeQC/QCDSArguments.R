@@ -11,7 +11,9 @@ QCDSArguments <- function(k, ds.method, ...){
   #             "does not support cross-validaton. Check documentation for more details."))
   #}
   #New check for cross-validation conflict:
-  if (is.multi_ens){
+  print(as.list(match.call()))
+  args <- list(...)
+  if (args$is.multi_ens){
     if (k > 1){
       stop(paste("Error in QCDSArguments: k of ", k, "is not", 
                  "supported for multi-ensemble data!"))
@@ -19,7 +21,7 @@ QCDSArguments <- function(k, ds.method, ...){
   }else{
     if (k > 1){
       #Check construction of tmasks
-      if (tmasks$apply_tmasks){
+      if (args$tmasks$apply_tmasks){
         tmask_types = c('OH', 'MH', 'MF', 'trim')
         k_tmask <- function(tmask_name){
           #All between 'kfold' and '.nc'
@@ -49,15 +51,11 @@ QCDSArguments <- function(k, ds.method, ...){
         }
       }
       #check construction of experiment names
-      exp_pos = regexpr('K[0-9]{2}', ds.experiment)
-      exp_name_kfold = as.numeric(substr(ds.experiment, exp_pos + 1, exp_pos + 2))
-      print("checks on experiment name kfold")
-      print(ds.experiment)
-      print(exp_name_kfold)
-      print(k)
+      exp_pos = regexpr('K[0-9]{2}', args$ds.experiment)
+      exp_name_kfold = as.numeric(substr(args$ds.experiment, exp_pos + 1, exp_pos + 2))
       if (exp_name_kfold != k){
         dtop(paste("Error in QCDSArguments: the kfold in the experiment name", 
-                   ds.experiment, ',namely,', exp_name_kfold, 
+                   args$ds.experiment, ',namely,', exp_name_kfold, 
                    "did not match the kfold of the input", k, '!'))
       }
     }

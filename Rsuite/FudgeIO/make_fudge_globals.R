@@ -6,21 +6,22 @@ make.fudge.globals <- function(){
                                       #Yes, it's MF above - that's what it was originally.
                                       #Talk about this with someone else when you do metdata revisions.
                                       "downscaled by FUDGE", FUDGETAG,
-                                      ds.experiment))
+                                      aux.ref$ds_experiment_name))
   fudge.reference <- NA
   fudge.institution <- paste("NOAA/GFDL", "(201 Forrestal Rd, Princeton, NJ, 08540)")
   fudge.insitute.id <- paste("NOAA/GFDL")
   fudgetag = FUDGETAG
   fudge.history <- make.fudge.history("NOAA/GFDL", FUDGETAG, FUDGEROOT)
-  fudge.comment <- make.fudge.comment(ds.method, target.var, grid, ds.region, k.fold, 
-                                      ds.experiment, 
+  fudge.comment <- make.fudge.comment(aux.ref$ds_method, target.var, 
+                                      aux.ref$output_grid, aux.ref$ds_region, aux.ref$kfold, 
+                                      aux.ref$ds_experiment_name, 
                                       #label.validation, label.training, 
-                                      predictor.vars, fut.pred.rip.list, 
+                                      predictor.vars, rip, #aux.ref$DS$rips, 
                                       train.string=train.string)
   
   fudge.info.atts <- make.fudge.info(tmasks$filenames, aux.ref,
                                      missval.args,
-                                     ds.method, args, 
+                                     aux.ref$ds_method, aux.ref$ds_args, 
                                      pre_ds, post_ds)
   fudge.OH.atts <- get.OH.experiment.atts(OH$metadata[[1]]$filename)
   fudge.MF.atts <- get.MF.experiment.atts(MF$metadata[[1]]$filename)
@@ -43,7 +44,7 @@ make.fudge.globals <- function(){
                             'comment' = fudge.comment, 
                             'references' = fudge.reference, 
                             #'climatology' = fudge.climatology, 
-                            'realizations' = paste(fut.pred.rip.list, collapse=","), 
+                            'realizations' = paste(aux.ref$DS$rips, collapse=","), 
                             'fudgetag' = fudgetag, 
                             'ds_downscaling_method' = ds.ref$method, 
                             'r_version' = r_version), 

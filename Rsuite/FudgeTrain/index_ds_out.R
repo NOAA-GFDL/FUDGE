@@ -32,7 +32,7 @@ index.delta <- function(hist_leapdays, fut_leapdays,
   #  if (ds$orientation='OH'){
   #    oh.idx <- ds$oh.idx 
   ###This assumes that you feed in a single ensemble of data at a time
-  if (hist_year_div == 0){
+  if (hist_year_div[1] == 0){
     #synthetic data check
     return(data)
   }else{

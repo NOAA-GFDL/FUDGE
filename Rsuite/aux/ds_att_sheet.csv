@@ -6,12 +6,11 @@
 "DeltaSD","OH, MH","MH,MF","MF",,"TRUE","FALSE","distributional","FALSE","FALSE","delta","squish",,,"spatial,temporal","FALSE","FALSE",
 "BCQM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE",
 "KDDM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","FALSE","TRUE","qm","squish","temporal","temporal","spatial,temporal","FALSE","FALSE","https://github.com/sethmcg/climod"
-"EDQM","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","Li et.al. 2010"
 "CFQM","OH, MH","MH,MF","MF","OH","TRUE","TRUE","distributional","FALSE","FALSE","qm","squish",,,"spatial,temporal","FALSE","FALSE",
 "PARM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","TRUE","TRUE","qm","squish","spatial",,"temporal","FALSE","FALSE","Stoner et.al. 2007"
-"MBC","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","synchronous","TRUE","TRUE","qm","squish","spatial",,"temporal","TRUE","TRUE","Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
+"MBC","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","TRUE","TRUE","qm","squish","spatial",,"temporal","TRUE","TRUE","Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
 "QDM","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","Cannon, A.J., submitted. Multivariate quantile mapping bias correction: An N-dimensional probability density function transform for climate model simulations of multiple variables. Climate Dynamics"
-"lmAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
-"lmstepAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
+"lmAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","synchronous","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
+"lmstepAsync","MH, MF","OH,MH","OH","MF","FALSE","FALSE","synchronous","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
 "returnMF","MH, MF","OH, MH","OH","MF","FALSE","FALSE","distributional","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE","Returning unaltered MF dataset"
 "BCMM","MH, MF","OH,MH","OH","MF","FALSE","FALSE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE",
