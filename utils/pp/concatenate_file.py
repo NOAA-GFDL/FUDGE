@@ -46,8 +46,8 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     #unwind_list = [el for f in find_list for el in f ]
     #i_matches = sorted([el for f in unwind_list for el in f if el != ""]) #remove duplicates
     index_subset = [re.split("\.", f)[1] for f in file_subset]
-    i_patterns = find_match_string('I', index_subset, file_subset)
-    j_patterns = find_match_string('J', index_subset, file_subset)
+    i_patterns = list(set(find_match_string('I', index_subset, file_subset)))
+    j_patterns = list(set(find_match_string('J', index_subset, file_subset)))
     file_split = re.split("\.", file_subset[0])
     print(file_split)
     out_filename = ".".join([file_split[0], file_split[-1]])
@@ -101,7 +101,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
     x_perm_out = ",".join(dimlist)
     print("outer call to cat_min")
-    xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
+    xy_out = call_parallel_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
                   tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
     #Final step needs to be finalizing some metadata atts
@@ -210,15 +210,36 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
     #Convenience wrapper for calling cat_min.csh
     print("calling cat_min")
     infile_str = ",".join(infiles)
-    #cat_min = "/home/cew/Code/h_testing/FudgeIO_reboot/concatenate_files.csh"
+    # cat_min = basedir + "/utils/pp/concatenate_files_parallel.csh"
+    # cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile, str(6)])
+    # p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
     cat_min = basedir + "/utils/pp/concatenate_files.csh"
     cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile])
-    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)	#, cwd=tdir
+    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
     out0,err0 = p.communicate()
     if (p.returncode != 0):
         print(str(out0))
         print(str(err0))
         print("Error in processing concatenation operations for " +  index_str + "; call to c-shell failed.")
+        print("Command that failed: " + cat_command)
+        sys.exit(1)
+        return(None)
+    else:
+        print(str(out0))
+        return(outfile)
+
+def call_parallel_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, index_str=""):
+    # Convenience wrapper for calling parallelized cat_min.csh
+    print("calling cat_min_parallel")
+    infile_str = ",".join(infiles)
+    cat_min = basedir + "/utils/pp/concatenate_files_parallel.csh"
+    cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile, str(7)])
+    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
+    out0,err0 = p.communicate()
+    if (p.returncode != 0):
+        print(str(out0))
+        print(str(err0))
+        print("Error in processing parallel concatenation operations for " +  index_str + "; call to c-shell failed.")
         print("Command that failed: " + cat_command)
         sys.exit(1)
         return(None)
