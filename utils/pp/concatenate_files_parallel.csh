@@ -67,14 +67,14 @@ end
 set i = 1
 foreach el (`ls $tdir/scripts/`)
   #echo "$tdir/scripts/${i_str}.tcsh"
-  tcsh $el &
+  tcsh $tdir/scripts/$el &
   set mod = `expr $i % $ncores`
   if ( $mod == 0 ) then
     wait
     #Check for failures
     set fail_files = `ls -a $tdir/status/ | grep 'failure' `
     set any_failures = $status
-    echo "any_failures: $any_failures"
+    #echo "any_failures: $any_failures"
     if ( $any_failures == 0 ) then
         foreach f ( $fail_files )
           set fail_str = `echo $f | sed -e s:.failure::g `
@@ -97,7 +97,7 @@ wait
 #Check for failures
 set fail_files = `ls -a $tdir/status/ | grep 'failure' `
 set any_failures = $status
-echo "any_failures: $any_failures"
+#echo "any_failures: $any_failures"
 if ( $any_failures == 0 ) then
     echo $fail_files
     foreach f ( $fail_files )

@@ -36,7 +36,7 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
         pp_sourcelist = []
         for j,suffix in zip(range(0, len(suffix_list)), suffix_list):
             pp_runcode_header = "\n".join(["#!/bin/tcsh",
-                                   "#SBATCH -c 8",
+                                   "#SBATCH -c 6",
                                    '#SBATCH -t '+str(runtime),
                                    "#SBATCH -J fudge_postProc_" + str(i+1) + "_" + str(j+1),
                                    "#SBATCH -o " + pp_log_dir + "/fudge_postProc_.%x.%j",
@@ -94,7 +94,8 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
     msub_file = osp.join(pp_dir, 'msubwrapper')
     msub_text = "#!/bin/tcsh -f \n"
     msub_text = msub_text + "rm -f " + pp_stat_dir + "/*\n"
-    msub_commands = "\n".join(["sbatch " + el + " --exclusive" for el in code_list]) + "\n"
+    msub_commands = "\n".join(["sbatch --exclusive " + el for el in code_list]) + "\n"
+    msub_commands = "\n".join(["sbatch " + el for el in code_list]) + "\n"
     #msub_text = msub_text + msub_commands + "\n"
     msub_text = msub_commands + "\n"
     with open(msub_file, 'w') as f:

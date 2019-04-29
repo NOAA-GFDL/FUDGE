@@ -101,8 +101,10 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
     x_perm_out = ",".join(dimlist)
     print("outer call to cat_min")
-    xy_out = call_parallel_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
+    xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
                   tdir_i, tmp_outfile, "all values")
+    #xy_out = call_parallel_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
+    #              tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
     #Final step needs to be finalizing some metadata atts
     #experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
@@ -234,6 +236,7 @@ def call_parallel_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, ou
     infile_str = ",".join(infiles)
     cat_min = basedir + "/utils/pp/concatenate_files_parallel.csh"
     cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile, str(7)])
+    print(cat_command)
     p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
     out0,err0 = p.communicate()
     if (p.returncode != 0):
