@@ -19,6 +19,7 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0, spath="na"):
        listbad = []
        append_ok = False
        othercheck = False
+       print(spath)
        spath = re.split(":", spath)[1]
        if (os.path.exists(path+"/.mini.fail")):
 	  	  print "\033[1;31m .mini.fail found in output dir, postProc cannot be executed. \033[1;m"

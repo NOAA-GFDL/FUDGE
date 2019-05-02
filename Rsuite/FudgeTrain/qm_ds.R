@@ -68,11 +68,16 @@ callQM <- function(OH, MH, MF, args, type="",
       )
       # print(length(out))
 
-      if(type=="KDDM" & !is.null(attr(out, "uncorrectable")) & train_qcmask){
-        correctable <- rep(1, length(index.mask))
-        correctable[attr(out, "uncorrectable")] <- NA
-        qc[,,,n,,] <- index.qm(index.mask, correctable, olap)
-        out <- as.numeric(out)
+      if (train_qcmask){
+        if(type=="KDDM" & !is.null(attr(out, "uncorrectable"))){
+          correctable <- rep(1, length(index.mask))
+          correctable[attr(out, "uncorrectable")] <- NA
+          qc[,,,n,,] <- index.qm(index.mask, correctable, olap)
+          out <- as.numeric(out)
+        }else if (type == 'BCMM'){
+          bias <- ifelse(is.na(index.mask), NA, attr(out, 'bias'))
+          qc[,,,n,,] <- index.qm(index.mask, bias, olap)
+        }
       }
 
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
@@ -303,6 +308,7 @@ callBCMM <- function(Oh, Mh, Mf, args){
   #' It's effectively delta but for the future time period.
   bias = mean(Mh, na.rm=T) - mean(Oh, na.rm=T)
   DS = Mf - bias
+  attr(DS, "bias") <- bias
   return(DS)
 }
 

@@ -76,6 +76,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     i_outfiles = []
     i_out_paths = []
     print("looping over i_patterns and concatenating in j")
+    natural_sort(i_patterns)
     print(i_patterns)
     for i_patt,i in zip( i_patterns, range( len(i_patterns) ) ):
         i_subset = [f for f in file_subset if re.search(i_patt, f) is not None]
@@ -97,6 +98,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
         #End i loop
     #Final concatenation operation
     print("final concatenation operation in i")
+    natural_sort(i_outfiles)
     x_idx = dimmap.index('x')
     x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
     x_perm_out = ",".join(dimlist)
@@ -217,6 +219,7 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
     # p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
     cat_min = basedir + "/utils/pp/concatenate_files.csh"
     cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile])
+    print(cat_command)
     p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
     out0,err0 = p.communicate()
     if (p.returncode != 0):

@@ -213,7 +213,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 			if (qc_mask_bool == 'on'):
 				v_print(1, "qc_mask seems to be on, checker to run on qc_mask")
 				outmask = out+"/"+target+"_qcmask"
-				retcode2 = checker.checker(outmask,exp_cnt,"warning",verbose=verbopt)
+				retcode2 = checker.checker(outmask,exp_cnt,"warning",verbose=verbopt, spath=script_base)
 		#print retcode
 				if (retcode3 == 0) & (retcode2 == 0):
 					v_print(1,"Both ds output and mask output seem to be available")

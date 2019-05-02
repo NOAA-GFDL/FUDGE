@@ -304,6 +304,8 @@ def make_qc_longname(qc_method, ds_method, ds_var):
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_longname = "Delta of " + ds_var
+        elif ds_method == "BCMM":
+            qc_longname = "Bias of " + ds_var
         else:
             qc_longname = "Training qcmask for " + ds_var
     else:
@@ -324,6 +326,8 @@ def make_qc_comment(qc_method, ds_method, BASEDIR):
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_comment = "Delta used to generate DS output at a given x,y,t"
+        if ds_method = "BCMM":
+            qc_comment = "Bias of historical (MH - OH) at a given x,y,t"
     return(qc_comment)
 
 def make_global_comment(ds_method, var, region, grid, kfold, exp_name, train_data, predictor_vars, fut_rips):
@@ -337,9 +341,12 @@ def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_n
     #Makes global comment for qc vars; some switches based on qc method
     make_start = True
     if qc_method == 'qc.train':
-        if ds_method == 'DeltaSD':
+        if ds_method == 'DeltaSD' or ds_method == "BCMM":
             make_start = False
-            start = "Output to document the delta ratio applied at individual x,y,twindow locations "
+            if ds_method == 'DeltaSD':
+                start = "Output to document the delta ratio applied at individual x,y,twindow locations "
+            else:
+                start = "Output to document the bias applied at individual x,y,twindow locations "
         else:
             qc_str = "where 1=minsamplesize requirements (n>" + minsamplesize + ") met for " + train_data + " and missing indicates retry option invoked"
     elif qc_method == "tail.adjust":
