@@ -326,7 +326,7 @@ def make_qc_comment(qc_method, ds_method, BASEDIR):
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_comment = "Delta used to generate DS output at a given x,y,t"
-        if ds_method = "BCMM":
+        if ds_method == "BCMM":
             qc_comment = "Bias of historical (MH - OH) at a given x,y,t"
     return(qc_comment)
 

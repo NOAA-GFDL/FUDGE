@@ -38,7 +38,8 @@ minijob:
 fulljob:
  stage: test_full
  script:
-  - if ( $(severity) -gt 1 ) then
+  - echo `bash --version`
+  - if (( $severity > 1 )) then
   -   echo "loading ESD environment"
   -   module purge
   -   module use -a /home/esd/local/modulefiles
@@ -62,7 +63,8 @@ fulljob:
 bigdata:
  stage: test_all
  script:
-  - if ( $(severity) -gt 2 ); then
+  - echo `bash --version`
+  - if (( $severity > 2 )); then
   -  echo "Running big data case"
   -   echo "loading ESD environment"
   -   module purge
