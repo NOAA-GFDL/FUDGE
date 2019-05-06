@@ -77,7 +77,6 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     i_out_paths = []
     print("looping over i_patterns and concatenating in j")
     natural_sort(i_patterns)
-    print(i_patterns)
     for i_patt,i in zip( i_patterns, range( len(i_patterns) ) ):
         i_subset = [f for f in file_subset if re.search(i_patt, f) is not None]
         natural_sort(i_subset)
@@ -98,7 +97,6 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
         #End i loop
     #Final concatenation operation
     print("final concatenation operation in i")
-    natural_sort(i_outfiles)
     x_idx = dimmap.index('x')
     x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
     x_perm_out = ",".join(dimlist)

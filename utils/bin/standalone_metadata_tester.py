@@ -84,10 +84,14 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
           comment: "comment for tasmax_qcmask"
     '''
     #Initial check on whether "strict" parsing is appropriate
+    is_csv = False
     if auxdict['file_format'] == "csv":
+        is_csv = True
         if is_strict:
-            print("Error in make_fudge_metadata: strict parsing is meaningless with csv files! Please turn off is_strict option")
-            sys.exit(1)
+            #print("Error in make_fudge_metadata: strict parsing is meaningless with csv files! Please turn off is_strict option")
+            #sys.exit(1)
+            print("Warning in make_fudge_metadata: strict parsing is meaningless with csv files; setting is_strict to FALSE")
+            is_strict = False
     pred_dict = {}
     #This needs a provision for a qcmask of some kind
     #qc gets several special atts:
@@ -130,7 +134,11 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     '''
     prime_var = auxdict['OH'].keys()[0]
     OH_file = auxdict['OH'][prime_var]['file']
-    MF_file = auxdict['MF'][prime_var]['file']
+    if prime_var in auxdict['MF'].keys():
+        MF_var = prime_var
+    else:
+        MF_var = auxdict['MF'].keys()[0]
+    MF_file = auxdict['MF'][MF_var]['file']
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
@@ -159,7 +167,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #Climatology and trend are more complicated - depending on the workflow,
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
-    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, is_running_standalone))
+    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, MF_var, is_running_standalone, is_csv))
     #attributes by variable
     var_longname = ""
     vd[prime_var] = {"longname": var_longname}
@@ -220,15 +228,15 @@ def arg_tostring(arg):
     return(ret)
 
 
-def get_climatology_atts(auxdict, var, is_running_standalone):
+def get_climatology_atts(auxdict, OH_var, MF_var, is_running_standalone, is_csv):
     #Gets the attributes that you'd need for writing trend/climatology metadata
     clim_source = auxdict['climo_source']
     if type(clim_source) is list:
         clim_source = clim_source[0]
     if clim_source == "MF":
-        clim_file = auxdict['MF'][var]['file']
+        clim_file = auxdict['MF'][MF_var]['file']
     elif clim_source == "OH":
-        clim_file = auxdict['OH'][var]['file']
+        clim_file = auxdict['OH'][OH_var]['file']
     else:
         print("Error in standalone_metadata_tester.py: climo_source was not set in the auxdict!")
         sys.exit(1)
@@ -237,15 +245,16 @@ def get_climatology_atts(auxdict, var, is_running_standalone):
     if is_running_standalone:
         clim_source = gcp(clim_file)
     attdict = {}
-    with Dataset(clim_file, 'r') as nc_obj:
-        try:
-            attdict['climatology'] = nc_obj.__dict__['climatology']
-        except:
-            print("No climatology found")
-        try:
-            attdict['trend'] = nc_obj.__dict__['trend']
-        except:
-            print("No trend found")
+    if not is_csv:
+        with Dataset(clim_file, 'r') as nc_obj:
+            try:
+                attdict['climatology'] = nc_obj.__dict__['climatology']
+            except:
+                print("No climatology found")
+            try:
+                attdict['trend'] = nc_obj.__dict__['trend']
+            except:
+                print("No trend found")
     return(attdict)
 
 def get_filename_atts(data_struct):

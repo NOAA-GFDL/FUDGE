@@ -851,7 +851,7 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
         msub_string = "sbatch "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
-    msub_cmd = "module load moab; "
+    msub_cmd = "module load slurm; "
     for el in master_scripts:
         #msub_cmd can be saved for later
         msub_cmd = msub_cmd + msub_string + el + "; "

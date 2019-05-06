@@ -25,10 +25,12 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     tmasks = []
     for dname in dataset_names:
         tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
-    if auxdict['DS']['indexing_tmask'] != 'na':
+    tmask_nones = ['na', 'none']
+    if auxdict['DS']['indexing_tmask'] not in tmask_nones:
         tmasks.append(auxdict['DS']['indexing_tmask'])
     tmasks = list(set(tmasks))
-    tmasks = [el for el in tmasks if el != 'na']
+    tmask_none = ["na", "none"]
+    tmasks = [el for el in tmasks if el not in tmask_none]
     if len(tmasks) > 0:
         dmget += "# Time mask files:\n" + "\n".join(["dmget " + el for el in tmasks]) + "\n"
     geomasks = []
@@ -448,10 +450,20 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
     # Currently assumes a single file of _qcmask output;
     # when we get to writing coordinates, this needs to be updated
     # Note: right now, for a given script job, all J are going to be identical.
+    # Updated May 2019: Adding in an alternative copy for the copy
+    # operations related to the csv workflow; if the i,j is not found, looks for
+    # files ending in .nc without the i,j
     outstr = []
-    outstr.append('echo `ls "$TMPDIR/' + outdir + '"`')
-    outstr.append('echo gcp "$TMPDIR/' + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir + '"')
-    outstr.append("gcp $TMPDIR/" + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir)
+    ij_id = i_string+"_"+j_string
+    outstr.append('set file_out = `ls "$TMPDIR/' + outdir + '"`')
+    outstr.append('echo $file_out | grep ' + ij_id)
+    outstr.append('if ( $status == 0 ) then')
+    outstr.append('  set file_id = "/*' + ij_id + '"')
+    outstr.append('else')
+    outstr.append('  set file_id = "/*"')
+    outstr.append('endif')
+    outstr.append('echo gcp "$TMPDIR/' + outdir + "${file_id}.nc " + outdir + '"')
+    outstr.append("gcp $TMPDIR/" + outdir + "${file_id}.nc " + outdir)
     outstr.append("set ostat = $?")
     outstr.append("if ( $ostat == 0 ) then")
     outstr.append("\t touch " + outdir + "/.mini.success")
@@ -460,8 +472,8 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
     outstr.append('endif')
     # Now do the same for the qc mask file
     out_mask_dir = outdir + "/" + target_var + "_qcmask/"
-    outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "/*."+i_string+"_"+j_string + ".nc " + out_mask_dir + '"')
-    outstr.append("gcp $TMPDIR/" + out_mask_dir + "/*."+i_string+"_"+j_string + ".nc " + out_mask_dir)
+    outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "${file_id}.nc " + out_mask_dir + '"')
+    outstr.append("gcp $TMPDIR/" + out_mask_dir + "${file_id}.nc " + out_mask_dir)
     outstr.append("set ostat = $?")
     outstr.append("if ( $ostat == 0 ) then")
     outstr.append("\t touch " + out_mask_dir + "/.mini.success")
