@@ -18,7 +18,7 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
     #one per dataset type / var combo in the input data struct.
     tmask.filenames[[ftype]] <- aux.ref[[ftype]][[1]]$tmask
   }
-  if (all(tmask.filenames=='na')){
+  if (all(tmask.filenames %in% c('na', 'none'))){
     tmask.filenames <- list()
     apply_tmasks = F
   }else{
