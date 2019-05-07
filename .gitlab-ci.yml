@@ -2,9 +2,13 @@
 stages:
  - test_mini
  - test_full
+ - test_all
 
 before_script:
  - module load git
+ - commitname=$CI_COMMIT_REF_NAME
+ - severity=$(python get_commit_severity.py $CI_COMMIT_REF_NAME)
+ - 'echo "Severity level: ${severity}"'
 
 minijob:
  # This step is meant to run the minifile tests.
@@ -14,25 +18,17 @@ minijob:
   - module purge
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
-  ##- module load slurm
-  - module unload python/2.7.12
-  - module load python/2.7.12_np
   - module list
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - module list
   - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
   - echo $REG_BASEDIR
-  #The below does not work. Calling entire thing, rather than alias.
-  #- alias run_regtests="python /home/cew/Code/FUDGE_regtests/run_fudge_regtests.py"
   - datestr=`date +%Y%m%d-%H%M`
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
-  #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/sample_mini_xml.txt --runtemp --summary_file $summfile --regtest
   - set -x
   - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 60 --compare-opt 'all'
- #only:
- # - tags,master,i_gitlab-ci-new
  tags:
   - analysis
 # variables:
@@ -42,21 +38,51 @@ minijob:
 fulljob:
  stage: test_full
  script:
-  - echo "loading ESD environment"
-  - module purge
-  - module use -a /home/esd/local/modulefiles
-  - module load esd/env
-  - module unload python/2.7.12
-  - module load python/2.7.12_np
-  - module list
-  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
-  - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
-  - datestr=`date +%Y%m%d-%H%M`
-  - PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
-  - summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
-  #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_icing.py -i /home/cew/Code/FUDGE_regtests/full_xml.txt --runtemp --summary_file $summfile --regtest --nloops 300
-  - set -x
-  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
+  - echo `bash --version`
+  - if [ $severity -gt 1 ]; then
+  -   echo "loading ESD environment"
+  -   module purge
+  -   module use -a /home/esd/local/modulefiles
+  -   module load esd/env
+  -   module unload python/2.7.12
+  -   module load python/2.7.12_np
+  -   module list
+  -   eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  -   source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  -   datestr=`date +%Y%m%d-%H%M`
+  -   PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
+  -   summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
+  -   set -x
+  -   python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
+  - else
+  -   echo "Severity set to 1; skipping full regression tests"
+  - fi
+ tags:
+  - analysis
+  
+bigdata:
+ stage: test_all
+ script:
+  - echo `bash --version`
+  - if [ $severity -gt 2 ]; then
+  -  echo "Running big data case"
+  -   echo "loading ESD environment"
+  -   module purge
+  -   module use -a /home/esd/local/modulefiles
+  -   module load esd/env
+  -   module unload python/2.7.12
+  -   module load python/2.7.12_np
+  -   module list
+  -   eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  -   source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  -   datestr=`date +%Y%m%d-%H%M`
+  -   PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
+  -   summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
+  -   set -x
+  -   python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/all_xml.yml --runtemp --summary_file $summfile --regtest --nloops 200 --compare-opt 'all'
+  - else
+  -  echo "Tag severity less than 3; not enough to run big data case"
+  - fi  
  tags:
   - analysis
 # variables:
