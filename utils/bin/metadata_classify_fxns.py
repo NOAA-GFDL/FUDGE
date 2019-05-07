@@ -15,7 +15,7 @@ from fudgeUtils import gcp
 
 
 def get_experiment_metadata(gd, pd, OH_file, MF_file, ds_experiment_name,
-                            running_standalone=False, is_strict=True,
+                            running_standalone=False, is_strict=False,
                             verbose=False):
     # Sets up parsing for OH and MF experiment attributes, based off of classification.
     if running_standalone:
@@ -82,11 +82,14 @@ def classify_data(vfile, verbose=False):
             vclass = "CBAY"
     # For remaining atts, there are 3 components: class, has_attname, has_attname_of_value
     classval = ['HIRAM',  'CORDEX', 'CMIP-6',
-                'Livneh', 'Prism', 'Daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'KB_SYN']
+                'Livneh', 'Prism', 'Daymet',
+                'HIRAM', 'BCC-CSM1-1','CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'KB_SYN']
     attnames = ['gfdl_experiment_name', 'project_id', 'conventions',
-                'title', 'title', 'title', 'model_id', 'title', 'title', 'title', 'title', 'experiment_id']
+                'title', 'title', 'title',
+                'model_id', 'model_id', 'title', 'title', 'title', 'title', 'experiment_id']
     attgrep = ['HIRAM', "CORDEX", 'CMIP-6',
-               'livneh', 'prism', 'daymet', 'HIRAM', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'QUANTILEMAP']
+               'livneh', 'prism', 'daymet',
+               'HIRAM', 'bcc-csm1-1', 'CCSM4', 'MIROC5', 'MPI-ESM-LR', 'GFDL-FLORB01-p2FA', 'QUANTILEMAP']
     if vclass == "Unclassified":
         with Dataset(vfile, 'r') as nc_obj:
             v_attnames = nc_obj.__dict__.keys()
@@ -121,7 +124,7 @@ def get_attributes(vfile, vclass, verbose):
         print("Getting attributes of " + vfile)
         print("Classified as " + vclass)
     attdict = {'dataset': "not found", "scenario": "not found", "orig_experiment": "not found"}
-    title_datasets = ['Livneh', 'Prism', 'Daymet', 'CCSM4', "MIROC5", "MPI-ESM-LR", "GFDL-FLORB01-p2FA"]
+    title_datasets = ['Livneh', 'Prism', 'Daymet', 'BCC-CSM1-1', 'CCSM4', "MIROC5", "MPI-ESM-LR", "GFDL-FLORB01-p2FA"]
     if vclass == "CBAY":
         attdict['dataset'] = "TPLM2"
         return(attdict)
@@ -135,6 +138,11 @@ def get_attributes(vfile, vclass, verbose):
         attdict['dataset'] = vclass
         # The FLOR case needs more attention; however, we're not running those
         # right now, so that's a lower priority
+        if vclass in ['BCC-CSM1-1']:
+            with Dataset(vfile, 'r') as nc_obj:
+                atts = nc_obj.__dict__
+                attdict['scenario'] = atts['experiment_id']
+                attdict['orig_experiment'] = vclass + " " + attdict['scenario']
         if vclass in ['CCSM4', 'MIROC5', "MPI-ESM-LR"]:
             fname = osp.basename(vfile)
             fsplit = re.split("_", fname)
