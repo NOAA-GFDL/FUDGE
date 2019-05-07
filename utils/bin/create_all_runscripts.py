@@ -9,7 +9,7 @@ from collections import OrderedDict
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           auxdict, auxfile, scriptdir, fudgetag,
-                          not_strict_metadata):
+                          not_strict_metadata, metadata_table):
     '''
     Creates runscripts (with dmget commands) based off of the aux input files -
     all files are present already
@@ -55,7 +55,8 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
                               auxdict['OH'].keys()[0], True,
                               dmget, gcp_str, auxdict, auxfile_mod,
-                              scriptdir, fudgetag, not_strict_metadata)
+                              scriptdir, fudgetag,
+                              not_strict_metadata, metadata_table)
 
 
 def create_xml_runscripts(i_start, i_end, i_by, i_offset,
@@ -67,7 +68,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                           outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
                           auxfile, aux_file_list, wallclocktime,
                           auxdict, ds_minifile, experiment_name,
-                          not_strict_metadata):
+                          not_strict_metadata, metadata_table):
     '''
     Creates runscripts (with dmget commands) based off of the xml input files -
     we need to build files from xml components
@@ -190,13 +191,18 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
                               target_var, is_syn,
-                              dmget_string, gcp_string, auxdict, auxfile_mod, scriptdir, fudgetag, not_strict_metadata)
+                              dmget_string, gcp_string, auxdict, auxfile_mod,
+                              scriptdir, fudgetag,
+                              not_strict_metadata, metadata_table)
 
 
 def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           target_var, is_syn,
-                          dmget_string, gcp_string, auxdict, auxfile_mod, scriptdir, fudgetag, not_strict_metadata):
+                          dmget_string, gcp_string,
+                          auxdict, auxfile_mod,
+                          scriptdir, fudgetag,
+                          not_strict_metadata, metadata_table):
     '''
     Common commands for making the runscript and runcodes from the auxdict.
     Note that this now implies that the auxdict contains the scriptdir.
@@ -245,7 +251,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     meta_tmp = "$TMPDIR/meta_file.json"
     meta_final = osp.join(scriptdir, "meta_file.json")
     meta_command = make_meta_command(auxfile_mod, meta_final,
-                                     scriptdir, not_strict_metadata)
+                                     scriptdir, not_strict_metadata, metadata_table)
     experiment_name = auxdict['ds_experiment_name']
 
     # Finally, start opts that need to loop by index available
@@ -314,13 +320,15 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     # f.write("wait")
     print('master runscript and mini creation completed')
 
-def make_meta_command(auxfile_mod, meta_final, scriptdir, not_strict_metadata):
+def make_meta_command(auxfile_mod, meta_final, scriptdir,
+                      not_strict_metadata, metadata_table):
     # Makes the metadata commands that can be run as a standalone tool
     strict_str = "" if not_strict_metadata else " --is-strict"
+    meta_str = " --metadata-table " + metadata_table
     meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
                               "set meta_final = " + meta_final,
                               "set meta_tmp = $TMPDIR/meta_file.json",
-                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str,
+                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
                               "set meta_status = $status",
                               'echo "status of meta call: $meta_status"',
                               "if ( $meta_status == 0 ) then",
