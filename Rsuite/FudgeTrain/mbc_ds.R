@@ -65,6 +65,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #to take place for each method
       out <- switch(loop.ds, 
                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
+                    'QDMall' = callQDMall(missval.out$OH, missval.out$MH, missval.out$MF, args),
                     'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
                                         args$variant, 
@@ -98,9 +99,6 @@ callQDM_mod <- function(OH, MH, MF, args){
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
-#   if (max (OH.slice) > max(MF.slice)){
-#     print("callQDM: OH max greater than MF max")
-#   }
   tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
                  ratio=args$ratio.seq, trace=args$trace, 
                  jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
@@ -116,14 +114,32 @@ callQDM <- function(OH, MH, MF, args){
   OH.slice <- remove.missvals(unlist(as.vector(OH)))
   MH.slice <- remove.missvals(unlist(as.vector(MH)))
   MF.slice <- remove.missvals(unlist(as.vector(MF)))
-#   if (max (OH.slice) > max(MF.slice)){
-#     print("callQDM: OH max greater than MF max")
-#   }
   tmp <- QDM(OH.slice, MH.slice, MF.slice, 
              ratio=args$ratio.seq, trace=args$trace, 
              jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
+  return(out)
+}
+
+callQDM_all <- function(OH, MH, MF, args){
+  # Helper function for downscaling historical and future simulatneously - 
+  # indexing for a MF that has a historical and future component is done
+  # within the ds function. 
+  # Note: this is meant to be used with a future timeseries 
+  # that has a historical and future component ONLY. 
+  # It assumes that you used the same tmasks for MH and MF (with different t)
+  MF.idx <- !is.na(unlist(as.vector(MF)))
+  OH.slice <- remove.missvals(unlist(as.vector(OH)))
+  MH.slice <- remove.missvals(unlist(as.vector(MH)))
+  MF.slice <- remove.missvals(unlist(as.vector(MF)))
+  MF.hist <- MF.slice[1:length(MH.slice)]
+  MF.fut <- MF.slice[(length(MH.slice)+1) : length(MF.slice)]
+  tmp <- QDM(OH.slice, MF.hist, MF.fut, 
+             ratio=args$ratio.seq, trace=args$trace, 
+             jitter.factor=args$jitter.factor, ties=args$ties)
+  out <- rep(NA, length(MF.idx))
+  out[MF.idx] <- c(tmp$mhat.c, tmp$mhat.p)
   return(out)
 }
 
