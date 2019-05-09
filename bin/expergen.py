@@ -862,13 +862,14 @@ def generate_experiment(parse_xml, create_default_aux,
 ################ step 5 job submission (if applicable) ##############################################
     print "Starting step 5: job submission"
     if msubmail == 1 and NEMSemail1 != 'none':
-            msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
+        msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
     else:
         msub_string = "sbatch "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
-    msub_cmd = "module load moab; "
+    msub_cmd = "module load slurm; "
     for el in master_scripts:
         #msub_cmd can be saved for later
+        print(el)
         msub_cmd = msub_cmd + msub_string + el + "; "
     if msub:
         p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -879,6 +880,7 @@ def generate_experiment(parse_xml, create_default_aux,
             print output5, errors5
             sys.exit(0)
         print output5, errors5
+        print(msub_cmd)
         print "5 - completed"
     print "-----------"
     if not msub:

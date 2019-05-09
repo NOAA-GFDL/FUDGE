@@ -122,7 +122,7 @@ callQDM <- function(OH, MH, MF, args){
   return(out)
 }
 
-callQDM_all <- function(OH, MH, MF, args){
+callQDMall <- function(OH, MH, MF, args){
   # Helper function for downscaling historical and future simulatneously - 
   # indexing for a MF that has a historical and future component is done
   # within the ds function. 

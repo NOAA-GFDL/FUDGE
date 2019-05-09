@@ -216,15 +216,21 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
     j_elements = range(int(j_start), int(j_end), j_by)
+    if len(j_elements) == 0:
+        j_elements = range(int(j_start), int(j_end)+1, j_by)
     j_elements.append(int(j_end)+1)
     j_elements = list(set(j_elements))
     j_elements = sorted(j_elements)
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
-    # sys.exit("Examine this out")
+    #print(i_elements)
+    #print(j_elements)
+    #sys.exit("Examine this out")
 
     if is_syn:
         j_elements = [1,2]
+    if len(j_elements) == 1:
+        j_elements.append(j_elements[0])
 
     njobs = auxdict['njobs']
     ncpus = auxdict['ncpus']
@@ -258,7 +264,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
     # print(j_elements)
     n_tiles = 0
-    for j in range(0, len(j_elements)-1):
+    j_rangeval = len(j_elements)-1 if len(j_elements) > 1 else 1
+    for j in range(0, j_rangeval):
         jval = j_elements[j]
         j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
         # j_max and j_by are passed in already; they are numeric
@@ -266,6 +273,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             ival = i_elements[i]
             n_tiles = n_tiles + 1
             i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
+            print("will we call the master?")
+            print(str(i % njobs))
             if i % njobs == 0 :
                 # Create the master scriptname
                 end_idx = i+njobs-1
