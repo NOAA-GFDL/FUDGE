@@ -511,6 +511,9 @@ def main():
                        help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
     parser.add_option('--not-strict-metadata', action='store_true', default=False,
                       dest='not_strict', help="Whether to continue with a FUDGE experiment if the metadata parser could not get the attributes needed to classify input from the netcdf files. Defaults to false, which exits with an error if classification fails. For csv files this option is effectively always set, since csv files don't have the metadata we use.")
+    parser.add_option('--metadata-table', action='store', default="$BASEDIR/utils/aux/metadata_table.csv",
+                       dest='metadata_table',
+                       help="Path to a csv file containing instructions on how to derive metadata attributes from datasets. Defaults to the metadata table in the FUDGE repo; if working with new datasets, it may be useful to point to a user-supplied table rather than run with --not-strict-metadata.")
     (options, args) = parser.parse_args()
 
     if(options.mail=="none"):
@@ -613,6 +616,16 @@ def main():
         msubmail = 1
     statmail = options.statmail
 
+    if re.search("\$BASEDIR", options.metadata_table,) is not None:
+        meta_table = re.sub("\$BASEDIR/", "\${BASEDIR}/", options.metadata_table)
+        #meta_table = osp.join(basedir, meta_table)
+    else:
+        meta_table = options.metadata_table
+        if not osp.isfile(meta_table):
+            print("Error in expergen: metadata table " + meta_table + " does not exist on tthis filesystem!")
+            print("Please use default value or point to location without environment vars in path!")
+            sys.exit(1)
+
     #Finally, clean experiments if they already exist
     ##clean_prior_experiments(uinput, sd, basedir, preexist_glob, is_csv)
     clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, preexist, is_csv)
@@ -622,14 +635,15 @@ def main():
     generate_experiment(parse_xml, create_default_aux,
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
-                        msubmail, statmail, options.run_watcher, options.not_strict)
+                        msubmail, statmail, options.run_watcher,
+                        options.not_strict, meta_table)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
                         sbase, msubmail, statmail, run_watcher,
-                        not_strict_metadata):
+                        not_strict_metadata, metadata_table):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -727,7 +741,8 @@ def generate_experiment(parse_xml, create_default_aux,
                               file_j_range, idirsuffix,
                               ds_info['multivar_target'],
                               auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-                              auxdict, ds_minifile, expconfig, not_strict_metadata)
+                              auxdict, ds_minifile, expconfig,
+                              not_strict_metadata, metadata_table)
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -756,7 +771,7 @@ def generate_experiment(parse_xml, create_default_aux,
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
-                                  not_strict_metadata)
+                                  not_strict_metadata, metadata_table)
 
     # copy xml to configs dir
     cdir = sbase+"/config/"
@@ -847,13 +862,14 @@ def generate_experiment(parse_xml, create_default_aux,
 ################ step 5 job submission (if applicable) ##############################################
     print "Starting step 5: job submission"
     if msubmail == 1 and NEMSemail1 != 'none':
-            msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
+        msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
     else:
         msub_string = "sbatch "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
     msub_cmd = "module load slurm; "
     for el in master_scripts:
         #msub_cmd can be saved for later
+        print(el)
         msub_cmd = msub_cmd + msub_string + el + "; "
     if msub:
         p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -864,6 +880,7 @@ def generate_experiment(parse_xml, create_default_aux,
             print output5, errors5
             sys.exit(0)
         print output5, errors5
+        print(msub_cmd)
         print "5 - completed"
     print "-----------"
     if not msub:

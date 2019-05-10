@@ -79,7 +79,7 @@ bigdata:
   -   PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
   -   summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
   -   set -x
-  -   python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/all_xml.yml --runtemp --summary_file $summfile --regtest --nloops 200 --compare-opt 'all'
+  -   python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_jamoca.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/all_xml.yml --runtemp --summary_file $summfile --regtest --nloops 200 --compare-opt 'all' --sleep 6
   - else
   -  echo "Tag severity less than 3; not enough to run big data case"
   - fi  

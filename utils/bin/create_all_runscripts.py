@@ -9,7 +9,7 @@ from collections import OrderedDict
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           auxdict, auxfile, scriptdir, fudgetag,
-                          not_strict_metadata):
+                          not_strict_metadata, metadata_table):
     '''
     Creates runscripts (with dmget commands) based off of the aux input files -
     all files are present already
@@ -57,7 +57,8 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
                               auxdict['OH'].keys()[0], True,
                               dmget, gcp_str, auxdict, auxfile_mod,
-                              scriptdir, fudgetag, not_strict_metadata)
+                              scriptdir, fudgetag,
+                              not_strict_metadata, metadata_table)
 
 
 def create_xml_runscripts(i_start, i_end, i_by, i_offset,
@@ -69,7 +70,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                           outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
                           auxfile, aux_file_list, wallclocktime,
                           auxdict, ds_minifile, experiment_name,
-                          not_strict_metadata):
+                          not_strict_metadata, metadata_table):
     '''
     Creates runscripts (with dmget commands) based off of the xml input files -
     we need to build files from xml components
@@ -192,13 +193,18 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
                               target_var, is_syn,
-                              dmget_string, gcp_string, auxdict, auxfile_mod, scriptdir, fudgetag, not_strict_metadata)
+                              dmget_string, gcp_string, auxdict, auxfile_mod,
+                              scriptdir, fudgetag,
+                              not_strict_metadata, metadata_table)
 
 
 def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           target_var, is_syn,
-                          dmget_string, gcp_string, auxdict, auxfile_mod, scriptdir, fudgetag, not_strict_metadata):
+                          dmget_string, gcp_string,
+                          auxdict, auxfile_mod,
+                          scriptdir, fudgetag,
+                          not_strict_metadata, metadata_table):
     '''
     Common commands for making the runscript and runcodes from the auxdict.
     Note that this now implies that the auxdict contains the scriptdir.
@@ -212,15 +218,21 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
     j_elements = range(int(j_start), int(j_end), j_by)
+    if len(j_elements) == 0:
+        j_elements = range(int(j_start), int(j_end)+1, j_by)
     j_elements.append(int(j_end)+1)
     j_elements = list(set(j_elements))
     j_elements = sorted(j_elements)
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
-    # sys.exit("Examine this out")
+    #print(i_elements)
+    #print(j_elements)
+    #sys.exit("Examine this out")
 
     if is_syn:
         j_elements = [1,2]
+    if len(j_elements) == 1:
+        j_elements.append(j_elements[0])
 
     njobs = auxdict['njobs']
     ncpus = auxdict['ncpus']
@@ -247,14 +259,15 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     meta_tmp = "$TMPDIR/meta_file.json"
     meta_final = osp.join(scriptdir, "meta_file.json")
     meta_command = make_meta_command(auxfile_mod, meta_final,
-                                     scriptdir, not_strict_metadata)
+                                     scriptdir, not_strict_metadata, metadata_table)
     experiment_name = auxdict['ds_experiment_name']
 
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
     # print(j_elements)
     n_tiles = 0
-    for j in range(0, len(j_elements)-1):
+    j_rangeval = len(j_elements)-1 if len(j_elements) > 1 else 1
+    for j in range(0, j_rangeval):
         jval = j_elements[j]
         j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
         # j_max and j_by are passed in already; they are numeric
@@ -262,6 +275,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             ival = i_elements[i]
             n_tiles = n_tiles + 1
             i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
+            print("will we call the master?")
+            print(str(i % njobs))
             if i % njobs == 0 :
                 # Create the master scriptname
                 end_idx = i+njobs-1
@@ -316,13 +331,15 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     # f.write("wait")
     print('master runscript and mini creation completed')
 
-def make_meta_command(auxfile_mod, meta_final, scriptdir, not_strict_metadata):
+def make_meta_command(auxfile_mod, meta_final, scriptdir,
+                      not_strict_metadata, metadata_table):
     # Makes the metadata commands that can be run as a standalone tool
     strict_str = "" if not_strict_metadata else " --is-strict"
+    meta_str = " --metadata-table " + metadata_table
     meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
                               "set meta_final = " + meta_final,
                               "set meta_tmp = $TMPDIR/meta_file.json",
-                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str,
+                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
                               "set meta_status = $status",
                               'echo "status of meta call: $meta_status"',
                               "if ( $meta_status == 0 ) then",

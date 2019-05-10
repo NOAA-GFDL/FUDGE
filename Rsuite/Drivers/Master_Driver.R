@@ -329,7 +329,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #commenting out 2018-04-19 - not all methods need this
   #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   env$prime_predictor <- paste0(MH.vars[1], ".0.0")
-  default.methods <- c("MBC", "QDM", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
+  default.methods <- c("MBC", "QDM", "QDMall", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
   if (! (ds.method %in% default.methods)){
     #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
     env$prime_predictor <- paste0(MH.vars[1], ".0.0")
@@ -337,6 +337,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
     env <- switch(ds.method,
                   'MBC' = set.MBC.defaults(args, ..., env=env),
                   'QDM' = set.QDM.defaults(args, ..., env=env),
+                  'QDMall' = set.QDM.defaults(args, ..., env=env),
                   "CFQM" = set.CFQM.defaults(args, ..., env=env),
                   "lmAsync" = set.lmAsync.defaults(args, ..., env=env),
                   "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env=env),

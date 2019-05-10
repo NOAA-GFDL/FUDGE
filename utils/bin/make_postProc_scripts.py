@@ -44,10 +44,11 @@ def make_postProc_scripts(ensembles, script_dir, fudgetag, mailid, runtime='4:00
             #make the sourcable code (command-line arg)
             pp_source = osp.join(pp_source_dir, "postProc_source_" + str(i+1) + "_" + str(j+1))
             out_dir = osp.dirname(ds_dir.rstrip("/"))
-            pp_source_text = "python $BASEDIR/bin/postProc " + "-e " + exp_info_file + " -d " + ds_dir + " -o " + out_dir + " -s " + suffix + "\n"
+            pp_source_text = "python $BASEDIR/bin/postProc " + "-e " + exp_info_file + " -d " + ds_dir + " -o " + out_dir + " -s " + suffix
             #Check on verbosity settings set earlier for message commands
             if osp.isfile( osp.join(pp_dir, "verb") + "/verbose.true" ):
                 pp_source_text = pp_source_text + " -m " + mailid
+            pp_source_text += "\n"
             with open(pp_source, 'w') as f:
                 f.write('set echo\n')
                 f.write(pp_source_text)

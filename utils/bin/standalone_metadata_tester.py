@@ -43,6 +43,9 @@ def parseScriptArgs():
     parser.add_option("-o", "--output", dest='output', help="Output file to which to dump json.")
     parser.add_option("--is-standalone", action='store_true', default=False, dest="is_standalone", help="Whether the tool is running as the standalone metadata tester. If set, netcdf will be copied to $TMPDIR before opening.")
     parser.add_option("--is-strict", dest='is_strict', action='store_true', default=False, help="Whether the strictest standard of metadata parsing should be used for the tool. If set, errors in metadata classification will lead to a failure of the tool.")
+    parser.add_option("--metadata-table", dest='meta_table', action='store',
+                      default='none',
+                      help="What path to use for the metadata lookup table. Defaults to the path within the checked-out repo.")
     parser.add_option("--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
     (options, args) = parser.parse_args()
     if not options.output:
@@ -68,9 +71,12 @@ def parseScriptArgs():
         ds_info = get_ds_info(auxdict['ds_method'], BASEDIR)
     #make_fudge_metadata takes as its args a modified auxdict - i.e. an auxfile
     #with all the stuff that the R code would need to run in it.
-    make_fudge_metadata(auxdict, ds_info, options.output, is_running_standalone = options.is_standalone, is_strict = options.is_strict, verbose=options.verbose)
+    make_fudge_metadata(auxdict, ds_info, options.output,
+                        is_running_standalone = options.is_standalone,
+                        is_strict = options.is_strict, metadata_table = options.meta_table,
+                        verbose=options.verbose)
 
-def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = False, is_strict = False, verbose=False):
+def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = False, is_strict = False, metadata_table = "none", verbose=False):
     '''
     Parses and builds fudge metadata attributes, given a list of config parameters.
     General structure looks like this:
@@ -83,6 +89,13 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         tasmax_qcmask:
           comment: "comment for tasmax_qcmask"
     '''
+    if metadata_table == 'none' or re.search('BASEDIR', metadata_table) is not None:
+        BASEDIR = os.environ.get('BASEDIR')
+        if BASEDIR is None:
+            print("Error in metadata setup: no --metadata-table is specified and no version of fudge is checked out! Please check out fudge or point to a metadata table!")
+            sys.exit(1)
+        else:
+            metadata_table = osp.join(BASEDIR, "utils/aux/metadata_table.csv")
     #Initial check on whether "strict" parsing is appropriate
     is_csv = False
     if auxdict['file_format'] == "csv":
@@ -142,7 +155,8 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
-                                     is_strict=is_strict, verbose=verbose)
+                                     is_strict=is_strict,
+                                     config=metadata_table, verbose=verbose)
     #Get the info options
     gd['ds_downscaling_method'] = ds_info['ds_method']
     gd['info_ds'] = generate_fxn_arglist({'d1': {'type': ds_info['ds_method'],
