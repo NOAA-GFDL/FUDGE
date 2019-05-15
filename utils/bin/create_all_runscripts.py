@@ -438,7 +438,7 @@ def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_
     runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
     runscript_header = "\n".join(['#!/bin/tcsh',
                                   '#SBATCH -c 1',
-                                  '#SBATCH -t walltime=6:00:00',
+                                  '#SBATCH -t 6:00:00',
                                   '#SBATCH -o ' + runscript_log,
                                   '#SBATCH -J fudge_run',
                                   '#SBATCH -p batch']) + "\n"
