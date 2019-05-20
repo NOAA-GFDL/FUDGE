@@ -18,6 +18,7 @@ from fudgeUtils import send_status_email
 from concatenate_file import concatenate_files
 from trend_supplement import callCopyToTrendDetr, callAddResid
 from clim_supplement import callCopyToAnomClim, callAddAnom
+from get_ds_info import parse_aux_info
 
 def postProc():
     #Input parsing and arg checking for main body of code
@@ -60,7 +61,12 @@ def runPostProc(exp_info, ds_dir, out_dir, var_suffix, mailid, verbose=False):
     expdict = read_exp_info_file(exp_info)
     total_exp_name = expdict['ds.experiment']
     script_dir = expdict['script.base']
-    var = expdict['target']
+    # 2019-05-20: get var from auxdict rather than experiment_info file
+    auxdir = osp.join(script_dir, 'config_mod')
+    auxfile = osp.join(auxdir, [el for el in os.listdir(auxdir)][0])
+    auxinfo, auxdict = parse_aux_info(auxfile)
+    var = auxdict['DS']['vars'][0]
+    #var = expdict['target']
     xml_loc = expdict['xml.path']
     send_to = mailid
 

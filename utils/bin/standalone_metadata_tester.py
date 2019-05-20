@@ -151,6 +151,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         MF_var = prime_var
     else:
         MF_var = auxdict['MF'].keys()[0]
+    ds_var = auxdict['DS']['vars'][0]
     MF_file = auxdict['MF'][MF_var]['file']
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
                                      auxdict['ds_experiment_name'],
@@ -172,7 +173,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     predictor_vars = ",".join(auxdict['MF'].keys())
     train_string = ds_info['train_datasets']
     fut_rips = ",".join(auxdict['DS']['rips'])
-    gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var,
+    gd['comment'] = make_global_comment(auxdict['ds_method'], ds_var,
                                         auxdict['ds_region'],
                                         auxdict['output_grid'],
                                         auxdict['kfold'],
@@ -184,9 +185,9 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, MF_var, is_running_standalone, is_csv))
     #attributes by variable
     var_longname = ""
-    vd[prime_var] = {"longname": var_longname}
+    vd[ds_var] = {"longname": var_longname}
     if auxdict['make_qcmask']:
-        qc_var = prime_var + "_qcmask"
+        qc_var = ds_var + "_qcmask"
         qc_comment = make_qc_comment(auxdict['qc_method'], auxdict['ds_method'], BASEDIR)
         qc_longname = make_qc_longname(auxdict['qc_method'], auxdict['ds_method'], prime_var)
         global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips, str(auxdict['minsamplesize']))

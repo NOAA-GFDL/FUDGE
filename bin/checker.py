@@ -45,9 +45,9 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0, spath="na"):
 			    if(append_ok == True):
           		    	listfile.append(file)
 			    	statfile = os.stat(path+"/"+file)
-		    	    	if(statfile.st_size <= 0):
-				   print "\033[1;31m ERROR Found file for zero byte. Breaking loop. \033[1;m"
-				   return -12
+		    	    	#if(statfile.st_size <= 0):
+				   #print "\033[1;31m ERROR Found file for zero byte. Breaking loop. \033[1;m"
+				   #return -12
 			 else:
 				if (file.endswith('.success') == False) & (file.endswith('.fail') == False):
 					listbad.append(file)

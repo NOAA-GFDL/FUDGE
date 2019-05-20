@@ -1,5 +1,5 @@
 #!/usr/local/python/2.7.3/bin/python
-#import expergen 
+#import expergen
 #import fudgeList
 import os,sys,subprocess,shutil,time
 from os import path as osp
@@ -31,7 +31,7 @@ from profile_FUDGE import make_prof_file
 import cgitb
 import tarfile
 
-def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):	
+def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	#print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
 	#sys.exit("This should trigger the end of the script")
 	expdict = read_exp_info_file(infile)
@@ -74,10 +74,10 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		if len(nfail) != 0:
 			print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
 			send_status_email("failure", 'ppWatcher', exp_name, \
-		                   traceback="One or more pp jobs have failed; sample jobs include " + \
-		                   (",").join([re.sub(".failure", "", p) for p in nfail]), \
-		                   mailid=mailid, logfiles = logfile_loc, 
-		                   exp_info_file = infile, outfiles = "")                   
+						   traceback="One or more pp jobs have failed; sample jobs include " + \
+						   (",").join([re.sub(".failure", "", p) for p in nfail]), \
+						   mailid=mailid, logfiles = logfile_loc,
+						   exp_info_file = infile, outfiles = "")
 			sys.exit(1)
 		else:
 			nsucceed = len([p for p in status_files if re.search('success',p) is not None])
@@ -104,14 +104,14 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		else:
 			#This should produce at least one file
 			outdir = osp.dirname(expdict['output.path'][0])
-			outdir_contents = os.listdir(outdir)	
+			outdir_contents = os.listdir(outdir)
 			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
 			outfiles.sort()
 			if len(outfiles) < 1:
 				print("Error in ppWatcher: No files found in " + outdir + " !")
 				sys.exit(1)
-			
-			#Checks for printing anomaly/detrending files needed for the detrending wofkflow	
+
+			#Checks for printing anomaly/detrending files needed for the detrending wofkflow
 			if re.search('Anom', outdir) is not None:
 				anom_outdir = re.sub("Anom", "", outdir)
 				anom_outfiles = [osp.join(anom_outdir, p) for p in os.listdir(anom_outdir) if re.search(".nc$", p) is not None]
@@ -121,14 +121,14 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				detr_outfiles = [osp.join(detr_outdir, p) for p in os.listdir(detr_outdir) if re.search(".nc$", p) is not None]
 				outfiles = outfiles + detr_outfiles
 			outfiles = "\n\t".join(outfiles)
-		if warnCrossval: 
+		if warnCrossval:
 			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
-		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
-			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")	
+					 " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
+			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")
 			print(cv_command)
-		if isCrossval: 
+		if isCrossval:
 			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
-		             " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
+					 " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
 			print("MakeCVEns command-line arguments:")
 			print(cv_command)
 			cv_outfiles = runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
@@ -139,14 +139,14 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 				#	print(cgitb.text(sys.exc_info()))
 				#	send_ppWatcher_message('failure')
 				#else:
-				#	send_ppWatcher_message('success')		
+				#	send_ppWatcher_message('success')
 		send_status_email("success", 'complete', exp_name, \
-		                  traceback="", \
-		                  mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
-		                  exp_info_file = infile, outfiles = outfiles)
-		#Extra code added 8-8 in order to add the xml ouptut to the end of the 
+						  traceback="", \
+						  mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
+						  exp_info_file = infile, outfiles = outfiles)
+		#Extra code added 8-8 in order to add the xml ouptut to the end of the
 		#experiment info files
-		#Make a permanent fix later; this is going to react oddly with the 
+		#Make a permanent fix later; this is going to react oddly with the
 		#cross-validation settings
 		outfile_exp_info_dirs = ["/".join(el.split("/")[:-3]) for el in outfiles.split("\n")]
 		outfile_exp_info_dirs = [el.split(":")[-1] for el in outfile_exp_info_dirs]
@@ -155,26 +155,26 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 		#print(outfiles)
 		print("outfile exp_info + script exp_info:")
 		print(outfile_exp_info + script_exp_info)
-		write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')	
+		#write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')
 		##Added 9-28: get profiling info, write to file
 		print("File cleanup operations in progress")
 		make_prof_file(expdict['script.base'], expdict['script.base'] + "/log/")
 		compress_logs(expdict['script.base'] + "/log/")
-		
+
 	else:
 		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
 		send_status_email("failure", 'ppWatcher', exp_name, \
-		                   traceback="Job timed out", \
-		                   mailid=mailid, logfiles = logfile_loc, exp_info_file = infile, 
-		                   outfiles = expdict['output.path'])
-		sys.exit(1)                   		                       
+						   traceback="Job timed out", \
+						   mailid=mailid, logfiles = logfile_loc, exp_info_file = infile,
+						   outfiles = expdict['output.path'])
+		sys.exit(1)
 	sys.exit(0)
 
 def compress_logs(logdir):
 	'''
-	Compresses all files in logdir matching the pattern (out.* ) 
+	Compresses all files in logdir matching the pattern (out.* )
 	which matches the R code logfiles, and deletes the uncompressed files
-	afterwards. 
+	afterwards.
 	'''
 	print("Archiving R code logfiles...")
 	compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)] # if re.search("out.*", el) is not None
@@ -184,8 +184,8 @@ def compress_logs(logdir):
 		tar_log.add(name)
 	tar_log.close()
 	for name in compress_files:
-		os.remove(name)	
-			
+		os.remove(name)
+
 def write_xml_info(outdirs, xml_dir):
 	#Writes the contents of the experiment xml
 	#to the end of all experiment info files
@@ -194,18 +194,19 @@ def write_xml_info(outdirs, xml_dir):
 	outdirs = [re.sub("\t", "", el) for el in outdirs]
 	#Then, get the xml file
 	xml_file = [el for el in os.listdir(xml_dir) if re.search("xml", el) is not None]
-	xml_file = osp.join(xml_dir, xml_file[0])
-	cat_string = ''
-	with open(xml_file, 'r') as infile:
-		for line in infile:
-			cat_string = cat_string + "#" + line.strip() + "\n"
-	for el in outdirs:
-		with open(el, 'a') as outfile:		
-			outfile.write("\n############ Concatenated experiment XML ######################################\n")
-			outfile.write(cat_string)
-				
-	
+	if len(xml_file) > 0:
+		xml_file = osp.join(xml_dir, xml_file[0])
+		cat_string = ''
+		with open(xml_file, 'r') as infile:
+			for line in infile:
+				cat_string = cat_string + "#" + line.strip() + "\n"
+		for el in outdirs:
+			with open(el, 'a') as outfile:
+				outfile.write("\n############ Concatenated experiment XML ######################################\n")
+				outfile.write(cat_string)
+
+
 if __name__ == '__main__':
 	print(sys.argv)
-	runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], 
-	             float(sys.argv[5]), sys.argv[6], sys.argv[7])				
+	runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4],
+				 float(sys.argv[5]), sys.argv[6], sys.argv[7])

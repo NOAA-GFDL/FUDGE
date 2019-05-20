@@ -27,6 +27,8 @@ from watcher import runWatcher #,_v_print
 from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
 from check_aux_consistency import check_aux_consistency
+sys.path.append('/home/cew/Code/k_testing/experiment_info')
+from make_experiment_info import make_exp_info
 
 list_title = []
 dictDS_hi = {}
@@ -760,7 +762,9 @@ def generate_experiment(parse_xml, create_default_aux,
         ds_info = get_ds_info(auxdict['ds_method'], basedir)
         i_subset = auxdict['i_subset']
         j_subset = auxdict['j_subset']
-        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+        # 2019-05-18: swapping output_grid for ds_region;
+        # output_grid can include NEUSA0p1 and that leads to grid param errors
+        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['ds_region'], basedir)
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
@@ -781,25 +785,27 @@ def generate_experiment(parse_xml, create_default_aux,
     shutil.copy2(env_file, sbase + "/environment_info.csh")
     ################ step 6 fudgeList invocation ##############################################
     slogloc = sbase+"/"+"experiment_info.txt"
-    fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
-    if uinput is not "none":
-        indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+    if parse_xml:
+        fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+        if uinput is not "none":
+            indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+        else:
+            indirs = []
+            dnames = ['OH', 'MH', 'MF']
+            for d in dnames:
+                indirs += [osp.dirname(auxdict[d][el]['file']) for el in auxdict[d].keys()]
+        if any([re.search('Pwl', el) is not None for el in indirs]):
+            fcmd += ' --parse-j-style'
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        out, err = f.communicate()
+        auxloc = sbase + "/config/" + osp.basename(auxinput)
+        shutil.copy2(auxinput, auxloc)
+        with open(slogloc, 'a') as f:
+            f.write("\naux:" + os.path.abspath(auxinput))
+            f.write("\nNEMSemail:" + NEMSemail1)
     else:
-        indirs = []
-        dnames = ['OH', 'MH', 'MF']
-        for d in dnames:
-            indirs += [osp.dirname(auxdict[d][el]['file']) for el in auxdict[d].keys()]
-    if any([re.search('Pwl', el) is not None for el in indirs]):
-        fcmd += ' --parse-j-style'
-    f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-    out, err = f.communicate()
-
-    auxloc = sbase + "/config/" + osp.basename(auxinput)
-    shutil.copy2(auxinput, auxloc)
-
-    with open(slogloc, 'a') as f:
-        f.write("\naux:" + os.path.abspath(auxinput))
-        f.write("\nNEMSemail:" + NEMSemail1)
+        print("Making experiment_info.txt by parsing aux dictionary")
+        make_exp_info(auxinput, slogloc)
 
 ############### crte ppscript #################
     print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
@@ -847,18 +853,11 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
-    if parse_xml:
-        print("Making postproc scripts")
-        make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
-        print "----------------------------------------"
-        print "\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
-        print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
-    else:
-        print("NOT making postProc scripts!!")
-        print("This experiment was run from an aux file; the postProc workflow needs the experiment_info.txt file")
-        print("and there is currently no good substitution in the auxfile workflow!")
-        print("However, for the csv workflow (which is the primary reason for using this right now)")
-        print("you wre not going to use postProc anyway.")
+    print("Making postproc scripts")
+    make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
+    print("----------------------------------------")
+    print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
+    print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
 ################ step 5 job submission (if applicable) ##############################################
     print "Starting step 5: job submission"
     if msubmail == 1 and NEMSemail1 != 'none':
@@ -886,33 +885,23 @@ def generate_experiment(parse_xml, create_default_aux,
     if not msub:
         print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
         print "\033[1;95m"+msub_cmd+"\033[1;m"
-    if parse_xml:
-        print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
-        if(NEMSemail1 != "none"):
-            print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
-        else:
-            print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+    #if parse_xml:
+    print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
+    if(NEMSemail1 != "none"):
+        print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
     else:
-        print("Path to master script for experiment:")
-        mdir = osp.join(sbase, 'master')
-        mpath = osp.join(mdir, os.listdir(mdir)[0])
-        print("\033[1;42m" + mpath + "\033[1;m")
+        print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
 
     print("It is possible to cancel all jobs belonging to this experiment with the following command:")
     print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
 
     #Script exit options - needs to exit with 0
     if run_watcher:
-        if parse_xml:
-            print("Invoking watcher script immediately")
-            expinfo = sbase + "/experiment_info.txt"
-            expdict = read_exp_info_file(expinfo)
-            #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
-            runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
-        else:
-            print("run_watcher option is not compatible with the csv workflow yet!")
-            print('There is not a good substitute for the experiment_info file in the FUDGE workflow.')
-            print('However, you CAN run this experiment in debug mode if you want to.')
+        print("Invoking watcher script immediately")
+        expinfo = sbase + "/experiment_info.txt"
+        expdict = read_exp_info_file(expinfo)
+        #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
+        runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
     else:
         sys.exit(0)
 

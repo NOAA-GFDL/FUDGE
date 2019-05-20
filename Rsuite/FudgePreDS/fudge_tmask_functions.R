@@ -28,7 +28,7 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   }
   #Check for whether there is an indexing mask used by the ds data
   #(formerly known as the time-trimming mask)
-  is_indexed_with_tmask <- aux.ref$DS$indexing_tmask != 'na'
+  is_indexed_with_tmask <- !(aux.ref$DS$indexing_tmask %in%  c('na', 'none'))
   #Either all data will use a time-windowing mask, or none will use it. 
   if (ds.ref$train_and_use_same){ 
     #Future data used in downscaling will be underneath the fut.time tag

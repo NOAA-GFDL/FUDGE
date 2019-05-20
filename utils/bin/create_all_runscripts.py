@@ -52,10 +52,17 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     os.makedirs(osp.dirname(auxfile_mod))
     shutil.copyfile(auxfile, auxfile_mod)
 
+    is_syn = False
+    if auxdict['output_grid'] in ['X1-1', 'grid0']:
+        is_syn = True
+    #if not is_syn:
+
     # And finally, do the looping by index and writing of master and runscripts.
+    #print(" ".join([str(el) for el in [i_start, i_end, i_by, i_offset, j_start, j_end, j_by, j_offset]]))
+    #sys.exit(1)
     make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
-                              auxdict['OH'].keys()[0], True,
+                              auxdict['OH'].keys()[0], is_syn,
                               dmget, gcp_str, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
                               not_strict_metadata, metadata_table)
@@ -225,9 +232,6 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     j_elements = sorted(j_elements)
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
-    #print(i_elements)
-    #print(j_elements)
-    #sys.exit("Examine this out")
 
     if is_syn:
         j_elements = [1,2]
@@ -253,9 +257,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               'module load git/2.4.6',
                               'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
     #Commmands for making/manipulating file paths
+    ds_var = auxdict['DS']['vars'][0]
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
-    outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
-    outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
+    outdir_cmd = create_outdir_string(outdirs, scriptdir, ds_var)
+    outdir_string = create_outdir_string(outdirs, scriptdir, ds_var)
     meta_tmp = "$TMPDIR/meta_file.json"
     meta_final = osp.join(scriptdir, "meta_file.json")
     meta_command = make_meta_command(auxfile_mod, meta_final,
@@ -275,8 +280,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             ival = i_elements[i]
             n_tiles = n_tiles + 1
             i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
-            print("will we call the master?")
-            print(str(i % njobs))
+            #print("will we call the master?")
+            #print(str(i % njobs))
             if i % njobs == 0 :
                 # Create the master scriptname
                 end_idx = i+njobs-1
@@ -304,9 +309,11 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                 jmax = j_max + 1
             # 2018-04-09: Need to copy modified auxfile all the time, since that
             # is where the file paths are.
+            #print(" ".join([str(el) for el in [ival, i_idx, imax, i_by, i_offset, jval, j_idx, jmax, j_by, j_offset]]))
             runscript_code = create_slice_runscript(i_string, j_string, scriptdir,
                                                     i_idx, imax, i_by, i_offset,
-                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, meta_tmp, target_var,outdirs)
+                                                    j_idx, jmax, j_by, j_offset,
+                                                    auxfile_mod, meta_tmp, ds_var,outdirs)
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n')  # needed for slurm POSIX standard
@@ -328,7 +335,6 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write("echo 'Beginning calls to executable'\n")
                     f.write(executable_code)
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
-                    # f.write("wait")
     print('master runscript and mini creation completed')
 
 def make_meta_command(auxfile_mod, meta_final, scriptdir,
@@ -412,10 +418,10 @@ def make_gcp_cmd(sourcefile, destfile, indent="", newline_end = True):
     return(indent + gcp_echo + "\n" + indent + gcp_cmd + "\n" + stat_cmd + end)
 
 
-def create_outdir_string(outdirs, scriptdir, target_var):
+def create_outdir_string(outdirs, scriptdir, ds_var):
     # Wrapper for making the outdir creation commands
     outdir_string = "# Creating output directories \n"
-    qcmaskdir = "/" + target_var + "_qcmask/"
+    qcmaskdir = "/" + ds_var + "_qcmask/"
     for out in outdirs:
         outdir_string = outdir_string + "mkdir -p " + out + "\n"
         outdir_string = outdir_string + "if ($status != 0) then" + "\n"
@@ -427,7 +433,10 @@ def create_outdir_string(outdirs, scriptdir, target_var):
         outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
     return(outdir_string)
 
-def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, meta_file, target_var, outdirs):
+def create_slice_runscript(i_string, j_string, scriptdir,
+                           i_idx, i_max, i_by, i_offset,
+                           j_idx, j_max, j_by, j_offset,
+                           auxfile_mod, meta_file, ds_var, outdirs):
     # Creates the runscript code specific to a slice of the grid downscaled
     # by the R code
     # Technically only the shebang is needed, but extra info in the event
@@ -436,12 +445,7 @@ def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_
     # i: 1:194
     # j_range: 'J454_576'
     runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
-    runscript_header = "\n".join(['#!/bin/tcsh',
-                                  '#SBATCH -c 1',
-                                  '#SBATCH -t 6:00:00',
-                                  '#SBATCH -o ' + runscript_log,
-                                  '#SBATCH -J fudge_run',
-                                  '#SBATCH -p batch']) + "\n"
+    runscript_header = "#!/bin/tcsh\n"
     exp_name = scriptdir.split("/")[-1]
     if(exp_name==''):
         exp_name = scriptdir.split("/")[-2]
@@ -459,10 +463,10 @@ def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_
     r_command = "Rscript " + master_driver + " " + cmd_args + " >>& " + logfile + " &"
     runscript = runscript_header + r_command + "\n" + "wait \n"
     for outdir in outdirs:
-        runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
+        runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, ds_var)
     return(runscript)
 
-def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
+def create_runscript_copy_ops(outdir, i_string, j_string, ds_var):
     # Makes the copy operations for the output of the R code
     # Currently assumes a single file of _qcmask output;
     # when we get to writing coordinates, this needs to be updated
@@ -488,7 +492,7 @@ def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
     outstr.append("\t touch " + outdir + "/.mini.fail")
     outstr.append('endif')
     # Now do the same for the qc mask file
-    out_mask_dir = outdir + "/" + target_var + "_qcmask/"
+    out_mask_dir = outdir + "/" + ds_var + "_qcmask/"
     outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "${file_id}.nc " + out_mask_dir + '"')
     outstr.append("gcp $TMPDIR/" + out_mask_dir + "${file_id}.nc " + out_mask_dir)
     outstr.append("set ostat = $?")
@@ -511,9 +515,7 @@ def awful_runcode_hack(runcode_dir, runscript_dir):
     runscript_patterns = [re.split("\.", el)[-1]
                           for el in runscript_files
                           if (re.split("\.", el)[-1]).count('-') == 2]
-    # print(runscript_patterns)
     runcode_split = re.split("\.", runcode_files[0])
-    # print(runcode_split)
     for patt in runscript_patterns:
         tmp_file = runcode_split
         tmp_file[-1] = patt
