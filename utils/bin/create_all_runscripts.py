@@ -55,7 +55,6 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     is_syn = False
     if auxdict['output_grid'] in ['X1-1', 'grid0']:
         is_syn = True
-    #if not is_syn:
 
     # And finally, do the looping by index and writing of master and runscripts.
     #print(" ".join([str(el) for el in [i_start, i_end, i_by, i_offset, j_start, j_end, j_by, j_offset]]))
@@ -179,6 +178,10 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     auxdict['MF'] = mf_auxdict
     auxdict['DS'] = ds_auxdict
     auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
+    # 2019-05-21: before dumping to file, add params to run from aux
+    auxdict['files_in_aux'] = True
+    auxdict['script_settings'] = {'scriptdir': scriptdir}
+    auxdict['cleanup_settings'] = {'if_preexist': 'move'}
     os.makedirs(osp.dirname(auxfile_mod))
     auxstr = json.dumps(auxdict, indent=4)
     with open(auxfile_mod, 'w') as f:
@@ -243,7 +246,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
     slurm_header = "\n".join(['#!/bin/tcsh',
                               '#SBATCH -t '+auxdict['wallclocktime'],
-                              '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
+                              #'#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
                               #'#SBATCH -J fudge_master',
                               '#SBATCH -c ' + str(ncpus),
                               '#SBATCH -p batch']) + "\n"
@@ -323,9 +326,14 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                 # Prepare to write all accululated data to file
                 executable_code = make_executable_stuff(runscript_files, auxfile_mod, meta_tmp,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
+                #idx_string = "I" + str(i_elements) + "_" + j_string
+                # idx_string is set above this point. Doesn't get used on the same
+                # loop, but it shouldn't vanish.
+                logfilename = 'fudge.%x.' + idx_string + ".%j"
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
                     #f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
+                    f.write('#SBATCH -o ' + osp.join(scriptdir, 'log') + "/" + logfilename + "\n")
                     f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
                     f.write(dmget_string)

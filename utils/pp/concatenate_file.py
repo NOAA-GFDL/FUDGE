@@ -60,6 +60,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     dimmap = get_dim_mapping(dimlist)
     print(dimmap)
     ############################################################################
+    print(tdir)
     tdir_i = osp.join(tdir, "i_cat")
     if not osp.exists(tdir_i):
         os.makedirs(tdir_i)

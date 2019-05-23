@@ -27,7 +27,6 @@ from watcher import runWatcher #,_v_print
 from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
 from check_aux_consistency import check_aux_consistency
-sys.path.append('/home/cew/Code/k_testing/experiment_info')
 from make_experiment_info import make_exp_info
 
 list_title = []
