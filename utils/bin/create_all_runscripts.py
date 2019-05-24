@@ -287,10 +287,13 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             #print(str(i % njobs))
             if i % njobs == 0 :
                 # Create the master scriptname
-                end_idx = i+njobs-1
+                end_idx = i+njobs #-1
                 if end_idx > len(i_elements) - 1:
                     end_idx = len(i_elements) - 1
-                i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
+                    iend = str(i_elements[-1])
+                else:
+                    iend = str(i_elements[end_idx]-1)
+                i_master_string = "I" + str(i_elements[i]) + "-" + iend
                 idx_string = i_master_string + '_' + j_string
                 master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
                 runscript_files = []
@@ -510,26 +513,6 @@ def create_runscript_copy_ops(outdir, i_string, j_string, ds_var):
     outstr.append("\t touch " + out_mask_dir + "/.mini.fail")
     outstr.append('endif')
     return("\n".join(outstr) + "\n")
-
-def awful_runcode_hack(runcode_dir, runscript_dir):
-    # I don't want to have to tinker with something that we're planning on
-    # replacing during this flavor or the next. For now, it's not much of
-    # a stretch to copy some of the runcodes to a location that fits the
-    # expected pattern in the runscripts.
-    runscript_files = [el for el in os.listdir(runscript_dir)
-                       if re.search("script", el) is not None]
-    runcode_files = [el for el in os.listdir(runcode_dir)
-                     if re.search("code", el) is not None]
-    runscript_patterns = [re.split("\.", el)[-1]
-                          for el in runscript_files
-                          if (re.split("\.", el)[-1]).count('-') == 2]
-    runcode_split = re.split("\.", runcode_files[0])
-    for patt in runscript_patterns:
-        tmp_file = runcode_split
-        tmp_file[-1] = patt
-        tmp_dest = osp.join(runcode_dir, ".".join(tmp_file))
-        tmp_src = osp.join(runcode_dir, runcode_files[0])
-        shutil.copy2(tmp_src, tmp_dest)
 
 def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
                           ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
