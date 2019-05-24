@@ -651,7 +651,7 @@ def generate_experiment(parse_xml, create_default_aux,
     '''
     #First, create experiment directories. Note that this assumes
     #you've cleaned up your experiment beforehand:
-    subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
+    subdirs = ['master', 'runscript', 'log','postProc', 'config', 'status', 'profile']
     for el in subdirs:
         subdir = osp.join(sbase,el)
         if not osp.exists(subdir):

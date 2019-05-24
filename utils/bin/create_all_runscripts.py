@@ -332,7 +332,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                 #idx_string = "I" + str(i_elements) + "_" + j_string
                 # idx_string is set above this point. Doesn't get used on the same
                 # loop, but it shouldn't vanish.
-                logfilename = 'fudge.%x.' + idx_string + ".%j"
+                logfilename = 'master.%x.' + idx_string + ".%j"
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
                     #f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
@@ -461,13 +461,7 @@ def create_slice_runscript(i_string, j_string, scriptdir,
     if(exp_name==''):
         exp_name = scriptdir.split("/")[-2]
     master_driver = "${BASEDIR}/Rsuite/Drivers/Master_Driver.R"
-    # runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + "." + i_string + "_" +j_string
     logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+"."+ i_string + "_" +j_string
-    # print(runcode)
-    # print(logfile)
-    # Okay - this defines the list of runcodes that are going to be run.
-    # i_idx is in the same space as i_max; i is in minifile space.
-    # r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile # + " &"
     cmd_args = " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx,
                                            j_max, j_by, j_offset, auxfile_mod,
                                            meta_file, 'TRUE'])
@@ -561,9 +555,6 @@ def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
                            "module unload R/2.15.2",
                            "module load R/3.4.4",
                            "set auxfile_mod = " + auxfile_mod,
-                           # "set runcode_dir = " + scriptdir + "/" + 'runcode',
-                           # "set generic_runcode_base = `ls $runcode_dir | head -n 1`",
-                           # "set generic_runcode = $runcode_dir/$generic_runcode_base",
                            "set master_driver = ${BASEDIR}/Rsuite/Drivers/Master_Driver.R",
                            # Below line shouldn't give an error: removes if there,
                            # moves on if not.
