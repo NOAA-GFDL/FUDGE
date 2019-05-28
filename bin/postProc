@@ -1,7 +1,8 @@
 #!/bin/python
 
 #starting to mess around with the modified postProc workflow
-from fudgeUtils import gcp,tstamp
+from gcp import gcp
+from fudgeUtils import tstamp
 from fudgeUtils import read_exp_info_file
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp

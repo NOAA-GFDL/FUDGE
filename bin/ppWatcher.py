@@ -18,10 +18,10 @@ from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
-import fudgeUtils
-from fudgeUtils import gcp,tstamp
+from fudgeUtils import tstamp
 from fudgeUtils import read_exp_info_file
 from fudgeUtils import send_status_email
+from gcp import gcp
 import makeExpEns
 from makeExpEns import runMakeExpEns
 import makeCVEns

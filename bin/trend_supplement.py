@@ -14,7 +14,7 @@ import netCDF4
 from netCDF4 import Dataset
 import fudgeUtils
 from fudgeUtils import send_status_email
-from fudgeUtils import gcp
+from gcp import gcp
 
 def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
     #Copies output to trend+resid output directory and changes the var name

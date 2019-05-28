@@ -7,9 +7,9 @@
 
 #import expergen
 import fudgeList
-import fudgeUtils
-from fudgeUtils import gcp,tstamp
+from fudgeUtils import tstamp
 from fudgeUtils import read_exp_info_file
+from gcp import gcp
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
