@@ -4,6 +4,7 @@ import os, stat, shutil
 from os import path as osp
 import json
 from collections import OrderedDict
+from make_runscripts import make_runscript
 
 
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
@@ -316,10 +317,13 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             # 2018-04-09: Need to copy modified auxfile all the time, since that
             # is where the file paths are.
             #print(" ".join([str(el) for el in [ival, i_idx, imax, i_by, i_offset, jval, j_idx, jmax, j_by, j_offset]]))
-            runscript_code = create_slice_runscript(i_string, j_string, scriptdir,
-                                                    i_idx, imax, i_by, i_offset,
-                                                    j_idx, jmax, j_by, j_offset,
-                                                    auxfile_mod, meta_tmp, ds_var,outdirs)
+            regex_outdir = osp.join(auxdict['DS']['out_dir'], auxdict['DS']['out_subdir'])
+            idstring = i_string + "_" + j_string
+            runscript_code = make_runscript(scriptdir, experiment_name, idstring,
+                                            auxdict['DS']['vars'], auxdict['DS']['rips'], regex_outdir,
+                                            i_idx, imax, i_by, i_offset,
+                                            j_idx, jmax, j_by, j_offset,
+                                            auxfile_mod, meta_tmp, auxdict['make_qcmask'])
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n')  # needed for slurm POSIX standard
@@ -455,11 +459,11 @@ def create_slice_runscript(i_string, j_string, scriptdir,
     # these differently is not going to hurt.
     # i: 1:194
     # j_range: 'J454_576'
-    runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
     runscript_header = "#!/bin/tcsh\n"
     exp_name = scriptdir.split("/")[-1]
     if(exp_name==''):
         exp_name = scriptdir.split("/")[-2]
+    # Create the runcode by looping over the
     master_driver = "${BASEDIR}/Rsuite/Drivers/Master_Driver.R"
     logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+"."+ i_string + "_" +j_string
     cmd_args = " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx,

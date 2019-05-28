@@ -25,8 +25,8 @@ if BASEDIR is None:
     print("Error in metadata setup: no version of fudge is checked out! Please check out a jamoca-or-later version of fudge.")
     sys.exit(1)
 sys.path.append(osp.join(BASEDIR, 'utils/aux'))
-from fudgeUtils import gcp
 sys.path.append(osp.join(BASEDIR, 'utils/bin'))
+from gcp import gcp
 from get_ds_info import make_aux_input, get_ds_info
 from get_ds_info import add_ds_params_to_auxdict,add_s3_s5_params_to_auxdict
 from metadata_classify_fxns import get_experiment_metadata

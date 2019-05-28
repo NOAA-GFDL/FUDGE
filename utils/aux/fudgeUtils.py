@@ -5,6 +5,8 @@ from os import path as osp
 from subprocess import PIPE
 import re
 
+# 2019-05-28: gcp is now in its own file, with commandline args
+'''
 def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=True):
 	#Wrapper for GFDL's GCP function
 	#for copying from /archive to /vftmp
@@ -36,6 +38,7 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=Tr
 			os.makedirs(osp.dirname(outfile))
 		shutil.copy2(infile, outfile)
 	return(outfile)		
+'''
 	
 def read_exp_info_file(exp_info, convert_to_j = True):
 	#Reads data formatted in the general form of an experiment info file
