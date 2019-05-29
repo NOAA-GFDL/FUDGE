@@ -29,16 +29,18 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
         os.makedirs(outdir)
     #Check for input file existance and tape migration
     if verbose:
-        print("checking for dmget of file " + infile)
+        print("checking for dm status of file " + infile)
     dcheck = subprocess.Popen("dmls -l " + infile, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,shell=True,env=os.environ)
+    d_out,d_err = dcheck.communicate()
     if dcheck.returncode != 0:
         print("Error in gcp: sourcefile " + infile + " not found on this system.")
         sys.exit(1)
-    elif re.search("(OFL)", dcheck) is not None:
+    elif re.search("(OFL)", d_out) is not None:
         #if is offline, dmget
         d = subprocess.Popen("dmget " + infile, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,shell=True,env=os.environ)
+        d_out,d_err = d.communicate()
     sync = '--sync ' if gcp_sync else ""
     verbose = '-v ' if gcp_verbose else ""
     command = "gcp " + sync + verbose + infile + ' ' + outfile
@@ -90,8 +92,9 @@ def parse_gcp_args():
                       help="Whether to use gcp's sync option, which doesn't copy fiels unless the timestamp has changed.")
     parser.add_option("--retry", action="store", default=1,
                       help="How many times to try copying a file before giving up. Defaults to 1, which tries once and stops.")
-    parser.add_option("--final-copy", action="store_true",
+    parser.add_option("--final-copy", action="store_true", dest='final_cp',
                       help="Whether to copy the results if the retries run out.")
+    parser.add_option("-v", "--verbose", action='store_true', help="whether to print extra gcp wrapper script status info")
     (options, args) = parser.parse_args()
     gcp(args[0], args[1],  options.timestamp, options.verbose,
         options.gcp_verbose, options.gcp_sync,
