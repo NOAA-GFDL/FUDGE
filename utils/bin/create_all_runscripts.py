@@ -178,6 +178,11 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     auxdict['MH'] = mh_auxdict
     auxdict['MF'] = mf_auxdict
     auxdict['DS'] = ds_auxdict
+    #Adding dmget parameters for data files after timeout associated with gcp
+    dmget_string += "# Dmget data files\n"
+    dmget_string += oh_dmget
+    dmget_string += mh_dmget
+    dmget_string += mf_dmget
     auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
     # 2019-05-21: before dumping to file, add params to run from aux
     auxdict['files_in_aux'] = True
