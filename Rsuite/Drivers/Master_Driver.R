@@ -346,6 +346,7 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
                              ds.method, "!")))
     #return(new.args)
   }
+  ds.ref$args <- ds.args
   return(env)
 }
 message("Checking for default ds arguments (requires var units)")
@@ -353,6 +354,9 @@ set.ds.defaults(ds.ref$method, ds.ref$args, predictor.vars=predictor.vars,
                           pre.ds.train=pre.ds.train,
                           ds.ref=ds.ref, aux.ref=aux.ref,
                 env=environment())
+
+print(ds.ref$args)
+stop('examine this output')
 
 # print(prime_predictor)
 # stop('examine this output')

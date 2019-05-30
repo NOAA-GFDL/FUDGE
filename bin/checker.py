@@ -21,8 +21,8 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0, spath="na"):
        othercheck = False
        print(spath)
        spath = re.split(":", spath)[1]
-       if os.path.isdir(path):
-          out_contents = os.listdir(path)
+       if os.path.isdir(spath):
+          out_contents = os.listdir(spath)
        else:
            out_contents = ["none"]
        if (any([re.search(".mini.fail", el) is not None for el in out_contents])):

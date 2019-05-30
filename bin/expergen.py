@@ -853,7 +853,9 @@ def generate_experiment(parse_xml, create_default_aux,
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
     print("Making postproc scripts")
-    make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
+    # 2019-05-29: updated to parse from auxdict rather than the experiment info file
+    #make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
+    make_postProc_scripts(auxdict)
     print("----------------------------------------")
     print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
