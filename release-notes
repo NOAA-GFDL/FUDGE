@@ -1,3 +1,7 @@
+05-30-219
+(cew)
+- bugfix for watcher behavior related to qcmasks
+
 04-19-2019
 (cew)
 - Local scripts for residuals addition added; scripts use nco utilities for lower memory footprint / faster cpu time with large (22 GB) files
