@@ -7,44 +7,49 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   #len_tail, which specifies how many points the trigger affects
   #Edited  2018-04-27 to remove CDFt-specific checks; other edits took place
   #in January of the same year
-  trigger.fxn = switch(args$tail,
-                       lower='min',
-                       upper='max')
-  select.cond = switch(args$tail,
-                       lower = '<=',
-                       upper = '>=')
-  adjust.cond = switch(args$tail,
-                       lower='<',
-                       upper='>')
-  delta_sample = args$delta_sample #lastNpts
-  delta.by = switch(args$tail,
-                    lower=(1),
-                    upper=(-1))
-#   cutoff = switch(args$tail,
-#                   lower=args$low_cutoff,
-#                   upper=args$high_cutoff)
-  #Initialize and sort data
+  if (args$tail == 'lower'){
+    trigger.fxn <- 'min'
+    select.cond <- '<='
+    adjust.cond <- '<'
+    delta.by <- 1
+  }else if (args$tail == 'upper'){
+    trigger.fxn <- 'max'
+    select.cond <- '>='
+    adjust.cond <- '>'
+    delta.by <- (-1)
+  }
+  delta_sample = args$delta_sample
   if (args$trigger != 'all'){
     stop(paste("Error in limited_tail_cutoff: as of fudgetag",
                "icing-testing-20180219, arguments for trigger other than 'all' are not", 
                "supported in the cdft limited tail cutoff!"))
   }
-#  ds.cond = do.call(select.cond, list(DS, cutoff))
-  ds.order = order(DS) #used to sort from lowest to highest
+  print(sum(is.na(DS)))
+  print(sum(is.na(MF)))
+  if (sum(is.na(DS) != sum(is.na(MF)))){
+    stop('these should be the same count')
+  }
+  print(length(DS))
+  print(length(MF))
+  if (length(DS) != length(MF)){
+    stop('these should be the same length')
+  }
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
-  #note: earlier versions did not include ties argument, lead to some changed answers
   DS = sort(DS)
+  ds.order = order(DS)
   MF = MF[ds.order]
+  mf.points <- args$tail_len:length(DS)-args$tail_len
+  
+  
   apply_adjust = T
-  #Determine if any points will need adjustment
-  minsample <- max(c((2*args$tail_len + 1), (args$tail_len + args$lastNpts + 1)))
+  #Check minsamplesize based on tail length
+  minsample <- max(c((2*args$tail_len + 1), (args$tail_len + args$delta_sample + 1)))
   if (length(DS) < minsample){
     print('Not enough points for required tail length; no tail adjustment')
     apply_adjust <- F
   }
   if (length(DS) > 1 && apply_adjust){
     #Need at least 2 points to adjust
-    if (args$trigger=='all'){
       if (args$tail=='lower'){
         ds.cond <- c(rep(T, args$tail_len), rep(F, length(DS)-args$tail_len))
         ds.cond <- ds.cond[ds.rank]
@@ -56,7 +61,6 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
         ds.idx <- length(DS) - args$tail_len
         args$high_cutoff <- DS[ds.idx]
       }
-    }
   }else{
     print("Insufficient data to adjust")
     apply_adjust <- F
@@ -65,49 +69,26 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   if (apply_adjust){
     delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
     if (args$adjmethod == 'add'){
-      offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
+      offset = mean(DS[delta.idx] - MF[delta.idx])
     } else if (args$adjmethod == 'mult') {
-      ## Check for division by zero or very small number, replace with "largest seen" ratio
-      opp.tail.cut = switch(args$tail,
-                            upper=args$low_cutoff,
-                            lower=args$high_cutoff)
-      opp.trigger.fxn = switch(args$tail,
-                               upper='min',
-                               lower='max')
-      opp.cond = switch(args$tail,
-                        upper = '<=',
-                        lower = '>=')
-      if (do.call(opp.cond, list(do.call(opp.trigger.fxn, list(DS)), opp.tail.cut)) && !is.na(opp.tail.cut)) {
-        opp.indices <- which(do.call(opp.cond, list(DS, opp.tail.cut)))
-        if (args$tail=='upper'){
-          opp.idx <- opp.indices[length(opp.indices)] + 1
-        }else if (args$tail=='lower'){
-          opp.idx <- opp.indices[1] - 1
-        }
-        inside.start <- ds.idx + delta.by*delta_sample
-        inside.tails <- seq(inside.start, opp.idx)
-        mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
-        mult.vec <- DS[delta.idx]/MF[delta.idx]
-        ##Adding missval removal 11-1-2016 - 
-        ##not sure why NaN are present in the first place, but they 
-        ##are being generated now
-        mult.vec <- mult.vec[!is.na(mult.vec)]
-        if (any(mult.vec > mult.ifzero)) {
-          print("Some calculated multipliers were too large, replacing with max inside tails.")
-          mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
-        }
-        offset <- mean(mult.vec)
-      } else {
-        if (args$tail=='upper'){
-          opp.idx <- 1
-        }else if (args$tail=='lower'){
-          opp.idx <- length(DS)
+      if (args$tail=='upper') {
+        inside.tail <- seq(min(delta.idx), min(mf.points))
+      } else if (args$tail=='lower') {
+        inside.tail <- seq(max(delta.idx),  max(mf.points))
+      }
+      if (any(inside.tail < 1)){
+        inside.tail <- inside.tail[inside.tail > 0]
+        if (length(inside.tail) == 0){
+          stop("Error in limited_tail_cutoff: At least one inside index should be greater than 0!")
         }
       }
-      inside.start <- ds.idx + delta.by*delta_sample
-      inside.tails <- seq(inside.start, opp.idx)
-      mult.ifzero <- max(DS[inside.tails]/MF[inside.tails], na.rm=TRUE)
+      mult.ifzero <- max(DS[inside.tail]/MF[inside.tail], na.rm=TRUE)
       mult.vec <- DS[delta.idx]/MF[delta.idx]
+      print(sum(is.na(DS)))
+      print(sum(is.na(MF)))
+      print(delta.idx)
+      print(mult.ifzero)
+      print(mult.vec)
       if (any(mult.vec > mult.ifzero)) {
         print("Some calculated multipliers were too large, replacing with max inside tails.")
         mult.vec[mult.vec > mult.ifzero] <- mult.ifzero

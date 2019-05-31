@@ -3,7 +3,7 @@
 "lm","MH, MF","OH,MH","OH","MF","FALSE","FALSE","synchronous","TRUE","TRUE","simple","squish","spatial",,"temporal","TRUE","FALSE",
 "CDFt","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","https://cran.r-project.org/web/packages/CDFt/index.html"
 "CDFtmod","OH, MH, MF","OH, MH, MF","OH","MF","FALSE","TRUE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE","https://cran.r-project.org/web/packages/CDFt/index.html"
-"DeltaSD","OH, MH","MH,MF","MF",,"TRUE","FALSE","distributional","FALSE","FALSE","delta","squish",,,"spatial,temporal","FALSE","FALSE",
+"DeltaSD","OH, MH","MH,MF","MF","OH","TRUE","FALSE","distributional","FALSE","FALSE","delta","squish",,,"spatial,temporal","FALSE","FALSE",
 "BCQM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","FALSE","FALSE","qm","squish","spatial",,"temporal","FALSE","FALSE",
 "KDDM","MH, MF","OH,MH","OH","MF","FALSE","TRUE","distributional","FALSE","TRUE","qm","squish","temporal","temporal","spatial,temporal","FALSE","FALSE","https://github.com/sethmcg/climod"
 "CFQM","OH, MH","MH,MF","MF","OH","TRUE","TRUE","distributional","FALSE","FALSE","qm","squish",,,"spatial,temporal","FALSE","FALSE",
