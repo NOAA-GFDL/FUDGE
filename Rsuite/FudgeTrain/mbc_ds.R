@@ -27,7 +27,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  MF_mask <- missval.args$pr_opts$MF #[[1]]
+  MF_mask <- missval.args$pr_opts$MF  
   tmp.missvals <- missval.args
   for (n in 1:nrips){
     nval <<- n
@@ -78,6 +78,12 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
       #out.data[,,,n,,][!is.na(index.mask)] <- out
+      loop.mask <- index.mask
+      loop.mask[is.na(MF.slice[[1]])] <- NA
+if (missval.out$mv.retry){
+  # We need to limit out to those values for which MF has data
+  out <- apply.fudge.tmask(data=out, mask=loop.mask)
+}
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if (train_qcmask &  missval.out$mv.retry){
         print("adding the pr retry mask")
