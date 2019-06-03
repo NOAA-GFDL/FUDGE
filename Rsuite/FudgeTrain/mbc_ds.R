@@ -27,18 +27,11 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
   }else{
     qc <- NULL
   }
-  MF_mask <- missval.args$pr_opts$MF
-  print("number missvals in MF:")
-  print(sum(is.na(MF)))
-  print(sum(is.na(MF_mask)))
-  print(str(MF))
-        
+  MF_mask <- missval.args$pr_opts$MF  
   tmp.missvals <- missval.args
   for (n in 1:nrips){
     nval <<- n
     MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
-    print("number missvals in MF.slice")
-    print(sum(is.na(MF.slice)))
     #pr-specific check for now; only do if present
     missval.args$pr_opts$MF <- MF_mask[,,,n,, ,drop=F]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice, 
@@ -71,8 +64,8 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #There are different pre-conditioning steps that need
       #to take place for each method
       ds_meth <- switch(loop.ds, 'QDM' = 'callQDM', 'QDM_mod' = 'callQDM_mod')
-      #ds_arglist = list(missval.out$OH, missval.out$MH, missval.out$MF, args)
-      ds_arglist <- list(OH, MH, MF.slice[[1]], args)
+      ds_arglist = list(missval.out$OH, missval.out$MH, missval.out$MF, args)
+      #ds_arglist <- list(OH, MH, MF.slice[[1]], args)
       out <- tryCatch({do.call(ds_meth, args = ds_arglist)}, 
                       error = function(e){
                         is_known <- grepl("need at least two non-NA values to interpolate", 
@@ -82,7 +75,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                                         "enough unique values in input datasets", 
                                         "to interpolate!"))
                           message(paste("Returning MF unchanged."))
-                          return(MF.slice)
+                          return(MF.slice[[1]])
                         }else{
                           traceback()
                           stop('Unknown error in QDM: Please examine outputs!')
@@ -105,21 +98,11 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #out.data[,,,n,,][!is.na(index.mask)] <- out
       loop.mask <- index.mask
       loop.mask[is.na(MF.slice[[1]])] <- NA
-message('facts about loop.mask')
-      print(sum(is.na(loop.mask)))
-      print(sum(is.na(MF.slice[[1]])))
-      print(length(out))
-      print(length(MF.slice))
-      tmp <- index.qm(loop.mask, out, olap)
-      print(str(MF.slice))
-      if (sum(is.na(tmp)) != sum(is.na(MF.slice[[1]]))){
-        loop.mask <<- loop.mask
-        out <<- out
-        olap <<- olap
-        MF.slice <<- MF.slice
-        stop('examine mf output - missval count is not correct')
-      }
-      out.data[,,,n,,] <- index.qm(loop.mask, out, olap)
+if (missval.out$mv.retry){
+  # We need to limit out to those values for which MF has data
+  out <- apply.fudge.tmask(data=out, mask=loop.mask)
+}
+      out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if (train_qcmask &  missval.out$mv.retry){
         print("adding the pr retry mask")
         qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)

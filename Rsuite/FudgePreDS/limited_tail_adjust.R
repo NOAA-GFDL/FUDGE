@@ -24,15 +24,15 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
                "icing-testing-20180219, arguments for trigger other than 'all' are not", 
                "supported in the cdft limited tail cutoff!"))
   }
-  print(sum(is.na(DS)))
-  print(sum(is.na(MF)))
   if (sum(is.na(DS) != sum(is.na(MF)))){
-    stop('these should be the same count')
+    print(sum(is.na(DS)))
+    print(sum(is.na(MF)))
+    stop('missing values should be the same count')
   }
-  print(length(DS))
-  print(length(MF))
   if (length(DS) != length(MF)){
-    stop('these should be the same length')
+    print(length(DS))
+    print(length(MF))
+    stop('length should be the same length')
   }
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
   DS = sort(DS)
@@ -84,11 +84,6 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       mult.ifzero <- max(DS[inside.tail]/MF[inside.tail], na.rm=TRUE)
       mult.vec <- DS[delta.idx]/MF[delta.idx]
-      print(sum(is.na(DS)))
-      print(sum(is.na(MF)))
-      print(delta.idx)
-      print(mult.ifzero)
-      print(mult.vec)
       if (any(mult.vec > mult.ifzero)) {
         print("Some calculated multipliers were too large, replacing with max inside tails.")
         mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
