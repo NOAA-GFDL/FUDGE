@@ -337,11 +337,16 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       force_reproducibility <- FALSE
     }
   }
-  #Put together MBC-specific args  
+  #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
                       var.names=unlist(predictor.vars), 
                       adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn, 
                       force_reproducibility = force_reproducibility)
+  if ('qdm_mult_noise' %in% names(args)){
+    if (args$qdm_mult_noise == 'off'){
+      return.args$trace.calc <- 0
+    }
+  }
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize
