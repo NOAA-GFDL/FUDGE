@@ -7,8 +7,9 @@
 
 #import expergen
 import fudgeList
-from fudgeUtils import read_exp_info_file
-from gcp import gcp
+import fudgeUtils
+from fudgeUtils import tstamp
+# from fudgeUtils import read_exp_info_file
 from get_ds_info import parse_aux_info
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
@@ -27,7 +28,7 @@ from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
 
-def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
+def concatenate_files(input_dir, patt, output_dir, aux='none'):
     #Get all files in the input dir that match a given pattern
     #(note: assumed to start at the beginning of the filename)
 
@@ -46,8 +47,8 @@ def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
     #unwind_list = [el for f in find_list for el in f ]
     #i_matches = sorted([el for f in unwind_list for el in f if el != ""]) #remove duplicates
     index_subset = [re.split("\.", f)[1] for f in file_subset]
-    i_patterns = list(set(find_match_string('I', index_subset, file_subset)))
-    j_patterns = list(set(find_match_string('J', index_subset, file_subset)))
+    i_patterns = find_match_string('I', index_subset, file_subset)
+    j_patterns = find_match_string('J', index_subset, file_subset)
     file_split = re.split("\.", file_subset[0])
     print(file_split)
     out_filename = ".".join([file_split[0], file_split[-1]])
@@ -60,7 +61,6 @@ def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
     dimmap = get_dim_mapping(dimlist)
     print(dimmap)
     ############################################################################
-    print(tdir)
     tdir_i = osp.join(tdir, "i_cat")
     if not osp.exists(tdir_i):
         os.makedirs(tdir_i)
@@ -77,7 +77,7 @@ def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
     i_outfiles = []
     i_out_paths = []
     print("looping over i_patterns and concatenating in j")
-    natural_sort(i_patterns)
+    print(i_patterns)
     for i_patt,i in zip( i_patterns, range( len(i_patterns) ) ):
         i_subset = [f for f in file_subset if re.search(i_patt, f) is not None]
         natural_sort(i_subset)
@@ -104,14 +104,12 @@ def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
     print("outer call to cat_min")
     xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
                   tdir_i, tmp_outfile, "all values")
-    #xy_out = call_parallel_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
-    #              tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
     #Final step needs to be finalizing some metadata atts
     #experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
-    if exp_info != 'none':
+    if aux != 'none':
         print("finalizing file metadata")
-        xy_out = finalize_metadata_out(xy_out, auxfile)
+        xy_out = finalize_metadata_out(xy_out, aux)
     else:
         print("no experiment_info file; metadata unchanged")
     print("copying file to final destination")
@@ -120,19 +118,20 @@ def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
     return(outfile)
 
 
-def finalize_metadata_out(xy_file, auxfile):
+def finalize_metadata_out(xy_file, aux):
     #Sets up final metadata attributes on the output. Fortunately, there's going to
     #be a decent header from the concatenation operations
     #NOTE: right now, none of these attributes can have spaces in them
     #due to the passing into c-shell. Probably solvable
-    auxinfo, auxdict = parse_aux_info(auxfile)
+    # expdict = read_exp_info_file(experiment_info)
+    auxinfo, auxdict = parse_aux_info(aux)
 
     attdict = {}
     attdict['contact'] = "http://nomads.gfdl.noaa.gov/contacts.html"
     attdict['conventions'] = "CF-1.4"
     attdict['downscaling_model_type'] = "statistical"
 
-    attdict['gfdl_experiment_name'] =  auxdict['ds_experiment_name']
+    attdict['gfdl_experiment_name'] = auxdict['ds_experiment_name']
     #attdict['region_id'] = expdict['region']
     #attdict['predictand_calibration_datset'] = "dummy_data"
 
@@ -213,38 +212,15 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
     #Convenience wrapper for calling cat_min.csh
     print("calling cat_min")
     infile_str = ",".join(infiles)
-    # cat_min = basedir + "/utils/pp/concatenate_files_parallel.csh"
-    # cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile, str(6)])
-    # p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
+    #cat_min = "/home/cew/Code/h_testing/FudgeIO_reboot/concatenate_files.csh"
     cat_min = basedir + "/utils/pp/concatenate_files.csh"
     cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile])
-    print(cat_command)
-    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
+    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)	#, cwd=tdir
     out0,err0 = p.communicate()
     if (p.returncode != 0):
         print(str(out0))
         print(str(err0))
         print("Error in processing concatenation operations for " +  index_str + "; call to c-shell failed.")
-        print("Command that failed: " + cat_command)
-        sys.exit(1)
-        return(None)
-    else:
-        print(str(out0))
-        return(outfile)
-
-def call_parallel_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, index_str=""):
-    # Convenience wrapper for calling parallelized cat_min.csh
-    print("calling cat_min_parallel")
-    infile_str = ",".join(infiles)
-    cat_min = basedir + "/utils/pp/concatenate_files_parallel.csh"
-    cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile, str(7)])
-    print(cat_command)
-    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
-    out0,err0 = p.communicate()
-    if (p.returncode != 0):
-        print(str(out0))
-        print(str(err0))
-        print("Error in processing parallel concatenation operations for " +  index_str + "; call to c-shell failed.")
         print("Command that failed: " + cat_command)
         sys.exit(1)
         return(None)

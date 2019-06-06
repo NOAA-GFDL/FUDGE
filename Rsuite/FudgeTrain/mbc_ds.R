@@ -80,10 +80,10 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #out.data[,,,n,,][!is.na(index.mask)] <- out
       loop.mask <- index.mask
       loop.mask[is.na(MF.slice[[1]])] <- NA
-if (missval.out$mv.retry){
-  # We need to limit out to those values for which MF has data
-  out <- apply.fudge.tmask(data=out, mask=loop.mask)
-}
+      if (missval.out$mv.retry){
+        # We need to limit out to those values for which MF has data
+        out <- apply.fudge.tmask(data=out, mask=loop.mask)
+      }
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if (train_qcmask &  missval.out$mv.retry){
         print("adding the pr retry mask")
@@ -158,6 +158,7 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
                                              complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
                                              complete.fut)))
+  MF.idx <- is.na(MF[[1]])
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
@@ -178,7 +179,8 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #...also need to do more advanced checking of missing values. 
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
-  return(tmp$mhat.p[,1])
+  out <- ifelse(MF.idx, NA, tmp$mhat.p[,1])
+  return(out)
 }
 
 set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
@@ -244,6 +246,11 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       ratio.seq <- TRUE
     }
   }
+  if ('adjust_trace' %in% names(args)){
+    adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
+  }else{
+    adjust_trace <- F
+  }
   jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
   if (any(jitter.names %in% names(args))){
     jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
@@ -262,7 +269,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   }
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars), 
-              force_reproducibility = force_reproducibility)
+              force_reproducibility = force_reproducibility, adjust_trace = adjust_trace)
   env$ds.ref$args <- return.args
   return(env)
 }

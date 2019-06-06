@@ -1,7 +1,7 @@
 #!/bin/python
 
 #starting to mess around with the modified postProc workflow
-from fudgeUtils import gcp,tstamp
+from fudgeUtils import tstamp
 #from fudgeUtils import read_exp_info_file
 from get_ds_info import parse_aux_info
 import os,sys,subprocess,shutil,time,copy
@@ -30,7 +30,7 @@ def postProc():
                       help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
     parser.add_option("-o", "--output_dir", action="store",
                       help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
-    parser.add_option("-v", "--var", action='store', default='none',
+    parser.add_option("--var", action='store', default='none',
                       help="The variable of interest in the files in -d (i.e. tasmax, tasmax_qcmask).")
     parser.add_option("-m","--mail", action="store", default=None,
                       help="If set, the destination to which to send email status messages. Note that this depends in part on the initial expergen experiment settings.")
@@ -41,8 +41,8 @@ def postProc():
         sys.exit(1)
     if not osp.exists(options.output_dir):
         sys.exit(1)
-    #Make sure the experiment_info file exists
-    if not osp.exists(options.exp_info_file):
+    #Make sure the json auxfile file exists
+    if not osp.exists(options.aux):
         sys.exit(1)
     #Do the slightly complicated checking of the mail arguments
     if options.mail is not None:
@@ -60,7 +60,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
     #for each ensemble member.
     auxinfo, auxdict = parse_aux_info(aux)
     total_exp_name = auxdict['ds_experiment_name']
-    script_dir = auxdict['script_settings']['script_dir']
+    script_dir = auxdict['script_settings']['scriptdir']
     # var is set; includes the _qcmask vars
     '''
     expdict = read_exp_info_file(exp_info)
@@ -85,7 +85,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
             try:
                 # pattern is the file before the i,j indicator
                 file_patt = ds_files[0].split(".")[0]
-                ds_file = process_file(exp_info, file_patt, ds_dir,
+                ds_file = process_file(aux, file_patt, ds_dir,
                                        out_dir, n_expected_files)
                 output_files.append(ds_file)
             except:
@@ -154,7 +154,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
         print "None of " + ",".join(add_strings)," found in var; no adding/trending operations take place."
     return(copy_file)
 
-def process_file(exp_info, file_patt, in_dir, out_dir, n_expected_files, force_overwrite=False):
+def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwrite=False):
     #Changes that we need in this step in order to duplicate past functionality.
     #No region masks needed.
     #determine the number of files expected
@@ -166,7 +166,7 @@ def process_file(exp_info, file_patt, in_dir, out_dir, n_expected_files, force_o
         sys.exit()
     #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
     #in that case, the modified workflow should just copy the file.
-    cat_file = concatenate_files(in_dir, file_patt, out_dir, exp_info)
+    cat_file = concatenate_files(in_dir, file_patt, out_dir, aux)
     #And finally, set your metadata.
     #Note: this is now done in the cat step, to avoid copying to tmpdir more than once
     #out_file = set_FUDGE_metadata(out_file, exp_info)

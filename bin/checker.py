@@ -21,21 +21,22 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0, spath="na"):
        othercheck = False
        print(spath)
        spath = re.split(":", spath)[1]
+       mini_statdir = os.path.join(spath, 'status', 'minifile')
        if os.path.isdir(spath):
           out_contents = os.listdir(spath)
        else:
            out_contents = ["none"]
-       if (any([re.search(".mini.fail", el) is not None for el in out_contents])):
-	  	  print "\033[1;31m .mini.fail found in output dir, postProc cannot be executed. \033[1;m"
+       if (any([re.search(".*fail", el) is not None for el in os.listdir(mini_statdir)])):
+	  	  print "\033[1;31m .*fail found in output dir, postProc cannot be executed. \033[1;m"
 	  	  return -13
-       elif spath != 'na' and (any([re.search('.fail', el) is not None for el in os.listdir(os.path.join(spath, 'status', 'minifile'))]) or os.path.exists(spath +"/status/.meta.fail") ):
+       elif spath != 'na' and (any([re.search('.fail', el) is not None for el in os.listdir(mini_statdir)]) or os.path.exists(spath +"/status/.meta.fail") ):
 	  	  print "\033[1;31m $status/minifile/.*.fail or .meta.fail found in script dir, postProc cannot be executed. \033[1;m"
 	  	  return -13
-       elif (any([re.search(".mini.success", el) is not None for el in out_contents])):
+       elif (any([re.search(".*success", el) is not None for el in os.listdir(mini_statdir)])):
 	  	  othercheck = True
 	  	  print "\033[1;42m *.mini.success found, other steps in checker to follow.\033[1;m"
        else:
-	  v_print(1,verbose,"INFO:Waiting for status file to be generated "+path)
+	  v_print(1,verbose,"INFO:Waiting for status file to be generated "+mini_statdir)
           return 14
        if (othercheck == True):
          for ROOT,DIR,FILES in os.walk(path):

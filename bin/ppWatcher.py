@@ -35,7 +35,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 	#print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
 	#sys.exit("This should trigger the end of the script")
 	expdict = read_exp_info_file(infile)
-	pp_statdir = osp.join(expdict['script.base'], "postProc/ppStatus")
+	pp_statdir = osp.join(expdict['script.base'], "status/postproc/")
 	logfile_loc = osp.join(expdict['script.base'], 'log/fudge_postProc_.mfudge_*')
 	nrips = len(expdict['output.path'])
 	print("Number of rips searched for:" + str(nrips))

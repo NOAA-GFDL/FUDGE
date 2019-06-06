@@ -33,7 +33,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     runtime = auxdict['pp_wallclocktime']
     # postproc dirs
     pp_dir = osp.join(script_dir, 'postProc')
-    statdir  = osp.join(script_dir, 'status', 'postProc')
+    statdir  = osp.join(script_dir, 'status', 'postproc')
     #pp_source_dir = osp.join(pp_dir, 'aux')
     pp_log_dir = osp.join(script_dir, "log")
     #pp_stat_dir = osp.join(pp_dir, "ppStatus")
@@ -65,10 +65,10 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                     pp_var = v
                 # postproc command
                 pp_cmd_text = " ".join(["python $BASEDIR/bin/postProc",
-                                        "--aux" + auxfile,
-                                        "-d" + indir_loop2,
-                                        "-o" + outdir_loop2,
-                                        "--var" + pp_var])
+                                        "--aux " + auxfile,
+                                        "-d " + indir_loop2,
+                                        "-o " + outdir_loop2,
+                                        "--var " + pp_var])
                 runcode_vars = set_pp_runcode_vars(desc, script_dir,
                                                    statdir,
                                                    indir_loop2, outdir_loop2)
@@ -102,7 +102,7 @@ def set_pp_runcode_vars(desc, scriptdir, statdir, indir, outdir):
     Sets up vars needed for the pp runcode; used in runcode commands
       to improve readability.
     '''
-    vars = "\nset".join(["# setting runcode vars",
+    vars = "\nset ".join(["# setting runcode vars",
                   "desc = " + desc,
                   "scriptdir = " + scriptdir,
                   "statdir = " + statdir,
@@ -129,6 +129,6 @@ def make_pp_runcode_commands(fudgetag, postproc_cmd):
                      "		 touch $statdir/${desc}.failure",
                      "	endif",
                      "else",
-                     "   echo 'statfile found for postproc; exiting'"
+                     "   echo 'statfile found for postproc; exiting'",
                      "endif" + "\n"])
     return(cmd + "\n")
