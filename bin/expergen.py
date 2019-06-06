@@ -11,6 +11,7 @@ from subprocess import PIPE
 from os import path as osp
 import re
 import optparse
+import shutil
 from optparse import OptionParser
 import json
 import cleanup_script
@@ -652,10 +653,15 @@ def generate_experiment(parse_xml, create_default_aux,
     #First, create experiment directories. Note that this assumes
     #you've cleaned up your experiment beforehand:
     subdirs = ['master', 'runscript', 'log','postProc', 'config', 'status', 'profile']
+    statdirs  = ['master', 'minifile', 'postproc', 'ensemble', 'aux']
     for el in subdirs:
         subdir = osp.join(sbase,el)
-        if not osp.exists(subdir):
-            os.makedirs(subdir)
+        if osp.exists(subdir):
+            shutil.rmtree(subdir)
+        os.makedirs(subdir)
+        if el == 'status':
+            for em in statdirs:
+                os.makedirs(osp.join(subdir, em))
 
     if parse_xml:
         output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)

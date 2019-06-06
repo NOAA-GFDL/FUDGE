@@ -28,8 +28,8 @@ def checker(path,cnt=0,sev="error",varname="",verbose=0, spath="na"):
        if (any([re.search(".mini.fail", el) is not None for el in out_contents])):
 	  	  print "\033[1;31m .mini.fail found in output dir, postProc cannot be executed. \033[1;m"
 	  	  return -13
-       elif spath != 'na' and ( os.path.exists(spath +"/status/*.mini.fail") or os.path.exists(spath +"/status/.meta.fail") ):
-	  	  print "\033[1;31m .mini.fail or .meta.fail found in script dir, postProc cannot be executed. \033[1;m"
+       elif spath != 'na' and (any([re.search('.fail', el) is not None for el in os.listdir(os.path.join(spath, 'status', 'minifile'))]) or os.path.exists(spath +"/status/.meta.fail") ):
+	  	  print "\033[1;31m $status/minifile/.*.fail or .meta.fail found in script dir, postProc cannot be executed. \033[1;m"
 	  	  return -13
        elif (any([re.search(".mini.success", el) is not None for el in out_contents])):
 	  	  othercheck = True

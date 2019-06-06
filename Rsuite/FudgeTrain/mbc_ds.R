@@ -257,7 +257,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars), 
               force_reproducibility = force_reproducibility)
-  env$ds.args <- return.args
+  env$ds.ref$args <- return.args
   return(env)
 }
 
