@@ -836,6 +836,7 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
          listrips = auxdict['DS']['rips']
 
+    '''
     if not os.path.exists(sbase+"/postProc/aux/"):
         os.makedirs(sbase+"/postProc/aux/")
     #CEW edit 5-2-16 for writing postproc status files
@@ -847,6 +848,14 @@ def generate_experiment(parse_xml, create_default_aux,
     #CEW edit 6-30-16 for the statmail settings
     if not os.path.exists(sbase+"/postProc/verb/"):
         os.makedirs(sbase+"/postProc/verb/")
+    '''
+
+    # 2019-06-05: rewrite of postproc in progress
+    # making the postproc directories
+    postproc_dirs = ['cvStatus', 'verb']
+    for p in postproc_dirs:
+        if not osp.exists(osp.join(sbase, 'postProc', p)):
+            os.makedirs(osp.join(sbase, 'postProc', p))
     if statmail:
         open(sbase+"/postProc/verb/verbose.true", 'a').close()
     else:
@@ -854,8 +863,8 @@ def generate_experiment(parse_xml, create_default_aux,
 
     print("Making postproc scripts")
     # 2019-05-29: updated to parse from auxdict rather than the experiment info file
-    make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
-    #make_postProc_scripts(auxdict)
+    #make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
+    make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
     print("----------------------------------------")
     print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")

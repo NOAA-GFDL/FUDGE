@@ -7,9 +7,9 @@
 
 #import expergen
 import fudgeList
-from fudgeUtils import tstamp
 from fudgeUtils import read_exp_info_file
 from gcp import gcp
+from get_ds_info import parse_aux_info
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
@@ -27,7 +27,7 @@ from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
 
-def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
+def concatenate_files(input_dir, patt, output_dir, auxfile='none'):
     #Get all files in the input dir that match a given pattern
     #(note: assumed to start at the beginning of the filename)
 
@@ -111,7 +111,7 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     #experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
     if exp_info != 'none':
         print("finalizing file metadata")
-        xy_out = finalize_metadata_out(xy_out, exp_info)
+        xy_out = finalize_metadata_out(xy_out, auxfile)
     else:
         print("no experiment_info file; metadata unchanged")
     print("copying file to final destination")
@@ -120,19 +120,19 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     return(outfile)
 
 
-def finalize_metadata_out(xy_file, experiment_info):
+def finalize_metadata_out(xy_file, auxfile):
     #Sets up final metadata attributes on the output. Fortunately, there's going to
     #be a decent header from the concatenation operations
     #NOTE: right now, none of these attributes can have spaces in them
     #due to the passing into c-shell. Probably solvable
-    expdict = read_exp_info_file(experiment_info)
+    auxinfo, auxdict = parse_aux_info(auxfile)
 
     attdict = {}
     attdict['contact'] = "http://nomads.gfdl.noaa.gov/contacts.html"
     attdict['conventions'] = "CF-1.4"
     attdict['downscaling_model_type'] = "statistical"
 
-    attdict['gfdl_experiment_name'] = expdict['ds.experiment']
+    attdict['gfdl_experiment_name'] =  auxdict['ds_experiment_name']
     #attdict['region_id'] = expdict['region']
     #attdict['predictand_calibration_datset'] = "dummy_data"
 

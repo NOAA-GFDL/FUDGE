@@ -1,9 +1,9 @@
 #!/bin/python
 
 #starting to mess around with the modified postProc workflow
-from gcp import gcp
-from fudgeUtils import tstamp
-from fudgeUtils import read_exp_info_file
+from fudgeUtils import gcp,tstamp
+#from fudgeUtils import read_exp_info_file
+from get_ds_info import parse_aux_info
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
@@ -19,20 +19,19 @@ from fudgeUtils import send_status_email
 from concatenate_file import concatenate_files
 from trend_supplement import callCopyToTrendDetr, callAddResid
 from clim_supplement import callCopyToAnomClim, callAddAnom
-from get_ds_info import parse_aux_info
 
 def postProc():
     #Input parsing and arg checking for main body of code
-    usage = "usage: %prog [-e exp_info_file] [-d ds_dir] [-o output_dir] [-s suffix] [-m --mail] [--verbose]"
-    parser = OptionParser(usage=usage, version='makeExpEns 1.0')
-    parser.add_option("-e", "--exp_info_file", dest="exp_info_file",
-                      help="Path to a standardized experiment_info.txt file. Will be used to get most information about the experiment that produced the files to concatenate.")
+    usage = "usage: %prog [--aux auxfile.json] [-d ds_dir] [-o output_dir] [-s suffix] [-m --mail] [--verbose]"
+    parser = OptionParser(usage=usage, version='postProc kahlua')
+    parser.add_option("--aux", dest="aux",
+                      help="Path to a standardized json auxfile. Used to derive experiment parameters.")
     parser.add_option("-d", "--ds_dir", dest="ds_dir",
                       help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
     parser.add_option("-o", "--output_dir", action="store",
                       help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
-    parser.add_option("-s", "--suffix", action='store', default='none',
-                      help="Suffix to search for on the output variable ($var_$suffix). If 'none' or '', no suffix is added; if 'all', all known suffixes are searched for.")
+    parser.add_option("-v", "--var", action='store', default='none',
+                      help="The variable of interest in the files in -d (i.e. tasmax, tasmax_qcmask).")
     parser.add_option("-m","--mail", action="store", default=None,
                       help="If set, the destination to which to send email status messages. Note that this depends in part on the initial expergen experiment settings.")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
@@ -53,22 +52,23 @@ def postProc():
         uemail = "na"
 
     verbose = options.verbose
-    runPostProc(options.exp_info_file, options.ds_dir, options.output_dir, options.suffix, uemail, verbose)
+    runPostProc(options.aux, options.ds_dir, options.output_dir, options.var, uemail, verbose)
 
-def runPostProc(exp_info, ds_dir, out_dir, var_suffix, mailid, verbose=False):
+def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
     #Clearer wrapper describing what the postProc function does.
     #Still trying to duplicate old functionality; should really be called once
     #for each ensemble member.
+    auxinfo, auxdict = parse_aux_info(aux)
+    total_exp_name = auxdict['ds_experiment_name']
+    script_dir = auxdict['script_settings']['script_dir']
+    # var is set; includes the _qcmask vars
+    '''
     expdict = read_exp_info_file(exp_info)
     total_exp_name = expdict['ds.experiment']
     script_dir = expdict['script.base']
-    # 2019-05-20: get var from auxdict rather than experiment_info file
-    auxdir = osp.join(script_dir, 'config_mod')
-    auxfile = osp.join(auxdir, [el for el in os.listdir(auxdir)][0])
-    auxinfo, auxdict = parse_aux_info(auxfile)
-    var = auxdict['DS']['vars'][0]
-    #var = expdict['target']
+    var = expdict['target']
     xml_loc = expdict['xml.path']
+    '''
     send_to = mailid
 
     output_files = [] #can end being up to 4 elements long
@@ -78,50 +78,43 @@ def runPostProc(exp_info, ds_dir, out_dir, var_suffix, mailid, verbose=False):
 
     #Determine how many ds vars we are looking for
     #note: anom + resid is a special case; always searched for
-    if var_suffix == 'all':
-        ds_vars = [var, var + "_qcmask", var + "_save"]
-        ds_dirs = [ds_dir, osp.join(ds_dir, var + "_qcmask". osp.join(ds_dir, var + "_save"))]
-    elif var_suffix == 'none' or var_suffix == "":
-        ds_vars = [var]
-        ds_dirs = [ds_dir]
+    if osp.exists(ds_dir):
+        ds_files = [f for f in os.listdir(ds_dir) if re.search("\.nc", f) is not None]
+        n_ds_files = len(ds_files)
+        if n_ds_files > 0:
+            try:
+                # pattern is the file before the i,j indicator
+                file_patt = ds_files[0].split(".")[0]
+                ds_file = process_file(exp_info, file_patt, ds_dir,
+                                       out_dir, n_expected_files)
+                output_files.append(ds_file)
+            except:
+                print(traceback.format_exc())
+                send_status_email("failure", 'postProc', total_exp_name, \
+                               traceback="One or more ds minifiles may be absent for the specified region", \
+                               mailid=send_to, logfiles = [os.path.join(script_dir, "fudge_postProc_.*")], \
+                               exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
+                               outfiles = ds_dir)
+                sys.exit(-1)
+            #Note: python 'is' checks to see if same object, '==' checks for same value
+            #'is' works within the list comprehensions, but == works outside
+            anom_resid_patterns = ['Anom', 'Resid']
+            supp_patterns = ['qcmask', 'save']
+            if any([re.search(el, var) is not None for el in anom_resid_patterns]):
+                if not any([re.search(el, var) is not None for el in supp_patterns]):
+                    anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
+                                                var, send_to, script_dir,
+                                                "",True)
+                    output_files.append(anom_out)
+                else:
+                    # you don't need to do a trend addition,
+                    # all you need is a copy
+                    anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
+                                                var, send_to, script_dir,
+                                                "",True)
+                    output_files.append(anom_out)
     else:
-        ds_vars = [var + "_" + var_suffix]
-        ds_dirs = [osp.join(ds_dir, var + "_" + var_suffix)]
-    print(ds_vars)
-    print(ds_dirs)
-    #Loop over available ds_vars and ds_dirs
-    for ds_var,ds_vardir in zip(ds_vars, ds_dirs):
-        #Always process the downscaled data (located in ds dir)
-        #which is passed in as a script arg
-        #ds_dir = osp.join(out_dir, "OneD")
-
-        #Only call the above bits if the dir which you are checking exists.
-        if osp.exists(ds_vardir):
-            ds_files = [f for f in os.listdir(ds_vardir) if re.search("\.nc", f) is not None]
-            n_ds_files = len(ds_files)
-            if n_ds_files > 0:
-                try:
-                    #(exp_info, file_patt, in_dir, out_dir, n_expected_files)
-                    file_patt = ds_files[0].split(".")[0]
-                    ds_file = process_file(exp_info, file_patt, ds_vardir,
-                                           out_dir, n_expected_files)
-                    output_files.append(ds_file)
-                except:
-                    print(traceback.format_exc())
-                    send_status_email("failure", 'postProc', total_exp_name, \
-                                   traceback="One or more ds minifiles may be absent for the specified region", \
-                                   mailid=send_to, logfiles = [os.path.join(script_dir, "fudge_postProc.mfudge_postProc*")], \
-                                   exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
-                                   outfiles = ds_vardir, xml = xml_loc)
-                    sys.exit(-1)
-                #Note: python 'is' checks to see if same object, '==' checks for same value
-                #'is' works within the list comprehensions, but == works outside
-                add_anom_to_var = ( (var_suffix == 'none') or (var_suffix == "") )
-                #print("add_anom_to_var, is_ds:")
-                #print(add_anom_to_var)
-                output_files.append(check_anom_resid(ds_file, out_dir, total_exp_name, ds_var, send_to,script_dir, xml_loc, add_anom_to_var))
-        else:
-            print('No suffix directory for ' + ds_var + ' found. Moving on to next var.')
+        print('No suffix directory for ' + var + ' found. Moving on to next var.')
     output_files = [el for el in output_files if el is not None]
     print("Concatenation operations complete." + "\n")
     for el in output_files:
