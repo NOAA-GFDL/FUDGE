@@ -32,183 +32,183 @@ import cgitb
 import tarfile
 
 def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
-	#print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
-	#sys.exit("This should trigger the end of the script")
-	expdict = read_exp_info_file(infile)
+    #print(" ".join([str(infile), str(timeout), str(verbopt), str(nloops), str(sleeptime), mailid, str(sev)]))
+    #sys.exit("This should trigger the end of the script")
+    expdict = read_exp_info_file(infile)
     scriptdir = expdict['script.base']
-	pp_statdir = osp.join(scriptdir, "status/postproc/")
-	logfile_loc = osp.join(scriptdir, 'log/fudge_postProc_.mfudge_*')
-	nrips = len(expdict['output.path'])
-	print("Number of rips searched for:" + str(nrips))
+    pp_statdir = osp.join(scriptdir, "status/postproc/")
+    logfile_loc = osp.join(scriptdir, 'log/fudge_postProc_.mfudge_*')
+    nrips = len(expdict['output.path'])
+    print("Number of rips searched for:" + str(nrips))
     ppdir = osp.join(scriptdir, 'postProc')
-	nfiles = len([el for el in os.listdir(ppdir) if re.search('\.', el) is not None])
-	#Check for whether or not an experiment has a cross-validated companion
-	exp_name = expdict['ds.experiment']
-	isCrossval = False
-	warnCrossval=False
-	crossval_patt = ['00r1e2', '00r2e2']
-	cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
-	if(len(cv_match) == 1):
-		#Need a check in here to print warnings for the r1e2 case
-		print("crossval match:" + str(cv_match))
-		if re.search(crossval_patt[0], exp_name) is not None:
-			warnCrossval = True
-		patt2 = 1 - cv_match[0]
-		exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
-		pdir_split = re.split("/", expdict['script.base'])
-		project = pdir_split[-1]
-		subproj = pdir_split[-2]
-		user = os.environ.get('USER')
-		if (user!='esd'):
-			print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
-		complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/scripts", subproj, exp_name2)
-		print(complement_exp)
-		if osp.isdir(complement_exp) and not warnCrossval:
-			isCrossval = True
-	loop_count = 0
-	complete=False
-	while int(loop_count) < int(nloops) and not complete:
-		print("starting loop " + str(loop_count) + " of " + str(nloops))
-		print("Checking " + pp_statdir + " for status files")
-		status_files = [p for p in os.listdir(pp_statdir) if osp.isfile(osp.join(pp_statdir,p))]
-		print(status_files)
-		nfail = [p for p in status_files if re.search('failure',p) is not None]
-		if len(nfail) != 0:
-			print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
-			send_status_email("failure", 'ppWatcher', exp_name, \
-						   traceback="One or more pp jobs have failed; sample jobs include " + \
-						   (",").join([re.sub(".failure", "", p) for p in nfail]), \
-						   mailid=mailid, logfiles = logfile_loc,
-						   exp_info_file = infile, outfiles = "")
-			sys.exit(1)
-		else:
-			nsucceed = len([p for p in status_files if re.search('success',p) is not None])
-			print("number of postproc jobs complete: " + str(nsucceed))
-			if nsucceed != nfiles:
-				loop_count = loop_count + 1
-				time.sleep(sleeptime)
-			else:
-				loop_count = loop_count+1
-				complete=True
-	if(complete):
-		basedir = os.environ.get('BASEDIR')
-		if basedir is None:
-			basedir = ""
-		print "postProc jobs are complete."
-		if(nrips > 1):
-			print("More than one experiment rip is present; calling makeExpEns")
-			print("MakeExpEns command-line arguments:")
-			print("makeExpEns --input " + infile)
-			outfiles = runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
-			#...check on the error returns from this. There shouldn't be an issue,
-			#since multiple exit points aren't that much of an issue and you
-			#WANT things to come to a screeching halt, but that may change later.
-		else:
-			#This should produce at least one file
-			outdir = osp.dirname(expdict['output.path'][0])
-			outdir_contents = os.listdir(outdir)
-			outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
-			outfiles.sort()
-			if len(outfiles) < 1:
-				print("Error in ppWatcher: No files found in " + outdir + " !")
-				sys.exit(1)
+    nfiles = len([el for el in os.listdir(ppdir) if re.search('\.', el) is not None])
+    #Check for whether or not an experiment has a cross-validated companion
+    exp_name = expdict['ds.experiment']
+    isCrossval = False
+    warnCrossval=False
+    crossval_patt = ['00r1e2', '00r2e2']
+    cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
+    if(len(cv_match) == 1):
+        #Need a check in here to print warnings for the r1e2 case
+        print("crossval match:" + str(cv_match))
+        if re.search(crossval_patt[0], exp_name) is not None:
+            warnCrossval = True
+        patt2 = 1 - cv_match[0]
+        exp_name2 = re.sub(crossval_patt[cv_match[0]], crossval_patt[patt2], exp_name)
+        pdir_split = re.split("/", expdict['script.base'])
+        project = pdir_split[-1]
+        subproj = pdir_split[-2]
+        user = os.environ.get('USER')
+        if (user!='esd'):
+            print("Warning in runPPWatcher: checking for cross-validated experiments assumes an ESD-specific dir structure")
+        complement_exp = osp.join("/home/", user, "PROJECTS/DOWNSCALING/scripts", subproj, exp_name2)
+        print(complement_exp)
+        if osp.isdir(complement_exp) and not warnCrossval:
+            isCrossval = True
+    loop_count = 0
+    complete=False
+    while int(loop_count) < int(nloops) and not complete:
+        print("starting loop " + str(loop_count) + " of " + str(nloops))
+        print("Checking " + pp_statdir + " for status files")
+        status_files = [p for p in os.listdir(pp_statdir) if osp.isfile(osp.join(pp_statdir,p))]
+        print(status_files)
+        nfail = [p for p in status_files if re.search('failure',p) is not None]
+        if len(nfail) != 0:
+            print("Error in ppWatcher: One or more pp jobs have failed! Watcher exiting.")
+            send_status_email("failure", 'ppWatcher', exp_name, \
+                           traceback="One or more pp jobs have failed; sample jobs include " + \
+                           (",").join([re.sub(".failure", "", p) for p in nfail]), \
+                           mailid=mailid, logfiles = logfile_loc,
+                           exp_info_file = infile, outfiles = "")
+            sys.exit(1)
+        else:
+            nsucceed = len([p for p in status_files if re.search('success',p) is not None])
+            print("number of postproc jobs complete: " + str(nsucceed))
+            if nsucceed != nfiles:
+                loop_count = loop_count + 1
+                time.sleep(sleeptime)
+            else:
+                loop_count = loop_count+1
+                complete=True
+    if(complete):
+        basedir = os.environ.get('BASEDIR')
+        if basedir is None:
+            basedir = ""
+        print "postProc jobs are complete."
+        if(nrips > 1):
+            print("More than one experiment rip is present; calling makeExpEns")
+            print("MakeExpEns command-line arguments:")
+            print("makeExpEns --input " + infile)
+            outfiles = runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
+            #...check on the error returns from this. There shouldn't be an issue,
+            #since multiple exit points aren't that much of an issue and you
+            #WANT things to come to a screeching halt, but that may change later.
+        else:
+            #This should produce at least one file
+            outdir = osp.dirname(expdict['output.path'][0])
+            outdir_contents = os.listdir(outdir)
+            outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
+            outfiles.sort()
+            if len(outfiles) < 1:
+                print("Error in ppWatcher: No files found in " + outdir + " !")
+                sys.exit(1)
 
-			#Checks for printing anomaly/detrending files needed for the detrending wofkflow
-			if re.search('Anom', outdir) is not None:
-				anom_outdir = re.sub("Anom", "", outdir)
-				anom_outfiles = [osp.join(anom_outdir, p) for p in os.listdir(anom_outdir) if re.search(".nc$", p) is not None]
-				outfiles = outfiles + anom_outfiles
-			if re.search('Detr', outdir) is not None:
-				detr_outdir = re.sub("Detr", "", outdir)
-				detr_outfiles = [osp.join(detr_outdir, p) for p in os.listdir(detr_outdir) if re.search(".nc$", p) is not None]
-				outfiles = outfiles + detr_outfiles
-			outfiles = "\n\t".join(outfiles)
-		if warnCrossval:
-			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
-					 " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
-			print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")
-			print(cv_command)
-		if isCrossval:
-			cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
-					 " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
-			print("MakeCVEns command-line arguments:")
-			print(cv_command)
-			cv_outfiles = runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
-			outfiles = outfiles + "\n" + cv_outfiles
-				#except:
-				#	#import sys, cgitb
-				#	#cgitb.enable()
-				#	print(cgitb.text(sys.exc_info()))
-				#	send_ppWatcher_message('failure')
-				#else:
-				#	send_ppWatcher_message('success')
-		send_status_email("success", 'complete', exp_name, \
-						  traceback="", \
-						  mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
-						  exp_info_file = infile, outfiles = outfiles)
-		#Extra code added 8-8 in order to add the xml ouptut to the end of the
-		#experiment info files
-		#Make a permanent fix later; this is going to react oddly with the
-		#cross-validation settings
-		outfile_exp_info_dirs = ["/".join(el.split("/")[:-3]) for el in outfiles.split("\n")]
-		outfile_exp_info_dirs = [el.split(":")[-1] for el in outfile_exp_info_dirs]
-		outfile_exp_info = [osp.join(el, 'experiment_info.txt') for el in outfile_exp_info_dirs if osp.isdir(el) ]
-		script_exp_info = [infile]
-		#print(outfiles)
-		print("outfile exp_info + script exp_info:")
-		print(outfile_exp_info + script_exp_info)
-		#write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')
-		##Added 9-28: get profiling info, write to file
-		print("File cleanup operations in progress")
-		make_prof_file(expdict['script.base'], expdict['script.base'] + "/log/")
-		compress_logs(expdict['script.base'] + "/log/")
+            #Checks for printing anomaly/detrending files needed for the detrending wofkflow
+            if re.search('Anom', outdir) is not None:
+                anom_outdir = re.sub("Anom", "", outdir)
+                anom_outfiles = [osp.join(anom_outdir, p) for p in os.listdir(anom_outdir) if re.search(".nc$", p) is not None]
+                outfiles = outfiles + anom_outfiles
+            if re.search('Detr', outdir) is not None:
+                detr_outdir = re.sub("Detr", "", outdir)
+                detr_outfiles = [osp.join(detr_outdir, p) for p in os.listdir(detr_outdir) if re.search(".nc$", p) is not None]
+                outfiles = outfiles + detr_outfiles
+            outfiles = "\n\t".join(outfiles)
+        if warnCrossval:
+            cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
+                     " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
+            print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")
+            print(cv_command)
+        if isCrossval:
+            cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
+                     " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
+            print("MakeCVEns command-line arguments:")
+            print(cv_command)
+            cv_outfiles = runMakeCVEns(exp_name, exp_name2, expdict['script.base'], complement_exp, verbose=(verbopt==1))
+            outfiles = outfiles + "\n" + cv_outfiles
+                #except:
+                #	#import sys, cgitb
+                #	#cgitb.enable()
+                #	print(cgitb.text(sys.exc_info()))
+                #	send_ppWatcher_message('failure')
+                #else:
+                #	send_ppWatcher_message('success')
+        send_status_email("success", 'complete', exp_name, \
+                          traceback="", \
+                          mailid=mailid, logfiles = osp.join(expdict['script.base'], 'log'), \
+                          exp_info_file = infile, outfiles = outfiles)
+        #Extra code added 8-8 in order to add the xml ouptut to the end of the
+        #experiment info files
+        #Make a permanent fix later; this is going to react oddly with the
+        #cross-validation settings
+        outfile_exp_info_dirs = ["/".join(el.split("/")[:-3]) for el in outfiles.split("\n")]
+        outfile_exp_info_dirs = [el.split(":")[-1] for el in outfile_exp_info_dirs]
+        outfile_exp_info = [osp.join(el, 'experiment_info.txt') for el in outfile_exp_info_dirs if osp.isdir(el) ]
+        script_exp_info = [infile]
+        #print(outfiles)
+        print("outfile exp_info + script exp_info:")
+        print(outfile_exp_info + script_exp_info)
+        #write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')
+        ##Added 9-28: get profiling info, write to file
+        print("File cleanup operations in progress")
+        make_prof_file(expdict['script.base'], expdict['script.base'] + "/log/")
+        compress_logs(expdict['script.base'] + "/log/")
 
-	else:
-		print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
-		send_status_email("failure", 'ppWatcher', exp_name, \
-						   traceback="Job timed out", \
-						   mailid=mailid, logfiles = logfile_loc, exp_info_file = infile,
-						   outfiles = expdict['output.path'])
-		sys.exit(1)
-	sys.exit(0)
+    else:
+        print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
+        send_status_email("failure", 'ppWatcher', exp_name, \
+                           traceback="Job timed out", \
+                           mailid=mailid, logfiles = logfile_loc, exp_info_file = infile,
+                           outfiles = expdict['output.path'])
+        sys.exit(1)
+    sys.exit(0)
 
 def compress_logs(logdir):
-	'''
-	Compresses all files in logdir matching the pattern (out.* )
-	which matches the R code logfiles, and deletes the uncompressed files
-	afterwards.
-	'''
-	print("Archiving R code logfiles...")
-	compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)] # if re.search("out.*", el) is not None
-	logfile = osp.join(logdir, "compressed_FUDGE_logfiles.tar.gz")
-	tar_log = tarfile.open(logfile, "w:gz")
-	for name in compress_files:
-		tar_log.add(name)
-	tar_log.close()
-	for name in compress_files:
-		os.remove(name)
+    '''
+    Compresses all files in logdir matching the pattern (out.* )
+    which matches the R code logfiles, and deletes the uncompressed files
+    afterwards.
+    '''
+    print("Archiving R code logfiles...")
+    compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)] # if re.search("out.*", el) is not None
+    logfile = osp.join(logdir, "compressed_FUDGE_logfiles.tar.gz")
+    tar_log = tarfile.open(logfile, "w:gz")
+    for name in compress_files:
+        tar_log.add(name)
+    tar_log.close()
+    for name in compress_files:
+        os.remove(name)
 
 def write_xml_info(outdirs, xml_dir):
-	#Writes the contents of the experiment xml
-	#to the end of all experiment info files
-	#located in the dirs discussed
-	#First, replace tabs in string
-	outdirs = [re.sub("\t", "", el) for el in outdirs]
-	#Then, get the xml file
-	xml_file = [el for el in os.listdir(xml_dir) if re.search("xml", el) is not None]
-	if len(xml_file) > 0:
-		xml_file = osp.join(xml_dir, xml_file[0])
-		cat_string = ''
-		with open(xml_file, 'r') as infile:
-			for line in infile:
-				cat_string = cat_string + "#" + line.strip() + "\n"
-		for el in outdirs:
-			with open(el, 'a') as outfile:
-				outfile.write("\n############ Concatenated experiment XML ######################################\n")
-				outfile.write(cat_string)
+    #Writes the contents of the experiment xml
+    #to the end of all experiment info files
+    #located in the dirs discussed
+    #First, replace tabs in string
+    outdirs = [re.sub("\t", "", el) for el in outdirs]
+    #Then, get the xml file
+    xml_file = [el for el in os.listdir(xml_dir) if re.search("xml", el) is not None]
+    if len(xml_file) > 0:
+        xml_file = osp.join(xml_dir, xml_file[0])
+        cat_string = ''
+        with open(xml_file, 'r') as infile:
+            for line in infile:
+                cat_string = cat_string + "#" + line.strip() + "\n"
+        for el in outdirs:
+            with open(el, 'a') as outfile:
+                outfile.write("\n############ Concatenated experiment XML ######################################\n")
+                outfile.write(cat_string)
 
 
 if __name__ == '__main__':
-	print(sys.argv)
-	runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4],
-				 float(sys.argv[5]), sys.argv[6], sys.argv[7])
+    print(sys.argv)
+    runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4],
+                 float(sys.argv[5]), sys.argv[6], sys.argv[7])
