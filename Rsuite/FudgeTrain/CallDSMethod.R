@@ -65,9 +65,7 @@ ReturnDownscaleError <- function(ds.method){
 ds.sum.function <- function(OH, MH, MF, args){
   print("within sum function")
   sum.all <- sum(c(OH[[1]], MH[[1]], MF[[1]]), na.rm=T)
-  print(sum.all)
   tmp.data <- array(sum.all, dim=c(1,1,1,1,dim(OH[[1]])[5:6]))
-  print(dim(tmp.data))
   return(list(ds=tmp.data,
               qc=NULL))
 }

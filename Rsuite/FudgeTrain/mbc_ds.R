@@ -158,7 +158,8 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
                                              complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
                                              complete.fut)))
-  MF.idx <- is.na(MF[[1]])
+  MF.idx <- !is.na(MF[[1]])
+  # MF.order <- rank(MF[[1]])
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
@@ -179,7 +180,17 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #...also need to do more advanced checking of missing values. 
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
-  out <- ifelse(MF.idx, NA, tmp$mhat.p[,1])
+  out <- rep(NA, length(MF.idx))
+  # print(str(tmp))
+  # print(length(tmp$mhat.p[,1]))
+  # print(length(MF.order))
+  out[MF.idx] <- tmp$mhat.p[,1]
+  # tmp <<- tmp
+  # OH.slice <<- OH.slice
+  # MH.slice <<- MH.slice
+  # MF.slice <<- MF.slice
+  # MF.ds <<- MF
+  # stop('examine this output')
   return(out)
 }
 

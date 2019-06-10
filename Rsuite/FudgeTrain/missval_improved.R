@@ -98,9 +98,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       message('retrying sample size with precipiation added in')
       pr_vars <- list(OH='pr_oh', MH='pr_mh', MF='pr_mf')
       #env=parent.frame(n=0)
-#       print('is there something wrong with the indexing?')
-#       print(train.index)
-#       print(c('OH', 'MH', "MF")[train.index])
       #Datset.index only has 3 elements - important for multivar pr
       dataset.index <- rowSums(sapply(ds.ref$training, 
                                       grepl, c("OH", "MH", "MF"))) > 0
@@ -110,11 +107,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #removes samples in OH and MH that never get added back in
         
         #var.idx <- pr_vars[[el]]
-#         print(summary(missval.args$pr_opts))
-#         print(summary(orig[[el]]))
-#         print(missval.args$pr_opts$pr_oh)
-#         print(missval.args$pr_opts$pr_mh)
-#         print(el)
         if (el == 'OH'){
           #print(summary(orig[[el]][!is.na(orig[[el]])]))
           assign(el, retry.with.pr.present(orig[[el]], 
