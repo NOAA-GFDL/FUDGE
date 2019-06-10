@@ -425,7 +425,8 @@ def make_gcp_cmd(sourcefile, destfile, indent="", newline_end = True):
     Wraps a gcp command in a status checker; exits with an error if that
     command fails
     '''
-    gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
+    #gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
+    gcp_cmd = "python ${BASEDIR}/utils/bin/gcp.py --gcp-verbose --gcp-sync --retry 2 --final-copy " + sourcefile + " " + destfile
     gcp_echo = indent + "echo '" + gcp_cmd + "'"
     gcp_cmd = indent + gcp_cmd
     stat_cmd = ("\n" + indent).join(["if ($status != 0) then",
