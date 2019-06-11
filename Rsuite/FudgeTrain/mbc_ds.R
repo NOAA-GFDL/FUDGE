@@ -77,7 +77,8 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
                           message(paste("Returning MF unchanged."))
                           return(MF.slice[[1]])
                         }else{
-                          traceback()
+                          print(e)
+                          #print(traceback())
                           stop('Unknown error in QDM: Please examine outputs!')
                         }
                         stop('examine error output')
@@ -120,15 +121,17 @@ if (missval.out$mv.retry){
 
 callQDM_mod <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
-  OH.slice <- remove.missvals(unlist(as.vector(OH)))
-  MH.slice <- remove.missvals(unlist(as.vector(MH)))
-  MF.slice <- remove.missvals(unlist(as.vector(MF)))
-#   if (max (OH.slice) > max(MF.slice)){
-#     print("callQDM: OH max greater than MF max")
-#   }
-  tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
-                 ratio=args$ratio.seq, trace=args$trace, 
-                 jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  OH.slice <- remove.missvals(unlist(as.vector(OH), use.names=F))
+  MH.slice <- remove.missvals(unlist(as.vector(MH), use.names=F))
+  MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
+  args$ratio <- args$ratio.seq
+  not.args <- c('adjust.trace', 'transform', 'tform_fxn', 
+                'force_reproducibility', 'var.names', 
+                'ratio.seq', 'iter', 'adjust_trace')
+  args <- args[!(names(args) %in% not.args)]
+  q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
+              args)
+  tmp <- do.call('QDM_mod', q.args)$mhat.p
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
   return(out)
@@ -138,15 +141,17 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 callQDM <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
-  OH.slice <- remove.missvals(unlist(as.vector(OH)))
-  MH.slice <- remove.missvals(unlist(as.vector(MH)))
-  MF.slice <- remove.missvals(unlist(as.vector(MF)))
-#   if (max (OH.slice) > max(MF.slice)){
-#     print("callQDM: OH max greater than MF max")
-#   }
-  tmp <- QDM(OH.slice, MH.slice, MF.slice, 
-             ratio=args$ratio.seq, trace=args$trace, 
-             jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  OH.slice <- remove.missvals(unlist(as.vector(OH), use.names=F))
+  MH.slice <- remove.missvals(unlist(as.vector(MH), use.names=F))
+  MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
+  args$ratio <- args$ratio.seq
+  not.args <- c('adjust.trace', 'transform', 'tform_fxn', 
+                'force_reproducibility', 'var.names', 
+                'ratio.seq', 'iter', 'adjust_trace')
+  args <- args[!(names(args) %in% not.args)]
+  q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
+              args)
+  tmp <- do.call('QDM', q.args)$mhat.p
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
   return(out)
