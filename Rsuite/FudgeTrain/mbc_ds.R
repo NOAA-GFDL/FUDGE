@@ -249,14 +249,18 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
                  "did not have as many elements as MH has vars!"))
     }
     ratio.seq <- in.rat.seq
+  }else{
+    print("length of ratio.seq:")
+    print(length(predictor.vars))
+    ratio.seq = rep(F, length(predictor.vars))
   }
-  if ('type' %in% names(args)){
-    if (args$type=='add'){
-      ratio.seq <- FALSE
-    }else if (args$type=='mult'){
-      ratio.seq <- TRUE
-    }
-  }
+  # if ('type' %in% names(args)){
+  #   if (args$type=='add'){
+  #     ratio.seq <- rep(F, length(predictor.vars))
+  #   }else if (args$type=='mult'){
+  #     ratio.seq <- rep(T, length(predictor.vars))
+  #   }
+  # }
   if ('adjust_trace' %in% names(args)){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }else{
@@ -278,7 +282,8 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       force_reproducibility <- FALSE
     }
   }
-  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, 
+                      ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars), 
               force_reproducibility = force_reproducibility, adjust_trace = adjust_trace)
   env$ds.ref$args <- return.args

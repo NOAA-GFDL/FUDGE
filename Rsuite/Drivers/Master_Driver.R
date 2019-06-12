@@ -100,8 +100,12 @@ missval.args <- getMissvalArgs(aux.ref$minsamplesize, ds.ref$missval_method)
 
 target.var = names(aux.ref$OH)
 predictor.vars = names(aux.ref$MH)
+# If we aren't running with MBC (or another yes-multi-targets-are-okay method)
+# we want to make sure the prime var is first
+if (!ds.ref$multivar_target){
 message("Checking input predictor var order")
 predictor.vars <- fix.var.order(predictor.vars, target.var)
+}
 
 
 #2018-04-10: Changing more information to come in via aux
@@ -267,7 +271,7 @@ if (!ds.ref$multivar_target){
   targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
   targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
   targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
-  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var, list(x=targ.x.subset,y=targ.y.subset),
+  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var[1], list(x=targ.x.subset,y=targ.y.subset),
                               dim=ds.ref$oh_dimlist,
                               x_by=aux.ref$OH[[1]]$idim, y_by=aux.ref$OH$jdim,
                               "none")
