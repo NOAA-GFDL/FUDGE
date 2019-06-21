@@ -451,10 +451,11 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc_filepath = file.path(loop_outdirs[2], qc_filename)
       
       message(paste('attempting to write to', qc_filename))
-      qc_comment <- meta_list$vars[[qc.var]][['comment']]
+      qc_comment <- list()
+      qc_comment[qc.var] <- meta_list$vars[[qc.var]][['comment']]
       qc_longname <- meta_list$vars[[qc.var]][['longname']]
       qc_globals <- meta_list$globals
-      qc_globals$comment <- meta_list$vars[[qc.var]][['global']][['comment']]
+      qc_globals$comment <- meta_list$vars[[qc.var]][['globals']][['comment']]
       qc_globals$climatology <- NA
       
       qc.list <- list()
@@ -466,7 +467,7 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc.out.filename  = WriteNC(qc_filepath, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,
                                  dim.list = dimlist, var.data=varlist,
                                  prec='float', missval=1e20, units="1",
-                                 comment=qc_comment,
+                                 comment=qc_comment, #comment needs to be a list
                                  longname=qc_longname,
                                  global_overwrite=qc_globals)
       
