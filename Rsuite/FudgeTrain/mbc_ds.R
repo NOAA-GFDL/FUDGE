@@ -154,6 +154,10 @@ callQDM <- function(OH, MH, MF, args){
   tmp <- do.call('QDM', q.args)$mhat.p
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
+  if ('trace.calc' %in% names(args)){
+    print('qdm_mult_noise invoked; replacing DS[MF == 0] <- 0')
+    out[unlist(as.vector(MF), use.names=F) == 0] <- 0
+  }
   return(out)
 }
 
@@ -352,7 +356,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
                       force_reproducibility = force_reproducibility)
   if ('qdm_mult_noise' %in% names(args)){
     if (args$qdm_mult_noise == 'off'){
-      return.args$trace.calc <- 0
+      return.args$trace.calc <- -99 # setting to 0 can still hit eps. compares
     }
   }
   #Deal with sample size
