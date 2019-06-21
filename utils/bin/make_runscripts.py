@@ -15,7 +15,8 @@ def make_runscript(scriptdir, experiment_name, idstring,
     '''
     header = "\n".join(["#!/bin/bash",
                         "set -x",
-                        "set -e",
+                        "# -e not recommended; breaks file status detection for preexist",
+                        "#set -e",
                         ". /usr/local/Modules/default/init/bash",
                         "if [ ! $?SLURM_JOB_ID ]; then",
                         "  scriptid=`date +%Y%m%d-%H%M`",
@@ -32,17 +33,17 @@ def make_runscript(scriptdir, experiment_name, idstring,
     outdir_regex = re.sub("<VAR>", "${var}", outdir_regex)
     outdir_regex = re.sub("<RIP>", "${rip}", outdir_regex)
     complete = "\n".join(["all_complete=0",
-                          "for rip in $(rips); do",
-                          "  for var in $(vars); do",
+                          "for rip in $rips; do",
+                          "  for var in $vars; do",
                           "    final_outdir=" + outdir_regex,
                           "    mkdir -p $final_outdir",
-                          "    search_files=`ls $final_outdir/ | grep $index_idstring`",
+                          "    search_files=$(ls $final_outdir/ | grep $index_idstring)",
                           "    file_exists=$#",
-                          "    if [ $file_exists != 0 ]; then",
+                          "    if [ $file_exists == 0 ]; then",
                           "      all_complete=1",
                           "    fi",
-                          "  end",
-                          "end",
+                          "   done",
+                          "done",
                           "if [ $all_complete == 0 ]; then",
                           "  echo 'All files that would have been written are written; not recalculating'",
                           "  exit 0",
@@ -54,9 +55,9 @@ def make_runscript(scriptdir, experiment_name, idstring,
                                            meta_file, 'TRUE'])
     r_command = "Rscript " + master_driver + " " + cmd_args + " &> $logfile &" + "\nwait\nsleep 10\n"
 
-    copies = "\n".join(["write_qcmask = " + ("0" if write_qcmask else "1"),
-                        "for rip in $(rips)",
-                        "  for var in $(vars)",
+    copies = "\n".join(["write_qcmask=" + ("0" if write_qcmask else "1"),
+                        "for rip in $rips; do",
+                        "  for var in $vars; do",
                         "    final_outdir=" + outdir_regex,
                         "    echo 'gcp $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/'",
                         "    python ${BASEDIR}/utils/bin/gcp.py $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/ --retry 2",
@@ -76,8 +77,8 @@ def make_runscript(scriptdir, experiment_name, idstring,
                         "        touch $statdir/.qcmask.${index_idstring}.fail",
                         "      fi",
                         "    fi",
-                        "  end",
-                        "end"])
+                        "  done",
+                        "done"])
     return "\n".join([header, var_set, rip_set, complete, r_command, copies]) + "\n"
 
     '''
