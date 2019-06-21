@@ -13,78 +13,80 @@ def make_runscript(scriptdir, experiment_name, idstring,
     2019-05-24: checks for preexisting files before recalculating
                 calls commandline gcp uitlity
     '''
-    header = "\n".join(["#!/bin/tcsh",
-                        "#set echo",
-                        "if ( ! $?SLURM_JOB_ID ) then",
-                        "  set scriptid = `date +%Y%m%d-%H%M`",
+    header = "\n".join(["#!/bin/bash",
+                        "set -x",
+                        "set -e",
+                        ". /usr/local/Modules/default/init/bash",
+                        "if [ ! $?SLURM_JOB_ID ]; then",
+                        "  scriptid=`date +%Y%m%d-%H%M`",
                         "else",
-                        "	set scriptid = $SLURM_JOB_ID",
-                        "endif",
-                        "set scriptdir = " + scriptdir,
-                        "set statdir = " + osp.join(scriptdir, 'status', 'minifile'),
-                        "set index_idstring = " + idstring,
-                        "set logfile = ${scriptdir}/log/out." + experiment_name + ".master.$scriptid.chunk.$index_idstring"])
+                        "	scriptid=$SLURM_JOB_ID",
+                        "fi",
+                        "scriptdir=" + scriptdir,
+                        "statdir=" + osp.join(scriptdir, 'status', 'minifile'),
+                        "index_idstring=" + idstring,
+                        "logfile=${scriptdir}/log/out." + experiment_name + ".master.$scriptid.chunk.$index_idstring"])
     header += "\n"
-    var_set = "set vars = (" + " ".join(ds_vars) + ")"
-    rip_set = "set rips = (" + " ".join(rips) + ")"
+    var_set = "vars=(" + " ".join(ds_vars) + ")"
+    rip_set = "rips=(" + " ".join(rips) + ")"
     outdir_regex = re.sub("<VAR>", "${var}", outdir_regex)
     outdir_regex = re.sub("<RIP>", "${rip}", outdir_regex)
-    complete = "\n".join(["set all_complete = 0",
-                          "foreach rip ( $rips )",
-                          "  foreach var ( $vars )",
-                          "    set final_outdir = " + outdir_regex,
+    complete = "\n".join(["all_complete=0",
+                          "for rip in $(rips); do",
+                          "  for var in $(vars); do",
+                          "    final_outdir=" + outdir_regex,
                           "    mkdir -p $final_outdir",
-                          "    set search_files = `ls $final_outdir/ | grep $index_idstring`",
-                          "    set file_exists = $status",
-                          "    if ( $file_exists != 0 ) then",
-                          "      set all_complete = 1",
-                          "    endif",
+                          "    search_files=`ls $final_outdir/ | grep $index_idstring`",
+                          "    file_exists=$#",
+                          "    if [ $file_exists != 0 ]; then",
+                          "      all_complete=1",
+                          "    fi",
                           "  end",
                           "end",
-                          "if ( $all_complete == 0 ) then",
+                          "if [ $all_complete == 0 ]; then",
                           "  echo 'All files that would have been written are written; not recalculating'",
                           "  exit 0",
-                          "endif"])
+                          "fi"])
     # Then call the main R code
     master_driver = "${BASEDIR}/Rsuite/Drivers/Master_Driver.R"
     cmd_args = " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx,
                                            j_max, j_by, j_offset, auxfile_mod,
                                            meta_file, 'TRUE'])
-    r_command = "Rscript " + master_driver + " " + cmd_args + " >>& $logfile &" + "\nwait\nsleep 10\n"
+    r_command = "Rscript " + master_driver + " " + cmd_args + " &> $logfile &" + "\nwait\nsleep 10\n"
 
-    copies = "\n".join(["set write_qcmask = " + ("0" if write_qcmask else "1"),
-                        "foreach rip ( $rips )",
-                        "  foreach var ( $vars )",
-                        "    set final_outdir = " + outdir_regex,
+    copies = "\n".join(["write_qcmask = " + ("0" if write_qcmask else "1"),
+                        "for rip in $(rips)",
+                        "  for var in $(vars)",
+                        "    final_outdir=" + outdir_regex,
                         "    echo 'gcp $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/'",
                         "    python ${BASEDIR}/utils/bin/gcp.py $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/ --retry 2",
-                        "    set ostat = $?",
-                        "    if ( $ostat == 0 ) then",
+                        "    ostat=$?",
+                        "    if [ $ostat == 0 ]; then",
                         "      touch $statdir/.mini.${index_idstring}.success",
                         "    else",
                         "      touch $statdir/.mini.${index_idstring}.fail",
-                        "    endif",
-                        "    if ( $write_qcmask == 0 ) then",
+                        "    fi",
+                        "    if [ $write_qcmask == 0 ]; then",
                         "      echo 'gcp $TMPDIR/$final_outdir/${var}_qcmask/*${index_idstring}.nc $final_outdir/${var}_qcmask/'",
                         "      python ${BASEDIR}/utils/bin/gcp.py $TMPDIR/$final_outdir/${var}_qcmask/*${index_idstring}.nc $final_outdir/${var}_qcmask/ --retry 2",
-                        "      set ostat = $?",
-                        "      if ( $ostat == 0 ) then",
+                        "      ostat=$?",
+                        "      if [ $ostat == 0 ]; then",
                         "        touch $statdir/.qcmask.${index_idstring}.success",
                         "      else",
                         "        touch $statdir/.qcmask.${index_idstring}.fail",
-                        "      endif",
-                        "    endif",
+                        "      fi",
+                        "    fi",
                         "  end",
                         "end"])
     return "\n".join([header, var_set, rip_set, complete, r_command, copies]) + "\n"
 
     '''
-    set final_outdir = "/archive/cew/PROJECTS/DOWNSCALING/REGj/downscaled/GFDL-ESM2M/rcp85/day/atmos/GFDL-ESM2Mdetr1981-2099PwlSm21St1Ww31rcp85/${rip}/v20120228/REGjtndetrcap1-QDM-D1A48L01K00/${var}/US480p1/OneD/"
-    set search_files = `ls $final_outdir/ | grep $index_idstring`
-    set file_exists = $status
+    final_outdir = "/archive/cew/PROJECTS/DOWNSCALING/REGj/downscaled/GFDL-ESM2M/rcp85/day/atmos/GFDL-ESM2Mdetr1981-2099PwlSm21St1Ww31rcp85/${rip}/v20120228/REGjtndetrcap1-QDM-D1A48L01K00/${var}/US480p1/OneD/"
+    search_files = `ls $final_outdir/ | grep $index_idstring`
+    file_exists = $status
     if ( $file_exists != 0 ) then
-      set all_complete = 1
-    endif
+      all_complete = 1
+    fi
     '''
 
 if __name__ == '__main__':
