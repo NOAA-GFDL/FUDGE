@@ -32,8 +32,13 @@ mkidr -p `dirname $climanom_file`
 
 ncrename -h -v "$anom_var,$clim_var" -O $anom_file
 # note to self: need header pad
-ncbo --op='add' -v $clim_var $anom_file $clim_file -O $climanom_tmp
-ncrename -h -v "$clim_var,$var" -O $climanom_tmp
+# The ncks command both saves off the metadata vars (i_offset, lat_bnds)
+# and allows for a header pad. The -A in the second line avoids
+# overwriting the metadata we worked so hard to add.
+ncks -h --hdr_pad 6000 $anom_file -O $climanom_tmp
+ncbo --op='add' -v $clim_var $anom_file $clim_file -A $climanom_tmp
+ncrename -h -v "$clim_var,$var" $climanom_tmp
+
 
 #write climatology-specific metadata (and do a clone)?
 Rscript $BASEDIR/utils/pp/write_climatology_metadata.R "anom" $clim_file $anom_file $var $climanom_tmp
