@@ -590,7 +590,7 @@ parm.train <- function(hist_pred, hist_targ, args){
     breakpoints <- unique(breakpoints)
     values <- hist_pred[breakpoints]
   }else{
-    print("No breakpoints found")
+    #print("No breakpoints found")
     values <- NA
     breakpoints <- NA
   }
@@ -612,7 +612,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   boundary.knots <- get.knot.range(c(hist_pred, hist_targ))
   
   if(!is.na(breakpoints[1])  && length(unique(values)) > 1 ){
-    print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
+    #print(paste('Computing piecewise regression with knots', paste(values, collapse=",")))
     regr_piecewise <- lm(sta ~ bs(mod, knots=values,deg=1, Boundary.knots=boundary.knots #c(-999,999)
     ),data=ds)
     
