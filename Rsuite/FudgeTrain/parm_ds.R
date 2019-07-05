@@ -10,14 +10,25 @@
 #'it's prob. safe to assume that there's only going to be a single 
 #'rip in the hist_pred dataset for now. 
 #'
+#'
+#'@title callPARM
+#'
+#'  #'Control the looping by rip and missval removal from within this function. 
+#'Calls R's lm() function using targ as a function
+#'of linear variability of one or more variables in 
+#'pred, and then uses the data in new to predict
+#'the future results. 
+#'
+#' @param hist_pred MH data
+#' @param hist_targ OH data
+#' @param fut_pred  MF data
+#' @param args      list of arguments to the ds function
+#' @param missval.args arguments for missing values
+#' @param tmasks The tmasks used in the function; used for indexing
+#' @param train_qcmask boolean  
 
 callPARM <- function(hist_pred, hist_targ, fut_pred, args, 
                      missval.args, tmasks, train_qcmask=F){
-  #'Control the looping by rip and missval removal from within this function. 
-  #'Calls R's lm() function using targ as a function
-  #'of linear variability of one or more variables in 
-  #'pred, and then uses the data in new to predict
-  #'the future results. 
   #'Currently takes 2 arguments to downscaling function: 
   #' subsample_pct, specifying width of windows used for determining knots of
   #'   best fit in percentage points (defaults to 5)
@@ -46,7 +57,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
                  paste(reg_sample_method_choices, collapse=","),
                  "but was", args$regression_subsample_method))
     }
-    #print(reg_sample_method)
   }
   #Add check for the definition of the tails/whether to taper the tails at ends of dist
   if(!'tail_taper_pct'%in%names(args)){
@@ -125,7 +135,9 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     if(train_qcmask){
       qc <- array(1, dim(out.data))
     }
-    return(list(ds=fut_pred[[1]], qc=qc))
+    out.data=fut_pred[[1]]
+    qc = qc
+    #return(list(ds=fut_pred[[1]], qc=qc))
   }else{
     #Synchronize missing values across OH and MH datasets
     missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
@@ -141,18 +153,12 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
       stop(paste("Error in parm_ds: length of OH and MH datasets after removing", 
                  "missing values should be identical!"))
     } 
-    
-#     print(summary(as.vector(hist_pred[[1]])))
-#     print(summary(as.vector(hist_targ[[1]])))
-#     print(summary(as.vector(fut_pred[[1]])))
-    
     #Added 2017-06-27; all same case causes errors for one subsample method, but
     #returns MF data unchaged for the other
-    
     if (missval.out$ds.possible){
       #Now, call the training code
-      hist.pred.tmp <- as.vector(hist_pred[[1]]) #unlist(hist_pred) #[!is.na(unlist(hist_pred))]
-      hist.targ.tmp <- as.vector(hist_targ[[1]]) #unlist(hist_targ) #[!is.na(unlist(hist_targ))]
+      hist.pred.tmp <- as.vector(hist_pred[[1]])
+      hist.targ.tmp <- as.vector(hist_targ[[1]])
       if(jitter){
         hist.pred.tmp <- pr_jitter_fxn(hist.pred.tmp)
         hist.targ.tmp <- pr_jitter_fxn(hist.targ.tmp)
@@ -163,10 +169,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
       hist.pred.tmp <- sort(hist.pred.tmp, na.last=FALSE)
       oh.len <- length(hist.targ.tmp)
       oh.pres <- which(!is.na(hist.targ.tmp))[1]
-      
-      #print(summary(hist.pred.tmp[oh.pres:oh.len]))
-      #print(summary(hist.targ.tmp[oh.pres:oh.len]))
-      
+
       parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
                                     hist.targ.tmp[oh.pres:oh.len], 
                                     ds.args)
@@ -212,8 +215,8 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
         qc <- array(NA, dim(out.data))
       }
     }
-    return(list(ds=out.data, qc=qc))
   }
+  return(list(ds=out.data, qc=qc))
 }
 
 arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
@@ -735,6 +738,18 @@ parm.train <- function(hist_pred, hist_targ, args){
   
 }#end arrm.train
 
+#' parm.downscale
+#'
+#'Downscaling step for PARM, using 
+#'
+#' @param fut_pred 
+#' @param hist_targ - 
+#' @param regr_piecewise  - the piecewise regression used in the training step
+#' @param args 
+#'
+#' @return list with two els: fut_obs, the future observations and the fit for the dist
+#'
+#' @examples
 parm.downscale <- function(fut_pred, hist_targ, regr_piecewise, 
                            args){
   
