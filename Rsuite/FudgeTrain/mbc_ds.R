@@ -164,15 +164,15 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
                                   ratio.seq=args$ratio.seq, trace=args$trace, 
-                                  ties=args$ties), 
+                                  ties=args$ties, silent=TRUE), 
                 "spearman" = MBCr(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
                                   ratio.seq=args$ratio.seq, trace=args$trace, 
-                                  ties=args$ties), 
+                                  ties=args$ties, silent=TRUE), 
                 "all"      = MBCn(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
                                   ratio.seq=args$ratio.seq, trace=args$trace, 
-                                  ties=args$ties), 
+                                  ties=args$ties, silent=TRUE), 
                 stop(paste("Error in callMBC_any: type was not one of", 
                            "pearson (MBCp), spearman (MBCr), or all (MBCn)!")))
   #Need to remove vars that aren't target var at this step
