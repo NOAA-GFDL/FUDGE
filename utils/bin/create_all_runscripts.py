@@ -550,7 +550,7 @@ def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'],
     '''
     Makes an aux file entry of input data files for one of OH, MH or MF.
     '''
-    aux_entry = {}
+    aux_entry = OrderedDict()
     for var, f, prime, fixed in zip(varnames, files, is_prime, is_fixed):
         aux_entry[var] = {'file': f,
                           'is_fixed': "TRUE" if is_fixed else "FALSE",
