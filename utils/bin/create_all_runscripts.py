@@ -5,6 +5,7 @@ from os import path as osp
 import json
 from collections import OrderedDict
 from make_runscripts import make_runscript
+import math
 
 
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
@@ -233,7 +234,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # i_offset = int(i_start)  - 1
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
-    j_elements = range(int(j_start), int(j_end), j_by)
+    j_elements = range(int(j_start), int(j_end)+1, j_by)
     if len(j_elements) == 0:
         j_elements = range(int(j_start), int(j_end)+1, j_by)
     j_elements.append(int(j_end)+1)
@@ -249,6 +250,17 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
     njobs = auxdict['njobs']
     ncpus = auxdict['ncpus']
+
+    #print(str(i_elements))
+    #print(str(j_elements))
+
+    nrunscripts = (len(i_elements) - 1) * (len(j_elements) - 1)
+    print("expected number runscripts:")
+    print(str(nrunscripts))
+    nmaster = int(math.ceil(float(nrunscripts) / float(njobs)))
+    print("expected number of master scripts:")
+    print(str(nmaster))
+    #print(str((float(nrunscripts) / float(njobs))))
 
     slurm_header = "\n".join(['#!/bin/bash',
                               '#SBATCH -t '+auxdict['wallclocktime'],
@@ -284,6 +296,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # print(j_elements)
     n_tiles = 0
     j_rangeval = len(j_elements)-1 if len(j_elements) > 1 else 1
+    k = 0
     for j in range(0, j_rangeval):
         jval = j_elements[j]
         j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
@@ -294,17 +307,19 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
             #print("will we call the master?")
             #print(str(i % njobs))
-            if i % njobs == 0 :
-                # Create the master scriptname
-                end_idx = i+njobs #-1
-                if end_idx > len(i_elements) - 1:
-                    end_idx = len(i_elements) - 1
-                    iend = str(i_elements[-1])
-                else:
-                    iend = str(i_elements[end_idx]-1)
-                i_master_string = "I" + str(i_elements[i]) + "-" + iend
-                idx_string = i_master_string + '_' + j_string
-                master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
+            if k % njobs == 0 :
+                print("initialize write strings")
+                print("i " + str(i) + " j " + str(j))
+                print("i " + str(i_elements[i]) + " j " + str(j_elements[j]))
+                ## Create the master scriptname
+                #end_idx = i+njobs #-1
+                #if end_idx > len(i_elements) - 1:
+                #    end_idx = len(i_elements) - 1
+                #    iend = str(i_elements[-1])
+                #else:
+                #    iend = str(i_elements[end_idx]-1)
+                i_master_string = "I" + str(i_elements[i])
+                j_master_string = "J" + str(j_elements[j])
                 runscript_files = []
             # Since master is created on first (always), can proceed with rest of runscript calls
             runscript_name = osp.join(scriptdir, 'runscript', "script." + target_var + "." + auxdict['ds_method'] + "." + i_string + "_" + j_string)
@@ -337,8 +352,15 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                 f.write('\n')  # needed for slurm POSIX standard
             os.chmod(runscript_name, runmode)    # f now executable
             runscript_files.append(runscript_name)
-            if i % njobs == (njobs - 1) or i == (len(i_elements) - 2):
+            if k % njobs == (njobs - 1) or k == ( nrunscripts - 1):
+                print("writing master")
+                print("i " + str(i) + " j " + str(j))
+                print("i " + str(i_elements[i+1]-1) + " j " + str(j_elements[j+1]-1))
                 # Prepare to write all accululated data to file
+                i_master_string += "-" + str(i_elements[i+1]-1)
+                j_master_string += "-" + str(j_elements[j+1]-1)
+                idx_string = i_master_string + '_' + j_master_string
+                master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
                 trap_command  = make_trap_command(scriptdir, idx_string)
                 executable_code = make_executable_stuff(runscript_files, auxfile_mod, meta_tmp,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
@@ -360,6 +382,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write("echo 'Beginning calls to executable'\n")
                     f.write(executable_code)
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
+            k += 1
     print('master runscript and mini creation completed')
 
 def make_trap_command(scriptdir, idx_string):
