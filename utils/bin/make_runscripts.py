@@ -33,8 +33,8 @@ def make_runscript(scriptdir, experiment_name, idstring,
     outdir_regex = re.sub("<VAR>", "${var}", outdir_regex)
     outdir_regex = re.sub("<RIP>", "${rip}", outdir_regex)
     complete = "\n".join(["all_complete=0",
-                          "for rip in $rips; do",
-                          "  for var in $vars; do",
+                          "for rip in ${rips[@]}; do",
+                          "  for var in ${vars[@]}; do",
                           "    final_outdir=" + outdir_regex,
                           "    mkdir -p $final_outdir",
                           "    search_files=$(ls $final_outdir/ | grep $index_idstring)",
@@ -56,8 +56,8 @@ def make_runscript(scriptdir, experiment_name, idstring,
     r_command = "Rscript " + master_driver + " " + cmd_args + " &> $logfile &" + "\nwait\nsleep 10\n"
 
     copies = "\n".join(["write_qcmask=" + ("0" if write_qcmask else "1"),
-                        "for rip in $rips; do",
-                        "  for var in $vars; do",
+                        "for rip in ${rips[@]}; do",
+                        "  for var in ${vars[@]}; do",
                         "    final_outdir=" + outdir_regex,
                         "    echo 'gcp $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/'",
                         "    python ${BASEDIR}/utils/bin/gcp.py $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/ --retry 2",

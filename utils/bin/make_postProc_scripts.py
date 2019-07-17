@@ -53,8 +53,8 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                                                    "#SBATCH -c 6",
                                                    '#SBATCH -t '+str(runtime),
                                                    "#SBATCH -J fudge_pp_" + str(v) + "." + str(t) + str(m),
-                                                   "#SBATCH -o " + pp_log_dir + "/%j.%x",
-                                                   "#SBATCH -p batch"])
+                                                   "#SBATCH -o " + pp_log_dir + "/%x.%j",
+                                                   "#SBATCH -p batch"]) + "\n"
                 if t == 'qcmask':
                     pp_var = v + '_qcmask'
                     indir_loop2 = osp.join(indir_loop2, pp_var)
