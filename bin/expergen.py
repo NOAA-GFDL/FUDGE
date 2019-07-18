@@ -877,9 +877,9 @@ def generate_experiment(parse_xml, create_default_aux,
 ################ step 5 job submission (if applicable) ##############################################
     print "Starting step 5: job submission"
     if msubmail == 1 and NEMSemail1 != 'none':
-        msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
+        msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " "
     else:
-        msub_string = "sbatch "
+        msub_string = "sbatch -D $HOME "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
     msub_cmd = "module load slurm; "
     for el in master_scripts:

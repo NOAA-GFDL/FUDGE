@@ -271,7 +271,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
-    module_loads = "\n".join(["#set -x",
+    module_loads = "\n".join(["set -x",
                               "set -e",
                               ". /usr/local/Modules/default/init/bash",
                               'module load R',
@@ -279,6 +279,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               'module load netcdf',
                               'module load nco',
                               'module load git/2.4.6',
+                              'pwd',
                               'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`']) + "\n"
     #Commmands for making/manipulating file paths
     ds_var = auxdict['DS']['vars'][0]
@@ -475,7 +476,7 @@ def make_gcp_cmd(sourcefile, destfile, indent="", newline_end = True):
     command fails
     '''
     #gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
-    gcp_cmd = "python ${BASEDIR}/utils/bin/gcp.py --gcp-verbose --gcp-sync --retry 2 --final-copy " + sourcefile + " " + destfile
+    gcp_cmd = "python ${BASEDIR}/utils/bin/gcp.py --gcp-verbose --gcp-sync --retry 2 --final-copy --verbose " + sourcefile + " " + destfile
     gcp_echo = indent + "echo '" + gcp_cmd + "'"
     gcp_cmd = indent + gcp_cmd
     stat_cmd = ("\n" + indent).join(["if [ $? != 0 ]; then",
