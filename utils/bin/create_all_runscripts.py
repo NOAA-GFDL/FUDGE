@@ -300,10 +300,12 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     k = 0
     for j in range(0, j_rangeval):
         jval = j_elements[j]
+        jby = j_elements[j+1] - jval
         j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
         # j_max and j_by are passed in already; they are numeric
         for i in range(0, len(i_elements)-1):
             ival = i_elements[i]
+            iby = i_elements[i+1] - ival
             n_tiles = n_tiles + 1
             i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
             #print("will we call the master?")
@@ -345,8 +347,8 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             idstring = i_string + "_" + j_string
             runscript_code = make_runscript(scriptdir, experiment_name, idstring,
                                             auxdict['DS']['vars'], auxdict['DS']['rips'], regex_outdir,
-                                            i_idx, imax, i_by, i_offset,
-                                            j_idx, jmax, j_by, j_offset,
+                                            i_idx, imax, iby, i_offset,
+                                            j_idx, jmax, jby, j_offset,
                                             auxfile_mod, meta_tmp, auxdict['make_qcmask'])
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
