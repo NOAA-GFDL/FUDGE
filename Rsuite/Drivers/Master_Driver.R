@@ -16,13 +16,18 @@ if (TMPDIR == ""){
 }  
 
 ########### Library calls, source necessary functions ################
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''), 
+                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''), 
+                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''), 
+                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''), 
+                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
 source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
 source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
 
+#stop('examine this output')
 #-------Add traceback call for error handling -------
 stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
 ival <<- 0
@@ -370,15 +375,19 @@ set.ds.defaults(ds.ref$method, ds.ref$args, predictor.vars=predictor.vars,
 
 message("FUDGE training begins...")
 message(paste("Starting at:", Sys.time()))
-start.time <- proc.time()
+ds.start <- proc.time()
 
 ds <- loop.xy.data()
+
+
 #ds <- list(ds=array(NA, dim=mf.dim), qc=array(NA, dim=mf.dim))
 
 #print('summary of ds:')
 #print(summary(ds))
+ds.end <- proc.time()
+ds.elapsed <<- (ds.end - ds.start)[3]
 message("FUDGE downscaling ends")
-message(paste("FUDGE downscaling took", proc.time()[1]-start.time[1], "seconds to run"))
+message(paste("FUDGE downscaling took", ds.elapsed, "seconds to run"))
 
 #s5 call used to go in here
 
@@ -444,7 +453,7 @@ for (r in 1:length(aux.ref$DS$rips)){
                             global_clone_file = global_clone_file,
                             clone_globals=clone_globals, clone_all=F,
                             clone_include="frequency",clone_exclude="climatology",
-                            verbose=T
+                            verbose=F
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
   if (aux.ref$make_qcmask){

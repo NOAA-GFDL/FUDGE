@@ -5,24 +5,25 @@ LoadLib <- function(ds.method){
   
   libs <- .libPaths()
   sys_lib <- libs[length(libs)]
+  print(paste("Getting system packages from: ", sys_lib))
   usr_libs <- c('/home/d1a/R/x86_64-unknown-linux-gnu-library/3.4/', 
                 '/home/cew/R/x86_64-unknown-linux-gnu-library/3.4/')
   
-  libWrapper <- function(pkg, pkg_lib='none'){
+  libWrapper <- function(pkg, pkg_lib='none', verbose=F){
     #'Wrapper for loading library functions.
     #'In all cases, we want to try loading from the current system path first; 
     #'however, 
     if (pkg_lib == 'none'){
       #print(as.character(quote(pkg)))
       library(pkg, character.only = T, lib.loc=sys_lib, verbose=T)
-      print_pkg(pkg, sys_lib)
+      if (verbose) {print_pkg(pkg, sys_lib)}
       #you MIGHT want to add a command to load from the local libs otherwise, 
       #but I think that's going to be prone to posisble issues.
     }else{
       #Assume that if you are passing in a specific path to a package lib,
       #you know that you want to load from this lib (and this lib only)
       library(pkg, character.only = T, lib.loc = pkg_lib, verbose=T)
-      print_pkg(pkg, pkg_lib)
+      if (verbose) {print_pkg(pkg, pkg_lib)}
     }
   }
   

@@ -13,34 +13,43 @@ loop.xy.data <- function(){
   output.all <- rep(list(array(NA, dim=c(OH.all.dim, MF.all.dim))), 
                     length(c("ds", "qc")))
   names(output.all) <- c("ds", "qc")
+  # Decide where reporting takes place in looping by i, j, w
+  imod <- 10
+  jmod <- 10
+  wmod <- 10
+  # Keep track of points in ds by counting for now
+  ds_tally <- 0
+  t.start <- proc.time()
+  i.write <- F
+  j.write <- F
   for (ival in 1:x.len){ #1:x.len
     #message(paste("Starting i loop", ival, 'of', x.len))
     ival <<- ival
-    if (ival %% 5 == 1){
-      message(paste("ival:", ival, "/", x.len))
-      if (ival != 1){
-        i.elapsed <- (proc.time() - i.start)[3]
-        message(paste("Last 5 i loops took:", i.elapsed))
-      }
-      i.start <- proc.time()
-      i.write <- T
-    }else{
-      i.write <- F
-    }
+    # if (ival %% 5 == 1){
+    #   message(paste("ival:", ival, "/", x.len))
+    #   if (ival != 1){
+    #     i.elapsed <- (proc.time() - i.start)[3]
+    #     message(paste("Last 5 i loops took:", i.elapsed))
+    #   }
+    #   i.start <- proc.time()
+    #   i.write <- T
+    # }else{
+    #   i.write <- F
+    # }
     for(jval in 1:y.len){ # 31:31 26:26 18:18 1:y.len #57:57 for pr, 25:25 for pr diffs
       #message(paste("Starting j loop", jval, 'of', y.len))
       jval <<- jval
-      if ( (jval %% 5 == 1) & i.write){
-        message(paste("jval:", jval, "/", y.len))
-        if (jval != 1){
-          j.elapsed <- (proc.time() - j.start)[3]
-          message(paste("Last 5 j loops took:", j.elapsed))
-        }
-        j.start <- proc.time()
-        j.write <- T
-      }else{
-        j.write <- F
-      }
+      # if ( (jval %% 5 == 1) & i.write){
+      #   message(paste("jval:", jval, "/", y.len))
+      #   if (jval != 1){
+      #     j.elapsed <- (proc.time() - j.start)[3]
+      #     message(paste("Last 5 j loops took:", j.elapsed))
+      #   }
+      #   j.start <- proc.time()
+      #   j.write <- T
+      # }else{
+      #   j.write <- F
+      # }
       OH.slice <- get.xy.slice(OH$data, oh.coords, ival, jval)
       MH.slice <- get.xy.slice(MH$data, mh.coords, ival, jval)
       MF.slice <- get.xy.slice(MF$data, mf.coords, ival, jval)
@@ -173,9 +182,9 @@ loop.xy.data <- function(){
           #Loop by time window
           for(w in nmask_start:nmask_end){
             #  for(w in 3:3){
-            if ( (w %% 10 == 0 | w ==  nmask_start) & j.write) {
-              print(paste("twindow:", w, "/", nmasks))
-            }
+            # if ( (w %% 10 == 0 | w ==  nmask_start) & j.write) {
+            #   print(paste("twindow:", w, "/", nmasks))
+            # }
             w <<- w
             qc.out <- NULL
             if (tmasks$apply_tmask){
@@ -255,6 +264,21 @@ loop.xy.data <- function(){
                 }
                 output[[out]][,,,,,,w] <- combine.out[[out]]
               }
+              if (out == 'ds'){
+                loop_ds_tally <- sum(!is.na(combine.out[[out]]))
+                ds_tally = ds_tally + loop_ds_tally
+              }
+            }
+            if ( ((ival %% imod == 0) || (ival == 1) ) && 
+                 ((jval %%jmod == 0) || (jval ==1)) && 
+                 (w %% wmod == 0)){
+              idx_string <- paste0("At i=",ival, "/", x.len, " j=", jval, "/", y.len,
+                                   " w=", w, "/", (nmask_end-nmask_start+1))
+              ds_string = paste("Downscaled", ds_tally, "points total.")
+              print(paste0(Sys.time(), ":", idx_string, " ", ds_string))
+              t.elapsed <- proc.time()[[3]] - t.start[[3]]
+              print(paste(round(t.elapsed, 2), "seconds since the last report"))
+              t.start <- proc.time()
             }
           }#Loop by w complete
           ##bring together all time levels
@@ -298,6 +322,7 @@ loop.xy.data <- function(){
   }#loop by x
   # print(summary(as.vector(output.all$ds)))
   #stop('examine output from calls')
+  ds_tally <<- ds_tally
   return(output.all)
 }
 
