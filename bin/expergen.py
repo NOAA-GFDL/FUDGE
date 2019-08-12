@@ -516,6 +516,7 @@ def main():
     parser.add_option('--metadata-table', action='store', default="$BASEDIR/utils/aux/metadata_table.csv",
                        dest='metadata_table',
                        help="Path to a csv file containing instructions on how to derive metadata attributes from datasets. Defaults to the metadata table in the FUDGE repo; if working with new datasets, it may be useful to point to a user-supplied table rather than run with --not-strict-metadata.")
+    parser.add_option('--no-dmget', action='store_true', default=False, dest='no_dmget', help="If set on the commandline, expergen will NOT source a file of dmget commands ($scriptdir/dmget_input_files.csh) for the input commands before exiting. This is meant as a precaution before submitting jobs when the dm queue is long; dmgetting before jobs run on the queue can reduce wallclocktime. This always runs if not set; the overall cost is low.")
     (options, args) = parser.parse_args()
 
     if(options.mail=="none"):
@@ -638,14 +639,14 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         msubmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table)
+                        options.not_strict, meta_table, options.no_dmget)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
                         sbase, msubmail, statmail, run_watcher,
-                        not_strict_metadata, metadata_table):
+                        not_strict_metadata, metadata_table, no_dmget):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -876,6 +877,14 @@ def generate_experiment(parse_xml, create_default_aux,
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
 ################ step 5 job submission (if applicable) ##############################################
     print "Starting step 5: job submission"
+    if not no_dmget:
+        dmget_script = osp.join(sbase, 'dmget_input_files.csh')
+        print("sourcing dmget commands for the experiment: " + dmget_script)
+        p4 = subprocess.Popen('tcsh ' + dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        out4,err4 = p4.communicate()
+        if (p4.returncode != 0):
+            print("sourcing of dmget commands failed; please run with --no-dmget option")
+            sys.exit(1)
     if msubmail == 1 and NEMSemail1 != 'none':
         msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " "
     else:

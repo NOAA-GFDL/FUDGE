@@ -311,16 +311,9 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             #print("will we call the master?")
             #print(str(i % njobs))
             if k % njobs == 0 :
-                print("initialize write strings")
-                print("i " + str(i) + " j " + str(j))
-                print("i " + str(i_elements[i]) + " j " + str(j_elements[j]))
-                ## Create the master scriptname
-                #end_idx = i+njobs #-1
-                #if end_idx > len(i_elements) - 1:
-                #    end_idx = len(i_elements) - 1
-                #    iend = str(i_elements[-1])
-                #else:
-                #    iend = str(i_elements[end_idx]-1)
+                #print("initialize write strings")
+                #print("i " + str(i) + " j " + str(j))
+                #print("i " + str(i_elements[i]) + " j " + str(j_elements[j]))
                 i_master_string = "I" + str(i_elements[i])
                 j_master_string = "J" + str(j_elements[j])
                 runscript_files = []
@@ -356,9 +349,9 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             os.chmod(runscript_name, runmode)    # f now executable
             runscript_files.append(runscript_name)
             if k % njobs == (njobs - 1) or k == ( nrunscripts - 1):
-                print("writing master")
-                print("i " + str(i) + " j " + str(j))
-                print("i " + str(i_elements[i+1]-1) + " j " + str(j_elements[j+1]-1))
+                #print("writing master")
+                #print("i " + str(i) + " j " + str(j))
+                #print("i " + str(i_elements[i+1]-1) + " j " + str(j_elements[j+1]-1))
                 # Prepare to write all accululated data to file
                 i_master_string += "-" + str(i_elements[i+1]-1)
                 j_master_string += "-" + str(j_elements[j+1]-1)
@@ -386,6 +379,13 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write(executable_code)
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
             k += 1
+    #2019-08: Adding sourcable script for dmgetting files
+    dmget_script = osp.join(scriptdir, "dmget_input_files.csh")
+    dmget_bg_string  = re.sub("\n", "&\n", dmget_string)
+    with open(dmget_script, 'w') as f:
+        f.write("#!/bin/tcsh\n")
+        f.write("# Script of dmget commands for the files in the FUDGE experiment\n")
+        f.write(dmget_bg_string)
     print('master runscript and mini creation completed')
 
 def make_trap_command(scriptdir, idx_string):
