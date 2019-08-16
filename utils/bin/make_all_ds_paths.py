@@ -127,27 +127,15 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
             out_dict[var] = make_cv_output_files(ds_out['ds'][var]['ens'], all_rip, exp_name)
             dummy_file = ds_out['ds'][var]['r1i1p1']
             dummy_rip = 'r1i1p1'
-            complement_file = make_cv_ens_filename(exp_name, ds_out['cv']['r2e2'], dummy_rip, 'r2i1p2', dummy_file)
+            complement_file = make_cv_ens_filename(exp_name, ds_out['cv']['r2e2'], dummy_rip, 'r2i1p1', dummy_file)
             out_dict[var]['dsdeph']['input'] = [ds_out['ds'][var]['r1i1p1'], complement_file]
-            complement_file = make_cv_ens_filename(exp_name, ds_out['cv']['r2e2'], dummy_rip, 'r1i1p2', dummy_file)
+            complement_file = make_cv_ens_filename(exp_name, ds_out['cv']['r1e2'], dummy_rip, 'r1i1p1', dummy_file)
             out_dict[var]['dscvh']['input'] = [ds_out['ds'][var]['r2i1p1'], complement_file]
-            #if is_anom:
-            #    x  = ""
-            #if is_trend:
-            #    x = ""
-            if write_qc:
-                x = ""
-                #if is_anom:
-                #    x = ""
-                #elif is_trend:
-                #    x = ""
             ds_out['cv'][var] = out_dict[var]
     if out_file is not None:
         print("Writing downscaling experiment output paths to " + out_file)
         ds_all_vars = list(set(ds_out['ds'].keys() + ds_out['anom'].keys() + ds_out['trend'].keys()))
-        print(ds_all_vars)
-        print(ds_rips)
-        print_file_dict(ds_out, ds_all_vars, ds_rips, out_file + ".out")
+        print_file_dict(ds_out, ds_all_vars, ds_rips, out_file)
     else:
         return(ds_out)
 
