@@ -9,6 +9,7 @@ profileFUDGERun <- function(){
   message(paste0("profile_npts_MF:", sum(sapply(MF$data, 'length'))))  
   message(paste0("profile_npts_DS:", ds_tally))
   message(paste0("profile_n_twindows:", tmasks$nmasks))
+  message(paste0("profile_npts_taxis:", sum(apply(ds$ds, 6, function(x){any(!is.na(x))}))))
 
   runtime <- proc.time()[3] - fudge.start.time
   message(paste0("profile_timetorun:", round(runtime, digits=3)))

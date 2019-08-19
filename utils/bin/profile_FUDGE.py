@@ -17,14 +17,14 @@ def make_prof_file(scriptdir, logdir):
     prof_spreadsheet_file = osp.join(scriptdir, 'profile', 'prof_data_spreadsheet.csv')
     with open(prof_file, 'w') as f:
         f.write(",".join(['logid',
-                          'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows',
+                          'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows', 'npts_DS_taxis',
                           'runtime', 'time_in_calculation', 'time_not_calculation',
                           'maxmemuse', 'location',
                           'memavail', 'swapavail']))
     # spreadhseet-ready data gets an extra indicator for units
     with open(prof_spreadsheet_file, 'w') as f:
         f.write(",".join(['logid',
-                          'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows',
+                          'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows', 'npts_DS_taxis',
                           'Time in minifile (s)', 'Time spent in section 3/5 looping and downscaling (s)', 'Time spent in R code IO/argument checking (s)',
                           'High-water memory use (Mb)', 'PP node',
                           'Memory available on PP node (Mb)', 'Swap available on PP node (Mb)']))

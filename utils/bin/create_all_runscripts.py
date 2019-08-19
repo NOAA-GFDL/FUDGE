@@ -105,7 +105,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
         spatmask_file = [osp.join(spatmask_dir, el)
                          for el in os.listdir(spatmask_dir)
                          if re.search('masks', el) is not None][0]
-        dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
+        #dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
         spatmask_files = [spatmask_file]
         dmget_string = dmget_string + "dmget " + spatmask_file + " \n"
         spatmask_path = spatmask_file
@@ -117,7 +117,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     tmask_files = []
     if tmask_present:
         tmask_files = [OH_tmask, MH_tmask, MF_tmask]
-        dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
+        #dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
         if trim_time_mask_present:
             tmask_files.append(trim_tmask)
             # dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"
@@ -180,7 +180,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     auxdict['MF'] = mf_auxdict
     auxdict['DS'] = ds_auxdict
     #Adding dmget parameters for data files after timeout associated with gcp
-    dmget_string += "# Dmget data files\n"
+    #dmget_string += "# Dmget data files\n"
     dmget_string += oh_dmget
     dmget_string += mh_dmget
     dmget_string += mf_dmget
@@ -292,6 +292,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                                      scriptdir, not_strict_metadata, metadata_table)
     experiment_name = auxdict['ds_experiment_name']
 
+    #swap out the newlines and dmgets in the dmget command
+    dmget_bg_string  = re.sub("\ndmget", " ", dmget_string)
+    dmget_bg_string = re.sub("  ", " ", dmget_bg_string)
+
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
     # print(j_elements)
@@ -371,7 +375,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
                     f.write(trap_command)
-                    f.write(dmget_string)
+                    f.write(dmget_bg_string)
                     f.write(gcp_string)
                     f.write(outdir_cmd)
                     f.write(meta_command)
@@ -381,7 +385,6 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             k += 1
     #2019-08: Adding sourcable script for dmgetting files
     dmget_script = osp.join(scriptdir, "dmget_input_files.csh")
-    dmget_bg_string  = re.sub("\n", "&\n", dmget_string)
     with open(dmget_script, 'w') as f:
         f.write("#!/bin/tcsh\n")
         f.write("# Script of dmget commands for the files in the FUDGE experiment\n")
