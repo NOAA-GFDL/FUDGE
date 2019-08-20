@@ -511,6 +511,7 @@ def main():
     parser.add_option('--run-watcher', action='store_true', dest='run_watcher',
                        default=False,
                        help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+    parser.add_option('--run-call-next-step', action='store_true', dest='run_call_next_step', default=False, help='Whether to run callNextStep by submitting to analysis. Adding for testing.')
     parser.add_option('--not-strict-metadata', action='store_true', default=False,
                       dest='not_strict', help="Whether to continue with a FUDGE experiment if the metadata parser could not get the attributes needed to classify input from the netcdf files. Defaults to false, which exits with an error if classification fails. For csv files this option is effectively always set, since csv files don't have the metadata we use.")
     parser.add_option('--metadata-table', action='store', default="$BASEDIR/utils/aux/metadata_table.csv",
@@ -639,14 +640,16 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         msubmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table, options.no_dmget)
+                        options.not_strict, meta_table, options.no_dmget,
+                        options.run_call_next_step)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
                         sbase, msubmail, statmail, run_watcher,
-                        not_strict_metadata, metadata_table, no_dmget):
+                        not_strict_metadata, metadata_table, no_dmget,
+                        run_call_next_step):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -921,14 +924,60 @@ def generate_experiment(parse_xml, create_default_aux,
     print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
 
     #Script exit options - needs to exit with 0
+    print(run_watcher)
+    print(run_call_next_step)
+    print('calling running steps')
     if run_watcher:
         print("Invoking watcher script immediately")
         expinfo = sbase + "/experiment_info.txt"
         expdict = read_exp_info_file(expinfo)
         #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
         runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
+    elif run_call_next_step:
+        print("Submitting callNextStep for this job to analysis")
+        nextstep_file = make_call_next_step_cmd(sbase, NEMSemail1, sleep=60, nloops=200, verbose=True)
+        ns_cmd = "module load slurm; sbatch -D $HOME " + nextstep_file
+        print(ns_cmd)
+        p6 = subprocess.Popen('tcsh -c ' + ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        output6, errors6 = p6.communicate()
+        #######
+        if(p6.returncode != 0):
+            print "Step6:!!!! FAILED !!!!, please contact developer."
+            print output6, errors6
+            sys.exit(0)
+        print output6, errors6
     else:
         sys.exit(0)
+
+def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
+    '''
+    Makes the command for submitting callNextStep() to analysis.
+    Include in documentation: this means the cancel_all_jobs thing probably won't work anymore
+    ...unless you WANT this to be named the same as all the other scripts
+    that's a thing to ask MJN about
+    '''
+    fudgetag = os.environ.get('FUDGETAG')
+    ns_header = "\n".join(['#!/bin/tcsh',
+                            '#SBATCH -t 2:12:00',
+                            '#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
+                            '#SBATCH -J fudge_watcher',
+                            '#SBATCH -c 1',
+                            '#SBATCH -p batch']) + "\n"
+    checkout_cmd = "\n".join(["module load git/2.4.6",
+                             "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
+    nextstep_cmd = " ".join(["python $BASEDIR/bin/call_next_step.py",
+                             "-s " + sbase,
+                             "--mail " + mailid,
+                             "--sleep " + str(sleep),
+                             "--nloops " + str(nloops),
+                             "--verbose " + str(verbose)])
+    callnext_file = osp.join(sbase, 'call_next_step.csh')
+    with open(callnext_file, 'w') as f:
+        f.write(ns_header + "\n")
+        f.write(checkout_cmd + "\n")
+        f.write(nextstep_cmd + "\n")
+    return(callnext_file)
+
 
 
 ####################################################################################

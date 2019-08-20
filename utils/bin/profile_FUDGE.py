@@ -15,19 +15,21 @@ def make_prof_file(scriptdir, logdir):
         os.makedirs(osp.join(scriptdir, "profile"))
     prof_file = osp.join(scriptdir, 'profile', 'prof_data.csv')
     prof_spreadsheet_file = osp.join(scriptdir, 'profile', 'prof_data_spreadsheet.csv')
-    with open(prof_file, 'w') as f:
-        f.write(",".join(['logid',
-                          'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows', 'npts_DS_taxis',
-                          'runtime', 'time_in_calculation', 'time_not_calculation',
-                          'maxmemuse', 'location',
-                          'memavail', 'swapavail']))
+    if not osp.exists(prof_file):
+        with open(prof_file, 'w') as f:
+            f.write(",".join(['logid',
+                              'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows', 'npts_DS_taxis',
+                              'runtime', 'time_in_calculation', 'time_not_calculation',
+                              'maxmemuse', 'location',
+                              'memavail', 'swapavail']))
     # spreadhseet-ready data gets an extra indicator for units
-    with open(prof_spreadsheet_file, 'w') as f:
-        f.write(",".join(['logid',
-                          'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows', 'npts_DS_taxis',
-                          'Time in minifile (s)', 'Time spent in section 3/5 looping and downscaling (s)', 'Time spent in R code IO/argument checking (s)',
-                          'High-water memory use (Mb)', 'PP node',
-                          'Memory available on PP node (Mb)', 'Swap available on PP node (Mb)']))
+    if not osp.exists(prof_spreadsheet_file):
+        with open(prof_spreadsheet_file, 'w') as f:
+            f.write(",".join(['logid',
+                              'npts_OH', 'npts_MH', 'npts_MF', 'npts_DS', 'n_twindows', 'npts_DS_taxis',
+                              'Time in minifile (s)', 'Time spent in section 3/5 looping and downscaling (s)', 'Time spent in R code IO/argument checking (s)',
+                              'High-water memory use (Mb)', 'PP node',
+                              'Memory available on PP node (Mb)', 'Swap available on PP node (Mb)']))
     #Start parsing logfiles
     logfiles = os.listdir(logdir)
     logfiles = [el for el in logfiles if osp.isfile(osp.join(logdir, el)) and re.search("out.*", el) is not None]
