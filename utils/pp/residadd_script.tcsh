@@ -13,8 +13,10 @@ set resid_file = $4
 set trend_file = $5
 set trendresid_file = $6
 
-gcp -cd $resid_file $TMPDIR/$resid_file
+mkdir -p `dirname $TMPDIR/$resid_file`
+gcp $resid_file $TMPDIR/$resid_file
 set resid_file = $TMPDIR/$resid_file
+mkdir -p `dirname $TMPDIR/$trend_file`
 gcp -cd $trend_file $TMPDIR/$trend_file
 set trend_file = $TMPDIR/$trend_file
 

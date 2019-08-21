@@ -21,14 +21,17 @@ set clim_var = "${var}Clim"
 
 pushd $TMPDIR
 
-gcp -cd $anom_file $TMPDIR
+mkdir -p `dirname $TMPDIR/$anom_file`
+gcp $anom_file $TMPDIR
 set anom_file = $TMPDIR/$anom_file
-gcp -cd $clim_file $TMPDIR/$clim_file
+
+mkdir -p `dirname $TMPDIR/$clim_file`
+gcp $clim_file $TMPDIR/$clim_file
 set clim_file = $TMPDIR/$clim_file
 
 set climanom_tmp = $TMPDIR/$climanom_file
 mkdir -p `dirname $climanom_tmp`
-mkidr -p `dirname $climanom_file`
+mkdir -p `dirname $climanom_file`
 
 ncrename -h -v "$anom_var,$clim_var" -O $anom_file
 # note to self: need header pad

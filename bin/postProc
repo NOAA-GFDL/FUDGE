@@ -111,7 +111,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
                     # all you need is a copy
                     anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
                                                 var, send_to, script_dir,
-                                                "",True)
+                                                "",False)
                     output_files.append(anom_out)
     else:
         print('No suffix directory for ' + var + ' found. Moving on to next var.')

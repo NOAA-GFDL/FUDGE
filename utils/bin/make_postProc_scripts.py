@@ -52,7 +52,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                 pp_runcode_header = pp_runcode_header = "\n".join(["#!/bin/tcsh",
                                                    "#SBATCH -c 6",
                                                    '#SBATCH -t '+str(runtime),
-                                                   "#SBATCH -J fudge_pp_" + str(v) + "." + str(t) + str(m),
+                                                   "#SBATCH -J fudge_pp_" + str(v) + "." + str(t) + "." + str(m),
                                                    "#SBATCH -o " + pp_log_dir + "/%x.%j",
                                                    "#SBATCH -p batch"]) + "\n"
                 if t == 'qcmask':
