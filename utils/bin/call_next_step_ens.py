@@ -58,16 +58,19 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                 print("File " + raw_outpath + " exists; not remaking")
             outfiles[var] = outfile
             if make_qc:
+                print("making qcmask ensemble file")
                 var_qc = var + "_qcmask"
+                qc_outpath = osp.join(var_outdir, raw_outfile)
+                print(qc_outpath)
                 if not osp.isfile(raw_outpath):
                     try:
-                        outfile = makeExpEns(raw_outpath, rips, var_qc, rip_sub_string, var_sub_string,
+                        outfile = makeExpEns(qc_outpath, rips, var_qc, rip_sub_string, var_sub_string,
                                       exp_name, epoch, trange_string,
                                       verbose=False, write_qcmask=False)
                         outfiles[var_qc] = outfile
                     except:
                         status = 'fail'
-                        faillist.append(raw_outpath)
+                        faillist.append(qc_outpath)
                 else:
                     print("File " + raw_outpath + " exists; not remaking")
                 outfiles[var_qc] = outfile
@@ -75,30 +78,46 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                 #var_anom = var + "Anom"
                 var_anom = re.sub("Anom", "", var)
                 anom_outpath = re.sub(var_sub_string, var_anom, raw_outdir)
-                outfile = makeExpEns(anom_outpath, rips, var_anom, rip_sub_string, var_sub_string,
-                                  exp_name, epoch, trange_string,
-                                  verbose=False, write_qcmask=False)
-                outfiles[var_anom] = outfile
-                if make_qc:
-                    var_anom_qc = var_anom + "_qcmask"
-                    outfile = makeExpEns(anom_outpath, rips, var_anom_qc, rip_sub_string, var_sub_string,
+                try:
+                    outfile = makeExpEns(osp.join(anom_outpath, raw_outfile), rips, var_anom, rip_sub_string, var_sub_string,
                                       exp_name, epoch, trange_string,
                                       verbose=False, write_qcmask=False)
-                    outfiles[var_anom_qc] = outfile
+                    outfiles[var_anom] = outfile
+                except:
+                    status = 'fail'
+                    faillist.append(anom_outpath)
+                if make_qc:
+                    try:
+                        var_anom_qc = var_anom + "_qcmask"
+                        outfile = makeExpEns(anom_outpath, rips, var_anom_qc, rip_sub_string, var_sub_string,
+                                          exp_name, epoch, trange_string,
+                                          verbose=False, write_qcmask=False)
+                        outfiles[var_anom_qc] = outfile
+                    except:
+                        status = 'fail'
+                        faillist.append(anom_outpath)
             if is_trend:
                 #var_trend = var + "Trend"
                 var_trend = re.sub("Trend", "", var)
                 trend_outpath = re.sub(var_sub_string, var_trend, raw_outdir)
-                outfile = makeExpEns(trend_outpath, rips, var_trend, rip_sub_string, var_sub_string,
-                                     exp_name, epoch, trange_string,
-                                     verbose=False, write_qcmask=False)
-                outfiles[var_trend] = outfile
+                try:
+                    outfile = makeExpEns(trend_outpath, rips, var_trend, rip_sub_string, var_sub_string,
+                                         exp_name, epoch, trange_string,
+                                         verbose=False, write_qcmask=False)
+                    outfiles[var_trend] = outfile
+                except:
+                        status = 'fail'
+                        faillist.append(trend_outpath)
                 if make_qc:
                     var_trend_qc = var_trend + "_qcmask"
-                    outfile = makeExpEns(trend_outpath, rips, var_trend_qc, rip_sub_string, var_sub_string,
-                                      exp_name, epoch, trange_string,
-                                      verbose=False, write_qcmask=False)
-                    outfiles[var_trend_qc] = outfile
+                    try:
+                        outfile = makeExpEns(trend_outpath, rips, var_trend_qc, rip_sub_string, var_sub_string,
+                                          exp_name, epoch, trange_string,
+                                          verbose=False, write_qcmask=False)
+                        outfiles[var_trend_qc] = outfile
+                    except:
+                        status = 'fail'
+                        faillist.append(trend_outpath)
     for el in outfiles.keys():
         print(el)
         print(outfiles[el])
@@ -123,9 +142,8 @@ def makeExpEns(raw_outpath, rips, ds_var, rip_sub_string, var_sub_string,
     in_files = []
     for rip in rips:
         infile = re.sub(rip_sub_string, rip, var_outpath)
-        print(infile)
         if not osp.isfile(osp.abspath(infile)):
-            print("Error in runMakeExpEns! The following file did not exist:")
+            print("Error in makeExpEns! The following file did not exist:")
             print(infile)
             sys.exit(1)
         in_files.append(infile)
@@ -138,7 +156,7 @@ def makeExpEns(raw_outpath, rips, ds_var, rip_sub_string, var_sub_string,
     print("Ensemble output file location: " + outfile)
     if not osp.exists(outfile):
         if not osp.exists(osp.dirname(outfile)):
-            print("Making " + osp.dirname(outfile))
+            print("Making dir " + osp.dirname(outfile))
             os.makedirs(osp.dirname(outfile))
         tmp_outfile = osp.join(tdir_ens, osp.basename(outfile) + tstamp())
         orig_filestring = ",".join([osp.basename(el) for el in in_files])

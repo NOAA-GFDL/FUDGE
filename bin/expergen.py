@@ -29,6 +29,7 @@ from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
 from check_aux_consistency import check_aux_consistency
 from make_experiment_info import make_exp_info
+from make_all_ds_paths import make_all_ds_paths
 
 list_title = []
 dictDS_hi = {}
@@ -831,34 +832,11 @@ def generate_experiment(parse_xml, create_default_aux,
          mail_command = "-m " + NEMSemail1 + " "
          msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
 
-    #print(sbase+"/postProc/aux/")
-    '''
-    if (multi == "on"):
-     suffix = ['suff1','suff2','suff3']
-     listrips = []
-    else:
-     suffix = ['']
-     listrips = ['na']
-     '''
     if parse_xml:
          listrips = [copyprop]
          listrips = copyprop.split(",")
     else:
          listrips = auxdict['DS']['rips']
-
-    '''
-    if not os.path.exists(sbase+"/postProc/aux/"):
-        os.makedirs(sbase+"/postProc/aux/")
-    #CEW edit 5-2-16 for writing postproc status files
-    if not os.path.exists(sbase+"/postProc/ppStatus/"):
-        os.makedirs(sbase+"/postProc/ppStatus/")
-    #CEW edit 5-4-16 for writing cross-validation status files
-    if not os.path.exists(sbase+"/postProc/cvStatus/"):
-        os.makedirs(sbase+"/postProc/cvStatus/")
-    #CEW edit 6-30-16 for the statmail settings
-    if not os.path.exists(sbase+"/postProc/verb/"):
-        os.makedirs(sbase+"/postProc/verb/")
-    '''
 
     # 2019-06-05: rewrite of postproc in progress
     # making the postproc directories
@@ -879,7 +857,10 @@ def generate_experiment(parse_xml, create_default_aux,
     print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
 ################ step 5 job submission (if applicable) ##############################################
-    print "Starting step 5: job submission"
+    print("Starting step 5: job submission")
+    outfile_loc = osp.join(sbase, "outfile_paths.txt")
+    print("File with all downscaled output paths: " + outfile_loc)
+    make_all_ds_paths(auxinput, outfile_loc)
     if not no_dmget:
         dmget_script = osp.join(sbase, 'dmget_input_files.csh')
         print("sourcing dmget commands for the experiment: " + dmget_script)
@@ -936,15 +917,15 @@ def generate_experiment(parse_xml, create_default_aux,
     elif run_call_next_step:
         print("Submitting callNextStep for this job to analysis")
         nextstep_file = make_call_next_step_cmd(sbase, NEMSemail1, sleep=60, nloops=200, verbose=True)
-        ns_cmd = "module load slurm; sbatch -D $HOME " + nextstep_file
+        ns_cmd = "sbatch -D $HOME " + nextstep_file #2019-08-21: removed initiaul slurm load
         print(ns_cmd)
-        p6 = subprocess.Popen('tcsh -c ' + ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output6, errors6 = p6.communicate()
         #######
         if(p6.returncode != 0):
-            print "Step6:!!!! FAILED !!!!, please contact developer."
+            print "Submission of callNextStep failed; please resubmit or ."
             print output6, errors6
-            sys.exit(0)
+            sys.exit(1)
         print output6, errors6
     else:
         sys.exit(0)
@@ -959,10 +940,16 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
     fudgetag = os.environ.get('FUDGETAG')
     ns_header = "\n".join(['#!/bin/tcsh',
                             '#SBATCH -t 2:12:00',
-                            '#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
+                            # 2019-08-21: slurm only redirects stdout/stderr
+                            # after a line is complete;
+                            # redirect needs to take place within the script itself
+                            #'#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
                             '#SBATCH -J fudge_watcher',
                             '#SBATCH -c 1',
                             '#SBATCH -p batch']) + "\n"
+    verbose_str = ""
+    if verbose:
+        verbose_str = "--verbose"
     checkout_cmd = "\n".join(["module load git/2.4.6",
                              "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
     nextstep_cmd = " ".join(["python $BASEDIR/bin/call_next_step.py",
@@ -970,12 +957,14 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
                              "--mail " + mailid,
                              "--sleep " + str(sleep),
                              "--nloops " + str(nloops),
-                             "--verbose " + str(verbose)])
+                             verbose_str])
+    nextstep_log = osp.join(sbase, 'log/watcher.${SLURM_JOBID}')
     callnext_file = osp.join(sbase, 'call_next_step.csh')
     with open(callnext_file, 'w') as f:
         f.write(ns_header + "\n")
         f.write(checkout_cmd + "\n")
-        f.write(nextstep_cmd + "\n")
+        f.write(nextstep_cmd + " >>& " + nextstep_log + "\n")
+        f.write("echo 'script complete'")
     return(callnext_file)
 
 

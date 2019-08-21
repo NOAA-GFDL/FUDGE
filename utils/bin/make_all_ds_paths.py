@@ -156,10 +156,10 @@ def make_AnomTrend_filepaths(var, anom_var, dict, rips, write_qc=False):
                 anom_dir,anom_file = swap_anom_var(var+"_qcmask", anom_var+"_qcmask", dict['ds'][var+"_qcmask"][rip])
                 out[anom_var+"_qcmask"][rip] = osp.join(anom_dir, anom_file)
         else:
-            anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ens'][var])
+            anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ds'][var]['ens'])
             out['ens'] = osp.join(anom_dir, anom_file)
             if write_qc:
-                anom_dir,anom_var = swap_anom_var(var+"_qcmask", anom_var+"_qcmask", dict['ens'][var+"_qcmask"])
+                anom_dir,anom_var = swap_anom_var(var+"_qcmask", anom_var+"_qcmask", dict['ds'][var+"_qcmask"]['ens'])
                 out[anom_var+"_qcmask"]['ens'] = anom_file
     return(out)
 

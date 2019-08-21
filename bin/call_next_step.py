@@ -137,23 +137,27 @@ def main(scriptdir, sleep=60, nloops=100,
             elif status == 'fail':
                 logfile_loc = logdir + "/fudge_pp_*"
                 tmessage = "One or more of the postproc jobs failed; failed jobs include " + (",").join(faillist)
+                rmessage = '''
+                If you want to try re-running the failed postproc scripts to recover, try running the scripts in
+                ''' + osp.join(scriptdir, 'postProc/${rip}.${var}.${type}')
                 send_status_email("failure", 'postproc', exp_name,
-                               traceback= tmessage,
+                               traceback= tmessage + "\n" + rmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
+                sys.exit(1)
         elif stage == 'ensemble':
             if num_ens > 1:
-                # status = check_ens_status()
-                status = 'success'
+                #status = check_ens_status()
                 if status == 'success':
                     stage = 'crossval' ; status = 'submit'
                 elif status == 'fail':
-                    logfile_loc = ""
-                    tmessage = ""
-                    send_status_email('fail', 'ensemble', exp_name,
+                    logfile_loc = osp.join(logdir, "watcher.*")
+                    tmessage = "One or more of the ensemble concatenation jobs failed; failed jobs include " + (",").join(faillist)
+                    send_status_email('failure', 'ensemble', exp_name,
                                       traceback=tmessage,
                                       mailid=mailid, logfiles=logfile_loc,
                                       exp_info_file=exp_info, outfiles="")
+                    sys.exit(1)
             else:
                 stage = 'crossval'
                 skip_wait = True
@@ -173,6 +177,7 @@ def main(scriptdir, sleep=60, nloops=100,
                                       traceback=tmessage,
                                       mailid=mailid, logfiles=logfile_loc,
                                       exp_info_file=exp_info, outfiles="")
+                    sys.exit(1)
             else:
                 stage = 'end' ; status = 'wait'
                 skip_wait = True
@@ -206,7 +211,6 @@ def main(scriptdir, sleep=60, nloops=100,
 
         """
         print(ens_outfiles)
-        print(cv_outfiles)
         for el in ens_outfiles:
             print(el)
         if is_cv:
@@ -400,8 +404,6 @@ def check_pp_status(statdir, ppdir, verbose=False):
     '''
     Checks the status of a postproc job
     '''
-    print(ppdir)
-    print(os.listdir(ppdir))
     n_postproc = len([el for el in os.listdir(ppdir) if osp.isfile(osp.join(ppdir, el))]) - 1
     status = "wait"
     statfiles = os.listdir(statdir)
@@ -410,14 +412,13 @@ def check_pp_status(statdir, ppdir, verbose=False):
     faillist = []
     if verbose:
         print("There are " + str(n_status) + " pp statfiles; " + str(n_success) + " successful")
-    print(n_postproc)
     if n_status == n_postproc:
         if n_success == n_postproc:
             status = 'success'
         else:
             status = 'fail'
-            faillist = [re.sub(".fail", "", el) for el in statfiles]
-    return(status,faillist)
+            faillist = [re.sub(".failure", "", el) for el in [em for em in statfiles if re.search(em, 'failure') is not None]]
+    return(status, faillist)
 
 
 def get_crossval_properties(crossval_patt, cv_match, exp_name, scriptdir):
