@@ -102,6 +102,7 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
     x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
     x_perm_out = ",".join(dimlist)
     print("outer call to cat_min")
+    print(i_outfiles)
     xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
                   tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
@@ -178,6 +179,7 @@ def find_match_string(lett, patt_array, match_array):
     if len(set(unwind_list))==1:
         print("No unique matches on this dim; don't concatenate")
         unwind_matches = [el for f in unwind_list for el in f if el != ""] #no unique matches on this dim
+        unwind_matches = [unwind_matches[0]]
         print(unwind_matches)
     else:
         patt_matches = sorted(list(set([el for f in unwind_list for el in f if el != ""])))

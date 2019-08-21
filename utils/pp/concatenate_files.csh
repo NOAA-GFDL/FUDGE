@@ -36,8 +36,9 @@ set tmp_outfile = $tdir/$out_fname
 #is expected to go in the output, and place it there as your last step.
 
 set file_list = `echo $in_files:q | sed 's/,/ /g'`
+set dmget_files = `echo $in_files:q | sed "s|,| $in_dir/|g"`
 # dmget all files before gcp command
-dmget $file_list
+dmget $in_dir/$dmget_files
 
 set i = 1
 foreach el ($file_list)
