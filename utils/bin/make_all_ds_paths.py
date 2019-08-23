@@ -148,7 +148,6 @@ def make_AnomTrend_filepaths(var, anom_var, dict, rips, write_qc=False):
     #anom_var = var + vstring
     out[anom_var] = OrderedDict()
     for rip in rips:
-        #out[rip] = OrderedDict()
         if rip != 'ens':
             anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ds'][var][rip])
             out[anom_var][rip] = osp.join(anom_dir, anom_file)
@@ -157,50 +156,11 @@ def make_AnomTrend_filepaths(var, anom_var, dict, rips, write_qc=False):
                 out[anom_var+"_qcmask"][rip] = osp.join(anom_dir, anom_file)
         else:
             anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ds'][var]['ens'])
-            out['ens'] = osp.join(anom_dir, anom_file)
+            out[anom_var]['ens'] = osp.join(anom_dir, anom_file)
             if write_qc:
                 anom_dir,anom_var = swap_anom_var(var+"_qcmask", anom_var+"_qcmask", dict['ds'][var+"_qcmask"]['ens'])
                 out[anom_var+"_qcmask"]['ens'] = anom_file
     return(out)
-
-
-def write_dict_to_file(dict, out_file):
-    '''
-    Writes data to file as an ordered dict; skips empty entries and
-    entries that aren't paths to files
-    '''
-    # First clean dict
-    #ens
-    if not dict['ens']['is_ens']:
-        dict.pop('ens')
-    else:
-        dict['ens'].pop('is_ens')
-    #anom
-    for k in dict['anom'].keys():
-        if 'is_anom' in dict['anom'][k].keys():
-            if not dict['anom'][k]['is_anom']:
-                dict['anom'].pop(k)
-    if len(dict['anom'].keys()) == 0:
-        dict.pop('anom')
-    # trend
-    for k in dict['trend'].keys():
-        if 'is_trend' in dict['trend'][k].keys():
-            if not dict['trend'][k]['is_trend']:
-                dict['trend'].pop(k)
-    if len(dict['trend'].keys()) == 0:
-        dict.pop('trend')
-    # cv
-    if not dict['cv']['is_cv']:
-        dict.pop('cv')
-    else:
-        dict['cv'].pop('DSDEPh_exp')
-        dict['cv'].pop('DSCVh_exp')
-    # Then write
-
-    with open(out_file, 'w') as f:
-        #yaml.dump(dict, f, default_flow_style = False)
-        text = json.dumps(dict, indent=4)
-        f.write(text)
 
 def swap_anom_var(var, anom_var, filepath):
     '''
@@ -251,10 +211,11 @@ def print_file_dict(dict, var_list, ds_rips, outfile):
     '''
     dictstring_1 = file_dict_to_str(dict['ds'], var_list, ds_rips, "")
     dict.pop('ds')
-    dictstring_2 = file_dict_to_str(dict, var_list, ds_rips, "")
+    for el in ['anom', 'trend', 'cv']:
+        dictstring_1 += file_dict_to_str(dict[el], var_list, ds_rips, "")
     with open(outfile, 'w') as f:
         f.write(dictstring_1)
-        f.write(dictstring_2)
+        f#.write(dictstring_2)
 
 def file_dict_to_str(ds, var_list, ds_rips, prefix, return_string=""):
     '''
@@ -263,15 +224,16 @@ def file_dict_to_str(ds, var_list, ds_rips, prefix, return_string=""):
     #var_list = sorted(ds_vars + qc_vars)
     cv_rips = ['dscvh', 'dsdeph']
     rip_list = ds_rips + cv_rips
-    #if (prefix == 'trend'):
-    #    print(ds['tasmin'].keys())
-    #    print(ds['tasmin']['r1i1p1'])
+    #if (prefix == 'anom'):
+    #    print(ds['tasmax'].keys())
+    #    print(ds['tasmax']['r1i1p2'])
     if not isinstance(ds, (dict, OrderedDict)):
         return("")
     key_list = ds.keys()
     for k in key_list:
         if k in var_list:
             for rip in rip_list:
+                #if isinstance(ds[k], (dict, OrderedDict)):
                 if rip in ds[k].keys():
                     if prefix == "":
                         k_pref = ".".join([k, rip])

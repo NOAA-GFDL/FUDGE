@@ -17,6 +17,7 @@ from gcp import gcp
 from fudgeUtils import tstamp
 from make_all_ds_paths import make_all_ds_paths
 from call_next_step_ens import submit_ens_job
+import shutil
 
 
 def ParseNextStepArgs():
@@ -204,18 +205,22 @@ def main(scriptdir, sleep=60, nloops=100,
                           exp_info_file=exp_info, outfiles="")
     else:
         print("outfile exp_info + script exp_info:")
-        #print(outfile_exp_info + script_exp_info)
+        script_info = osp.join(scriptdir, 'experiment_info.txt')
+        exp_paths = get_exp_info_paths(outfile_dict) + [scriptdir]
+        exp_info_files = [osp.join(el, 'experiment_info.txt') for el in exp_paths]
+        for el in exp_info_files:
+            if not osp.isfile(el):
+                shutil.copy2(script_info, el)
         tmessage = "The experiment " + exp_name + "completed successfully!"
         note = "Profiling information for the experiment is located in: " + osp.join(scriptdir, "profile")
-        note = "\n" + """
-
-        """
-        print(ens_outfiles)
-        for el in ens_outfiles:
-            print(el)
-        if is_cv:
-            for el in cv_outfiles:
-                print(el)
+        with open(osp.join(scriptdir, 'outfile_paths.txt'), 'r') as f:
+            outpath_str = f.read()
+        note = "\n" + outpath_str
+        print(outfile_dict)
+        exp_append = "#" * 80 + outpath_str
+        for el in exp_info_files:
+            with open(el, 'a') as f:
+                f.write(exp_append + "\n")
         send_status_email("success", 'complete', exp_name,
                        traceback= tmessage,
                        mailid=mailid, logfiles = logdir,
@@ -223,6 +228,21 @@ def main(scriptdir, sleep=60, nloops=100,
         print("File cleanup operations in progress")
         make_prof_file(scriptdir, scriptdir + "/log/")
         compress_logs(scriptdir + "/log/")
+
+def get_exp_info_paths(file_dict, exp_info=[]):
+    '''
+    Recursively traverse a path of outfiles to return all paths
+    that point to a dictionary location
+    '''
+    for el in file_dict:
+        if not isinstance(el, (OrderedDict, dict)):
+            # Need a single path to a single file
+            if len(el) == 1 and osp.isfile(el):
+                fpath = re.split("/", el)[:-3][-1]
+                exp_info.append(fpath)
+        else:
+            exp_info = get_exp_info_paths(el, exp_info)
+    return(exp_info)
 
 def submit_crossval_job(outdict, ds_vars, verbose=False):
     '''
@@ -417,7 +437,7 @@ def check_pp_status(statdir, ppdir, verbose=False):
             status = 'success'
         else:
             status = 'fail'
-            faillist = [re.sub(".failure", "", el) for el in [em for em in statfiles if re.search(em, 'failure') is not None]]
+            faillist = [re.sub(".failure", "", el) for el in [em for em in statfiles if re.search('failure', em) is not None]]
     return(status, faillist)
 
 

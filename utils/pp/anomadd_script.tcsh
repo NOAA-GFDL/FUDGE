@@ -22,7 +22,7 @@ set clim_var = "${var}Clim"
 pushd $TMPDIR
 
 mkdir -p `dirname $TMPDIR/$anom_file`
-gcp $anom_file $TMPDIR
+gcp $anom_file $TMPDIR/$anom_file
 set anom_file = $TMPDIR/$anom_file
 
 mkdir -p `dirname $TMPDIR/$clim_file`

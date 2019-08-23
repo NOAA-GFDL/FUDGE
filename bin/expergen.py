@@ -860,7 +860,8 @@ def generate_experiment(parse_xml, create_default_aux,
     print("Starting step 5: job submission")
     outfile_loc = osp.join(sbase, "outfile_paths.txt")
     print("File with all downscaled output paths: " + outfile_loc)
-    make_all_ds_paths(auxinput, outfile_loc)
+    config_mod = [el for el in os.listdir(osp.join(sbase, 'config_mod')) if re.search('json', el) is not None][0]
+    make_all_ds_paths(osp.join(sbase, 'config_mod/' +config_mod), outfile_loc)
     if not no_dmget:
         dmget_script = osp.join(sbase, 'dmget_input_files.csh')
         print("sourcing dmget commands for the experiment: " + dmget_script)

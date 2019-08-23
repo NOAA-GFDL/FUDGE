@@ -39,6 +39,10 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
         is_anom_var = [re.search("Anom", el) is not None for el in vars]
         is_trend_var = [re.search("Trend", el) is not None for el in vars]
         raw_outfile = re.sub(".I<ISTART>-<IEND>_J<JSTART>-<JEND>", "", raw_outfile)
+        # 2019-08-22: awful hack to take into account that var subsitution
+        # isn't yet common across our workflow
+        if re.search(var_sub_string, raw_outfile) is None:
+            raw_outfile = re.sub(vars[0]+"_", var_sub_string + "_", raw_outfile)
         status = 'success'
 
         for var, is_anom, is_trend in zip(vars, is_anom_var, is_trend_var):
@@ -78,6 +82,10 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                 #var_anom = var + "Anom"
                 var_anom = re.sub("Anom", "", var)
                 anom_outpath = re.sub(var_sub_string, var_anom, raw_outdir)
+                # 2019-08-22: awful hack for dealing with the fact that var
+                # sub strings are not common in outpath file structure yet
+                if anom_outpath == raw_outdir:
+                    anom_outpath = re.sub(var, var_anom, anom_outpath)
                 try:
                     outfile = makeExpEns(osp.join(anom_outpath, raw_outfile), rips, var_anom, rip_sub_string, var_sub_string,
                                       exp_name, epoch, trange_string,
@@ -100,6 +108,9 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                 #var_trend = var + "Trend"
                 var_trend = re.sub("Trend", "", var)
                 trend_outpath = re.sub(var_sub_string, var_trend, raw_outdir)
+                # 2019-08-22: similar awful hack, but for trends
+                if trend_outpath == raw_outdir:
+                    trend_outpath = re.sub(var, var_trend, anom_outpath)
                 try:
                     outfile = makeExpEns(trend_outpath, rips, var_trend, rip_sub_string, var_sub_string,
                                          exp_name, epoch, trange_string,

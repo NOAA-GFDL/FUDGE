@@ -44,9 +44,9 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
     print(trendetr_fpath)
     gcp(fpath, trendetr_fpath)
     nco_command = "ncrename -v " +var+","+trendetr_var +" "+trendetr_fpath
-    try:
-        p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except:
+    p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out0, err0 = p.communicate()
+    if p.returncode != 0:
         print("Error in subprocess call of callCopyToTrendDetr! Please examine call in more detail.")
         print(nco_command)
         if(mailid is not None):
@@ -55,18 +55,18 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
                        mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
                        outfiles = final_out_dir)
         sys.exit(1)
-    error,output = p.communicate()
-    print(error)
-    print(output)
-    if(p.returncode != 0):
-        err_message = "error in call to ncrename"
-        print ("Error in renaming! There was an " + err_message)
-        print(nco_command)
-        if(mailid is not None):
-            send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
-                       traceback = "Error in call to ncrename - call for reference: " + nco_command,\
-                       mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
-                       outfiles = final_out_dir)
+    #error,output = p.communicate()
+    #print(error)
+    #print(output)
+    #if(p.returncode != 0):
+    #    err_message = "error in call to ncrename"
+    #    print ("Error in renaming! There was an " + err_message)
+    #    print(nco_command)
+    #    if(mailid is not None):
+    #        send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
+    #                   traceback = "Error in call to ncrename - call for reference: " + nco_command,\
+    #                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
+    #                   outfiles = final_out_dir)
     else:
         print "gcp and rename successful"
     return(trendetr_fpath)
@@ -144,7 +144,7 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
         s8_fudge = os.environ["FUDGE_S8_LOC"]
         os.environ["S8_PATH"] = s8_fudge
         #r_command = "Rscript " + s8_fudge + "/AddResid.R --trend " + str(trend_file_out) + " --resid " + str(detr_file_out) + ' --var ' + str(trend_detr_var) + " -o " + str(trend_detr_file_out) + " --clone_globals --prof 3"
-        residadd_command = "tcsh $BASEDIR/utils/pp/residadd_script.tcsh " + " ".join([trend_detr_var, var, trend_var, 
+        residadd_command = "tcsh $BASEDIR/utils/pp/residadd_script.tcsh " + " ".join([trend_detr_var, var, trend_var,
                                                                                       detr_file_out, trend_file_out, trend_detr_file_out])
         print("Calling anomaly addition")
         print(residadd_command)
