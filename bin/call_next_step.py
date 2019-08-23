@@ -90,6 +90,7 @@ def main(scriptdir, sleep=60, nloops=100,
             print("in stage " + stage + ", status " + status)
         skip_wait = False
         if stage == 'master':
+            print(master_retry)
             status,faillist,master_retry = check_master_status(osp.join(statdir, 'master'),
                                                   osp.join(scriptdir, 'master'),
                                                   master_retry, verbose)
@@ -350,18 +351,18 @@ def check_master_status(master_statdir, masterdir, retry, verbose):
                 retry += 1
             else:
                 print("Faiulre in master script and max number of retries met")
-                status = 'fail'
+                print([em for em in master_statfiles if re.search("fail", em) is not None])
                 faillist = [re.sub(".fail", "", el)
-                            for el in master_statfiles
-                            if re.search("fail", el) is not None]
-    return(status, retry, faillist)
+                            for el in [em for em in master_statfiles if re.search("fail", em) is not None]]
+    return(status, faillist, retry)
 
 
 def submit_retry_scripts(statdir, scriptdir):
-    failstat = [el for el in os.listdir(statdir) if re.search(el, 'fail') is not None]
-    pieces = [re.split(el, '.') for el in failstat]
+    failstat = [el for el in os.listdir(statdir) if re.search('fail', el) is not None]
+    print(failstat)
+    pieces = [re.split('\.', el)[0] for el in failstat]
     failscripts = ["master_script_" + el for el in pieces]
-    for scr,stat in zip(failstat, failscripts):
+    for stat,scr in zip(failstat, failscripts):
         os.remove(osp.join(statdir, stat))
         submit_cmd = "module load slurm; sbatch -D $HOME " + osp.abspath(osp.join(scriptdir, scr))
         p1 = subprocess.Popen(submit_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)

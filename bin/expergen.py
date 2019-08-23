@@ -944,7 +944,7 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
                             # 2019-08-21: slurm only redirects stdout/stderr
                             # after a line is complete;
                             # redirect needs to take place within the script itself
-                            #'#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
+                            '#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
                             '#SBATCH -J fudge_watcher',
                             '#SBATCH -c 1',
                             '#SBATCH -p batch']) + "\n"
@@ -953,7 +953,7 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
         verbose_str = "--verbose"
     checkout_cmd = "\n".join(["module load git/2.4.6",
                              "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
-    nextstep_cmd = " ".join(["python $BASEDIR/bin/call_next_step.py",
+    nextstep_cmd = " ".join(["python -u $BASEDIR/bin/call_next_step.py",
                              "-s " + sbase,
                              "--mail " + mailid,
                              "--sleep " + str(sleep),
@@ -964,7 +964,7 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
     with open(callnext_file, 'w') as f:
         f.write(ns_header + "\n")
         f.write(checkout_cmd + "\n")
-        f.write(nextstep_cmd + " >>& " + nextstep_log + "\n")
+        f.write(nextstep_cmd) #+ " >>& " + nextstep_log + "\n")
         f.write("echo 'script complete'")
     return(callnext_file)
 
