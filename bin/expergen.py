@@ -964,7 +964,7 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
     with open(callnext_file, 'w') as f:
         f.write(ns_header + "\n")
         f.write(checkout_cmd + "\n")
-        f.write(nextstep_cmd) #+ " >>& " + nextstep_log + "\n")
+        f.write(nextstep_cmd + "\n") #+ " >>& " + nextstep_log + "\n")
         f.write("echo 'script complete'")
     return(callnext_file)
 
