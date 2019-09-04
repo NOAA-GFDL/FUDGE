@@ -39,8 +39,8 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
 
     print("getting list of files")
     file_subset = [f for f in os.listdir(input_dir) if re.search(patt, f) is not None]
-    #print("file_subset:")
-    #print(file_subset)
+    print("file_subset:")
+    print(file_subset)
     #Start dividing the file subset into subsets based on the separators.
     #Each one is going to be in the general form of $capital_letter$start_index-$end_index
     #find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
@@ -98,11 +98,11 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
         #End i loop
     #Final concatenation operation
     print("final concatenation operation in i")
+    print("outer call to cat_min")
+    print(i_outfiles)
     x_idx = dimmap.index('x')
     x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
     x_perm_out = ",".join(dimlist)
-    print("outer call to cat_min")
-    print(i_outfiles)
     xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
                   tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
@@ -271,3 +271,9 @@ def natural_sort(list, key=lambda s:s):
         return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
     sort_key = get_alphanum_key_func(key)
     list.sort(key=sort_key)
+
+if __name__ == '__main__':
+    # Can call from the commandline with 3 args:
+    # dir, pattern, outdir
+    print(sys.argv)
+    concatenate_files(sys.argv[1],sys.argv[2],sys.argv[3])
