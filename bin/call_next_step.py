@@ -488,8 +488,8 @@ def check_crossval_status(crossval_patt, cv_match, exp_name, scriptdir, exp_name
 
 def compress_logs(logdir):
     '''
-    Compresses all files in logdir matching the pattern (out.* )
-    which matches the R code logfiles, and deletes the uncompressed files
+    For each pattern in pattdict, compresses all files matching the pattern
+    into a separate archive and deletes the uncompressed files
     afterwards.
     '''
     print("Archiving R code logfiles...")

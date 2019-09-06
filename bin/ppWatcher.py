@@ -174,19 +174,25 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
 
 def compress_logs(logdir):
     '''
-    Compresses all files in logdir matching the pattern (out.* )
-    which matches the R code logfiles, and deletes the uncompressed files
+    For each pattern in pattdict, compresses all files matching the pattern
+    into a separate archive and deletes the uncompressed files
     afterwards.
     '''
     print("Archiving R code logfiles...")
-    compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)] # if re.search("out.*", el) is not None
-    logfile = osp.join(logdir, "compressed_FUDGE_logfiles.tar.gz")
-    tar_log = tarfile.open(logfile, "w:gz")
-    for name in compress_files:
-        tar_log.add(name)
-    tar_log.close()
-    for name in compress_files:
-        os.remove(name)
+    olddir = os.getcwd()
+    os.chdir(logdir)
+    #compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)]
+    pattdict = {'chunk': '^out\.', 'master': '^master\.'}
+    for step,patt in pattdict.items():
+        lname = osp.join(logdir, step + "_compressed_logfiles.tar.gz")
+        lfiles = [el for el in os.listdir(logdir) if re.search(patt,el) is not None]
+        tar_log = tarfile.open(lname, "w:gz")
+        for name in lfiles:
+            tar_log.add(name)
+        tar_log.close()
+        for name in lfiles:
+            os.remove(name)
+    os.chdir(olddir)
 
 def write_xml_info(outdirs, xml_dir):
     #Writes the contents of the experiment xml
