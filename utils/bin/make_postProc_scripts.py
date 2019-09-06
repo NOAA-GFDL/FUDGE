@@ -64,7 +64,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                 else:
                     pp_var = v
                 # postproc command
-                pp_cmd_text = " ".join(["python $BASEDIR/bin/postProc",
+                pp_cmd_text = " ".join(["python -u $BASEDIR/bin/postProc",
                                         "--aux " + auxfile,
                                         "-d " + indir_loop2,
                                         "-o " + outdir_loop2,

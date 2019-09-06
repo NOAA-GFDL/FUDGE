@@ -74,7 +74,7 @@ def main(scriptdir, sleep=60, nloops=100,
     if is_cv:
         exp_name2,scriptdir2 = get_crossval_properties(crossval_patt, cv_match, exp_name, scriptdir)
     stage = 'master'
-    master_retry = 0
+    master_retry = 1
     status = 'wait'
     is_done = False
     t = 0
@@ -125,17 +125,21 @@ def main(scriptdir, sleep=60, nloops=100,
                                               osp.join(scriptdir, 'postProc'),
                                               verbose)
             if status == 'success':
-                stage = 'ensemble'; status = 'wait'
-                #raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
-                raw_outdir = auxdict['DS']['out_dir']
-                raw_outfile = auxdict['DS']['out_file']
-                rips = auxdict['DS']['rips']
-                vars = auxdict['DS']['vars']
-                ens_outfiles = [outfile_dict['ds'][el]['ens'] for el in outfile_dict['ds'].keys()]
-                # submit_ens_job is supposed to do the trend and anomaly stuff;
-                epoch = "fake-epoch"
-                trange_string = "fake-trange"
-                status,faillist,ens_outfiles,exp_info_files = submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
+                if num_ens > 1:
+                    stage = 'ensemble'; status = 'wait'
+                    #raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
+                    raw_outdir = auxdict['DS']['out_dir']
+                    raw_outfile = auxdict['DS']['out_file']
+                    rips = auxdict['DS']['rips']
+                    vars = auxdict['DS']['vars']
+                    ens_outfiles = [outfile_dict['ds'][el]['ens'] for el in outfile_dict['ds'].keys()]
+                    # submit_ens_job is supposed to do the trend and anomaly stuff;
+                    epoch = "fake-epoch"
+                    trange_string = "fake-trange"
+                    status,faillist,ens_outfiles,exp_info_files = submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
+                else:
+                    stage = 'end'; status='success'
+                    skip_wait = True
             elif status == 'fail':
                 logfile_loc = logdir + "/fudge_pp_*"
                 tmessage = "One or more of the postproc jobs failed; failed jobs include " + (",").join(faillist)
@@ -333,6 +337,7 @@ def check_master_status(master_statdir, masterdir, retry, verbose):
     '''
     n_master = len(os.listdir(masterdir))
     max_retry = 2
+    resubmit = (retry < max_retry)
     status = 'wait'
     faillist = []
     master_statfiles = os.listdir(master_statdir)
@@ -340,20 +345,24 @@ def check_master_status(master_statdir, masterdir, retry, verbose):
     n_status = len(master_statfiles)
     n_success = len([el for el in master_statfiles if re.search('success', el) is not None])
     if verbose:
-        print("There are " + str(n_status) + " master statfiles; " + str(n_success) + " successful")
+        print("There are " + str(n_status) + "/" + str(n_master) + " master statfiles; " + str(n_success) + " successful")
     if n_status == n_master:
         if n_success == n_master:
             status = 'success'
+        elif resubmit:
+            submit_retry_scripts(master_statdir, masterdir)
+            print("retry: " + str(retry))
+            print("master retry: " + str(max_retry))
+            print(str(retry < max_retry))
+            #if retry < max_retry:
+            #    # Re-submit the master scripts in question - this might be a gcp failure
+            #    submit_retry_scripts(master_statdir, masterdir)
         else:
-            if retry < max_retry:
-                # Re-submit the master scripts in question - this might be a gcp failure
-                submit_retry_scripts(master_statdir, masterdir)
-                retry += 1
-            else:
-                print("Faiulre in master script and max number of retries met")
-                print([em for em in master_statfiles if re.search("fail", em) is not None])
-                faillist = [re.sub(".fail", "", el)
-                            for el in [em for em in master_statfiles if re.search("fail", em) is not None]]
+            print("Failure in master script and max number of retries met")
+            status = 'fail'
+            print([em for em in master_statfiles if re.search("fail", em) is not None])
+            faillist = [re.sub(".fail", "", el) for el in [em for em in master_statfiles if re.search("fail", em) is not None]]
+        retry += 1
     return(status, faillist, retry)
 
 
@@ -484,14 +493,20 @@ def compress_logs(logdir):
     afterwards.
     '''
     print("Archiving R code logfiles...")
-    compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)] # if re.search("out.*", el) is not None
-    logfile = osp.join(logdir, "compressed_FUDGE_logfiles.tar.gz")
-    tar_log = tarfile.open(logfile, "w:gz")
-    for name in compress_files:
-        tar_log.add(name)
-    tar_log.close()
-    for name in compress_files:
-        os.remove(name)
+    olddir = os.getcwd()
+    os.chdir(logdir)
+    #compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)]
+    pattdict = {'chunk': '^out\.', 'master': '^master\.'}
+    for step,patt in pattdict.items():
+        lname = osp.join(logdir, step + "_compressed_logfiles.tar.gz")
+        lfiles = [el for el in os.listdir(logdir) if re.search(patt,el) is not None]
+        tar_log = tarfile.open(lname, "w:gz")
+        for name in lfiles:
+            tar_log.add(name)
+        tar_log.close()
+        for name in lfiles:
+            os.remove(name)
+    os.chdir(olddir)
 
 
 def write_xml_info(outdirs, xml_dir):
