@@ -111,7 +111,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 # GENERAL TAIL SCHEME FUNCTION THAT CALLS EITHER SIMPLE (I.E. BCQM/PARM)
 # SCHEME OR CDFT SPECIFIC SCHEME AND PERFORMS THE ADJUSTMENTS
 
-tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks){
+tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks, 
+                          hi_adjust = T, lo_adjust = T){
   #Fast wrapper for the more complicated tail_cutoff function
   
   #Added 12-9-16
@@ -150,15 +151,30 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     tmp.mask=rep(0, length(ds.orig))
   } else {
     #Calculate high and low tails
+    default_tail = list(cond=rep(FALSE, length(model.fut)),
+                        offset=0)
+    hitail = default_tail; lotail = default_tail
     if (args$triggertype == 'limited'){
-      hitail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      lotail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      if (hi_adjust){
+        hitail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      }
+      if (lo_adjust){
+        lotail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      }
     }else if (args$triggertype == 'cdft_orig'){
-      hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      if (hi_adjust){
+        hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      }
+      if (lo_adjust){
+        lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      }
     } else {
-      hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      if (hi_adjust){
+        hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      }
+      if (lo_adjust){
+        lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      }
     }
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
@@ -170,7 +186,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     hitail.pts = hitail$cond >= 1
     lotail.pts = lotail$cond >= 1
     
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## PERFORM ADJUSTMENT BY ADDING OFFSET TO POINTS REQUIRING ADJUSTMENT
     if (args$adjmethod == 'add'){
       ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
@@ -181,11 +196,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     } else {
       stop("something has gone terribly WRONG with the supplied adjmethod!!")
     }
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED?
-    #tmp.mask <- (hitail$cond)*2 + lotail$cond
-    #CEW commented out - we now distinguish cases up to 6
-    #tmp.mask[tmp.mask > 4] = 4
+    # CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED
     tmp.mask <- hitail$cond + lotail$cond
   }
   return(list(ds = ds.orig, mask = (tmp.mask)))
