@@ -100,7 +100,7 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
     #Step 5: cross-validated output
     crossval_patt = ['00r1e2', '00r2e2']
     cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
-    is_cv = (len(cv_match) > 0)
+    is_cv = (len(cv_match) > 0) and (len(ds_rips) > 1)
     ds_out['cv']['is_cv'] = is_cv
     if not is_cv:
             ds_out['cv']['make_cv_ens'] = False
