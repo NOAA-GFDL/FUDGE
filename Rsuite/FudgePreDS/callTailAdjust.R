@@ -66,6 +66,22 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     oh_ss <- sum(!is.na(OH))
     mh_ss <- sum(!is.na(MH))
   }
+  #2019-09: allow for adjustment of upper-only or lower-only tail
+  if (!('which_tail' %in% arg.names)){
+    stop(paste("Error in callTailAdjust: which_tail argument is required for tail adjustment!"))
+  }
+  print(test$qc_args$which_tail)
+  hi = F; lo = F
+  if (test$qc_args$which_tail == 'right'){
+    hi = T
+  }else if (test$qc_args$which_tail == 'left'){
+    lo = T
+  }else{
+    # both
+    hi = T; lo = T
+  }
+  print(hi)
+  print(lo)
   for(n in 1:nrips){
     MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
     DS.slice <- adjusted.output$ds.out[,,,n,,]
@@ -92,7 +108,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
                                obs.hist = OH,
                                model.fut = MF.slice,
                                ds.fut = DS.slice,
-                               args = arg_list, tmasks=tmasks)
+                               args = arg_list, tmasks=tmasks, 
+                               hi_adjust = hi, lo_adjust = lo)
     if(test$make_qc_mask){
       ds.correct$mask[ds.correct$mask==0] <- NA
       adjusted.output$qc.mask[,,,n,,] <- ds.correct$mask
