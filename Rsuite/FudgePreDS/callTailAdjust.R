@@ -70,7 +70,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
   if (!('which_tail' %in% arg.names)){
     stop(paste("Error in callTailAdjust: which_tail argument is required for tail adjustment!"))
   }
-  print(test$qc_args$which_tail)
   hi = F; lo = F
   if (test$qc_args$which_tail == 'right'){
     hi = T
@@ -80,8 +79,6 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     # both
     hi = T; lo = T
   }
-  print(hi)
-  print(lo)
   for(n in 1:nrips){
     MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
     DS.slice <- adjusted.output$ds.out[,,,n,,]
@@ -168,8 +165,13 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     tmp.mask=rep(0, length(ds.orig))
   } else {
     #Calculate high and low tails
+    if (args$adjmethod == 'add'){
+      offval = 0
+    }else if (args$adjmethod == 'mult'){
+      offval = 1
+    }
     default_tail = list(cond=rep(FALSE, length(model.fut)),
-                        offset=0)
+                        offset=offval)
     hitail = default_tail; lotail = default_tail
     if (args$triggertype == 'limited'){
       if (hi_adjust){

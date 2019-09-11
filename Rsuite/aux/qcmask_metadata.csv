@@ -7,3 +7,4 @@
 "${var}_qcmask_simpletailadj","simpletailadj","NA = no adjust;1 = simpletailadj applied to lower tail;2 = simpletailadj applied to upper tail;3 = adjust applied to upper and lower tail;4 = MH and MF do not overlap and MF > max(MH); 5=MH and MF do not overlap and MF < min(MH);6=all MF < min(MH) or MF > max(MH)"
 "${var}_qcmask_flag_neg","flag.neg","1 = downscaled values greater than 0 before adjustment; NA = downscaled values negative before adjustment"
 "${var}_qcmask_cdfttailaj","cdft_limtailadj","NA = No adjust;1 = cdft_limtailadj applied to lower tail;2 = cdft_limtailadj applied to upper tail"
+"${var}_qcmask_limtailadj","limtailadj","NA = No adjust;1 = adjust applied to lower tail;2 = adjust applied to upper tail; 3 = adjust would have been applied to lower tail but 0/0 case kicked in; 4 = adjust would have been applied to upper tail but 0/0 adjust kicked in"
