@@ -29,24 +29,6 @@
 
 callPARM <- function(hist_pred, hist_targ, fut_pred, args, 
                      missval.args, tmasks, train_qcmask=F){
-  #'Currently takes 2 arguments to downscaling function: 
-  #' subsample_pct, specifying width of windows used for determining knots of
-  #'   best fit in percentage points (defaults to 5)
-  #' round, specifying if and how to round the output in accordance with prior
-  #'   arrm teachnique (defaults to FALSE)
-  
-  #print(sys.frame(1))
-  #basepath  = sys.frame(1)$ofile)
-  #print(helpers)
-  #if (!exists('calc_parm_rsquared', mode='function')){
-  #  helpers = file.path(FUDGEROOT, 'Rsuite/FudgeTrain/PARM/parm_helpers.Rc')
-  #  library(compiler)
-  #  loadcmp(helpers)
-  #}
-  
-  #any general pooling steps go in here - keep in mind, 
-  #the aarm training code assumes a single vector for the training
-  #and future data. 
   
   #add check for presence of round option
   if(!'round'%in%names(args)){
@@ -72,9 +54,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     ds.args$tail_taper_pct <- 0.1
   }else{
     ds.args$tail_taper_pct <- as.numeric(args$tail_taper_pct)/100
-    #print('dividng tail_taper_pct')
-    #prints are added to deal with something that may have been leading to 
-    #tail_taper_pct being divided by 100 repeatedly.
   }
   #Add check for presence of window option
   if(!'subsample_pct'%in%names(args)){
@@ -115,18 +94,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   #Pre-initialize output
   out.data <- array(NA, dim=dim(fut_pred[[1]]))
   nrips = dim(out.data)[4]
-  #Attempting switch to index masking data 
-  #on 12-15-16; this is the way we used to do it, 
-  #but I thought there was a clever way around it.
-  #   if (tmasks$time_mask_overlap){
-  #     index.mask <- tmasks$trim$masks[[w]]
-  #     olap=T
-  #   }else{
-  #     index.mask <- tmasks$MF$masks[[w]]
-  #     olap=F
-  #   }
-  #Revising above on 12-17-16. We need to undo the trimming/qm indexing
-  #at this step in order to use the full data in the s3/s5 adjustments.
   index.mask <- tmasks$MF$masks[[w]]
   olap <- F
   
@@ -141,7 +108,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     qc <- NULL
   }
   
-  #print(summary(as.vector(hist_pred[[1]])))
   if (all.identical(remove.missvals(hist_pred[[1]]))){
     print("MH data all identical; returning MF data for DS")
     if(train_qcmask){
@@ -149,7 +115,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
     }
     out.data=fut_pred[[1]]
     qc = qc
-    #return(list(ds=fut_pred[[1]], qc=qc))
   }else{
     #Synchronize missing values across OH and MH datasets
     missval.out <- remove.FUDGE.missvals(OH=hist_targ, MH=hist_pred, MF=fut_pred,
@@ -182,8 +147,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
       oh.len <- length(hist.targ.tmp)
       oh.pres <- which(!is.na(hist.targ.tmp))[1]
 
-      
-      #2019-07-10: testing stride option for parm
       ds.args$stride <- 1
       parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
                                     hist.targ.tmp[oh.pres:oh.len], 
@@ -211,12 +174,9 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
           rip.tmp <- as.vector(unlist(out.tmp$fut_obs))
           out <- rep(NA, length(MF.idx))
           out[MF.idx] <- rip.tmp[rip.rank][1:rip.len]
-          #print("summary of PARM output:")
-          #print(summary(as.vector(out)))
           if (jitter){
             out <- pr_unjitter_fxn(out)
           }
-          # previously ouyt
           out.data[,,,n,,] <- index.qm(index.mask, out, olap)
         } #Don't need to do anything otherwise - just return all missing
         #qcmask
@@ -364,11 +324,6 @@ parm.train <- function(hist_pred, hist_targ, args){
   
   #calculate r squared of linear regressions the length of 'window1'
   #CEW: reference line is 550
-  #
-  #n <- start
-  #window1 issues started around here
-  #jseq <- start:hist.pred.len
-  #rsq <- rep(NA, length(jseq))
   #r_sq1 <- rep(NA, hist.pred.len-start)
   stride = args$regression_subsample_stride
   r_sq1 <- calc_parm_rsquared(start, hist.pred.len, 
@@ -399,19 +354,15 @@ parm.train <- function(hist_pred, hist_targ, args){
   #message('Starting PARM step 3: find second set of breakpoints')
   nas.3 <- is.na(k[1])
   if(!is.na(k[1])){
-    #print('deriving k from the min of the previous breakpoints')
     start2 <- min(k,na.rm=T) #most common case
   }else{
     start2 <- start
   }
   if(start2 > hist.pred.len){
-    #print('setting second start based on hist.pred.len')
     start2 <- hist.pred.len
   }
   
   #calculate r squared of linear regressions the length of 'window2'
-  #r_sq2 <- rep(NA, start2)
-  #jseq <- start2:1
   r_sq2 <- calc_parm_rsquared(start2, 1, stride * (-1), 
                               hist_pred, hist_targ, window2, 
                               dir='backward')
@@ -468,11 +419,6 @@ parm.train <- function(hist_pred, hist_targ, args){
   rank <- rank(breakpoints0, na.last=T, ties='first')
   #get the actual values of temp/precip where the break is
   if(length(breakpoints) > 0){
-    #print('current breakpoints:')
-    #print(breakpoints)
-    #CEW edit 12-14-16:
-    #making sure breakpoitns are unique
-    #because that seems to have been leading to squirrely PARM results
     breakpoints <- unique(breakpoints)
     values <- hist_pred[breakpoints]
   }else{
@@ -503,8 +449,6 @@ parm.train <- function(hist_pred, hist_targ, args){
     ),data=ds)
     
     ### More diagnostic prints 2017-06-27
-#     print("first set of breakpoints:")
-#     print(format(values, digits=10), sep="  ")
     slopefun <- function(x.vals, y.vals){
       n.slope <- length(x.vals) - 1
       slope.vals <- rep(NA, n.slope)
@@ -541,15 +485,6 @@ parm.train <- function(hist_pred, hist_targ, args){
     slopes[j] <- (yvals[j+1]-yvals[j])/(xvals[j+1]-xvals[j]+0.0001)
   }
   
-  # find negative/flat slopes and the value of corresponding breakpoints 
-  # note: if negative slope is first segment, breakpoint to the right is removed
-  #       if negative slope is any other segment, breakpoint to the left is removed
-  # values2 is list of breakpoints corresponding to bad slopes
-  # slopes2 is list of bad slopes
-  # breakpoints2 is list of points (not temp values) where bad breakpoints are located
-  #CEW: replacing with list of indices corresponding to points to get booted, one for 
-  #each of the quantities listed above.
-  
   #CEW 12-14-16: replacing xvals (which had been values + range) with which(hist_pred %in% values)
   bad.indices <- arrm.find.bad.slopes(values, slopes, c(1,breakpoints,hist.pred.len), #xvals, 
                                       run=!is.na(breakpoints[1]))
@@ -561,9 +496,7 @@ parm.train <- function(hist_pred, hist_targ, args){
   breakpoints3 <- breakpoints
   
   for (k in 1:5){# do loop up to 5 times (assuming that one month cannot possibly have that many negative slope segments)
-    #if(sum(bad.slope.indices)>=1){
     if(sum(bad.indices$bad.slopes)>=1){
-      #print('there is at least one point where the bad slope indices are activated')
       if(length(values_new1)==1)  values_new1 <- NA
       else{
         #Store all points but the single bad value of interest
@@ -575,17 +508,14 @@ parm.train <- function(hist_pred, hist_targ, args){
       #Perform regressions again with the first slope taken out
       ds <- data.frame(mod=hist_pred, sta=hist_targ)
       if(!is.na(breakpoints[1])){
-        #print("Beginning piecewise linear regression")
         regr_piecewise2 <- lm(sta ~ bs(mod, knots=values_new1,deg=1,
                                        #Boundary_knots has been set for our PARM analysis, 
                                        #but it might be leading to weird settings for precip.
                                        #Like, 10000-inches-per-day weird.
                                        # Boundary.knots=c(-999,999)),
                                        Boundary.knots=boundary.knots),
-                              #),
                               data=ds)
       }else{
-        #print("No breakpoints found; activating simple lm prediction")
         regr_piecewise2 <- lm(sta ~ mod, data=ds)
       }
       # recalculate slopes
@@ -609,12 +539,6 @@ parm.train <- function(hist_pred, hist_targ, args){
       if(sum(bad.indices$bad.slopes) >= 1){
         slope_rank <- rank(slopes[bad.indices$bad.slopes], ties='first')
       }
-      #Added 12-22, to try and catch the breakpoint differences
-      ##removed 1-11, to try and figure out why points are failing to match
-      ##values2 <- values[bad.indices$bad.values]
-      ##breakpoints2 <- breakpoints[bad.indices$bad.breaks]
-      ##regr_piecewise <- regr_piecewise2 #regression model
-      ##values <- values_new1             #values of hist_pred at those points
     }#end check for any present bad values; commented out 1-11 to better match the  original arrm code
   }#end k loop
   return(list(ds.model=regr_piecewise, sta_mon_save=hist_targ))

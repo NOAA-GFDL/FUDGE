@@ -51,7 +51,6 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       if (args$trace > adj.thold){
         args$trace <- adj.thold
       }
-      #args$trace <- min(args$trace, adj.thold)
     }
     loop.ds <- ds.method
     if (missval.out$mv.retry){
@@ -181,9 +180,6 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
   out <- rep(NA, length(MF.idx))
-  # print(str(tmp))
-  # print(length(tmp$mhat.p[,1]))
-  # print(length(MF.order))
   out[MF.idx] <- tmp$mhat.p[,1]
   # tmp <<- tmp
   # OH.slice <<- OH.slice
@@ -254,13 +250,6 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     print(length(predictor.vars))
     ratio.seq = rep(F, length(predictor.vars))
   }
-  # if ('type' %in% names(args)){
-  #   if (args$type=='add'){
-  #     ratio.seq <- rep(F, length(predictor.vars))
-  #   }else if (args$type=='mult'){
-  #     ratio.seq <- rep(T, length(predictor.vars))
-  #   }
-  # }
   if ('adjust_trace' %in% names(args)){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }else{

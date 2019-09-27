@@ -73,11 +73,8 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
-      #print("settings dim vals to out.dim")
       if (!is.null(adjusted.output[[el]])){
-        #if (is.null(dim(adjusted.output[[el]]))){
           dim(out$adjusted.output[[el]]) <- out.dim
-        #}
       }
     }
   }
@@ -112,8 +109,6 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   #1's show good data
   #'Assumes one predictor variable and one target variable
   #'But multiple ensemble members are supported
-  
-  #print(str(input))
   if(verbose){print("entering simple bias correction function")}
   if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
     toplim <- test$qc_args$toplim
@@ -439,47 +434,14 @@ callMapMFOrder <- function(test, input, adjusted.output){
     MF.rip <- input$fut.pred[[1]][,,,n,,]
     MF.rank <- rank(MF.rip, na.last=F, ties='min')
     #Determine overlap in MF and DS wetday frequency, if applicable.
-    #print(which(is.na(sort(MF.rip, na.last = F))))
     which.dry <- tail(which(is.na(sort(MF.rip, na.last = F))), n=1)
 
     MF.dry.freq <- which.dry/length(MF.rank)
     OH.dry.freq <- sum((out.list$ds.out[,,,n,,]==0))/length(out.list$ds.out[,,,n,,])
     sort.ds.out <- sort(out.list$ds.out[,,,n,,])
-    #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
-    
-#     if (MF.dry.freq > OH.dry.freq){
-#       #If thre are more dry days in the future than the roughly time-synchronous
-#       #historical
-#       diff.freq <- MF.dry.freq - OH.dry.freq
-#       diff.num  <- floor(diff.freq * length(MF.rank))
-#       ds.max <- sort.ds.out[floor(OH.dry.freq * length(MF.rank)) + 1]
-#       print("before alter.vals")
-#       print(diff.num)
-#       print(which.dry)
-#       alter.vals <- alter.ds.diff(diff.num, which.dry, 
-#                                   sort.ds.out[1], ds.max)
-#       sort.ds.out[alter.vals$idx] <- alter.vals$vals
-#     }
-#     tlev <- 1:length(MF.rank)
-
-
-    #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
     x <- out.list$ds.out[,,,n,,]
     y <- MF.rip
-# print(summary(x))
-# print(length(x))
-# print(summary(y))
-# print(length(y))
     out.list$ds.out[,,,n,,] <- sort(x)[rank(y)]
-#print(summary(out.list$ds.out[,,,n,,]))
-#stop('examine this output')
-
-#         plot(tlev, input$fut.pred[[1]][,,,n,,], #ylim=c(0,0.0008), 
-#              lty=2,
-#              main=paste("rank for ens", n))
-#         plot(tlev, out.list$ds.out[,,,n,,], col='red')
-#         ds.sort <- sort.ds.out
-#         lines(tlev, ds.sort[MF.rank], col='blue')
   }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
@@ -487,7 +449,6 @@ callMapMFOrder <- function(test, input, adjusted.output){
 alter.ds.diff <- function(diff.num, diff.max, min.val, max.val){
   set.seed(ival * 100 + jval * 10 + w)
   ds.idx <- sample(x=diff.max:diff.max+diff.num, size=diff.num, replace=F)
-  #ds.vals <- runif(diff.num, min.val, max.val)
   ds.vals <- rep(0, diff.num)
   return(list(idx=ds.idx, vals=ds.vals))
 }

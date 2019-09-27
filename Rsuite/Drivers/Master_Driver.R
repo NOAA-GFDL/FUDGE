@@ -312,9 +312,6 @@ if (pr_is_adjusted){
   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
 }
 
-#print(str(adjust.metadata))
-#stop('examine this output')
-
 ####Now that you have your input data, initialize your outputs.
 ###This will include your downscaled output and your qc masks.
 ###Until the input structure is fixed, that means you can get
@@ -334,7 +331,6 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   
   #Okay - from now on, we also need to set a default prime_predictor;
   #the lm() and MBC(0 family of methods may reset this value)
-  #print(str(as.list(match.call())))
   #commenting out 2018-04-19 - not all methods need this
   #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   env$prime_predictor <- paste0(MH.vars[1], ".0.0")
@@ -362,15 +358,6 @@ set.ds.defaults(ds.ref$method, ds.ref$args, predictor.vars=predictor.vars,
                           pre.ds.train=pre.ds.train,
                           ds.ref=ds.ref, aux.ref=aux.ref,
                 env=environment())
-
-
-# print(prime_predictor)
-# stop('examine this output')
-
-# print(s5.outloop)
-# print(post.ds)
-# stop('examine this out')
-
 ##s3 call formerly here
 
 message("FUDGE training begins...")
@@ -379,11 +366,6 @@ ds.start <- proc.time()
 
 ds <- loop.xy.data()
 
-
-#ds <- list(ds=array(NA, dim=mf.dim), qc=array(NA, dim=mf.dim))
-
-#print('summary of ds:')
-#print(summary(ds))
 ds.end <- proc.time()
 ds.elapsed <<- (ds.end - ds.start)[3]
 message("FUDGE downscaling ends")
@@ -414,12 +396,6 @@ for (r in 1:length(aux.ref$DS$rips)){
   loop_filepath = file.path(loop_outdirs[1], loop_filename)
   #Metadata-related things
   message('writing global attributes')
-#   if (aux.ref$file_format == 'netcdf'){
-#     global_att_list <- make.fudge.globals()
-#   }else{
-#     global_att_list <- list('fakemeta' = "metadata att that doesn't need to exist")
-#   }
-  
   if (ds.ref$target != "MF"){
     if (ds.ref$method == "KDDM") {
       dimlist <- MF$metadata[[1]]$dim

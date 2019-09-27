@@ -9,8 +9,6 @@ assess.missvals <- function(OH, MH, MF,
                             ds.method="", ds.args="", 
                             threshold=1, retry=FALSE, 
                             att.table="", qcmask=FALSE){
-#   rip.list <- lapply(att.table$fut.pred, '[[', 'rip')
-#   rips <- unique(rip.list)
   ds.list <- switch(type, 
                     'distributional' = remove.all.missvals(OH, MH, MF), 
                     'synchronous' = remove.synch.missvals(OH, MH, MF, att.table), 
@@ -27,9 +25,6 @@ assess.missvals <- function(OH, MH, MF,
     MF.kount <- unlist(lapply(ds.list$MF, length))
     train.index <- colSums(sapply(c('MH', 'OH', 'MF'), 'grepl', train.names)) > 0
     if(threshold >= 1){ #sample size threshold
-      #ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
-      #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold))
-      #print(!(c(MH.kount, OH.kount, MF.kount)>=threshold)[c('MH', 'OH', 'MF')%in%train.names])
       ds.list$status <- sum(!(c(MH.kount, OH.kount, MF.kount)>=threshold)[train.index])
     }else{ #percentage threshold
       MH.korig <- unlist(lapply(MH, length))
@@ -42,7 +37,6 @@ assess.missvals <- function(OH, MH, MF,
   }
   #Statuses over 100 are from the missing value removal functions and just need
   #a qcmask, if that applies; statuses less than that need a retry
-  #for(rip in rips){
     if(ds.list$status < 100 && ds.list$status > 0){
       message('Recovery option enabled; adding precip zeroes back into the training data.')
       ds.tmp <- switch(ds.method, 
@@ -52,7 +46,6 @@ assess.missvals <- function(OH, MH, MF,
       }
       ds.list$status <- 10 #used recover.ignore0 to fix the input data
     }
-  #}
   if(qcmask){
     #...you know, I am sort of glad that I don't have to worry about the multi-rip implications
     #of this bit just yet.
@@ -62,9 +55,6 @@ assess.missvals <- function(OH, MH, MF,
     ds.list$qcmask <- NA
   }
   #previously sd on all, but that's not a reliable predictor
-#   print(summary(ds.list$OH))
-#   print(lapply(ds.list$MH, 'summary'))
-#   print(lapply(ds.list$MF, 'summary'))
   return(ds.list)
 }
 
@@ -135,13 +125,7 @@ remove.delta.missvals <- function(OH, MH, MF, args, threshold,
       status=110
     }
   }
-#   print('delta summaries:')
-#   print(lapply(MH.new, 'summary'))
-#   print(summary(OH.new))
-#   print(lapply(MF.new, 'summary'))
    print(paste('final delta status:', status))
-  #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
-  #return(list(MH=MH.new, OH=OH.new, MF=MF.new, status=status))
   return(list(MH=MH, OH=OH, MF=MF, status=status))
 }
 
@@ -168,13 +152,6 @@ remove.cdft.missvals<- function(OH, MH, MF, ds.args, thold=1){
   return(out.list)
 }
 
-remove.mask.missvals <- function(data, mask){
-  #under this scheme, you keep track of the places 
-  #where the mask was added, and 
-}
-
-# remove.delta.missvals <- function(OH, MH, MF, 
-#                                   threshold, )
 
 restore.missvals <- function(MF, time.mask, 
                              ds, ds.mask=NA, type='remove.all'){
@@ -211,9 +188,6 @@ recover.ignore0 <- function(OH,MH,MF){
       out.list[[el]] <- replace.missval(OH, 0)
     }
   }
-#   return(list(MH=lapply(MH, 'replace.missval', 0),  
-#               OH=replace.missval(OH, 0), 
-#               MF=lapply(MF, 'replace.missval', 0)))
   return(out.list)
 }
 

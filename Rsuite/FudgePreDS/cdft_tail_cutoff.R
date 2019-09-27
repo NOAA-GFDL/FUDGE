@@ -23,17 +23,14 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
     ds.order = order(DS)
     DS = sort(DS)
     MF = MF[ds.order]
-    #print(which(do.call(select.cond, list(DS, cutoff))))
     ds.indices <- which(do.call(select.cond, list(DS, cutoff)))
     if (args$tail=='upper'){
       ds.idx <- ds.indices[1] - 1
     }else if (args$tail=='lower'){
       ds.idx <- ds.indices[length(ds.indices)] + 1
     }
-    #     print(ds.idx)
     #get delta
     delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
-    #     print(delta.idx)
     
     if (args$adjmethod == 'add'){
       offset = mean(DS[delta.idx] - MF[delta.idx]) #previously MF - DS
@@ -64,8 +61,6 @@ cdft_tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       inside.start <- ds.idx + delta.by*delta_sample
       inside.tails <- seq(inside.start, opp.idx)
-      #print(delta.idx)
-      #print(inside.tails)
       #CEW added 12-12-16; needed to remove negative/0 subscripts
       if (any(inside.tails < 1)){
         inside.tails <- inside.tails[inside.tails > 0]

@@ -18,13 +18,6 @@ which.missing.xy <- function(dataset){
 }
 
 missval.xyens <- function(x){
-  #   #x is a 6-dimensional dataset
-  #   tmp.dat <- apply(x, c(1,2,3), 
-  #                function(z){is.na(z)})
-  #   #Time is now first dimension
-  #   time.dat <- apply(tmp.dat, c(1), sum)
-  #...y'know, it might be faster to just sum the above vector
-  #and THEN do the check for is.na
   tmp.dat <- apply(x, c(6), 'sum')
   return(is.na(tmp.dat))
 }
@@ -106,16 +99,12 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
         #if you do not use it, the synchronous missing values step 
         #removes samples in OH and MH that never get added back in
         
-        #var.idx <- pr_vars[[el]]
         if (el == 'OH'){
-          #print(summary(orig[[el]][!is.na(orig[[el]])]))
           assign(el, retry.with.pr.present(orig[[el]], 
                                            missval.args$pr_opts[[el]],  
-                                           1, #missval.args$pr[[var.idx]],
+                                           1, 
                                            tmasks$apply_tmasks, 
                                            tmasks[[el]]$masks[[w]]))
-#           print(summary(orig[[el]]))
-#           stop('examine this output')
         }else{
           assign(el, retry.with.pr.present(orig[[el]], 
                                            missval.args$pr_opts[[el]],  
@@ -150,7 +139,6 @@ remove.FUDGE.missvals <- function(OH, MH, MF,
       #If there are no pr missing values, don't downscale the point
       ds.possible <- F
     }
-#stop('examine the output from the retry; there are too many missing values being written here')
   }else{
     #In the event that everything is above the threshold, all is good.
     mv.retry <- F
@@ -204,16 +192,13 @@ retry.with.pr.present <- function(data.list, pr.mask, var.id,
     #pr.mask[is.na(pr.mask)] <- T
   }
   #As of 2017-07027, we are only applying the ignore0 settings to a single
-  #one of the input varsa (prime_predictor and whatever OH is doing).
+  #one of the input vars (prime_predictor and whatever OH is doing).
   #Thus, there is no need for the var searching steo
   #Thanks to var collapsing, extra step needed to check for matches
   tmp.pr <- data.list[[var.id]]
   data.list[[var.id]] <- as.numeric(!pr.mask)
   data.list[[var.id]][!is.na(tmp.pr)] <- tmp.pr[!is.na(tmp.pr)]
-  #...ooookay, as of 03-07-2017, this is causing issues. Is there a way to fix it?
-  #dim issues seem to have been caused by unexamined assumption that target could be 3x3.
   dim(data.list[[var.id]]) <- dim(tmp.pr)
-  #    print(length(data.tmask))
   data.list[[var.id]] <- apply.any.mask(data=data.list[[var.id]], mask=data.tmask, dim='temporal')  
   return(data.list)
 }
@@ -222,14 +207,10 @@ segment.missval.vars <- function(varnames, data, masks, data.coords, ival, jval,
                                  apply_tmask, tmasks, w){
   #Drills down from the full x,y components of a mask to the bits that apply to
   # the region that we are downscaling
-  
-  #get xy region
-  #data.masks <- get.xy.slice(masks[varnames], data.coords, ival, jval)
-  #No longer needed; looping on i and j before call to pr missvals
   data.masks <- masks
   #Apply tmask
   if (apply_tmask){
-    data.masks <- apply.fudge.tmask(data.masks, tmasks$masks[[w]]) #lapply(data=data.masks, "apply.fudge.tmask", tmasks$masks[[w]])
+    data.masks <- apply.fudge.tmask(data.masks, tmasks$masks[[w]]) 
   }
   #apply mask to data, setting from missing to other as required
   for (var in varnames){
@@ -246,55 +227,22 @@ place.synch.missvals <- function(OH, MH, MF, env=parent.frame()){
   #synchronizes missing values between OH and MH, placing vals back
   #in the calling environment.
   #Assumes that OH vars and MH vars have the same time dimension
-#   print("placing synch missvals")
-#   print(summary(OH))
-#   print(summary(MH))
-#   print(dim(OH))
-#   print(dim(MH))
   OH.missing <- rowSums(sapply(OH, missval.xyens)) > 0 #T is NA 
   MH.missing <- rowSums(sapply(MH, missval.xyens)) > 0 #T is NA 
   all.missing <- OH.missing + MH.missing
   all.missing[all.missing  > 0] <- NA
   all.missing[all.missing == 0] <- 1
-  #print("working on the hist vals")
   OH <- lapply(OH, apply.fudge.tmask, all.missing)
   MH <- lapply(MH, apply.fudge.tmask, all.missing)
-  #Added 11-10: Apparently, I was doing this for the synch lm masks, WTH.
-#  MF.missvals <- lapply(MF, function(x){apply(x, c(1,2,3,5,6), 'sum')})
-#   for (el in names(MF)){
-#     missval.mask <- as.numeric(!is.na(MF.missvals[[el]]))
-#     missval.mask[missval.mask==0] <- NA
-#     print(summary(missval.mask))
-#     MF[[el]] <- MF[[el]] *  missval.mask 
-#   }
-##Trying to fix this as of 4-19-2017
 for (n in 1:dim(MF[[1]])[4]){
-  #print(paste("starting ens", n))
-  #print(dim(MF[[1]]))
-  #print(summary(sapply(lapply(MF, '[', ,,,n,,,drop=F), missval.xyens)))
   MF.ens.missvals <- rowSums(sapply(lapply(MF, '[', ,,,n,,,drop=F), missval.xyens)) > 0 #T is NA
   MF.ens.missvals[MF.ens.missvals  > 0] <- NA
   MF.ens.missvals[MF.ens.missvals == 0] <- 1
-  #print("MF.ens.missvals:")
-  #print(summary(MF.ens.missvals))
   for (el in names(MF)){
     MF[[el]][,,,n,,] <- apply.fudge.tmask(MF[[el]][,,,n,,,drop=F], MF.ens.missvals)
   }
 }
-# MF.missing <- rowSums(sapply(MF, missval.xyens)) > 0 #T is NA
-# MF.missing[MF.missing  > 0] <- NA
-# MF.missing[MF.missing == 0] <- 1
-# MF <- lapply(MF, apply.fudge.tmask, MF.missing)
-
-#print(summary(MF.missing))
-#print(summary(MF))
-#print(lapply(MF, 'summary'))
-
-#print("Summary of rags returend from missval functions:")
-#print(lapply(MF, 'summary'))
-#print(lapply(MF, 'length'))
   env$MF <- MF
-  #Definetly keep these
   env$OH <- OH
   env$MH <- MH
 }

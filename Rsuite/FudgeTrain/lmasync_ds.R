@@ -55,16 +55,10 @@ callLMAsync <- function(OH.data, MH.data, MF.data, args, ds.method='lm',
                        'lmAsync' = lmAsync.downscale(lm.model, MF.slice,args), 
                        'lmstepAsync' = lmstepAsync.downscale(lm.model, MF.slice, args)
       )
-      #out.data[,,,n,,] <- index.qm(index.mask, ds.out, olap)
       notna.index <- which(!is.na(unlist(MF.slice[grepl(targ.var, names(MF.slice))])))
-      #print(str(missval.out))
-      #print(summary(missval.out$complete.fut))
       out.data[,,,n,,][missval.out$complete.fut[,,,n,,]] <- ds.out
       if(missval.out$mv.retry & train_qcmask){
-        #Double-check on pr settings for this - are there different settings
-        #for retry and insufficient points?
-        #qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
-        qc[,,,n,,] <- NA #index.qm(index.mask, rep(NA, length(index.mask)), olap)
+        qc[,,,n,,] <- NA
       }
     }else{
       print('downscaling not possible at this point')
@@ -90,10 +84,6 @@ lmAsync.train <- function(OH, MH, args){
   MH <- lapply(MH, remove.missvals)
   OH <- lapply(OH, as.vector)
   MH <- lapply(MH, as.vector)
-  #Sort all by the target variable (first el OH)
-  #order.all <- order(MH[[1]])
-  #OH <- lapply(OH, '[', order.all)
-  #MH <- lapply(MH, '[', order.all)
   ##That's not what we're doing - instead, we should sort OH and MH independent
   #of each other, for quantile mapping
   oh.order <- order(OH[[1]])

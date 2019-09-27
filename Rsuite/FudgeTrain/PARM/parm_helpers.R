@@ -13,13 +13,10 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
   for (p in 1:3){ #Find up to 6 break points total,or 3 per call to this fxn
     na.vec <- is.na(r_sq)
     found.min=F
-    # print("in arrm.find.breakpoints; summary of r_sq:")
-    # print(summary(r_sq))
     min_rsq = suppressWarnings(min(r_sq, na.rm=T))
     for (j in 1:length(r_sq)){
       if(sum(is.na(r_sq))!=length(r_sq)){
         if(!na.vec[j] & r_sq[j]==min_rsq & 
-           #(r_sq[j] <= (mean_rsq-0*sdev_rsq))){
            (r_sq[j] <= (mean_rsq))){
           #The above criteria match at most one point in the vector. However,
           #that one point is about to get removed as part of the next step 
@@ -38,21 +35,17 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
         #cut out section of 'window' surrounding the found break point
         if(k.out[j] < window.index ){
           r_sq[0:(k.out[j]+window.index)]<- NA    #break point is close to beginning of vector...
-          #print(0:(k.out[j]+window.index))
         }
         if ((k.out[j]>=window.index) & (k.out[j]<=(length(r_sq)-window.index))){
           r_indices <- (k.out[j]-window.index):(k.out[j]+window.index)
           r_sq[r_indices] <- NA
-          # print(r_indices)
         }
         if (k.out[j]>(length(r_sq)-window.index)){
           r_sq[(k.out[j]-window.index):length(r_sq)] <- NA    #break point is close to end of vector
-          #print((k.out[j]-window.index):length(r_sq))
         }
       }
     }else{
       #If there is no breakpoint found, k.out[k.i] is already missing
-      #message(paste('no breakpoints found on loop', p))
     }
     k.i <- k.i + 1
   }#end for p in 1:3
@@ -136,7 +129,6 @@ calc_parm_rsquared <- function(start, end, by, hist_pred, hist_targ, window, dir
   n <- start
   jseq <- seq(start, end, by=by)
   rsq <- rep(NA, (abs(start-end) + 1))
-  #if (dir == 'forward'){n_iter=by*1}else{n_iter=by*(-1)}
   for (j in jseq){
     if (dir == 'forward'){
       j.val <- (j-start + 1)
@@ -149,11 +141,9 @@ calc_parm_rsquared <- function(start, end, by, hist_pred, hist_targ, window, dir
     }
     sm <- hist_targ[n_start:n_end]
     mm <- hist_pred[n_start:n_end]
-    #ix=which(!is.na(sm))
     ix=!is.na(sm)
     sm=sm[ix]
     mm=mm[ix]
-    #qrd=qr(matrix(c(rep(1,length(ix)),mm),ncol=2,byrow=F))
     qrd=qr(matrix(c(rep(1,sum(ix)),mm),ncol=2,byrow=F))
     yhat=qr.fitted(qrd,sm)
     mss=sum((yhat-mean(yhat))^2)

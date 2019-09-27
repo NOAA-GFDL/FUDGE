@@ -13,13 +13,6 @@ adjustTrace <- function(OH, MH, MF,
                         oh.ord2, mh.ord2,
                         pr_trace, allow_lower_mh, ignore0, conserve){
   #MF never needs to be referenced
-
-#   OH <- OH[oh.ord1]
-#   MH <- MH[mh.ord1]
-#   mh.ord <- rank(MH, ties='first')
-#   oh.ord <- rank(OH, ties='first')
-#   OH <- sort(OH)
-#   MH <- sort(MH)
   #assume that missvals are removed before this step
   oh.dry <- sum(OH < pr_trace)
   mh.dry <- sum(MH < pr_trace)
@@ -124,9 +117,6 @@ adjustPR <- function(OH, MH, MF,
 
     MF[MF < pr.trace] <- 0
     mf.mask <- (MF == 0)
-    #print(summary(MF==0))
-    #print(summary(mf.mask))
-    #stop('examine the summary!')
     if (conserve){
       OH <- conserve_pr(OH, oh.mask)
       MH <- conserve_pr(MH, mh.mask)
@@ -152,9 +142,6 @@ adjustPR <- function(OH, MH, MF,
   out.list$MH[mh.idx] <- NA
   out.list$MF[!mf.idx] <- MF
   out.list$MF[mf.idx] <- NA
-#   out.list$OH <- ifelse(oh.idx, NA, OH)
-#   out.list$MH <- ifelse(mh.idx, NA, MH)
-#   out.list$MF <- ifelse(mf.idx, NA, MF)
   if (return_masks){
     out.list$oh.mask <- oh.idx
     out.list$oh.mask[!oh.idx] <- oh.mask
@@ -165,15 +152,9 @@ adjustPR <- function(OH, MH, MF,
     out.list$mf.mask <- mf.idx
     out.list$mf.mask[!mf.idx] <- mf.mask
     out.list$mf.mask[mf.idx] <- NA
-#     out.list$oh.mask <- ifelse(oh.idx, NA, oh.mask)
-#     out.list$mh.mask <- ifelse(mh.idx, NA, mh.mask)
-#     out.list$mf.mask <- ifelse(mf.idx, NA, mf.mask)
   }
   out.list$oh.trace <- pr.trace
   out.list$mh.trace <- adjust.trace
-#print(pr.trace)
-#print(adjust.trace)
-#stop('examine this output')
   return(out.list)
 }
 
@@ -193,10 +174,7 @@ AdjustPRPoints <- function(OH, MH, MF,
   allow_lower_mh <- T
   pr_args=list(oh=list(), mh=list, mf=list())
 
-  #print(pr_vars)
   for (v in pr_vars){
-    #print(v)
-
     oh_present <- T
     mh_present <- T
     mf_present <- T
@@ -246,9 +224,6 @@ AdjustPRPoints <- function(OH, MH, MF,
                         pr_trace, pr.units, tmp.freqadj, allow_lower_mh,
                         ignore0=ignore0, conserve=conserve,
                         return_masks=T)
-#         print(summary(as.vector(tmp$oh.mask)))
-#         print(summary(as.vector(tmp$OH)))
-#         stop('examine this output')
         if (oh_present){
           OH[[1]] <- tmp$OH
           pr_args$OH <- tmp$oh.mask

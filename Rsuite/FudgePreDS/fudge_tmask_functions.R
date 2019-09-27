@@ -153,20 +153,12 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
                                                     MF$metadata[[1]]$dim$time$calendar)
       tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
       tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
-#       print(tmask.list$nyears_hist)
-#       print(tmask.list$nyears_fut)
-#       stop('examine this output')
     }else{
       tmask.list$hist.year.div <- length(tmask.list$hist.leapmask)
       tmask.list$fut.year.div <- length(tmask.list$fut.leapmask)
       tmask.list$nyears_hist <- 1
       tmask.list$nyears_fut <- 1
     }
-    #     print(tmask.list$hist.year.div)
-    #     print(tmask.list$fut.year.div)
-    #     print(tmask.list$nyears_hist)
-    #     print(tmask.list$nyears_fut)
-    #     stop('examine this output. Does it make sense?')
   }
   ###Set booleans for handy access
   print(paste("Applying overlapping time window masks:", time_mask_overlap))
@@ -177,18 +169,6 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   tmask.list$calendar <- MF$metadata[[1]]$dim$time$calendar
   return(tmask.list)
 }
-
-
-# apply.fudge.tmask <- function(data, mask){
-#   #Fast and dirty adaptation of apply.any.mask
-#   #for use with 6-dimensional output
-#   #print('applying tmask')
-#   data <- aperm(data, c(6,1,2,3,4,5))
-#   data.dim <- dim(data)
-#   result <- rep(mask, length.out=length(data)) * as.vector(data)
-#   dim(result) <- data.dim
-#   return(aperm(result, c(2,3,4,5,6,1)))
-# }
 
 apply.fudge.tmask <- function(data, mask){
   #'Rewriting the above with lessons from the section 8 tools - 

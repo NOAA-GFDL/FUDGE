@@ -9,13 +9,6 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
   #'front and back of the historical sample, labelled as front.offset
   #'and back.offset
   print('applying OH mask correction!')
-  #h.time.len <- dim(OH.data)[3]
-  #years <- paste0("c(", paste0("'",seq(1960, 2100),"'", collapse=","), ")")
-#  years <- paste0(seq(1960, 2100), collapse=",")
-#   leapyears <- c(1960,1964,1968,'1972','1976','1980','1984','1988','1992',
-#                  1996','2000','2004','2008','2012','2016','2020','2024','2028',
-#                 2032','2036','2040','2044','2048','2052','2056','2060','2064',
-#                  206','2072','2076','2080','2084','2088','2092','2096')
   years <- seq(1960, 2100)
   leapyears <- c(1960,1964,1968,1972,1976,1980,1984,1988,1992,1996,2000,2004,
                   2008,2012,2016,2020,2024,2028,2032,2036,2040,2044,2048,2052,
@@ -38,7 +31,6 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
     leapday.shift <- (hist.leap.index-fut.leap.index)%%4
     print(paste("leapday.shift:", leapday.shift))
     start.year <- start.year + leapday.shift
-    #print(start.year)
     leapday.offset <- sum(days.per.year[(years > start.year) & (years <= start.year + leapday.shift)])
     start.year <- start.year + leapday.shift
     print(paste("leapday.offset:", leapday.offset))
@@ -47,15 +39,9 @@ correct.hist.leapdays <- function(h.time.len, f.time.len,
       #(the centennial leap years shouldn't matter now, because of y2k)
       max.hist.index <- floor((end.year - start.year)/4)*4 # of commensurable leapday periods covered
       end.year <- start.year + (max.hist.index - 1)
-#       print(max.hist.index)
-#       print(years[(hist.range[1] + leapday.shift) < years & (hist.range[1] + max.hist.index) >= years])
       leapday.range <- sum(days.per.year[(start.year) < years & (start.year + max.hist.index) >= years]) #start.year + max.hist.index
       print(leapday.range)
       divide.offset <- h.time.len-(leapday.range + leapday.offset)
-      #divide.offset = 0 #365 #365 #365*2+1 #365 
-      print(paste("divide.offset:", divide.offset))
-#      stop('examine this out')
-      #stop(paste("Error in correct.hist.leapdays: future time periods longer than historical time periods are not supported at this time."))
     }else{
       #You're never going to need to divide anything
       divide.offset <- 0

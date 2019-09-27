@@ -127,19 +127,7 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 
 tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks, 
                           hi_adjust = T, lo_adjust = T){
-  #Fast wrapper for the more complicated tail_cutoff function
-  
-  #Added 12-9-16
-  #If you are going to be using overlapping masks,
-  #you need to trim your samples for this method
-#   if (tmasks$time_mask_overlap){
-#     #print(summary(tmasks))
-#     model.fut <- apply.any.mask(tmasks$trim$masks[[w]], model.fut, dim='time')
-#   }
-  #CEW removed 2017-12-6: as section5.R and the tail adjust currently call this
-  #function (no tmasks, default=list(timas_mask_overlap=F)), this NEVER
-  #gets invoked. Turning off to avoid confusion.
-  
+  #Fast wrapper for the more complicated tail_cutoff function  
   # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,
                      'GfGh' = model.fut,
@@ -265,7 +253,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   if(any(points.to.be.adjusted)){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
     # which method is used?
-    #print(paste("adjusting the", args$tail, "tail"))
     adjmethod <- args$adjmethod
     
     if(mf.overlap & any(mf.points)){
@@ -317,8 +304,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         # CALCULATE ADJUSTMENT RATIO
         mult.vec <- DS[delta.idx]/MF[delta.idx]
         #CEW added 12-12-16; mult.vec can, in fact, be NA sometimes
-        #mult.vec <- mult.vec[!is.na(mult.vec)]
-        #mult.ifzero <- mult.ifzero[!is.na(mult.ifzero)]
         if (length(mult.vec) == 0){
           if (length(mult.ifzero) > 0){
             mult.vec <- mult.ifzero
@@ -355,15 +340,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #(goalpost = all MF values are either < min(MH) or > max(MH))
       #and in either case the adjustment will be the same
       if (args$adjmethod == 'add') {
-        #offset = mean(OH) - mean(MH)
         offset = offset = ( sum(OH) / args$oh_ss ) - ( sum(MH) / args$mh_ss ) 
       } else { # alternative correction in "mult" land
-        #offset = mean(OH)/mean(MH)
         offset = (sum(OH) / args$oh_ss ) / ( sum(MH) / args$mh_ss) 
       }
-#       print(mean(OH)  - mean(MH))
-#       print((sum(OH) / args$oh_ss)  - (sum(MH) / args$mh_ss) )
-#       stop('examine this out')
       if (mf.overlap){
         print("Goalpost case")
         cond = do.call(adjust.cond, list(MF[mf.rank], do.call(trigger.fxn, list(MH))))
@@ -381,12 +361,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         cond <- rep(1, length(MF))
       }
     }
-    #return(list(cond=mf.cond, offset=offset))
   }else{
     cond=rep(FALSE, length(MF))
     offset=0
     cond.val <- 0
-    #return(list(cond=cond, offset=offset))
   }
 return(list(cond = cond * cond.val, offset = offset))
 }

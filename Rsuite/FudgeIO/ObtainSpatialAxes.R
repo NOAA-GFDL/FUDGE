@@ -33,8 +33,6 @@ ObtainSpatialAxes <- function(key, verbose=FALSE,
                       seq(0, by=0, length.out=1)) 
       dim(lat.bounds) <- c(2,1)
     }else if (key=='mean'){
-      #print(match.call(expand.dots=T))
-      #print(lat.bnds.vals)
       if (is.na(lat.bnds.vals)){
         #build from the lat dim instead
         message('lat bnds not present; calculating from lat values')
@@ -82,17 +80,6 @@ ObtainSpatialAxes <- function(key, verbose=FALSE,
                                             prec='double', dimnames=c('bnds', 'lat'), 
                                             longname='latitude axis boundaries', 
                                             units=lon.units)
-#   attr(lon.bounds, "dimids") <- "bnds,lon"
-#   attr(lon.bounds, "units") <- lon.dim$units
-#   attr(lon.bounds, "prec") <- "double"
-#   attr(lon.bounds, "longname") <- "longitude axis boundaries"
-#   attr(lon.bounds, "dim") <- dim(lon.bounds)
-#   #Latitude bounds attributes setting
-#   attr(lat.bounds, "dimids") <- "bnds,lat"
-#   attr(lat.bounds, "units") <- lat.dim$units
-#   attr(lat.bounds, "prec") <- "double"
-#   attr(lat.bounds, "longname") <- "latitude axis boundaries"
-#   attr(lat.bounds, "dim") <- dim(lat.bounds)
   return(list(dim=list('lat'=lat.dim, 'lon'=lon.dim), 
               vars=list('lat_bnds'=lat.bounds, 'lon_bnds'=lon.bounds)))
 }

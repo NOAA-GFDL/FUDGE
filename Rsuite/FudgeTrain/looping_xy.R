@@ -165,9 +165,6 @@ loop.xy.data <- function(){
                                             missval.args = missval.args, 
                                             prime_predictor=prime_predictor)
             #Assign output and remove temporary output
-            # missval.args <- temp.output$missval.args
-            ####h_record_trace_pr
-            #pr_trace[ival,jval,,1,,1] <<- missval.args$pr$adjusted.thold
             post_ds_outloop <- temp.output$s5.list
             OH.slice <- temp.output$input$OH
             MH.slice <- temp.output$input$MH
@@ -218,9 +215,6 @@ loop.xy.data <- function(){
               window.post_ds_inloop <- post.ds.train
             }
             #Call the downscaling method
-            #           if (all(is.na(MH.window[[1]]))){
-            #             stop('examine this output - MH is all NA after s3 opts')
-            #           }
             tmp.ds <- callDSMethod(ds.ref$method, 
                                    OH.window, MH.window, MF.window, ds.ref$args, 
                                    missvals=ds.ref$missval_method, 
@@ -230,7 +224,6 @@ loop.xy.data <- function(){
             ds.out <- list(ds=tmp.ds$ds)
             qc.out <- c(qc.out, tmp.ds$qc)
             ds.atts <- tmp.ds$ds.atts
-            #ds.atts makes the PARM tail adjustment simpler, when we get to it
             if(s5.inloop){
               tmp.s5 <- callS5Adjustment(s5.instructions=window.post_ds_inloop,
                                          data = ds.out$ds, 
@@ -242,15 +235,10 @@ loop.xy.data <- function(){
                                          data.atts = adjust.metadata, 
                                          missval.args = missval.args)
               ds.out$ds <- tmp.s5$ds.out
-              # qc.out <- c(qc.out, tmp.s5$qc)
-              #qc.out more complicated; trying to preserve dim information
-              #in with the edits on 12-17-16
               if (!is.null(tmp.s5$qc)){
                 qc.out <- tmp.s5$qc
               }
             }
-            #...hm. Is it possible to adapt that OU code that included window
-            #as an extra dimension and include it for multiple qc masks?
             combine.out <- list(ds=ds.out$ds, qc=qc.out)
             for (out in names(combine.out)){
               #it is LEGIT POSSIBLE to get all NA back from the downscaling function
@@ -302,9 +290,6 @@ loop.xy.data <- function(){
             #Or rather, once you get a list of qc masks, you return them - 
             #ATM, only one process at a time should be returning a qc mask
             output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$ds.out
-            #           if (any(is.na(output.all$ds[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,]))){
-            #             stop('examine the coords - this is leading to issues')
-            #           }
             if(aux.ref$make_qcmask && aux.ref$qc_loc == 'outloop'){
               output.all$qc[ds.x.start:ds.x.end, ds.y.start:ds.y.end,,,,] <- temp.postproc$qc.mask
             }
@@ -320,8 +305,6 @@ loop.xy.data <- function(){
       message(paste("Ending ival:", ival, "/", x.len))
     }
   }#loop by x
-  # print(summary(as.vector(output.all$ds)))
-  #stop('examine output from calls')
   ds_tally <<- ds_tally
   return(output.all)
 }
