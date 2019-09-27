@@ -220,7 +220,11 @@ def main(scriptdir, sleep=60, nloops=100,
         note = "Profiling information for the experiment is located in: " + osp.join(scriptdir, "profile")
         with open(osp.join(scriptdir, 'outfile_paths.txt'), 'r') as f:
             outpath_str = f.read()
-        note = "\n" + outpath_str
+        outfiles = "\n" + outpath_str
+        outsplit = re.split('\n', outfiles)
+        outsplit = [el for el in outsplit if re.search('\.ens:', el) is not None]
+        if len(outsplit) == 0:
+            outsplit = re.split('\n', outfiles)
         print(outfile_dict)
         exp_append = "#" * 80 + outpath_str
         for el in exp_info_files:
@@ -229,7 +233,7 @@ def main(scriptdir, sleep=60, nloops=100,
         send_status_email("success", 'complete', exp_name,
                        traceback= tmessage,
                        mailid=mailid, logfiles = logdir,
-                       exp_info_file = exp_info, outfiles = "", note=note)
+                       exp_info_file = exp_info, outfiles = outsplit)
         print("File cleanup operations in progress")
         make_prof_file(scriptdir, scriptdir + "/log/")
         compress_logs(scriptdir + "/log/")
