@@ -1,0 +1,6 @@
+##target mappings to construct experiment config in FUDGE
+longname:tasmax,shortname:tx
+longname:tasmin,shortname:tn
+longname:pr,shortname:pr
+
+
