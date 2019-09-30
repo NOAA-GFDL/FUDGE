@@ -155,7 +155,7 @@ def classify_cmip5(atts, vfile, vclass, vdat, verbose):
     attdict['dataset'] = vdat
     fname = osp.basename(vfile)
     fsplit = re.split("_", fname)
-    attlist = ['model_id', 'experiment', 'realization_alwasyfromfile']
+    attlist = ['model_id', 'experiment', 'realization_alwaysfromfile']
     #att_reg = ["", "", "_(r[:num:])"]
     att_idx = [2,3,4]
     # Adding a workaround for some of our clim/anom cases - they
