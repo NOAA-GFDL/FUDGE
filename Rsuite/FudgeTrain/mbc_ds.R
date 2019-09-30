@@ -51,6 +51,7 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       if (args$trace > adj.thold){
         args$trace <- adj.thold
       }
+      #args$trace <- min(args$trace, adj.thold)
     }
     loop.ds <- ds.method
     if (missval.out$mv.retry){
@@ -62,14 +63,33 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     if(missval.out$ds.possible){
       #There are different pre-conditioning steps that need
       #to take place for each method
-      out <- switch(loop.ds, 
-                    'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
-                    'QDMall' = callQDMall(missval.out$OH, missval.out$MH, missval.out$MF, args),
-                    'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
-                    'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
-                                        args$variant, 
-                                        missval.out$complete.hist, 
-                                        missval.out$complete.fut, args))
+      ds_meth <- switch(loop.ds, 'QDM' = 'callQDM', 'QDM_mod' = 'callQDM_mod')
+      ds_arglist = list(missval.out$OH, missval.out$MH, missval.out$MF, args)
+      #ds_arglist <- list(OH, MH, MF.slice[[1]], args)
+      out <- tryCatch({do.call(ds_meth, args = ds_arglist)}, 
+                      error = function(e){
+                        is_known <- grepl("need at least two non-NA values to interpolate", 
+                                          e$message)
+                        if (is_known){
+                          message(paste("Warning in callQDM: QDM did not have", 
+                                        "enough unique values in input datasets", 
+                                        "to interpolate!"))
+                          message(paste("Returning MF unchanged."))
+                          return(MF.slice[[1]])
+                        }else{
+                          print(e)
+                          #print(traceback())
+                          stop('Unknown error in QDM: Please examine outputs!')
+                        }
+                        stop('examine error output')
+                      })
+#       out <- switch(loop.ds, 
+#                     'QDM' = callQDM(missval.out$OH, missval.out$MH, missval.out$MF, args), 
+#                     'QDM_mod' = callQDM_mod(missval.out$OH, missval.out$MH, missval.out$MF, args),
+#                     'MBC' = callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF, 
+#                                         args$variant, 
+#                                         missval.out$complete.hist, 
+#                                         missval.out$complete.fut, args))
       train.stat <- missval.out$missval.status
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
@@ -79,10 +99,10 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       #out.data[,,,n,,][!is.na(index.mask)] <- out
       loop.mask <- index.mask
       loop.mask[is.na(MF.slice[[1]])] <- NA
-      if (missval.out$mv.retry){
-        # We need to limit out to those values for which MF has data
-        out <- apply.fudge.tmask(data=out, mask=loop.mask)
-      }
+if (missval.out$mv.retry){
+  # We need to limit out to those values for which MF has data
+  out <- apply.fudge.tmask(data=out, mask=loop.mask)
+}
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if (train_qcmask &  missval.out$mv.retry){
         print("adding the pr retry mask")
@@ -101,12 +121,22 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
 
 callQDM_mod <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
-  OH.slice <- remove.missvals(unlist(as.vector(OH)))
-  MH.slice <- remove.missvals(unlist(as.vector(MH)))
-  MF.slice <- remove.missvals(unlist(as.vector(MF)))
-  tmp <- QDM_mod(OH.slice, MH.slice, MF.slice, 
-                 ratio=args$ratio.seq, trace=args$trace, 
-                 jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  OH.slice <- remove.missvals(unlist(as.vector(OH), use.names=F))
+  MH.slice <- remove.missvals(unlist(as.vector(MH), use.names=F))
+  MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
+  args$ratio <- args$ratio.seq
+  screen_NaNs <- args$screen_NaNs
+  not.args <- c('adjust.trace', 'transform', 'tform_fxn', 
+                'force_reproducibility', 'var.names', 
+                'ratio.seq', 'iter', 'adjust_trace', 'screen_NaNs')
+  args <- args[!(names(args) %in% not.args)]
+  q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
+              args)
+  tmp <- do.call('QDM_mod', q.args)$mhat.p
+  if (screen_NaNs){
+    # Screen out NaNs from 0/0
+    tmp[is.nan(tmp)] <- 0
+  }
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
   return(out)
@@ -116,35 +146,28 @@ callQDM_mod <- function(OH, MH, MF, args){
 
 callQDM <- function(OH, MH, MF, args){
   MF.idx <- !is.na(unlist(as.vector(MF)))
-  OH.slice <- remove.missvals(unlist(as.vector(OH)))
-  MH.slice <- remove.missvals(unlist(as.vector(MH)))
-  MF.slice <- remove.missvals(unlist(as.vector(MF)))
-  tmp <- QDM(OH.slice, MH.slice, MF.slice, 
-             ratio=args$ratio.seq, trace=args$trace, 
-             jitter.factor=args$jitter.factor, ties=args$ties)$mhat.p
+  OH.slice <- remove.missvals(unlist(as.vector(OH), use.names=F))
+  MH.slice <- remove.missvals(unlist(as.vector(MH), use.names=F))
+  MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
+  args$ratio <- args$ratio.seq
+  screen_NaNs <- args$screen_NaNs
+  not.args <- c('adjust.trace', 'transform', 'tform_fxn', 
+                'force_reproducibility', 'var.names', 
+                'ratio.seq', 'iter', 'adjust_trace', 'screen_NaNs')
+  args <- args[!(names(args) %in% not.args)]
+  q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
+              args)
+  tmp <- do.call('QDM', q.args)$mhat.p
+  if (screen_NaNs){
+    # Screen out NaNs from 0/0
+    tmp[is.nan(tmp)] <- 0
+  }
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
-  return(out)
-}
-
-callQDMall <- function(OH, MH, MF, args){
-  # Helper function for downscaling historical and future simulatneously - 
-  # indexing for a MF that has a historical and future component is done
-  # within the ds function. 
-  # Note: this is meant to be used with a future timeseries 
-  # that has a historical and future component ONLY. 
-  # It assumes that you used the same tmasks for MH and MF (with different t)
-  MF.idx <- !is.na(unlist(as.vector(MF)))
-  OH.slice <- remove.missvals(unlist(as.vector(OH)))
-  MH.slice <- remove.missvals(unlist(as.vector(MH)))
-  MF.slice <- remove.missvals(unlist(as.vector(MF)))
-  MF.hist <- MF.slice[1:length(MH.slice)]
-  MF.fut <- MF.slice[(length(MH.slice)+1) : length(MF.slice)]
-  tmp <- QDM(OH.slice, MF.hist, MF.fut, 
-             ratio=args$ratio.seq, trace=args$trace, 
-             jitter.factor=args$jitter.factor, ties=args$ties)
-  out <- rep(NA, length(MF.idx))
-  out[MF.idx] <- c(tmp$mhat.c, tmp$mhat.p)
+  if ('trace.calc' %in% names(args)){
+    print('qdm_mult_noise invoked; replacing DS[MF == 0] <- 0')
+    out[unlist(as.vector(MF), use.names=F) == 0] <- 0
+  }
   return(out)
 }
 
@@ -157,21 +180,19 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
                                              complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y){return(x[y])}, 
                                              complete.fut)))
-  MF.idx <- !is.na(MF[[1]])
-  # MF.order <- rank(MF[[1]])
   tmp <- switch(variant, 
                 "pearson"  = MBCp(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
                                   ratio.seq=args$ratio.seq, trace=args$trace, 
-                                  ties=args$ties, silent=TRUE), 
+                                  ties=args$ties), 
                 "spearman" = MBCr(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
                                   ratio.seq=args$ratio.seq, trace=args$trace, 
-                                  ties=args$ties, silent=TRUE), 
+                                  ties=args$ties), 
                 "all"      = MBCn(OH.slice, MH.slice, MF.slice, 
                                   iter=args$iter, jitter.factor=args$jitter, 
                                   ratio.seq=args$ratio.seq, trace=args$trace, 
-                                  ties=args$ties, silent=TRUE), 
+                                  ties=args$ties), 
                 stop(paste("Error in callMBC_any: type was not one of", 
                            "pearson (MBCp), spearman (MBCr), or all (MBCn)!")))
   #Need to remove vars that aren't target var at this step
@@ -179,15 +200,7 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args){
   #...also need to do more advanced checking of missing values. 
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
-  out <- rep(NA, length(MF.idx))
-  out[MF.idx] <- tmp$mhat.p[,1]
-  # tmp <<- tmp
-  # OH.slice <<- OH.slice
-  # MH.slice <<- MH.slice
-  # MF.slice <<- MF.slice
-  # MF.ds <<- MF
-  # stop('examine this output')
-  return(out)
+  return(tmp$mhat.p[,1])
 }
 
 set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
@@ -245,15 +258,13 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
                  "did not have as many elements as MH has vars!"))
     }
     ratio.seq <- in.rat.seq
-  }else{
-    print("length of ratio.seq:")
-    print(length(predictor.vars))
-    ratio.seq = rep(F, length(predictor.vars))
   }
-  if ('adjust_trace' %in% names(args)){
-    adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
-  }else{
-    adjust_trace <- F
+  if ('type' %in% names(args)){
+    if (args$type=='add'){
+      ratio.seq <- FALSE
+    }else if (args$type=='mult'){
+      ratio.seq <- TRUE
+    }
   }
   jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
   if (any(jitter.names %in% names(args))){
@@ -271,11 +282,10 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       force_reproducibility <- FALSE
     }
   }
-  return.args <- list(iter=iter, jitter.factor=jitter.fac, 
-                      ratio.seq=ratio.seq, trace=trace, ties=ties, 
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
               variant=args$variant, var.names=unlist(predictor.vars), 
-              force_reproducibility = force_reproducibility, adjust_trace = adjust_trace)
-  env$ds.ref$args <- return.args
+              force_reproducibility = force_reproducibility)
+  env$ds.args <- return.args
   return(env)
 }
 
@@ -292,6 +302,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   tform_fxn = 'none'
   ties = 'first'
   force_reproducibility=FALSE
+  screen_NaNs = FALSE
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -356,9 +367,13 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
                       force_reproducibility = force_reproducibility)
   if ('qdm_mult_noise' %in% names(args)){
     if (args$qdm_mult_noise == 'off'){
-      return.args$trace.calc <- 0
+      return.args$trace.calc <- -99 # setting to 0 can still hit eps. compares
+      if (ratio.seq){
+        screen_NaNs = TRUE
+      }
     }
   }
+  return.args$screen_NaNs = screen_NaNs
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize
