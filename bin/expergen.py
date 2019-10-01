@@ -492,8 +492,8 @@ def main():
 
     use = '''
           Expergen usage (two cases:)
-          expergen -i path_to_xml.xml [--sbatch --run-watcher --mail --sbatchmail]
-          expergen -a path_to_aux.json [-a path_to_aux.yml --sbatch --run-watcher --mail --sbatchmail]
+          expergen -i path_to_xml.xml [--sbatch --run-watcher --mail --sbatchmail --run-watcher --not-strict-metadata]
+          expergen -a path_to_aux.json [-a path_to_aux.yml --sbatch --run-watcher --mail --sbatchmail --run-watcher --not-strict-metadata]
           '''
     parser = OptionParser(usage=use)
     parser.add_option("-i", "--file", dest="uinput", default='none',
@@ -511,8 +511,7 @@ def main():
                       default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
     parser.add_option('--run-watcher', action='store_true', dest='run_watcher',
                        default=False,
-                       help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
-    parser.add_option('--run-call-next-step', action='store_true', dest='run_call_next_step', default=False, help='Whether to run callNextStep by submitting to analysis. Adding for testing.')
+                       help="Whether to submit a non-interactive watcher script to the batch queue directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
     parser.add_option('--not-strict-metadata', action='store_true', default=False,
                       dest='not_strict', help="Whether to continue with a FUDGE experiment if the metadata parser could not get the attributes needed to classify input from the netcdf files. Defaults to false, which exits with an error if classification fails. For csv files this option is effectively always set, since csv files don't have the metadata we use.")
     parser.add_option('--metadata-table', action='store', default="$BASEDIR/utils/aux/metadata_table.csv",
@@ -533,7 +532,7 @@ def main():
     msub = options.sbatch
     print "Will jobs be automatically submitted? " + str(msub)
     if (options.run_watcher and not options.sbatch):
-        print("Error in expergen: option run-watcher should only be used with msub!")
+        print("Error in expergen: option run-watcher should only be used with sbatch!")
         sys.exit(1)
     # xml and aux input specifications
     inputs = [options.uinput, options.auxinput]
@@ -641,16 +640,14 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         msubmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table, options.no_dmget,
-                        options.run_call_next_step)
+                        options.not_strict, meta_table, options.no_dmget)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
                         sbase, msubmail, statmail, run_watcher,
-                        not_strict_metadata, metadata_table, no_dmget,
-                        run_call_next_step):
+                        not_strict_metadata, metadata_table, no_dmget):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -895,27 +892,23 @@ def generate_experiment(parse_xml, create_default_aux,
     if not msub:
         print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
         print "\033[1;95m"+msub_cmd+"\033[1;m"
+    '''
     #if parse_xml:
     print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
     if(NEMSemail1 != "none"):
         print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
     else:
         print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
-
-    print("It is possible to cancel all jobs belonging to this experiment with the following command:")
-    print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
+    '''
 
     #Script exit options - needs to exit with 0
-    print(run_watcher)
-    print(run_call_next_step)
-    print('calling running steps')
+    #if run_watcher:
+    #    print("Invoking watcher script immediately")
+    #    expinfo = sbase + "/experiment_info.txt"
+    #    expdict = read_exp_info_file(expinfo)
+    #    #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
+    #    runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
     if run_watcher:
-        print("Invoking watcher script immediately")
-        expinfo = sbase + "/experiment_info.txt"
-        expdict = read_exp_info_file(expinfo)
-        #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
-        runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
-    elif run_call_next_step:
         print("Submitting callNextStep for this job to analysis")
         nextstep_file = make_call_next_step_cmd(sbase, expconfig, NEMSemail1, sleep=60, nloops=200, verbose=True)
         ns_cmd = "sbatch -D $HOME " + nextstep_file #2019-08-21: removed initiaul slurm load
@@ -924,12 +917,15 @@ def generate_experiment(parse_xml, create_default_aux,
         output6, errors6 = p6.communicate()
         #######
         if(p6.returncode != 0):
-            print "Submission of callNextStep failed; please resubmit or ."
+            print "Submission of callNextStep failed; please resubmit or call fron the command line."
             print output6, errors6
             sys.exit(1)
         print output6, errors6
-    else:
-        sys.exit(0)
+    print("It is possible to cancel all jobs belonging to this experiment with the following command(s):")
+    print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
+    if run_watcher:
+        print("\033[1;42mscancel -u $USER -n fudge_watcher." + expconfig + "\033[1;m")
+    sys.exit(0)
 
 def make_call_next_step_cmd(sbase, experiment_name, mailid, sleep=60, nloops=10, verbose=True):
     '''
