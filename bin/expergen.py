@@ -917,7 +917,7 @@ def generate_experiment(parse_xml, create_default_aux,
         runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
     elif run_call_next_step:
         print("Submitting callNextStep for this job to analysis")
-        nextstep_file = make_call_next_step_cmd(sbase, NEMSemail1, sleep=60, nloops=200, verbose=True)
+        nextstep_file = make_call_next_step_cmd(sbase, expconfig, NEMSemail1, sleep=60, nloops=200, verbose=True)
         ns_cmd = "sbatch -D $HOME " + nextstep_file #2019-08-21: removed initiaul slurm load
         print(ns_cmd)
         p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
@@ -931,7 +931,7 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
         sys.exit(0)
 
-def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
+def make_call_next_step_cmd(sbase, experiment_name, mailid, sleep=60, nloops=10, verbose=True):
     '''
     Makes the command for submitting callNextStep() to analysis.
     Include in documentation: this means the cancel_all_jobs thing probably won't work anymore
@@ -945,7 +945,7 @@ def make_call_next_step_cmd(sbase, mailid, sleep=60, nloops=10, verbose=True):
                             # after a line is complete;
                             # redirect needs to take place within the script itself
                             '#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
-                            '#SBATCH -J fudge_watcher',
+                            '#SBATCH -J fudge_watcher.' + experiment_name,
                             '#SBATCH -c 1',
                             '#SBATCH -p batch']) + "\n"
     verbose_str = ""
