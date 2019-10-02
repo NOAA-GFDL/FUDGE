@@ -912,7 +912,7 @@ def generate_experiment(parse_xml, create_default_aux,
         print("Submitting callNextStep for this job to analysis")
         nextstep_file = make_call_next_step_cmd(sbase, expconfig, NEMSemail1, sleep=60, nloops=200, verbose=True)
         ns_cmd = "sbatch -D $HOME " + nextstep_file #2019-08-21: removed initiaul slurm load
-        print(ns_cmd)
+        print("\033[1;42m" + ns_cmd + "\033[1;m")
         p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output6, errors6 = p6.communicate()
         #######
@@ -956,7 +956,7 @@ def make_call_next_step_cmd(sbase, experiment_name, mailid, sleep=60, nloops=10,
                              "--nloops " + str(nloops),
                              verbose_str])
     nextstep_log = osp.join(sbase, 'log/watcher.${SLURM_JOBID}')
-    callnext_file = osp.join(sbase, 'call_next_step.csh')
+    callnext_file = osp.join(sbase, 'run_watcher.csh')
     with open(callnext_file, 'w') as f:
         f.write(ns_header + "\n")
         f.write(checkout_cmd + "\n")

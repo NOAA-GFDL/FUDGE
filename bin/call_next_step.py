@@ -18,6 +18,7 @@ from fudgeUtils import tstamp
 from make_all_ds_paths import make_all_ds_paths
 from call_next_step_ens import submit_ens_job
 import shutil
+from pathlib2 import Path
 
 
 def ParseNextStepArgs():
@@ -50,7 +51,6 @@ def main(scriptdir, sleep=60, nloops=100,
     '''
     Main looping structure for the watcher
     '''
-    mailid = 'Carolyn.Whitlock@noaa.gov'
     statdir = osp.abspath(osp.join(scriptdir, 'status'))
     logdir = osp.abspath(osp.join(scriptdir, 'log'))
     #Get parameters from the auxfile/config_mod file
@@ -74,6 +74,9 @@ def main(scriptdir, sleep=60, nloops=100,
     if is_cv:
         exp_name2,scriptdir2 = get_crossval_properties(crossval_patt, cv_match, exp_name, scriptdir)
     stage = 'master'
+    stagedir = osp.join(scriptdir, 'status/stage')
+    if not osp.isdir(stagedir):
+        os.makedirs(stagedir)
     master_retry = 1
     status = 'wait'
     is_done = False
@@ -96,6 +99,7 @@ def main(scriptdir, sleep=60, nloops=100,
                                                   master_retry, verbose)
             if status == 'success':
                 stage = 'mini'; status = 'wait'
+                Path(osp.join(stagedir, "master.success")).touch()
             elif status == 'fail':
                 logfile_loc = logdir + "/master." + exp_name + ".*"
                 tmessage = "One or more master jobs have failed and unsuccessfully retried; sample master slices include " + (",").join(faillist)
@@ -103,6 +107,7 @@ def main(scriptdir, sleep=60, nloops=100,
                                traceback= tmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
+                Path(osp.join(stagedir, "master.fail")).touch()
                 sys.exit(1)
         elif stage == 'mini':
             status,faillist = check_mini_status(osp.join(statdir, 'minifile'),
@@ -110,6 +115,7 @@ def main(scriptdir, sleep=60, nloops=100,
                                        make_qcmask, verbose)
             if status == 'success':
                 stage = 'postProc'; status = 'wait'
+                Path(osp.join(stagedir, "mini.success")).touch()
                 submit_postproc_jobs(scriptdir, verbose)
             elif status == 'fail':
                 logfile_loc = logdir + "/out.*"
@@ -118,6 +124,7 @@ def main(scriptdir, sleep=60, nloops=100,
                                traceback= tmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
+                Path(osp.join(stagedir, "mini.fail")).touch()
                 sys.exit(1)
         elif stage == 'postProc':
             # Note to self: concatenation steps include both postproc and anomaly/trend addition
@@ -137,8 +144,9 @@ def main(scriptdir, sleep=60, nloops=100,
                     epoch = "fake-epoch"
                     trange_string = "fake-trange"
                     status,faillist,ens_outfiles,exp_info_files = submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
+                    Path(osp.join(stagedir, "postproc.success")).touch()
                 else:
-                    stage = 'end'; status='success'
+                    stage = 'end'; status = 'success'
                     skip_wait = True
             elif status == 'fail':
                 logfile_loc = logdir + "/fudge_pp_*"
@@ -150,12 +158,14 @@ def main(scriptdir, sleep=60, nloops=100,
                                traceback= tmessage + "\n" + rmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
+                Path(osp.join(stagedir, "postproc.failure")).touch()
                 sys.exit(1)
         elif stage == 'ensemble':
             if num_ens > 1:
                 #status = check_ens_status()
                 if status == 'success':
                     stage = 'crossval' ; status = 'submit'
+                    Path(osp.join(stagedir, "ensemble.success")).touch()
                 elif status == 'fail':
                     logfile_loc = osp.join(logdir, "watcher.*")
                     tmessage = "One or more of the ensemble concatenation jobs failed; failed jobs include " + (",").join(faillist)
@@ -163,6 +173,7 @@ def main(scriptdir, sleep=60, nloops=100,
                                       traceback=tmessage,
                                       mailid=mailid, logfiles=logfile_loc,
                                       exp_info_file=exp_info, outfiles="")
+                    Path(osp.join(stagedir, "ensemble.failure")).touch()
                     sys.exit(1)
             else:
                 stage = 'crossval'
@@ -222,11 +233,12 @@ def main(scriptdir, sleep=60, nloops=100,
             outpath_str = f.read()
         outfiles = "\n" + outpath_str
         outsplit = re.split('\n', outfiles)
-        outsplit = [el for el in outsplit if re.search('\.ens:', el) is not None]
+        outsplit = [re.split(':', el)[1] for el in outsplit if re.search('\.ens:', el) is not None]
         if len(outsplit) == 0:
             outsplit = re.split('\n', outfiles)
+            outsplit = [re.split(':', el)[1] for el in outsplit]
         print(outfile_dict)
-        exp_append = "#" * 80 + outpath_str
+        exp_append = "\n" + "#" * 80 + '\n#' + '\n#'.join(outsplit) #outpath_str
         for el in exp_info_files:
             with open(el, 'a') as f:
                 f.write(exp_append + "\n")
@@ -234,6 +246,7 @@ def main(scriptdir, sleep=60, nloops=100,
                        traceback= tmessage,
                        mailid=mailid, logfiles = logdir,
                        exp_info_file = exp_info, outfiles = outsplit)
+        Path(osp.join(stagedir, "experiment.success")).touch()
         print("File cleanup operations in progress")
         make_prof_file(scriptdir, scriptdir + "/log/")
         compress_logs(scriptdir + "/log/")
