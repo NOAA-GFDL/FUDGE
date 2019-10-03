@@ -235,9 +235,8 @@ def main(scriptdir, sleep=60, nloops=100,
         outsplit = re.split('\n', outfiles)
         outsplit = [re.split(':', el)[1] for el in outsplit if re.search('\.ens:', el) is not None]
         if len(outsplit) == 0:
-            outsplit = re.split('\n', outfiles)
+            outsplit = [el for el in re.split('\n', outfiles) if el != ""]
             outsplit = [re.split(':', el)[1] for el in outsplit]
-        print(outfile_dict)
         exp_append = "\n" + "#" * 80 + '\n#' + '\n#'.join(outsplit) #outpath_str
         for el in exp_info_files:
             with open(el, 'a') as f:

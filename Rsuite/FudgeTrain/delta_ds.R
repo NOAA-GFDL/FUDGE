@@ -4,15 +4,15 @@
 
 callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
   #'@author carlos.gaitan@noaa.gov
-    #'@description The script uses the Delta Method to downscale coarse res. climate variables  
+    #'@description The script uses the Delta Method to downscale coarse res. climate variables
     #over a single variable
     #'@param OH: Local Historical (a.k.a. observations)
     #'@param MH: Coarse Historical (a.k.a. GCM historical)
     #'@param MF: Coarse Future (a.k.a GCM future)
-    #'@param args: A list containing three arguments: 
-    #'  @param deltatype, one of 'mean' or 'median', which will be used to determine 
+    #'@param args: A list containing three arguments:
+    #'  @param deltatype, one of 'mean' or 'median', which will be used to determine
     #'  what single value will be used for the difference between the MH and MF
-    #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine 
+    #'  @param deltaop, one of 'ratio' or 'add', which will be used to determine
     #'  the mthod for calculating the delta
     #'  @param oh_offset: by how many years to offset Oh between ensemble members.
     #'  Setting to greater than 0 keeps weather patterns diffrent between ens
@@ -63,26 +63,26 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
   }else{
     oh_offset <- args$oh_offset
   }
-#CEW: 2 successive bugfixes 2018-01-18 ; length(OH[[1]]) instead of length(OH), 
+#CEW: 2 successive bugfixes 2018-01-18 ; length(OH[[1]]) instead of length(OH),
 #and no longer over-sampling MH when MF is longer than or equal to MH.
     oh_longer <- length(MF[[1]][,,,1,,]) <= length(OH[[1]])
     for (n in 1:nrips){
       #Determine data to use when indexing against OH
       out.status <- 0
       MF.slice <- lapply(MF, '[', ,,,n,, , drop=F)
-      missval.data <- remove.FUDGE.missvals(OH, MH, MF.slice, 
-                                            missval.args$minsamplesize, 
-                                            missval.args, 
+      missval.data <- remove.FUDGE.missvals(OH, MH, MF.slice,
+                                            missval.args$minsamplesize,
+                                            missval.args,
                                             missval.method='distributional')
       OH.loop <- missval.data$OH[[1]]
       MH.loop <- missval.data$MH[[1]]
       MF.loop <- missval.data$MF[[1]]
-      #With delta, DS is always effectively possible - all missing in one 
+      #With delta, DS is always effectively possible - all missing in one
       #dataset does not neccessarily mean that ds can't take place
       if (oh_longer){
         #Speciciations for this were created in main driver script when delta ds is used
-        idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                 tmasks$hist.year.div, tmasks$fut.year.div, 
+        idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut,
+                                 tmasks$hist.year.div, tmasks$fut.year.div,
                                  start_year= (pr_start + (n-1) * oh_offset) %% tmasks$nyears_hist )
         OH.idx <- idx$index
         pr_start <- idx$end
@@ -95,8 +95,8 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
         #calendars in any dataset, need to adjust the two for concurrent leapdays
         #note:leapday masks are already in global environment as part of setup
       }else{
-        idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                 tmasks$hist.year.div, tmasks$fut.year.div, 
+        idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut,
+                                 tmasks$hist.year.div, tmasks$fut.year.div,
                                  start_year=1 + (n-1) * oh_offset)
         OH.idx <- idx$index
         start <- idx$end
@@ -108,25 +108,25 @@ callDeltaSD <- function(OH,MH,MF, args, train_qcmask, tmasks=list()){
       }
       #Note that index.delta includes a step applying the time-trimming mask
       ##print(str(tmasks))
-      tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                             tmasks$fut.leapmask, 
+      tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx],
+                             tmasks$fut.leapmask,
                              tmasks$OH$masks[[w]][OH.idx],
                              index.mask,
                              ds.out,
-                             idx$year_div, tmasks$fut.year.div) 
+                             idx$year_div, tmasks$fut.year.div)
       #For both cases, final case is the same: tmp.out indexed back in
       out.data[,,,n,,] <- tmp.out
       if (train_qcmask){
       	#qcmask is now the delta applied at a given x,y,t
         qc.out <- rep(1, length(ds.out)) * delta$delta
-        tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                               tmasks$fut.leapmask, 
+        tmp.out <- index.delta(tmasks$hist.leapmask[OH.idx],
+                               tmasks$fut.leapmask,
                                tmasks$OH$masks[[w]][OH.idx],
                                index.mask,
                                qc.out,
-                               idx$year_div, tmasks$fut.year.div) 
-        qc.data[,,,n,,] <- tmp.out        
-      }      
+                               idx$year_div, tmasks$fut.year.div)
+        qc.data[,,,n,,] <- tmp.out
+      }
     }
     return(list(ds=out.data, qc=qc.data))
 }
@@ -161,13 +161,13 @@ delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
         delta <- 1
       }
       if (deltatype == 'mean'){
-        delta <- (sum(delta.fut) / length(delta.fut)) / (sum(delta.hist) / length(delta.hist)) 
-      }else if (deltarype == 'median'){
+        delta <- (sum(delta.fut) / length(delta.fut)) / (sum(delta.hist) / length(delta.hist))
+      }else if (deltatype == 'median'){
         stop(paste("Error in Delta: median is not currently considered for "))
       }
       #Loud warning message for divide-by-0 case
       if(is.nan(delta)||is.infinite(delta)||is.na(delta)){
-        message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop, 
+        message(paste("Warning in delta.downscale: Calculated delta with deltaop", deltaop,
                       "is either NaN or Inf and cannot be processed normally.",
                       "Returning delta of 1 for the calculation."))
         #Add a value flagging operation at this point
@@ -181,7 +181,7 @@ delta.train <- function(delta.hist, delta.fut, deltatype, deltaop, status){
 
 delta.downscale <- function(delta, delta.targ, deltaop, status){
   #Separates out the downscaling function for the delta method.
-  #Adds or multiples targ by delta; passed-in status have separate 
+  #Adds or multiples targ by delta; passed-in status have separate
   #effects.
   if (status > 0){
     #somethign went wrong with training or minsamplesize; return OH unchanged
