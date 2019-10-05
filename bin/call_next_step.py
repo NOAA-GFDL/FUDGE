@@ -419,7 +419,8 @@ def check_mini_status(mini_statdir, minidir, write_qcmask, verbose):
         n_success = len([el for el in str_statfiles if re.search('success', el) is not None])
         if verbose:
             print("There are " + str(n_status) + " " + srst + " statfiles; " + str(n_success) + " successful")
-        if n_status == n_mini:
+        # The below is a hack - but I want to see what the results are
+        if n_status >= n_mini:
             if n_success == n_mini:
                 n_complete += 1
             else:

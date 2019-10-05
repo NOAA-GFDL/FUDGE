@@ -492,8 +492,8 @@ def main():
 
     use = '''
           Expergen usage (two cases:)
-          expergen -i path_to_xml.xml [--sbatch --run-watcher --mail --sbatchmail --run-watcher --not-strict-metadata]
-          expergen -a path_to_aux.json [-a path_to_aux.yml --sbatch --run-watcher --mail --sbatchmail --run-watcher --not-strict-metadata]
+          expergen -i path_to_xml.xml [--sbatch --run-watcher --sbatchmail --email-address Carolyn.Whitlock@noaa.gov --run-watcher --not-strict-metadata]
+          expergen -a path_to_aux.json [-a path_to_aux.json --sbatch --run-watcher --no-statmail --run-watcher --not-strict-metadata]
           '''
     parser = OptionParser(usage=use)
     parser.add_option("-i", "--file", dest="uinput", default='none',
@@ -502,16 +502,16 @@ def main():
                       help="pass location of auxilary JSON/YAML alternative input specifications. Not expected for production use yet; if set, no xml should be used.")
     parser.add_option("--sbatch",action="store_true",default=False,
                       help="Automatically submit the master runscripts using SLURM's sbatch command. Default is set to FALSE")
-    parser.add_option("-m", "--mail", action="store",
-                     dest="mail", default="none",
-                     help="Pass user email for notifications from tools like postProc (this is optional)")
-    parser.add_option("--sbatchmail", action='store_true', dest='msubmail',
-                      default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
-    parser.add_option("--statmail", action='store_true', dest='statmail',
-                      default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
     parser.add_option('--run-watcher', action='store_true', dest='run_watcher',
                        default=False,
                        help="Whether to submit a non-interactive watcher script to the batch queue directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+    parser.add_option("--no-statmail", action='store_true', dest='no_statmail',
+                      default=False, help="Should FUDGE send no email notifications upon step completion?" + "Defaults to false, which sends email notifications from FUDGE.")
+    parser.add_option("--sbatchmail", action='store_true', dest='sbatchmail',
+                      default=False, help="Should slurm email notifications be sent from individual master scripts? Defaults to false, which does not send email notifications from every master script.")
+    parser.add_option("-m", "--email-address", action="store",
+                     dest="mail", default="none",
+                     help="Pass user email for notifications from tools like postProc. If not set, it will be deduced from the environment variable $NEMSemail; if $NEMSemail is not set, defaults to none, which will send no email.")
     parser.add_option('--not-strict-metadata', action='store_true', default=False,
                       dest='not_strict', help="Whether to continue with a FUDGE experiment if the metadata parser could not get the attributes needed to classify input from the netcdf files. Defaults to false, which exits with an error if classification fails. For csv files this option is effectively always set, since csv files don't have the metadata we use.")
     parser.add_option('--metadata-table', action='store', default="$BASEDIR/utils/aux/metadata_table.csv",
@@ -528,7 +528,7 @@ def main():
             NEMSemail1 = 'none'
     else:
         NEMSemail1 = options.mail
-    print "Status emails will be sent to: " + NEMSemail1
+        #print "Status emails will be sent to: " + NEMSemail1
     msub = options.sbatch
     print "Will jobs be automatically submitted? " + str(msub)
     if (options.run_watcher and not options.sbatch):
@@ -615,10 +615,14 @@ def main():
         sys.exit(1)
 
     #CEW edits 6-30 for msub mail verbosity settings
-    msubmail = 0
-    if options.msubmail:
-        msubmail = 1
-    statmail = options.statmail
+    sbatchmail = 0
+    if options.sbatchmail:
+        sbatchmail = 1
+    statmail = not options.no_statmail
+    if not statmail or sbatchmail == 0:
+        if NEMSemail1 == 'none':
+            print("Error in expergen: email from FUDGE or the master scripts was requested, but no email was set!")
+            sys.exit(1)
 
     if re.search("\$BASEDIR", options.metadata_table,) is not None:
         meta_table = re.sub("\$BASEDIR/", "\${BASEDIR}/", options.metadata_table)
@@ -639,14 +643,14 @@ def main():
     generate_experiment(parse_xml, create_default_aux,
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
-                        msubmail, statmail, options.run_watcher,
+                        sbatchmail, statmail, options.run_watcher,
                         options.not_strict, meta_table, options.no_dmget)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
-                        sbase, msubmail, statmail, run_watcher,
+                        sbase, sbatchmail, statmail, run_watcher,
                         not_strict_metadata, metadata_table, no_dmget):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
@@ -825,7 +829,7 @@ def generate_experiment(parse_xml, create_default_aux,
     mail_command = ""
     msub_mail_command = ""
     if (NEMSemail1!='none'):
-     if msubmail==1:
+     if sbatchmail==1:
          mail_command = "-m " + NEMSemail1 + " "
          msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
 
@@ -867,7 +871,7 @@ def generate_experiment(parse_xml, create_default_aux,
         if (p4.returncode != 0):
             print("sourcing of dmget commands failed; please run with --no-dmget option")
             sys.exit(1)
-    if msubmail == 1 and NEMSemail1 != 'none':
+    if sbatchmail == 1 and NEMSemail1 != 'none':
         msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " "
     else:
         msub_string = "sbatch -D $HOME "
@@ -900,18 +904,10 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
         print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
     '''
-
-    #Script exit options - needs to exit with 0
-    #if run_watcher:
-    #    print("Invoking watcher script immediately")
-    #    expinfo = sbase + "/experiment_info.txt"
-    #    expdict = read_exp_info_file(expinfo)
-    #    #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
-    #    runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
+    nextstep_file = make_call_next_step_cmd(sbase, expconfig, statmail, NEMSemail1, sleep=60, nloops=200, verbose=True)
+    ns_cmd = "sbatch -D $HOME " + nextstep_file
     if run_watcher:
         print("Submitting callNextStep for this job to analysis")
-        nextstep_file = make_call_next_step_cmd(sbase, expconfig, NEMSemail1, sleep=60, nloops=200, verbose=True)
-        ns_cmd = "sbatch -D $HOME " + nextstep_file #2019-08-21: removed initiaul slurm load
         print("\033[1;42m" + ns_cmd + "\033[1;m")
         p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output6, errors6 = p6.communicate()
@@ -921,13 +917,16 @@ def generate_experiment(parse_xml, create_default_aux,
             print output6, errors6
             sys.exit(1)
         print output6, errors6
+    else:
+        print("You can submit an experiment-tracking watcher to the batch queue with this command:")
+        print("\033[1;42m" + ns_cmd + "\033[1;m")
     print("It is possible to cancel all jobs belonging to this experiment with the following command(s):")
     print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
     if run_watcher:
         print("\033[1;42mscancel -u $USER -n fudge_watcher." + expconfig + "\033[1;m")
     sys.exit(0)
 
-def make_call_next_step_cmd(sbase, experiment_name, mailid, sleep=60, nloops=10, verbose=True):
+def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60, nloops=10, verbose=True):
     '''
     Makes the command for submitting callNextStep() to analysis.
     Include in documentation: this means the cancel_all_jobs thing probably won't work anymore
@@ -951,17 +950,18 @@ def make_call_next_step_cmd(sbase, experiment_name, mailid, sleep=60, nloops=10,
                              "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
     nextstep_cmd = " ".join(["python -u $BASEDIR/bin/call_next_step.py",
                              "-s " + sbase,
-                             "--mail " + mailid,
                              "--sleep " + str(sleep),
                              "--nloops " + str(nloops),
                              verbose_str])
+    if send_mail:
+        nextstep_cmd += " --mail " + mailid
     nextstep_log = osp.join(sbase, 'log/watcher.${SLURM_JOBID}')
     callnext_file = osp.join(sbase, 'run_watcher.csh')
     with open(callnext_file, 'w') as f:
         f.write(ns_header + "\n")
         f.write(checkout_cmd + "\n")
         f.write(nextstep_cmd + "\n") #+ " >>& " + nextstep_log + "\n")
-        f.write("echo 'script complete'")
+        f.write("echo 'script complete'" + "\n")
     return(callnext_file)
 
 
