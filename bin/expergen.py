@@ -618,8 +618,8 @@ def main():
     sbatchmail = 0
     if options.sbatchmail:
         sbatchmail = 1
-    statmail = not options.no_statmail
-    if not statmail or sbatchmail == 0:
+    statmail = not (options.no_statmail)
+    if statmail or sbatchmail == 1:
         if NEMSemail1 == 'none':
             print("Error in expergen: email from FUDGE or the master scripts was requested, but no email was set!")
             sys.exit(1)
