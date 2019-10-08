@@ -55,13 +55,14 @@ callQM <- function(OH, MH, MF, args, type="",
       MF.slice <- missval.out$MF[[1]]
       mf.missing <- sum(is.na(MF.slice))
 
-      args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
-      args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
-      args$is.uniform.Mf <- length(unique(MF.slice[!is.na(MF.slice)])) <= 1
+      #args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
+      #args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
+      #args$is.uniform.Mf <- length(unique(MF.slice[!is.na(MF.slice)])) <= 1
 
       train.stat <- missval.out$missval.status
       out <- switch(type,
-                    'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
+                    #'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
+                    'BCQM' = bcqm(OH.slice, MH.slice, MF.slice),
                     #Note: CFQM is now called from CallDSMethod
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args),
                     'BCMM' = callBCMM(OH.slice, MH.slice, MF.slice, args)
@@ -79,7 +80,7 @@ callQM <- function(OH, MH, MF, args, type="",
           qc[,,,n,,] <- index.qm(index.mask, bias, olap)
         }
       }
-
+      
       out.data[,,,n,,] <- index.qm(index.mask, out, olap)
 
       if(missval.out$mv.retry & train_qcmask){
@@ -97,6 +98,61 @@ callQM <- function(OH, MH, MF, args, type="",
   }
   #stop('examine idx returned')
   return(list(ds=out.data, qc=qc))
+}
+
+
+cfqm <- function(Oh, Mh, Mf){
+  DSout <- Mf + NA
+  Oh <- Oh[!is.na(Oh)]
+  Mh <- Mh[!is.na(Mh)]
+  Mf.orig <- Mf
+  Mf.nas <- is.na(Mf)
+  Mf <- Mf[!(Mf.nas)]
+  uni.oh <- length(unique(Oh)) <= 1
+  uni.mh <- length(unique(Mh)) <= 1
+  if (uni.mh || uni.oh){
+    print(paste0(ifelse(uni.oh,"Oh",""), ifelse(uni.oh & uni.mh," and ",""),
+                 ifelse(uni.mh,"Mh",""), ifelse(uni.oh & args$uni.mh," are"," is"),
+                 " uniform. Returning Mf."))
+    return(Mf.orig)
+  }else{
+    DSout[!Mf.nas] <- qm(Mh, Oh, Mf)
+    return(DSout)
+  }
+}
+
+bcqm <- function(Oh, Mh, Mf){
+  DSout <- Mf + NA
+  Oh <- Oh[!is.na(Oh)]
+  Mh <- Mh[!is.na(Mh)]
+  Mf.orig <- Mf
+  Mf.nas <- is.na(Mf)
+  Mf <- Mf[!(Mf.nas)]
+  uni.oh <- length(unique(Oh)) <= 1
+  uni.mh <- length(unique(Mh)) <= 1
+  if (uni.mh || uni.oh){
+    print(paste0(ifelse(uni.oh,"Oh",""), ifelse(uni.oh & uni.mh," and ",""),
+                 ifelse(uni.mh,"Mh",""), ifelse(uni.oh & args$uni.mh," are"," is"),
+                 " uniform. Returning Mf."))
+    return(Mf.orig)
+  }else{
+    DSout[!Mf.nas] <- qm(Oh, Mh, Mf)
+    return(DSout)
+  } 
+}
+
+qm <- function(y, x, z){
+  # Common code for the BCQM and CFQM functions. 
+  n.max <- max(length(y), length(x))
+  tau <- c(0, (1:n.max)/(n.max+1), 1)
+  x <- quantile(x, tau, type=8, na.rm=TRUE)
+  y <- quantile(y, tau, type=8, na.rm=TRUE)
+  yout <- approx(x, y, xout=z, rule=1)$y
+  extrap.lower <- is.na(yout) & (z <= min(x))
+  extrap.upper <- is.na(yout) & (z >= max(x))
+  yout[extrap.lower] <- min(y) + (z[extrap.lower]- min(x))
+  yout[extrap.upper] <- max(y) + (z[extrap.upper]- max(x))
+  return(yout)
 }
 
 callBCQMv4 <- function(Oh, Mh, Mf, args) {

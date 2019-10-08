@@ -79,7 +79,7 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
       }
       ds.idx <- !is.na(OH.slice[OH.idx])
       ds.out <- rep(NA, length(ds.idx))
-      tmp.out <- CFQM_hist(remove.missvals(MH.slice), remove.missvals(MF.slice), 
+      tmp.out <- cfqm(remove.missvals(MH.slice), remove.missvals(MF.slice), 
                            remove.missvals(OH.slice[OH.idx])) 
       ds.out[ds.idx] <- tmp.out
       indexed.out <- ds.out

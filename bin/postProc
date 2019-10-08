@@ -98,7 +98,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
                 sys.exit(-1)
             #Note: python 'is' checks to see if same object, '==' checks for same value
             #'is' works within the list comprehensions, but == works outside
-            anom_resid_patterns = ['Anom', 'Resid']
+            anom_resid_patterns = ['Anom', 'Detr']
             supp_patterns = ['qcmask', 'save']
             if any([re.search(el, var) is not None for el in anom_resid_patterns]):
                 if not any([re.search(el, var) is not None for el in supp_patterns]):

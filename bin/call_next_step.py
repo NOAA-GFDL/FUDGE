@@ -237,6 +237,17 @@ def main(scriptdir, sleep=60, nloops=100,
         if len(outsplit) == 0:
             outsplit = [el for el in re.split('\n', outfiles) if el != ""]
             outsplit = [re.split(':', el)[1] for el in outsplit]
+        for f in outsplit:
+            if not osp.isdir(f):
+                tmessage = "Watcher had an unknown status: file " + f + " was supposed to be written by this experiment, but is not present."
+                rmessage = '''
+                Please contact a developer with the experiment logs to resolve this issue. Also check to see what other files from the experiment may not have been written.
+                '''
+                send_status_email('fail', 'watcher', exp_name,
+                                  traceback=tmessage + "\n" + rmessage,
+                                  mailid=mailid, logfiles=logfile_loc,
+                                  exp_info_file=exp_info, outfiles=outsplit)
+
         exp_append = "\n" + "#" * 80 + '\n#' + '\n#'.join(outsplit) #outpath_str
         for el in exp_info_files:
             with open(el, 'a') as f:
