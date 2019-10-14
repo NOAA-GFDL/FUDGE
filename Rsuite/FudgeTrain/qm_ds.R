@@ -55,14 +55,14 @@ callQM <- function(OH, MH, MF, args, type="",
       MF.slice <- missval.out$MF[[1]]
       mf.missing <- sum(is.na(MF.slice))
 
-      #args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
-      #args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
-      #args$is.uniform.Mf <- length(unique(MF.slice[!is.na(MF.slice)])) <= 1
+      args$is.uniform.Oh <- length(unique(OH.slice[!is.na(OH.slice)])) <= 1
+      args$is.uniform.Mh <- length(unique(MH.slice[!is.na(MH.slice)])) <= 1
+      args$is.uniform.Mf <- length(unique(MF.slice[!is.na(MF.slice)])) <= 1
 
       train.stat <- missval.out$missval.status
       out <- switch(type,
                     #'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
-                    'BCQM' = bcqm(OH.slice, MH.slice, MF.slice),
+                    'BCQM' = bcqm(OH.slice, MH.slice, MF.slice, args),
                     #Note: CFQM is now called from CallDSMethod
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args),
                     'BCMM' = callBCMM(OH.slice, MH.slice, MF.slice, args)
@@ -101,18 +101,16 @@ callQM <- function(OH, MH, MF, args, type="",
 }
 
 
-cfqm <- function(Oh, Mh, Mf){
+cfqm <- function(Oh, Mh, Mf, args){
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
   Mf.orig <- Mf
   Mf.nas <- is.na(Mf)
   Mf <- Mf[!(Mf.nas)]
-  uni.oh <- length(unique(Oh)) <= 1
-  uni.mh <- length(unique(Mh)) <= 1
-  if (uni.mh || uni.oh){
-    print(paste0(ifelse(uni.oh,"Oh",""), ifelse(uni.oh & uni.mh," and ",""),
-                 ifelse(uni.mh,"Mh",""), ifelse(uni.oh & args$uni.mh," are"," is"),
+  if (args$is.uniform.Mh || args$is.uniform.Oh){
+    print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
+                 ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
                  " uniform. Returning Mf."))
     return(Mf.orig)
   }else{
@@ -121,18 +119,16 @@ cfqm <- function(Oh, Mh, Mf){
   }
 }
 
-bcqm <- function(Oh, Mh, Mf){
+bcqm <- function(Oh, Mh, Mf, args){
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
   Mf.orig <- Mf
   Mf.nas <- is.na(Mf)
   Mf <- Mf[!(Mf.nas)]
-  uni.oh <- length(unique(Oh)) <= 1
-  uni.mh <- length(unique(Mh)) <= 1
-  if (uni.mh || uni.oh){
-    print(paste0(ifelse(uni.oh,"Oh",""), ifelse(uni.oh & uni.mh," and ",""),
-                 ifelse(uni.mh,"Mh",""), ifelse(uni.oh & args$uni.mh," are"," is"),
+  if (args$is.uniform.Mh || args$is.uniform.Oh){
+    print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
+                 ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$args$is.uniform.Mh," are"," is"),
                  " uniform. Returning Mf."))
     return(Mf.orig)
   }else{

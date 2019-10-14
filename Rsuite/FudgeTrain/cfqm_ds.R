@@ -79,8 +79,16 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
       }
       ds.idx <- !is.na(OH.slice[OH.idx])
       ds.out <- rep(NA, length(ds.idx))
-      tmp.out <- cfqm(remove.missvals(MH.slice), remove.missvals(MF.slice), 
-                           remove.missvals(OH.slice[OH.idx])) 
+      
+      oh <- OH.slice[!is.na(OH.slice)]
+      mh <- MH.slice[!is.na(MH.slice)]
+      mf <- MF.slice[!is.na(MF.slice)]
+      
+      args$is.uniform.Oh <- length(unique(oh)) <= 1
+      args$is.uniform.Mh <- length(unique(mf)) <= 1
+      args$is.uniform.Mf <- length(unique(mf)) <= 1
+      
+      tmp.out <- cfqm(oh, mh, mf, args) 
       ds.out[ds.idx] <- tmp.out
       indexed.out <- ds.out
       out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
