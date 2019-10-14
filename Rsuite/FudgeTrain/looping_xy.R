@@ -16,7 +16,7 @@ loop.xy.data <- function(){
   # Decide where reporting takes place in looping by i, j, w
   imod <- 10
   jmod <- 10
-  wmod <- 10
+  wmod <- ifelse(tmasks$nmasks > 60, 50, 10)
   # Keep track of points in ds by counting for now
   ds_tally <- 0
   t.start <- proc.time()
