@@ -215,6 +215,7 @@ def main(scriptdir, sleep=60, nloops=100,
         If you believe that this was a simple timeout with no steps failed, \
         try restarting the watcher script; if that fails, contact Carolyn.
         '''
+        Path(osp.join(stagedir, "watcher.failure")).touch()
         send_status_email('fail', 'watcher', exp_name,
                           traceback=tmessage + "\n" + rmessage,
                           mailid=mailid, logfiles=logfile_loc,
@@ -245,7 +246,7 @@ def main(scriptdir, sleep=60, nloops=100,
                 '''
                 send_status_email('fail', 'watcher', exp_name,
                                   traceback=tmessage + "\n" + rmessage,
-                                  mailid=mailid, logfiles=logfile_loc,
+                                  mailid=mailid, logfiles=logdir,
                                   exp_info_file=exp_info, outfiles=outsplit)
 
         exp_append = "\n" + "#" * 80 + '\n#' + '\n#'.join(outsplit) #outpath_str
