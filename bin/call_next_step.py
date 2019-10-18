@@ -190,7 +190,7 @@ def main(scriptdir, sleep=60, nloops=100,
                 else:
                     logfile_loc = ""
                     tmessage = ""
-                    send_status_email('fail', 'crossval', exp_name,
+                    send_status_email('failure', 'crossval', exp_name,
                                       traceback=tmessage,
                                       mailid=mailid, logfiles=logfile_loc,
                                       exp_info_file=exp_info, outfiles="")
@@ -216,7 +216,7 @@ def main(scriptdir, sleep=60, nloops=100,
         try restarting the watcher script; if that fails, contact Carolyn.
         '''
         Path(osp.join(stagedir, "watcher.failure")).touch()
-        send_status_email('fail', 'watcher', exp_name,
+        send_status_email('failure', 'watcher', exp_name,
                           traceback=tmessage + "\n" + rmessage,
                           mailid=mailid, logfiles=logfile_loc,
                           exp_info_file=exp_info, outfiles="")
@@ -234,20 +234,27 @@ def main(scriptdir, sleep=60, nloops=100,
             outpath_str = f.read()
         outfiles = "\n" + outpath_str
         outsplit = re.split('\n', outfiles)
-        outsplit = [re.split(':', el)[1] for el in outsplit if re.search('\.ens:', el) is not None]
+        outsplit = [re.split(':', el)[1].strip() for el in outsplit if re.search('\.ens:', el) is not None]
         if len(outsplit) == 0:
             outsplit = [el for el in re.split('\n', outfiles) if el != ""]
-            outsplit = [re.split(':', el)[1] for el in outsplit]
+            outsplit = [re.split(':', el)[1].strip() for el in outsplit]
+        else:
+            # check for cross-validated patterns as well:
+            out_allsplit = re.split('\n', outfiles)
+            out_patt = ['\.dsdeph:', '\.dscvh:']
+            for p in out_patt:
+                outsplit += [re.split(':', el)[1].strip() for el in out_allsplit if re.search(p, el) is not None]
         for f in outsplit:
-            if not osp.isdir(f):
+            if not osp.isfile(f):
                 tmessage = "Watcher had an unknown status: file " + f + " was supposed to be written by this experiment, but is not present."
                 rmessage = '''
                 Please contact a developer with the experiment logs to resolve this issue. Also check to see what other files from the experiment may not have been written.
                 '''
-                send_status_email('fail', 'watcher', exp_name,
+                send_status_email('failure', 'watcher', exp_name,
                                   traceback=tmessage + "\n" + rmessage,
                                   mailid=mailid, logfiles=logdir,
                                   exp_info_file=exp_info, outfiles=outsplit)
+                sys.exit(1)
 
         exp_append = "\n" + "#" * 80 + '\n#' + '\n#'.join(outsplit) #outpath_str
         for el in exp_info_files:
@@ -313,6 +320,7 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
     trend_vars = [re.sub("Trend", "", el) for el in ds_vars]
     ds_vars = list(set(ds_vars + qc_vars + anom_vars + trend_vars))
     outfiles = {}
+    status = 'success'
     for v in ds_vars:
         if v in outdict.keys():
             for t in types:
@@ -321,6 +329,8 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
                 for f in outdict[v][t]['input']:
                     if not osp.isfile(f):
                         print("Error in submit_crossval_job for var " + v + "! File " + f + " does not exist!")
+                        status='failure'
+                        break
                 orig_inFiles = ",".join(outdict[v][t]['input'])
                 inFiles = ",".join([gcp(el) for el in outdict[v][t]['input']])
                 outfile = outdict[v][t]['ens']
@@ -348,7 +358,7 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
                     print(str(err0))
                     print("Error in processing ensemble " +  inFiles + "; call to c-shell failed.")
                     print("Command that failed: " + ens_command)
-                    sys.exit(1)
+                    status='failure'
                 else:
                     if verbose:
                         print(str(out0))
@@ -356,7 +366,7 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
                     gcp(tmp_outfile, outfile, verbose, verbose)
                     print("Copied to " + outfile)
                 outfiles[v + "_" + t] = outfile
-    return('success', [], outfiles)
+    return(status, [], outfiles)
 
 def check_master_status(master_statdir, masterdir, retry, verbose):
     '''
