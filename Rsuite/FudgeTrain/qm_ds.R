@@ -62,7 +62,7 @@ callQM <- function(OH, MH, MF, args, type="",
       train.stat <- missval.out$missval.status
       out <- switch(type,
                     #'BCQM' = callBCQMv4(OH.slice, MH.slice, MF.slice, args),
-                    'BCQM' = bcqm(OH.slice, MH.slice, MF.slice, args),
+                    'BCQM' = call_qm(OH.slice, MH.slice, MF.slice, args, method='bcqm'),
                     #Note: CFQM is now called from CallDSMethod
                     'KDDM' = callKDDM(OH.slice, MH.slice, MF.slice, args),
                     'BCMM' = callBCMM(OH.slice, MH.slice, MF.slice, args)
@@ -101,7 +101,9 @@ callQM <- function(OH, MH, MF, args, type="",
 }
 
 
-cfqm <- function(Oh, Mh, Mf, args){
+call_qm <- function(Oh, Mh, Mf, args, method='bcqm'){
+  #'Wrapper function for the common code between BCQM and CFQM. 
+  #'Switches based on the method supplied.
   DSout <- Mf + NA
   Oh <- Oh[!is.na(Oh)]
   Mh <- Mh[!is.na(Mh)]
@@ -114,31 +116,25 @@ cfqm <- function(Oh, Mh, Mf, args){
                  " uniform. Returning Mf."))
     return(Mf.orig)
   }else{
-    DSout[!Mf.nas] <- qm(Mh, Oh, Mf)
+    if (method == 'bcqm'){
+      DSout[!Mf.nas] <- qm(Oh, Mh, Mf)
+    }else if (method == 'cfqm'){
+      DSout[!Mf.nas] <- qm(Mh, Oh, Mf)
+    }else{
+      stop(paste("Error in call_qm: I don't know how you got here, but", 
+                 "method was neither bcqm nor qm!"))
+    }
     return(DSout)
   }
 }
 
-bcqm <- function(Oh, Mh, Mf, args){
-  DSout <- Mf + NA
-  Oh <- Oh[!is.na(Oh)]
-  Mh <- Mh[!is.na(Mh)]
-  Mf.orig <- Mf
-  Mf.nas <- is.na(Mf)
-  Mf <- Mf[!(Mf.nas)]
-  if (args$is.uniform.Mh || args$is.uniform.Oh){
-    print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
-                 ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$args$is.uniform.Mh," are"," is"),
-                 " uniform. Returning Mf."))
-    return(Mf.orig)
-  }else{
-    DSout[!Mf.nas] <- qm(Oh, Mh, Mf)
-    return(DSout)
-  } 
-}
-
 qm <- function(y, x, z){
-  # Common code for the BCQM and CFQM functions. 
+  # Common code for the BCQM and CFQM functions based off of QDM()
+  #' This is a version of the bias-corrected quantile mapping method, updated
+  #' to produce less of a step function effect with quantile windows.
+  #' For more information on the general method, please consult
+  #' Ho, C-K., D. B. Stephenson, M. Collins, C. A. T. Ferro, and S. J. Brown, 2012: Calibration strategies: A source of additional uncertainty in climate change projections. Bull. Amer. Meteor. Soc., 93(1), 21-26, doi:10.1175/2011BAMS3110.1.
+  #' and the ESD wiki page
   n.max <- max(length(y), length(x))
   tau <- c(0, (1:n.max)/(n.max+1), 1)
   x <- quantile(x, tau, type=8, na.rm=TRUE)
@@ -149,40 +145,6 @@ qm <- function(y, x, z){
   yout[extrap.lower] <- min(y) + (z[extrap.lower]- min(x))
   yout[extrap.upper] <- max(y) + (z[extrap.upper]- max(x))
   return(yout)
-}
-
-callBCQMv4 <- function(Oh, Mh, Mf, args) {
-  #' Modified BCQM in light of observations of QDM()
-  #' This is a version of the bias-corrected quantile mapping method, updated
-  #' to produce less of a step function effect with quantile windows.
-  #' For more information on the general method, please consult
-  #' Ho, C-K., D. B. Stephenson, M. Collins, C. A. T. Ferro, and S. J. Brown, 2012: Calibration strategies: A source of additional uncertainty in climate change projections. Bull. Amer. Meteor. Soc., 93(1), 21-26, doi:10.1175/2011BAMS3110.1.
-  #' and the ESD wiki page
-
-  DSout <- Mf + NA
-  Oh <- Oh[!is.na(Oh)]
-  Mh <- Mh[!is.na(Mh)]
-  Mf.orig <- Mf
-  Mf <- Mf[!(Mf.nas <- is.na(Mf))]
-
-  if (!args$is.uniform.Oh & !args$is.uniform.Mh) {
-    n.max <- max(length(Oh), length(Mh))
-    tau <- c(0, (1:n.max)/(n.max+1), 1)
-    x <- quantile(Mh, tau, type=8, na.rm=TRUE)
-    y <- quantile(Oh, tau, type=8, na.rm=TRUE)
-    yout <- approx(x, y, xout=Mf, rule=1)$y
-    extrap.lower <- is.na(yout) & (Mf <= min(Mh))
-    extrap.upper <- is.na(yout) & (Mf >= max(Mh))
-    yout[extrap.lower] <- min(Oh) + (Mf[extrap.lower]- min(Mh))
-    yout[extrap.upper] <- max(Oh) + (Mf[extrap.upper]- max(Mh))
-    DSout[!Mf.nas] <- yout
-    return(DSout)
-  } else {
-    print(paste0(ifelse(args$is.uniform.Oh,"Oh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," and ",""),
-                 ifelse(args$is.uniform.Mh,"Mh",""), ifelse(args$is.uniform.Oh & args$is.uniform.Mh," are"," is"),
-                 " uniform. Returning Mf."))
-    return(Mf.orig)
-  }
 }
 
 callBCMM <- function(Oh, Mh, Mf, args){
@@ -644,51 +606,3 @@ distmap.new <- function(x, y, densfun = KernSmooth::bkde,
 }
 
 ##### ABOVE ### Can be removed when new version of climod package is installed -djas 2018-01-03
-
-callBCQMv2<-function(LH,CH,CF,args){
-  #'Performs an bias-correction quantile mapping on a single variable
-  #'over the historical period, in order to generate downscaled data.
-  #' @param LH: Local Historical (a.k.a. observations)
-     #' @param CH: Coarse Historical (a.k.a. GCM historical)
-     #' @param CF: Coarse Future (a.k.a GCM future)
-     #' Contains no other arguments in the args parameter.
-     #'
-     #' Note: Even though there is no training step on this method, and no
-     #' intention of implementing multivar downscaling for the QM methods,
-     #' they need to be named to fit into the new indexing scheme.
-
-     #Unlist data from its input form
-     #     CH <- unlist(CH)
-     lengthCH<-length(CH)
-     lengthLH<-length(LH)
-     lengthCF<-length(CF)
-
-     # if (lengthCF>lengthCH) maxdim=lengthCF else maxdim=lengthCH
-     maxdim=max(c(lengthCH, lengthCF, lengthLH))
-
-     # first define vector with probabilities [0,1]
-     #previously, prob was lengthCF
-     cf.present <- sum(!is.na(CF))
-     prob<-seq(0.001,0.999,length.out=cf.present)
-
-     # initialize data.frame
-     #index used ot be 1:lengthCF; doing 1:maxdim instead
-     #c(seq(1,lengthCF), rep(NA,maxdim-lengthCF))
-     if(cf.present != 0){
-       temp<-data.frame(index=1:maxdim,CF=rep(NA,maxdim),CH=rep(NA,maxdim),LH=rep(NA,maxdim),
-                        qCF=rep(NA,maxdim),ecdfCHqCF=rep(NA,maxdim),qLHecdfCHqCF=rep(NA,maxdim))
-       temp$CF[1:lengthCF]<-CF
-       temp$CH[1:lengthCH]<-CH
-       temp$LH[1:lengthLH]<-LH #THIS is the line that's throwing things off
-       temp.CFsorted<-temp[order(temp$CF),]
-       temp.CFsorted$qCF[1:cf.present]<-quantile(temp.CFsorted$CF,prob,na.rm =TRUE)
-       temp.CFsorted$ecdfCHqCF[1:cf.present]<-ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =TRUE))
-       temp.CFsorted$qLHecdfCHqCF[1:cf.present]<-quantile(temp$LH,ecdf(temp$CH)(quantile(temp$CF,prob,na.rm =T)),
-                                                          na.rm =T)
-       temp<-temp.CFsorted[order(temp.CFsorted$index),]
-       return(temp$qLHecdfCHqCF[1:lengthCF])
-     }else{
-       print("No present values in CF; returning all NA")
-       return(CF)
-     }
-}

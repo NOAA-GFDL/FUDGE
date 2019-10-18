@@ -88,7 +88,7 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
       args$is.uniform.Mh <- length(unique(mf)) <= 1
       args$is.uniform.Mf <- length(unique(mf)) <= 1
       
-      tmp.out <- cfqm(oh, mh, mf, args) 
+      tmp.out <- call_qm(oh, mh, mf, args, method='cfqm') 
       ds.out[ds.idx] <- tmp.out
       indexed.out <- ds.out
       out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
@@ -114,16 +114,6 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
     }
   }
   return(list(ds=out.data, qc=qc.data))
-}
-
-
-CFQM_hist <- function(MH, MF, OH){
-  #Not worrying about sort in this function - we need it OH-ordered to get the
-  #leapdays in the right order anyway
-  prob=seq(from=0.001, to=0.999, length.out=length(OH))
-  OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
-  DS <- quantile(MF, OH.mapped.to.MH, na.rm=T)
-  return(DS[rank(OH, ties='first')])
 }
 
 set.CFQM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
