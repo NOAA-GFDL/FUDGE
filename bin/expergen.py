@@ -787,7 +787,10 @@ def generate_experiment(parse_xml, create_default_aux,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
                                   not_strict_metadata, metadata_table)
-
+    if auxdict['ds_method'] == 'CFQM':
+        print("Error in expergen: ds method CFQM is not supported for tag kahlua-20191114!")
+        print("Please use a later kahlua tag with revised CF indexing!")
+        sys.exit(1)
     # copy xml to configs dir
     cdir = sbase+"/config/"
     if uinput is not "none":
