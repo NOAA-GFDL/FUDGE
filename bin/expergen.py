@@ -530,10 +530,10 @@ def main():
         NEMSemail1 = options.mail
         #print "Status emails will be sent to: " + NEMSemail1
     msub = options.sbatch
-    print "Will jobs be automatically submitted? " + str(msub)
-    if (options.run_watcher and not options.sbatch):
-        print("Error in expergen: option run-watcher should only be used with sbatch!")
-        sys.exit(1)
+    #print "Will jobs be automatically submitted? " + str(msub)
+    #if (options.run_watcher and not options.sbatch):
+    #    print("Error in expergen: option run-watcher should only be used with sbatch!")
+    #    sys.exit(1)
     # xml and aux input specifications
     inputs = [options.uinput, options.auxinput]
     if all([el is "none" for el in inputs]):
@@ -938,7 +938,7 @@ def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60,
     '''
     fudgetag = os.environ.get('FUDGETAG')
     ns_header = "\n".join(['#!/bin/tcsh',
-                            '#SBATCH -t 2:12:00',
+                            '#SBATCH -t 2-12:00:00',
                             # 2019-08-21: slurm only redirects stdout/stderr
                             # after a line is complete;
                             # redirect needs to take place within the script itself
