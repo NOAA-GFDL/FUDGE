@@ -28,7 +28,6 @@ minijob:
   - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
   - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
   - set -x
-<<<<<<< HEAD
   - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/cew/Code/FUDGE_regtests/full_xml_subset_single.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all' --verbose
  tags:
