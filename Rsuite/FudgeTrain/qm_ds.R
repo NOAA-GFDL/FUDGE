@@ -104,8 +104,8 @@ callQM <- function(OH, MH, MF, args, type="",
 call_qm <- function(Oh, Mh, Mf, args, method='bcqm'){
   #'Wrapper function for the common code between BCQM and CFQM. 
   #'Switches based on the method supplied.
-  DSout <- Mf + NA
-  Oh <- Oh[!is.na(Oh)]
+  Oh.nas <- is.na(Oh)
+  Oh <- Oh[!Oh.nas]
   Mh <- Mh[!is.na(Mh)]
   Mf.orig <- Mf
   Mf.nas <- is.na(Mf)
@@ -117,9 +117,11 @@ call_qm <- function(Oh, Mh, Mf, args, method='bcqm'){
     return(Mf.orig)
   }else{
     if (method == 'bcqm'){
+      DSout <- Mf.nas + NA
       DSout[!Mf.nas] <- qm(Oh, Mh, Mf)
     }else if (method == 'cfqm'){
-      DSout[!Mf.nas] <- qm(Mh, Oh, Mf)
+      DSout = Oh.nas + NA
+      DSout[!Oh.nas] <- qm(Mf, Mh, Oh)
     }else{
       stop(paste("Error in call_qm: I don't know how you got here, but", 
                  "method was neither bcqm nor qm!"))
