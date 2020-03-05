@@ -146,6 +146,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
   ds.fut <- remove.missvals(unlist(ds.fut))
   
   # CHECK IF FEASIBLE -- IF SO CALL APPROPRIATE TAIL SCHEME FUNCTION
+  print(sapply(list(ds.fut, model.fut, model.hist, obs.hist), length))
   if( any(sapply(list(ds.fut, model.fut, model.hist, obs.hist), length) < 2) ){
     #You need at least 2 points to do this tail adjust
     #Bypass for missing data
@@ -183,6 +184,8 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
         lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
       }
     }
+    print(lotail$cond)
+    print(hitail$cond)
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
     cond.tmp[cond.tmp] <- hitail$cond

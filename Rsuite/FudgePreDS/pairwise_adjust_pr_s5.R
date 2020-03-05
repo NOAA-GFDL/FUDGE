@@ -24,35 +24,10 @@ adjust_pr_s5 <- function(test, input, adjusted.output){
       #non-OH downscaling is straightforward:
       DS[test$qc_args$MF] <- 0
     }else{
-      #Oh downscaling is more complicated, especially when leapdays get involved
-      oh.timelen <- length(OH)
-      mf.timelen <- length(pr_args$mf.mask)
-      nrips <- dim(adjusted.output$ds.out)[4]
       start <- 1
       for(n in 1:nrips){
-        if (oh_timelen >= mf_timelen){
-          #If more samples in OH, index by nyears present
-          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                   tmasks$hist.year.div, tmasks$fut.year.div, 
-                                   start_year=start)
-          OH.idx <- idx$index
-          start <- idx$end
-        }else{
-          #If more samples in MF, repeat mask until it matches length of MF sample;
-          #repeat for each ensemble
-          idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                   tmasks$hist.year.div, tmasks$fut.year.div, 
-                                   start_year=1)
-          OH.idx <- idx$index         
-        }
-        #After either step is complete, index the mask to the future timseries
-        #using index.delta
-        loop.ds.prmask <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                                      tmasks$fut.leapmask, 
-                                      rep(1, oh.timelen), 
-                                      rep(1, mf.timelen), 
-                                      obs.prmask[,,,n,,])
-        adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
+        loop.ds.prmask <- test$qc_args$OH[tmasks$cf_resample[[1]]]
+        adjusted.output$ds.out[,,,n,,][loop.ds.prmask] <- 0
       }
     }
   }else{
@@ -72,7 +47,7 @@ adjust_pr_s5 <- function(test, input, adjusted.output){
   input$hist.targ <- OH
   input$hist.pred <- MH
   input$fut.pred <- MF
-  adjusted.output$ds.out <- DS
+  adjusted.output$ds.out[!is.na(DS)] <- DS[!is.na(DS)]
   return(list('input' = input, 'adjusted.output' = adjusted.output))
 }
 

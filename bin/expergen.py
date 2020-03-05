@@ -326,11 +326,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #	print(property)
 #	sys.exit()
     if (len(listoutdir) > 1):
-       print "Multi-output ON"
+       print("Multi-output ON")
        global multi
        multi = "on"
     else:
-       print "single output on"
+       print("single output on")
        global multi
        multi = "off"
     ##script -and- log prefix section ##
@@ -360,7 +360,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     elif(preexist == 'move'):
         force = True #new move feature in clobber - support
     else:
-        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
+        print("\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist)
         sys.exit(-2)
     if(output_grid == 'station'):
         if(latjstart == latjend):
@@ -421,9 +421,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         else:
             outdir = out_dir
         #experiment in the above is expconfig that's constructed
-        #print "Output directory is :",outdir
-        #print "Script directory is:",sbase
-#new
         if (pp == False):
             for lon in range(int(lons),int(lone)):
                 exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
@@ -524,11 +521,10 @@ def main():
         try:
             NEMSemail1 = os.environ["NEMSemail"]
         except KeyError:
-            print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
+            print("-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually.")
             NEMSemail1 = 'none'
     else:
         NEMSemail1 = options.mail
-        #print "Status emails will be sent to: " + NEMSemail1
     msub = options.sbatch
     #print "Will jobs be automatically submitted? " + str(msub)
     #if (options.run_watcher and not options.sbatch):
@@ -787,10 +783,16 @@ def generate_experiment(parse_xml, create_default_aux,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
                                   not_strict_metadata, metadata_table)
-    if auxdict['ds_method'] == 'CFQM':
-        print("Error in expergen: ds method CFQM is not supported for tag kahlua-20191114!")
-        print("Please use a later kahlua tag with revised CF indexing!")
-        sys.exit(1)
+    # 2020-03-02: Adding checks for combinations of settings that
+    # are not currently turned on until we get the QC
+    print(ds_info.keys())
+    if ds_info["downscale_oh"]:
+        if auxdict['OH'].keys()[0] == 'pr':
+            print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
+            sys.exit(1)
+        if len( auxdict['DS']['rips']) > 1:
+            print("Error in expergen: multi-rip behavior not established for CF methods!")
+            sys.exit(1)
     # copy xml to configs dir
     cdir = sbase+"/config/"
     if uinput is not "none":
@@ -821,9 +823,7 @@ def generate_experiment(parse_xml, create_default_aux,
         print("Making experiment_info.txt by parsing aux dictionary")
         make_exp_info(auxinput, slogloc)
 
-############### crte ppscript #################
-    print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
-    #print " ========================="
+    print("Step 4: --------------PP postProc SCRIPT GENERATION-----------------------")
     dev = "off"
     msubwrapper = []
     #CEW edit 6-30 for better status file monitoring when queue is full
@@ -879,26 +879,30 @@ def generate_experiment(parse_xml, create_default_aux,
     else:
         msub_string = "sbatch -D $HOME "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
-    msub_cmd = "module load slurm; "
+    env_script = osp.abspath(osp.join(sbase, "environment_info.csh"))
+    msub_cmd = "source " + env_script + "; "
     for el in master_scripts:
         #msub_cmd can be saved for later
         print(el)
         msub_cmd = msub_cmd + msub_string + el + "; "
     if msub:
-        p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p5 = subprocess.Popen(msub_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        #p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output5, errors5 = p5.communicate()
         #######
         if(p5.returncode != 0):
-            print "Step5:!!!! FAILED !!!!, please contact developer."
-            print output5, errors5
-            sys.exit(0)
-        print output5, errors5
-        print(msub_cmd)
-        print "5 - completed"
-    print "-----------"
+            print("Step5:!!!! FAILED !!!!, please contact developer.")
+            print(msub_cmd)
+            print(output5, errors5)
+            sys.exit(1)
+        print(output5)
+        print(errors5)
+        print("'"+msub_cmd+"'")
+        print("5 - completed")
+    print("-----------")
     if not msub:
-        print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
-        print "\033[1;95m"+msub_cmd+"\033[1;m"
+        print("--sbatch not set on command line. To submit jobs at a later point, please use the following:")
+        print("\033[1;95m"+msub_cmd+"\033[1;m")
     '''
     #if parse_xml:
     print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
@@ -916,10 +920,12 @@ def generate_experiment(parse_xml, create_default_aux,
         output6, errors6 = p6.communicate()
         #######
         if(p6.returncode != 0):
-            print "Submission of callNextStep failed; please resubmit or call fron the command line."
-            print output6, errors6
+            print("Submission of callNextStep failed; please resubmit or call fron the command line.")
+            print(output6)
+            print(errors6)
             sys.exit(1)
-        print output6, errors6
+        print(output6)
+        print(errors6)
     else:
         print("You can submit an experiment-tracking watcher to the batch queue with this command:")
         print("\033[1;42m" + ns_cmd + "\033[1;m")
