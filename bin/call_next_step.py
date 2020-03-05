@@ -46,6 +46,22 @@ def ParseNextStepArgs():
         NEMSemail1 = options.mail
     main(options.scriptdir, options.sleep, options.nloops, NEMSemail1, options.verbose)
 
+def gcp_then_touch(file):
+    '''
+    Attempts to gcp a file to a new location; if that fails, attempts to touch it.
+    This is getting added in due to lab nfs issues slowing down regression tests.
+    Hopefully, we can eliminate this alltogether when the issues resolve.
+    If the issues resolve.
+    '''
+    tdir = os.environ.get('TMPDIR')
+    tmpfile = osp.join(tdir.rstrip("/"), file.lstrip("/"))
+    print(tmpfile)
+    if not osp.isdir(osp.dirname(tmpfile)):
+        os.makedirs(osp.dirname(tmpfile))
+    Path(tmpfile).touch()
+    gcp(tmpfile, file)
+
+
 def main(scriptdir, sleep=60, nloops=100,
          mailid='Carolyn.Whitlock@noaa.gov', verbose=False):
     '''
@@ -96,10 +112,11 @@ def main(scriptdir, sleep=60, nloops=100,
             print(master_retry)
             status,faillist,master_retry = check_master_status(osp.join(statdir, 'master'),
                                                   osp.join(scriptdir, 'master'),
-                                                  master_retry, verbose)
+                                                  master_retry, scriptdir, verbose)
             if status == 'success':
                 stage = 'mini'; status = 'wait'
-                Path(osp.join(stagedir, "master.success")).touch()
+                #Path(osp.join(stagedir, "master.success")).touch()
+                gcp_then_touch(osp.join(stagedir, "master.success"))
             elif status == 'fail':
                 logfile_loc = logdir + "/master." + exp_name + ".*"
                 tmessage = "One or more master jobs have failed and unsuccessfully retried; sample master slices include " + (",").join(faillist)
@@ -107,7 +124,8 @@ def main(scriptdir, sleep=60, nloops=100,
                                traceback= tmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
-                Path(osp.join(stagedir, "master.fail")).touch()
+                #Path(osp.join(stagedir, "master.fail")).touch()
+                gcp_then_touch(osp.join(stagedir, "master.fail"))
                 sys.exit(1)
         elif stage == 'mini':
             status,faillist = check_mini_status(osp.join(statdir, 'minifile'),
@@ -116,6 +134,7 @@ def main(scriptdir, sleep=60, nloops=100,
             if status == 'success':
                 stage = 'postProc'; status = 'wait'
                 Path(osp.join(stagedir, "mini.success")).touch()
+                #gcp_then_touch(osp.join(stagedir, "mini.success"))
                 submit_postproc_jobs(scriptdir, verbose)
             elif status == 'fail':
                 logfile_loc = logdir + "/out.*"
@@ -124,7 +143,8 @@ def main(scriptdir, sleep=60, nloops=100,
                                traceback= tmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
-                Path(osp.join(stagedir, "mini.fail")).touch()
+                #Path(osp.join(stagedir, "mini.fail")).touch()
+                gcp_then_touch(osp.join(stagedir, "mini.fail"))
                 sys.exit(1)
         elif stage == 'postProc':
             # Note to self: concatenation steps include both postproc and anomaly/trend addition
@@ -144,7 +164,8 @@ def main(scriptdir, sleep=60, nloops=100,
                     epoch = "fake-epoch"
                     trange_string = "fake-trange"
                     status,faillist,ens_outfiles,exp_info_files = submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
-                    Path(osp.join(stagedir, "postproc.success")).touch()
+                    #Path(osp.join(stagedir, "postproc.success")).touch()
+                    gcp_then_touch(osp.join(stagedir, "postproc.success"))
                 else:
                     stage = 'end'; status = 'success'
                     skip_wait = True
@@ -158,14 +179,16 @@ def main(scriptdir, sleep=60, nloops=100,
                                traceback= tmessage + "\n" + rmessage,
                                mailid=mailid, logfiles = logfile_loc,
                                exp_info_file = exp_info, outfiles = "")
-                Path(osp.join(stagedir, "postproc.failure")).touch()
+                #Path(osp.join(stagedir, "postproc.failure")).touch()
+                gcp_then_touch(osp.join(stagedir, "postproc.failure"))
                 sys.exit(1)
         elif stage == 'ensemble':
             if num_ens > 1:
                 #status = check_ens_status()
                 if status == 'success':
                     stage = 'crossval' ; status = 'submit'
-                    Path(osp.join(stagedir, "ensemble.success")).touch()
+                    #Path(osp.join(stagedir, "ensemble.success")).touch()
+                    gcp_then_touch(osp.join(stagedir, "ensemble.success"))
                 elif status == 'fail':
                     logfile_loc = osp.join(logdir, "watcher.*")
                     tmessage = "One or more of the ensemble concatenation jobs failed; failed jobs include " + (",").join(faillist)
@@ -173,7 +196,8 @@ def main(scriptdir, sleep=60, nloops=100,
                                       traceback=tmessage,
                                       mailid=mailid, logfiles=logfile_loc,
                                       exp_info_file=exp_info, outfiles="")
-                    Path(osp.join(stagedir, "ensemble.failure")).touch()
+                    #Path(osp.join(stagedir, "ensemble.failure")).touch()
+                    gcp_then_touch(osp.join(stagedir, "ensemble.failure"))
                     sys.exit(1)
             else:
                 stage = 'crossval'
@@ -368,7 +392,7 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
                 outfiles[v + "_" + t] = outfile
     return(status, [], outfiles)
 
-def check_master_status(master_statdir, masterdir, retry, verbose):
+def check_master_status(master_statdir, masterdir, retry, scriptdir, verbose):
     '''
     Checks the status of an experiment when it's doing things related
     to the master/minifile chunking steps
@@ -388,7 +412,7 @@ def check_master_status(master_statdir, masterdir, retry, verbose):
         if n_success == n_master:
             status = 'success'
         elif resubmit:
-            submit_retry_scripts(master_statdir, masterdir)
+            submit_retry_scripts(master_statdir, masterdir, scriptdir)
             print("retry: " + str(retry))
             print("master retry: " + str(max_retry))
             print(str(retry < max_retry))
@@ -404,14 +428,15 @@ def check_master_status(master_statdir, masterdir, retry, verbose):
     return(status, faillist, retry)
 
 
-def submit_retry_scripts(statdir, scriptdir):
+def submit_retry_scripts(statdir, scriptdir, basedir):
     failstat = [el for el in os.listdir(statdir) if re.search('fail', el) is not None]
     print(failstat)
     pieces = [re.split('\.', el)[0] for el in failstat]
     failscripts = ["master_script_" + el for el in pieces]
+    env_script = osp.abspath(osp.join(basedir, "environment_info.csh"))
     for stat,scr in zip(failstat, failscripts):
         os.remove(osp.join(statdir, stat))
-        submit_cmd = "module load slurm; sbatch -D $HOME " + osp.abspath(osp.join(scriptdir, scr))
+        submit_cmd = "source " + env_script + "; sbatch -D $HOME " + osp.abspath(osp.join(scriptdir, scr))
         p1 = subprocess.Popen(submit_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output1, error1 = p1.communicate()
         if(p1.returncode != 0):

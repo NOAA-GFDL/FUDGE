@@ -85,26 +85,37 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
         i_out_file =  "i_pattern_"+str(i) +".nc"
         i_outfiles.append(i_out_file)
         i_out_paths.append(osp.join(outdir_j, i_out_file)) #osp.join(input_dir, i_out_file)
-        y_idx = dimmap.index('y')
-        y_perm_in =  dimlist[y_idx] + "," + ",".join([y for i,y in enumerate(dimlist) if i!=y_idx])
-        y_perm_out = ",".join(dimlist)
-        if len(j_patterns) > 1:
-            #If there's more than one J, find the j matches for this i
-            loop_file = call_cat_min(y_perm_in, y_perm_out, input_dir, i_subset,
-                                        tdir_j, osp.join(outdir_j, i_out_file), i_patt)
-        else:
-            #Copy to directory that i concatenation expects to find results in
+        try:
+            y_idx = dimmap.index('y')
+        except ValueError:
+            # This is a dodge for some input files that don't have a y dim
             shutil.copy2(osp.join(input_dir, i_subset[0]), osp.join(outdir_j, i_out_file))
+        else:
+            y_perm_in =  dimlist[y_idx] + "," + ",".join([y for i,y in enumerate(dimlist) if i!=y_idx])
+            y_perm_out = ",".join(dimlist)
+            if len(j_patterns) > 1:
+                #If there's more than one J, find the j matches for this i
+                loop_file = call_cat_min(y_perm_in, y_perm_out, input_dir, i_subset,
+                                            tdir_j, osp.join(outdir_j, i_out_file), i_patt)
+            else:
+                #Copy to directory that i concatenation expects to find results in
+                shutil.copy2(osp.join(input_dir, i_subset[0]), osp.join(outdir_j, i_out_file))
         #End i loop
     #Final concatenation operation
     print("final concatenation operation in i")
     print("outer call to cat_min")
     print(i_outfiles)
-    x_idx = dimmap.index('x')
-    x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
-    x_perm_out = ",".join(dimlist)
-    xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
-                  tdir_i, tmp_outfile, "all values")
+    try:
+        x_idx = dimmap.index('x')
+    except ValueError:
+        # not all files have an x dim either.
+        xy_out = osp.join(outdir_j, i_out_file)
+        tmp_outfile = xy_out
+    else:
+        x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
+        x_perm_out = ",".join(dimlist)
+        xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
+                      tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
     #Final step needs to be finalizing some metadata atts
     #experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"

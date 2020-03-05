@@ -30,18 +30,23 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
         rip_suffix = ds_rips[1][-4:]
         all_rip = "r1to" + str(len(ds_rips)) + rip_suffix
         ds_rips = ds_rips + ["ens"]
-    write_qc = False
+    write_qc = auxdict['make_qcmask']
     rip_sub_string = '<RIP>'
     var_sub_string = '<VAR>'
     end_suffix = "I<ISTART>-<IEND>_J<JSTART>-<JEND>."
     ens_suffix = "_ensmbl.nc"
     ds_path = auxdict["DS"]['out_dir']
     ds_file = auxdict['DS']['out_file']
+    if re.search(var_sub_string, ds_file) is None:
+        var_sub_string = auxdict["DS"]['vars'][0]
     exp_name = auxdict['ds_experiment_name']
     ds_file = re.sub(end_suffix, "", ds_file)
     #Step 1: single-ens output from FUDGE
     for var in ds_vars:
         ds_out['ds'][var] = {} #OrderedDict()
+        if write_qc:
+            var_qc = var + '_qcmask'
+            ds_out['ds'][var_qc] = {}
     for rip in ds_rips:
         if rip != 'ens':
             loop_path = re.sub(rip_sub_string, rip, ds_path)
@@ -56,8 +61,7 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
                 loop_var_file = re.sub(var_sub_string, var, loop_file)
                 ds_out['ds'][var][rip] = osp.join(loop_var_path, loop_var_file)
                 if write_qc:
-                    var_qc = var + '_qcmask'
-                    loop_qc_file = re.sub(var_sub_string, var_qc, loop_file)
+                    loop_qc_file = re.sub("_" + var_sub_string, "_" + var_qc, loop_file)
                     ds_out['ds'][var_qc][rip] = osp.join(loop_var_path, loop_qc_file)
             else:
                 #Multi-ens file path creation
@@ -66,12 +70,14 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
                 loop_var_file = re.sub("\.nc", ens_suffix, loop_var_file)
                 ds_out['ds'][var]['ens'] = osp.join(loop_var_path, loop_var_file)
                 if write_qc:
-                    var_qc = var + '_qcmask'
-                    loop_qc_file = re.sub(var_sub_string, var_qc, loop_file)
+                    loop_qc_file = re.sub("_" + var_sub_string, "_" + var_qc, loop_file)
                     loop_qc_file = re.sub(".nc^", ens_suffix, loop_qc_file)
                     ds_out['ds'][var_qc]['ens'] = osp.join(loop_var_path, loop_qc_file)
     # Now that we've got the qcmask calculation, recycle that
     ds_vars = ds_out['ds'].keys()
+    ds_vars.sort()
+    print("ds_vars:")
+    print(ds_vars)
     #Step 3: anomaly output, single and multi-ens
     ds_out['anom'] = {}
     for var in ds_vars:
@@ -147,19 +153,28 @@ def make_AnomTrend_filepaths(var, anom_var, dict, rips, write_qc=False):
     out = OrderedDict()
     #anom_var = var + vstring
     out[anom_var] = OrderedDict()
+    is_qc = False
+    if re.search("_qcmask", var) is not None:
+        is_qc = True
+        qc_var = anom_var
+        var = re.sub("_qcmask", "", var)
+        anom_var = re.sub("_qcmask", "", anom_var)
+        out[qc_var] = {}
     for rip in rips:
         if rip != 'ens':
             anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ds'][var][rip])
-            out[anom_var][rip] = osp.join(anom_dir, anom_file)
-            if write_qc:
-                anom_dir,anom_file = swap_anom_var(var+"_qcmask", anom_var+"_qcmask", dict['ds'][var+"_qcmask"][rip])
-                out[anom_var+"_qcmask"][rip] = osp.join(anom_dir, anom_file)
+            if not is_qc:
+                out[anom_var][rip] = osp.join(anom_dir, anom_file)
+            else:
+                anom_file = re.sub(anom_var, qc_var, anom_file)
+                out[qc_var][rip] = osp.join(anom_dir, anom_file)
         else:
             anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ds'][var]['ens'])
-            out[anom_var]['ens'] = osp.join(anom_dir, anom_file)
-            if write_qc:
-                anom_dir,anom_var = swap_anom_var(var+"_qcmask", anom_var+"_qcmask", dict['ds'][var+"_qcmask"]['ens'])
-                out[anom_var+"_qcmask"]['ens'] = anom_file
+            if not is_qc:
+                out[anom_var]['ens'] = osp.join(anom_dir, anom_file)
+            else:
+                anom_file = re.sub(anom_var, qc_var, anom_file)
+                out[qc_var]['ens'] = osp.join(anom_dir, anom_file)
     return(out)
 
 def swap_anom_var(var, anom_var, filepath):

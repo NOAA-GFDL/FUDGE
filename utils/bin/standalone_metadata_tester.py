@@ -330,6 +330,8 @@ def make_qc_longname(qc_method, ds_method, ds_var):
             qc_longname = "Delta of " + ds_var
         elif ds_method == "BCMM":
             qc_longname = "Bias of " + ds_var
+        elif ds_method == 'CFQM':
+            qc_longname = "Out-of-bounds tracking of " + ds_var
         else:
             qc_longname = "Training qcmask for " + ds_var
     else:
@@ -352,6 +354,8 @@ def make_qc_comment(qc_method, ds_method, BASEDIR):
             qc_comment = "Delta used to generate DS output at a given x,y,t"
         if ds_method == "BCMM":
             qc_comment = "Bias of historical (MH - OH) at a given x,y,t"
+        elif ds_method == "CFQM":
+            qc_comment = "Places in DS timeseries where (OH >= max(MH)) = 2 and (OH <= min(MH)) = 1"
     return(qc_comment)
 
 def make_global_comment(ds_method, var, region, grid, kfold, exp_name, train_data, predictor_vars, fut_rips):
@@ -365,10 +369,12 @@ def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_n
     #Makes global comment for qc vars; some switches based on qc method
     make_start = True
     if qc_method == 'qc.train':
-        if ds_method == 'DeltaSD' or ds_method == "BCMM":
+        if ds_method == 'DeltaSD' or ds_method == "BCMM" or ds_method == 'CFQM':
             make_start = False
             if ds_method == 'DeltaSD':
                 start = "Output to document the delta ratio applied at individual x,y,twindow locations "
+            elif ds_method == 'CFQM':
+                start = "Output to document out-of-bounds conditions for OH relative to MH "
             else:
                 start = "Output to document the bias applied at individual x,y,twindow locations "
         else:

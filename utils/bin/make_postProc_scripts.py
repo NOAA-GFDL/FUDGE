@@ -92,7 +92,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     # msub_commands = "\n".join(["sbatch --exclusive " + el for el in code_list]) + "\n"
     msub_commands = "\n".join(["sbatch " + el for el in code_list]) + "\n"
     #msub_text = msub_text + msub_commands + "\n"
-    msub_text = msub_commands + "\n"
+    msub_text = msub_text + msub_commands + "\n"
     with open(msub_file, 'w') as f:
         f.write(msub_text)
     os.chmod(msub_file, runmode)
