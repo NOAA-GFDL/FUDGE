@@ -79,12 +79,11 @@ gregorian_resample <- function(hist_dates, fut_dates) {
 	# logical vectors indicating positions of leapdays in historical and future time periods
 	# 02-2020: can't search for Feb. 29th b/c we want to do this for 365-day 
 	# and 360-day data too
-	leapyears <- c(1900, 1904, 1908, 1912, 1916, 1920, 1924, 1928, 1932, 1936, 
+	leapyears <- c(1904, 1908, 1912, 1916, 1920, 1924, 1928, 1932, 1936, 
 	               1940, 1944, 1948, 1952, 1956, 1960, 1964, 1968, 1972, 1976, 
 	               1980, 1984, 1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 
 	               2020, 2024, 2028, 2032, 2036, 2040, 2044, 2048, 2052, 2056, 
-	               2060, 2064, 2068, 2072, 2076, 2080, 2084, 2088, 2092, 2096, 
-	               2100)
+	               2060, 2064, 2068, 2072, 2076, 2080, 2084, 2088, 2092, 2096)
 	hist_leapdays <- format(hist_dates,"%m-%d") == "02-28" & (as.numeric(format(hist_dates,"%Y")) %in% leapyears)
 	fut_leapdays <- format(fut_dates,"%m-%d") == "02-28" & (as.numeric(format(fut_dates,"%Y")) %in% leapyears)
 	  

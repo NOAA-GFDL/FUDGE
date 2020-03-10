@@ -526,10 +526,10 @@ def main():
     else:
         NEMSemail1 = options.mail
     msub = options.sbatch
-    #print "Will jobs be automatically submitted? " + str(msub)
-    #if (options.run_watcher and not options.sbatch):
-    #    print("Error in expergen: option run-watcher should only be used with sbatch!")
-    #    sys.exit(1)
+    print("Will jobs be automatically submitted? " + str(msub))
+    if (options.run_watcher and not options.sbatch):
+        print("Error in expergen: option run-watcher should only be used with sbatch!")
+        sys.exit(1)
     # xml and aux input specifications
     inputs = [options.uinput, options.auxinput]
     if all([el is "none" for el in inputs]):
@@ -783,6 +783,7 @@ def generate_experiment(parse_xml, create_default_aux,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
                                   not_strict_metadata, metadata_table)
+
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
     print(ds_info.keys())
@@ -793,6 +794,7 @@ def generate_experiment(parse_xml, create_default_aux,
         if len( auxdict['DS']['rips']) > 1:
             print("Error in expergen: multi-rip behavior not established for CF methods!")
             sys.exit(1)
+
     # copy xml to configs dir
     cdir = sbase+"/config/"
     if uinput is not "none":
@@ -880,7 +882,8 @@ def generate_experiment(parse_xml, create_default_aux,
         msub_string = "sbatch -D $HOME "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
     env_script = osp.abspath(osp.join(sbase, "environment_info.csh"))
-    msub_cmd = "source " + env_script + "; "
+    #msub_cmd = "source " + env_script + "; "
+    msub_cmd = ""
     for el in master_scripts:
         #msub_cmd can be saved for later
         print(el)
@@ -915,7 +918,7 @@ def generate_experiment(parse_xml, create_default_aux,
     ns_cmd = "sbatch -D $HOME " + nextstep_file
     if run_watcher:
         print("Submitting callNextStep for this job to analysis")
-        print("\033[1;42m" + ns_cmd + "\033[1;m")
+        print("\033[1;42m" + ns_cmd + "\033[0;m" + "\n")
         p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output6, errors6 = p6.communicate()
         #######
@@ -944,7 +947,7 @@ def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60,
     '''
     fudgetag = os.environ.get('FUDGETAG')
     ns_header = "\n".join(['#!/bin/tcsh',
-                            '#SBATCH -t 2-12:00:00',
+                            '#SBATCH -t 2:12:00',
                             # 2019-08-21: slurm only redirects stdout/stderr
                             # after a line is complete;
                             # redirect needs to take place within the script itself
