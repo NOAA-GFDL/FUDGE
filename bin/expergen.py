@@ -947,7 +947,7 @@ def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60,
     '''
     fudgetag = os.environ.get('FUDGETAG')
     ns_header = "\n".join(['#!/bin/tcsh',
-                            '#SBATCH -t 2:12:00',
+                            '#SBATCH -t 2:12:00:00',
                             # 2019-08-21: slurm only redirects stdout/stderr
                             # after a line is complete;
                             # redirect needs to take place within the script itself
