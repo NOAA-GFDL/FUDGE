@@ -44,16 +44,19 @@
 # ensemble limits? 1 to 12 ?
 
 
-CF_resample <- function(hist_dates, fut_dates, hist_caltype, fut_caltype) {
+CF_resample <- function(hist_dates, fut_dates, hist_cal, fut_cal) {
+  get.cal.strings()
+  hist_caltype = get_caltype(hist_cal)
+  fut_caltype = get_caltype(fut_cal)
+  hist_hascal = (hist_cal != "") || (hist_cal %in% none.strings)
+  fut_hascal = (fut_cal != "") || (fut_cal %in% none.strings)
 	if (hist_caltype != fut_caltype){
-		warning(paste("hist_caltype:", hist_caltype, "and fut_caltype:", fut_caltype))
+		warning(paste("hist_cal:", hist_caltype, "and fut_cal:", fut_caltype))
 		stop("Historical calendar type must match future calendar type!")
 	}
   nrips = 1
   cf_fut_masks = list()
-  get.cal.strings()
-  hist_hascal = (hist_caltype != "") || (hist_caltype %in% none.strings)
-  fut_hascal = (fut_caltype != "") || (fut_caltype %in% none.strings)
+
   for (n in 1:nrips){
     if (hist_hascal & fut_hascal){
       # Note: as of 02-2020, doing gregorian resample for all calendar
@@ -125,30 +128,44 @@ simple_resample <- function(hist_dates, fut_dates) {
 		return(cf_fut_idx)
 }
 
+get_caltype <- function(cal){
+  get.cal.strings()
+  if (cal %in% julian.strings){
+    caltype = 'julian'
+  }else if (cal %in% noleap.strings){
+    caltype = 'noleap'
+  }else if (cal %in% cal360.strings){
+    caltype = '360_day'
+  }else if ((cal %in% none.strings) | cal == ""){
+    caltype = 'none'
+  }
+  return(caltype)
+}
 
-test_fun <- function(hist_caltype = "gregorian",
-                     fut_caltype = "gregorian",
+
+test_fun <- function(hist_cal = "gregorian",
+                     fut_cal = "gregorian",
                      hist_first_year = 1979, hist_last_year = 2005,
                      fut_first_year = 2041, fut_last_year = 2099) {
   ##############################################################
   ## Including simulated time series to "unit test" this idea ##
   ##############################################################
   
-  hist_last <- ifelse(hist_caltype=="360_day",
+  hist_last <- ifelse(hist_cal=="360_day",
                       paste0(hist_last_year,"-12-30"),
                       paste0(hist_last_year,"-12-31"))
-  fut_last <- ifelse(fut_caltype=="360_day",
+  fut_last <- ifelse(fut_cal=="360_day",
                      paste0(fut_last_year,"-12-30"),
                      paste0(fut_last_year,"-12-31"))
   
-  hist_dates <- seq(as.PCICt(paste0(hist_first_year,"-01-01"), cal=hist_caltype),
-                    as.PCICt(hist_last, cal=hist_caltype),
+  hist_dates <- seq(as.PCICt(paste0(hist_first_year,"-01-01"), cal=hist_cal),
+                    as.PCICt(hist_last, cal=hist_cal),
                     by="day")
-  fut_dates <- seq(as.PCICt(paste0(fut_first_year,"-01-01"), cal=fut_caltype),
-                   as.PCICt(fut_last, cal=fut_caltype),
+  fut_dates <- seq(as.PCICt(paste0(fut_first_year,"-01-01"), cal=fut_cal),
+                   as.PCICt(fut_last, cal=fut_cal),
                    by="day")
   
-  CF_resample(hist_dates, fut_dates, hist_caltype, fut_caltype)
+  CF_resample(hist_dates, fut_dates, hist_cal, fut_cal)
 }
 
 
