@@ -25,8 +25,8 @@ if BASEDIR is None:
     print("Error in metadata setup: no version of fudge is checked out! Please check out a jamoca-or-later version of fudge.")
     sys.exit(1)
 sys.path.append(osp.join(BASEDIR, 'utils/aux'))
-sys.path.append(osp.join(BASEDIR, 'utils/bin'))
 from gcp import gcp
+sys.path.append(osp.join(BASEDIR, 'utils/bin'))
 from get_ds_info import make_aux_input, get_ds_info
 from get_ds_info import add_ds_params_to_auxdict,add_s3_s5_params_to_auxdict
 from metadata_classify_fxns import get_experiment_metadata
@@ -97,14 +97,10 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         else:
             metadata_table = osp.join(BASEDIR, "utils/aux/metadata_table.csv")
     #Initial check on whether "strict" parsing is appropriate
-    is_csv = False
     if auxdict['file_format'] == "csv":
-        is_csv = True
         if is_strict:
-            #print("Error in make_fudge_metadata: strict parsing is meaningless with csv files! Please turn off is_strict option")
-            #sys.exit(1)
-            print("Warning in make_fudge_metadata: strict parsing is meaningless with csv files; setting is_strict to FALSE")
-            is_strict = False
+            print("Error in make_fudge_metadata: strict parsing is meaningless with csv files! Please turn off is_strict option")
+            sys.exit(1)
     pred_dict = {}
     #This needs a provision for a qcmask of some kind
     #qc gets several special atts:
@@ -147,12 +143,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     '''
     prime_var = auxdict['OH'].keys()[0]
     OH_file = auxdict['OH'][prime_var]['file']
-    if prime_var in auxdict['MF'].keys():
-        MF_var = prime_var
-    else:
-        MF_var = auxdict['MF'].keys()[0]
-    ds_var = auxdict['DS']['vars'][0]
-    MF_file = auxdict['MF'][MF_var]['file']
+    MF_file = auxdict['MF'][prime_var]['file']
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
@@ -173,7 +164,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     predictor_vars = ",".join(auxdict['MF'].keys())
     train_string = ds_info['train_datasets']
     fut_rips = ",".join(auxdict['DS']['rips'])
-    gd['comment'] = make_global_comment(auxdict['ds_method'], ds_var,
+    gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var,
                                         auxdict['ds_region'],
                                         auxdict['output_grid'],
                                         auxdict['kfold'],
@@ -182,12 +173,12 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #Climatology and trend are more complicated - depending on the workflow,
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
-    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, MF_var, is_running_standalone, is_csv))
+    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, is_running_standalone))
     #attributes by variable
     var_longname = ""
-    vd[ds_var] = {"longname": var_longname}
+    vd[prime_var] = {"longname": var_longname}
     if auxdict['make_qcmask']:
-        qc_var = ds_var + "_qcmask"
+        qc_var = prime_var + "_qcmask"
         qc_comment = make_qc_comment(auxdict['qc_method'], auxdict['ds_method'], BASEDIR)
         qc_longname = make_qc_longname(auxdict['qc_method'], auxdict['ds_method'], prime_var)
         global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips, str(auxdict['minsamplesize']))
@@ -243,15 +234,15 @@ def arg_tostring(arg):
     return(ret)
 
 
-def get_climatology_atts(auxdict, OH_var, MF_var, is_running_standalone, is_csv):
+def get_climatology_atts(auxdict, var, is_running_standalone):
     #Gets the attributes that you'd need for writing trend/climatology metadata
     clim_source = auxdict['climo_source']
     if type(clim_source) is list:
         clim_source = clim_source[0]
     if clim_source == "MF":
-        clim_file = auxdict['MF'][MF_var]['file']
+        clim_file = auxdict['MF'][var]['file']
     elif clim_source == "OH":
-        clim_file = auxdict['OH'][OH_var]['file']
+        clim_file = auxdict['OH'][var]['file']
     else:
         print("Error in standalone_metadata_tester.py: climo_source was not set in the auxdict!")
         sys.exit(1)
@@ -260,16 +251,15 @@ def get_climatology_atts(auxdict, OH_var, MF_var, is_running_standalone, is_csv)
     if is_running_standalone:
         clim_source = gcp(clim_file)
     attdict = {}
-    if not is_csv:
-        with Dataset(clim_file, 'r') as nc_obj:
-            try:
-                attdict['climatology'] = nc_obj.__dict__['climatology']
-            except:
-                print("No climatology found")
-            try:
-                attdict['trend'] = nc_obj.__dict__['trend']
-            except:
-                print("No trend found")
+    with Dataset(clim_file, 'r') as nc_obj:
+        try:
+            attdict['climatology'] = nc_obj.__dict__['climatology']
+        except:
+            print("No climatology found")
+        try:
+            attdict['trend'] = nc_obj.__dict__['trend']
+        except:
+            print("No trend found")
     return(attdict)
 
 def get_filename_atts(data_struct):
@@ -328,10 +318,6 @@ def make_qc_longname(qc_method, ds_method, ds_var):
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_longname = "Delta of " + ds_var
-        elif ds_method == "BCMM":
-            qc_longname = "Bias of " + ds_var
-        elif ds_method == 'CFQM':
-            qc_longname = "Out-of-bounds tracking of " + ds_var
         else:
             qc_longname = "Training qcmask for " + ds_var
     else:
@@ -352,10 +338,6 @@ def make_qc_comment(qc_method, ds_method, BASEDIR):
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_comment = "Delta used to generate DS output at a given x,y,t"
-        if ds_method == "BCMM":
-            qc_comment = "Bias of historical (MH - OH) at a given x,y,t"
-        elif ds_method == "CFQM":
-            qc_comment = "Places in DS timeseries where (OH >= max(MH)) = 2 and (OH <= min(MH)) = 1"
     return(qc_comment)
 
 def make_global_comment(ds_method, var, region, grid, kfold, exp_name, train_data, predictor_vars, fut_rips):
@@ -369,14 +351,9 @@ def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_n
     #Makes global comment for qc vars; some switches based on qc method
     make_start = True
     if qc_method == 'qc.train':
-        if ds_method == 'DeltaSD' or ds_method == "BCMM" or ds_method == 'CFQM':
+        if ds_method == 'DeltaSD':
             make_start = False
-            if ds_method == 'DeltaSD':
-                start = "Output to document the delta ratio applied at individual x,y,twindow locations "
-            elif ds_method == 'CFQM':
-                start = "Output to document out-of-bounds conditions for OH relative to MH "
-            else:
-                start = "Output to document the bias applied at individual x,y,twindow locations "
+            start = "Output to document the delta ratio applied at individual x,y,twindow locations "
         else:
             qc_str = "where 1=minsamplesize requirements (n>" + minsamplesize + ") met for " + train_data + " and missing indicates retry option invoked"
     elif qc_method == "tail.adjust":

@@ -91,6 +91,9 @@ def classify_data(vfile, config, verbose=False):
                                 if re.search(row['attribute'], el, re.IGNORECASE) is not None]
                     if len(att_search) > 0:
                         #Check for att value matches (case-insensitive)
+                        if row['attribute'] == "gfdlesd_idname":
+                            vdat = row['dataset']
+                            vclass = row['data_class']; break
                         attnm = att_search[0] if len(att_search) == 1 else row['attribute']
                         v_att = nc_obj.__dict__[attnm]
                         v_search = re.search(row['attgrep'], v_att, re.IGNORECASE)
@@ -118,7 +121,11 @@ def get_attributes(vfile, vclass, vdat, verbose):
     attdict = {'dataset': "not found", "scenario": "not found", "orig_experiment": "not found"}
     with Dataset(vfile, 'r') as nc_obj:
         atts = atts = nc_obj.__dict__
-    if vclass == 'CMIP-5':
+    if vclass == 'gfdlesd':
+        attdict['dataset'] = atts['gfdlesd_idname']
+        attdict['scenario'] = atts['gfdlesd_idscenario']
+        attdict['orig_experiment'] = atts['gfdlesd_idlongname'] #Check on this - idname instead?
+    elif vclass == 'CMIP-5':
         attdict = classify_cmip5(atts, vfile, vclass, vdat, verbose)
     elif vclass == 'CMIP-6':
         attdict['dataset'] = atts['source_id']
@@ -155,7 +162,7 @@ def classify_cmip5(atts, vfile, vclass, vdat, verbose):
     attdict['dataset'] = vdat
     fname = osp.basename(vfile)
     fsplit = re.split("_", fname)
-    attlist = ['model_id', 'experiment', 'realization_alwaysfromfile']
+    attlist = ['model_id', 'experiment', 'realization_alwasyfromfile']
     #att_reg = ["", "", "_(r[:num:])"]
     att_idx = [2,3,4]
     # Adding a workaround for some of our clim/anom cases - they
@@ -241,6 +248,8 @@ def run_classify_tests():
     Runs a set of pre-written tests for the metadata classifier
     '''
     config = '/home/cew/Code/fudge2014/utils/aux/metadata_table.csv'
+    
+    '''
     print("HIRAM experiment")
     OH_file = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360/amip/day/atmos/day/r1to2i1p1/v20110601/pr/US48/pr_day_GFDL-HIRAM-C360_amip_r1to2i1p1_US48_19790101-20081231_ensmbl.nc"
     MF_file = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/NCPP/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1to2i1p1/v20110601/pr/US48/pr_day_GFDL-HIRAM-C360-COARSENED_amip_r1to2i1p1_US48_19790101-20081231_ensmbl.nc"
@@ -265,11 +274,18 @@ def run_classify_tests():
     OH_file = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/livneh/historical/day/atmos/day/r0i0p1/v2016/tasmax/US480p1/tasmax_day_livneh_historical_r0i0p1_US480p1_19810101-20141231.nc"
     MF_file = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CMIP6/GFDL-CM4/historical/day/atmos/day/r1i1p1f1/v20181207/tasmax/US480p1/tasmax_day_GFDL-CM4_historical_r1i1p1f1_US480p1_19810101-20141231.nc"
     send_test("cmip-6", OH_file, MF_file, config)
+    '''
     # cbay experiment
     print("cbay")
     OH_file = "/archive/esd/PROJECTS/DOWNSCALING/OBS_DATA/GRIDDED_OBS/TPLM2/historical/day/atmos/day/r0i0p0/v1/tas/NEUSA/tas_day_TPLM2_historical_r0i0p0_NEUSA_19860101-20151231.nc"
     MF_file = "/archive/esd/PROJECTS/DOWNSCALING/GCM_DATA/CM2p5/GFDL-FLORB01-p2FA/lead01/day/atmos/day/r1to12i1p1/v1/tas/NEUSA/tas_day_GFDL-FLORB01-p2FA_lead01_r1to12i1p1_NEUSA_19860101-20151231_ensmbl.nc"
     send_test("cbay", OH_file, MF_file, config)
+    
+    #gfdlesd experiment
+    print("gfdlesd")
+    OH_file = "/archive/esd/PROJECTS/DOWNSCALING/MJ_TESTDATA/tasmax_day_livneh_historical_r0i0p0_NEUSA0p1_19810101-20051231.nc"
+    MF_file = "/archive/esd/PROJECTS/DOWNSCALING/MJ_TESTDATA/tasmax_day_MPI-ESM-LR_rcp85_r1i1p1_NEUSA0p1_20060101-20991231.nc"
+    send_test("gfdlesd", OH_file, MF_file, config)
 
     print("metadata test cases complete.")
 
