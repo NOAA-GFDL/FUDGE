@@ -2,7 +2,7 @@
 #!/usr/local/bin/python
 #Stand-alone FUDGE metadata tester
 
-import os,sys,stat,shutil,subprocess
+import os,sys,stat,shutil,subprocess,time
 from os import path as osp
 import numpy as np
 from subprocess import PIPE
@@ -143,8 +143,9 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     '''
     prime_var = auxdict['OH'].keys()[0]
     OH_file = auxdict['OH'][prime_var]['file']
+    MH_file = auxdict['MH'][prime_var]['file']
     MF_file = auxdict['MF'][prime_var]['file']
-    gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
+    gd, pd = get_experiment_metadata(gd, pd, OH_file, MH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
                                      is_strict=is_strict,
@@ -170,6 +171,10 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
                                         auxdict['kfold'],
                                         auxdict['ds_experiment_name'],
                                         train_string, predictor_vars, fut_rips)
+    #add timestamp of script creation
+    exp_info = auxdict['script_settings']['scriptdir'].rstrip("/") + "/experiment_info.txt"
+    gd['scriptgen_timestamp'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(osp.getmtime(exp_info)))
+    gd['experiment_info'] = exp_info
     #Climatology and trend are more complicated - depending on the workflow,
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
