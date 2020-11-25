@@ -146,7 +146,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
   ds.fut <- remove.missvals(unlist(ds.fut))
   
   # CHECK IF FEASIBLE -- IF SO CALL APPROPRIATE TAIL SCHEME FUNCTION
-  print(sapply(list(ds.fut, model.fut, model.hist, obs.hist), length))
   if( any(sapply(list(ds.fut, model.fut, model.hist, obs.hist), length) < 2) ){
     #You need at least 2 points to do this tail adjust
     #Bypass for missing data
@@ -184,8 +183,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
         lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
       }
     }
-    print(lotail$cond)
-    print(hitail$cond)
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
     cond.tmp[cond.tmp] <- hitail$cond
@@ -269,7 +266,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
-        #print(trigger.fxn)
         print("Overlap too small for delta_sample upper; resizing")
         delta.idx <- delta.idx[delta.idx >= 1]
       }
@@ -280,7 +276,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
-      #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
       if (args$adjmethod == 'add') {
         #### It's THIS easy for additive!  The rest is for ratio!
