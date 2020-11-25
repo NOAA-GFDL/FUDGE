@@ -1,0 +1,104 @@
+#!/bin/python
+# commandline wrapper for GFDL's gcp command
+
+import os
+import sys
+from os import path as osp
+import re
+import time
+import stat
+import shutil
+import subprocess
+from optparse import OptionParser
+
+def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
+        gcp_verbose=True, gcp_sync = True, retry = 1, final_cp = True):
+    '''
+    Wrapper for GFDL's GCP function
+    for copying from /archive to /vftmp
+    '''
+    infile = osp.abspath(infile)
+    if (outfile=='TMPDIR'):
+        tdir = os.environ.get("TMPDIR")
+        outfile = osp.join(tdir,infile.lstrip("/"))
+    if timestamp:
+        outfile  = outfile +"." + tstamp()
+    #Make sure that the output directory exists
+    outdir = osp.dirname(osp.abspath(outfile)).rstrip("/") + "/"
+    if not osp.isdir(outdir):
+        os.makedirs(outdir)
+    #Check for input file existance and tape migration
+    if verbose:
+        print("checking for dm status of file " + infile)
+    dcheck = subprocess.Popen("dmls -l " + infile, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,shell=True,env=os.environ)
+    d_out,d_err = dcheck.communicate()
+    if dcheck.returncode != 0:
+        print("Error in gcp: sourcefile " + infile + " not found on this system.")
+        sys.exit(1)
+    elif re.search("(OFL)", d_out) is not None:
+        #if is offline, dmget
+        d = subprocess.Popen("dmget " + infile, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,shell=True,env=os.environ)
+        d_out,d_err = d.communicate()
+    sync = '--sync ' if gcp_sync else ""
+    verbose = '-v ' if gcp_verbose else ""
+    command = "gcp " + sync + verbose + infile + ' ' + outfile
+    if verbose:
+        print(command)
+    modulepath = "source /usr/local/Modules/default/init/sh"
+    mod_command = modulepath + "; module load gcp; module load globus; "
+    success = False; tries = 0
+    while not success and tries <= retry:
+        g = subprocess.Popen(mod_command + command, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,shell=True,env=os.environ)
+        g_out,g_err = g.communicate()
+        if(g.returncode != 0):
+            print "Error in gcp: file " + infile + " did not copy to " + outfile
+            print(g_out)
+            print(g_err)
+            tries += 1
+            time.sleep(10)
+        else:
+            success = True
+    if not success and final_cp:
+        print "final try with cp"
+        if not osp.exists(osp.dirname(outfile)):
+            os.makedirs(osp.dirname(outfile))
+        shutil.copy2(infile, outfile)
+        if not osp.isdir(outfile):
+            sys.exit(1)
+    elif not success:
+        sys.exit(1)
+    return(outfile)
+
+def tstamp():
+    # Returns a simple timestamp for the output file
+    return(time.strftime("%Y%m%d-%H%M%S"))
+
+def parse_gcp_args():
+    '''
+    Parser for the args to the gcp wrapper. Dmgets files before trying to copy.
+    '''
+    use = '''
+          Wrapper for GFDL's gcp function. Includes a retry option and an option to try cp if all else fails.
+          gcp --timestamp --verbose [--gcp-verbose --gcp-sync] [--retry 1 --final-copy] $sourcefile $destfile
+          '''
+    parser = OptionParser(usage=use)
+    parser.add_option("--timestamp", action="store_true", default=False,
+                      help="whether to timestamp the copy.")
+    parser.add_option("--gcp-verbose", action="store_true", help="Whether to use gcp's verbose option.")
+    parser.add_option("--gcp-sync", action="store_true",
+                      help="Whether to use gcp's sync option, which doesn't copy fiels unless the timestamp has changed.")
+    parser.add_option("--retry", action="store", default=1,
+                      help="How many times to try copying a file before giving up. Defaults to 1, which tries once and stops.")
+    parser.add_option("--final-copy", action="store_true", dest='final_cp',
+                      help="Whether to copy the results if the retries run out.")
+    parser.add_option("-v", "--verbose", action='store_true', help="whether to print extra gcp wrapper script status info")
+    (options, args) = parser.parse_args()
+    gcp(args[0], args[1],  options.timestamp, options.verbose,
+        options.gcp_verbose, options.gcp_sync,
+        int(options.retry), options.final_cp)
+
+if __name__ == '__main__':
+    parse_gcp_args()

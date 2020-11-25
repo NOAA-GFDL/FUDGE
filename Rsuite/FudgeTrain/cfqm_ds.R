@@ -6,23 +6,22 @@
 
 callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args, 
                      tmasks=list(), s5_list=list()){
-  #First shot at implementing CFQM in a delta-SD-like form
-  #   OH.data <- compress.xy.data(OH)
-  #   MH.data <- compress.xy.data(MH)
-  #   MF.data <- compress.xy.data(MF)
-  #   print(lapply(MF.data, 'summary'))
-  #   print(lapply(MF.data, 'dim'))
-  
   status=0
-  out.data <- array(NA, dim=dim(MF[[1]]))
+  MF.dim <- dim(MF[[1]])
+  OH.dim <- dim(OH[[1]])
+  out.data <- array(NA, dim=c(MF.dim[1:5], OH.dim[6]))
   nrips = dim(out.data)[4]
   #Are we returning a mask of those points where delta beahved as expected?
   if (train_qcmask){
     if(tmasks$apply_tmasks){
       #This is going to have to be revised for use in the workflow
-      qc.data <- mapply(rep, tmasks$MF$masks[[w]], nrips)
+      qc.data <- mapply(rep, tmasks$OH$masks[[w]], nrips)
     }else{
-      qc.data <- rep(1, dim(MF[[1]]))
+      if (!is.null(dim(OH[[1]]))){
+       qc.data <- rep(1, length(OH[[1]])) 
+      }else{
+      qc.data <- rep(1, dim(OH[[1]]))
+      }
     }
     dim(qc.data) <- dim(out.data)
   }else{
@@ -52,48 +51,28 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
       MH.slice <- missval.out$MH[[1]]
       MF.slice <- missval.out$MF[[1]]
       out.idx <- !is.na(OH.slice)
-      if (oh_longer){
-        #Speciciations for this were created in main driver script when delta ds is used
-        idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                 tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=pr_start)
-        OH.idx <- idx$index
-        pr_start <- idx$end
-        tmasks$idx_year_div[[n]] <- idx$year_div
-        tmasks$OH_idx[[n]] <- OH.idx
-        tmasks <<- tmasks
-        #ds is now indexed by a subset of the OH timeseries; if using non-noleap
-        #calendars in any dataset, need to adjust the two for concurrent leapdays
-        #note:leapday masks are already in global environment as part of setup
-      }else{
-        #Otherwise, if the vectors are uneven then calculate n+1 deltas, 
-        #where n=length(MF.data)/length(OH)
-        idx <- get.OH.time.index(tmasks$nyears_hist, tmasks$nyears_fut, 
-                                 tmasks$hist.year.div, tmasks$fut.year.div, 
-                                 start_year=1)
-        OH.idx <- idx$index
-        pr_start <- idx$end
-        tmasks$idx_year_div[[n]] <- idx$year_div
-        tmasks$OH_idx[[n]] <- OH.idx
-        tmasks <<- tmasks
-      }
-      ds.idx <- !is.na(OH.slice[OH.idx])
+      ds.idx <- !is.na(OH.slice)
       ds.out <- rep(NA, length(ds.idx))
-      tmp.out <- CFQM_hist(remove.missvals(MH.slice), remove.missvals(MF.slice), 
-                           remove.missvals(OH.slice[OH.idx])) 
+      
+      oh <- OH.slice[!is.na(OH.slice)]
+      mh <- MH.slice[!is.na(MH.slice)]
+      mf <- MF.slice[!is.na(MF.slice)]
+      
+      args$is.uniform.Oh <- length(unique(oh)) <= 1
+      args$is.uniform.Mh <- length(unique(mf)) <= 1
+      args$is.uniform.Mf <- length(unique(mf)) <= 1
+      
+      tmp.out <- call_qm(oh, mh, mf, args, method='cfqm') 
       ds.out[ds.idx] <- tmp.out
-      indexed.out <- ds.out
-      out.data[,,,n,,] <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                                      tmasks$fut.leapmask, 
-                                      tmasks$OH$masks[[w]][OH.idx],
-                                      tmasks$MF$masks[[w]],
-                                      indexed.out, 
-                                      idx$year_div, tmasks$fut.year.div)
+      out.data[,,,n,,] <- ds.out
       if (train_qcmask){
-        #the below used to store the status return; for now, to keep 
-        #consistency with the other, more commonly-used training mask
-        #methods, we're replacing that with NA
-        qc.data[,,,n,,] <- 1 
+        #train_qcmask tracks whether any of the Oh data we work with 
+        #fell outside the bounds of the MH data. We expect this to be 
+        #a thing in the mountains and on the coasts.
+        qc.out <- rep(NA, length(ds.idx))
+        qc.out[oh > max(mh)] <- 2 #previously oh.repeat
+        qc.out[oh < min(mh)] <- 1
+        qc.data[,,,n,,] <- qc.out
       }
     }else{
       print("insufficient data to downscale at this point")
@@ -106,16 +85,6 @@ callCFQM <- function(OH,MH,MF,args, train_qcmask, missval.args,
     }
   }
   return(list(ds=out.data, qc=qc.data))
-}
-
-
-CFQM_hist <- function(MH, MF, OH){
-  #Not worrying about sort in this function - we need it OH-ordered to get the
-  #leapdays in the right order anyway
-  prob=seq(from=0.001, to=0.999, length.out=length(OH))
-  OH.mapped.to.MH <- ecdf(MH)(quantile(OH, prob, na.rm=T))
-  DS <- quantile(MF, OH.mapped.to.MH, na.rm=T)
-  return(DS[rank(OH, ties='first')])
 }
 
 set.CFQM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){

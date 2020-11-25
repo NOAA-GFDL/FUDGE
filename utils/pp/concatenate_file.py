@@ -8,8 +8,9 @@
 #import expergen
 import fudgeList
 import fudgeUtils
-from fudgeUtils import gcp,tstamp
-from fudgeUtils import read_exp_info_file
+from fudgeUtils import tstamp
+# from fudgeUtils import read_exp_info_file
+from get_ds_info import parse_aux_info
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
@@ -27,7 +28,7 @@ from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
 
-def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
+def concatenate_files(input_dir, patt, output_dir, aux='none'):
     #Get all files in the input dir that match a given pattern
     #(note: assumed to start at the beginning of the filename)
 
@@ -38,8 +39,8 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
 
     print("getting list of files")
     file_subset = [f for f in os.listdir(input_dir) if re.search(patt, f) is not None]
-    #print("file_subset:")
-    #print(file_subset)
+    print("file_subset:")
+    print(file_subset)
     #Start dividing the file subset into subsets based on the separators.
     #Each one is going to be in the general form of $capital_letter$start_index-$end_index
     #find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
@@ -84,31 +85,43 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
         i_out_file =  "i_pattern_"+str(i) +".nc"
         i_outfiles.append(i_out_file)
         i_out_paths.append(osp.join(outdir_j, i_out_file)) #osp.join(input_dir, i_out_file)
-        y_idx = dimmap.index('y')
-        y_perm_in =  dimlist[y_idx] + "," + ",".join([y for i,y in enumerate(dimlist) if i!=y_idx])
-        y_perm_out = ",".join(dimlist)
-        if len(j_patterns) > 1:
-            #If there's more than one J, find the j matches for this i
-            loop_file = call_cat_min(y_perm_in, y_perm_out, input_dir, i_subset,
-                                        tdir_j, osp.join(outdir_j, i_out_file), i_patt)
-        else:
-            #Copy to directory that i concatenation expects to find results in
+        try:
+            y_idx = dimmap.index('y')
+        except ValueError:
+            # This is a dodge for some input files that don't have a y dim
             shutil.copy2(osp.join(input_dir, i_subset[0]), osp.join(outdir_j, i_out_file))
+        else:
+            y_perm_in =  dimlist[y_idx] + "," + ",".join([y for i,y in enumerate(dimlist) if i!=y_idx])
+            y_perm_out = ",".join(dimlist)
+            if len(j_patterns) > 1:
+                #If there's more than one J, find the j matches for this i
+                loop_file = call_cat_min(y_perm_in, y_perm_out, input_dir, i_subset,
+                                            tdir_j, osp.join(outdir_j, i_out_file), i_patt)
+            else:
+                #Copy to directory that i concatenation expects to find results in
+                shutil.copy2(osp.join(input_dir, i_subset[0]), osp.join(outdir_j, i_out_file))
         #End i loop
     #Final concatenation operation
     print("final concatenation operation in i")
-    x_idx = dimmap.index('x')
-    x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
-    x_perm_out = ",".join(dimlist)
     print("outer call to cat_min")
-    xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
-                  tdir_i, tmp_outfile, "all values")
+    print(i_outfiles)
+    try:
+        x_idx = dimmap.index('x')
+    except ValueError:
+        # not all files have an x dim either.
+        xy_out = osp.join(outdir_j, i_out_file)
+        tmp_outfile = xy_out
+    else:
+        x_perm_in =  dimlist[x_idx] + "," +",".join([x for i,x in enumerate(dimlist) if i!=x_idx])
+        x_perm_out = ",".join(dimlist)
+        xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
+                      tdir_i, tmp_outfile, "all values")
     print("concatenated file: " + xy_out)
     #Final step needs to be finalizing some metadata atts
     #experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
-    if exp_info != 'none':
+    if aux != 'none':
         print("finalizing file metadata")
-        xy_out = finalize_metadata_out(xy_out, exp_info)
+        xy_out = finalize_metadata_out(xy_out, aux)
     else:
         print("no experiment_info file; metadata unchanged")
     print("copying file to final destination")
@@ -117,19 +130,20 @@ def concatenate_files(input_dir, patt, output_dir, exp_info='none'):
     return(outfile)
 
 
-def finalize_metadata_out(xy_file, experiment_info):
+def finalize_metadata_out(xy_file, aux):
     #Sets up final metadata attributes on the output. Fortunately, there's going to
     #be a decent header from the concatenation operations
     #NOTE: right now, none of these attributes can have spaces in them
     #due to the passing into c-shell. Probably solvable
-    expdict = read_exp_info_file(experiment_info)
+    # expdict = read_exp_info_file(experiment_info)
+    auxinfo, auxdict = parse_aux_info(aux)
 
     attdict = {}
     attdict['contact'] = "http://nomads.gfdl.noaa.gov/contacts.html"
     attdict['conventions'] = "CF-1.4"
     attdict['downscaling_model_type'] = "statistical"
 
-    attdict['gfdl_experiment_name'] = expdict['ds.experiment']
+    attdict['gfdl_experiment_name'] = auxdict['ds_experiment_name']
     #attdict['region_id'] = expdict['region']
     #attdict['predictand_calibration_datset'] = "dummy_data"
 
@@ -176,6 +190,7 @@ def find_match_string(lett, patt_array, match_array):
     if len(set(unwind_list))==1:
         print("No unique matches on this dim; don't concatenate")
         unwind_matches = [el for f in unwind_list for el in f if el != ""] #no unique matches on this dim
+        unwind_matches = [unwind_matches[0]]
         print(unwind_matches)
     else:
         patt_matches = sorted(list(set([el for f in unwind_list for el in f if el != ""])))
@@ -267,3 +282,9 @@ def natural_sort(list, key=lambda s:s):
         return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
     sort_key = get_alphanum_key_func(key)
     list.sort(key=sort_key)
+
+if __name__ == '__main__':
+    # Can call from the commandline with 3 args:
+    # dir, pattern, outdir
+    print(sys.argv)
+    concatenate_files(sys.argv[1],sys.argv[2],sys.argv[3])

@@ -22,6 +22,7 @@ from fudgeUtils import send_status_email
 import ppWatcher
 from ppWatcher import runPPWatcher
 from fudgeUtils import read_exp_info_file
+from get_ds_info import parse_aux_info
 
 global quiet
 global debug
@@ -163,6 +164,11 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 	postProc_call = True
 	v_print(2,"INFO: SLEEP TIME:" +(str)(sleeptime)+"s")
 	minifile_i_start,minifile_i_end,output_path,script_base,target,qc_mask,exp_name = asciiParser(uinput)
+	# replace target with target derived from auxfile
+	auxdir = osp.join(script_base.split(':')[1], 'config_mod')
+	auxfile = osp.join(auxdir, [el for el in os.listdir(auxdir)][0])
+	auxinfo, auxdict = parse_aux_info(auxfile)
+	target = auxdict['DS']['vars'][0]
 
 	#if < 2 minifile length, postProc should not be called.
 	if (((int)(minifile_i_end) - (int)(minifile_i_start)) == 0):
@@ -177,12 +183,7 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 	dirs_output = output_path.split(':')[1]
 	list_output = dirs_output.split(',')
 	list_output = expdict['output.path']
-	#print(output_path)
-	#print(dirs_output)
-	#print(expdict['output.path'])
-	#sys.exit('examine this out - is there more than one el?')
 	qc_mask_bool = qc_mask.split(':')[1]
-	target = target.split(':')[1]
 	exp_name = exp_name.split(':')[1]
 	#will be nice to have target also in experiment_info.txt
 	ctr = 0
@@ -210,6 +211,8 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 				sys.exit("Quitting watcher, max number of loops met "+(str)(nloops)+"<="+(str)(nloop_start))
 			v_print(1, "checker to run on the file ")
 			retcode3 = checker.checker(out,exp_cnt,"warning",verbose=verbopt,spath=script_base)
+			#print(retcode3)
+			#print(qc_mask_bool)
 			if (qc_mask_bool == 'on'):
 				v_print(1, "qc_mask seems to be on, checker to run on qc_mask")
 				outmask = out+"/"+target+"_qcmask"

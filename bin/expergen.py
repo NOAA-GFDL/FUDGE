@@ -11,6 +11,7 @@ from subprocess import PIPE
 from os import path as osp
 import re
 import optparse
+import shutil
 from optparse import OptionParser
 import json
 import cleanup_script
@@ -27,6 +28,8 @@ from watcher import runWatcher #,_v_print
 from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
 from check_aux_consistency import check_aux_consistency
+from make_experiment_info import make_exp_info
+from make_all_ds_paths import make_all_ds_paths
 
 list_title = []
 dictDS_hi = {}
@@ -323,11 +326,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #	print(property)
 #	sys.exit()
     if (len(listoutdir) > 1):
-       print "Multi-output ON"
+       print("Multi-output ON")
        global multi
        multi = "on"
     else:
-       print "single output on"
+       print("single output on")
        global multi
        multi = "off"
     ##script -and- log prefix section ##
@@ -357,7 +360,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     elif(preexist == 'move'):
         force = True #new move feature in clobber - support
     else:
-        print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
+        print("\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist)
         sys.exit(-2)
     if(output_grid == 'station'):
         if(latjstart == latjend):
@@ -418,9 +421,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         else:
             outdir = out_dir
         #experiment in the above is expconfig that's constructed
-        #print "Output directory is :",outdir
-        #print "Script directory is:",sbase
-#new
         if (pp == False):
             for lon in range(int(lons),int(lone)):
                 exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
@@ -489,8 +489,8 @@ def main():
 
     use = '''
           Expergen usage (two cases:)
-          expergen -i path_to_xml.xml [--sbatch --run-watcher --mail --sbatchmail]
-          expergen -a path_to_aux.json [-a path_to_aux.yml --sbatch --run-watcher --mail --sbatchmail]
+          expergen -i path_to_xml.xml [--sbatch --run-watcher --sbatchmail --email-address Carolyn.Whitlock@noaa.gov --run-watcher --not-strict-metadata]
+          expergen -a path_to_aux.json [-a path_to_aux.json --sbatch --run-watcher --no-statmail --run-watcher --not-strict-metadata]
           '''
     parser = OptionParser(usage=use)
     parser.add_option("-i", "--file", dest="uinput", default='none',
@@ -499,36 +499,36 @@ def main():
                       help="pass location of auxilary JSON/YAML alternative input specifications. Not expected for production use yet; if set, no xml should be used.")
     parser.add_option("--sbatch",action="store_true",default=False,
                       help="Automatically submit the master runscripts using SLURM's sbatch command. Default is set to FALSE")
-    parser.add_option("-m", "--mail", action="store",
-                     dest="mail", default="none",
-                     help="Pass user email for notifications from tools like postProc (this is optional)")
-    parser.add_option("--sbatchmail", action='store_true', dest='msubmail',
-                      default=False, help="Should email notifications be sent from the master scripts sent to the PP system?")
-    parser.add_option("--statmail", action='store_true', dest='statmail',
-                      default=False, help="Should email notifications upon step completion be sent from the FUDGE workflow?")
     parser.add_option('--run-watcher', action='store_true', dest='run_watcher',
                        default=False,
-                       help="Whether to run the watcher script directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+                       help="Whether to submit a non-interactive watcher script to the batch queue directly after expergen completes. Not expected for use in production, but useful for development and running synthetic data experiments.")
+    parser.add_option("--no-statmail", action='store_true', dest='no_statmail',
+                      default=False, help="Should FUDGE send no email notifications upon step completion?" + "Defaults to false, which sends email notifications from FUDGE.")
+    parser.add_option("--sbatchmail", action='store_true', dest='sbatchmail',
+                      default=False, help="Should slurm email notifications be sent from individual master scripts? Defaults to false, which does not send email notifications from every master script.")
+    parser.add_option("-m", "--email-address", action="store",
+                     dest="mail", default="none",
+                     help="Pass user email for notifications from tools like postProc. If not set, it will be deduced from the environment variable $NEMSemail; if $NEMSemail is not set, defaults to none, which will send no email.")
     parser.add_option('--not-strict-metadata', action='store_true', default=False,
                       dest='not_strict', help="Whether to continue with a FUDGE experiment if the metadata parser could not get the attributes needed to classify input from the netcdf files. Defaults to false, which exits with an error if classification fails. For csv files this option is effectively always set, since csv files don't have the metadata we use.")
     parser.add_option('--metadata-table', action='store', default="$BASEDIR/utils/aux/metadata_table.csv",
                        dest='metadata_table',
                        help="Path to a csv file containing instructions on how to derive metadata attributes from datasets. Defaults to the metadata table in the FUDGE repo; if working with new datasets, it may be useful to point to a user-supplied table rather than run with --not-strict-metadata.")
+    parser.add_option('--no-dmget', action='store_true', default=False, dest='no_dmget', help="If set on the commandline, expergen will NOT source a file of dmget commands ($scriptdir/dmget_input_files.csh) for the input commands before exiting. This is meant as a precaution before submitting jobs when the dm queue is long; dmgetting before jobs run on the queue can reduce wallclocktime. This always runs if not set; the overall cost is low.")
     (options, args) = parser.parse_args()
 
     if(options.mail=="none"):
         try:
             NEMSemail1 = os.environ["NEMSemail"]
         except KeyError:
-            print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
+            print("-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually.")
             NEMSemail1 = 'none'
     else:
         NEMSemail1 = options.mail
-    print "Status emails will be sent to: " + NEMSemail1
     msub = options.sbatch
-    print "Will jobs be automatically submitted? " + str(msub)
+    print("Will jobs be automatically submitted? " + str(msub))
     if (options.run_watcher and not options.sbatch):
-        print("Error in expergen: option run-watcher should only be used with msub!")
+        print("Error in expergen: option run-watcher should only be used with sbatch!")
         sys.exit(1)
     # xml and aux input specifications
     inputs = [options.uinput, options.auxinput]
@@ -611,10 +611,14 @@ def main():
         sys.exit(1)
 
     #CEW edits 6-30 for msub mail verbosity settings
-    msubmail = 0
-    if options.msubmail:
-        msubmail = 1
-    statmail = options.statmail
+    sbatchmail = 0
+    if options.sbatchmail:
+        sbatchmail = 1
+    statmail = not (options.no_statmail)
+    if statmail or sbatchmail == 1:
+        if NEMSemail1 == 'none':
+            print("Error in expergen: email from FUDGE or the master scripts was requested, but no email was set!")
+            sys.exit(1)
 
     if re.search("\$BASEDIR", options.metadata_table,) is not None:
         meta_table = re.sub("\$BASEDIR/", "\${BASEDIR}/", options.metadata_table)
@@ -635,26 +639,31 @@ def main():
     generate_experiment(parse_xml, create_default_aux,
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
-                        msubmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table)
+                        sbatchmail, statmail, options.run_watcher,
+                        options.not_strict, meta_table, options.no_dmget)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
-                        sbase, msubmail, statmail, run_watcher,
-                        not_strict_metadata, metadata_table):
+                        sbase, sbatchmail, statmail, run_watcher,
+                        not_strict_metadata, metadata_table, no_dmget):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
     '''
     #First, create experiment directories. Note that this assumes
     #you've cleaned up your experiment beforehand:
-    subdirs = ['master', 'runscript', 'runcode', 'log','postProc', 'config', 'status', 'profile']
+    subdirs = ['master', 'runscript', 'log','postProc', 'config', 'status', 'profile']
+    statdirs  = ['master', 'minifile', 'postproc', 'ensemble', 'aux']
     for el in subdirs:
         subdir = osp.join(sbase,el)
-        if not osp.exists(subdir):
-            os.makedirs(subdir)
+        if osp.exists(subdir):
+            shutil.rmtree(subdir)
+        os.makedirs(subdir)
+        if el == 'status':
+            for em in statdirs:
+                os.makedirs(osp.join(subdir, em))
 
     if parse_xml:
         output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
@@ -760,7 +769,9 @@ def generate_experiment(parse_xml, create_default_aux,
         ds_info = get_ds_info(auxdict['ds_method'], basedir)
         i_subset = auxdict['i_subset']
         j_subset = auxdict['j_subset']
-        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+        # 2019-05-18: swapping output_grid for ds_region;
+        # output_grid can include NEUSA0p1 and that leads to grid param errors
+        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['ds_region'], basedir)
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
@@ -773,6 +784,17 @@ def generate_experiment(parse_xml, create_default_aux,
                                   auxdict, auxinput, sbase, fudgetag,
                                   not_strict_metadata, metadata_table)
 
+    # 2020-03-02: Adding checks for combinations of settings that
+    # are not currently turned on until we get the QC
+    print(ds_info.keys())
+    if ds_info["downscale_oh"]:
+        if auxdict['OH'].keys()[0] == 'pr':
+            print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
+            sys.exit(1)
+        if len( auxdict['DS']['rips']) > 1:
+            print("Error in expergen: multi-rip behavior not established for CF methods!")
+            sys.exit(1)
+
     # copy xml to configs dir
     cdir = sbase+"/config/"
     if uinput is not "none":
@@ -781,29 +803,29 @@ def generate_experiment(parse_xml, create_default_aux,
     shutil.copy2(env_file, sbase + "/environment_info.csh")
     ################ step 6 fudgeList invocation ##############################################
     slogloc = sbase+"/"+"experiment_info.txt"
-    fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
-    if uinput is not "none":
-        indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+    if parse_xml:
+        fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc
+        if uinput is not "none":
+            indirs = [target_dir, hist_pred_dir, fut_pred_dir]
+        else:
+            indirs = []
+            dnames = ['OH', 'MH', 'MF']
+            for d in dnames:
+                indirs += [osp.dirname(auxdict[d][el]['file']) for el in auxdict[d].keys()]
+        if any([re.search('Pwl', el) is not None for el in indirs]):
+            fcmd += ' --parse-j-style'
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        out, err = f.communicate()
+        auxloc = sbase + "/config/" + osp.basename(auxinput)
+        shutil.copy2(auxinput, auxloc)
+        with open(slogloc, 'a') as f:
+            f.write("\naux:" + os.path.abspath(auxinput))
+            f.write("\nNEMSemail:" + NEMSemail1)
     else:
-        indirs = []
-        dnames = ['OH', 'MH', 'MF']
-        for d in dnames:
-            indirs += [osp.dirname(auxdict[d][el]['file']) for el in auxdict[d].keys()]
-    if any([re.search('Pwl', el) is not None for el in indirs]):
-        fcmd += ' --parse-j-style'
-    f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-    out, err = f.communicate()
+        print("Making experiment_info.txt by parsing aux dictionary")
+        make_exp_info(auxinput, slogloc)
 
-    auxloc = sbase + "/config/" + osp.basename(auxinput)
-    shutil.copy2(auxinput, auxloc)
-
-    with open(slogloc, 'a') as f:
-        f.write("\naux:" + os.path.abspath(auxinput))
-        f.write("\nNEMSemail:" + NEMSemail1)
-
-############### crte ppscript #################
-    print "Step 4: --------------PP postProc SCRIPT GENERATION-----------------------"
-    #print " ========================="
+    print("Step 4: --------------PP postProc SCRIPT GENERATION-----------------------")
     dev = "off"
     msubwrapper = []
     #CEW edit 6-30 for better status file monitoring when queue is full
@@ -812,107 +834,148 @@ def generate_experiment(parse_xml, create_default_aux,
     mail_command = ""
     msub_mail_command = ""
     if (NEMSemail1!='none'):
-     if msubmail==1:
+     if sbatchmail==1:
          mail_command = "-m " + NEMSemail1 + " "
          msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
 
-    #print(sbase+"/postProc/aux/")
-    '''
-    if (multi == "on"):
-     suffix = ['suff1','suff2','suff3']
-     listrips = []
-    else:
-     suffix = ['']
-     listrips = ['na']
-     '''
     if parse_xml:
          listrips = [copyprop]
          listrips = copyprop.split(",")
     else:
          listrips = auxdict['DS']['rips']
 
-    if not os.path.exists(sbase+"/postProc/aux/"):
-        os.makedirs(sbase+"/postProc/aux/")
-    #CEW edit 5-2-16 for writing postproc status files
-    if not os.path.exists(sbase+"/postProc/ppStatus/"):
-        os.makedirs(sbase+"/postProc/ppStatus/")
-    #CEW edit 5-4-16 for writing cross-validation status files
-    if not os.path.exists(sbase+"/postProc/cvStatus/"):
-        os.makedirs(sbase+"/postProc/cvStatus/")
-    #CEW edit 6-30-16 for the statmail settings
-    if not os.path.exists(sbase+"/postProc/verb/"):
-        os.makedirs(sbase+"/postProc/verb/")
+    # 2019-06-05: rewrite of postproc in progress
+    # making the postproc directories
+    postproc_dirs = ['cvStatus', 'verb']
+    for p in postproc_dirs:
+        if not osp.exists(osp.join(sbase, 'postProc', p)):
+            os.makedirs(osp.join(sbase, 'postProc', p))
     if statmail:
         open(sbase+"/postProc/verb/verbose.true", 'a').close()
     else:
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
-    if parse_xml:
-        print("Making postproc scripts")
-        make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
-        print "----------------------------------------"
-        print "\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"
-        print "NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)"
-    else:
-        print("NOT making postProc scripts!!")
-        print("This experiment was run from an aux file; the postProc workflow needs the experiment_info.txt file")
-        print("and there is currently no good substitution in the auxfile workflow!")
-        print("However, for the csv workflow (which is the primary reason for using this right now)")
-        print("you wre not going to use postProc anyway.")
+    print("Making postproc scripts")
+    # 2019-05-29: updated to parse from auxdict rather than the experiment info file
+    #make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
+    make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
+    print("----------------------------------------")
+    print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
+    print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
 ################ step 5 job submission (if applicable) ##############################################
-    print "Starting step 5: job submission"
-    if msubmail == 1 and NEMSemail1 != 'none':
-            msub_string = "sbatch --mail-type END --mail-user " + NEMSemail1 + " "
+    print("Starting step 5: job submission")
+    outfile_loc = osp.join(sbase, "outfile_paths.txt")
+    print("File with all downscaled output paths: " + outfile_loc)
+    config_mod = [el for el in os.listdir(osp.join(sbase, 'config_mod')) if re.search('json', el) is not None][0]
+    make_all_ds_paths(osp.join(sbase, 'config_mod/' +config_mod), outfile_loc)
+    if not no_dmget:
+        dmget_script = osp.join(sbase, 'dmget_input_files.csh')
+        print("sourcing dmget commands for the experiment: " + dmget_script)
+        p4 = subprocess.Popen('tcsh ' + dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        out4,err4 = p4.communicate()
+        if (p4.returncode != 0):
+            print("sourcing of dmget commands failed; please run with --no-dmget option")
+            sys.exit(1)
+    if sbatchmail == 1 and NEMSemail1 != 'none':
+        msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " "
     else:
-        msub_string = "sbatch "
+        msub_string = "sbatch -D $HOME "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
-    msub_cmd = "module load moab; "
+    env_script = osp.abspath(osp.join(sbase, "environment_info.csh"))
+    #msub_cmd = "source " + env_script + "; "
+    msub_cmd = ""
     for el in master_scripts:
         #msub_cmd can be saved for later
+        print(el)
         msub_cmd = msub_cmd + msub_string + el + "; "
     if msub:
-        p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p5 = subprocess.Popen(msub_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        #p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output5, errors5 = p5.communicate()
         #######
         if(p5.returncode != 0):
-            print "Step5:!!!! FAILED !!!!, please contact developer."
-            print output5, errors5
-            sys.exit(0)
-        print output5, errors5
-        print "5 - completed"
-    print "-----------"
+            print("Step5:!!!! FAILED !!!!, please contact developer.")
+            print(msub_cmd)
+            print(output5, errors5)
+            sys.exit(1)
+        print(output5)
+        print(errors5)
+        print("'"+msub_cmd+"'")
+        print("5 - completed")
+    print("-----------")
     if not msub:
-        print "--sbatch not set on command line. To submit jobs at a later point, please use the following:"
-        print "\033[1;95m"+msub_cmd+"\033[1;m"
-    if parse_xml:
-        print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
-        if(NEMSemail1 != "none"):
-            print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
-        else:
-            print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+        print("--sbatch not set on command line. To submit jobs at a later point, please use the following:")
+        print("\033[1;95m"+msub_cmd+"\033[1;m")
+    '''
+    #if parse_xml:
+    print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
+    if(NEMSemail1 != "none"):
+        print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+" -m "+NEMSemail1+"\033[1;m"
     else:
-        print("Path to master script for experiment:")
-        mdir = osp.join(sbase, 'master')
-        mpath = osp.join(mdir, os.listdir(mdir)[0])
-        print("\033[1;42m" + mpath + "\033[1;m")
-
-    print("It is possible to cancel all jobs belonging to this experiment with the following command:")
-    print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
-
-    #Script exit options - needs to exit with 0
+        print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
+    '''
+    nextstep_file = make_call_next_step_cmd(sbase, expconfig, statmail, NEMSemail1, sleep=60, nloops=200, verbose=True)
+    ns_cmd = "sbatch -D $HOME " + nextstep_file
     if run_watcher:
-        if parse_xml:
-            print("Invoking watcher script immediately")
-            expinfo = sbase + "/experiment_info.txt"
-            expdict = read_exp_info_file(expinfo)
-            #Note: check on this when mailid is not set. Is the scrip smart enough to parse it?
-            runWatcher(expinfo,0,1,120,180,NEMSemail1,1, expdict)
-        else:
-            print("run_watcher option is not compatible with the csv workflow yet!")
-            print('There is not a good substitute for the experiment_info file in the FUDGE workflow.')
-            print('However, you CAN run this experiment in debug mode if you want to.')
+        print("Submitting callNextStep for this job to analysis")
+        print("\033[1;42m" + ns_cmd + "\033[0;m" + "\n")
+        p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        output6, errors6 = p6.communicate()
+        #######
+        if(p6.returncode != 0):
+            print("Submission of callNextStep failed; please resubmit or call fron the command line.")
+            print(output6)
+            print(errors6)
+            sys.exit(1)
+        print(output6)
+        print(errors6)
     else:
-        sys.exit(0)
+        print("You can submit an experiment-tracking watcher to the batch queue with this command:")
+        print("\033[1;42m" + ns_cmd + "\033[1;m")
+    print("It is possible to cancel all jobs belonging to this experiment with the following command(s):")
+    print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
+    if run_watcher:
+        print("\033[1;42mscancel -u $USER -n fudge_watcher." + expconfig + "\033[1;m")
+    sys.exit(0)
+
+def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60, nloops=10, verbose=True):
+    '''
+    Makes the command for submitting callNextStep() to analysis.
+    Include in documentation: this means the cancel_all_jobs thing probably won't work anymore
+    ...unless you WANT this to be named the same as all the other scripts
+    that's a thing to ask MJN about
+    '''
+    fudgetag = os.environ.get('FUDGETAG')
+    ns_header = "\n".join(['#!/bin/tcsh',
+                            '#SBATCH -t 60:00:00',
+                            # 2019-08-21: slurm only redirects stdout/stderr
+                            # after a line is complete;
+                            # redirect needs to take place within the script itself
+                            '#SBATCH -o ' + sbase+'/log/'+'watcher.%x.%j',
+                            '#SBATCH -J fudge_watcher.' + experiment_name,
+                            '#SBATCH -c 1',
+                            '#SBATCH -p batch']) + "\n"
+    verbose_str = ""
+    if verbose:
+        verbose_str = "--verbose"
+    checkout_cmd = "\n".join(["module load git/2.4.6",
+                             "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
+    nextstep_cmd = " ".join(["python -u $BASEDIR/bin/call_next_step.py",
+                             "-s " + sbase,
+                             "--sleep " + str(sleep),
+                             "--nloops " + str(nloops),
+                             verbose_str])
+    if send_mail:
+        nextstep_cmd += " --mail " + mailid
+    nextstep_log = osp.join(sbase, 'log/watcher.${SLURM_JOBID}')
+    callnext_file = osp.join(sbase, 'run_watcher.csh')
+    with open(callnext_file, 'w') as f:
+        f.write(ns_header + "\n")
+        f.write(checkout_cmd + "\n")
+        f.write(nextstep_cmd + "\n") #+ " >>& " + nextstep_log + "\n")
+        f.write("echo 'script complete'" + "\n")
+    return(callnext_file)
+
 
 
 ####################################################################################

@@ -12,11 +12,13 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
     select.cond <- '<='
     adjust.cond <- '<'
     delta.by <- 1
+    cond.base = 1
   }else if (args$tail == 'upper'){
     trigger.fxn <- 'max'
     select.cond <- '>='
     adjust.cond <- '>'
     delta.by <- (-1)
+    cond.base = 2
   }
   delta_sample = args$delta_sample
   if (args$trigger != 'all'){
@@ -34,7 +36,9 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
     print(length(MF))
     stop('length should be the same length')
   }
+  zero.vec <- (DS == 0) | (MF == 0)
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
+  ds.order = order(DS)
   DS = sort(DS)
   ds.order = order(DS)
   MF = MF[ds.order]
@@ -70,6 +74,7 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
     delta.idx = seq(from=ds.idx, by=delta.by, length.out=delta_sample)
     if (args$adjmethod == 'add'){
       offset = mean(DS[delta.idx] - MF[delta.idx])
+      cond.val <- 1
     } else if (args$adjmethod == 'mult') {
       if (args$tail=='upper') {
         inside.tail <- seq(min(delta.idx), min(mf.points))
@@ -84,19 +89,38 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       mult.ifzero <- max(DS[inside.tail]/MF[inside.tail], na.rm=TRUE)
       mult.vec <- DS[delta.idx]/MF[delta.idx]
-      if (any(mult.vec > mult.ifzero)) {
-        print("Some calculated multipliers were too large, replacing with max inside tails.")
-        mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
+      mult.na <- is.na(mult.vec)
+      if (any(mult.na)){
+        print("missing values found in mult.na")
+        offset <- 1
+        cond.val <- 2 + cond.base
+      }else{
+        mult.vec <- mult.vec[!is.na(mult.vec)]
+        if (any(is.infinite(mult.ifzero))){
+          print("infinite values found in mult.ifzero")
+          offset <- 1
+          cond.val <- 2 + cond.base
+        }else{
+          if (any(mult.vec > mult.ifzero)) {
+            print("Some calculated multipliers were too large, replacing with max inside tails.")
+            mult.vec[mult.vec > mult.ifzero] <- mult.ifzero
+          }
+          offset <- mean(mult.vec)
+          cond.val <- cond.base
+        }
       }
-      offset <- mean(mult.vec)
     } else {
       stop("Something has gone terribly wrong with supplied ADJMETHOD!")
     }
-    return(list(cond=ds.cond, offset=offset))
+    return(list(cond= (ds.cond * cond.val), offset=offset))
   }else{
-    print('no adjust')
+    print('no adjust; not enough present data')
     cond = rep(FALSE, length(DS))
-    offset = 0
+    if (args$adjmethod == 'add'){
+      offset = 0
+    }else{
+      offset = 1
+    }
     return(list(cond=cond, offset=offset))
   }
 }

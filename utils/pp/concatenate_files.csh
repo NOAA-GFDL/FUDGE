@@ -8,9 +8,9 @@
 #set in_files = "/home/cew/Code/testing/temp_file.nc,/home/cew/Code/testing/temp_file.txt"
 #set has_record = 0
 
-#echo $argv
-#echo "length of argv:"
-#echo $#argv
+echo $argv
+echo "length of argv:"
+echo $#argv
 
 set perm_in = $argv[1]
 #lat,time,bnds,lon
@@ -30,13 +30,16 @@ set out_fname = `basename $outfile`
 set tmp_outfile = $tdir/$out_fname
 ##If the files have a record dimension, then the record dimension needs to go first when
 #ncrcat is called.
-echo "writing $tmp_outfile"
 
 ##If, however, there is not a record dimension and you use ncrcat, you need
 #to make a record dimension your last dimension, know where that dimension
 #is expected to go in the output, and place it there as your last step.
 
 set file_list = `echo $in_files:q | sed 's/,/ /g'`
+set dmget_files = `echo $in_files:q | sed "s|,| $in_dir/|g"`
+# dmget all files before gcp command
+dmget $in_dir/$dmget_files
+
 set i = 1
 foreach el ($file_list)
 	#echo $el
@@ -48,19 +51,19 @@ foreach el ($file_list)
 end
 
 #Concatenate the temporary permuted files
-#echo "ncrcat"
-#echo "ncrcat -h $tdir/scratch/tmpfile*.nc $tdir/all_unperm_out.nc"
+echo "ncrcat"
+echo "ncrcat -h $tdir/scratch/tmpfile*.nc $tdir/all_unperm_out.nc"
 ncrcat -h -O $tdir/scratch/tmpfile*.nc $tdir/all_unperm_out.nc
 
 #Permute concantenated file
-#echo "ncpdq"
-#echo "$tdir/all_unperm_out.nc"
-#echo $perm_out
+echo "ncpdq"
+echo "$tdir/all_unperm_out.nc"
+echo $perm_out
 ncpdq -h -a $perm_out -O --header_pad 10000 $tdir/all_unperm_out.nc $tdir/all_perm_out.nc
 
-#echo "make record dimension"
+echo "make record dimension"
 ncks -h -O --mk_rec_dmn 'time' --header_pad 10000 $tdir/all_perm_out.nc $tmp_outfile
 
 #Copy to the final output location
-#echo "final copy"
+echo "final copy"
 gcp -cd $tmp_outfile $outfile

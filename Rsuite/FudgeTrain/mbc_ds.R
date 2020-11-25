@@ -125,13 +125,18 @@ callQDM_mod <- function(OH, MH, MF, args){
   MH.slice <- remove.missvals(unlist(as.vector(MH), use.names=F))
   MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
   args$ratio <- args$ratio.seq
+  screen_NaNs <- args$screen_NaNs
   not.args <- c('adjust.trace', 'transform', 'tform_fxn', 
                 'force_reproducibility', 'var.names', 
-                'ratio.seq', 'iter', 'adjust_trace')
+                'ratio.seq', 'iter', 'adjust_trace', 'screen_NaNs')
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
               args)
   tmp <- do.call('QDM_mod', q.args)$mhat.p
+  if (screen_NaNs){
+    # Screen out NaNs from 0/0
+    tmp[is.nan(tmp)] <- 0
+  }
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
   return(out)
@@ -145,13 +150,18 @@ callQDM <- function(OH, MH, MF, args){
   MH.slice <- remove.missvals(unlist(as.vector(MH), use.names=F))
   MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
   args$ratio <- args$ratio.seq
+  screen_NaNs <- args$screen_NaNs
   not.args <- c('adjust.trace', 'transform', 'tform_fxn', 
                 'force_reproducibility', 'var.names', 
-                'ratio.seq', 'iter', 'adjust_trace')
+                'ratio.seq', 'iter', 'adjust_trace', 'screen_NaNs')
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
               args)
   tmp <- do.call('QDM', q.args)$mhat.p
+  if (screen_NaNs){
+    # Screen out NaNs from 0/0
+    tmp[is.nan(tmp)] <- 0
+  }
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
   if ('trace.calc' %in% names(args)){
@@ -292,6 +302,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   tform_fxn = 'none'
   ties = 'first'
   force_reproducibility=FALSE
+  screen_NaNs = FALSE
   if ('trace' %in% names(args)){
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -357,8 +368,12 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('qdm_mult_noise' %in% names(args)){
     if (args$qdm_mult_noise == 'off'){
       return.args$trace.calc <- -99 # setting to 0 can still hit eps. compares
+      if (ratio.seq){
+        screen_NaNs = TRUE
+      }
     }
   }
+  return.args$screen_NaNs = screen_NaNs
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
     return.args$minsamplesize <- args$minsamplesize

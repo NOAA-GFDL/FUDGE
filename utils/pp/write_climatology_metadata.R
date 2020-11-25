@@ -94,7 +94,7 @@ SetResidMetadata <- function(trend_file, resid_file, fvar, trendvar, residvar, o
   }else{
     date.string <- trend.datestring$value
   }
-  trend.att <- ncatt_get(resid.nc, 0, 'trendatology')
+  trend.att <- ncatt_get(resid.nc, 0, 'trend')
   if (trend.att$hasatt){
     trend.orig <- trend.att$value
   }else{

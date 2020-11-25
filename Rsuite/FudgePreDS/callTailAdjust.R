@@ -66,6 +66,19 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
     oh_ss <- sum(!is.na(OH))
     mh_ss <- sum(!is.na(MH))
   }
+  #2019-09: allow for adjustment of upper-only or lower-only tail
+  if (!('which_tail' %in% arg.names)){
+    stop(paste("Error in callTailAdjust: which_tail argument is required for tail adjustment!"))
+  }
+  hi = F; lo = F
+  if (test$qc_args$which_tail == 'right'){
+    hi = T
+  }else if (test$qc_args$which_tail == 'left'){
+    lo = T
+  }else{
+    # both
+    hi = T; lo = T
+  }
   for(n in 1:nrips){
     MF.slice <- input$fut.pred[[targ.var]][,,,n,,]
     DS.slice <- adjusted.output$ds.out[,,,n,,]
@@ -92,7 +105,8 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
                                obs.hist = OH,
                                model.fut = MF.slice,
                                ds.fut = DS.slice,
-                               args = arg_list, tmasks=tmasks)
+                               args = arg_list, tmasks=tmasks, 
+                               hi_adjust = hi, lo_adjust = lo)
     if(test$make_qc_mask){
       ds.correct$mask[ds.correct$mask==0] <- NA
       adjusted.output$qc.mask[,,,n,,] <- ds.correct$mask
@@ -111,20 +125,9 @@ callTailAdjust <- function(test, input, adjusted.output, triggertype=NA_characte
 # GENERAL TAIL SCHEME FUNCTION THAT CALLS EITHER SIMPLE (I.E. BCQM/PARM)
 # SCHEME OR CDFT SPECIFIC SCHEME AND PERFORMS THE ADJUSTMENTS
 
-tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks){
-  #Fast wrapper for the more complicated tail_cutoff function
-  
-  #Added 12-9-16
-  #If you are going to be using overlapping masks,
-  #you need to trim your samples for this method
-#   if (tmasks$time_mask_overlap){
-#     #print(summary(tmasks))
-#     model.fut <- apply.any.mask(tmasks$trim$masks[[w]], model.fut, dim='time')
-#   }
-  #CEW removed 2017-12-6: as section5.R and the tail adjust currently call this
-  #function (no tmasks, default=list(timas_mask_overlap=F)), this NEVER
-  #gets invoked. Turning off to avoid confusion.
-  
+tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks, 
+                          hi_adjust = T, lo_adjust = T){
+  #Fast wrapper for the more complicated tail_cutoff function  
   # CHOSE BETWEEN TYPES OF SCHEMES
   cond.data = switch(args$triggertype,
                      'GfGh' = model.fut,
@@ -150,15 +153,35 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     tmp.mask=rep(0, length(ds.orig))
   } else {
     #Calculate high and low tails
+    if (args$adjmethod == 'add'){
+      offval = 0
+    }else if (args$adjmethod == 'mult'){
+      offval = 1
+    }
+    default_tail = list(cond=rep(FALSE, length(model.fut)),
+                        offset=offval)
+    hitail = default_tail; lotail = default_tail
     if (args$triggertype == 'limited'){
-      hitail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      lotail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      if (hi_adjust){
+        hitail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      }
+      if (lo_adjust){
+        lotail = limited_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      }
     }else if (args$triggertype == 'cdft_orig'){
-      hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      if (hi_adjust){
+        hitail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      }
+      if (lo_adjust){
+        lotail = cdft_tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      }
     } else {
-      hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
-      lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      if (hi_adjust){
+        hitail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='upper'))
+      }
+      if (lo_adjust){
+        lotail = tail_cutoff(model.hist, obs.hist, model.fut, ds.fut, c(args, tail='lower'))
+      }
     }
     #Add missing values of condition back into main
     cond.tmp <- cond.missvals
@@ -170,7 +193,6 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     hitail.pts = hitail$cond >= 1
     lotail.pts = lotail$cond >= 1
     
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## PERFORM ADJUSTMENT BY ADDING OFFSET TO POINTS REQUIRING ADJUSTMENT
     if (args$adjmethod == 'add'){
       ds.orig[hitail.pts] = cond.data[hitail.pts] + hitail$offset
@@ -181,11 +203,7 @@ tail.correct <-  function(model.hist, obs.hist,  model.fut, ds.fut, args, tmasks
     } else {
       stop("something has gone terribly WRONG with the supplied adjmethod!!")
     }
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED?
-    #tmp.mask <- (hitail$cond)*2 + lotail$cond
-    #CEW commented out - we now distinguish cases up to 6
-    #tmp.mask[tmp.mask > 4] = 4
+    # CREATE INDICATORS TELLING WHICH POINTS WERE ADJUSTED
     tmp.mask <- hitail$cond + lotail$cond
   }
   return(list(ds = ds.orig, mask = (tmp.mask)))
@@ -235,7 +253,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
   if(any(points.to.be.adjusted)){
     # DETERMINE POINTS THAT NEED TO BE ADJUSTED
     # which method is used?
-    #print(paste("adjusting the", args$tail, "tail"))
     adjmethod <- args$adjmethod
     
     if(mf.overlap & any(mf.points)){
@@ -249,7 +266,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
-        #print(trigger.fxn)
         print("Overlap too small for delta_sample upper; resizing")
         delta.idx <- delta.idx[delta.idx >= 1]
       }
@@ -260,7 +276,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
-      #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
       if (args$adjmethod == 'add') {
         #### It's THIS easy for additive!  The rest is for ratio!
@@ -287,8 +302,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         # CALCULATE ADJUSTMENT RATIO
         mult.vec <- DS[delta.idx]/MF[delta.idx]
         #CEW added 12-12-16; mult.vec can, in fact, be NA sometimes
-        #mult.vec <- mult.vec[!is.na(mult.vec)]
-        #mult.ifzero <- mult.ifzero[!is.na(mult.ifzero)]
         if (length(mult.vec) == 0){
           if (length(mult.ifzero) > 0){
             mult.vec <- mult.ifzero
@@ -325,15 +338,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       #(goalpost = all MF values are either < min(MH) or > max(MH))
       #and in either case the adjustment will be the same
       if (args$adjmethod == 'add') {
-        #offset = mean(OH) - mean(MH)
         offset = offset = ( sum(OH) / args$oh_ss ) - ( sum(MH) / args$mh_ss ) 
       } else { # alternative correction in "mult" land
-        #offset = mean(OH)/mean(MH)
         offset = (sum(OH) / args$oh_ss ) / ( sum(MH) / args$mh_ss) 
       }
-#       print(mean(OH)  - mean(MH))
-#       print((sum(OH) / args$oh_ss)  - (sum(MH) / args$mh_ss) )
-#       stop('examine this out')
       if (mf.overlap){
         print("Goalpost case")
         cond = do.call(adjust.cond, list(MF[mf.rank], do.call(trigger.fxn, list(MH))))
@@ -351,12 +359,10 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
         cond <- rep(1, length(MF))
       }
     }
-    #return(list(cond=mf.cond, offset=offset))
   }else{
     cond=rep(FALSE, length(MF))
     offset=0
     cond.val <- 0
-    #return(list(cond=cond, offset=offset))
   }
 return(list(cond = cond * cond.val, offset = offset))
 }

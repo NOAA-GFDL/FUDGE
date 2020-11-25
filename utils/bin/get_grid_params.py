@@ -24,6 +24,6 @@ def get_grid_params(grid, FUDGEROOT):
                 iend = int(row['iend'])
                 jstart = int(row['jstart'])
                 jend = int(row['jend'])
-                ioff = iend - istart + 1
-                joff = jend - jstart + 1
+                #ioff = istart - 1 # iend - istart + 1
+                #joff = iend - 1 #jend - jstart + 1
     return(istart, iend, ioff, jstart, jend, joff)

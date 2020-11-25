@@ -102,7 +102,6 @@ WriteNC <-  function(filename,out.data,var.names,
       all.att.list <- all.att.list[!(names(all.att.list)%in% c("units", "longname", "prec", "dim", "dimids", "missval", 'names'))]
       if(length(all.att.list) > 0){
         for (at in 1:length(all.att.list)){
-          #print(paste(loop.var, ":", names(all.att.list)[[at]], "=", all.att.list[[at]]))
           ncatt_put(nc.obj, loop.var,  names(all.att.list)[[at]], all.att.list[[at]])
         }
       }

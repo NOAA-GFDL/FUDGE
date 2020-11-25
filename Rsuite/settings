@@ -1,7 +1,0 @@
-## source settings ##
-module load R/2.15.2
-module load netcdf/4.2
-setenv FUDGEROOT "/home/a1r/gitlab/fudge2014/"
-#### TMPDIR for workstations #####
-#If running R workflow from workstation, ensure TMPDIR is set. 
-#For PAN, use $TMPDIR (/vftmp) . Do not set TMPDIR explicitly for use in PAN. 

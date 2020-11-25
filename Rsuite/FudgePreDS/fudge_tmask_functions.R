@@ -18,7 +18,7 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
     #one per dataset type / var combo in the input data struct.
     tmask.filenames[[ftype]] <- aux.ref[[ftype]][[1]]$tmask
   }
-  if (all(tmask.filenames=='na')){
+  if (all(tmask.filenames %in% c('na', 'none'))){
     tmask.filenames <- list()
     apply_tmasks = F
   }else{
@@ -28,7 +28,7 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   }
   #Check for whether there is an indexing mask used by the ds data
   #(formerly known as the time-trimming mask)
-  is_indexed_with_tmask <- aux.ref$DS$indexing_tmask != 'na'
+  is_indexed_with_tmask <- !(aux.ref$DS$indexing_tmask %in%  c('na', 'none'))
   #Either all data will use a time-windowing mask, or none will use it. 
   if (ds.ref$train_and_use_same){ 
     #Future data used in downscaling will be underneath the fut.time tag
@@ -106,67 +106,48 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   if (ds.ref$downscale_oh){
     #Create global reference vectors for where leapdays are in the input
     #historical and future datasets
-    has_calendar = TRUE
-    if (!apply_tmasks){
-      warning(paste("Warning in get.fudge.tmask.list: you should use a tmask if", 
-                    "working with delta and/or CFQM unless you are working with", 
-                    "synthetic data!"))
-      print(MF$metadata[[1]]$dim$time$calendar)
-      tmask.list$OH$masks[[1]] <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
-      if (MF$metadata[[1]]$dim$time$calendar != "none"){      
-        fut.tseries <- get.PCICt.time.series(MF$metadata[[1]]$dim$time$units, 
-                                             MF$metadata[[1]]$dim$time$vals, 
-                                             MF$metadata[[1]]$dim$time$calendar)
-        hist.tseries <- get.PCICt.time.series(OH$metadata[[1]]$dim$time$units, 
-                                              OH$metadata[[1]]$dim$time$vals, 
-                                              OH$metadata[[1]]$dim$time$calendar)
-        tmask.list$hist.leapmask <- make.leapday.mask(hist.tseries)
-        tmask.list$fut.leapmask <- make.leapday.mask(fut.tseries)
-        OH_years <- get_tmask_years(OH$metadata[[1]]$filename)
-        MF_years <- get_tmask_years(MF$metadata[[1]]$filename)
+    fut_calendar <- MF$metadata[[1]]$dim$time$calendar
+    hist_calendar <- OH$metadata[[1]]$dim$time$calendar
+    if (fut_calendar != 'none'){
+      fut.tseries <- get.PCICt.time.series(MF$metadata[[1]]$dim$time$units, 
+                                           MF$metadata[[1]]$dim$time$vals, 
+                                           MF$metadata[[1]]$dim$time$calendar)
+      hist.tseries <- get.PCICt.time.series(OH$metadata[[1]]$dim$time$units, 
+                                            OH$metadata[[1]]$dim$time$vals, 
+                                            OH$metadata[[1]]$dim$time$calendar)
+    }else{
+      fut.tseries <- MF$metadata[[1]]$dim$time$vals
+      hist.tseries <- OH$metadata[[1]]$dim$time$vals
+    }
+    resample_method = 'cf_resample'
+    if (resample_method == 'cf_resample'){
+      #Added November 2019 - resamples based off fo four-year leapday cycles
+      # Current structure of return is a separate list for each ensemble,
+      # which accounts for year cycling
+      tmask.list$cf_resample <- CF_resample(hist.tseries, fut.tseries, 
+                                            hist_calendar, fut_calendar)
+    }else{
+      # Resample based off of adding/removing leapdays - used in i,j,k
+      nyears_hist = length(unique(format(hist.tseries, "%Y")))
+      nyears_fut = length(unique(format(fut.tseries, "%Y")))
+      if (hist.cal %in% cal360.strings()){
+        hist.year.div = which(format(hist.tseries, '%m-%d') == "12-30")
+        fut.year.div = which(format(fut.tseries, '%m-%d') == "12-30")
+      }else if (hist.cal == 'none'){
+        hist.year.div = length(hist.tseries)
+        fut.year.div = length(fut.tseries)
       }else{
-        #This case is used for the synthetic data - no leapdays to be found.
-        has_calendar = FALSE
-        tmask.list$hist.leapmask <- rep(1, length(OH$metadata[[1]]$dim$time$vals))
-        tmask.list$fut.leapmask <- rep(1, length(MF$metadata[[1]]$dim$time$vals))
+        # Note to self: add/remove leapday indexing may not be accurate when 
+        # working with years that don't start on Jan. first. Keep in mind for 
+        # debugging.
+        hist.year.div <- which(format(hist.tseries, "%m-%d") == '12-31')
+        fut.year.div <- which(format(hist.tseries, "%m-%d") == '12-31')
       }
-    }else{
-      print("getting the leapday masks")
-      OH_years <- get_tmask_years(tmask.filenames$OH)
-      MF_years <- get_tmask_years(tmask.filenames$MF)
-      tmask.list$hist.leapmask <- get.leapday.mask(OH_years$yearstring,
-                                                   OH$metadata[[1]]$dim$time$calendar, 
-                                                   origin=OH$metadata[[1]]$dim$time$units,
-                                                   time.data=OH$metadata[[1]]$dim$time$vals)
-      tmask.list$fut.leapmask <- get.leapday.mask(MF_years$yearstring,
-                                                  MF$metadata[[1]]$dim$time$calendar, 
-                                                  origin = MF$metadata[[1]]$dim$time$units,
-                                                  time.data=MF$metadata[[1]]$dim$time$vals)
+      #start_year = (1 + (n-1) * oh_offset)
+      tmask.list$cf_resample <- get.OH.time.index(nyears_hist, nyear_fut, 
+                                                  hist.year.div, fut.year.div, 
+                                                  start_year = 1)
     }
-    if (has_calendar){
-      print("getting year divisions")
-      tmask.list$hist.year.div <- get.year.divisions(OH_years$start, 
-                                                     OH_years$end, 
-                                                     OH$metadata[[1]]$dim$time$calendar)
-      tmask.list$fut.year.div <- get.year.divisions(MF_years$start, 
-                                                    MF_years$end, 
-                                                    MF$metadata[[1]]$dim$time$calendar)
-      tmask.list$nyears_hist <- length(unique(cut(1:oh.dim[6], breaks=tmask.list$hist.year.div)))
-      tmask.list$nyears_fut <- length(unique(cut(1:mf.dim[6], breaks=tmask.list$fut.year.div)))
-#       print(tmask.list$nyears_hist)
-#       print(tmask.list$nyears_fut)
-#       stop('examine this output')
-    }else{
-      tmask.list$hist.year.div <- length(tmask.list$hist.leapmask)
-      tmask.list$fut.year.div <- length(tmask.list$fut.leapmask)
-      tmask.list$nyears_hist <- 1
-      tmask.list$nyears_fut <- 1
-    }
-    #     print(tmask.list$hist.year.div)
-    #     print(tmask.list$fut.year.div)
-    #     print(tmask.list$nyears_hist)
-    #     print(tmask.list$nyears_fut)
-    #     stop('examine this output. Does it make sense?')
   }
   ###Set booleans for handy access
   print(paste("Applying overlapping time window masks:", time_mask_overlap))
@@ -177,18 +158,6 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   tmask.list$calendar <- MF$metadata[[1]]$dim$time$calendar
   return(tmask.list)
 }
-
-
-# apply.fudge.tmask <- function(data, mask){
-#   #Fast and dirty adaptation of apply.any.mask
-#   #for use with 6-dimensional output
-#   #print('applying tmask')
-#   data <- aperm(data, c(6,1,2,3,4,5))
-#   data.dim <- dim(data)
-#   result <- rep(mask, length.out=length(data)) * as.vector(data)
-#   dim(result) <- data.dim
-#   return(aperm(result, c(2,3,4,5,6,1)))
-# }
 
 apply.fudge.tmask <- function(data, mask){
   #'Rewriting the above with lessons from the section 8 tools - 

@@ -14,7 +14,7 @@ import netCDF4
 from netCDF4 import Dataset
 import fudgeUtils
 from fudgeUtils import send_status_email
-from fudgeUtils import gcp
+from gcp import gcp
 
 def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
     #Copies output to anom+clim output directory and changes the var name
@@ -139,26 +139,16 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
                                                                                     str(clim_anom_file_out)])
         print "Calling anomaly addition"
         print(anomadd_command)
-        try:
-            p = subprocess.Popen(anomadd_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except:
+        p = subprocess.Popen(anomadd_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out,err = p.communicate()
+        print("return from p:")
+        print(p)
+        print(str(p.returncode))
+        if p.returncode != 0:
             print("Error in subprocess call of anomaly addition! Please examine call in more detail.")
             print(anomadd_command)
             os.environ["S8_PATH"] = s8_orig
             sys.exit(1)
-            if(mailid is not None):
-                send_status_email("failure", 'postProc - anomAdd', exp_name,
-                           traceback = "Error in call to anomaly addition - call for reference: " + anomadd_command,
-                           mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"),
-                           outfiles = final_out_dir)
-        error,output = p.communicate()
-        os.environ["S8_PATH"] = s8_orig
-        #Check on what this returns with an R error
-        print(error)
-        print(output)
-        if(p.returncode != 0):
-            err_message = "error in call to anomaly addition"
-            print ("Error in anomaly addition! There was an " + err_message)
             if(mailid is not None):
                 send_status_email("failure", 'postProc - anomAdd', exp_name,
                            traceback = "Error in call to anomaly addition - call for reference: " + anomadd_command,

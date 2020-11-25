@@ -2,14 +2,19 @@ profileFUDGERun <- function(){
   #Prins basic profiling information for the 
   #minifile run, along with statistics about the 
   #number of points downscaled over
+  message("All timings are reported in seconds")
+  message("All memory usage statistics are reported in Mb")
   message(paste0("profile_npts_OH:", sum(sapply(OH$data, 'length'))))
   message(paste0("profile_npts_MH:", sum(sapply(MH$data, 'length'))))
   message(paste0("profile_npts_MF:", sum(sapply(MF$data, 'length'))))  
-  #message(paste0("profile_npts_OH:", sum(sapply(list.target$clim.in, 'length'))))
-  #message(paste0("profile_npts_MH:", sum(sapply(list.hist$clim.in, 'length'))))
-  #message(paste0("profile_npts_MF:", sum(sapply(list.fut$clim.in, 'length'))))  
+  message(paste0("profile_npts_DS:", ds_tally))
+  message(paste0("profile_n_twindows:", tmasks$nmasks))
+  message(paste0("profile_npts_taxis:", sum(apply(ds$ds, 6, function(x){any(!is.na(x))}))))
 
-  message(paste0("profile_timetorun:", proc.time()[3] - fudge.start.time))
+  runtime <- proc.time()[3] - fudge.start.time
+  message(paste0("profile_timetorun:", round(runtime, digits=3)))
+  message(paste0("profile_timeincalc:", round(ds.elapsed, digits=3)))
+  message(paste0("profile_timenotincalc:", round(runtime - ds.elapsed, digits=3)))
   gcmem <- gc()
   #message(paste("profile_ncells:", gcmem[1,6]))
   #message(paste("profile_vcells:", gcmem[2,6])
@@ -20,7 +25,6 @@ profileFUDGERun <- function(){
   swaplist <- unlist(strsplit(out[4], " +"))
   message(paste0("profile_memavail:", memlist[2]))
   message(paste0("profile_swapavail:", swaplist[4]))
-  #message(paste("profile_memavail:"))
 }
 
 report_gc_memuse_fudge <- function(simplify=F){

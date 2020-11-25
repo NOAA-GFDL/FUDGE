@@ -4,6 +4,8 @@ import os, stat, shutil
 from os import path as osp
 import json
 from collections import OrderedDict
+from make_runscripts import make_runscript
+import math
 
 
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
@@ -25,10 +27,12 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     tmasks = []
     for dname in dataset_names:
         tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
-    if auxdict['DS']['indexing_tmask'] != 'na':
+    tmask_nones = ['na', 'none']
+    if auxdict['DS']['indexing_tmask'] not in tmask_nones:
         tmasks.append(auxdict['DS']['indexing_tmask'])
     tmasks = list(set(tmasks))
-    tmasks = [el for el in tmasks if el != 'na']
+    tmask_none = ["na", "none"]
+    tmasks = [el for el in tmasks if el not in tmask_none]
     if len(tmasks) > 0:
         dmget += "# Time mask files:\n" + "\n".join(["dmget " + el for el in tmasks]) + "\n"
     geomasks = []
@@ -50,10 +54,16 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     os.makedirs(osp.dirname(auxfile_mod))
     shutil.copyfile(auxfile, auxfile_mod)
 
+    is_syn = False
+    if auxdict['output_grid'] in ['X1-1', 'grid0']:
+        is_syn = True
+
     # And finally, do the looping by index and writing of master and runscripts.
+    #print(" ".join([str(el) for el in [i_start, i_end, i_by, i_offset, j_start, j_end, j_by, j_offset]]))
+    #sys.exit(1)
     make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
-                              auxdict['OH'].keys()[0], True,
+                              auxdict['OH'].keys()[0], is_syn,
                               dmget, gcp_str, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
                               not_strict_metadata, metadata_table)
@@ -95,7 +105,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
         spatmask_file = [osp.join(spatmask_dir, el)
                          for el in os.listdir(spatmask_dir)
                          if re.search('masks', el) is not None][0]
-        dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
+        #dmget_string = dmget_string + "# Obtain spatial mask" + "\n"
         spatmask_files = [spatmask_file]
         dmget_string = dmget_string + "dmget " + spatmask_file + " \n"
         spatmask_path = spatmask_file
@@ -107,7 +117,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     tmask_files = []
     if tmask_present:
         tmask_files = [OH_tmask, MH_tmask, MF_tmask]
-        dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
+        #dmget_string = dmget_string + "# Get all tmasks (OH MH MF trimming) " + "\n"
         if trim_time_mask_present:
             tmask_files.append(trim_tmask)
             # dmget_string = dmget_string + "# Get MF overlap tmask " + "\n"
@@ -169,7 +179,16 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     auxdict['MH'] = mh_auxdict
     auxdict['MF'] = mf_auxdict
     auxdict['DS'] = ds_auxdict
+    #Adding dmget parameters for data files after timeout associated with gcp
+    #dmget_string += "# Dmget data files\n"
+    dmget_string += oh_dmget
+    dmget_string += mh_dmget
+    dmget_string += mf_dmget
     auxfile_mod = scriptdir + "/config_mod/" + osp.basename(auxfile)
+    # 2019-05-21: before dumping to file, add params to run from aux
+    auxdict['files_in_aux'] = True
+    auxdict['script_settings'] = {'scriptdir': scriptdir}
+    auxdict['cleanup_settings'] = {'if_preexist': 'move'}
     os.makedirs(osp.dirname(auxfile_mod))
     auxstr = json.dumps(auxdict, indent=4)
     with open(auxfile_mod, 'w') as f:
@@ -215,65 +234,92 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # i_offset = int(i_start)  - 1
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
-    j_elements = range(int(j_start), int(j_end), j_by)
+    j_elements = range(int(j_start), int(j_end)+1, j_by)
+    if len(j_elements) == 0:
+        j_elements = range(int(j_start), int(j_end)+1, j_by)
     j_elements.append(int(j_end)+1)
     j_elements = list(set(j_elements))
     j_elements = sorted(j_elements)
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
-    # sys.exit("Examine this out")
 
     if is_syn:
         j_elements = [1,2]
+    if len(j_elements) == 1:
+        j_elements.append(j_elements[0])
 
     njobs = auxdict['njobs']
     ncpus = auxdict['ncpus']
 
-    slurm_header = "\n".join(['#!/bin/tcsh',
+    #print(str(i_elements))
+    #print(str(j_elements))
+
+    nrunscripts = (len(i_elements) - 1) * (len(j_elements) - 1)
+    print("expected number runscripts:")
+    print(str(nrunscripts))
+    nmaster = int(math.ceil(float(nrunscripts) / float(njobs)))
+    print("expected number of master scripts:")
+    print(str(nmaster))
+    #print(str((float(nrunscripts) / float(njobs))))
+
+    slurm_header = "\n".join(['#!/bin/bash',
                               '#SBATCH -t '+auxdict['wallclocktime'],
-                              '#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
+                              #'#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
                               #'#SBATCH -J fudge_master',
                               '#SBATCH -c ' + str(ncpus),
                               '#SBATCH -p batch']) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
-    module_loads = "\n".join(['module load R',
+    module_loads = "\n".join(["set -x",
+                              "set -e",
+                              ". /usr/local/Modules/default/init/bash",
+                              'module load R',
                               'module load gcp',
                               'module load netcdf',
                               'module load nco',
                               'module load git/2.4.6',
-                              'eval `/home/esd/bin/checkout-fudge-s8 --fudgetag ' + fudgetag + '`']) + "\n"
+                              'pwd',
+                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`']) + "\n"
     #Commmands for making/manipulating file paths
+    ds_var = auxdict['DS']['vars'][0]
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
-    outdir_cmd = create_outdir_string(outdirs, scriptdir, target_var)
-    outdir_string = create_outdir_string(outdirs, scriptdir, target_var)
+    outdir_cmd = create_outdir_string(outdirs, scriptdir, ds_var)
+    outdir_string = create_outdir_string(outdirs, scriptdir, ds_var)
     meta_tmp = "$TMPDIR/meta_file.json"
     meta_final = osp.join(scriptdir, "meta_file.json")
     meta_command = make_meta_command(auxfile_mod, meta_final,
                                      scriptdir, not_strict_metadata, metadata_table)
     experiment_name = auxdict['ds_experiment_name']
 
+    #swap out the newlines and dmgets in the dmget command
+    dmget_bg_string  = re.sub("\ndmget", " ", dmget_string)
+    dmget_bg_string = re.sub("  ", " ", dmget_bg_string)
+
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
     # print(j_elements)
     n_tiles = 0
-    for j in range(0, len(j_elements)-1):
+    j_rangeval = len(j_elements)-1 if len(j_elements) > 1 else 1
+    k = 0
+    for j in range(0, j_rangeval):
         jval = j_elements[j]
+        jby = j_elements[j+1] - jval
         j_string = "J"+str(j_elements[j]) + "-" + str(j_elements[j+1]-1)
         # j_max and j_by are passed in already; they are numeric
         for i in range(0, len(i_elements)-1):
             ival = i_elements[i]
+            iby = i_elements[i+1] - ival
             n_tiles = n_tiles + 1
             i_string = "I" + str(i_elements[i]) + "-" + str(i_elements[i+1]-1)
-            if i % njobs == 0 :
-                # Create the master scriptname
-                end_idx = i+njobs-1
-                if end_idx > len(i_elements) - 1:
-                    end_idx = len(i_elements) - 1
-                i_master_string = "I" + str(i_elements[i]) + "-" + str(i_elements[end_idx])
-                idx_string = i_master_string + '_' + j_string
-                master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
+            #print("will we call the master?")
+            #print(str(i % njobs))
+            if k % njobs == 0 :
+                #print("initialize write strings")
+                #print("i " + str(i) + " j " + str(j))
+                #print("i " + str(i_elements[i]) + " j " + str(j_elements[j]))
+                i_master_string = "I" + str(i_elements[i])
+                j_master_string = "J" + str(j_elements[j])
                 runscript_files = []
             # Since master is created on first (always), can proceed with rest of runscript calls
             runscript_name = osp.join(scriptdir, 'runscript', "script." + target_var + "." + auxdict['ds_method'] + "." + i_string + "_" + j_string)
@@ -293,32 +339,78 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                 jmax = j_max + 1
             # 2018-04-09: Need to copy modified auxfile all the time, since that
             # is where the file paths are.
-            runscript_code = create_slice_runscript(i_string, j_string, scriptdir,
-                                                    i_idx, imax, i_by, i_offset,
-                                                    j_idx, jmax, j_by, j_offset, auxfile_mod, meta_tmp, target_var,outdirs)
+            #print(" ".join([str(el) for el in [ival, i_idx, imax, i_by, i_offset, jval, j_idx, jmax, j_by, j_offset]]))
+            regex_outdir = osp.join(auxdict['DS']['out_dir'], auxdict['DS']['out_subdir'])
+            idstring = i_string + "_" + j_string
+            runscript_code = make_runscript(scriptdir, experiment_name, idstring,
+                                            auxdict['DS']['vars'], auxdict['DS']['rips'], regex_outdir,
+                                            i_idx, imax, iby, i_offset,
+                                            j_idx, jmax, jby, j_offset,
+                                            auxfile_mod, meta_tmp, auxdict['make_qcmask'])
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n')  # needed for slurm POSIX standard
             os.chmod(runscript_name, runmode)    # f now executable
             runscript_files.append(runscript_name)
-            if i % njobs == (njobs - 1) or i == (len(i_elements) - 2):
+            if k % njobs == (njobs - 1) or k == ( nrunscripts - 1):
+                #print("writing master")
+                #print("i " + str(i) + " j " + str(j))
+                #print("i " + str(i_elements[i+1]-1) + " j " + str(j_elements[j+1]-1))
                 # Prepare to write all accululated data to file
+                i_master_string += "-" + str(i_elements[i+1]-1)
+                j_master_string += "-" + str(j_elements[j+1]-1)
+                idx_string = i_master_string + '_' + j_master_string
+                master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
+                trap_command  = make_trap_command(scriptdir, idx_string)
                 executable_code = make_executable_stuff(runscript_files, auxfile_mod, meta_tmp,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
+                #idx_string = "I" + str(i_elements) + "_" + j_string
+                # idx_string is set above this point. Doesn't get used on the same
+                # loop, but it shouldn't vanish.
+                logfilename = 'master.%x.' + idx_string + ".%j"
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
                     #f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
+                    f.write('#SBATCH -o ' + osp.join(scriptdir, 'log') + "/" + logfilename + "\n")
                     f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
-                    f.write(dmget_string)
+                    f.write(trap_command)
+                    f.write(dmget_bg_string)
                     f.write(gcp_string)
                     f.write(outdir_cmd)
                     f.write(meta_command)
                     f.write("echo 'Beginning calls to executable'\n")
                     f.write(executable_code)
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
-                    # f.write("wait")
+            k += 1
+    #2019-08: Adding sourcable script for dmgetting files
+    dmget_script = osp.join(scriptdir, "dmget_input_files.csh")
+    with open(dmget_script, 'w') as f:
+        f.write("#!/bin/tcsh\n")
+        f.write("# Script of dmget commands for the files in the FUDGE experiment\n")
+        f.write(dmget_bg_string)
     print('master runscript and mini creation completed')
+
+def make_trap_command(scriptdir, idx_string):
+    '''
+    Makes a command to trap and write status files based off of the master exit status
+    '''
+    statdir = osp.join(scriptdir, 'status', 'master')
+    trap_command = "\n".join(["#Trap code - writes status files for cleanup",
+                              "chunk_id='" + idx_string + "'",
+                              "function exit_fxn() {",
+                              "    # many thanks to https://medium.com/@dirk.avery/the-bash-trap-trap-ce6083f36700",
+                              "	echo $1",
+                              '	if [ "$1" != "0" ]; then',
+                              "	  touch " + statdir + "/${chunk_id}.fail",
+                              "	  exit 1",
+                              "  	else",
+                              "	  touch " + statdir + "/${chunk_id}.success",
+                              "	  exit 0",
+                              "	fi",
+                              "}",
+                              "trap 'exit_fxn $?' EXIT"])
+    return(trap_command + "\n")
 
 def make_meta_command(auxfile_mod, meta_final, scriptdir,
                       not_strict_metadata, metadata_table):
@@ -326,23 +418,23 @@ def make_meta_command(auxfile_mod, meta_final, scriptdir,
     strict_str = "" if not_strict_metadata else " --is-strict"
     meta_str = " --metadata-table " + metadata_table
     meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
-                              "set meta_final = " + meta_final,
-                              "set meta_tmp = $TMPDIR/meta_file.json",
-                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
-                              "set meta_status = $status",
+                              "meta_final=" + meta_final,
+                              "meta_tmp=$TMPDIR/meta_file.json",
+                              "python -u ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
+                              "meta_status=$?",
                               'echo "status of meta call: $meta_status"',
-                              "if ( $meta_status == 0 ) then",
-                              "  if ( ! -f $meta_final ) then",
+                              "if [ $meta_status == 0 ]; then",
+                              "  if [ ! -f $meta_final ]; then",
                               "  " + make_gcp_cmd("$meta_tmp", meta_final,
                                                   indent="    ",
                                                   newline_end = False),
                               "  sleep 10",
-                              "  endif",
+                              "  fi",
                               "else",
                               "  echo 'Error in standalone_metadata_tester: Metadata operations failed!'",
                               "  touch " + scriptdir + "/status/.meta.fail",
                               "  exit 1",
-                              "endif"])
+                              "fi"])
     return(meta_command + "\n")
 
 
@@ -388,117 +480,34 @@ def make_gcp_cmd(sourcefile, destfile, indent="", newline_end = True):
     Wraps a gcp command in a status checker; exits with an error if that
     command fails
     '''
-    gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
+    #gcp_cmd  = "gcp --sync --verbose " + sourcefile + " " + destfile
+    gcp_cmd = "python ${BASEDIR}/utils/bin/gcp.py --gcp-verbose --gcp-sync --retry 2 --final-copy --verbose " + sourcefile + " " + destfile
     gcp_echo = indent + "echo '" + gcp_cmd + "'"
     gcp_cmd = indent + gcp_cmd
-    stat_cmd = ("\n" + indent).join(["if ($status != 0) then",
+    stat_cmd = ("\n" + indent).join(["if [ $? != 0 ]; then",
                                      "   echo 'Error in runscript: gcp from " + sourcefile + " to " + destfile + " failed!'",
                                      "   exit 99",
-                                     "endif"])
+                                     "fi"])
     stat_cmd = indent + stat_cmd
     # echo command goes first; status of the echo is usually 0
     end = '\n' if newline_end else ''
     return(indent + gcp_echo + "\n" + indent + gcp_cmd + "\n" + stat_cmd + end)
 
 
-def create_outdir_string(outdirs, scriptdir, target_var):
+def create_outdir_string(outdirs, scriptdir, ds_var):
     # Wrapper for making the outdir creation commands
     outdir_string = "# Creating output directories \n"
-    qcmaskdir = "/" + target_var + "_qcmask/"
+    qcmaskdir = "/" + ds_var + "_qcmask/"
     for out in outdirs:
         outdir_string = outdir_string + "mkdir -p " + out + "\n"
-        outdir_string = outdir_string + "if ($status != 0) then" + "\n"
+        outdir_string = outdir_string + "if [ $? != 0 ]; then" + "\n"
         outdir_string = outdir_string + "\t echo 'Error in creation of output dir! You may not have write permissions'" + "\n"
         outdir_string = outdir_string + "\t touch " + scriptdir + "/status/.mini.fail" + "\n"
-        outdir_string = outdir_string + "endif"    + "\n"
+        outdir_string = outdir_string + "fi"    + "\n"
         outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + "\n"
         outdir_string = outdir_string + "mkdir -p " + out + qcmaskdir + "\n"
         outdir_string = outdir_string + "mkdir -p $TMPDIR/" + out + qcmaskdir + "\n"
     return(outdir_string)
-
-def create_slice_runscript(i_string, j_string, scriptdir, i_idx, i_max, i_by, i_offset, j_idx, j_max, j_by, j_offset, auxfile_mod, meta_file, target_var, outdirs):
-    # Creates the runscript code specific to a slice of the grid downscaled
-    # by the R code
-    # Technically only the shebang is needed, but extra info in the event
-    # that we ever split
-    # these differently is not going to hurt.
-    # i: 1:194
-    # j_range: 'J454_576'
-    runscript_log = osp.join(scriptdir, 'log') + "/ind.%x.%j"
-    runscript_header = "\n".join(['#!/bin/tcsh',
-                                  '#SBATCH -c 1',
-                                  '#SBATCH -t walltime=6:00:00',
-                                  '#SBATCH -o ' + runscript_log,
-                                  '#SBATCH -J fudge_run',
-                                  '#SBATCH -p batch']) + "\n"
-    exp_name = scriptdir.split("/")[-1]
-    if(exp_name==''):
-        exp_name = scriptdir.split("/")[-2]
-    master_driver = "${BASEDIR}/Rsuite/Drivers/Master_Driver.R"
-    # runcode = osp.join(scriptdir, 'runcode') + "/code." + target_var + "." + exp_name + "." + i_string + "_" +j_string
-    logfile = osp.join(scriptdir, 'log') + "/out."+exp_name+"."+ i_string + "_" +j_string
-    # print(runcode)
-    # print(logfile)
-    # Okay - this defines the list of runcodes that are going to be run.
-    # i_idx is in the same space as i_max; i is in minifile space.
-    # r_command = "Rscript " + runcode + " " + " ".join([str(el) for el in [i_idx, i_max, auxfile, 'TRUE']]) + " >>& " + logfile # + " &"
-    cmd_args = " ".join(str(el) for el in [i_idx, i_max, i_by, i_offset, j_idx,
-                                           j_max, j_by, j_offset, auxfile_mod,
-                                           meta_file, 'TRUE'])
-    r_command = "Rscript " + master_driver + " " + cmd_args + " >>& " + logfile + " &"
-    runscript = runscript_header + r_command + "\n" + "wait \n"
-    for outdir in outdirs:
-        runscript = runscript + create_runscript_copy_ops(outdir, i_string, j_string, target_var)
-    return(runscript)
-
-def create_runscript_copy_ops(outdir, i_string, j_string, target_var):
-    # Makes the copy operations for the output of the R code
-    # Currently assumes a single file of _qcmask output;
-    # when we get to writing coordinates, this needs to be updated
-    # Note: right now, for a given script job, all J are going to be identical.
-    outstr = []
-    outstr.append('echo `ls "$TMPDIR/' + outdir + '"`')
-    outstr.append('echo gcp "$TMPDIR/' + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir + '"')
-    outstr.append("gcp $TMPDIR/" + outdir + "/*."+i_string+"_"+j_string + ".nc " + outdir)
-    outstr.append("set ostat = $?")
-    outstr.append("if ( $ostat == 0 ) then")
-    outstr.append("\t touch " + outdir + "/.mini.success")
-    outstr.append("else")
-    outstr.append("\t touch " + outdir + "/.mini.fail")
-    outstr.append('endif')
-    # Now do the same for the qc mask file
-    out_mask_dir = outdir + "/" + target_var + "_qcmask/"
-    outstr.append('echo "gcp $TMPDIR/' + out_mask_dir + "/*."+i_string+"_"+j_string + ".nc " + out_mask_dir + '"')
-    outstr.append("gcp $TMPDIR/" + out_mask_dir + "/*."+i_string+"_"+j_string + ".nc " + out_mask_dir)
-    outstr.append("set ostat = $?")
-    outstr.append("if ( $ostat == 0 ) then")
-    outstr.append("\t touch " + out_mask_dir + "/.mini.success")
-    outstr.append("else")
-    outstr.append("\t touch " + out_mask_dir + "/.mini.fail")
-    outstr.append('endif')
-    return("\n".join(outstr) + "\n")
-
-def awful_runcode_hack(runcode_dir, runscript_dir):
-    # I don't want to have to tinker with something that we're planning on
-    # replacing during this flavor or the next. For now, it's not much of
-    # a stretch to copy some of the runcodes to a location that fits the
-    # expected pattern in the runscripts.
-    runscript_files = [el for el in os.listdir(runscript_dir)
-                       if re.search("script", el) is not None]
-    runcode_files = [el for el in os.listdir(runcode_dir)
-                     if re.search("code", el) is not None]
-    runscript_patterns = [re.split("\.", el)[-1]
-                          for el in runscript_files
-                          if (re.split("\.", el)[-1]).count('-') == 2]
-    # print(runscript_patterns)
-    runcode_split = re.split("\.", runcode_files[0])
-    # print(runcode_split)
-    for patt in runscript_patterns:
-        tmp_file = runcode_split
-        tmp_file[-1] = patt
-        tmp_dest = osp.join(runcode_dir, ".".join(tmp_file))
-        tmp_src = osp.join(runcode_dir, runcode_files[0])
-        shutil.copy2(tmp_src, tmp_dest)
 
 def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
                           ival, imax, i_by, i_offset, jval, jmax, j_by, j_offset):
@@ -546,16 +555,13 @@ def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
     int_cmd = "\n\t".join(["\tmodule load rstudio/0.98.1103",
                            "module unload R/2.15.2",
                            "module load R/3.4.4",
-                           "set auxfile_mod = " + auxfile_mod,
-                           # "set runcode_dir = " + scriptdir + "/" + 'runcode',
-                           # "set generic_runcode_base = `ls $runcode_dir | head -n 1`",
-                           # "set generic_runcode = $runcode_dir/$generic_runcode_base",
-                           "set master_driver = ${BASEDIR}/Rsuite/Drivers/Master_Driver.R",
+                           "auxfile_mod=" + auxfile_mod,
+                           "master_driver=${BASEDIR}/Rsuite/Drivers/Master_Driver.R",
                            # Below line shouldn't give an error: removes if there,
                            # moves on if not.
                            "rm -rf $TMPDIR/command_line_params.R",
-                           "set r_cmd = " + echo_cmd,
-                           "set r_header = '<shebang>/bin/Rscript'",
+                           "r_cmd=" + echo_cmd,
+                           "r_header='<shebang>/bin/Rscript'",
                            "echo $r_header | sed -e 's:<shebang>:# \!:g' >> $TMPDIR/command_line_params.R",
                            "echo $r_cmd | sed -e 's:<newline>:" + r'\n' + ":g' >> $TMPDIR/command_line_params.R",
                            "echo 'Command to run R minifile code from the command line:'",
@@ -563,7 +569,7 @@ def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
                            "rstudio $TMPDIR/command_line_params.R &"]
                           )
     # And then, join both commands together with ifelse
-    executable_stuff = "\nset arrlen = $# argv\n\nif ( $arrlen == 0 ) then\n" + batch_cmd + "\nelse\n" + int_cmd + "\nendif"
+    executable_stuff = "\narrlen=$#\n\nif [ $arrlen == 0 ]; then\n" + batch_cmd + "\nelse\n" + int_cmd + "\nfi"
     return(executable_stuff)
 
 
@@ -573,7 +579,7 @@ def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'],
     '''
     Makes an aux file entry of input data files for one of OH, MH or MF.
     '''
-    aux_entry = {}
+    aux_entry = OrderedDict()
     for var, f, prime, fixed in zip(varnames, files, is_prime, is_fixed):
         aux_entry[var] = {'file': f,
                           'is_fixed': "TRUE" if is_fixed else "FALSE",

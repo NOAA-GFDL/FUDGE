@@ -162,7 +162,7 @@ def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv):
         if len(exist_dirs) > 0:
             print("Error in clean_prior_experiments: one or more directories that would " +
                   "be written to by the current experiment already exist. Please " +
-                  "clean up directories and re-run.")
+                  "clean up directories and re-run, or change preeexist settings in config files.")
             print("Directories that exist: " + "\n\t".join(exist_dirs))
             sys.exit(1)
     if opt=='erase':

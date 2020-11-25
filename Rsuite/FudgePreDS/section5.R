@@ -59,12 +59,8 @@ callS5Adjustment <- function(s5.instructions = list('na'),
                   'mapMFOrder' = callMapMFOrder(test, out$input, out$adjusted.output),
                   stop(paste('Adjustment Method Error: method', test$type,
                              "is not supported for callS5Adjustment. Please check your input.")))
-#     print('summary of adjusted output:')
-#     print(summary(as.vector(out$adjusted.output$ds.out)))
-#     print(summary(as.vector(out$adjusted.output$ds.out[!is.na(out$adjusted.output$ds.out)])))  
     #Make sure no dimension information gets lost
     for(el in names(out$input)){
-      #print("This step should ensure dim info does not get lost")
       for(var in names(out$input[[el]])){
         dim(out$input[[el]][[var]]) <- dim(input[[el]][[var]])
       }
@@ -73,11 +69,8 @@ callS5Adjustment <- function(s5.instructions = list('na'),
     #dims or NULL; this should fail spectacularly 
     #if there are outputs with more than one dimensionality
     for(el in names(out$adjusted.output)){
-      #print("settings dim vals to out.dim")
       if (!is.null(adjusted.output[[el]])){
-        #if (is.null(dim(adjusted.output[[el]]))){
           dim(out$adjusted.output[[el]]) <- out.dim
-        #}
       }
     }
   }
@@ -112,8 +105,6 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   #1's show good data
   #'Assumes one predictor variable and one target variable
   #'But multiple ensemble members are supported
-  
-  #print(str(input))
   if(verbose){print("entering simple bias correction function")}
   if(!is.null(test$qc_args$toplim) && !is.null(test$qc_args$botlim)){
     toplim <- test$qc_args$toplim
@@ -121,7 +112,6 @@ callSBCorr <- function(test, input, adjusted.output, verbose=FALSE){
   }else{
     stop("Section 5 Adjustment Error: Arguments toplim and botlim are not present for the SBiasCorr function. Please check your XML.")
   }
-  #target.var <- unlist(lapply(input$data.atts$hist.targ, "[[", 'var'))
   target.var <- names(input$hist.targ)[1]
   ds.vars <- names(adjusted.output$ds.out)
   #Unlist the historic predictors
@@ -161,11 +151,9 @@ callFlagNegativeValues <- function(test, input, adjusted.output){
     dim(out.list$qc.mask) <- dim(adjusted.output$ds.out)
     out.list$qc.mask[mask.vec==0] <- NA
   }
-  #if(test$adjust.out=='on'){
-    adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out)
-    dim(adjust.vec) <- dim(adjusted.output$ds.out)
-    out.list$ds.out <- adjust.vec
-  #}
+  adjust.vec <- ifelse( (mask.vec==0), yes=0, no=adjusted.output$ds.out)
+  dim(adjust.vec) <- dim(adjusted.output$ds.out)
+  out.list$ds.out <- adjust.vec
   return(list('input' = input, 'adjusted.output' = out.list))
 }
 
@@ -202,24 +190,15 @@ callPRPostproc <- function(test, input, adjusted.output){
       dim(adjusted.output$ds.out) <- ds.dim
     }else{
       #Oh downscaling is more complicated, especially when leapdays get involved
-      obs.prmask <- get.xy.center(test$qc_args$targ.prmask)
-      oh.timelen <- dim(input$hist.targ[[1]])[6]
-      mf.timelen <- dim(input$fut.pred[[1]])[6]
       nrips <- dim(adjusted.output$ds.out)[4]
       start <- 1
       #For better or worse, OH gets adjusted by nrips present
       for(n in 1:nrips){
-        #After either step is complete, index the mask to the future timseries
-        #using index.delta
-        OH.idx <- tmasks$OH_idx[[n]]
-        loop.ds.prmask <- index.delta(tmasks$hist.leapmask[OH.idx], 
-                                      tmasks$fut.leapmask, 
-                                      rep(1, oh.timelen), 
-                                      rep(1, mf.timelen), 
-                                      obs.prmask[,,,1,,], 
-                                      tmasks$idx_year_div[[n]],tmasks$fut.year.div)
-        #obs.prmask right now does not support more than one
-        #ensemble member.
+        # resample accoridng to cf method
+        #print(names(test$qc_args))
+        # possibly obs.prmask?
+        loop.ds.prmask <- test$qc_args$targ.prmask[tmasks$cf_resample[[1]]]
+        #print(summary(as.vector(loop.ds.prmask)))
         adjusted.output$ds.out[,,,n,,][!loop.ds.prmask] <- 0
       }
     }
@@ -271,10 +250,7 @@ callAddOne <- function(test, input, adjusted.output){
     #create sppropriate variable name
     ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
     #Find arguments to pre-processing function
-    #There are no arguments to be applied
-    #if(test$adjust.out=='on'){
-      adjusted.output$ds.out <- (adjusted.output$ds.out + 1)
-    #}
+    adjusted.output$ds.out <- (adjusted.output$ds.out + 1)
     if(test$make_qc_mask){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
@@ -293,9 +269,7 @@ callAddFive <- function(test, input, adjusted.output){
     ds.var <- paste0(input$data.atts$hist.targ$var, ".", rip)
     #Find arguments to pre-processing function
     #There are no arguments to be applied
-    #if(test$adjust.out=='on'){
-      adjusted.output$ds.out <- (adjusted.output$ds.out + 5)
-    #}
+    adjusted.output$ds.out <- (adjusted.output$ds.out + 5)
     if(test$make_qc_mask){
       adjusted.output$qc.mask[[ds.var]] <- NA #more or less blank code for
     }
@@ -439,47 +413,14 @@ callMapMFOrder <- function(test, input, adjusted.output){
     MF.rip <- input$fut.pred[[1]][,,,n,,]
     MF.rank <- rank(MF.rip, na.last=F, ties='min')
     #Determine overlap in MF and DS wetday frequency, if applicable.
-    #print(which(is.na(sort(MF.rip, na.last = F))))
     which.dry <- tail(which(is.na(sort(MF.rip, na.last = F))), n=1)
 
     MF.dry.freq <- which.dry/length(MF.rank)
     OH.dry.freq <- sum((out.list$ds.out[,,,n,,]==0))/length(out.list$ds.out[,,,n,,])
     sort.ds.out <- sort(out.list$ds.out[,,,n,,])
-    #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
-    
-#     if (MF.dry.freq > OH.dry.freq){
-#       #If thre are more dry days in the future than the roughly time-synchronous
-#       #historical
-#       diff.freq <- MF.dry.freq - OH.dry.freq
-#       diff.num  <- floor(diff.freq * length(MF.rank))
-#       ds.max <- sort.ds.out[floor(OH.dry.freq * length(MF.rank)) + 1]
-#       print("before alter.vals")
-#       print(diff.num)
-#       print(which.dry)
-#       alter.vals <- alter.ds.diff(diff.num, which.dry, 
-#                                   sort.ds.out[1], ds.max)
-#       sort.ds.out[alter.vals$idx] <- alter.vals$vals
-#     }
-#     tlev <- 1:length(MF.rank)
-
-
-    #out.list$ds.out[,,,n,,] <- sort.ds.out[MF.rank]
     x <- out.list$ds.out[,,,n,,]
     y <- MF.rip
-# print(summary(x))
-# print(length(x))
-# print(summary(y))
-# print(length(y))
     out.list$ds.out[,,,n,,] <- sort(x)[rank(y)]
-#print(summary(out.list$ds.out[,,,n,,]))
-#stop('examine this output')
-
-#         plot(tlev, input$fut.pred[[1]][,,,n,,], #ylim=c(0,0.0008), 
-#              lty=2,
-#              main=paste("rank for ens", n))
-#         plot(tlev, out.list$ds.out[,,,n,,], col='red')
-#         ds.sort <- sort.ds.out
-#         lines(tlev, ds.sort[MF.rank], col='blue')
   }
   return(list('input' = input, 'adjusted.output' = out.list))
 }
@@ -487,7 +428,6 @@ callMapMFOrder <- function(test, input, adjusted.output){
 alter.ds.diff <- function(diff.num, diff.max, min.val, max.val){
   set.seed(ival * 100 + jval * 10 + w)
   ds.idx <- sample(x=diff.max:diff.max+diff.num, size=diff.num, replace=F)
-  #ds.vals <- runif(diff.num, min.val, max.val)
   ds.vals <- rep(0, diff.num)
   return(list(idx=ds.idx, vals=ds.vals))
 }

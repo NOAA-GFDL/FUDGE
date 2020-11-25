@@ -257,8 +257,6 @@ CDFtmod <- function (ObsRp, DataGp, DataGf, npas = 100, dev = 2){
   FGf = ecdf(DataGf)
   FGP = FGp(x)
   FGF = FGf(x)
-  #print(attributes(xx$y))
-  #attributes(xx$y) <- c(attributes(xx$y), list('high_tail'=hitail, 'low_tail'=lotail))
   return(list(x = x, FRp = FRP, FGp = FGP, FGf = FGF, FRf = FRF,
               DS = xx$y, high_cutoff=hitail, low_cutoff=lotail))
 }

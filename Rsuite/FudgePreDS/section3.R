@@ -88,10 +88,6 @@ callPRPreproc <- function(test, input, postproc.output,
     message("Assuming that an old XML is being used; default behavior in place")
     ignore0=FALSE
   }
-  #recognize that there might be a default value of prime_predictor
-#   if (prime_predictor == 'na'){
-#     prime_predictor <- names(input$MF)[1]
-#   }
   #Select the variables of interest, and put them through the pr pre_processing function
   pr_target <- input$att.list$pr_oh
   nrips <- dim(input$MF[[pr_target]])[4]
@@ -106,16 +102,6 @@ callPRPreproc <- function(test, input, postproc.output,
   input$MH <- tmp.out$MH
   input$MF <- tmp.out$MF
   #Adding in variant branch to test negative pr behavior
-#   rand_below_0 <- function(data){
-#     which.data <- which(data == 0)
-#     which.rand <- round(length(which.data)/2)
-#     rand.which.data <- sample(which.data, which.rand, replace = F)
-#     data[rand.which.data] <- rnorm(which.rand, -1e-05, sd=1e-05)
-#     return(data)
-#   }
-#   input$OH[[1]] <- rand_below_0(input$OH[[1]])
-#   input$MH[[1]] <- rand_below_0(input$MH[[1]])
-#   input$MF[[1]] <- rand_below_0(input$MF[[1]])
   missval.args$pr_opts <- tmp.out$pr_args
   missval.args$pr_opts$prime_predictor <- prime_predictor
   #and store args for later use
@@ -225,16 +211,12 @@ callPRTransform <- function(test, input, postproc.output, missval.args){
           #if var is one of the vars receiving a transform
           if(!is.null(t.fxn[[2]])){
             #If arguments to the transform, use them
-            #data.dim <- dim(input[[datatype]][[varname]])
             input[[datatype]][[varname]] <- do.call(t.fxn[[1]],
                                                 list(input[[datatype]][[varname]], t.fxn[[2]]))
-            #dim(input[[datatype]][[varname]]) <- data.dim
           }else{
             #Otherwise, call without arguments
-            #data.dim <- dim(input[[datatype]][[varname]])
             input[[datatype]][[varname]] <- do.call(t.fxn[[1]],
                                                 list(input[[datatype]][[varname]]))
-            #dim(input[[datatype]][[varname]]) <- data.dim
           }
         }
       }

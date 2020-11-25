@@ -26,8 +26,6 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
   
   fudge.data <- list()
   fudge.metadata <- list()
-  #print(subset)
-  #stop('examine this out')
   for (v in 1:length(varnames)){
     filename <- filenames[[v]]
     nc.var <- varnames[[v]]
@@ -36,15 +34,6 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
     
     #data: 
     var.data <- obtain.fudge.var(nc.obj, nc.var, subset)
-    
-    #Add check to rest the subset if smaller x subset returned from file
-    #Note: this gets easier if i_idx and i_max returned from
-    #subset in the first place.
-    #if (dim(var.data)[1] != length(subset$subset[1]:subset$subset[2])){
-    #loop.subset <- get.FUDGE.subset(x.dim, subset$i_idx, subset$i_max)
-    #}else{
-    #loop.subset <- subset
-    #}
     
     #metadata:
     var.metadata <- obtain.fudge.var.metadata(nc.obj, nc.var)

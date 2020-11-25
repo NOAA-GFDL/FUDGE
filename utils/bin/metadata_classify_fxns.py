@@ -12,7 +12,7 @@ if BASEDIR is None:
     print("Error in metadata setup: no version of fudge is checked out! Please check out a jamoca-or-later version of fudge.")
     sys.exit(1)
 sys.path.append(osp.join(BASEDIR, 'utils/aux'))
-from fudgeUtils import gcp
+from gcp import gcp
 
 
 def get_experiment_metadata(gd, pd, OH_file, MF_file, ds_experiment_name,
@@ -155,7 +155,7 @@ def classify_cmip5(atts, vfile, vclass, vdat, verbose):
     attdict['dataset'] = vdat
     fname = osp.basename(vfile)
     fsplit = re.split("_", fname)
-    attlist = ['model_id', 'experiment', 'realization_alwasyfromfile']
+    attlist = ['model_id', 'experiment', 'realization_alwaysfromfile']
     #att_reg = ["", "", "_(r[:num:])"]
     att_idx = [2,3,4]
     # Adding a workaround for some of our clim/anom cases - they
