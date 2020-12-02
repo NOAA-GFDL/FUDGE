@@ -166,14 +166,14 @@ def make_AnomTrend_filepaths(var, anom_var, dict, rips, write_qc=False):
             if not is_qc:
                 out[anom_var][rip] = osp.join(anom_dir, anom_file)
             else:
-                anom_file = re.sub(anom_var, qc_var, anom_file)
+                anom_file = re.sub(anom_var + "_", qc_var + "_", anom_file)
                 out[qc_var][rip] = osp.join(anom_dir, anom_file)
         else:
             anom_dir,anom_file = swap_anom_var(var, anom_var, dict['ds'][var]['ens'])
             if not is_qc:
                 out[anom_var]['ens'] = osp.join(anom_dir, anom_file)
             else:
-                anom_file = re.sub(anom_var, qc_var, anom_file)
+                anom_file = re.sub(anom_var + "_", qc_var + "_", anom_file)
                 out[qc_var]['ens'] = osp.join(anom_dir, anom_file)
     return(out)
 
@@ -194,7 +194,7 @@ def swap_delim_segment(patt, rep, delim, string):
     Swaps a segment of a delimiter for a new string
     '''
     strsplit = re.split(delim, string)
-    strsplit = [rep if re.match("^"+patt+"$", el) is not None else el for el in strsplit]
+    strsplit = [rep if re.search("^"+patt+"$", el) is not None else el for el in strsplit]
     return(delim.join(strsplit))
 
 def make_cv_output_files(ens_file, ens_rip, ens_experiment_name):
