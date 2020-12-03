@@ -771,7 +771,7 @@ def generate_experiment(parse_xml, create_default_aux,
         j_subset = auxdict['j_subset']
         # 2019-05-18: swapping output_grid for ds_region;
         # output_grid can include NEUSA0p1 and that leads to grid param errors
-        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['ds_region'], basedir)
+        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
