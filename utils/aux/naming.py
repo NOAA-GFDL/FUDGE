@@ -53,7 +53,7 @@ def constructExpname(lname_project,lname_target,series,method,kfold,basedir,dumb
 	else:
                 #print "Running on a workstation", node
 	        plat = node 
-                print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run fudgeList. \033[1;m",plat
+                print("\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please login to analysis nodes to run fudgeList. \033[1;m",plat)
 		sys.exit(-5)
 
 

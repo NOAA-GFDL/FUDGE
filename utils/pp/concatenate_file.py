@@ -79,7 +79,7 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
     i_out_paths = []
     print("looping over i_patterns and concatenating in j")
     print(i_patterns)
-    for i_patt,i in zip( i_patterns, range( len(i_patterns) ) ):
+    for i_patt,i in zip( i_patterns, list(range( len(i_patterns))) ):
         i_subset = [f for f in file_subset if re.search(i_patt, f) is not None]
         natural_sort(i_subset)
         #i_out_file = out_filename = ".".join(i_idx) #[file_split[0], , file_split[-1]
@@ -117,7 +117,7 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
         x_perm_out = ",".join(dimlist)
         xy_out = call_cat_min(x_perm_in, x_perm_out, outdir_j, i_outfiles,
                       tdir_i, tmp_outfile, "all values")
-    print("concatenated file: " + xy_out)
+    print(("concatenated file: " + xy_out))
     #Final step needs to be finalizing some metadata atts
     #experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
     if aux != 'none':
@@ -126,7 +126,7 @@ def concatenate_files(input_dir, patt, output_dir, aux='none'):
     else:
         print("no experiment_info file; metadata unchanged")
     print("copying file to final destination")
-    print("cp " + tmp_outfile + " " + outfile)
+    print(("cp " + tmp_outfile + " " + outfile))
     shutil.copy2(tmp_outfile, outfile)
     return(outfile)
 
@@ -151,7 +151,7 @@ def finalize_metadata_out(xy_file, aux):
 
     #NCO = "I'm not entiretly sure I need to add this in now."
 
-    att_val_list = [",".join(el) for el in zip(attdict.keys(), attdict.values())]
+    att_val_list = [",".join(el) for el in zip(list(attdict.keys()), list(attdict.values()))]
     #Leaving off because the quotes get added in when writing the atts.
     #If we could strip those, that would be great - but for now,
     #keep an eye out for things that might contain spaces.
@@ -165,14 +165,14 @@ def finalize_metadata_out(xy_file, aux):
     p = subprocess.Popen(set_command, stdout=subprocess.PIPE, shell=True, env=None)
     out0,err0 = p.communicate()
     if (p.returncode != 0):
-        print(str(out0))
-        print(str(err0))
-        print("Error in setting metadata operations for " +  xy_file + "; call to c-shell failed.")
-        print("Command that failed: " + set_command)
+        print((str(out0)))
+        print((str(err0)))
+        print(("Error in setting metadata operations for " +  xy_file + "; call to c-shell failed."))
+        print(("Command that failed: " + set_command))
         sys.exit(1)
         return(None)
     else:
-        print(str(out0))
+        print((str(out0)))
 
 
 
@@ -233,14 +233,14 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
     p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)	#, cwd=tdir
     out0,err0 = p.communicate()
     if (p.returncode != 0):
-        print(str(out0))
-        print(str(err0))
-        print("Error in processing concatenation operations for " +  index_str + "; call to c-shell failed.")
-        print("Command that failed: " + cat_command)
+        print((str(out0)))
+        print((str(err0)))
+        print(("Error in processing concatenation operations for " +  index_str + "; call to c-shell failed."))
+        print(("Command that failed: " + cat_command))
         sys.exit(1)
         return(None)
     else:
-        print(str(out0))
+        print((str(out0)))
         return(outfile)
 
 def determine_dims_present(nc_file):
@@ -269,7 +269,7 @@ def get_dim_mapping(dimlist):
     maplist = ['zz'] * len(dimlist)
     for n in range(0, len(dimlist)):
         ndim = dimlist[n]
-        maplist[n] = [k for k in dim_dict.keys() if any([re.match(ndim, el) is not None for el in dim_dict[k]])]
+        maplist[n] = [k for k in list(dim_dict.keys()) if any([re.match(ndim, el) is not None for el in dim_dict[k]])]
     #Assume that any els of length 0 are the bounds dimension
     maplist = [el for f in maplist for el in f ]
     return(maplist)
@@ -288,5 +288,5 @@ def natural_sort(list, key=lambda s:s):
 if __name__ == '__main__':
     # Can call from the commandline with 3 args:
     # dir, pattern, outdir
-    print(sys.argv)
+    print((sys.argv))
     concatenate_files(sys.argv[1],sys.argv[2],sys.argv[3])

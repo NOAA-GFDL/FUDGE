@@ -26,7 +26,7 @@ def make_exp_info(input, exp_outpath):
     dsets = ['OH', 'MH', 'MF']
     spatmasks = []
     for d in dsets:
-        spatmasks.append([ind[d][el]['geomask'] for el in ind[d].keys()])
+        spatmasks.append([ind[d][el]['geomask'] for el in list(ind[d].keys())])
     spatmasks = list(set(chain.from_iterable(spatmasks))) #if el != 'none'
     spatmask = spatmasks[0]
     in_files = [ind['OH'][oh]['file'], ind['MH'][mh]['file'], ind['MF'][mf]['file']]
@@ -102,9 +102,9 @@ def parse_auxfile(input):
     '''
     with open(input, 'r') as f:
         out = json.load(f)
-    OHvar = out['OH'].keys()[0]
-    MHvar = out['MH'].keys()[0]
-    MFvar = out['MF'].keys()[0]
+    OHvar = list(out['OH'].keys())[0]
+    MHvar = list(out['MH'].keys())[0]
+    MFvar = list(out['MF'].keys())[0]
     return(out, OHvar, MHvar, MFvar)
 
 def get_file_time_strings(f):

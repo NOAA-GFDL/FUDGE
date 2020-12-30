@@ -21,12 +21,12 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     dataset_names = ['OH', 'MH', 'MF']
     data_files = []
     for dname in dataset_names:
-        data_files += [auxdict[dname][el]['file'] for el in auxdict[dname].keys()]
+        data_files += [auxdict[dname][el]['file'] for el in list(auxdict[dname].keys())]
     #None of these are going to be 'none':
     dmget = "# Data files:\n" + "\n".join(["dmget " + el for el in data_files]) + "\n"
     tmasks = []
     for dname in dataset_names:
-        tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
+        tmasks += [auxdict[dname][el]['tmask'] for el in list(auxdict[dname].keys())]
     tmask_nones = ['na', 'none']
     if auxdict['DS']['indexing_tmask'] not in tmask_nones:
         tmasks.append(auxdict['DS']['indexing_tmask'])
@@ -37,7 +37,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
         dmget += "# Time mask files:\n" + "\n".join(["dmget " + el for el in tmasks]) + "\n"
     geomasks = []
     for dname in dataset_names:
-        geomasks += [auxdict[dname][el]['geomask'] for el in auxdict[dname].keys()]
+        geomasks += [auxdict[dname][el]['geomask'] for el in list(auxdict[dname].keys())]
     geomasks = list(set(geomasks))
     geomasks = [el for el in geomasks if el != 'none']
     if len(geomasks) > 0:
@@ -63,7 +63,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     #sys.exit(1)
     make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
-                              auxdict['OH'].keys()[0], is_syn,
+                              list(auxdict['OH'].keys())[0], is_syn,
                               dmget, gcp_str, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
                               not_strict_metadata, metadata_table)
@@ -227,16 +227,16 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     Note that this now implies that the auxdict contains the scriptdir.
     '''
         # which i_indices are we going to be looping over?
-    i_elements = range(int(i_start), int(i_end)+1, i_by)
+    i_elements = list(range(int(i_start), int(i_end)+1, i_by))
     i_elements.append(int(i_end)+1)
     i_elements = list(set(i_elements))
     i_elements = sorted(i_elements)
     # i_offset = int(i_start)  - 1
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
-    j_elements = range(int(j_start), int(j_end)+1, j_by)
+    j_elements = list(range(int(j_start), int(j_end)+1, j_by))
     if len(j_elements) == 0:
-        j_elements = range(int(j_start), int(j_end)+1, j_by)
+        j_elements = list(range(int(j_start), int(j_end)+1, j_by))
     j_elements.append(int(j_end)+1)
     j_elements = list(set(j_elements))
     j_elements = sorted(j_elements)
@@ -256,10 +256,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
     nrunscripts = (len(i_elements) - 1) * (len(j_elements) - 1)
     print("expected number runscripts:")
-    print(str(nrunscripts))
+    print((str(nrunscripts)))
     nmaster = int(math.ceil(float(nrunscripts) / float(njobs)))
     print("expected number of master scripts:")
-    print(str(nmaster))
+    print((str(nmaster)))
     #print(str((float(nrunscripts) / float(njobs))))
 
     slurm_header = "\n".join(['#!/bin/bash',
@@ -452,10 +452,10 @@ def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
             in_file = [el for el in f_dir_files if re.search(".nc$", el) is not None][0] # should only match ONE
             in_files.append(in_file)
         except IndexError:
-            print("directory: " + f_dir)
-            print("suffix: " + suffix)
-            print("trange: " + trange)
-            print("No files found with " + trange + " in " + f_dir + "; check path construction!")
+            print(("directory: " + f_dir))
+            print(("suffix: " + suffix))
+            print(("trange: " + trange))
+            print(("No files found with " + trange + " in " + f_dir + "; check path construction!"))
             sys.exit(1)
         dmget_string = dmget_string + "dmget "+ in_file + "\n"
     return(in_files, dmget_string)
@@ -468,7 +468,7 @@ def build_aux_input_paths(aux_subset):
     '''
     in_files = []
     dmget_string = ""
-    for v in aux_subset.keys():
+    for v in list(aux_subset.keys()):
         in_file = aux_subset[v]['file']
         in_files.append(in_file)
         dmget_string += 'dmget ' + in_file + "\n"

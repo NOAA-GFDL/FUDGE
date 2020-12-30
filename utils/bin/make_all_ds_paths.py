@@ -74,7 +74,7 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
                     loop_qc_file = re.sub(".nc^", ens_suffix, loop_qc_file)
                     ds_out['ds'][var_qc]['ens'] = osp.join(loop_var_path, loop_qc_file)
     # Now that we've got the qcmask calculation, recycle that
-    ds_vars = ds_out['ds'].keys()
+    ds_vars = list(ds_out['ds'].keys())
     ds_vars.sort()
     print("ds_vars:")
     print(ds_vars)
@@ -89,7 +89,7 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
             # So now that we have this file, we want all dir path instances of
             # var in the ds and ens vars
             anom_dict = make_AnomTrend_filepaths(var, anom_var, ds_out, ds_rips, write_qc)
-            for k in anom_dict.keys():
+            for k in list(anom_dict.keys()):
                 ds_out['anom'][k] = anom_dict[k]
     #Step 4: trend output, single and multi-ens
     for var in ds_vars:
@@ -101,7 +101,7 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
             #ds_out['trend'][var]['is_trend'] = True
             trend_dict = make_AnomTrend_filepaths(var, trend_var, ds_out, ds_rips, write_qc)
             #ds_out['trend'][trend_var] = trend_dict
-            for k in trend_dict.keys():
+            for k in list(trend_dict.keys()):
                 ds_out['trend'][k] = trend_dict[k]
     #Step 5: cross-validated output
     crossval_patt = ['00r1e2', '00r2e2']
@@ -139,8 +139,8 @@ def make_all_ds_paths(auxfile, out_file = "/home/cew/Code/testing/test_out.txt")
             out_dict[var]['dscvh']['input'] = [ds_out['ds'][var]['r2i1p1'], complement_file]
             ds_out['cv'][var] = out_dict[var]
     if out_file is not None:
-        print("Writing downscaling experiment output paths to " + out_file)
-        ds_all_vars = list(set(ds_out['ds'].keys() + ds_out['anom'].keys() + ds_out['trend'].keys()))
+        print(("Writing downscaling experiment output paths to " + out_file))
+        ds_all_vars = list(set(list(ds_out['ds'].keys()) + list(ds_out['anom'].keys()) + list(ds_out['trend'].keys())))
         print_file_dict(ds_out, ds_all_vars, ds_rips, out_file)
     else:
         return(ds_out)
@@ -205,7 +205,7 @@ def make_cv_output_files(ens_file, ens_rip, ens_experiment_name):
               "dsdeph": {'short_rip': 'dpe2', 'rip_equiv': "DSDEPh"}}
     short_rip_string = ens_experiment_name[ens_experiment_name.find("00"):ens_experiment_name.find("X01")]
     out = OrderedDict()
-    for k in dsdict.keys():
+    for k in list(dsdict.keys()):
       out[k] = {}
       cv_exp_name = re.sub(short_rip_string, "00"+dsdict[k]['short_rip'], ens_experiment_name)
       cv_rip = dsdict[k]['rip_equiv']
@@ -244,12 +244,12 @@ def file_dict_to_str(ds, var_list, ds_rips, prefix, return_string=""):
     #    print(ds['tasmax']['r1i1p2'])
     if not isinstance(ds, (dict, OrderedDict)):
         return("")
-    key_list = ds.keys()
+    key_list = list(ds.keys())
     for k in key_list:
         if k in var_list:
             for rip in rip_list:
                 #if isinstance(ds[k], (dict, OrderedDict)):
-                if rip in ds[k].keys():
+                if rip in list(ds[k].keys()):
                     if prefix == "":
                         k_pref = ".".join([k, rip])
                     else:
@@ -281,6 +281,6 @@ def parse_makepath_args():
     make_all_ds_paths(options.auxfile, options.outfile)
 
 if __name__ == '__main__':
-    print(sys.argv)
+    print((sys.argv))
     parse_makepath_args()
     #make_all_ds_paths(sys.argv[1])

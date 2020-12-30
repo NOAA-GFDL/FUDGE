@@ -39,7 +39,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
     pp_statdir = osp.join(scriptdir, "status/postproc/")
     logfile_loc = osp.join(scriptdir, 'log/fudge_postProc_.mfudge_*')
     nrips = len(expdict['output.path'])
-    print("Number of rips searched for:" + str(nrips))
+    print(("Number of rips searched for:" + str(nrips)))
     ppdir = osp.join(scriptdir, 'postProc')
     nfiles = len([el for el in os.listdir(ppdir) if re.search('\.', el) is not None])
     #Check for whether or not an experiment has a cross-validated companion
@@ -50,7 +50,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
     cv_match = [crossval_patt.index(c) for c in crossval_patt if re.search(c, exp_name) is not None]
     if(len(cv_match) == 1):
         #Need a check in here to print warnings for the r1e2 case
-        print("crossval match:" + str(cv_match))
+        print(("crossval match:" + str(cv_match)))
         if re.search(crossval_patt[0], exp_name) is not None:
             warnCrossval = True
         patt2 = 1 - cv_match[0]
@@ -68,8 +68,8 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
     loop_count = 0
     complete=False
     while int(loop_count) < int(nloops) and not complete:
-        print("starting loop " + str(loop_count) + " of " + str(nloops))
-        print("Checking " + pp_statdir + " for status files")
+        print(("starting loop " + str(loop_count) + " of " + str(nloops)))
+        print(("Checking " + pp_statdir + " for status files"))
         status_files = [p for p in os.listdir(pp_statdir) if osp.isfile(osp.join(pp_statdir,p))]
         print(status_files)
         nfail = [p for p in status_files if re.search('failure',p) is not None]
@@ -83,7 +83,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
             sys.exit(1)
         else:
             nsucceed = len([p for p in status_files if re.search('success',p) is not None])
-            print("number of postproc jobs complete: " + str(nsucceed))
+            print(("number of postproc jobs complete: " + str(nsucceed)))
             if nsucceed != nfiles:
                 loop_count = loop_count + 1
                 time.sleep(sleeptime)
@@ -94,11 +94,11 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
         basedir = os.environ.get('BASEDIR')
         if basedir is None:
             basedir = ""
-        print "postProc jobs are complete."
+        print("postProc jobs are complete.")
         if(nrips > 1):
             print("More than one experiment rip is present; calling makeExpEns")
             print("MakeExpEns command-line arguments:")
-            print("makeExpEns --input " + infile)
+            print(("makeExpEns --input " + infile))
             outfiles = runMakeExpEns(expdict, verbose=(verbopt==1), sev=sev)
             #...check on the error returns from this. There shouldn't be an issue,
             #since multiple exit points aren't that much of an issue and you
@@ -110,7 +110,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
             outfiles = [osp.join(outdir, p) for p in outdir_contents if re.search(".nc$", p) is not None]
             outfiles.sort()
             if len(outfiles) < 1:
-                print("Error in ppWatcher: No files found in " + outdir + " !")
+                print(("Error in ppWatcher: No files found in " + outdir + " !"))
                 sys.exit(1)
 
             #Checks for printing anomaly/detrending files needed for the detrending wofkflow
@@ -126,7 +126,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
         if warnCrossval:
             cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
                      " --script1 " + expdict['script.base'] + " --script2 " + complement_exp
-            print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")
+            print(("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m "))
             print(cv_command)
         if isCrossval:
             cv_command = "python " + "makeCVEns --exp1 " + exp_name +" --exp2 " + exp_name2 + \
@@ -156,7 +156,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
         script_exp_info = [infile]
         #print(outfiles)
         print("outfile exp_info + script exp_info:")
-        print(outfile_exp_info + script_exp_info)
+        print((outfile_exp_info + script_exp_info))
         #write_xml_info(outfile_exp_info + script_exp_info, expdict['script.base'] + '/config/')
         ##Added 9-28: get profiling info, write to file
         print("File cleanup operations in progress")
@@ -164,7 +164,7 @@ def runPPWatcher(infile,timeout,verbopt,nloops,sleeptime,mailid,sev):
         compress_logs(expdict['script.base'] + "/log/")
 
     else:
-        print "postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc
+        print("postProc job watcher has timed out. Please re-submit jobs or examine logfiles located at:" + logfile_loc)
         send_status_email("failure", 'ppWatcher', exp_name, \
                            traceback="Job timed out", \
                            mailid=mailid, logfiles = logfile_loc, exp_info_file = infile,
@@ -183,7 +183,7 @@ def compress_logs(logdir):
     os.chdir(logdir)
     #compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)]
     pattdict = {'chunk': '^out\.', 'master': '^master\.'}
-    for step,patt in pattdict.items():
+    for step,patt in list(pattdict.items()):
         lname = osp.join(logdir, step + "_compressed_logfiles.tar.gz")
         lfiles = [el for el in os.listdir(logdir) if re.search(patt,el) is not None]
         tar_log = tarfile.open(lname, "w:gz")
@@ -215,6 +215,6 @@ def write_xml_info(outdirs, xml_dir):
 
 
 if __name__ == '__main__':
-    print(sys.argv)
+    print((sys.argv))
     runPPWatcher(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4],
                  float(sys.argv[5]), sys.argv[6], sys.argv[7])

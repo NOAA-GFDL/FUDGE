@@ -65,7 +65,7 @@ def parserWatcher():
 	parser.add_option('--quiet',action="store_true",default=False,help="silent run, except for error reporting (True by default)" )
 	(options, args) = parser.parse_args()
 	expdict = read_exp_info_file(options.uinput)
-	for opts,vals in options.__dict__.items():
+	for opts,vals in list(options.__dict__.items()):
 		if(opts == 'uinput'):
 			uinput = vals
 		if(opts == 'timeout'):
@@ -91,7 +91,7 @@ def parserWatcher():
 				if ((float)(vals) > 0):
 					sleeptime = (float)(vals) * 60
 				else:
-					print "Please set a positive number for sleeptime-", sleeptime
+					print("Please set a positive number for sleeptime-", sleeptime)
 					sys.exit(-1)
 		if(opts == 'nloops'):
 			nloops = vals
@@ -112,11 +112,11 @@ def v_print(sev,verbmsg):
 		#we do nothing
 		_v_print = lambda *a: None  # do-nothing function
 	elif (sev == 1) & ((verbose == True) | (debug == True) | (traceback == True)):
-		print verbmsg
+		print(verbmsg)
 	elif (sev == 2) & ((debug == True) | (traceback == True)):
-	    print verbmsg
+	    print(verbmsg)
 	elif(sev == 3) & (traceback == True):
-	    print verbmsg
+	    print(verbmsg)
 
 def asciiParser(uinput):
 	op = False #not yet spotted output_path
@@ -278,8 +278,8 @@ def runWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev,expdict):
 		                   mailid=mailid, logfiles = minilogs, exp_info_file = uinput, outfiles = "")
 		 sys.exit(1)
 	else:
-		 print "jobs submitted"
-		 print "Calling postProc watcher to check for postproc completion/call ensemble generation"
+		 print("jobs submitted")
+		 print("Calling postProc watcher to check for postproc completion/call ensemble generation")
 		 #runPPWatcher(uinput, waittime, nrips)
 		 runPPWatcher(uinput,timeout,verbopt,nloops,sleeptime,mailid,sev)
 

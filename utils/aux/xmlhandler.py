@@ -18,16 +18,16 @@ class XMLHandler:
 	
 	# returns three major sub-section tags
 	if(debug == 1):
-     		print "returns three major sub-section tags:"
+     		print("returns three major sub-section tags:")
      		root = tree.getroot()
      		for child in root:
-        		 print child.tag
+        		 print(child.tag)
 
 	#returns entire tree with tags and attribs
 	if(debug == 1):
-     		print "returns entire tree with tags and attribs:"    
+     		print("returns entire tree with tags and attribs:")    
      		for node in tree.iter():
-        		print node.tag, node.attrib
+        		print(node.tag, node.attrib)
 	# Get ifpreexist 
         for preexist_node in tree.iter('ifpreexist'):
 		preexist = preexist_node.text 
@@ -119,7 +119,7 @@ class XMLHandler:
                                 dictParams['target_id'] = target_id
                         for target_suffix_node in target_node.findall('.//suffix'):
                                 target_suffix = target_suffix_node.text
-                                print "suff...............t",target_suffix
+                                print("suff...............t",target_suffix)
 
                                 dictParams['target_suffix'] = target_suffix 
 	 ############## get future predictor information ######################
@@ -234,22 +234,22 @@ class XMLHandler:
 		for options_node in qc_node:
 			qcparam = qcparam + 1	
 			qcparamstext = options_node.text
-			print qcparamstext,"debug debug ---------" 
+			print(qcparamstext,"debug debug ---------") 
 			if(qcparam > 1):
 			   delimit = ","
 			else:
 			   listQCParams = ''	
 			   delimit = ''
                 	listQCParams = listQCParams + delimit + ""+options_node.tag+"="+qcparamstext+""
-			print "listQCParams",listQCParams
+			print("listQCParams",listQCParams)
                 	dictParams['qcparams'] = listQCParams	
 	    if(qc_type != list('na')):	
 	    	masklist = "list(mask1=list(type='"+qc_type+"',adjust.out='"+adjust_out+"',qc.mask='"+qc_mask+"',qc_options=list("+listQCParams+")))"
 		dictParams['masklists'] = masklist
-	    	print "DEBUG -------",masklist
+	    	print("DEBUG -------",masklist)
         if(debug == 1):
-                 for x,v in dictParams.iteritems():
-                         print x,v
+                 for x,v in dictParams.items():
+                         print(x,v)
         return dictParams
 
 

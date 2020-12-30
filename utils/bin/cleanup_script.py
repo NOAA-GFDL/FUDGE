@@ -147,28 +147,28 @@ def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv):
             if cv_match[0]==0:
                 cv_warn = True
     if cv_warn:
-        print("\033[1;43mWarning in cleanup_script! The cross-validated ensembles " +
+        print(("\033[1;43mWarning in cleanup_script! The cross-validated ensembles " +
               "generated with this experiment will not be regenerated " +
-              "automatically! Run other member of experiment to regenerate.\033[1;m ")
-    print "Starting cleanup file operations with opt " + opt
+              "automatically! Run other member of experiment to regenerate.\033[1;m "))
+    print("Starting cleanup file operations with opt " + opt)
     exist_dirs = [el for el in dirpaths if os.path.exists(el)]
     if len(exist_dirs) > 0 and is_csv:
-        print("Error in clean_prior_experiments: csv experiments don't enforce dir structure. " +
+        print(("Error in clean_prior_experiments: csv experiments don't enforce dir structure. " +
               "Please manually clean up the components of this experiment - right now, " +
-              "it's a guard against unexpected file deletion/moving.")
-        print("\n\t".join(exist_dirs))
+              "it's a guard against unexpected file deletion/moving."))
+        print(("\n\t".join(exist_dirs)))
         sys.exit(1)
     if opt=='exit':
         if len(exist_dirs) > 0:
-            print("Error in clean_prior_experiments: one or more directories that would " +
+            print(("Error in clean_prior_experiments: one or more directories that would " +
                   "be written to by the current experiment already exist. Please " +
-                  "clean up directories and re-run, or change preeexist settings in config files.")
-            print("Directories that exist: " + "\n\t".join(exist_dirs))
+                  "clean up directories and re-run, or change preeexist settings in config files."))
+            print(("Directories that exist: " + "\n\t".join(exist_dirs)))
             sys.exit(1)
     if opt=='erase':
         for el in dirpaths:
             if os.path.exists(el):
-                print "removing " + str(el)
+                print("removing " + str(el))
                 shutil.rmtree(el) #check on this - does it work for non-empty directories?
     elif opt=='move':
         #set suffix to move new paths to:
@@ -176,7 +176,7 @@ def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv):
         for el in dirpaths:
             if os.path.exists(el):
                 dest = "~".join([el.rstrip("/"), suffix])
-                print "moving " + str(el) + " to " + dest
+                print("moving " + str(el) + " to " + dest)
                 shutil.move(el, dest)
                 #except:
                 #"Move failed; indexes are uneven. Trying again."

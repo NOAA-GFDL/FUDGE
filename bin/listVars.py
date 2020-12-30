@@ -30,15 +30,15 @@ preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
 idirsuffix = ""
 global mutli
 def checkTags(dictParams,key):
-		if(dictParams.has_key(key)):
+		if(key in dictParams):
 	       	 	val = dictParams[key]
 		else:
 			if(key == 'oroot'):
-				print "output root tag is being deprecated from darkchocolate."
+				print("output root tag is being deprecated from darkchocolate.")
 				sys.exit("error")
 
 			elif(key == 'sroot'):
-				print "Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again "
+				print("Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again ")
 				sys.exit("error")
 			elif(key == 'outdir'):
 				val = 'na'
@@ -81,7 +81,7 @@ def checkTags(dictParams,key):
 			elif(key == 'property'):
 				val = {}
 			else:
-				print "Error: Missing value for ",key
+				print("Error: Missing value for ",key)
 				sys.exit(1)
 		return val
 
@@ -97,7 +97,7 @@ def parse_outdir(out_dir,property):
 		if '$(' in outdirs:
 			#print "outdirs as defined expects a property tag.."
 			expect_prop = 1
-			for pname,pval in property.iteritems():
+			for pname,pval in property.items():
 				pname = '$('+pname+')'
 				if pname == outdirs:
 					#print "we may have located the property tag"
@@ -111,7 +111,7 @@ def parse_outdir(out_dir,property):
 	#print "test",pname,new_out_dir,listout
 	if(replace == "") & (expect_property == 1):
 		replace = "na"
-		print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
+		print("\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m")
 	if (replace == "") & (expect_property == 0):
 		replace ="na"
  	if not bool(property):
@@ -126,7 +126,7 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
 	dictDS = {}
 	listDS = []
 	if(output_grid == "na"):
-		print "ERROR, output_grid not accepted as na"
+		print("ERROR, output_grid not accepted as na")
 		sys.exit(1)
 	for itemj in listDatasetID:
 		#print "counter .......",ctr
@@ -183,7 +183,7 @@ def getDir(listDir,label):
 
 
 def listVars(uinput,basedir=None,msub=False,pp=False):
-	print "PP option is set to ",pp
+	print("PP option is set to ",pp)
 	if os.path.exists(uinput):
 		handler = xmlhandler.XMLHandler(  )
 		dictParams = handler.getParams(uinput)
@@ -194,10 +194,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	#print "----Downscaling XML template-", uinput
       #  print "----Force Override existing output Flag-", force
 	###################################
-	print "Input from XML"
-	print "########################"
-	for name,val in dictParams.iteritems():
-		print name,"=",val
+	print("Input from XML")
+	print("########################")
+	for name,val in dictParams.items():
+		print(name,"=",val)
 	###### get dictParams #################################
 	predictor =  checkTags(dictParams,'predictor_list')
 	target = checkTags(dictParams,'target')
@@ -263,7 +263,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	#	if(pr_opts != 'na'):
 	#		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
 	#		sys.exit()
-	print "pr_opts:---------------- ",pr_opts
+	print("pr_opts:---------------- ",pr_opts)
 	#### pr_opts #########
 	auxcustom1 = "na"  #$auxcustom1 now not used
 	if (params != 'na'):
@@ -306,11 +306,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 #	print(property)
 #	sys.exit()
 	if (len(listoutdir) > 1):
-	   print "Multi-output ON"
+	   print("Multi-output ON")
 	   global multi
 	   multi = "on"
 	else:
-	   print "single output on"
+	   print("single output on")
 	   global multi
 	   multi = "off"
 	##script -and- log prefix section ##
@@ -339,14 +339,14 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 	elif(preexist == 'move'):
 		force = True #new move feature in clobber - support
 	else:
-		print "\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist
+		print("\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist)
 		sys.exit(-2)
 	if(output_grid == 'station'):
 		if(latjstart == latjend):
 			dsuffix = "J"+str(latjstart)
 			region = output_grid
 		else:
-			print "Please specify a single station. "
+			print("Please specify a single station. ")
 			sys.exit()
 	else:
 	   if(file_j_range != ''):
@@ -407,10 +407,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
 		    	for lon in range(int(lons),int(lone)):
 				exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
 			 	if (exists == True) & (force == False):
-					print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
+					print("\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir)
 					sys.exit(-7)
 			 	if (exists == True) & (force == True):
-					print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
+					print('\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m')
 			       # 	print "CAUTION Output already exists. -f is turned on. Any existing output will be overwritten."
 					global overwrite
 					overwrite = True
