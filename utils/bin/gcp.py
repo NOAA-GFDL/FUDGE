@@ -33,8 +33,6 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
     dcheck = subprocess.Popen("dmls -l " + infile, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,shell=True,env=os.environ)
     d_out,d_err = dcheck.communicate()
-    print(d_out)
-    print(d_err)
     if dcheck.returncode != 0:
         print(("Error in gcp: sourcefile " + infile + " not found on this system."))
         sys.exit(1)

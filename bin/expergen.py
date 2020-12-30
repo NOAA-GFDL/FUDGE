@@ -767,7 +767,6 @@ def generate_experiment(parse_xml, create_default_aux,
 
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
-    print(ds_info.keys())
     if ds_info["downscale_oh"]:
         if list(auxdict['OH'].keys())[0] == 'pr':
             print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
