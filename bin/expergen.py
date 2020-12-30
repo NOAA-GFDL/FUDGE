@@ -172,7 +172,7 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
         hi_ver = hi[ind+6]
         hi_expname = hi_exp+"_"+hi_rip
         hi_expname = hi_expname
-#		dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
+#       dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
         hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+output_grid+"/"+dim+"/"
         dictDS['proj']=hi_proj
         dictDS['product']=hi_product
@@ -281,9 +281,9 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     ##### end filename suffix ######
     # removing the following precipitation check. Checks in XMLGen should be good enough. And this condition may not apply any more. Espresso release
     # if(target != 'pr'):
-    #	if(pr_opts != 'na'):
-    #		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
-    #		sys.exit()
+    #   if(pr_opts != 'na'):
+    #       print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
+    #       sys.exit()
     print("pr_opts:---------------- ",pr_opts)
     #### pr_opts #########
     auxcustom1 = "na"  #$auxcustom1 now not used
@@ -304,11 +304,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     out_dir = out_dir.strip()
 
     property = checkTags(dictParams,'property')
-#c	if not bool(property):
-#c	    out_dir = out_dir+"#na#na"
-#c	    listoutdir = out_dir
-#c	else:
-#c	   print "or not"
     out_dir,listoutdir =  parse_outdir(out_dir,property)
     #print "new out_dir", out_dir
     ###CEW edits - debugging single-ens I35 case
@@ -319,20 +314,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         copyprop = property
     else:
         copyprop = property['RIP']
-        #copyprop = property.iteritems()
-#	print(property)
-#	print(out_dir, listoutdir)
-#	print(copyprop)
-#	print(property)
-#	sys.exit()
-    if (len(listoutdir) > 1):
-       print("Multi-output ON")
-       global multi
-       multi = "on"
-    else:
-       print("single output on")
-       global multi
-       multi = "off"
     ##script -and- log prefix section ##
     sroot = checkTags(dictParams,'sroot')
     sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
@@ -373,7 +354,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
        if(file_j_range != ''):
            dsuffix=file_j_range
            dim1 = dim
-    #comment out RR a1r	dim = output_grid+"/"+dim1
+    #comment out RR a1r dim = output_grid+"/"+dim1
        else:
            sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
     #print(dim1)
@@ -438,10 +419,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         preexist_glob = preexist
         ## CEW edit 2018-09-14
         #if(preexist == 'move'):
-        #	global preexist_glob
-        #	preexist_glob = 'move'
-        #	#print "preexist turned ON................"
-#	    return targetdir1,hist_pred_dir1,fut_pred_dir1
+        #   global preexist_glob
+        #   preexist_glob = 'move'
+        #   #print "preexist turned ON................"
+#       return targetdir1,hist_pred_dir1,fut_pred_dir1
         target_scenario = dict_target['exp']+"_"+dict_target['rip']
         target_model = dict_target['model']
         #CEW edit for testing purposes mip to freq
@@ -1005,7 +986,7 @@ def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_
         fileid= ".I"+str(lon)+"_"+str(Jsuffix)+filesuff
         filename = variable+"_"+"day"+"_"+exper+"_"+str(scenario)+"_"+str(region)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
         if(os.path.exists(dire+"/"+filename)):
-        #	print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
+        #   print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
             exists = True
     return exists
 
