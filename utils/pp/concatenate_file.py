@@ -230,7 +230,7 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
     #cat_min = "/home/cew/Code/h_testing/FudgeIO_reboot/concatenate_files.csh"
     cat_min = basedir + "/utils/pp/concatenate_files.csh"
     cat_command = " ".join(["tcsh -f ",cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile])
-    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)	#, cwd=tdir
+    p = subprocess.Popen(cat_command, stdout=subprocess.PIPE, shell=True, env=None)
     out0,err0 = p.communicate()
     if (p.returncode != 0):
         print((str(out0)))

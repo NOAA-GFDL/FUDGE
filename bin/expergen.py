@@ -870,7 +870,6 @@ def generate_experiment(parse_xml, create_default_aux,
         msub_cmd = msub_cmd + msub_string + el + "; "
     if msub:
         p5 = subprocess.Popen(msub_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        #p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         output5, errors5 = p5.communicate()
         #######
         if(p5.returncode != 0):

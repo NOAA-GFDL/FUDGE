@@ -6,39 +6,6 @@ from subprocess import PIPE
 import re
 
 # 2019-05-28: gcp is now in its own file, with commandline args
-'''
-def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=True):
-    #Wrapper for GFDL's GCP function
-    #for copying from /archive to /vftmp
-    if (outfile=='TMPDIR'):
-        tdir = os.environ.get("TMPDIR")
-        outfile = osp.join(tdir,infile.lstrip("/"))
-    if timestamp:
-        outfile  = outfile +"." + tstamp()
-    #Make sure that the output directory exists
-    outdir = osp.dirname(osp.abspath(outfile)).rstrip("/") + "/"
-    if not osp.isdir(outdir):
-        os.makedirs(outdir)
-    if gcp_verbose:
-        command = "gcp -v " + infile + " " + outfile
-    else:
-        command = "gcp " + infile + " " + outfile
-    if verbose:
-        print(command)
-    modulepath = "source /usr/local/Modules/default/init/sh"
-    mod_command = modulepath + "; module load gcp; module load globus;"
-    g = subprocess.Popen(mod_command + command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True,env=os.environ)
-    g_out,g_err = g.communicate()
-    if(g.returncode != 0):
-        print "Error in gcp: file " + infile + " did not copy to " + outfile
-        print(g_out)
-        print(g_err)
-        print "Trying again with cp"
-        if not osp.exists(osp.dirname(outfile)):
-            os.makedirs(osp.dirname(outfile))
-        shutil.copy2(infile, outfile)
-    return(outfile)
-'''
 
 def read_exp_info_file(exp_info, convert_to_j = True):
     #Reads data formatted in the general form of an experiment info file

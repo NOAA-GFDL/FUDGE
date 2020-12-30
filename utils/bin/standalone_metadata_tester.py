@@ -126,7 +126,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     out0,err0 = p0.communicate()
     # I'm turning off R and python version for the moment, since they
     # create too many false positives when doing comaprisons.
-    gd['r_version'] = re.split(" --", out0)[0]
+    gd['r_version'] = re.split(" --", out0.decode('utf-8'))[0]
     # gd['python_version'] = re.split("\n", sys.version)[0]
     #Filenames of data
     gd['filenames_OH'] = get_filename_atts(auxdict['OH'])
