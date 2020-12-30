@@ -12,11 +12,6 @@ import checker
 import time
 import smtplib
 import re
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email.Utils import COMMASPACE, formatdate
-from email import Encoders
 import fudgeUtils
 from fudgeUtils import send_status_email
 import ppWatcher

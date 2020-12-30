@@ -11,11 +11,6 @@ import smtplib
 import re
 import optparse
 from optparse import OptionParser
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email.Utils import COMMASPACE, formatdate
-from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
 from fudgeUtils import tstamp
