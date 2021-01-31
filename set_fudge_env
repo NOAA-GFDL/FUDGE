@@ -13,7 +13,7 @@ endif
 
 module load r/3.4.4-gcc-4.8.5
 module load nco/4.7.9-gcc-4.8.5
-module load gcp
+module load gcp/2.3
 
 #needed for role accnt
 module load globus
