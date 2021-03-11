@@ -295,6 +295,9 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     #swap out the newlines and dmgets in the dmget command
     dmget_bg_string  = re.sub("\ndmget", " ", dmget_string)
     dmget_bg_string = re.sub("  ", " ", dmget_bg_string)
+    
+    #Make the command to source the list of files for dmgetting within the script
+    script_dmgets = "$BASEDIR/utils/bin/dmget_files $scriptdir/fudge_inputs.txt\n"
 
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
@@ -375,7 +378,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
                     f.write(trap_command)
-                    f.write(dmget_bg_string)
+                    f.write(script_dmgets)
                     f.write(gcp_string)
                     f.write(outdir_cmd)
                     f.write(meta_command)
@@ -384,11 +387,11 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
             k += 1
     #2019-08: Adding sourcable script for dmgetting files
-    dmget_script = osp.join(scriptdir, "dmget_input_files.csh")
-    with open(dmget_script, 'w') as f:
-        f.write("#!/bin/tcsh\n")
-        f.write("# Script of dmget commands for the files in the FUDGE experiment\n")
-        f.write(dmget_bg_string)
+    #2021-03: File is now a text file of all files used by FUDGE
+    infile_list = osp.join(scriptdir, "fudge_inputs.txt")
+    dmget_list = "\n".join(dmget_bg_string.split(" ")[1:])
+    with open(infile_list, 'w') as f:
+    	f.write(dmget_list)
     print('master runscript and mini creation completed')
 
 def make_trap_command(scriptdir, idx_string):

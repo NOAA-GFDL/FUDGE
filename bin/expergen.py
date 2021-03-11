@@ -869,9 +869,9 @@ def generate_experiment(parse_xml, create_default_aux,
     config_mod = [el for el in os.listdir(osp.join(sbase, 'config_mod')) if re.search('json', el) is not None][0]
     make_all_ds_paths(osp.join(sbase, 'config_mod/' +config_mod), outfile_loc)
     if not no_dmget:
-        dmget_script = osp.join(sbase, 'dmget_input_files.csh')
+        dmget_script = osp.join(basedir, "utils/bin/dmget_files") + " " + osp.join(sbase, 'fudge_inputs.txt')
         print("sourcing dmget commands for the experiment: " + dmget_script)
-        p4 = subprocess.Popen('tcsh ' + dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p4 = subprocess.Popen(dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         out4,err4 = p4.communicate()
         if (p4.returncode != 0):
             print("sourcing of dmget commands failed; please run with --no-dmget option")
