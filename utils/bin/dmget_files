@@ -17,9 +17,9 @@ for i in ${infile_list[@]}; do
     #add to dmget list
     dmget_list=("${dmget_list[@]}" $i)
   fi
-  if [ ${#dmget_list[@]} > 0 ]; then
-    echo ${dmget_list[@]}
-    dmget $dmget_list
-  fi
 done
+if [ ${#dmget_list[@]} > 0 ]; then
+  echo ${dmget_list[@]}
+  dmget $dmget_list
+fi
   

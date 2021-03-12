@@ -161,8 +161,9 @@ def main(scriptdir, sleep=60, nloops=100,
                     vars = auxdict['DS']['vars']
                     ens_outfiles = [outfile_dict['ds'][el]['ens'] for el in outfile_dict['ds'].keys()]
                     # submit_ens_job is supposed to do the trend and anomaly stuff;
-                    epoch = "fake-epoch"
-                    trange_string = "fake-trange"
+                    
+                    epoch = "testing-epoch"
+                    trange_string = "testing-trange"
                     status,faillist,ens_outfiles,exp_info_files = submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
                     #Path(osp.join(stagedir, "postproc.success")).touch()
                     gcp_then_touch(osp.join(stagedir, "postproc.success"))
