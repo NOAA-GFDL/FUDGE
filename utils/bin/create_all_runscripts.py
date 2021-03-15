@@ -297,7 +297,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     dmget_bg_string = re.sub("  ", " ", dmget_bg_string)
     
     #Make the command to source the list of files for dmgetting within the script
-    script_dmgets = "$BASEDIR/utils/bin/dmget_files $scriptdir/fudge_inputs.txt\n"
+    script_dmgets = "$BASEDIR/utils/bin/dmget_files " + scriptdir + "/fudge_inputs.txt\n"
 
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
