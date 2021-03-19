@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 source /usr/local/Modules/default/init/tcsh
+=======
+source /usr/local/Modules/default
+>>>>>>> k_ens_metafix
 echo "sourcing set_fudge_env located in fudge repository"
 
+#This is not technically the correct version of python but it needs to be
+#loaded for some of our path work
 module load python/2.7.12
 
 set whichenv = `/home/gfdl/bin2/gfdl_platform`

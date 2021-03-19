@@ -107,7 +107,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #comment, longname
     #for v in auxdict$MH.keys():
     #    pred_dict[v] = {'none': None}
-    gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict();
+    gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict(); egd = OrderedDict();
     title = "" #initializing title here, because title gets added sooner
     gd['title'] = title
     gd['institution'] = "NOAA/GFDL (201 Forrestal Rd, Princeton, NJ, 08540)"
@@ -190,9 +190,14 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         vd[qc_var] = {"longname": qc_longname,
                       "comment": qc_comment,
                       "globals": {"comment": global_comment}}
+    #As of 2021, trying to move some metadata operations from ensemble 
+    #process to a common location (here). 
+    egd['epoch'] = gd['ds_scenario']
+    egd['trange'] = get_trange_from_filename(MF_file)
     #so now we've got 3 dicts: globals, provenance (of globals) and by var
     ad = OrderedDict()
-    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd;
+    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd; 
+    ad['ensemble_globals'] = egd;
     #And finally, write the whole thing to file
     print("Wrting to: " + meta_file)
     meta_text = json.dumps(ad, indent=2)
@@ -317,6 +322,25 @@ def get_stencil_atts(auxdict):
         stencils = list(set(stencils))
         stencil_list.append(k + ":" + ",".join(stencils))
     return(",".join(stencil_list))
+    
+def get_trange_from_filename(esd_file):
+    #Given a file in ESD-standard construction (i.e. with the dates LAST
+    #in the filename string), determines the trange from the name of the 
+    #file. 
+    #NOTE: failure on this function does not currently lead to a big gaping
+    #error becuase this cpaticular code is only invoked for the metadata changes
+    #associated with our ensemble-generation code.
+    fname = os.path.basename(esd_file)
+    fsplit = re.split("_", fname)
+    daterange = fsplit[6]
+    #if not full:
+    startyear = re.split("-", daterange)[0][:4]
+    endyear = re.split("-", daterange)[1][:4]
+    #else:
+    #startyear = re.split("-", daterange)[0][:8]
+    #endyear = re.split("-", daterange)[1][:8]
+    #trange = startyear + "-" + endyear
+    return(startyear + "-" + endyear)
 
 def make_qc_longname(qc_method, ds_method, ds_var):
     #Makes a longname for the qc data (or more generally, s3/s5)

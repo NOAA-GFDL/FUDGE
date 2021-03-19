@@ -5,7 +5,7 @@ stages:
  - test_all
 
 before_script:
- - module load git
+ #- module load git
  - commitname=$CI_COMMIT_REF_NAME
  - severity=$(python get_commit_severity.py $CI_COMMIT_REF_NAME)
  - 'echo "Severity level: ${severity}"'
@@ -14,11 +14,13 @@ minijob:
  # This step is meant to run the minifile tests.
  stage: test_mini
  script:
-  - echo "loading ESD environment"
+  - echo "loading ESD environment in gitlab-ci"
   - module purge
   - module use -a /home/esd/local/modulefiles
   - module load esd/env
   - module list
+  - gitvers=$(git --version)
+  - echo $gitvers
   #Note: we're using an outdated version at the lab; this is normally commit sha
   - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
   - module list

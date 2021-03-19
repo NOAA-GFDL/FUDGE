@@ -266,7 +266,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       # NOT SURE WHAT THIS IS DOING IN RESETTING 'delta.idx'
       # MAYBE FEWER THAN SPECIFIED NUMBER OF VALUES TO USE ARE AVAILABLE?
       if(any(delta.idx < 1)){
-        #print(trigger.fxn)
         print("Overlap too small for delta_sample upper; resizing")
         delta.idx <- delta.idx[delta.idx >= 1]
       }
@@ -277,7 +276,6 @@ tail_cutoff <- function(MH, OH, MF, DS, args){
       }
       ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ## COMPUTES THE DELTA (I.E. ADDITIVE TERM FOR ADJUSTMENT) AS AN AVERAGE
-      #print(paste0("Adjusting tail with ", adjmethod))
       ## check arg for delta or mult
       if (args$adjmethod == 'add') {
         #### It's THIS easy for additive!  The rest is for ratio!
