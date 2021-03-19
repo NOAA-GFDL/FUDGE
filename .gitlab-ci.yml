@@ -5,7 +5,7 @@ stages:
  - test_all
 
 before_script:
- - module load git
+ #- module load git
  - commitname=$CI_COMMIT_REF_NAME
  - severity=$(python get_commit_severity.py $CI_COMMIT_REF_NAME)
  - 'echo "Severity level: ${severity}"'
