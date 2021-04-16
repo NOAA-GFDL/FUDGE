@@ -159,18 +159,25 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                                                trange=mf_timerange,
                                                suffix=idirsuffix,
                                                is_multivar=True)
-    # Set hooks for is_prime and is_fixed qualities for the vars
-    oh_prime = oh_fixed = [False for el in oh_vars]
-    mh_prime = mh_fixed = [False for el in predlist]
-    mf_prime = mf_fixed = [False for el in predlist]
+    # Set hooks for is_prime and no_grid qualities for the vars
+    # as of 2021, no_grid is referenced by metadata functions
+    oh_prime = [False for el in oh_vars]
+    mh_prime = [False for el in predlist]
+    mf_prime = [False for el in predlist]
+    oh_prime[0] = True 
+    mh_prime[0] = True
+    mf_prime[0] = True 
+    oh_nogrid = [False for el in oh_vars]
+    mh_nogrid = [False for el in predlist]
+    mf_nogrid = [False for el in predlist]
     # Add modified aux copy & structure addition
-    oh_auxdict = make_aux_entry(oh_vars,  oh_files, oh_prime, oh_fixed,
+    oh_auxdict = make_aux_entry(oh_vars,  oh_files, oh_prime, oh_nogrid,
                                 stencil=auxdict['OH']['stencil'],
                                 geomask=spatmask_path, tmask=OH_tmask)
-    mh_auxdict = make_aux_entry(predlist, mh_files, mh_prime, mh_fixed,
+    mh_auxdict = make_aux_entry(predlist, mh_files, mh_prime, mh_nogrid,
                                 stencil=auxdict['MH']['stencil'],
                                 geomask=spatmask_path, tmask=MH_tmask)
-    mf_auxdict = make_aux_entry(predlist, mf_files, mf_prime, mf_fixed,
+    mf_auxdict = make_aux_entry(predlist, mf_files, mf_prime, mf_nogrid,
                                 stencil=auxdict['MF']['stencil'],
                                 geomask=spatmask_path, tmask=MF_tmask)
     ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0],
@@ -577,16 +584,16 @@ def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
 
 
 def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'],
-                   is_prime=[False], is_fixed=[False],
+                   is_prime=[False], no_grid=[False],
                    stencil='none', tmask='none', geomask='none'):
     '''
     Makes an aux file entry of input data files for one of OH, MH or MF.
     '''
     aux_entry = OrderedDict()
-    for var, f, prime, fixed in zip(varnames, files, is_prime, is_fixed):
+    for var, f, prime, nog in zip(varnames, files, is_prime, no_grid):
         aux_entry[var] = {'file': f,
-                          'is_fixed': "TRUE" if is_fixed else "FALSE",
-                          'is_prime': "TRUE" if is_prime else "FALSE",
+                          'no_grid': "TRUE" if nog else "FALSE",
+                          'is_prime': "TRUE" if prime else "FALSE",
                           'stencil': stencil,
                           'geomask': geomask,
                           'tmask':   tmask}

@@ -20,7 +20,7 @@ import get_npts_by
 from create_all_runscripts import create_auxfile_runscripts
 from create_all_runscripts import create_xml_runscripts
 from get_comment_specs import get_comment_specs, get_exp_check_tag
-from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
+from get_ds_info import get_ds_info, parse_aux_info, make_aux_input, parse_gridspec
 from get_ds_info import add_ds_params_to_auxdict, add_s3_s5_params_to_auxdict
 from make_postProc_scripts import make_postProc_scripts
 from collections import OrderedDict
@@ -719,29 +719,21 @@ def generate_experiment(parse_xml, create_default_aux,
                                         "<RIP>",
                                         ds_region, fut_file_start_time, fut_file_end_time)
         print("Calling create_xml_runscripts")
-        idict = {'US48' : 748,
-                 'SCCSC0p1'  : 181,
-                 'RR'   : 181,
-                 'grid0': 0,
-                 'NEUSA': 1,
-                 'NEUSA0p1': 425}
-        jdict = {'US48' : 454,
-                 'SCCSC0p1'  : 31,
-                 'RR'   : 31,
-                 'grid0': 0,
-                 'NEUSA': 1,
-                 'NEUSA0p1': 127}
-        try:
-            i_offset = idict[output_grid]
-        except KeyError:
-            i_offset = 1
-        try:
-            j_offset = jdict[output_grid]
-        except KeyError:
-            j_offset = 1
+        if 'gridspec' in auxdict.keys():
+            ginfo = parse_gridspec(auxdict['gridspec'])
+            print(ginfo)
+            i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
+            j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
+            #Copy to config directory
+            dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
+            shutil.copy2(auxdict['gridspec'], dest)
+        else:
+            print("You should not end up here!")
+            sys.exit(1)
+            i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
         print("Step 0: Create the unified runcscripts and master runscripts")
-        create_xml_runscripts(lons, lone, i_subset, i_offset,
-                              lats, late, j_subset, j_offset,
+        create_xml_runscripts(i_s, i_e, i_subset, i_off,
+                              j_s, j_e, j_subset, j_off,
                               njobs, ncpus, fudgetag, sbase,
                               target_dir, hist_pred_dir, fut_pred_dir,
                               oh_timerange, mh_timerange, mf_timerange, predlist,
@@ -771,7 +763,17 @@ def generate_experiment(parse_xml, create_default_aux,
         j_subset = auxdict['j_subset']
         # 2019-05-18: swapping output_grid for ds_region;
         # output_grid can include NEUSA0p1 and that leads to grid param errors
-        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+        if 'gridspec' in auxdict.keys():
+            ginfo = parse_gridspec(auxdict['gridspec'])
+            i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
+            j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
+            #Copy to config directory
+            dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
+            shutil.copy2(auxdict['gridspec'], dest)
+        else:
+            print("You should not end up here!")
+            sys.exit(1)
+            i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
