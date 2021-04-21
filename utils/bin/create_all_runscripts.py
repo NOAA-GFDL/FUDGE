@@ -23,7 +23,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     for dname in dataset_names:
         data_files += [auxdict[dname][el]['file'] for el in auxdict[dname].keys()]
     #None of these are going to be 'none':
-    dmget = "# Data files:\n" + "\n".join(["dmget " + el for el in data_files]) + "\n"
+    dmget = "\n".join(["dmget " + el for el in data_files]) + "\n"
     tmasks = []
     for dname in dataset_names:
         tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
@@ -34,14 +34,14 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     tmask_none = ["na", "none"]
     tmasks = [el for el in tmasks if el not in tmask_none]
     if len(tmasks) > 0:
-        dmget += "# Time mask files:\n" + "\n".join(["dmget " + el for el in tmasks]) + "\n"
+        dmget += "\n".join(["dmget " + el for el in tmasks]) + "\n"
     geomasks = []
     for dname in dataset_names:
         geomasks += [auxdict[dname][el]['geomask'] for el in auxdict[dname].keys()]
     geomasks = list(set(geomasks))
     geomasks = [el for el in geomasks if el != 'none']
     if len(geomasks) > 0:
-        dmget += "# Spatial mask files:\n" + "\n".join(["dmget " + el for el in geomasks]) + "\n"
+        dmget +=  "\n".join(["dmget " + el for el in geomasks]) + "\n"
     # Create the gcps for the script
     file_list = data_files + geomasks + tmasks
     mkdir_commands = ["mkdir -p $TMPDIR/" + osp.dirname(el) for el in file_list]
@@ -396,9 +396,11 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     #2019-08: Adding sourcable script for dmgetting files
     #2021-03: File is now a text file of all files used by FUDGE
     infile_list = osp.join(scriptdir, "fudge_inputs.txt")
-    dmget_list = "\n".join(dmget_bg_string.split(" ")[1:])
+    dmget_list = dmget_bg_string.split(" ")[1:]
+    #remove any empty entries and strip whitespace
+    dmget_list = [x.strip() for x in dmget_list if x is not ""]
     with open(infile_list, 'w') as f:
-    	f.write(dmget_list)
+    	f.write("\n".join(dmget_list))
     print('master runscript and mini creation completed')
 
 def make_trap_command(scriptdir, idx_string):

@@ -728,8 +728,7 @@ def generate_experiment(parse_xml, create_default_aux,
             dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
             shutil.copy2(auxdict['gridspec'], dest)
         else:
-            print("You should not end up here!")
-            sys.exit(1)
+            #output grid or ds_region
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
         print("Step 0: Create the unified runcscripts and master runscripts")
         create_xml_runscripts(i_s, i_e, i_subset, i_off,
@@ -771,8 +770,6 @@ def generate_experiment(parse_xml, create_default_aux,
             dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
             shutil.copy2(auxdict['gridspec'], dest)
         else:
-            print("You should not end up here!")
-            sys.exit(1)
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
