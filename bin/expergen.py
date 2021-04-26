@@ -731,8 +731,8 @@ def generate_experiment(parse_xml, create_default_aux,
             #output grid or ds_region
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
         print("Step 0: Create the unified runcscripts and master runscripts")
-        create_xml_runscripts(i_s, i_e, i_subset, i_off,
-                              j_s, j_e, j_subset, j_off,
+        create_xml_runscripts(lons, lone, i_subset, i_off,
+                              lats, late, j_subset, j_off,
                               njobs, ncpus, fudgetag, sbase,
                               target_dir, hist_pred_dir, fut_pred_dir,
                               oh_timerange, mh_timerange, mf_timerange, predlist,
