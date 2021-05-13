@@ -721,7 +721,13 @@ def generate_experiment(parse_xml, create_default_aux,
         print("Calling create_xml_runscripts")
         if 'gridspec' in auxdict.keys():
             ginfo = parse_gridspec(auxdict['gridspec'])
-            print(ginfo)
+            #check for agreement with XML:
+            if output_grid != ginfo['grid']:
+                print("Error in grid parsing: gridspec grid " + ginfo['grid'] + " and xml grid " + output_grid + " do not match!")
+                sys.exit(1)
+            elif output_grid == "":
+                print("Error in grid parsing: xml grid should not be an empty string!")
+                sys.exit(1)
             i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
             j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
             #Copy to config directory
