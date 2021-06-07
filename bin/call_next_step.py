@@ -19,6 +19,7 @@ from make_all_ds_paths import make_all_ds_paths
 from call_next_step_ens import submit_ens_job
 import shutil
 from pathlib2 import Path
+import json
 
 
 def ParseNextStepArgs():
@@ -161,8 +162,14 @@ def main(scriptdir, sleep=60, nloops=100,
                     vars = auxdict['DS']['vars']
                     ens_outfiles = [outfile_dict['ds'][el]['ens'] for el in list(outfile_dict['ds'].keys())]
                     # submit_ens_job is supposed to do the trend and anomaly stuff;
-                    epoch = "fake-epoch"
-                    trange_string = "fake-trange"
+                    
+                    #2021-03-16:reading from common metadata file
+                    meta_file = osp.join(scriptdir, 'meta_file.json')
+                    with open(meta_file, 'r') as f:
+                        metadict = json.load(f) # I actually don't think I need OrderedDict in this case
+                    print(metadict.keys())
+                    epoch = metadict['ensemble_globals']['epoch']
+                    trange_string = metadict['ensemble_globals']['trange']
                     status,faillist,ens_outfiles,exp_info_files = submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_string, verbose)
                     #Path(osp.join(stagedir, "postproc.success")).touch()
                     gcp_then_touch(osp.join(stagedir, "postproc.success"))

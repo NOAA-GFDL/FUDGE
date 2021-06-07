@@ -1,6 +1,8 @@
 source /usr/local/Modules/default/init/tcsh
 echo "sourcing set_fudge_env located in fudge repository"
 
+#This is not technically the correct version of python but it needs to be
+#loaded for some of our path work
 module load python/2.7.12
 
 set whichenv = `/home/gfdl/bin2/gfdl_platform`
@@ -13,7 +15,7 @@ endif
 
 module load r/3.4.4-gcc-4.8.5
 module load nco/4.7.9-gcc-4.8.5
-module load gcp
+module load gcp/2.3
 
 #needed for role accnt
 module load globus

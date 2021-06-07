@@ -410,3 +410,25 @@ def as_num(val):
             return(float(val))
         except:
             return(val)
+            
+def parse_gridspec(gridfile):
+    #Expecation is that this contains at most 3 lines: 
+    #comment, header, data
+    lcount = 0; griddict = {};
+    with open(gridfile, 'r') as f:
+      for line in f.readlines():
+        data = re.split(',', line)
+        if not data[0].startswith("#"):
+            data = [x.strip() for x in data]
+            data = [x.replace('\"', "") for x in data]
+            data = [x.replace('\n', "") for x in data]
+            data = [as_num(x.strip("\\'")) for x in data]
+            if lcount == 0:
+              d0 = data
+              lcount += 1
+            else:
+              d1 = data
+    #now, assign 
+    for k,v in zip(d0,d1):
+      griddict[k] = v
+    return(griddict)

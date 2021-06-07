@@ -39,7 +39,8 @@ ncrename -h -v "$anom_var,$clim_var" -O $anom_file
 # and allows for a header pad. The -A in the second line avoids
 # overwriting the metadata we worked so hard to add.
 ncks -h --hdr_pad 6000 $anom_file -O $climanom_tmp
-ncbo --op='add' -v $clim_var $anom_file $clim_file -A $climanom_tmp
+#ncbo --op='add'
+ncbo --op_typ='add' -v $clim_var $anom_file $clim_file -A $climanom_tmp
 ncrename -h -v "$clim_var,$var" $climanom_tmp
 
 

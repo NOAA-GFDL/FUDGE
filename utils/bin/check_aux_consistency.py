@@ -43,8 +43,8 @@ def check_data_struct(data_struct):
     for el in list(data_struct.keys()):
         d_el = data_struct[el]
         d_keys = sorted(d_el.keys())
-        fix_keys = sorted(['tmask', 'stencil','geomask', 'file', 'is_prime', 'is_fixed'])
-        d_comp = list(zip(d_keys, fix_keys))
+        fix_keys = sorted(['tmask', 'stencil','geomask', 'file', 'is_prime', 'no_grid'])
+        d_comp = zip(d_keys, fix_keys)
         if not all(el[0] == el[1] for el in d_comp):
             print(("Error in check_data_struct: expected keys and found keys did not match for el " + el + "!"))
             print(("Expected keys:\n\t" + "\n\t".join(fix_keys)))

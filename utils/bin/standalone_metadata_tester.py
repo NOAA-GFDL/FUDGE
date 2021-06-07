@@ -27,7 +27,7 @@ if BASEDIR is None:
 sys.path.append(osp.join(BASEDIR, 'utils/aux'))
 from gcp import gcp
 sys.path.append(osp.join(BASEDIR, 'utils/bin'))
-from get_ds_info import make_aux_input, get_ds_info
+from get_ds_info import make_aux_input, get_ds_info, parse_gridspec
 from get_ds_info import add_ds_params_to_auxdict,add_s3_s5_params_to_auxdict
 from metadata_classify_fxns import get_experiment_metadata
 sys.path.append(osp.join(BASEDIR, 'bin'))
@@ -107,7 +107,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #comment, longname
     #for v in auxdict$MH.keys():
     #    pred_dict[v] = {'none': None}
-    gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict();
+    gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict(); egd = OrderedDict();
     title = "" #initializing title here, because title gets added sooner
     gd['title'] = title
     gd['institution'] = "NOAA/GFDL (201 Forrestal Rd, Princeton, NJ, 08540)"
@@ -120,6 +120,11 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     fudgetag = os.environ.get('FUDGETAG')
     gd['fudgetag'] = fudgetag
     gd['ds_downscaling_method'] = auxdict['ds_method']
+    if 'gridspec' in auxdict.keys():
+        ds_grid = parse_gridspec(auxdict['gridspec'])['grid']
+    else:
+        ds_grid = auxdict['output_grid']
+    gd['gfdlesd_idgrid'] = ds_grid
     ## Similar false positive issue compared to the one below
     # gd['ds_experiment_name'] = auxdict['ds_experiment_name']
     p0 = subprocess.Popen("R --version", shell=True, stdout=PIPE, stderr=PIPE)
@@ -133,6 +138,12 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd['filenames_MH'] = get_filename_atts(auxdict['MH'])
     gd['filenames_MF'] = get_filename_atts(auxdict['MF'])
     #add the atts that are a dataset-dependent parse on metadata atts
+    oh_gridfiles = [auxdict['OH'][el]['file'] for el in auxdict['OH'].keys() if auxdict['OH'][el]['no_grid'] == "FALSE"]
+    mh_gridfiles = [auxdict['MH'][el]['file'] for el in auxdict['MH'].keys() if auxdict['MH'][el]['no_grid'] == "FALSE"]
+    mf_gridfiles = [auxdict['MF'][el]['file'] for el in auxdict['MF'].keys() if auxdict['MF'][el]['no_grid'] == "FALSE"]
+    check_grid_att('gfdlesd_idgrid', ds_grid, oh_gridfiles, "OH", is_strict)
+    check_grid_att('gfdlesd_idgrid', ds_grid, mh_gridfiles, "MH", is_strict)
+    check_grid_att('gfdlesd_idgrid', ds_grid, mf_gridfiles, "MF", is_strict)
     '''
     prime_var = [k for k in auxdict['MF'].keys() if auxdict['MF'][k]['is_prime']]
     #All of this needs to be checked for working with a non-stated prime var
@@ -190,9 +201,14 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         vd[qc_var] = {"longname": qc_longname,
                       "comment": qc_comment,
                       "globals": {"comment": global_comment}}
+    #As of 2021, trying to move some metadata operations from ensemble 
+    #process to a common location (here). 
+    egd['epoch'] = gd['ds_scenario']
+    egd['trange'] = get_trange_from_filename(MF_file)
     #so now we've got 3 dicts: globals, provenance (of globals) and by var
     ad = OrderedDict()
-    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd;
+    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd; 
+    ad['ensemble_globals'] = egd;
     #And finally, write the whole thing to file
     print(("Wrting to: " + meta_file))
     meta_text = json.dumps(ad, indent=2)
@@ -317,6 +333,25 @@ def get_stencil_atts(auxdict):
         stencils = list(set(stencils))
         stencil_list.append(k + ":" + ",".join(stencils))
     return(",".join(stencil_list))
+    
+def get_trange_from_filename(esd_file):
+    #Given a file in ESD-standard construction (i.e. with the dates LAST
+    #in the filename string), determines the trange from the name of the 
+    #file. 
+    #NOTE: failure on this function does not currently lead to a big gaping
+    #error becuase this cpaticular code is only invoked for the metadata changes
+    #associated with our ensemble-generation code.
+    fname = os.path.basename(esd_file)
+    fsplit = re.split("_", fname)
+    daterange = fsplit[6]
+    #if not full:
+    startyear = re.split("-", daterange)[0][:4]
+    endyear = re.split("-", daterange)[1][:4]
+    #else:
+    #startyear = re.split("-", daterange)[0][:8]
+    #endyear = re.split("-", daterange)[1][:8]
+    #trange = startyear + "-" + endyear
+    return(startyear + "-" + endyear)
 
 def make_qc_longname(qc_method, ds_method, ds_var):
     #Makes a longname for the qc data (or more generally, s3/s5)
@@ -378,6 +413,50 @@ def make_main_comment(region, grid, kfold, exp_name, desc, train_data, predictor
     config = "with experiment configuration " + exp_name + '. '
     train = " trained on " + train_data + " using predictor variable(s) " + predictor_vars + " and future predictor rips " + fut_rips
     return(main + kfold + config + desc + train)
+    
+def check_grid_att(grid_attname, grid_attval, file_list, file_type, is_strict=True):
+    '''
+    checks name of grid given in csv against attributes in the file
+    For now, this is a dumb check  - earlier filename steps don't 
+    filter based on whether files are expected to be gridless; 
+    in future that will also probably be a metadata attribute.
+    is_strict refers to whether this step fails if metadata errors don't match;
+    number of lon/lat val errors are different.
+    '''
+    if len(file_list) == 0:
+        print("Error in check_grid_att: file_list passed is empty!")
+        sys.exit(1)
+    lat_vals = []
+    lon_vals = []
+    #if file_list isn't a list, cast it as a list here.     
+    for f in file_list:
+        with Dataset(f, 'r') as nc_obj:
+            global_atts = nc_obj.__dict__.keys()
+            var_names = nc_obj.variables.keys()
+            if grid_attname not in global_atts:
+                print("Warning in check_grid_att! " + file_type + " " + f + " did not have grid attribute " + grid_attname + "!")
+            else:
+                grid_fval = nc_obj.__dict__[grid_attname]
+                if grid_fval != grid_attval:
+                    print("Error in check_grid_att! " + file_type + " file " + f + " had grid attribute " + grid_fval + " which did not match val in gridspec," + grid_attval + "!")
+                    #if is_strict: sys.exit(1)
+                    sys.exit(1)
+            #check and store lat and lon dim length, if present
+            if 'lat' in var_names:
+                lat_vals.append(len(nc_obj.variables['lat']))
+            else:
+                lat_vals.append(1)
+            if 'lon' in var_names:
+                lon_vals.append(len(nc_obj.variables['lon']))
+            else:
+                lon_vals.append(1)
+        if lon_vals.count(lon_vals[0]) != len(lon_vals):
+            print("Error in check_grid_att: one or more gridded " + file_type + " files did not have same number of lon vals")
+            sys.exit(1)
+        if lat_vals.count(lat_vals[0]) != len(lat_vals):
+            print("Error in check_grid_att: one or more gridded " + file_type + " files did not have same number of lat vals")
+            sys.exit(1)
+                    
 
 def add_input_file_params(auxdict, lots_of_other_params):
     '''

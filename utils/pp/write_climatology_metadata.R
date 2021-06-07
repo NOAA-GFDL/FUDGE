@@ -44,17 +44,30 @@ SetAnomMetadata <- function(clim_file, anom_file, fvar, out_file){
   }
   #And our one-and-only instance of a variable att:
   #Note: not varAnom, because this got renamed in the earlier step
-  orig.longname <- ncatt_get(anom.nc, paste0(fvar, "Clim"), 'long_name')$value
-  print(orig.longname)
-  new.longname <- str_trim(sub("anomaly[ of]*", "", orig.longname, ignore.case=TRUE, perl=TRUE))
-  new.longname <- sub(fvar, paste(fvar, "(anom + clim)"), new.longname, ignore.case=TRUE)
-  if(!grepl("(anom + clim)", new.longname, fixed=T)){
-    new.longname <- paste(new.longname, "(anom + clim)")
+  
+  get_anom_name <- function(old_longname){
+    new_longname <- str_trim(sub("anomaly[ of]*", "", old_longname, ignore.case=TRUE, perl=TRUE))
+    new_longname <- sub(fvar, paste(fvar, "(anom + clim)"), new_longname, ignore.case=TRUE)
+    if(!grepl("(anom + clim)", new_longname, fixed=T)){
+      new_longname <- paste(new_longname, "(anom + clim)")
+    }
+    return(new_longname)
   }
+  
+  orig.longname <- ncatt_get(anom.nc, paste0(fvar, "Clim"), 'long_name')$value
+  new.longname <- get_anom_name(orig.longname) 
+  orig.standard_name <- ncatt_get(anom.nc, paste0(fvar, "Clim"), 'standard_name')
+  if (orig.standard_name$hasatt){
+    new.standard_name <- get_anom_name(orig.standard_name$value) 
+    var_atts <- list(long_name = new.longname, standard_name = new.standard_name)
+  }else{
+    var_atts <- list(long_name = new.longname)
+  }
+  
   nc_close(clim.nc)
   nc_close(anom.nc)
   
-  var_atts <- list(long_name = new.longname)
+  
   global_atts <- list(institution='NOAA-GFDL', 
                       title=paste("Sum of anomaly", anom.dset.name, 
                                   "relative to", date.string, 
@@ -102,34 +115,44 @@ SetResidMetadata <- function(trend_file, resid_file, fvar, trendvar, residvar, o
   }
   #And our one-and-only instance of a variable att:
   #Note: not varAnom, because this got renamed in the earlier step
-  orig.longname <- ncatt_get(resid.nc, trendvar, 'long_name')$value
-  print(orig.longname)
-  new.longname <- str_trim(sub("residuals[ of]*", "", orig.longname, ignore.case=TRUE, perl=TRUE))
-  new.longname <- sub(fvar, paste(fvar, "(resid + trend)"), new.longname, ignore.case=TRUE)
-  if(!grepl("(resid + trend)", new.longname, fixed=T)){
-    new.longname <- paste(new.longname, "(resid + trend)")
-    
-    nc_close(trend.nc)
-    nc_close(resid.nc)
-    
-    var_atts <- list(long_name = new.longname)
-    global_atts <- list(institution='NOAA-GFDL', 
-                        title=paste("Sum of residuals", resid.dset.name, 
-                                    "relative to", date.string, 
-                                    "and trend", trend.dset.name, 
-                                    smooth.string), 
-                        s8_tag = paste(get.git.branch(base.path)), 
-                        trend_added = trend.orig)
-    #Set new metadata atts of the output file
-    out.nc <- nc_open(out_file, write = T)
-    for (n in names(var_atts)){
-      ncatt_put(out.nc, fvar, n, var_atts[[n]])
+  
+  get_trend_name <- function(old_longname){
+    new_longname <- str_trim(sub("residuals[ of]*", "", old_longname, ignore.case=TRUE, perl=TRUE))
+    new_longname <- sub(fvar, paste(fvar, "(resid + trend)"), new_longname, ignore.case=TRUE)
+    if(!grepl("(resid + trend)", new_longname, fixed=T)){
+      new_longname <- paste(new_longname, "(resid + trend)")
     }
-    for (n in names(global_atts)){
-      ncatt_put(out.nc, 0, n, global_atts[[n]])
-    }
-    nc_close(out.nc)
+    return(new_longname)
   }
+  
+  orig.longname <- ncatt_get(resid.nc, trendvar, 'long_name')$value
+  new.longname <- get_trend_name(orig.longname)
+  orig.standard_name <- ncatt_get(resid.nc, trendvar, 'standard_name')
+  if (orig.standard_name$hasatt){
+    new.standard_name <- get_trend_name(orig.standard_name$value) 
+    var_atts <- list(long_name = new.longname, standard_name = new.standard_name)
+  }else{
+    var_atts <- list(long_name = new.longname)
+  }
+  
+  nc_close(trend.nc)
+  nc_close(resid.nc)
+  global_atts <- list(institution='NOAA-GFDL', 
+                      title=paste("Sum of residuals", resid.dset.name, 
+                                  "relative to", date.string, 
+                                  "and trend", trend.dset.name, 
+                                  smooth.string), 
+                      s8_tag = paste(get.git.branch(base.path)), 
+                      trend_added = trend.orig)
+  #Set new metadata atts of the output file
+  out.nc <- nc_open(out_file, write = T)
+  for (n in names(var_atts)){
+    ncatt_put(out.nc, fvar, n, var_atts[[n]])
+  }
+  for (n in names(global_atts)){
+    ncatt_put(out.nc, 0, n, global_atts[[n]])
+  }
+  nc_close(out.nc)
 }
 
 ################################################################################
