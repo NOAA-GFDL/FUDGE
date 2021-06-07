@@ -1,0 +1,30 @@
+#%Module########################################################################
+##Testing module for esd role account env cleanup
+
+proc ModulesHelp { } {
+
+	puts stderr "\tloads a smaller subset of modules for FUDGE, the framework for downscaling of GCMs empirically. Is meant to change in synch with the ESD environment, only *this* is under version control.\t"
+}
+
+module-whatis "loads the project environment for ESD project FUDGE"
+
+set whichenv = `/home/gfdl/bin2/gfdl_platform`
+if ($whichenv == 'desktop') then
+  module use /app/spack/v0.15/modulefiles/linux-rhel7-x86_64
+else
+  module use /app/spack/v0.15/modulefiles/linux-rhel6-x86_64
+  module load slurm
+endif
+
+module use ${spack_path}
+module load python/2.7.12
+module swap r/4.0.2
+module swap cdo/1.9.8
+module swap udunits/2.2.24
+module load nco/4.8.1
+module load git/2.27.0
+module load gcp
+
+#needed for role accnt
+module load globus
+

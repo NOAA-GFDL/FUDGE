@@ -271,8 +271,6 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
     slurm_header = "\n".join(['#!/bin/bash',
                               '#SBATCH -t '+auxdict['wallclocktime'],
-                              #'#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
-                              #'#SBATCH -J fudge_master',
                               '#SBATCH -c ' + str(ncpus),
                               '#SBATCH -p batch']) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
@@ -280,14 +278,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # checkout script is going to be used.
     module_loads = "\n".join(["set -x",
                               "set -e",
-                              ". /usr/local/Modules/default/init/bash",
-                              'module load R',
-                              'module load gcp',
-                              'module load netcdf',
-                              'module load nco',
                               'module load git/2.4.6',
                               'pwd',
-                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`']) + "\n"
+                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`', 
+                              "source $BASEDIR/set_fudge_env_bash"]) + "\n"
     #Commmands for making/manipulating file paths
     ds_var = auxdict['DS']['vars'][0]
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
