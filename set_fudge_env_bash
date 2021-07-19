@@ -4,4 +4,4 @@ echo "sourcing set_fudge_env located in fudge repository"
 module use $BASEDIR
 module load fudge-module
 
-set s8_tag = sec8-20190415
+s8_tag=sec8-20190415
