@@ -11,7 +11,7 @@ import math
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           auxdict, auxfile, scriptdir, fudgetag,
-                          not_strict_metadata, metadata_table):
+                          not_strict_metadata, metadata_table, queue):
     '''
     Creates runscripts (with dmget commands) based off of the aux input files -
     all files are present already
@@ -66,7 +66,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                               auxdict['OH'].keys()[0], is_syn,
                               dmget, gcp_str, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
-                              not_strict_metadata, metadata_table)
+                              not_strict_metadata, metadata_table, queue)
 
 
 def create_xml_runscripts(i_start, i_end, i_by, i_offset,
@@ -78,7 +78,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                           outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
                           auxfile, aux_file_list, wallclocktime,
                           auxdict, ds_minifile, experiment_name,
-                          not_strict_metadata, metadata_table):
+                          not_strict_metadata, metadata_table, queue):
     '''
     Creates runscripts (with dmget commands) based off of the xml input files -
     we need to build files from xml components
@@ -219,7 +219,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                               target_var, is_syn,
                               dmget_string, gcp_string, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
-                              not_strict_metadata, metadata_table)
+                              not_strict_metadata, metadata_table, queue)
 
 
 def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
@@ -228,7 +228,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                           dmget_string, gcp_string,
                           auxdict, auxfile_mod,
                           scriptdir, fudgetag,
-                          not_strict_metadata, metadata_table):
+                          not_strict_metadata, metadata_table, queue):
     '''
     Common commands for making the runscript and runcodes from the auxdict.
     Note that this now implies that the auxdict contains the scriptdir.
@@ -272,16 +272,18 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     slurm_header = "\n".join(['#!/bin/bash',
                               '#SBATCH -t '+auxdict['wallclocktime'],
                               '#SBATCH -c ' + str(ncpus),
-                              '#SBATCH -p batch']) + "\n"
+                              '#SBATCH -p ' + queue]) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
-    module_loads = "\n".join(["set -x",
-                              "set -e",
+    module_loads = "\n".join(["set -e",
                               'module load git/2.4.6',
-                              'pwd',
                               'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`', 
-                              "source $BASEDIR/set_fudge_env_bash"]) + "\n"
+                              'module purge',
+                              "source $BASEDIR/set_fudge_env_bash",
+                              "echo 'list of modules:'",
+                              "module list", 
+                              "set -x"]) + "\n"
     #Commmands for making/manipulating file paths
     ds_var = auxdict['DS']['vars'][0]
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
@@ -426,7 +428,9 @@ def make_meta_command(auxfile_mod, meta_final, scriptdir,
     meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
                               "meta_final=" + meta_final,
                               "meta_tmp=$TMPDIR/meta_file.json",
-                              "python -u ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
+                              "echo `which python`",
+                              #this comand was previously python -u - not working in this context?
+                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
                               "meta_status=$?",
                               'echo "status of meta call: $meta_status"',
                               "if [ $meta_status == 0 ]; then",

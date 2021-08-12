@@ -515,6 +515,7 @@ def main():
                        dest='metadata_table',
                        help="Path to a csv file containing instructions on how to derive metadata attributes from datasets. Defaults to the metadata table in the FUDGE repo; if working with new datasets, it may be useful to point to a user-supplied table rather than run with --not-strict-metadata.")
     parser.add_option('--no-dmget', action='store_true', default=False, dest='no_dmget', help="If set on the commandline, expergen will NOT source a file of dmget commands ($scriptdir/dmget_input_files.csh) for the input commands before exiting. This is meant as a precaution before submitting jobs when the dm queue is long; dmgetting before jobs run on the queue can reduce wallclocktime. This always runs if not set; the overall cost is low.")
+    parser.add_option('-q', '--queue', action='store', default='batch', dest='queue', help='If set on the commandline, expergen will submit all jobs (both R code chunks and postProc) to the to the specified queue (aka partition in slurm-speak). Possible options include: bigmem (more RAM) and batch7 (centOS7) ; if not set, all jobs are sent to the batch queue.')
     (options, args) = parser.parse_args()
 
     if(options.mail=="none"):
@@ -640,14 +641,15 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         sbatchmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table, options.no_dmget)
+                        options.not_strict, meta_table, options.no_dmget, 
+                        options.queue)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
                         sbase, sbatchmail, statmail, run_watcher,
-                        not_strict_metadata, metadata_table, no_dmget):
+                        not_strict_metadata, metadata_table, no_dmget, queue):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -748,7 +750,7 @@ def generate_experiment(parse_xml, create_default_aux,
                               ds_info['multivar_target'],
                               auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
                               auxdict, ds_minifile, expconfig,
-                              not_strict_metadata, metadata_table)
+                              not_strict_metadata, metadata_table, queue)
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -787,7 +789,7 @@ def generate_experiment(parse_xml, create_default_aux,
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
-                                  not_strict_metadata, metadata_table)
+                                  not_strict_metadata, metadata_table, queue)
 
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
@@ -861,9 +863,7 @@ def generate_experiment(parse_xml, create_default_aux,
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
     print("Making postproc scripts")
-    # 2019-05-29: updated to parse from auxdict rather than the experiment info file
-    #make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
-    make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
+    make_postProc_scripts(auxdict, fudgetag, NEMSemail1, queue)
     print("----------------------------------------")
     print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
@@ -881,10 +881,11 @@ def generate_experiment(parse_xml, create_default_aux,
         if (p4.returncode != 0):
             print("sourcing of dmget commands failed; please run with --no-dmget option")
             sys.exit(1)
+    queuespec = queue
     if sbatchmail == 1 and NEMSemail1 != 'none':
-        msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " "
+        msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " -p " + queuespec + " "
     else:
-        msub_string = "sbatch -D $HOME "
+        msub_string = "sbatch -D $HOME -p " + queuespec + " "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
     env_script = osp.abspath(osp.join(sbase, "environment_info.csh"))
     #msub_cmd = "source " + env_script + "; "

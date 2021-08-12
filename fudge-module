@@ -24,7 +24,7 @@ switch ${plat} {
 	} 
 } 
 
-module load python/2.7.12
+module load /usr/local/Modules/modulefiles/python/2.7.12
 module swap r/4.0.2
 module swap cdo/1.9.8
 module swap udunits/2.2.24

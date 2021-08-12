@@ -12,7 +12,7 @@ import smtplib
 import re
 
 
-def make_postProc_scripts(auxdict, fudgetag, mailid):
+def make_postProc_scripts(auxdict, fudgetag, mailid, queue):
     #Okay, this is going to go in a few steps:
     ensembles = auxdict['DS']['rips']
     vars = auxdict['DS']['vars']
@@ -54,7 +54,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                                                    '#SBATCH -t '+str(runtime),
                                                    "#SBATCH -J fudge_pp_" + str(v) + "." + str(t) + "." + str(m),
                                                    "#SBATCH -o " + pp_log_dir + "/%x.%j",
-                                                   "#SBATCH -p batch"]) + "\n"
+                                                   "#SBATCH -p " + queue]) + "\n"
                 if t == 'qcmask':
                     pp_var = v + '_qcmask'
                     indir_loop2 = osp.join(indir_loop2, pp_var)
@@ -116,12 +116,14 @@ def make_pp_runcode_commands(fudgetag, postproc_cmd):
     Assumes you've set some vars in set_pp_runcode_vars
       for readability.
     '''
+    # Including a manual load of git for the crowbar problem
     cmd = "\n".join(["echo 'Checking for prior postproc jobs...'",
                      "find $statdir/* | grep $desc",
                      "set ppstat = $status",
                      "if ($ppstat == 1) then",
-                     "	source $BASEDIR/set_fudge_env",
+                     "  module load git/2.27.0",
                      "	eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`",
+                     "	source $BASEDIR/set_fudge_env",
                      "	" + postproc_cmd,
                      "	if ( $status == 0 ) then",
                      "		 touch $statdir/${desc}.success",
