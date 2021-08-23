@@ -2,6 +2,7 @@ source /usr/local/Modules/default/init/tcsh
 echo "sourcing set_fudge_env located in fudge repository"
 
 module use $BASEDIR
-module swap fudge-module
+echo "loading $BASEDIR/fudge-module"
+module load fudge-module
 
 set s8_tag = sec8-20190415
