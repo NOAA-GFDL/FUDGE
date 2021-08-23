@@ -20,7 +20,7 @@ switch ${plat} {
 } 
 	hpcs-csc {
     module use "/app/spack/v0.15/modulefiles/linux-rhel6-x86_64/"
-    module load slurm
+    module swap slurm
 	} 
 } 
 
