@@ -427,9 +427,9 @@ for (r in 1:length(aux.ref$DS$rips)){
                             longname=paste(OH$metadata[[OH.vars[1]]]$long_name),
                             standard_name=paste(OH$metadata[[OH.vars[1]]]$long_name),
                             global_overwrite=meta_list$globals,
-                            global_clone_file = global_clone_file,
-                            clone_globals=clone_globals, clone_all=F,
-                            clone_include="frequency",clone_exclude="climatology",
+                            #global_clone_file = global_clone_file,
+                            #clone_globals=clone_globals, clone_all=F,
+                            #clone_include="frequency",clone_exclude="climatology",
                             verbose=F
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))

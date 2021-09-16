@@ -2,8 +2,7 @@
 #execute_parallel.tcsh
 #helper script for backgrounding a process
 
-source /usr/local/Modules/3.1.6/init/csh
-module load nco
+source $BASEDIR/set_fudge_env
 #set in_command = ${1}
 set status_root = ${2}
 

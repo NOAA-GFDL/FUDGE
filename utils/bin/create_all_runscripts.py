@@ -11,7 +11,7 @@ import math
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           auxdict, auxfile, scriptdir, fudgetag,
-                          not_strict_metadata, metadata_table):
+                          not_strict_metadata, metadata_table, queue):
     '''
     Creates runscripts (with dmget commands) based off of the aux input files -
     all files are present already
@@ -23,7 +23,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     for dname in dataset_names:
         data_files += [auxdict[dname][el]['file'] for el in auxdict[dname].keys()]
     #None of these are going to be 'none':
-    dmget = "# Data files:\n" + "\n".join(["dmget " + el for el in data_files]) + "\n"
+    dmget = "\n".join(["dmget " + el for el in data_files]) + "\n"
     tmasks = []
     for dname in dataset_names:
         tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
@@ -34,14 +34,14 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     tmask_none = ["na", "none"]
     tmasks = [el for el in tmasks if el not in tmask_none]
     if len(tmasks) > 0:
-        dmget += "# Time mask files:\n" + "\n".join(["dmget " + el for el in tmasks]) + "\n"
+        dmget += "\n".join(["dmget " + el for el in tmasks]) + "\n"
     geomasks = []
     for dname in dataset_names:
         geomasks += [auxdict[dname][el]['geomask'] for el in auxdict[dname].keys()]
     geomasks = list(set(geomasks))
     geomasks = [el for el in geomasks if el != 'none']
     if len(geomasks) > 0:
-        dmget += "# Spatial mask files:\n" + "\n".join(["dmget " + el for el in geomasks]) + "\n"
+        dmget +=  "\n".join(["dmget " + el for el in geomasks]) + "\n"
     # Create the gcps for the script
     file_list = data_files + geomasks + tmasks
     mkdir_commands = ["mkdir -p $TMPDIR/" + osp.dirname(el) for el in file_list]
@@ -66,7 +66,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                               auxdict['OH'].keys()[0], is_syn,
                               dmget, gcp_str, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
-                              not_strict_metadata, metadata_table)
+                              not_strict_metadata, metadata_table, queue)
 
 
 def create_xml_runscripts(i_start, i_end, i_by, i_offset,
@@ -78,7 +78,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                           outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
                           auxfile, aux_file_list, wallclocktime,
                           auxdict, ds_minifile, experiment_name,
-                          not_strict_metadata, metadata_table):
+                          not_strict_metadata, metadata_table, queue):
     '''
     Creates runscripts (with dmget commands) based off of the xml input files -
     we need to build files from xml components
@@ -159,18 +159,25 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                                                trange=mf_timerange,
                                                suffix=idirsuffix,
                                                is_multivar=True)
-    # Set hooks for is_prime and is_fixed qualities for the vars
-    oh_prime = oh_fixed = [False for el in oh_vars]
-    mh_prime = mh_fixed = [False for el in predlist]
-    mf_prime = mf_fixed = [False for el in predlist]
+    # Set hooks for is_prime and no_grid qualities for the vars
+    # as of 2021, no_grid is referenced by metadata functions
+    oh_prime = [False for el in oh_vars]
+    mh_prime = [False for el in predlist]
+    mf_prime = [False for el in predlist]
+    oh_prime[0] = True 
+    mh_prime[0] = True
+    mf_prime[0] = True 
+    oh_nogrid = [False for el in oh_vars]
+    mh_nogrid = [False for el in predlist]
+    mf_nogrid = [False for el in predlist]
     # Add modified aux copy & structure addition
-    oh_auxdict = make_aux_entry(oh_vars,  oh_files, oh_prime, oh_fixed,
+    oh_auxdict = make_aux_entry(oh_vars,  oh_files, oh_prime, oh_nogrid,
                                 stencil=auxdict['OH']['stencil'],
                                 geomask=spatmask_path, tmask=OH_tmask)
-    mh_auxdict = make_aux_entry(predlist, mh_files, mh_prime, mh_fixed,
+    mh_auxdict = make_aux_entry(predlist, mh_files, mh_prime, mh_nogrid,
                                 stencil=auxdict['MH']['stencil'],
                                 geomask=spatmask_path, tmask=MH_tmask)
-    mf_auxdict = make_aux_entry(predlist, mf_files, mf_prime, mf_fixed,
+    mf_auxdict = make_aux_entry(predlist, mf_files, mf_prime, mf_nogrid,
                                 stencil=auxdict['MF']['stencil'],
                                 geomask=spatmask_path, tmask=MF_tmask)
     ds_auxdict = make_ds_aux_entry(ds_minifile, outdir_string, oh_vars[0],
@@ -212,7 +219,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                               target_var, is_syn,
                               dmget_string, gcp_string, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
-                              not_strict_metadata, metadata_table)
+                              not_strict_metadata, metadata_table, queue)
 
 
 def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
@@ -221,7 +228,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                           dmget_string, gcp_string,
                           auxdict, auxfile_mod,
                           scriptdir, fudgetag,
-                          not_strict_metadata, metadata_table):
+                          not_strict_metadata, metadata_table, queue):
     '''
     Common commands for making the runscript and runcodes from the auxdict.
     Note that this now implies that the auxdict contains the scriptdir.
@@ -243,8 +250,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
 
-    if is_syn:
-        j_elements = [1,2]
+    #turned off setting of is_syn for Kieran's experiments in 08-2021; 
+    #R code expects j elements of 0-0
+    #if is_syn:
+    #    j_elements = [1,2]
     if len(j_elements) == 1:
         j_elements.append(j_elements[0])
 
@@ -264,23 +273,19 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
     slurm_header = "\n".join(['#!/bin/bash',
                               '#SBATCH -t '+auxdict['wallclocktime'],
-                              #'#SBATCH -o ' + scriptdir+'/log/'+'fudge.%x.%j',
-                              #'#SBATCH -J fudge_master',
                               '#SBATCH -c ' + str(ncpus),
-                              '#SBATCH -p batch']) + "\n"
+                              '#SBATCH -p ' + queue]) + "\n"
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
-    module_loads = "\n".join(["set -x",
-                              "set -e",
-                              ". /usr/local/Modules/default/init/bash",
-                              'module load R',
-                              'module load gcp',
-                              'module load netcdf',
-                              'module load nco',
-                              'module load git/2.4.6',
-                              'pwd',
-                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`']) + "\n"
+    module_loads = "\n".join(["set -e",
+                              'module swap git/2.4.6',
+                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`', 
+                              'module purge',
+                              "source $BASEDIR/set_fudge_env_bash",
+                              "echo 'list of modules:'",
+                              "module list", 
+                              "set -x"]) + "\n"
     #Commmands for making/manipulating file paths
     ds_var = auxdict['DS']['vars'][0]
     outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
@@ -295,6 +300,9 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     #swap out the newlines and dmgets in the dmget command
     dmget_bg_string  = re.sub("\ndmget", " ", dmget_string)
     dmget_bg_string = re.sub("  ", " ", dmget_bg_string)
+    
+    #Make the command to source the list of files for dmgetting within the script
+    script_dmgets = "$BASEDIR/utils/bin/dmget_files " + scriptdir + "/fudge_inputs.txt\n"
 
     # Finally, start opts that need to loop by index available
     runmode = ( stat.S_IROTH | stat.S_IRGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
@@ -375,7 +383,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
                     f.write(trap_command)
-                    f.write(dmget_bg_string)
+                    f.write(script_dmgets)
                     f.write(gcp_string)
                     f.write(outdir_cmd)
                     f.write(meta_command)
@@ -384,11 +392,13 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
             k += 1
     #2019-08: Adding sourcable script for dmgetting files
-    dmget_script = osp.join(scriptdir, "dmget_input_files.csh")
-    with open(dmget_script, 'w') as f:
-        f.write("#!/bin/tcsh\n")
-        f.write("# Script of dmget commands for the files in the FUDGE experiment\n")
-        f.write(dmget_bg_string)
+    #2021-03: File is now a text file of all files used by FUDGE
+    infile_list = osp.join(scriptdir, "fudge_inputs.txt")
+    dmget_list = dmget_bg_string.split(" ")[1:]
+    #remove any empty entries and strip whitespace
+    dmget_list = [x.strip() for x in dmget_list if x is not ""]
+    with open(infile_list, 'w') as f:
+    	f.write("\n".join(dmget_list))
     print('master runscript and mini creation completed')
 
 def make_trap_command(scriptdir, idx_string):
@@ -420,7 +430,9 @@ def make_meta_command(auxfile_mod, meta_final, scriptdir,
     meta_command = "\n".join(["# Call the metadata tester; copy to NFS filesystem",
                               "meta_final=" + meta_final,
                               "meta_tmp=$TMPDIR/meta_file.json",
-                              "python -u ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
+                              "echo `which python`",
+                              #this comand was previously python -u - not working in this context?
+                              "python ${BASEDIR}/utils/bin/standalone_metadata_tester.py --aux_input " + auxfile_mod + " --output $meta_tmp --verbose" + strict_str + meta_str,
                               "meta_status=$?",
                               'echo "status of meta call: $meta_status"',
                               "if [ $meta_status == 0 ]; then",
@@ -574,16 +586,16 @@ def make_executable_stuff(runscript_files, auxfile_mod, meta_final,
 
 
 def make_aux_entry(varnames=['fakevar'], files=['fake_file.nc'],
-                   is_prime=[False], is_fixed=[False],
+                   is_prime=[False], no_grid=[False],
                    stencil='none', tmask='none', geomask='none'):
     '''
     Makes an aux file entry of input data files for one of OH, MH or MF.
     '''
     aux_entry = OrderedDict()
-    for var, f, prime, fixed in zip(varnames, files, is_prime, is_fixed):
+    for var, f, prime, nog in zip(varnames, files, is_prime, no_grid):
         aux_entry[var] = {'file': f,
-                          'is_fixed': "TRUE" if is_fixed else "FALSE",
-                          'is_prime': "TRUE" if is_prime else "FALSE",
+                          'no_grid': "TRUE" if nog else "FALSE",
+                          'is_prime': "TRUE" if prime else "FALSE",
                           'stencil': stencil,
                           'geomask': geomask,
                           'tmask':   tmask}

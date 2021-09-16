@@ -1,20 +1,8 @@
-source /usr/local/Modules/3.1.6/init/tcsh
+source /usr/local/Modules/default/init/tcsh
 echo "sourcing set_fudge_env located in fudge repository"
 
-module load python/2.7.12
+module use $BASEDIR
+echo "loading $BASEDIR/fudge-module"
+module swap fudge-module
 
-set whichenv = `/home/gfdl/bin2/gfdl_platform`
-if ($whichenv == 'desktop') then
-  module use -a /app/spack/modulefiles/linux-rhel7-x86_64
-else
-  module use -a /app/spack/modulefiles/linux-rhel6-x86_64
-  module load slurm
-endif
-
-module load r/3.4.4-gcc-4.8.5
-module load nco/4.7.9-gcc-4.8.5
-module load gcp
-
-#needed for role accnt
-module load globus
 set s8_tag = sec8-20190415

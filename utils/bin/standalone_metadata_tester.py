@@ -2,7 +2,7 @@
 #!/usr/local/bin/python
 #Stand-alone FUDGE metadata tester
 
-import os,sys,stat,shutil,subprocess
+import os,sys,stat,shutil,subprocess,time
 from os import path as osp
 import numpy as np
 from subprocess import PIPE
@@ -25,9 +25,9 @@ if BASEDIR is None:
     print("Error in metadata setup: no version of fudge is checked out! Please check out a jamoca-or-later version of fudge.")
     sys.exit(1)
 sys.path.append(osp.join(BASEDIR, 'utils/aux'))
-sys.path.append(osp.join(BASEDIR, 'utils/bin'))
 from gcp import gcp
-from get_ds_info import make_aux_input, get_ds_info
+sys.path.append(osp.join(BASEDIR, 'utils/bin'))
+from get_ds_info import make_aux_input, get_ds_info, parse_gridspec
 from get_ds_info import add_ds_params_to_auxdict,add_s3_s5_params_to_auxdict
 from metadata_classify_fxns import get_experiment_metadata
 sys.path.append(osp.join(BASEDIR, 'bin'))
@@ -97,24 +97,20 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         else:
             metadata_table = osp.join(BASEDIR, "utils/aux/metadata_table.csv")
     #Initial check on whether "strict" parsing is appropriate
-    is_csv = False
     if auxdict['file_format'] == "csv":
-        is_csv = True
         if is_strict:
-            #print("Error in make_fudge_metadata: strict parsing is meaningless with csv files! Please turn off is_strict option")
-            #sys.exit(1)
-            print("Warning in make_fudge_metadata: strict parsing is meaningless with csv files; setting is_strict to FALSE")
-            is_strict = False
+            print("Error in make_fudge_metadata: strict parsing is meaningless with csv files! Please turn off is_strict option")
+            sys.exit(1)
     pred_dict = {}
     #This needs a provision for a qcmask of some kind
     #qc gets several special atts:
     #comment, longname
     #for v in auxdict$MH.keys():
     #    pred_dict[v] = {'none': None}
-    gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict();
+    gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict(); egd = OrderedDict();
     title = "" #initializing title here, because title gets added sooner
     gd['title'] = title
-    gd['institution'] = "NOAA/GFDL (201 Forrestal Rd, Princeton, NJ, 08540)"
+    gd['institution'] = "NOAA/GFDL"
     gd['institute_id'] = "NOAA/GFDL"
     gd['comment'] = "" #same deal for comment
     ##I think this should include this, but its not there yet
@@ -124,6 +120,11 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     fudgetag = os.environ.get('FUDGETAG')
     gd['fudgetag'] = fudgetag
     gd['ds_downscaling_method'] = auxdict['ds_method']
+    if 'gridspec' in auxdict.keys():
+        ds_grid = parse_gridspec(auxdict['gridspec'])['grid']
+    else:
+        ds_grid = auxdict['output_grid']
+    gd['gfdlesd_idgrid'] = ds_grid
     ## Similar false positive issue compared to the one below
     # gd['ds_experiment_name'] = auxdict['ds_experiment_name']
     p0 = subprocess.Popen("R --version", shell=True, stdout=PIPE, stderr=PIPE)
@@ -137,6 +138,12 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd['filenames_MH'] = get_filename_atts(auxdict['MH'])
     gd['filenames_MF'] = get_filename_atts(auxdict['MF'])
     #add the atts that are a dataset-dependent parse on metadata atts
+    oh_gridfiles = [auxdict['OH'][el]['file'] for el in auxdict['OH'].keys() if auxdict['OH'][el]['no_grid'] == "FALSE"]
+    mh_gridfiles = [auxdict['MH'][el]['file'] for el in auxdict['MH'].keys() if auxdict['MH'][el]['no_grid'] == "FALSE"]
+    mf_gridfiles = [auxdict['MF'][el]['file'] for el in auxdict['MF'].keys() if auxdict['MF'][el]['no_grid'] == "FALSE"]
+    check_grid_att('gfdlesd_idgrid', ds_grid, oh_gridfiles, "OH", is_strict)
+    check_grid_att('gfdlesd_idgrid', ds_grid, mh_gridfiles, "MH", is_strict)
+    check_grid_att('gfdlesd_idgrid', ds_grid, mf_gridfiles, "MF", is_strict)
     '''
     prime_var = [k for k in auxdict['MF'].keys() if auxdict['MF'][k]['is_prime']]
     #All of this needs to be checked for working with a non-stated prime var
@@ -147,13 +154,9 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     '''
     prime_var = auxdict['OH'].keys()[0]
     OH_file = auxdict['OH'][prime_var]['file']
-    if prime_var in auxdict['MF'].keys():
-        MF_var = prime_var
-    else:
-        MF_var = auxdict['MF'].keys()[0]
-    ds_var = auxdict['DS']['vars'][0]
-    MF_file = auxdict['MF'][MF_var]['file']
-    gd, pd = get_experiment_metadata(gd, pd, OH_file, MF_file,
+    MH_file = auxdict['MH'][prime_var]['file']
+    MF_file = auxdict['MF'][prime_var]['file']
+    gd, pd = get_experiment_metadata(gd, pd, OH_file, MH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
                                      is_strict=is_strict,
@@ -173,30 +176,45 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     predictor_vars = ",".join(auxdict['MF'].keys())
     train_string = ds_info['train_datasets']
     fut_rips = ",".join(auxdict['DS']['rips'])
-    gd['comment'] = make_global_comment(auxdict['ds_method'], ds_var,
+    gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var,
                                         auxdict['ds_region'],
                                         auxdict['output_grid'],
                                         auxdict['kfold'],
                                         auxdict['ds_experiment_name'],
                                         train_string, predictor_vars, fut_rips)
+    #add timestamp of script creation
+    exp_info = auxdict['script_settings']['scriptdir'].rstrip("/") + "/experiment_info.txt"
+    gd['scriptgen_timestamp'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(osp.getmtime(exp_info)))
+    gd['experiment_info'] = exp_info
     #Climatology and trend are more complicated - depending on the workflow,
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
-    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, MF_var, is_running_standalone, is_csv))
+    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, is_running_standalone))
     #attributes by variable
     var_longname = ""
-    vd[ds_var] = {"longname": var_longname}
+    vd[prime_var] = {"longname": var_longname}
     if auxdict['make_qcmask']:
-        qc_var = ds_var + "_qcmask"
+        qc_var = prime_var + "_qcmask"
         qc_comment = make_qc_comment(auxdict['qc_method'], auxdict['ds_method'], BASEDIR)
         qc_longname = make_qc_longname(auxdict['qc_method'], auxdict['ds_method'], prime_var)
         global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips, str(auxdict['minsamplesize']))
         vd[qc_var] = {"longname": qc_longname,
                       "comment": qc_comment,
                       "globals": {"comment": global_comment}}
+    #As of 2021, trying to move some metadata operations from ensemble 
+    #process to a common location (here). 
+    egd['epoch'] = gd['ds_scenario']
+    try:
+        egd['trange'] = get_trange_from_filename(MF_file)
+    except:
+        if not is_strict:
+            egd['trange'] = "none"
+        else:
+            sys.exit(2)
     #so now we've got 3 dicts: globals, provenance (of globals) and by var
     ad = OrderedDict()
-    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd;
+    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd; 
+    ad['ensemble_globals'] = egd;
     #And finally, write the whole thing to file
     print("Wrting to: " + meta_file)
     meta_text = json.dumps(ad, indent=2)
@@ -243,15 +261,15 @@ def arg_tostring(arg):
     return(ret)
 
 
-def get_climatology_atts(auxdict, OH_var, MF_var, is_running_standalone, is_csv):
+def get_climatology_atts(auxdict, var, is_running_standalone):
     #Gets the attributes that you'd need for writing trend/climatology metadata
     clim_source = auxdict['climo_source']
     if type(clim_source) is list:
         clim_source = clim_source[0]
     if clim_source == "MF":
-        clim_file = auxdict['MF'][MF_var]['file']
+        clim_file = auxdict['MF'][var]['file']
     elif clim_source == "OH":
-        clim_file = auxdict['OH'][OH_var]['file']
+        clim_file = auxdict['OH'][var]['file']
     else:
         print("Error in standalone_metadata_tester.py: climo_source was not set in the auxdict!")
         sys.exit(1)
@@ -260,16 +278,15 @@ def get_climatology_atts(auxdict, OH_var, MF_var, is_running_standalone, is_csv)
     if is_running_standalone:
         clim_source = gcp(clim_file)
     attdict = {}
-    if not is_csv:
-        with Dataset(clim_file, 'r') as nc_obj:
-            try:
-                attdict['climatology'] = nc_obj.__dict__['climatology']
-            except:
-                print("No climatology found")
-            try:
-                attdict['trend'] = nc_obj.__dict__['trend']
-            except:
-                print("No trend found")
+    with Dataset(clim_file, 'r') as nc_obj:
+        try:
+            attdict['climatology'] = nc_obj.__dict__['climatology']
+        except:
+            print("No climatology found")
+        try:
+            attdict['trend'] = nc_obj.__dict__['trend']
+        except:
+            print("No trend found")
     return(attdict)
 
 def get_filename_atts(data_struct):
@@ -322,16 +339,33 @@ def get_stencil_atts(auxdict):
         stencils = list(set(stencils))
         stencil_list.append(k + ":" + ",".join(stencils))
     return(",".join(stencil_list))
+    
+def get_trange_from_filename(esd_file):
+    #Given a file with a date in $startdate-$enddate form in the filename, 
+    #determines the trange from the name of the file. 
+    fname = os.path.basename(esd_file)
+    fsplit = re.split("_", fname)
+    patt = "(\d*-\d*)"
+    is_found = False
+    for f in fsplit:
+        fmatch = re.match(patt, f)
+        if fmatch is not None:
+            is_found = True
+            datesplit = re.split('-', f)
+            start_date = datesplit[0]
+            end_date = datesplit[1]
+            startyear = start_date[:4]
+            endyear = end_date[:4]
+    if not is_found:
+        print("Error in get_trange_from_filename: no string matching " + patt + "was found in the filename!")
+        sys.exit(1)
+    return(startyear + "-" + endyear)
 
 def make_qc_longname(qc_method, ds_method, ds_var):
     #Makes a longname for the qc data (or more generally, s3/s5)
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_longname = "Delta of " + ds_var
-        elif ds_method == "BCMM":
-            qc_longname = "Bias of " + ds_var
-        elif ds_method == 'CFQM':
-            qc_longname = "Out-of-bounds tracking of " + ds_var
         else:
             qc_longname = "Training qcmask for " + ds_var
     else:
@@ -352,10 +386,6 @@ def make_qc_comment(qc_method, ds_method, BASEDIR):
     if qc_method == 'qc.train':
         if ds_method == 'DeltaSD':
             qc_comment = "Delta used to generate DS output at a given x,y,t"
-        if ds_method == "BCMM":
-            qc_comment = "Bias of historical (MH - OH) at a given x,y,t"
-        elif ds_method == "CFQM":
-            qc_comment = "Places in DS timeseries where (OH >= max(MH)) = 2 and (OH <= min(MH)) = 1"
     return(qc_comment)
 
 def make_global_comment(ds_method, var, region, grid, kfold, exp_name, train_data, predictor_vars, fut_rips):
@@ -369,14 +399,9 @@ def make_qc_global_comment(ds_method, qc_method, var, region, grid, kfold, exp_n
     #Makes global comment for qc vars; some switches based on qc method
     make_start = True
     if qc_method == 'qc.train':
-        if ds_method == 'DeltaSD' or ds_method == "BCMM" or ds_method == 'CFQM':
+        if ds_method == 'DeltaSD':
             make_start = False
-            if ds_method == 'DeltaSD':
-                start = "Output to document the delta ratio applied at individual x,y,twindow locations "
-            elif ds_method == 'CFQM':
-                start = "Output to document out-of-bounds conditions for OH relative to MH "
-            else:
-                start = "Output to document the bias applied at individual x,y,twindow locations "
+            start = "Output to document the delta ratio applied at individual x,y,twindow locations "
         else:
             qc_str = "where 1=minsamplesize requirements (n>" + minsamplesize + ") met for " + train_data + " and missing indicates retry option invoked"
     elif qc_method == "tail.adjust":
@@ -396,6 +421,50 @@ def make_main_comment(region, grid, kfold, exp_name, desc, train_data, predictor
     config = "with experiment configuration " + exp_name + '. '
     train = " trained on " + train_data + " using predictor variable(s) " + predictor_vars + " and future predictor rips " + fut_rips
     return(main + kfold + config + desc + train)
+    
+def check_grid_att(grid_attname, grid_attval, file_list, file_type, is_strict=True):
+    '''
+    checks name of grid given in csv against attributes in the file
+    For now, this is a dumb check  - earlier filename steps don't 
+    filter based on whether files are expected to be gridless; 
+    in future that will also probably be a metadata attribute.
+    is_strict refers to whether this step fails if metadata errors don't match;
+    number of lon/lat val errors are different.
+    '''
+    if len(file_list) == 0:
+        print("Error in check_grid_att: file_list passed is empty!")
+        sys.exit(1)
+    lat_vals = []
+    lon_vals = []
+    #if file_list isn't a list, cast it as a list here.     
+    for f in file_list:
+        with Dataset(f, 'r') as nc_obj:
+            global_atts = nc_obj.__dict__.keys()
+            var_names = nc_obj.variables.keys()
+            if grid_attname not in global_atts:
+                print("Warning in check_grid_att! " + file_type + " " + f + " did not have grid attribute " + grid_attname + "!")
+            else:
+                grid_fval = nc_obj.__dict__[grid_attname]
+                if grid_fval != grid_attval:
+                    print("Error in check_grid_att! " + file_type + " file " + f + " had grid attribute " + grid_fval + " which did not match val in gridspec," + grid_attval + "!")
+                    #if is_strict: sys.exit(1)
+                    sys.exit(1)
+            #check and store lat and lon dim length, if present
+            if 'lat' in var_names:
+                lat_vals.append(len(nc_obj.variables['lat']))
+            else:
+                lat_vals.append(1)
+            if 'lon' in var_names:
+                lon_vals.append(len(nc_obj.variables['lon']))
+            else:
+                lon_vals.append(1)
+        if lon_vals.count(lon_vals[0]) != len(lon_vals):
+            print("Error in check_grid_att: one or more gridded " + file_type + " files did not have same number of lon vals")
+            sys.exit(1)
+        if lat_vals.count(lat_vals[0]) != len(lat_vals):
+            print("Error in check_grid_att: one or more gridded " + file_type + " files did not have same number of lat vals")
+            sys.exit(1)
+                    
 
 def add_input_file_params(auxdict, lots_of_other_params):
     '''

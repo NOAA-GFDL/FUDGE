@@ -1,4 +1,5 @@
 dataset,attribute,attgrep,data_class
+gfdlesd,gfdlesd_idname,'.*',gfdlesd
 HIRAM,gfdl_experiment_name,HIRAM,HIRAM
 HIRAM,model_id,HIRAM,HIRAM
 BCC-CSM1-1,model_id,BCC-CSM1-1,CMIP-5
@@ -14,4 +15,3 @@ CORDEX,project_id,CORDEX,CORDEX
 GFDL-FLORB01-p2FA,title,GFDL-FLORB01-p2FA,FLOR
 KB_SYN,experiment_id,QUANTILEMAP,KB_SYN
 CBAY,FILE_3,TPLM2,TPLM2
-GISS,model_id,GISS-E2-R,CMIP-5

@@ -14,6 +14,7 @@ from get_ds_info import parse_aux_info
 import os,sys,subprocess,shutil,time,copy
 from os import path as osp
 from subprocess import PIPE
+import datetime
 import argparse
 import shlex
 import smtplib
@@ -144,7 +145,8 @@ def finalize_metadata_out(xy_file, aux):
     attdict['downscaling_model_type'] = "statistical"
 
     attdict['gfdl_experiment_name'] = auxdict['ds_experiment_name']
-    #attdict['region_id'] = expdict['region']
+    now = datetime.datetime.now()
+    attdict['postproc_timestamp'] = now.strftime("%Y-%m-%d__%H:%M:%S")
     #attdict['predictand_calibration_datset'] = "dummy_data"
 
     #NCO = "I'm not entiretly sure I need to add this in now."

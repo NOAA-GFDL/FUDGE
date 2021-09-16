@@ -20,7 +20,7 @@ import get_npts_by
 from create_all_runscripts import create_auxfile_runscripts
 from create_all_runscripts import create_xml_runscripts
 from get_comment_specs import get_comment_specs, get_exp_check_tag
-from get_ds_info import get_ds_info, parse_aux_info, make_aux_input
+from get_ds_info import get_ds_info, parse_aux_info, make_aux_input, parse_gridspec
 from get_ds_info import add_ds_params_to_auxdict, add_s3_s5_params_to_auxdict
 from make_postProc_scripts import make_postProc_scripts
 from collections import OrderedDict
@@ -172,7 +172,7 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
         hi_ver = hi[ind+6]
         hi_expname = hi_exp+"_"+hi_rip
         hi_expname = hi_expname
-#		dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
+#        dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
         hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+output_grid+"/"+dim+"/"
         dictDS['proj']=hi_proj
         dictDS['product']=hi_product
@@ -281,9 +281,9 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     ##### end filename suffix ######
     # removing the following precipitation check. Checks in XMLGen should be good enough. And this condition may not apply any more. Espresso release
     # if(target != 'pr'):
-    #	if(pr_opts != 'na'):
-    #		print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
-    #		sys.exit()
+    #    if(pr_opts != 'na'):
+    #        print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
+    #        sys.exit()
     print "pr_opts:---------------- ",pr_opts
     #### pr_opts #########
     auxcustom1 = "na"  #$auxcustom1 now not used
@@ -304,11 +304,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     out_dir = out_dir.strip()
 
     property = checkTags(dictParams,'property')
-#c	if not bool(property):
-#c	    out_dir = out_dir+"#na#na"
-#c	    listoutdir = out_dir
-#c	else:
-#c	   print "or not"
+#c    if not bool(property):
+#c        out_dir = out_dir+"#na#na"
+#c        listoutdir = out_dir
+#c    else:
+#c       print "or not"
     out_dir,listoutdir =  parse_outdir(out_dir,property)
     #print "new out_dir", out_dir
     ###CEW edits - debugging single-ens I35 case
@@ -320,11 +320,11 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     else:
         copyprop = property['RIP']
         #copyprop = property.iteritems()
-#	print(property)
-#	print(out_dir, listoutdir)
-#	print(copyprop)
-#	print(property)
-#	sys.exit()
+#    print(property)
+#    print(out_dir, listoutdir)
+#    print(copyprop)
+#    print(property)
+#    sys.exit()
     if (len(listoutdir) > 1):
        print("Multi-output ON")
        global multi
@@ -373,7 +373,7 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
        if(file_j_range != ''):
            dsuffix=file_j_range
            dim1 = dim
-    #comment out RR a1r	dim = output_grid+"/"+dim1
+    #comment out RR a1r    dim = output_grid+"/"+dim1
        else:
            sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
     #print(dim1)
@@ -438,10 +438,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         preexist_glob = preexist
         ## CEW edit 2018-09-14
         #if(preexist == 'move'):
-        #	global preexist_glob
-        #	preexist_glob = 'move'
-        #	#print "preexist turned ON................"
-#	    return targetdir1,hist_pred_dir1,fut_pred_dir1
+        #    global preexist_glob
+        #    preexist_glob = 'move'
+        #    #print "preexist turned ON................"
+#        return targetdir1,hist_pred_dir1,fut_pred_dir1
         target_scenario = dict_target['exp']+"_"+dict_target['rip']
         target_model = dict_target['model']
         #CEW edit for testing purposes mip to freq
@@ -515,6 +515,7 @@ def main():
                        dest='metadata_table',
                        help="Path to a csv file containing instructions on how to derive metadata attributes from datasets. Defaults to the metadata table in the FUDGE repo; if working with new datasets, it may be useful to point to a user-supplied table rather than run with --not-strict-metadata.")
     parser.add_option('--no-dmget', action='store_true', default=False, dest='no_dmget', help="If set on the commandline, expergen will NOT source a file of dmget commands ($scriptdir/dmget_input_files.csh) for the input commands before exiting. This is meant as a precaution before submitting jobs when the dm queue is long; dmgetting before jobs run on the queue can reduce wallclocktime. This always runs if not set; the overall cost is low.")
+    parser.add_option('-q', '--queue', action='store', default='batch', dest='queue', help='If set on the commandline, expergen will submit all jobs (both R code chunks and postProc) to the to the specified queue (aka partition in slurm-speak). Possible options include: bigmem (more RAM) and batch7 (centOS7) ; if not set, all jobs are sent to the batch queue.')
     (options, args) = parser.parse_args()
 
     if(options.mail=="none"):
@@ -640,14 +641,15 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         sbatchmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table, options.no_dmget)
+                        options.not_strict, meta_table, options.no_dmget, 
+                        options.queue)
 
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
                         basedir, fudgetag, env_file, msub,
                         sbase, sbatchmail, statmail, run_watcher,
-                        not_strict_metadata, metadata_table, no_dmget):
+                        not_strict_metadata, metadata_table, no_dmget, queue):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
@@ -719,29 +721,26 @@ def generate_experiment(parse_xml, create_default_aux,
                                         "<RIP>",
                                         ds_region, fut_file_start_time, fut_file_end_time)
         print("Calling create_xml_runscripts")
-        idict = {'US48' : 748,
-                 'SCCSC0p1'  : 181,
-                 'RR'   : 181,
-                 'grid0': 0,
-                 'NEUSA': 1,
-                 'NEUSA0p1': 425}
-        jdict = {'US48' : 454,
-                 'SCCSC0p1'  : 31,
-                 'RR'   : 31,
-                 'grid0': 0,
-                 'NEUSA': 1,
-                 'NEUSA0p1': 127}
-        try:
-            i_offset = idict[output_grid]
-        except KeyError:
-            i_offset = 1
-        try:
-            j_offset = jdict[output_grid]
-        except KeyError:
-            j_offset = 1
+        if 'gridspec' in auxdict.keys():
+            ginfo = parse_gridspec(auxdict['gridspec'])
+            #check for agreement with XML:
+            if output_grid != ginfo['grid']:
+                print("Error in grid parsing: gridspec grid " + ginfo['grid'] + " and xml grid " + output_grid + " do not match!")
+                sys.exit(1)
+            elif output_grid == "":
+                print("Error in grid parsing: xml grid should not be an empty string!")
+                sys.exit(1)
+            i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
+            j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
+            #Copy to config directory
+            dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
+            shutil.copy2(auxdict['gridspec'], dest)
+        else:
+            #output grid or ds_region
+            i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
         print("Step 0: Create the unified runcscripts and master runscripts")
-        create_xml_runscripts(lons, lone, i_subset, i_offset,
-                              lats, late, j_subset, j_offset,
+        create_xml_runscripts(lons, lone, i_subset, i_off,
+                              lats, late, j_subset, j_off,
                               njobs, ncpus, fudgetag, sbase,
                               target_dir, hist_pred_dir, fut_pred_dir,
                               oh_timerange, mh_timerange, mf_timerange, predlist,
@@ -751,7 +750,7 @@ def generate_experiment(parse_xml, create_default_aux,
                               ds_info['multivar_target'],
                               auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
                               auxdict, ds_minifile, expconfig,
-                              not_strict_metadata, metadata_table)
+                              not_strict_metadata, metadata_table, queue)
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -771,7 +770,15 @@ def generate_experiment(parse_xml, create_default_aux,
         j_subset = auxdict['j_subset']
         # 2019-05-18: swapping output_grid for ds_region;
         # output_grid can include NEUSA0p1 and that leads to grid param errors
-        i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['ds_region'], basedir)
+        if 'gridspec' in auxdict.keys():
+            ginfo = parse_gridspec(auxdict['gridspec'])
+            i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
+            j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
+            #Copy to config directory
+            dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
+            shutil.copy2(auxdict['gridspec'], dest)
+        else:
+            i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
@@ -782,7 +789,7 @@ def generate_experiment(parse_xml, create_default_aux,
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
-                                  not_strict_metadata, metadata_table)
+                                  not_strict_metadata, metadata_table, queue)
 
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
@@ -856,9 +863,7 @@ def generate_experiment(parse_xml, create_default_aux,
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
     print("Making postproc scripts")
-    # 2019-05-29: updated to parse from auxdict rather than the experiment info file
-    #make_postProc_scripts(listrips, sbase, fudgetag, NEMSemail1, auxinfo['pp_wallclocktime'])
-    make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
+    make_postProc_scripts(auxdict, fudgetag, NEMSemail1, queue)
     print("----------------------------------------")
     print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
@@ -869,17 +874,18 @@ def generate_experiment(parse_xml, create_default_aux,
     config_mod = [el for el in os.listdir(osp.join(sbase, 'config_mod')) if re.search('json', el) is not None][0]
     make_all_ds_paths(osp.join(sbase, 'config_mod/' +config_mod), outfile_loc)
     if not no_dmget:
-        dmget_script = osp.join(sbase, 'dmget_input_files.csh')
+        dmget_script = osp.join(basedir, "utils/bin/dmget_files") + " " + osp.join(sbase, 'fudge_inputs.txt')
         print("sourcing dmget commands for the experiment: " + dmget_script)
-        p4 = subprocess.Popen('tcsh ' + dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p4 = subprocess.Popen(dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
         out4,err4 = p4.communicate()
         if (p4.returncode != 0):
             print("sourcing of dmget commands failed; please run with --no-dmget option")
             sys.exit(1)
+    queuespec = queue
     if sbatchmail == 1 and NEMSemail1 != 'none':
-        msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " "
+        msub_string = "sbatch -D $HOME --mail-type END --mail-user " + NEMSemail1 + " -p " + queuespec + " "
     else:
-        msub_string = "sbatch -D $HOME "
+        msub_string = "sbatch -D $HOME -p " + queuespec + " "
     master_scripts = [osp.join(sbase,'master/',el) for el in os.listdir(osp.join(sbase, 'master')) if re.search('master_script_', el) is not None]
     env_script = osp.abspath(osp.join(sbase, "environment_info.csh"))
     #msub_cmd = "source " + env_script + "; "
@@ -887,21 +893,18 @@ def generate_experiment(parse_xml, create_default_aux,
     for el in master_scripts:
         #msub_cmd can be saved for later
         print(el)
-        msub_cmd = msub_cmd + msub_string + el + "; sleep 0.5; "
-    if msub:
-        p5 = subprocess.Popen(msub_cmd,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        #p5 = subprocess.Popen('tcsh -c "'+msub_cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        output5, errors5 = p5.communicate()
-        #######
-        if(p5.returncode != 0):
-            print("Step5:!!!! FAILED !!!!, please contact developer.")
-            print(msub_cmd)
-            print(output5, errors5)
-            sys.exit(1)
-        print(output5)
-        print(errors5)
-        print("'"+msub_cmd+"'")
-        print("5 - completed")
+        msub_cmd = msub_cmd + msub_string + el + "; "
+        msub_short = msub_string + el + "; sleep 1"
+        if msub:
+            p5 = subprocess.Popen(msub_short,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+            output5, errors5 = p5.communicate()
+            if(p5.returncode != 0):
+                print("Step5:!!!! FAILED !!!!, please contact developer.")
+                print(msub_cmd)
+                print(output5, errors5)
+                sys.exit(1)
+    print("'"+msub_cmd+"'")
+    print("5 - completed")
     print("-----------")
     if not msub:
         print("--sbatch not set on command line. To submit jobs at a later point, please use the following:")
@@ -1005,7 +1008,7 @@ def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_
         fileid= ".I"+str(lon)+"_"+str(Jsuffix)+filesuff
         filename = variable+"_"+"day"+"_"+exper+"_"+str(scenario)+"_"+str(region)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
         if(os.path.exists(dire+"/"+filename)):
-        #	print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
+        #    print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
             exists = True
     return exists
 
