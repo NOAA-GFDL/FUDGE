@@ -110,7 +110,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd = OrderedDict(); pd = OrderedDict(); vd = OrderedDict(); egd = OrderedDict();
     title = "" #initializing title here, because title gets added sooner
     gd['title'] = title
-    gd['institution'] = "NOAA/GFDL (201 Forrestal Rd, Princeton, NJ, 08540)"
+    gd['institution'] = "NOAA/GFDL"
     gd['institute_id'] = "NOAA/GFDL"
     gd['comment'] = "" #same deal for comment
     ##I think this should include this, but its not there yet
@@ -204,7 +204,13 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #As of 2021, trying to move some metadata operations from ensemble 
     #process to a common location (here). 
     egd['epoch'] = gd['ds_scenario']
-    egd['trange'] = get_trange_from_filename(MF_file)
+    try:
+        egd['trange'] = get_trange_from_filename(MF_file)
+    except:
+        if not is_strict:
+            egd['trange'] = "none"
+        else:
+            sys.exit(2)
     #so now we've got 3 dicts: globals, provenance (of globals) and by var
     ad = OrderedDict()
     ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd; 
@@ -335,22 +341,24 @@ def get_stencil_atts(auxdict):
     return(",".join(stencil_list))
     
 def get_trange_from_filename(esd_file):
-    #Given a file in ESD-standard construction (i.e. with the dates LAST
-    #in the filename string), determines the trange from the name of the 
-    #file. 
-    #NOTE: failure on this function does not currently lead to a big gaping
-    #error becuase this cpaticular code is only invoked for the metadata changes
-    #associated with our ensemble-generation code.
+    #Given a file with a date in $startdate-$enddate form in the filename, 
+    #determines the trange from the name of the file. 
     fname = os.path.basename(esd_file)
     fsplit = re.split("_", fname)
-    daterange = fsplit[6]
-    #if not full:
-    startyear = re.split("-", daterange)[0][:4]
-    endyear = re.split("-", daterange)[1][:4]
-    #else:
-    #startyear = re.split("-", daterange)[0][:8]
-    #endyear = re.split("-", daterange)[1][:8]
-    #trange = startyear + "-" + endyear
+    patt = "(\d*-\d*)"
+    is_found = False
+    for f in fsplit:
+        fmatch = re.match(patt, f)
+        if fmatch is not None:
+            is_found = True
+            datesplit = re.split('-', f)
+            start_date = datesplit[0]
+            end_date = datesplit[1]
+            startyear = start_date[:4]
+            endyear = end_date[:4]
+    if not is_found:
+        print("Error in get_trange_from_filename: no string matching " + patt + "was found in the filename!")
+        sys.exit(1)
     return(startyear + "-" + endyear)
 
 def make_qc_longname(qc_method, ds_method, ds_var):

@@ -250,8 +250,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
 
-    if is_syn:
-        j_elements = [1,2]
+    #turned off setting of is_syn for Kieran's experiments in 08-2021; 
+    #R code expects j elements of 0-0
+    #if is_syn:
+    #    j_elements = [1,2]
     if len(j_elements) == 1:
         j_elements.append(j_elements[0])
 
