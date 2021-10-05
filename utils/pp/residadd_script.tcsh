@@ -2,8 +2,7 @@
 #c-shell script for residaly addition + metadata
 
 set echo
-module load nco
-module load gcp
+source $BASEDIR/set_fudge_env
 
 
 set var = $1

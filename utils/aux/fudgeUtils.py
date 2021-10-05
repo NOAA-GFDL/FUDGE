@@ -6,6 +6,10 @@ from subprocess import PIPE
 import re
 
 # 2019-05-28: gcp is now in its own file, with commandline args
+<<<<<<< HEAD
+=======
+# search for gcp.py
+>>>>>>> master
 
 def read_exp_info_file(exp_info, convert_to_j = True):
     #Reads data formatted in the general form of an experiment info file

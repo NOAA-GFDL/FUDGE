@@ -1,0 +1,7 @@
+source /usr/local/Modules/default/init/bash
+echo "sourcing set_fudge_env located in fudge repository"
+
+module use $BASEDIR
+module swap fudge-module
+
+s8_tag=sec8-20190415

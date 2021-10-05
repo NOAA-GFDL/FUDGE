@@ -146,7 +146,6 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
       hist.pred.tmp <- sort(hist.pred.tmp, na.last=FALSE)
       oh.len <- length(hist.targ.tmp)
       oh.pres <- which(!is.na(hist.targ.tmp))[1]
-
       ds.args$stride <- 1
       parm.train.data <- parm.train(hist.pred.tmp[oh.pres:oh.len], 
                                     hist.targ.tmp[oh.pres:oh.len], 
@@ -193,6 +192,7 @@ callPARM <- function(hist_pred, hist_targ, fut_pred, args,
   }
   return(list(ds=out.data, qc=qc))
 }
+
 
 parm.train <- function(hist_pred, hist_targ, args){
   #'Assume for now that the dataset merging is done up in a prior step - 

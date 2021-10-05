@@ -420,12 +420,9 @@ def check_master_status(master_statdir, masterdir, retry, scriptdir, verbose):
             status = 'success'
         elif resubmit:
             submit_retry_scripts(master_statdir, masterdir, scriptdir)
-            print(("retry: " + str(retry)))
-            print(("master retry: " + str(max_retry)))
-            print((str(retry < max_retry)))
-            #if retry < max_retry:
-            #    # Re-submit the master scripts in question - this might be a gcp failure
-            #    submit_retry_scripts(master_statdir, masterdir)
+            print("retry: " + str(retry))
+            print("master retry: " + str(max_retry))
+            print(str(retry < max_retry))
         else:
             print("Failure in master script and max number of retries met")
             status = 'fail'

@@ -40,6 +40,7 @@ limited_tail_cutoff <- function(MH, OH, MF, DS, args){
   ds.rank <- rank(DS, ties='first')  #used to get sorted output in same order as unsorted ds
   ds.order = order(DS)
   DS = sort(DS)
+  ds.order = order(DS)
   MF = MF[ds.order]
   mf.points <- args$tail_len:length(DS)-args$tail_len
   

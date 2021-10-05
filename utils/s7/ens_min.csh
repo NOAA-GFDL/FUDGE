@@ -1,15 +1,8 @@
 #!/bin/tcsh -f
 #Minimal script for adding ensemble data together
 #needed to allow module loads when not using current environment
-source /usr/local/Modules/default/init/csh
-#module list
-module load netcdf/4.2
-#module unload nco
-module load nco/4.3.1
-#module unload ncarg
-module load ncarg/6.2.1
-#module load gcp/2.3
-#module list
+source $BASEDIR/set_fudge_env
+
 #Please note that the scraper script uses the default python install. If cdat
 #is loaded, the python script will fail.
 set outFile = $argv[1]
