@@ -309,21 +309,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         copyprop = property
     else:
         copyprop = property['RIP']
-        #copyprop = property.iteritems()
-#    print(property)
-#    print(out_dir, listoutdir)
-#    print(copyprop)
-#    print(property)
-#    sys.exit()
-    if (len(listoutdir) > 1):
-       print("Multi-output ON")
-       global multi
-       multi = "on"
-    else:
-       print("single output on")
-       global multi
-       multi = "off"
->>>>>>> l_ens_metafix
     ##script -and- log prefix section ##
     sroot = checkTags(dictParams,'sroot')
     sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"

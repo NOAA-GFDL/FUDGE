@@ -9,11 +9,6 @@ from os import path as osp
 from subprocess import PIPE
 import re
 from optparse import OptionParser
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email.Utils import COMMASPACE, formatdate
-from email import Encoders
 import traceback
 from fudgeUtils import send_status_email
 from concatenate_file import concatenate_files
@@ -118,7 +113,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
     output_files = [el for el in output_files if el is not None]
     print("Concatenation operations complete." + "\n")
     for el in output_files:
-        print "\t" + el
+        print("\t" + el)
     sys.exit(0)
 
 
@@ -133,7 +128,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
         #You need to do the add operations (note: adds here include copies. Yes, it's weird.)
         if ("Anom" in var):
             if is_ds:
-                print "Calling the anomaly addition script"
+                print("Calling the anomaly addition script")
                 anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
                 print(osp.dirname(anom_file))
                 copy_file = anom_file
@@ -144,14 +139,14 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
                 copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
         elif ("Detr" in var):
             if is_ds:
-                print "Calling the trend/resid addition script"
+                print("Calling the trend/resid addition script")
                 anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
                 climvar = re.sub('Detr', '', var)
             else:
                 print("Copying qc file to final destination")
                 copy_file = callCopyToTrendDetr(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
     else:
-        print "None of " + ",".join(add_strings)," found in var; no adding/trending operations take place."
+        print("None of " + ",".join(add_strings)," found in var; no adding/trending operations take place.")
     return(copy_file)
 
 def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwrite=False):
@@ -234,10 +229,10 @@ def proc_all_files(exp_info, out_dir):
             if not any(supp_strings) in var:
                 #You need to do the add operations (note: adds here include copies. Yes, it's weird.)
                 if ("Anom" in var):
-                    print "Calling the anomaly addition script"
+                    print("Calling the anomaly addition script")
                     anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
                 elif ("Detr" in var):
-                    print "Calling the trend addition script"
+                    print("Calling the trend addition script")
                     anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
             #Copy operations are predictable, and called by everything
             if ("Anom" in var):

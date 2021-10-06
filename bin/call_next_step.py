@@ -98,7 +98,7 @@ def main(scriptdir, sleep=60, nloops=100,
     status = 'wait'
     is_done = False
     t = 0
-    t_max = nloops
+    t_max = int(nloops)
     #sleepytime = 60 * 10
     sleepytime = float(sleep)
     outfiles = OrderedDict()
