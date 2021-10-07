@@ -763,7 +763,11 @@ def generate_experiment(parse_xml, create_default_aux,
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
     if ds_info["downscale_oh"]:
-        if list(auxdict['OH'].keys())[0] == 'pr':
+        #all online documentation says that this should be solvable with a 
+        #simple list() to conver the keys. It is not.
+        oh_keys = auxdict["OH"].keys()
+        oh_keys = [*oh_keys]
+        if oh_keys[0] == 'pr':
             print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
             sys.exit(1)
         if len( auxdict['DS']['rips']) > 1:
@@ -789,7 +793,7 @@ def generate_experiment(parse_xml, create_default_aux,
                 indirs += [osp.dirname(auxdict[d][el]['file']) for el in list(auxdict[d].keys())]
         if any([re.search('Pwl', el) is not None for el in indirs]):
             fcmd += ' --parse-j-style'
-        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True, text=True)
         out, err = f.communicate()
         auxloc = sbase + "/config/" + osp.basename(auxinput)
         shutil.copy2(auxinput, auxloc)
@@ -844,7 +848,7 @@ def generate_experiment(parse_xml, create_default_aux,
     if not no_dmget:
         dmget_script = osp.join(basedir, "utils/bin/dmget_files") + " " + osp.join(sbase, 'fudge_inputs.txt')
         print("sourcing dmget commands for the experiment: " + dmget_script)
-        p4 = subprocess.Popen(dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p4 = subprocess.Popen(dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE, text=True)
         out4,err4 = p4.communicate()
         if (p4.returncode != 0):
             print("sourcing of dmget commands failed; please run with --no-dmget option")
@@ -864,7 +868,7 @@ def generate_experiment(parse_xml, create_default_aux,
         msub_cmd = msub_cmd + msub_string + el + "; "
         msub_short = msub_string + el + "; sleep 1"
         if msub:
-            p5 = subprocess.Popen(msub_short,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+            p5 = subprocess.Popen(msub_short,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE, )
             output5, errors5 = p5.communicate()
             if(p5.returncode != 0):
                 print("Step5:!!!! FAILED !!!!, please contact developer.")
@@ -890,7 +894,7 @@ def generate_experiment(parse_xml, create_default_aux,
     if run_watcher:
         print("Submitting callNextStep for this job to analysis")
         print(("\033[1;42m" + ns_cmd + "\033[0;m" + "\n"))
-        p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE, )
         output6, errors6 = p6.communicate()
         #######
         if(p6.returncode != 0):
