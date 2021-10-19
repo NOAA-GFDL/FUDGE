@@ -24,7 +24,6 @@ from get_ds_info import get_ds_info, parse_aux_info, make_aux_input, parse_grids
 from get_ds_info import add_ds_params_to_auxdict, add_s3_s5_params_to_auxdict
 from make_postProc_scripts import make_postProc_scripts
 from collections import OrderedDict
-from watcher import runWatcher #,_v_print
 from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
 from check_aux_consistency import check_aux_consistency

@@ -7,7 +7,6 @@ from subprocess import PIPE
 import argparse
 import shlex
 import fudgeList
-import checker
 import smtplib
 import re
 import netCDF4
