@@ -416,6 +416,10 @@ for (r in 1:length(aux.ref$DS$rips)){
     global_clone_file = OH.files[[1]]
     clone_globals = T
   }
+  var_atts <- list()
+  for (v in aux.ref$DS$vars){
+  	var_atts[[v]] <- list("missing_value" = 1e20)
+  }
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],
@@ -427,6 +431,7 @@ for (r in 1:length(aux.ref$DS$rips)){
                             longname=paste(OH$metadata[[OH.vars[1]]]$long_name),
                             standard_name=paste(OH$metadata[[OH.vars[1]]]$long_name),
                             global_overwrite=meta_list$globals,
+                            var_attributes=var_atts,
                             #global_clone_file = global_clone_file,
                             #clone_globals=clone_globals, clone_all=F,
                             #clone_include="frequency",clone_exclude="climatology",
