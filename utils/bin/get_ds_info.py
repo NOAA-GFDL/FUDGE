@@ -68,43 +68,24 @@ def parse_aux_info(infile):
             print("Error in parse_aux_input: input " + infile + " is not json!")
             sys.exit(1)
         #wallclock time
-        if 'wallclocktime' in jsondict.keys():
-            #R's json converter helpfully wraps everything in lists.
-            if isinstance(jsondict['wallclocktime'], list):
-                wallclocktime=jsondict['wallclocktime'][0]
+        #defaults values for: wallclock time, njobs, ncpus, queue
+        #and corresponding pp settings
+        defaultdict = {'wallclocktime': '6:00:00', 
+                        'njobs': 8,
+                        "ncpus": 2,
+                        "queue": 'batch',
+                        "pp_wallclocktime": '6:00:00',
+                        #"pp_njobs": not acually used in our setup
+                        "pp_ncpus": 8,
+                        "pp_queue": "batch"}
+        for kd in defaultdict.keys():
+            if kd in jsondict.keys():
+                #R's json converter helpfully wraps everything in lists; unwrap
+                if isinstance(jsondict[kd], list):
+                    jsondict[kd]=jsondict[kd][0]
+                #otherwise nothing is needed
             else:
-                wallclocktime = jsondict['wallclocktime']
-        else:
-            wallclocktime='6:00:00'
-        jsondict['wallclocktime'] = wallclocktime
-        #pp wallclocktime
-        if 'pp_wallclocktime' in jsondict.keys():
-            if isinstance(jsondict['pp_wallclocktime'], list):
-                pp_wallclocktime=jsondict['pp_wallclocktime'][0]
-            else:
-                pp_wallclocktime = jsondict['pp_wallclocktime']
-        else:
-            pp_wallclocktime = '6:00:00'
-        jsondict['pp_wallclocktime'] = pp_wallclocktime
-        #njobs and ncpus parameters:
-        if 'njobs' in jsondict.keys():
-            njob_tmp = jsondict['njobs']
-            if isinstance(njob_tmp, list):
-                njobs = njob_tmp[0]
-            else:
-                njobs = njob_tmp
-        else:
-            njobs = 8
-        jsondict['njobs'] = njobs
-        if 'ncpus' in jsondict.keys():
-            ncpus_tmp = jsondict['ncpus']
-            if isinstance(ncpus_tmp, list):
-                ncpus = ncpus_tmp[0]
-            else:
-                ncpus = ncpus_tmp
-        else:
-            ncpus = 2
-        jsondict['ncpus'] = ncpus
+                jsondict[kd] = defaultdict[kd]
         #Subsets in i and j that we are interested in
         defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}
         subsetdict = {}
@@ -134,9 +115,14 @@ def parse_aux_info(infile):
                         copy_files.append(filetmp)
         if len(copy_files) > 1:
             copy_files = list(set(copy_files))
-    return({'copy_files':copy_files, 'wallclocktime':wallclocktime,
-            'pp_wallclocktime':pp_wallclocktime,
-            'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus}, jsondict)
+    #return({'copy_files':copy_files, 'wallclocktime':wallclocktime,
+    #        'pp_wallclocktime':pp_wallclocktime,
+    #        'subsetdict':subsetdict, 'njobs':njobs, 'ncpus':ncpus}, jsondict)
+    a_sublist = ['wallclocktime', 'pp_wallclocktime', 'njobs', 'ncpus']
+    adict = {a: jsondict[a] for a in a_sublist}
+    adict['copy_files'] = copy_files
+    adict['subsetdict'] = subsetdict
+    return(adict, jsondict)
 
 def make_aux_input(grid, script_base, targ_var):
     #Creates an aux info file with g-or-earlier default settings: minifiles,

@@ -739,6 +739,8 @@ def generate_experiment(parse_xml, create_default_aux,
             #output grid or ds_region
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
         print("Step 0: Create the unified runcscripts and master runscripts")
+        if (queue == 'batch'):
+            queue = auxdict['queue']
         create_xml_runscripts(lons, lone, i_subset, i_off,
                               lats, late, j_subset, j_off,
                               njobs, ncpus, fudgetag, sbase,
@@ -786,6 +788,8 @@ def generate_experiment(parse_xml, create_default_aux,
         # same for the pp_wallclocktime - this should get added to the aux dict
         auxinfo = {'pp_wallclocktime': '5:00:00'}
         print("Step 0: Create the unified runcscripts and master runscripts")
+        if (queue == 'batch'):
+            queue = auxdict['queue']
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
@@ -863,7 +867,7 @@ def generate_experiment(parse_xml, create_default_aux,
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
     print("Making postproc scripts")
-    make_postProc_scripts(auxdict, fudgetag, NEMSemail1, queue)
+    make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
     print("----------------------------------------")
     print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")

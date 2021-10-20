@@ -12,7 +12,7 @@ import smtplib
 import re
 
 
-def make_postProc_scripts(auxdict, fudgetag, mailid, queue):
+def make_postProc_scripts(auxdict, fudgetag, mailid):
     #Okay, this is going to go in a few steps:
     ensembles = auxdict['DS']['rips']
     vars = auxdict['DS']['vars']
@@ -31,6 +31,8 @@ def make_postProc_scripts(auxdict, fudgetag, mailid, queue):
     auxdir = osp.join(script_dir, 'config_mod')
     auxfile = osp.join(auxdir, os.listdir(auxdir)[0])
     runtime = auxdict['pp_wallclocktime']
+    cores = auxdict['pp_ncpus']
+    queue = auxdict['pp_queue']
     # postproc dirs
     pp_dir = osp.join(script_dir, 'postProc')
     statdir  = osp.join(script_dir, 'status', 'postproc')
@@ -50,7 +52,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid, queue):
                 desc = ".".join([m, v, t])
                 pp_runcode = osp.join(pp_dir, desc)
                 pp_runcode_header = pp_runcode_header = "\n".join(["#!/bin/tcsh",
-                                                   "#SBATCH -c 6",
+                                                   "#SBATCH -c " + str(cores),
                                                    '#SBATCH -t '+str(runtime),
                                                    "#SBATCH -J fudge_pp_" + str(v) + "." + str(t) + "." + str(m),
                                                    "#SBATCH -o " + pp_log_dir + "/%x.%j",
