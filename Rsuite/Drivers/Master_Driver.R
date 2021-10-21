@@ -461,11 +461,16 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc.varlist <- varlist
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
+       qc_var_atts <- list()
+  for (v in names(qc.list)){
+  	qc_var_atts[[v]] <- list("missing_value" = 1e20)
+  }
       qc.out.filename  = WriteNC(qc_filepath, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,
                                  dim.list = dimlist, var.data=varlist,
                                  prec='float', missval=1e20, units="1",
                                  comment=qc_comment, #comment needs to be a list
                                  longname=qc_longname,
+                                 var_attributes = qc_var_atts,
                                  global_overwrite=qc_globals)
 
       message(paste('QC Mask output file:',qc.out.filename,sep=''))
