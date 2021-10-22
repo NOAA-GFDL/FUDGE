@@ -276,9 +276,9 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               '#SBATCH -c ' + str(ncpus),
                               '#SBATCH -p ' + queue]) + "\n"
     if auxdict['mem'] != 'none':
-        slurm_header += "#SBATCH --mem=" + auxdict['mem'] + 'GB\n'
+        slurm_header += "#SBATCH --mem=" + str(auxdict['mem']) + 'GB\n'
     if auxdict['constraint'] != "none":
-        slurm_header += '\n' + "#SBATCH --constraint=" + auxdict['constraint'] + '\n'
+        slurm_header += '\n' + "#SBATCH --constraint=" + str(auxdict['constraint']) + '\n'
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
