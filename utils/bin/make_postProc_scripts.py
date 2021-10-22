@@ -33,6 +33,14 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     runtime = auxdict['pp_wallclocktime']
     cores = auxdict['pp_ncpus']
     queue = auxdict['pp_queue']
+    mem = auxdict['pp_mem']
+    const = auxdict['pp_constraint']
+    #Make strings for mem and const in header
+    memstr = ""; conststr = "";
+    if mem != 'none':
+        memstr = "#SBATCH --mem=" + str(mem) + "GB"
+    if const != 'none':
+        conststr = "#SBATCH --constraint=" + str(const)
     # postproc dirs
     pp_dir = osp.join(script_dir, 'postProc')
     statdir  = osp.join(script_dir, 'status', 'postproc')

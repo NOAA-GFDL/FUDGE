@@ -893,7 +893,7 @@ def generate_experiment(parse_xml, create_default_aux,
         print "\033[1;42mwatcher -i "+(str)(os.path.abspath(slogloc))+"\033[1;m"
     '''
     nextstep_file = make_call_next_step_cmd(sbase, expconfig, statmail, NEMSemail1, sleep=60, nloops=200, verbose=True)
-    ns_cmd = "sbatch -D $HOME " + nextstep_file
+    ns_cmd = "sbatch -D $HOME " + nextstep_file + " --reservation=postfix_troubleshooting"
     if run_watcher:
         print("Submitting callNextStep for this job to analysis")
         print(("\033[1;42m" + ns_cmd + "\033[0;m" + "\n"))

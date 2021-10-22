@@ -70,12 +70,16 @@ def parse_aux_info(infile):
         #defaults values for: wallclock time, njobs, ncpus, queue
         #and corresponding pp settings
         defaultdict = {'wallclocktime': '6:00:00', 
+                        'mem': 'none',
                         'njobs': 8,
                         "ncpus": 2,
+                        "constraint": "none",
                         "queue": 'batch',
                         "pp_wallclocktime": '6:00:00',
+                        'pp_mem': 'none',
                         #"pp_njobs": not acually used in our setup
                         "pp_ncpus": 8,
+                        "pp_constraint": "none",
                         "pp_queue": "batch"}
         for kd in defaultdict.keys():
             if kd in jsondict.keys():
