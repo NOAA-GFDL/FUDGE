@@ -275,6 +275,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               '#SBATCH -t '+auxdict['wallclocktime'],
                               '#SBATCH -c ' + str(ncpus),
                               '#SBATCH -p ' + queue]) + "\n"
+    if auxdict['mem'] != 'none':
+        slurm_header += "#SBATCH --mem=" + auxdict['mem'] + 'GB\n'
+    if auxdict['constraint'] != "none":
+        slurm_header += '\n' + "#SBATCH --constraint=" + auxdict['constraint'] + '\n'
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
@@ -378,7 +382,6 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                 logfilename = 'master.%x.' + idx_string + ".%j"
                 with open(master_scriptname, 'w') as f:
                     f.write(slurm_header)
-                    #f.write("#SBATCH -J " + experiment_name + "." + idx_string + "\n")
                     f.write('#SBATCH -o ' + osp.join(scriptdir, 'log') + "/" + logfilename + "\n")
                     f.write("#SBATCH -J " + experiment_name + "\n")
                     f.write(module_loads)
@@ -632,3 +635,14 @@ def make_ds_aux_entry(out_file, outdir, var, tmask='none'):
               'vars': out_vars,
               'rips': out_rips}
     return(dsdict)
+    
+def make_master_job_control(auxdict):
+    '''
+    Returns a set of lines describing job control settings in the master script file
+    '''
+    jobctl = "#SBATCH -p " + auxdict['queue']
+    if auxdict['mem'] != 'none':
+        jobctl += '\n' + "#SBATCH --mem=" + auxdict['mem'] + 'GB'
+    if auxdict['constraint'] != "none":
+        jobctl += '\n' + "#SBATCH --constraint=" + auxdict['constraint']
+    return(jobctl)
