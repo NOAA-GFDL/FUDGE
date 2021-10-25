@@ -272,13 +272,13 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     #print(str((float(nrunscripts) / float(njobs))))
 
     slurm_header = "\n".join(['#!/bin/bash',
-                              '#SBATCH -t '+auxdict['wallclocktime'],
+                              '#SBATCH -t '+ auxdict['wallclocktime'],
                               '#SBATCH -c ' + str(ncpus),
                               '#SBATCH -p ' + queue]) + "\n"
     if auxdict['mem'] != 'none':
         slurm_header += "#SBATCH --mem=" + str(auxdict['mem']) + 'GB\n'
     if auxdict['constraint'] != "none":
-        slurm_header += '\n' + "#SBATCH --constraint=" + str(auxdict['constraint']) + '\n'
+        slurm_header += "#SBATCH --constraint=" + str(auxdict['constraint']) + '\n'
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
