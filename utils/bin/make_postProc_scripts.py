@@ -38,9 +38,9 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     #Make strings for mem and const in header
     memstr = ""; conststr = "";
     if mem != 'none':
-        memstr = "#SBATCH --mem=" + str(mem) + "GB"
+        memstr = "#SBATCH --mem=" + str(mem) + "GB" + "\n"
     if const != 'none':
-        conststr = "#SBATCH --constraint=" + str(const)
+        conststr = "#SBATCH --constraint=" + str(const) + "\n"
     # postproc dirs
     pp_dir = osp.join(script_dir, 'postProc')
     statdir  = osp.join(script_dir, 'status', 'postproc')
@@ -65,6 +65,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                                                    "#SBATCH -J fudge_pp_" + str(v) + "." + str(t) + "." + str(m),
                                                    "#SBATCH -o " + pp_log_dir + "/%x.%j",
                                                    "#SBATCH -p " + queue]) + "\n"
+                pp_runcode_header += memstr + conststr
                 if t == 'qcmask':
                     pp_var = v + '_qcmask'
                     indir_loop2 = osp.join(indir_loop2, pp_var)
