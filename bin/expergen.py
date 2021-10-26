@@ -916,7 +916,7 @@ def generate_experiment(parse_xml, create_default_aux,
         print(("\033[1;42mscancel -u $USER -n fudge_watcher." + expconfig + "\033[1;m"))
     sys.exit(0)
 
-def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60, nloops=10, verbose=True):
+def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=3, nloops=1200, verbose=True):
     '''
     Makes the command for submitting callNextStep() to analysis.
     Include in documentation: this means the cancel_all_jobs thing probably won't work anymore
@@ -940,7 +940,7 @@ def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=60,
                              "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
     nextstep_cmd = " ".join(["python -u $BASEDIR/bin/call_next_step.py",
                              "-s " + sbase,
-                             "--sleep " + str(sleep),
+                             "--sleep " + str(sleep * 60),
                              "--nloops " + str(nloops),
                              verbose_str])
     if send_mail:
