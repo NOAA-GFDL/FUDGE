@@ -331,7 +331,7 @@ obtain.fudge.var.metadata <- function(nc.obj, nc.var){
   #'nc object and variable.
   attnames <- c('standard_name', 'long_name', 'units', 
                 'prec','calendar', 'filename', 'rips')
-  att.defaults <- c('', nc.var, "", 
+  att.defaults <- c(NA, nc.var, "", 
                     'float', "",'', "")
   var.att.list <- list()
   #Get var atts
