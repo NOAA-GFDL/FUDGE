@@ -420,6 +420,7 @@ for (r in 1:length(aux.ref$DS$rips)){
   for (v in aux.ref$DS$vars){
   	var_atts[[v]] <- list("missing_value" = 1e20)
   }
+  sname <- OH$metadata[[OH.vars[1]]]$long_name
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],
@@ -429,7 +430,7 @@ for (r in 1:length(aux.ref$DS$rips)){
                             prec='float',
                             units=OH$metadata[[OH.vars[1]]]$units,
                             longname=paste(OH$metadata[[OH.vars[1]]]$long_name),
-                            standard_name=paste(OH$metadata[[OH.vars[1]]]$long_name),
+                            standard_name=paste(OH$metadata[[OH.vars[1]]]$standard_name),
                             global_overwrite=meta_list$globals,
                             var_attributes=var_atts,
                             #global_clone_file = global_clone_file,
