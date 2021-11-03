@@ -2,6 +2,8 @@
 #'since both use the same package and there is similar
 #'argument checking between the two of them
 
+
+library(rlang)
 callMBC <- function(OH, MH, MF, args, ds.method="",
                     tmasks, train_qcmask=F){
   if (args$force_reproducibility){
@@ -132,7 +134,13 @@ callQDM_mod <- function(OH, MH, MF, args){
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
               args)
-  tmp <- do.call('QDM_mod', q.args)$mhat.p
+  tmp <- withCallingHandlers(do.call('QDM_mod', q.args)$mhat.p, 
+                             warning = function(w){
+                               if ((conditionMessage(w) == c("collapsing to unique 'x' values"))) {
+                                 rlang::cnd_muffle(w)
+                               }
+                             }
+  )
   if (screen_NaNs){
     # Screen out NaNs from 0/0
     tmp[is.nan(tmp)] <- 0
@@ -157,7 +165,13 @@ callQDM <- function(OH, MH, MF, args){
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice), 
               args)
-  tmp <- do.call('QDM', q.args)$mhat.p
+  tmp <- withCallingHandlers(do.call('QDM', q.args)$mhat.p, 
+                             warning = function(w){
+                               if ((conditionMessage(w) == c("collapsing to unique 'x' values"))) {
+                                 rlang::cnd_muffle(w)
+                               }
+                             }
+  )
   if (screen_NaNs){
     # Screen out NaNs from 0/0
     tmp[is.nan(tmp)] <- 0
