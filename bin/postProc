@@ -11,7 +11,7 @@ import re
 from optparse import OptionParser
 import traceback
 from fudgeUtils import send_status_email
-from concatenate_file import concatenate_files
+from concatenate_nc_files import cat_files
 from trend_supplement import callCopyToTrendDetr, callAddResid
 from clim_supplement import callCopyToAnomClim, callAddAnom
 
@@ -150,8 +150,10 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
     return(copy_file)
 
 def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwrite=False):
-    #Changes that we need in this step in order to duplicate past functionality.
-    #No region masks needed.
+    #determine reference grid from the auxfile: for now, OH works
+    auxinfo, auxdict = parse_aux_info(aux)
+    OH = auxdict['OH']
+    complete_gridfile = OH[OH.keys()[0]]['file']
     #determine the number of files expected
     pres_files = [osp.join(in_dir, f) for f in os.listdir(in_dir) if re.search("\.nc", f) is not None]
     nfiles = len(pres_files)
@@ -161,13 +163,17 @@ def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwr
         sys.exit()
     #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
     #in that case, the modified workflow should just copy the file.
-    cat_file = concatenate_files(in_dir, file_patt, out_dir, aux)
+    cat_file = cat_files(in_dir, file_patt, out_dir, delim_patt = ".", orig_file = complete_gridfile)
     #And finally, set your metadata.
     #Note: this is now done in the cat step, to avoid copying to tmpdir more than once
     #out_file = set_FUDGE_metadata(out_file, exp_info)
     return(cat_file)
 
 def process_mask_file(exp_info, file_patt, out_dir):
+    #determine reference grid from the auxfile: for now, OH works
+    auxinfo, auxdict = parse_aux_info(aux)
+    OH = auxdict['OH']
+    complete_gridfile = OH[OH.keys()[0]]['file']
     #Okay...steps are roughly as follows:
     mask_region_files = []
     #For each of the mask directories:
@@ -184,7 +190,7 @@ def process_mask_file(exp_info, file_patt, out_dir):
             print("Error in process_file: wrong number of files in",spatpath, "!")
         #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
         #in that case, the modified workflow should just copy the file.
-        mask_file = concatenate_files(spatpath, file_patt, maskdir)
+        mask_file = cat_files(spatpath, file_patt, maskdir, delim_patt = ".", orig_file = complete_gridfile)
         #note: mask_file is already copied to maskdir
         mask_region_files.append(mask_file)
     #...upon further inspection, it looks like ncbo isn't going to work readily -
