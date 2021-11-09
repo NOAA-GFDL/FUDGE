@@ -1,0 +1,122 @@
+#!/bin/tcsh
+#Concatenates a set of files sent in as a long array
+#into a single file, along the dimensions specified
+#in the input
+
+source /usr/local/Modules/default/init/tcsh
+module use /app/spack/v0.15/modulefiles/linux-rhel6-x86_64/
+module load cdo/1.9.8
+module load netcdf/4.6.1
+
+#/work/cew/testing/file_chunks/
+set in_dir = $argv[1]
+#out.I1-10.J5-8.nc,out.I11-15.J5-8.nc,out.I16-20.J5-8.nc,out.I21-30.J5-8.nc
+set in_files=$argv[2]
+#$TMPDIR/lat_cat/
+set tdir = $argv[3]
+#/work/cew/testing/final_concatenated_out.nc
+set outfile = $argv[4]
+#original_file_with_complete_grid.nc
+set gridsource = $argv[5]
+
+rm -rf $tdir/*
+mkdir $tdir/input
+set out_fname = `basename $outfile`
+set tmp_outfile = $tdir/$out_fname
+
+cd $in_dir
+set file_list = `echo $in_files:q | sed 's/,/ /g'`
+# dmget all files before gcp command
+#honestly, the way we call this it probably isn't neccessary
+#but I'd rather be safe than sorry for our archive files
+dmget $file_list
+
+foreach el ($file_list)
+	cp $in_dir/$el $tdir/input/$el
+end
+
+echo "cdo -v --no_history collgrid $tdir/input/* $tmp_outfile >& $tdir/collgrid_out.txt"
+cdo -v --no_history collgrid $tdir/input/* $tmp_outfile >& $tdir/collgrid_out.txt
+set collstat = $status 
+if ( $collstat != 0 ) then
+  echo "Error in concatenate_files-cdo! cdo concatenation failed!"
+  exit 1
+endif
+
+grep "calendar >julian< unsupported!" $tdir/collgrid_out.txt
+set is_julian = $status
+
+cdo griddes $gridsource > $tdir/griddesc.txt
+cdo --hdr_pad 300000 setgrid,$tdir/griddesc.txt $tmp_outfile $tdir/griddesc_out.nc
+
+set metafile = $file_list[1]
+echo `date`
+
+ncks -m --trd $metafile | grep ": type" | cut -f 1 -d ":" | sort > $tdir/orig_vars.txt
+ncks -m --trd $tdir/griddesc_out.nc | grep ": type" | cut -f 1 -d ":" | sort > $tdir/cat_vars.txt
+
+set echo
+echo "ncks to copy missing/incomplete vars that are not dimension-related"
+echo `date`
+set vars_not_pres = `grep -F -x -v -f $tdir/cat_vars.txt $tdir/orig_vars.txt`
+if ($#vars_not_pres > 0) then
+   set varstr = $vars_not_pres[1]
+   if ($#vars_not_pres > 1) then
+      foreach v (`seq 2 $#vars_not_pres`)
+         echo "appending var $vars_not_pres[$v]"
+         set varstr = "${varstr},$vars_not_pres[$v]"
+      end
+   endif
+   echo $varstr
+   ncks --hdr_pad 300000 -h --no_abc -v $varstr -A $metafile $tdir/griddesc_out.nc
+endif
+
+
+echo "ncks to copy data from lat,lon, respective bnds"
+#look, this would be elegant but it doesn't seem to work - the entire file is getting rewritten
+#maybe ncks rewrites files regardless?
+ncks -h -A -v lat,lon $gridsource $tdir/griddesc_out.nc
+##copy over any bnds vars
+#ncks -m --trd $metafile | grep ": type" | grep "_bnds" | cut -f 1 -d ":" | sort > #$tdir/bnds_vars.txt
+#set varlist = `cat $bnds_vars.txt`
+#set varstr = `echo $varlist | sed -e s:\n:,:g`
+#ncks -h -A -v lat,lon $gridsource $tdir/griddesc_out.nc
+
+echo `date`
+#I'm not happy with hard-coding lon_bnds and lat_bnds above, but honestly? data standardization.
+
+echo "ncks to copy metadata for lat,lon, respective bounds"
+echo `date`
+set varlist = `cat $tdir/orig_vars.txt`
+set varstr = `echo $varlist | sed -e s:\ :,:g`
+echo $varstr
+#previously gridsource was metafile
+ncks -A -C -H --no-abc -v $varstr $gridsource $tdir/griddesc_out.nc
+#ncks -A -C -H -v one,three_dmn_rec_var ~/in2.nc ~/out.nc 
+
+
+#This command can safely be last due to a padded header
+echo "calendar checks"
+if ($is_julian == 0) then
+  ncatted -h -a calendar,time,o,c,julian -O $tdir/griddesc_out.nc
+else
+  set calstring = `ncks -m --trd $tdir/griddesc_out.nc | grep ': calendar,'`
+  echo $calstring | grep '365_day'
+  set is_365 = $status
+  if ($is_365 == 0) then
+    #set calval = `ncks -m --trd $metafile | grep ': calendar,' | grep -P "(?<=value = ).*"`
+    #Have NOT been able to get grep to work. Horrible series of cuts and reverses works in stead.
+    set calval = `ncks -m --trd $metafile | grep ': calendar,' | cut -f 3 -d ',' | rev | cut -f 1 -d ' ' | rev`
+    #should change for ALL instances of calendar
+    echo $calval
+    echo "ncatted -h -a calendar,,m,c,$calval -O $tdir/griddesc_out.nc"
+    ncatted -h -a calendar,,m,c,$calval -O $tdir/griddesc_out.nc
+  endif
+endif
+
+ncatted -h -a subsetspecs,global,d,, -O $tdir/griddesc_out.nc
+
+#Step 6: Copy to the final output location
+echo "final copy"
+gcp -cd $tdir/griddesc_out.nc $outfile
+
