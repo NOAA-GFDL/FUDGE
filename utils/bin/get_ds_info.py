@@ -89,6 +89,13 @@ def parse_aux_info(infile):
                 #otherwise nothing is needed
             else:
                 jsondict[kd] = defaultdict[kd]
+        #replace common strings that aren't defaults but ARE errors
+        errdict = {'queue' : "none", 
+                   'pp_queue' : 'none'}
+        for kd in errdict.keys():
+            if jsondict[kd] == errdict[kd]:
+                print("Error in parse_aux_info: entry " + kd + " needs a val other than " + errdict[kd] + "; consider replacing with " + defaultdict[kd] + ".")
+                sys.exit(1)
         #Subsets in i and j that we are interested in
         defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}
         subsetdict = {}
