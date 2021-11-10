@@ -6,39 +6,43 @@
 #specified
 
 import os,sys,subprocess,shutil,time,copy
+from get_ds_info import parse_aux_info
 from os import path as osp
 from subprocess import PIPE
 import re
 import netCDF4
 from netCDF4 import Dataset
+import datetime
 
-S8_PATH = os.environ.get('S8_PATH')
-if S8_PATH is None:
-    print("Error in python script calculation: $S8_PATH not set. Please source a path to the section 8 tools.")
+#in the section 8 tools, this uses S8_path instead
+BASEDIR = os.environ.get('BASEDIR')
+if BASEDIR is None:
+    print("Error in python script calculation: $BASEDIR not set. Please source a path to the section 8 tools.")
     sys.exit(1)
-sys.path.append(osp.join(S8_PATH, 'shared_code'))
+sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
 from common_functions import get_nc_dim_lengths, tstamp
 import env
 
-def cat_files(input_dir, patt, output_dir, exp_info='none', delim_patt = ".", orig_file="test.nc"):
+def cat_files(input_dir, patt, output_dir, aux='none', delim_patt = ".", orig_file="test.nc"):
 	#Get all files in the input dir that match a given pattern
 	#(note: assumed to start at the beginning of the filename)
 
 	global basedir
 	global tdir
 	global cat_min_loc
-	global S8_PATH
-	S8_PATH = os.environ.get('S8_PATH')
-	if S8_PATH is None:
-		print("Error in batch setup: $S8_PATH not set. Please source a path to the section 8 tools.")
-		sys.exit(1)
-	basedir = osp.join(S8_PATH, "shared_code/embarassingly_parallel/")
+	#global S8_PATH
+	#S8_PATH = os.environ.get('S8_PATH')
+	#if S8_PATH is None:
+	#	print("Error in batch setup: $S8_PATH not set. Please source a path to the section 8 tools.")#
+	#	sys.exit(1)
+	#basedir = osp.join(S8_PATH, "shared_code/embarassingly_parallel/")
 	tdir = env.TMPDIR
+	basedir = env.BASEDIR
 	tsp = tstamp()
 	tdir_cat = osp.join(tdir, "i_cat-" + str(tsp))
 	if not osp.exists(tdir_cat):
 		os.makedirs(tdir_cat)
-	cat_min_loc = basedir
+	cat_min_loc = osp.join(basedir, 'utils/pp/')
 
 	print("getting list of files")
 	print(patt)
@@ -52,16 +56,18 @@ def cat_files(input_dir, patt, output_dir, exp_info='none', delim_patt = ".", or
 	#filename - $filename.i_suffix.nc 
 	#corrected in 2021 to be separated by a general-purpose delimiter
 	file_split = re.split(delim_patt, file_subset[0])
-	out_filename = ".".join([file_split[0], ".nc"])
+	out_filename = ".".join([file_split[0], "nc"])
 	outfile = osp.join(output_dir, out_filename)
 	tmp_outfile = osp.join(tdir, out_filename)
 	print("cdo call to all files matching pattern")
 	xy_out = call_cat_min_cdo(input_dir, file_subset, tdir_cat, tmp_outfile, "all values", orig_file)
 	print("concatenated file: " + xy_out)
 	#Final step needs to be finalizing some metadata atts
-	if exp_info != 'none':
-		print("finalizing file metadata")
-		xy_out = finalize_metadata_out(xy_out, exp_info)
+	if aux != 'none':
+	    print("finalizing file metadata")
+	    xy_out = finalize_metadata_out(xy_out, aux)
+	else:
+	    print("no aux file; metadata unchanged")
 	print("copying file to final destination")
 	print("cp " + tmp_outfile + " " + outfile)
 	shutil.copy2(tmp_outfile, outfile)
@@ -169,10 +175,9 @@ def cat_files_nco(input_dir, patt, output_dir, exp_info='none', delim_patt = "."
 
 	print("concatenated file: " + xy_out)
 	#Final step needs to be finalizing some metadata atts
-	#experiment_info = "/archive/cew/PROJECTS/DOWNSCALING/PMhCR/downscaled/GFDL-HIRAM-C360-COARSENED/sst2090/day/atmos/day/r1i1p1/v20110601/PMhCRtxp1-EDQM-A01r1e3X01K00/experiment_info.txt"
-	if exp_info != 'none':
+	if auxfile != 'none':
 		print("finalizing file metadata")
-		xy_out = finalize_metadata_out(xy_out, exp_info)
+		xy_out = finalize_metadata_out(xy_out, auxfile)
 	#else:
 	#	print("no experiment_info file; metadata unchanged")
 	print("copying file to final destination")
@@ -239,7 +244,7 @@ def call_cat_min_cdo(input_dir, infiles, scratch_dir, outfile, index_str="", ori
 	cat_command = " ".join([cat_min, input_dir, infile_str, scratch_dir, outfile, orig_file])
 	print(str(len(cat_command)))
 	if len(cat_command) > 8191:
-	    print("Error in call_cat_min cdo! The command was more than 2^13-1 characters long, which may lead to failure due to command size length!")	
+	    print("Warning in call_cat_min cdo! The command was more than 2^13-1 characters long, which may lead to failure due to command size length!")	
 	cat_cmd_file = osp.join(scratch_dir, "cat_cmd.csh")
 	with open(cat_cmd_file, 'w') as f:
 	    f.write("#!/bin/tcsh\n")
@@ -298,6 +303,49 @@ def determine_dims_present(nc_file):
 	with Dataset(nc_file, 'r') as nc_fid:
 		nc_dims = [dim for dim in nc_fid.dimensions if dim not in exclude_dims]  # list of nc dimensions
 	return nc_dims
+
+def finalize_metadata_out(xy_file, aux):
+    #Sets up final metadata attributes on the output. Fortunately, there's going to
+    #be a decent header from the concatenation operations
+    #NOTE: right now, none of these attributes can have spaces in them
+    #due to the passing into c-shell. Probably solvable
+    # expdict = read_exp_info_file(experiment_info)
+    auxinfo, auxdict = parse_aux_info(aux)
+
+    attdict = {}
+    attdict['contact'] = "http://nomads.gfdl.noaa.gov/contacts.html"
+    attdict['conventions'] = "CF-1.4"
+    attdict['downscaling_model_type'] = "statistical"
+
+    attdict['gfdl_experiment_name'] = auxdict['ds_experiment_name']
+    now = datetime.datetime.now()
+    attdict['postproc_timestamp'] = now.strftime("%Y-%m-%d__%H:%M:%S")
+    #attdict['predictand_calibration_datset'] = "dummy_data"
+
+    #NCO = "I'm not entiretly sure I need to add this in now."
+
+    att_val_list = [",".join(el) for el in zip(list(attdict.keys()), list(attdict.values()))]
+    #Leaving off because the quotes get added in when writing the atts.
+    #If we could strip those, that would be great - but for now,
+    #keep an eye out for things that might contain spaces.
+    att_val_list = ['"'+el+'"' for el in att_val_list]
+    att_val_string = " ".join(att_val_list)
+
+    print("calling set_metadata")
+    #set_metadata = "/home/cew/Code/h_testing/FudgeIO_reboot/set_cat_metadata.csh"
+    set_metadata = basedir + "/utils/pp/set_cat_metadata.csh"
+    set_command = " ".join(["tcsh -f ",set_metadata, xy_file, att_val_string])
+    p = subprocess.Popen(set_command, stdout=subprocess.PIPE, shell=True, env=None, )
+    out0,err0 = p.communicate()
+    if (p.returncode != 0):
+        print((str(out0)))
+        print((str(err0)))
+        print(("Error in setting metadata operations for " +  xy_file + "; call to c-shell failed."))
+        print(("Command that failed: " + set_command))
+        sys.exit(1)
+        return(None)
+    else:
+        print((str(out0)))
 
 def get_dim_perm():
 	#Gets a dimension permutation for the input file
