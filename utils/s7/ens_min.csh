@@ -55,7 +55,7 @@ ncdump -h $outFile |grep plev
   set varsPresent = ("i_offset" "j_offset" "lat_bnds" "lon_bnds" "time_bnds")
   set vars2copy   = ""
   foreach v ($varsPresent)
-  	ncdump -h $inFiles_array[1] | grep $v >> /dev/null
+  	ncks -m --trd $inFiles_array[1] | grep ": type" | grep $v >> /dev/null
   	set ispresent = $status
   	if ($ispresent == 0) then
   		if ($vars2copy == "") then
