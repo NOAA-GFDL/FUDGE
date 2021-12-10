@@ -29,45 +29,47 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   #Check for whether there is an indexing mask used by the ds data
   #(formerly known as the time-trimming mask)
   is_indexed_with_tmask <- !(aux.ref$DS$indexing_tmask %in%  c('na', 'none'))
-  #Either all data will use a time-windowing mask, or none will use it. 
-  if (ds.ref$train_and_use_same){ 
-    #Future data used in downscaling will be underneath the fut.time tag
+  # #Either all data will use a time-windowing mask, or none will use it. 
+  # if (ds.ref$train_and_use_same){ 
+  #   #Future data used in downscaling will be underneath the fut.time tag
+  #   if(!is_indexed_with_tmask){
+  #     if(apply_tmasks){
+  #       tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$MH, 
+  #                                          hist.targ.mask = tmask.filenames$OH, 
+  #                                          esd.gen.mask = tmask.filenames$MF, k=aux.ref$kfold, 
+  #                                          method=ds.ref$method, 
+  #                                          train.and.use.same = ds.ref$train_and_use_same)
+  #       names(tmask.list) <- tmask.list.names
+  #       nmasks <- length(tmask.list$OH$masks)
+  #     }else{
+  #       message("no time windows included; moving on to next step")
+  #       tmask.list <- list("na")
+  #     }
+  #   }else{
+  #     #If there is a time trimming mask, and there are masks of all kinds
+  #     tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$MH, 
+  #                                        hist.targ.mask = tmask.filenames$OH, 
+  #                                        esd.gen.mask = tmask.filenames$MF, k=aux.ref$kfold, 
+  #                                        method=ds.ref$method, 
+  #                                        time.prune.mask = aux.ref$DS$indexing_tmask,
+  #                                        train.and.use.same = ds.ref$train_and_use_same)
+  #     names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
+  #     tmask.filenames <- c(tmask.filenames, list('trim' = aux.ref$DS$indexing_tmask))
+  #     nmasks <- length(tmask.list$OH$masks)
+  #     if (check_mask_olap(tmask.list$MF$masks)){
+  #       time_mask_overlap <- T
+  #     }
+  #   }
+  # }else{ 
+  tus <- ds.ref$train_and_use_same
+  tus <- FALSE
     if(!is_indexed_with_tmask){
       if(apply_tmasks){
-        tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$MH, 
-                                           hist.targ.mask = tmask.filenames$OH, 
+        tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$OH, 
+                                           hist.targ.mask = tmask.filenames$MH, 
                                            esd.gen.mask = tmask.filenames$MF, k=aux.ref$kfold, 
                                            method=ds.ref$method, 
-                                           train.and.use.same = ds.ref$train_and_use_same)
-        names(tmask.list) <- tmask.list.names
-        nmasks <- length(tmask.list$OH$masks)
-      }else{
-        message("no time windows included; moving on to next step")
-        tmask.list <- list("na")
-      }
-    }else{
-      #If there is a time trimming mask, and there are masks of all kinds
-      tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$MH, 
-                                         hist.targ.mask = tmask.filenames$OH, 
-                                         esd.gen.mask = tmask.filenames$MF, k=aux.ref$kfold, 
-                                         method=ds.ref$method, 
-                                         time.prune.mask = aux.ref$DS$indexing_tmask,
-                                         train.and.use.same = ds.ref$train_and_use_same)
-      names(tmask.list) <- c(tmask.list.names, "trim") #time.trim.mask
-      tmask.filenames <- c(tmask.filenames, list('trim' = aux.ref$DS$indexing_tmask))
-      nmasks <- length(tmask.list$OH$masks)
-      if (check_mask_olap(tmask.list$MF$masks)){
-        time_mask_overlap <- T
-      }
-    }
-  }else{ 
-    if(!is_indexed_with_tmask){
-      if(apply_tmasks){
-        tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$MH, 
-                                           hist.targ.mask = tmask.filenames$OH, 
-                                           esd.gen.mask = tmask.filenames$MF, k=aux.ref$kfold, 
-                                           method=ds.ref$method, 
-                                           train.and.use.same = ds.ref$train_and_use_same)
+                                           train.and.use.same = tus)
         names(tmask.list) <- tmask.list.names
         nmasks <- length(tmask.list$OH$masks)
       }else{
@@ -76,18 +78,18 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
         tmask.list <- list("na")
       }
     }else{
-      tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$MH, 
-                                         hist.targ.mask = tmask.filenames$OH, 
+      tmask.list <- CreateTimeWindowList(hist.train.mask = tmask.filenames$OH, 
+                                         hist.targ.mask = tmask.filenames$MH, 
                                          esd.gen.mask = tmask.filenames$MF, k=aux.ref$kfold, 
                                          method=ds.ref$method, 
                                          time.prune.mask = aux.ref$DS$indexing_tmask,
-                                         train.and.use.same = ds.ref$train_and_use_same)
+                                         train.and.use.same = tus)
       names(tmask.list) <- c(tmask.list.names, "trim")
       tmask.filenames <- c(tmask.filenames, list('trim' = aux.ref$DS$indexing_tmask))
       nmasks <- length(tmask.list$OH$masks)
       time_mask_overlap <- T
     }
-  }
+#  }
   #Do explicit checks on the members of masks
   masknames <- names(tmask.list$OH$masks)
   for (el in names(tmask.list)){
