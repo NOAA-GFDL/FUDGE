@@ -52,8 +52,8 @@ def cat_files(input_dir, patt, output_dir, aux='none', delim_patt = ".", orig_fi
 	#find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
 	#unwind_list = [el for f in find_list for el in f ]
 	#i_matches = sorted([el for f in unwind_list for el in f if el != ""]) #remove duplicates
-	# this bit right here assumes that there are only ever gonna be two periods in the 
-	#filename - $filename.i_suffix.nc 
+	# this bit right here assumes that there are only ever gonna be two periods in the
+	#filename - $filename.i_suffix.nc
 	#corrected in 2021 to be separated by a general-purpose delimiter
 	file_split = re.split(delim_patt, file_subset[0])
 	out_filename = ".".join([file_split[0], "nc"])
@@ -102,8 +102,8 @@ def cat_files_nco(input_dir, patt, output_dir, exp_info='none', delim_patt = "."
 	#find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
 	#unwind_list = [el for f in find_list for el in f ]
 	#i_matches = sorted([el for f in unwind_list for el in f if el != ""]) #remove duplicates
-	# this bit right here assumes that there are only ever gonna be two periods in the 
-	#filename - $filename.i_suffix.nc 
+	# this bit right here assumes that there are only ever gonna be two periods in the
+	#filename - $filename.i_suffix.nc
 	index_subset = [re.split(delim_patt, f)[1] for f in file_subset]
 	i_patterns = find_match_string('I', index_subset, file_subset)
 	j_patterns = find_match_string('J', index_subset, file_subset)
@@ -158,7 +158,7 @@ def cat_files_nco(input_dir, patt, output_dir, exp_info='none', delim_patt = "."
 			#loop_file = call_cat_min_cdo(input_dir, i_subset, tdir_j, osp.join(outdir_j, i_out_file), i_patt)
 		else:
 			#Copy to directory that i concatenation expects to find results in
-			shutil.copy2(osp.join(input_dir, i_subset[0]), osp.join(outdir_j, i_out_file))							
+			shutil.copy2(osp.join(input_dir, i_subset[0]), osp.join(outdir_j, i_out_file))
 		if i  %10 == 0:
 			print("i index ", i, " of ", len(i_matches), "complete")
 		#End i loop
@@ -237,14 +237,10 @@ def call_cat_min_cdo(input_dir, infiles, scratch_dir, outfile, index_str="", ori
 	print("calling cat_min")
 	infile_str = ",".join(infiles)
 	cat_min = cat_min_loc + "concatenate_files-cdo.csh"
-	'''
-	cat_command = " ".join(["tcsh -f",cat_min, input_dir, infile_str, scratch_dir, outfile, orig_file])
-	    sys.exit(1)
-	'''
 	cat_command = " ".join([cat_min, input_dir, infile_str, scratch_dir, outfile, orig_file])
 	print(str(len(cat_command)))
 	if len(cat_command) > 8191:
-	    print("Warning in call_cat_min cdo! The command was more than 2^13-1 characters long, which may lead to failure due to command size length!")	
+	    print("Warning in call_cat_min cdo! The command was more than 2^13-1 characters long, which may lead to failure due to command size length!")
 	cat_cmd_file = osp.join(scratch_dir, "cat_cmd.csh")
 	with open(cat_cmd_file, 'w') as f:
 	    f.write("#!/bin/tcsh\n")
@@ -274,7 +270,7 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
 	cat_command = " ".join([cat_min, perm_in, perm_out, input_dir, infile_str, scratch_dir, outfile])
 	print(str(len(cat_command)))
 	if len(cat_command) > 8191:
-	    print("Warning in call_cat_min! The command was more than 2^13-1 characters long, which may lead to errors!")	
+	    print("Warning in call_cat_min! The command was more than 2^13-1 characters long, which may lead to errors!")
 	cat_cmd_file = osp.join(scratch_dir, "cat_cmd.csh")
 	with open(cat_cmd_file, 'w') as f:
 	    f.write("#!/bin/tcsh\n")
@@ -294,7 +290,7 @@ def call_cat_min(perm_in, perm_out, input_dir, infiles, scratch_dir, outfile, in
 		print(str(err0))
 		print("returning " + outfile)
 		return(outfile)
-		
+
 def determine_dims_present(nc_file):
 	#Determines the dimensions that are present in the input file
 	print('determining dimensions present')

@@ -19,6 +19,7 @@ from fudgeUtils import send_status_email
 from concatenate_nc_files import cat_files
 from trend_supplement import callCopyToTrendDetr, callAddResid
 from clim_supplement import callCopyToAnomClim, callAddAnom
+print("imports complete")
 
 def postProc():
     #Input parsing and arg checking for main body of code
@@ -52,12 +53,14 @@ def postProc():
         uemail = "na"
 
     verbose = options.verbose
+    print("calling runpostProc")
     runPostProc(options.aux, options.ds_dir, options.output_dir, options.var, uemail, verbose)
 
 def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
     #Clearer wrapper describing what the postProc function does.
     #Still trying to duplicate old functionality; should really be called once
     #for each ensemble member.
+    print("in runpostProc")
     auxinfo, auxdict = parse_aux_info(aux)
     total_exp_name = auxdict['ds_experiment_name']
     script_dir = auxdict['script_settings']['scriptdir']
@@ -78,6 +81,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
 
     #Determine how many ds vars we are looking for
     #note: anom + resid is a special case; always searched for
+    print(ds_dir)
     if osp.exists(ds_dir):
         ds_files = [f for f in os.listdir(ds_dir) if re.search("\.nc", f) is not None]
         n_ds_files = len(ds_files)
@@ -85,6 +89,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
             try:
                 # pattern is the file before the i,j indicator
                 file_patt = ds_files[0].split(".")[0]
+                print('calling process_file')
                 ds_file = process_file(aux, file_patt, ds_dir,
                                        out_dir, n_expected_files)
                 output_files.append(ds_file)

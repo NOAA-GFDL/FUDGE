@@ -14,18 +14,22 @@ import re
 
 def make_postProc_scripts(auxdict, fudgetag, mailid):
     #Okay, this is going to go in a few steps:
+    xtmpdir = auxdict['xtmpdir']
     ensembles = auxdict['DS']['rips']
     vars = auxdict['DS']['vars']
     types = ['none']
     if auxdict['make_qcmask']:
         types.append('qcmask')
+        vars.append(auxdict['DS']['ds_supp'])
     # Hook for adding in save files when we get to that point
     make_save = False
     if make_save:
         types.append('save')
+        vars.append(auxdict['DS']['ds_supp'])
     # regexes contain switches for ensemble members and vars;
     # saving off coords is more complex and we aren't doing it now
     indir_regex = osp.join(auxdict['DS']['out_dir'], auxdict['DS']['out_subdir'])
+
     outdir_regex = auxdict['DS']['out_dir']
     script_dir = auxdict['script_settings']['scriptdir']
     auxdir = osp.join(script_dir, 'config_mod')
@@ -51,11 +55,11 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     code_list = []
     #for each var, ensemble, type:
     for v in vars:
-        indir_loop = re.sub('<VAR>', v, indir_regex)
         outdir_loop = re.sub('<VAR>', v, outdir_regex)
         for m in ensembles:
-            indir_loop2 = re.sub('<RIP>', m, indir_loop)
             outdir_loop2 = re.sub('<RIP>', m, outdir_loop)
+            indir_loop = osp.join(xtmpdir, m, v)
+            indir_loop2 = osp.join(xtmpdir, m, v)
             for t in types:
                 desc = ".".join([m, v, t])
                 pp_runcode = osp.join(pp_dir, desc)
@@ -66,23 +70,24 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                                                    "#SBATCH -o " + pp_log_dir + "/%x.%j",
                                                    "#SBATCH -p " + queue]) + "\n"
                 pp_runcode_header += memstr + conststr
-                if t == 'qcmask':
-                    pp_var = v + '_qcmask'
-                    indir_loop2 = osp.join(indir_loop2, pp_var)
-                elif t == 'save':
-                    pp_var = v = '_save'
-                    indir_loop2 = osp.join(indir_loop2, pp_var)
-                else:
-                    pp_var = v
+#                if t == 'qcmask':
+#                    pp_var = v + '_qcmask'
+#                    indir_loop2 = osp.join(indir_loop2, pp_var)
+#                elif t == 'save':
+#                    pp_var = v = '_save'
+#                    indir_loop2 = osp.join(indir_loop2, pp_var)
+#                else:
+#                    pp_var = v
+                pp_var = v
                 # postproc command
-                pp_cmd_text = " ".join(["python -u $BASEDIR/bin/postProc",
-                                        "--aux " + auxfile,
-                                        "-d " + indir_loop2,
-                                        "-o " + outdir_loop2,
-                                        "--var " + pp_var])
                 runcode_vars = set_pp_runcode_vars(desc, script_dir,
                                                    statdir,
                                                    indir_loop2, outdir_loop2)
+                pp_cmd_text = " ".join(["python -u $BASEDIR/bin/postProc",
+                                        "--aux " + auxfile,
+                                        "-d $indir",
+                                        "-o $outdir",
+                                        "--var " + pp_var])
                 runcode_cmd = make_pp_runcode_commands(fudgetag, pp_cmd_text)
                 # Check on verbosity settings set earlier for message commands
                 with open(pp_runcode, 'w') as f:
@@ -108,7 +113,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
         f.write(msub_text)
     os.chmod(msub_file, runmode)
 
-def set_pp_runcode_vars(desc, scriptdir, statdir, indir, outdir):
+def set_pp_runcode_vars(desc, scriptdir, statdir, indir, final_outdir):
     '''
     Sets up vars needed for the pp runcode; used in runcode commands
       to improve readability.
@@ -117,8 +122,9 @@ def set_pp_runcode_vars(desc, scriptdir, statdir, indir, outdir):
                   "desc = " + desc,
                   "scriptdir = " + scriptdir,
                   "statdir = " + statdir,
-                  "indir = " + indir,
-                  "outdir = " + outdir])
+                  "indir = " + osp.join(indir, "chunk"),
+                  "outdir = " + indir,
+                  "final_outdir = " + final_outdir])
     return(vars + "\n")
 
 def make_pp_runcode_commands(fudgetag, postproc_cmd):
@@ -136,6 +142,7 @@ def make_pp_runcode_commands(fudgetag, postproc_cmd):
                      "	eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`",
                      "	source $BASEDIR/set_fudge_env",
                      "	" + postproc_cmd,
+                     "  gcp $outdir/*.nc $final_outdir/",
                      "	if ( $status == 0 ) then",
                      "		 touch $statdir/${desc}.success",
                      "	else",

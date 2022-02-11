@@ -60,7 +60,7 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                     status = 'fail'
             else:
                 print("File " + raw_outpath + " exists; not remaking")
-            outfiles[var] = outfile
+                outfiles[var] = raw_outpath
             if make_qc:
                 print("making qcmask ensemble file")
                 var_qc = var + "_qcmask"
@@ -77,7 +77,7 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                         faillist.append(qc_outpath)
                 else:
                     print("File " + raw_outpath + " exists; not remaking")
-                outfiles[var_qc] = outfile
+                    outfiles[var_qc] = raw_outpath
             if is_anom:
                 #var_anom = var + "Anom"
                 var_anom = re.sub("Anom", "", var)

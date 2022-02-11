@@ -267,8 +267,8 @@ WriteNC <-  function(filename,out.data,var.names,
       }
     }
   }
-  #2020-08: adding the last_modified date for the tool
-  ncatt_put(nc.obj, 0, "tool_version", moddate(), prec='character')
+  ##2020-08: adding the last_modified date for the tool
+  #ncatt_put(nc.obj, 0, "tool_version", moddate(), prec='character')
   #################
   nc_close(nc.obj)
   ##2021 - adding compression settings via nccopy

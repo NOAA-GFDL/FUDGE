@@ -238,12 +238,17 @@ mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
                               allow_partial=F)
 ########################
 #2018-04-10: Creating file paths and checking for existance
-outdirs <- c(file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir),
-             file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir, aux.ref$DS$out_supp[1]))
-write_to_tmp = TRUE
-if (write_to_tmp){
-  outdirs <- sapply(outdirs, function(x){file.path(TMPDIR, x)})
-}
+#outdirs <- c(file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir),
+#             file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir, aux.ref$DS$out_supp[1]))
+#write_to_tmp = TRUE
+#if (write_to_tmp){
+#  outdirs <- sapply(outdirs, function(x){file.path(TMPDIR, x)})
+#}
+#2022-02
+print(c(aux.ref$DS$vars,aux.ref$DS$out_supp))
+#Note that this particular structure is to facilitate the nested dirs that postproc uses for its writes
+#outvpaths <- c(aux.ref$DS$vars, paste0(aux.ref$DS$vars, aux.ref$DS$out_supp))
+outdirs <- sapply(c(aux.ref$DS$vars,aux.ref$DS$out_supp), function(x){file.path(aux.ref$xtmpdir, '<RIP>', x, "chunk")})
 #Check for existance of output dirs, after replacing $rip a bit
 out_rip_dirs <- list()
 for (rip in fut.pred.rip.list){

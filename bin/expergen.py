@@ -31,6 +31,16 @@ from check_aux_consistency import check_aux_consistency
 from make_experiment_info import make_exp_info
 from make_all_ds_paths import make_all_ds_paths
 
+
+BASEDIR = os.environ.get('BASEDIR')
+if BASEDIR is None:
+    print("Error in python script calculation: $BASEDIR not set. Please source a path to the section 8 tools.")
+    sys.exit(1)
+sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
+from xtmp_functions import make_xtmp_path
+import env
+
+
 list_title = []
 dictDS_hi = {}
 listh = []
@@ -641,7 +651,7 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         sbatchmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table, options.no_dmget, 
+                        options.not_strict, meta_table, options.no_dmget,
                         options.queue)
 
 
@@ -738,6 +748,8 @@ def generate_experiment(parse_xml, create_default_aux,
         else:
             #output grid or ds_region
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
+        #2022-02: create xtmp and set in auxfile
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, auxdict['DS']['vars'], auxdict['DS']['rips'])
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
             queue = auxdict['queue']
@@ -752,7 +764,7 @@ def generate_experiment(parse_xml, create_default_aux,
                               ds_info['multivar_target'],
                               auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
                               auxdict, ds_minifile, expconfig,
-                              not_strict_metadata, metadata_table, queue)
+                              not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -787,13 +799,14 @@ def generate_experiment(parse_xml, create_default_aux,
         multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
         # same for the pp_wallclocktime - this should get added to the aux dict
         auxinfo = {'pp_wallclocktime': '5:00:00'}
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], ginfo['grid'], True, auxdict['DS']['vars'], auxdict['DS']['rips'])
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
             queue = auxdict['queue']
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
-                                  not_strict_metadata, metadata_table, queue)
+                                  not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
 
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
@@ -812,6 +825,10 @@ def generate_experiment(parse_xml, create_default_aux,
         shutil.copy2(uinput, cdir)
     shutil.copy2(auxinput, cdir)
     shutil.copy2(env_file, sbase + "/environment_info.csh")
+    #2022-02: and dump a modified auxdict
+    cmdir = sbase + "/config_mod/"
+    with open(osp.join(cmdir, osp.basename(auxinput)), 'w') as f:
+        f.write(json.dumps(auxdict, indent=2))
     ################ step 6 fudgeList invocation ##############################################
     slogloc = sbase+"/"+"experiment_info.txt"
     if parse_xml:
