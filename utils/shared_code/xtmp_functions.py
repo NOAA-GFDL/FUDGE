@@ -15,6 +15,10 @@ sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
 #from common_functions import get_nc_dim_lengths, tstamp
 import env
 
+def make_ptmp_path():
+    ptmp_dir = "/xtmp/" + env.USER + "/work/"
+    return(ptmp_dir)
+
 def mirror_ptmp(source):
     '''
     Given a source file, provides the mirored location in the xtmp-based
@@ -22,7 +26,7 @@ def mirror_ptmp(source):
     file is not present or b) the file in source has a later modification date
     than dest
     '''
-    ptmp_dir = "/xtmp/" + env.USER + "/work/"
+    ptmp_dir = make_ptmp_path()
     dest = osp.join(ptmp_dir, source)
     if not osp.exists(dest):
         gcp(source, dest)

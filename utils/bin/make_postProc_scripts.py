@@ -20,12 +20,19 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     types = ['none']
     if auxdict['make_qcmask']:
         types.append('qcmask')
-        vars.append(auxdict['DS']['ds_supp'])
+        if 'ds_supp' in auxdict['DS'].keys():
+            vars.append(auxdict['DS']['ds_supp'])
+        else:
+            qcvar = auxdict['DS']['vars'][0] + "_qcmask"
+            vars.append(qcvar)
     # Hook for adding in save files when we get to that point
     make_save = False
     if make_save:
-        types.append('save')
-        vars.append(auxdict['DS']['ds_supp'])
+        if 'ds_supp' in auxdict['DS'].keys():
+            vars.append(auxdict['DS']['ds_supp'])
+        else:
+            svar = auxdict['DS']['vars'][0] + "_save"
+            vars.append(svar)
     # regexes contain switches for ensemble members and vars;
     # saving off coords is more complex and we aren't doing it now
     indir_regex = osp.join(auxdict['DS']['out_dir'], auxdict['DS']['out_subdir'])
@@ -61,7 +68,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
             indir_loop = osp.join(xtmpdir, m, v)
             indir_loop2 = osp.join(xtmpdir, m, v)
             for t in types:
-                desc = ".".join([m, v, t])
+                desc = ".".join([m, v]) #,t
                 pp_runcode = osp.join(pp_dir, desc)
                 pp_runcode_header = pp_runcode_header = "\n".join(["#!/bin/tcsh",
                                                    "#SBATCH -c " + str(cores),
@@ -87,6 +94,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
                                         "--aux " + auxfile,
                                         "-d $indir",
                                         "-o $outdir",
+                                        "--final_outdir $final_outdir",
                                         "--var " + pp_var])
                 runcode_cmd = make_pp_runcode_commands(fudgetag, pp_cmd_text)
                 # Check on verbosity settings set earlier for message commands
@@ -106,7 +114,7 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
     msub_text = msub_text + "rm -f " + statdir + "/*\n"
     # 2019-06-03 - I'm not sure these need to be on a node by themselves. Check?
     # msub_commands = "\n".join(["sbatch --exclusive " + el for el in code_list]) + "\n"
-    msub_commands = "\n".join(["sbatch " + el for el in code_list]) + "\n"
+    msub_commands = "\n".join(["sbatch " + el for el in list(set(code_list))]) + "\n"
     #msub_text = msub_text + msub_commands + "\n"
     msub_text = msub_text + msub_commands + "\n"
     with open(msub_file, 'w') as f:

@@ -31,6 +31,8 @@ def postProc():
                       help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
     parser.add_option("-o", "--output_dir", action="store",
                       help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
+    parser.add_option("--final_outdir", action="store", default="output_dir",
+                     help="Directory to which the concatenated output will be copied for permanent storage (i.e. somewhere in /archive). If not set, is set to output_dir.")
     parser.add_option("--var", action='store', default='none',
                       help="The variable of interest in the files in -d (i.e. tasmax, tasmax_qcmask).")
     parser.add_option("-m","--mail", action="store", default=None,
@@ -42,6 +44,8 @@ def postProc():
         sys.exit(1)
     if not osp.exists(options.output_dir):
         sys.exit(1)
+    if not osp.exists(options.final_outdir):
+        sys.exit(1)
     #Make sure the json auxfile file exists
     if not osp.exists(options.aux):
         sys.exit(1)
@@ -52,11 +56,16 @@ def postProc():
     else:
         uemail = "na"
 
+    if options.final_outdir is "output_dir":
+        final_outdir = options.output_dir
+    else:
+        final_outdir = options.final_outdir
+
     verbose = options.verbose
     print("calling runpostProc")
-    runPostProc(options.aux, options.ds_dir, options.output_dir, options.var, uemail, verbose)
+    runPostProc(options.aux, options.ds_dir, options.output_dir, final_outdir, options.var, uemail, verbose)
 
-def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
+def runPostProc(aux, ds_dir, out_dir, final_outdir, var, mailid, verbose=False):
     #Clearer wrapper describing what the postProc function does.
     #Still trying to duplicate old functionality; should really be called once
     #for each ensemble member.
@@ -107,14 +116,14 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
             supp_patterns = ['qcmask', 'save']
             if any([re.search(el, var) is not None for el in anom_resid_patterns]):
                 if not any([re.search(el, var) is not None for el in supp_patterns]):
-                    anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
+                    anom_out = check_anom_resid(ds_file, final_outdir, total_exp_name,
                                                 var, send_to, script_dir,
                                                 "",True)
                     output_files.append(anom_out)
                 else:
                     # you don't need to do a trend addition,
                     # all you need is a copy
-                    anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
+                    anom_out = check_anom_resid(ds_file, final_outdir, total_exp_name,
                                                 var, send_to, script_dir,
                                                 "",False)
                     output_files.append(anom_out)
@@ -146,7 +155,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
                 print("Copying qc file to final destination")
                 print("using var " + var)
                 climvar = re.sub('Anom', '', var)
-                copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
+                copy_file = callCopyToAnomClim(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput)
         elif ("Detr" in var):
             if is_ds:
                 print "Calling the trend/resid addition script"
@@ -154,7 +163,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
                 climvar = re.sub('Detr', '', var)
             else:
                 print("Copying qc file to final destination")
-                copy_file = callCopyToTrendDetr(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
+                copy_file = callCopyToTrendDetr(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput)
     else:
         print "None of " + ",".join(add_strings)," found in var; no adding/trending operations take place."
     return(copy_file)

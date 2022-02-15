@@ -749,7 +749,7 @@ def generate_experiment(parse_xml, create_default_aux,
             #output grid or ds_region
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
         #2022-02: create xtmp and set in auxfile
-        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, auxdict['DS']['vars'], auxdict['DS']['rips'])
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, target, rip_list)
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
             queue = auxdict['queue']
@@ -791,15 +791,17 @@ def generate_experiment(parse_xml, create_default_aux,
             #Copy to config directory
             dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
             shutil.copy2(auxdict['gridspec'], dest)
+            xtmp_grid = ginfo['grid']
         else:
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+            xtmp_grid = auxdict['output_grid']
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
         multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
         # same for the pp_wallclocktime - this should get added to the aux dict
         auxinfo = {'pp_wallclocktime': '5:00:00'}
-        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], ginfo['grid'], True, auxdict['DS']['vars'], auxdict['DS']['rips'])
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], xtmp_grid, True, auxdict['DS']['vars'], auxdict['DS']['rips'])
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
             queue = auxdict['queue']
