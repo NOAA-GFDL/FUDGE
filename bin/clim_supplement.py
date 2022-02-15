@@ -15,26 +15,28 @@ import fudgeUtils
 from fudgeUtils import send_status_email
 from gcp import gcp
 
-def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
-    #Copies output to anom+clim output directory and changes the var name
-    out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
-    out_files = [f for f in out_files if re.search(var, f) is not None]
-    print("var to be searched for:")
-    print(var)
-    print("out_files:")
-    print(out_files)
-    if len(out_files) > 1:
-        print(("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!"))
-        sys.exit(1)
-    #Get modified file path
-    fpath  = osp.join(final_out_dir, out_files[0])
+def callCopyToAnomClim(infile, final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
+    ##Copies output to anom+clim output directory and changes the var name
+    #out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+    #out_files = [f for f in out_files if re.search(var, f) is not None]
+    #print("var to be searched for:")
+    #print(var)
+    #print("out_files:")
+    #print(out_files)
+    #if len(out_files) > 1:
+    #    print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
+    #    sys.exit(1)
+    ##Get modified file path
+    #fpath  = osp.join(final_out_dir, out_files[0])
+
+    fpath = osp.join(final_out_dir, osp.basename(infile))
     climanom_var = re.sub("Anom", "", var)
     #climanom_fpath = re.sub(var, climanom_var, fpath)
     climanom_fpath = re.sub("Anom", "", fpath)
     print("Copying supplementary anomaly files to new location!")
     print(fpath)
     print(climanom_fpath)
-    gcp(fpath, climanom_fpath)
+    gcp(infile, climanom_fpath) #prev. infile=fpath
     nco_command = "ncrename -v " +var+","+climanom_var +" "+climanom_fpath
     try:
         p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)

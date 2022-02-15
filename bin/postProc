@@ -14,6 +14,7 @@ from fudgeUtils import send_status_email
 from concatenate_nc_files import cat_files
 from trend_supplement import callCopyToTrendDetr, callAddResid
 from clim_supplement import callCopyToAnomClim, callAddAnom
+print("imports complete")
 
 def postProc():
     #Input parsing and arg checking for main body of code
@@ -25,6 +26,8 @@ def postProc():
                       help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
     parser.add_option("-o", "--output_dir", action="store",
                       help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
+    parser.add_option("--final_outdir", action="store", default="output_dir",
+                     help="Directory to which the concatenated output will be copied for permanent storage (i.e. somewhere in /archive). If not set, is set to output_dir.")
     parser.add_option("--var", action='store', default='none',
                       help="The variable of interest in the files in -d (i.e. tasmax, tasmax_qcmask).")
     parser.add_option("-m","--mail", action="store", default=None,
@@ -36,6 +39,8 @@ def postProc():
         sys.exit(1)
     if not osp.exists(options.output_dir):
         sys.exit(1)
+    if not osp.exists(options.final_outdir):
+        sys.exit(1)
     #Make sure the json auxfile file exists
     if not osp.exists(options.aux):
         sys.exit(1)
@@ -46,13 +51,20 @@ def postProc():
     else:
         uemail = "na"
 
-    verbose = options.verbose
-    runPostProc(options.aux, options.ds_dir, options.output_dir, options.var, uemail, verbose)
+    if options.final_outdir is "output_dir":
+        final_outdir = options.output_dir
+    else:
+        final_outdir = options.final_outdir
 
-def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
+    verbose = options.verbose
+    print("calling runpostProc")
+    runPostProc(options.aux, options.ds_dir, options.output_dir, final_outdir, options.var, uemail, verbose)
+
+def runPostProc(aux, ds_dir, out_dir, final_outdir, var, mailid, verbose=False):
     #Clearer wrapper describing what the postProc function does.
     #Still trying to duplicate old functionality; should really be called once
     #for each ensemble member.
+    print("in runpostProc")
     auxinfo, auxdict = parse_aux_info(aux)
     total_exp_name = auxdict['ds_experiment_name']
     script_dir = auxdict['script_settings']['scriptdir']
@@ -73,6 +85,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
 
     #Determine how many ds vars we are looking for
     #note: anom + resid is a special case; always searched for
+    print(ds_dir)
     if osp.exists(ds_dir):
         ds_files = [f for f in os.listdir(ds_dir) if re.search("\.nc", f) is not None]
         n_ds_files = len(ds_files)
@@ -80,6 +93,7 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
             try:
                 # pattern is the file before the i,j indicator
                 file_patt = ds_files[0].split(".")[0]
+                print('calling process_file')
                 ds_file = process_file(aux, file_patt, ds_dir,
                                        out_dir, n_expected_files)
                 output_files.append(ds_file)
@@ -97,14 +111,14 @@ def runPostProc(aux, ds_dir, out_dir, var, mailid, verbose=False):
             supp_patterns = ['qcmask', 'save']
             if any([re.search(el, var) is not None for el in anom_resid_patterns]):
                 if not any([re.search(el, var) is not None for el in supp_patterns]):
-                    anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
+                    anom_out = check_anom_resid(ds_file, final_outdir, total_exp_name,
                                                 var, send_to, script_dir,
                                                 "",True)
                     output_files.append(anom_out)
                 else:
                     # you don't need to do a trend addition,
                     # all you need is a copy
-                    anom_out = check_anom_resid(ds_file, out_dir, total_exp_name,
+                    anom_out = check_anom_resid(ds_file, final_outdir, total_exp_name,
                                                 var, send_to, script_dir,
                                                 "",False)
                     output_files.append(anom_out)
@@ -136,7 +150,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
                 print("Copying qc file to final destination")
                 print("using var " + var)
                 climvar = re.sub('Anom', '', var)
-                copy_file = callCopyToAnomClim(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
+                copy_file = callCopyToAnomClim(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput)
         elif ("Detr" in var):
             if is_ds:
                 print("Calling the trend/resid addition script")
@@ -144,7 +158,7 @@ def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase
                 climvar = re.sub('Detr', '', var)
             else:
                 print("Copying qc file to final destination")
-                copy_file = callCopyToTrendDetr(osp.dirname(in_file), total_exp_name, var, send_to, sbase, uinput)
+                copy_file = callCopyToTrendDetr(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput)
     else:
         print("None of " + ",".join(add_strings)," found in var; no adding/trending operations take place.")
     return(copy_file)

@@ -29,15 +29,15 @@ set file_list = `echo $in_files:q | sed 's/,/ /g'`
 # dmget all files before gcp command
 #honestly, the way we call this it probably isn't neccessary
 #but I'd rather be safe than sorry for our archive files
-dmget $file_list
+#dmget $file_list
 
 foreach el ($file_list)
-	cp $in_dir/$el $tdir/input/$el
+	ln -s $in_dir/$el $tdir/input/$el
 end
 
 echo "cdo -v --no_history collgrid $tdir/input/* $tmp_outfile >& $tdir/collgrid_out.txt"
 cdo -v --no_history collgrid $tdir/input/* $tmp_outfile >& $tdir/collgrid_out.txt
-set collstat = $status 
+set collstat = $status
 if ( $collstat != 0 ) then
   echo "Error in concatenate_files-cdo! cdo concatenation failed!"
   exit 1
@@ -55,9 +55,10 @@ echo `date`
 ncks -m --trd $metafile | grep ": type" | cut -f 1 -d ":" | sort > $tdir/orig_vars.txt
 ncks -m --trd $tdir/griddesc_out.nc | grep ": type" | cut -f 1 -d ":" | sort > $tdir/cat_vars.txt
 
-set echo
+
 echo "ncks to copy missing/incomplete vars that are not dimension-related"
 echo `date`
+#find vars that are not present in the concatenated file but are present in the metadata file
 set vars_not_pres = `grep -F -x -v -f $tdir/cat_vars.txt $tdir/orig_vars.txt`
 if ($#vars_not_pres > 0) then
    set varstr = $vars_not_pres[1]
@@ -88,11 +89,26 @@ echo `date`
 echo "ncks to copy metadata for lat,lon, respective bounds"
 echo `date`
 set varlist = `cat $tdir/orig_vars.txt`
+#note: orig_vars may include some vars that are not present in the concatenated version
 set varstr = `echo $varlist | sed -e s:\ :,:g`
-echo $varstr
+#echo $varstr
 #previously gridsource was metafile
-ncks -A -C -H --no-abc -v $varstr $gridsource $tdir/griddesc_out.nc
-#ncks -A -C -H -v one,three_dmn_rec_var ~/in2.nc ~/out.nc 
+ncks -A -C -H --no-abc -v $varstr $gridsource $tdir/griddesc_out.nc >& $tdir/ncks_stdout.stderr.txt
+
+grep -q "ERROR" $tdir/ncks_stdout.stderr.txt
+set grepstat = $status
+
+if ( $grepstat == 0 ) then
+  foreach line ( "`cat $tdir/ncks_stdout.stderr.txt`" )
+    echo $line > $tdir/line_tmp.txt
+    grep -F -q 'reports user-supplied variable name or regular expression' $tdir/line_tmp.txt
+    set lgrepstat = $status
+    if ( $lgrepstat != 0 ) then
+      echo $line
+    endif
+  end
+endif
+#ncks -A -C -H -v one,three_dmn_rec_var ~/in2.nc ~/out.nc
 
 
 #This command can safely be last due to a padded header
@@ -117,6 +133,5 @@ endif
 ncatted -h -a subsetspecs,global,d,, -O $tdir/griddesc_out.nc
 
 #Step 6: Copy to the final output location
-echo "final copy"
+echo "final copy of $tdir/griddesc_out.nc to $outfile"
 gcp -cd $tdir/griddesc_out.nc $outfile
-
