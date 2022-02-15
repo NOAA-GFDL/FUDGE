@@ -38,9 +38,8 @@ def mirror_ptmp(source):
     return(dest)
 
 def make_xtmp_path(experiment_name, gridname, create=False, var_list=[], rip_list=[]):
-    xtmp_path = "/".join(["/xtmp",
-                           env.USER,
-                           "work/PROJECTS/DOWNSCALING/SUBPROJECTS",
+    ptmp_dir = make_ptmp_path()
+    xtmp_path = "/".join([ptmp_dir, "/PROJECTS/DOWNSCALING/SUBPROJECTS",
                            gridname,
                            experiment_name])
     if create:
