@@ -26,7 +26,7 @@ import env
 
 #These two functions are on loan from FudgeUtils unitl I add an addition to pythonpath
 #within the section 8 environment setup
-def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=True):
+def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False, gcp_verbose=True, gcp_checksum=True, gcp_noop=False):
     #Wrapper for GFDL's GCP function
     #for copying from /archive to /vftmp
     if (outfile=='TMPDIR'):
@@ -192,7 +192,3 @@ def call_R_code(r_command, infiles, out_pattern, rtool,
                 # Examine this call - there might be a better way to do this
                 #os.remove(src)
     return(outfiles)
-
-
-    
-

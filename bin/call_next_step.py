@@ -21,6 +21,14 @@ import shutil
 from pathlib2 import Path
 import json
 
+#in the section 8 tools, this uses S8_path instead
+BASEDIR = os.environ.get('BASEDIR')
+if BASEDIR is None:
+    print("Error in python script calculation: $BASEDIR not set. Please source a path to the section 8 tools.")
+    sys.exit(1)
+sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
+
+from clean_xtmp import clean_xtmp_dir
 
 def ParseNextStepArgs():
     '''
@@ -297,6 +305,7 @@ def main(scriptdir, sleep=60, nloops=100,
                        exp_info_file = exp_info, outfiles = outsplit)
         Path(osp.join(stagedir, "experiment.success")).touch()
         print("File cleanup operations in progress")
+        clean_xtmp_dir(auxdict['xtmpdir'], noop = False)
         make_prof_file(scriptdir, scriptdir + "/log/")
         compress_logs(scriptdir + "/log/")
 
