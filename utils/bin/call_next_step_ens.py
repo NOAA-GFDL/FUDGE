@@ -48,7 +48,7 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
         for var, is_anom, is_trend in zip(vars, is_anom_var, is_trend_var):
             var_outdir = re.sub(var_sub_string, var, raw_outdir)
             raw_outpath = osp.join(var_outdir, raw_outfile)
-            print("submit_ens_job outfile: " + raw_outpath)
+            print(("submit_ens_job outfile: " + raw_outpath))
             #sys.exit(1)
             if not osp.isfile(raw_outpath):
                 try:
@@ -60,7 +60,7 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                     status = 'fail'
             else:
                 print("File " + raw_outpath + " exists; not remaking")
-            outfiles[var] = outfile
+                outfiles[var] = raw_outpath
             if make_qc:
                 print("making qcmask ensemble file")
                 var_qc = var + "_qcmask"
@@ -77,7 +77,7 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                         faillist.append(qc_outpath)
                 else:
                     print("File " + raw_outpath + " exists; not remaking")
-                outfiles[var_qc] = outfile
+                    outfiles[var_qc] = raw_outpath
             if is_anom:
                 #var_anom = var + "Anom"
                 var_anom = re.sub("Anom", "", var)
@@ -129,9 +129,9 @@ def submit_ens_job(raw_outdir, raw_outfile, rips, vars, exp_name, epoch, trange_
                     except:
                         status = 'fail'
                         faillist.append(trend_outpath)
-    for el in outfiles.keys():
+    for el in list(outfiles.keys()):
         print(el)
-        print(outfiles[el])
+        print((outfiles[el]))
     exp_info_files = []
     return(status,faillist,outfiles,exp_info_files)
 
@@ -164,10 +164,10 @@ def makeExpEns(raw_outpath, rips, ds_var, rip_sub_string, var_sub_string,
     out_rip = "r1to" + str(len(rips)) + rip_suffix
     outfile = re.sub(rip_sub_string, out_rip, var_outpath)
     outfile = re.sub(".nc$", "_ensmbl.nc", outfile)
-    print("Ensemble output file location: " + outfile)
+    print(("Ensemble output file location: " + outfile))
     if not osp.exists(outfile):
         if not osp.exists(osp.dirname(outfile)):
-            print("Making dir " + osp.dirname(outfile))
+            print(("Making dir " + osp.dirname(outfile)))
             os.makedirs(osp.dirname(outfile))
         tmp_outfile = osp.join(tdir_ens, osp.basename(outfile) + tstamp())
         orig_filestring = ",".join([osp.basename(el) for el in in_files])
@@ -183,16 +183,16 @@ def makeExpEns(raw_outpath, rips, ds_var, rip_sub_string, var_sub_string,
         p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
         out0,err0 = p.communicate()
         if (p.returncode != 0):
-            print(str(out0))
-            print(str(err0))
-            print("Error in processing ensemble " +  outfile + "; call to c-shell failed.")
-            print("Command that failed: " + ens_command)
+            print((str(out0)))
+            print((str(err0)))
+            print(("Error in processing ensemble " +  outfile + "; call to c-shell failed."))
+            print(("Command that failed: " + ens_command))
             sys.exit(1)
             return(None)
         else:
             if verbose:
-                print(str(out0))
-                print(str(err0))
+                print((str(out0)))
+                print((str(err0)))
             gcp(tmp_outfile, outfile, False, verbose)
             return(outfile)
     else:

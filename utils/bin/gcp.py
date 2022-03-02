@@ -29,14 +29,14 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
         os.makedirs(outdir)
     #Check for input file existance and tape migration
     if verbose:
-        print("checking for dm status of file " + infile)
+        print(("checking for dm status of file " + infile))
     dcheck = subprocess.Popen("dmls -l " + infile, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,shell=True,env=os.environ)
     d_out,d_err = dcheck.communicate()
     if dcheck.returncode != 0:
-        print("Error in gcp: sourcefile " + infile + " not found on this system.")
+        print(("Error in gcp: sourcefile " + infile + " not found on this system."))
         sys.exit(1)
-    elif re.search("(OFL)", d_out) is not None:
+    elif re.search("(OFL)", d_out.decode('utf-8')) is not None:
         #if is offline, dmget
         d = subprocess.Popen("dmget " + infile, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,shell=True,env=os.environ)
@@ -54,7 +54,7 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
                              stderr=subprocess.PIPE,shell=True,env=os.environ)
         g_out,g_err = g.communicate()
         if(g.returncode != 0):
-            print "Error in gcp: file " + infile + " did not copy to " + outfile
+            print("Error in gcp: file " + infile + " did not copy to " + outfile)
             print(g_out)
             print(g_err)
             tries += 1
@@ -62,7 +62,7 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
         else:
             success = True
     if not success and final_cp:
-        print "final try with cp"
+        print("final try with cp")
         if not osp.exists(osp.dirname(outfile)):
             os.makedirs(osp.dirname(outfile))
         shutil.copy2(infile, outfile)

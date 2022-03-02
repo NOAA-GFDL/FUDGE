@@ -130,6 +130,7 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   output['make_qcmask'] = aux_list['make_qcmask']
   output['qc_method'] = aux_list['qc_method']
   output['qc_loc'] = aux_list['qc_loc']
+  output['xtmpdir'] = aux_list['xtmpdir']
   return(output)
 }
 

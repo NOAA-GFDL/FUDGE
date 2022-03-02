@@ -302,7 +302,7 @@ if not htFile:
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
   logfile.write(">>>>>>>  MISSING  2D historical_target_file:"+htFileName.strip()+"\n")
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-  print(">>>>>>>  MISSING  2D historical_target_file:"+htFileName.strip()+"\n")
+  print((">>>>>>>  MISSING  2D historical_target_file:"+htFileName.strip()+"\n"))
   fmissing = True
 logfile.write("\n")
 k=0
@@ -313,7 +313,7 @@ for hpFile in hpFiles:
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>>  MISSING  2D historical_predictor_file:"+hpFileNames[k].strip()+"\n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING  2D historical_predictor_file:"+hpFileNames[k].strip()+"\n")
+    print((">>>>>>>  MISSING  2D historical_predictor_file:"+hpFileNames[k].strip()+"\n"))
     fmissing = True
   k=k+1
 logfile.write("\n")
@@ -326,7 +326,7 @@ for fpFile in fpFiles:
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>>  MISSING  2D historical_predictor_file:"+fpFileNames[k].strip()+"\n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING  2D historical_predictor_file:"+fpFileNames[k].strip()+"\n")
+    print((">>>>>>>  MISSING  2D historical_predictor_file:"+fpFileNames[k].strip()+"\n"))
     fmissing = True
   k=k+1
 logfile.write("\n")
@@ -337,7 +337,7 @@ if smask!="na":
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>> MISSING   spatial_mask_file: " + spFileName.strip() + ": \n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING   spatial_mask_file: " + spFileName.strip() + " \n")
+    print((">>>>>>>  MISSING   spatial_mask_file: " + spFileName.strip() + " \n"))
     fmissing = True
   logfile.write("   " + spFile + "\n")
   logfile.write("\n")
@@ -349,7 +349,7 @@ if htwFileName!="na":
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>>  MISSING  htwFileName = "+htwFileName.strip()+ " \n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING  historical time window FileName = "+htwFileName.strip())
+    print((">>>>>>>  MISSING  historical time window FileName = "+htwFileName.strip()))
     fmissing = True
 logfile.write("\n")
 logfile.write("future_time_window_file: " + ftwFileName+ "\n")
@@ -359,7 +359,7 @@ if ftwFileName!="na":
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>>  MISSING  ftwFileName = "+ftwFileName.strip() + " \n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING  future time window FileName = "+ftwFileName.strip())
+    print((">>>>>>>  MISSING  future time window FileName = "+ftwFileName.strip()))
     fmissing = True
 logfile.write("\n")
 logfile.write("-------------------------- \n")

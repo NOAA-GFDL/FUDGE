@@ -21,6 +21,14 @@ import shutil
 from pathlib2 import Path
 import json
 
+#in the section 8 tools, this uses S8_path instead
+BASEDIR = os.environ.get('BASEDIR')
+if BASEDIR is None:
+    print("Error in python script calculation: $BASEDIR not set. Please source a path to the section 8 tools.")
+    sys.exit(1)
+sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
+
+from clean_xtmp import clean_xtmp_dir
 
 def ParseNextStepArgs():
     '''
@@ -41,7 +49,7 @@ def ParseNextStepArgs():
         try:
             NEMSemail1 = os.environ["NEMSemail"]
         except KeyError:
-            print "-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually."
+            print("-m option unused and NEMSemail environmental var not set. If you want email notifications, enter them manually.")
             NEMSemail1 = 'none'
     else:
         NEMSemail1 = options.mail
@@ -98,7 +106,7 @@ def main(scriptdir, sleep=60, nloops=100,
     status = 'wait'
     is_done = False
     t = 0
-    t_max = nloops
+    t_max = int(nloops)
     #sleepytime = 60 * 10
     sleepytime = float(sleep)
     outfiles = OrderedDict()
@@ -106,8 +114,8 @@ def main(scriptdir, sleep=60, nloops=100,
 
     while not is_done and t < t_max:
         if verbose:
-            print("starting watcher loop " + str(t))
-            print("in stage " + stage + ", status " + status)
+            print(("starting watcher loop " + str(t)))
+            print(("in stage " + stage + ", status " + status))
         skip_wait = False
         if stage == 'master':
             print(master_retry)
@@ -160,7 +168,7 @@ def main(scriptdir, sleep=60, nloops=100,
                     raw_outfile = auxdict['DS']['out_file']
                     rips = auxdict['DS']['rips']
                     vars = auxdict['DS']['vars']
-                    ens_outfiles = [outfile_dict['ds'][el]['ens'] for el in outfile_dict['ds'].keys()]
+                    ens_outfiles = [outfile_dict['ds'][el]['ens'] for el in list(outfile_dict['ds'].keys())]
                     # submit_ens_job is supposed to do the trend and anomaly stuff;
                     
                     #2021-03-16:reading from common metadata file
@@ -236,7 +244,7 @@ def main(scriptdir, sleep=60, nloops=100,
             skip_wait = True
         t += 1
         if not skip_wait:
-            print("sleeping for " + str(sleepytime) + " seconds.")
+            print(("sleeping for " + str(sleepytime) + " seconds."))
             time.sleep(sleepytime)
     print("Done with watcher looping")
     if t > t_max:
@@ -297,6 +305,7 @@ def main(scriptdir, sleep=60, nloops=100,
                        exp_info_file = exp_info, outfiles = outsplit)
         Path(osp.join(stagedir, "experiment.success")).touch()
         print("File cleanup operations in progress")
+        clean_xtmp_dir(auxdict['xtmpdir'], noop = False)
         make_prof_file(scriptdir, scriptdir + "/log/")
         compress_logs(scriptdir + "/log/")
 
@@ -353,13 +362,13 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
     outfiles = {}
     status = 'success'
     for v in ds_vars:
-        if v in outdict.keys():
+        if v in list(outdict.keys()):
             for t in types:
                 #print(outdict[v])
                 #print(outdict[v][t])
                 for f in outdict[v][t]['input']:
                     if not osp.isfile(f):
-                        print("Error in submit_crossval_job for var " + v + "! File " + f + " does not exist!")
+                        print(("Error in submit_crossval_job for var " + v + "! File " + f + " does not exist!"))
                         status='failure'
                         break
                 orig_inFiles = ",".join(outdict[v][t]['input'])
@@ -371,9 +380,9 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
                 cv_type = t
                 trange_string = "fake_trange"
                 # All below is taken from the cross-valdiation tool
-                print("Output file location: " + outfile)
+                print(("Output file location: " + outfile))
                 if not osp.exists(osp.dirname(outfile)):
-                    print("Making " + osp.dirname(outfile))
+                    print(("Making " + osp.dirname(outfile)))
                     os.makedirs(osp.dirname(outfile))
                 tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())
                 #Finally, call the ensemble generation code:
@@ -385,17 +394,17 @@ def submit_crossval_job(outdict, ds_vars, verbose=False):
                 p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
                 out0,err0 = p.communicate()
                 if (p.returncode != 0):
-                    print(str(out0))
-                    print(str(err0))
-                    print("Error in processing ensemble " +  inFiles + "; call to c-shell failed.")
-                    print("Command that failed: " + ens_command)
+                    print((str(out0)))
+                    print((str(err0)))
+                    print(("Error in processing ensemble " +  inFiles + "; call to c-shell failed."))
+                    print(("Command that failed: " + ens_command))
                     status='failure'
                 else:
                     if verbose:
-                        print(str(out0))
-                        print(str(err0))
+                        print((str(out0)))
+                        print((str(err0)))
                     gcp(tmp_outfile, outfile, verbose, verbose)
-                    print("Copied to " + outfile)
+                    print(("Copied to " + outfile))
                 outfiles[v + "_" + t] = outfile
     return(status, [], outfiles)
 
@@ -414,7 +423,7 @@ def check_master_status(master_statdir, masterdir, retry, scriptdir, verbose):
     n_status = len(master_statfiles)
     n_success = len([el for el in master_statfiles if re.search('success', el) is not None])
     if verbose:
-        print("There are " + str(n_status) + "/" + str(n_master) + " master statfiles; " + str(n_success) + " successful")
+        print(("There are " + str(n_status) + "/" + str(n_master) + " master statfiles; " + str(n_success) + " successful"))
     if n_status == n_master:
         if n_success == n_master:
             status = 'success'
@@ -446,7 +455,7 @@ def submit_retry_scripts(statdir, scriptdir, basedir):
         if(p1.returncode != 0):
             print("Error in submit_retry_scripts - job submission failed!")
             print(submit_cmd)
-            print(output1 + "\n" + error1)
+            print((output1 + "\n" + error1))
             sys.exit(1)
 
 
@@ -469,7 +478,7 @@ def check_mini_status(mini_statdir, minidir, write_qcmask, verbose):
         n_status = len(str_statfiles)
         n_success = len([el for el in str_statfiles if re.search('success', el) is not None])
         if verbose:
-            print("There are " + str(n_status) + " " + srst + " statfiles; " + str(n_success) + " successful")
+            print(("There are " + str(n_status) + " " + srst + " statfiles; " + str(n_success) + " successful"))
         # The below is a hack - but I want to see what the results are
         if n_status >= n_mini:
             if n_success == n_mini:
@@ -489,7 +498,7 @@ def submit_postproc_jobs(scriptdir, verbose=False):
     '''
     wscript = scriptdir+"/postProc/msubwrapper"
     if verbose:
-        print("submitting " + wscript)
+        print(("submitting " + wscript))
     p = subprocess.Popen(wscript,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
     output, errors = p.communicate()
     if(p.returncode != 0):
@@ -509,7 +518,7 @@ def check_pp_status(statdir, ppdir, verbose=False):
     n_success = len([el for el in statfiles if re.search('success', el) is not None])
     faillist = []
     if verbose:
-        print("There are " + str(n_status) + " pp statfiles; " + str(n_success) + " successful")
+        print(("There are " + str(n_status) + " pp statfiles; " + str(n_success) + " successful"))
     if n_status == n_postproc:
         if n_success == n_postproc:
             status = 'success'
@@ -550,7 +559,7 @@ def check_crossval_status(crossval_patt, cv_match, exp_name, scriptdir, exp_name
         cv_outfiles = runMakeCVEns(exp_name, exp_name2, scriptdir, scriptdir2, verbose=(verbopt==1))
     else:
         # Warn about the cross-validated complement experiment
-        print("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m ")
+        print(("\033[1;43mExperiment " + exp_name +" has a cross-validated complement " + exp_name2 + " ; please run complement to get cross-validated ensembles automatically, or run following command on your own:\033[1;m "))
         print(cv_command)
         return('success')
 
@@ -565,7 +574,7 @@ def compress_logs(logdir):
     os.chdir(logdir)
     #compress_files = [osp.join(logdir, el) for el in os.listdir(logdir)]
     pattdict = {'chunk': '^out\.', 'master': '^master\.'}
-    for step,patt in pattdict.items():
+    for step,patt in list(pattdict.items()):
         lname = osp.join(logdir, step + "_compressed_logfiles.tar.gz")
         lfiles = [el for el in os.listdir(logdir) if re.search(patt,el) is not None]
         tar_log = tarfile.open(lname, "w:gz")
@@ -602,7 +611,7 @@ def final_print(outfiles, exp_info_file, logfile_path, xml_path):
     Prints the final message pointing to the outfiles for the experiment
     '''
     # ens_list = ens_namemap(ens_list)
-    outpath_list = "\n".join([el + ":" + outfiles[el] for el in outfiles.keys()])
+    outpath_list = "\n".join([el + ":" + outfiles[el] for el in list(outfiles.keys())])
     outpath_string = "\n####" + " Downscaled final output " +"#"*47 +"\n"+outpath_list+"\n"
     # concatenate the  xml path onto the tail of every experiment_info.txt
     with open(exp_info_file, 'a') as f:

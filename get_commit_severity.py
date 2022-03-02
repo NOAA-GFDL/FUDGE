@@ -40,23 +40,23 @@ def run_commit_tests():
     test1 = "jamoca-20190425"
     test1_sev = get_commit_severity(test1)
     print(test1)
-    print(str(test1_sev))
+    print((str(test1_sev)))
     test2 = 'icing-testing-20190401'
     test2_sev = get_commit_severity(test2)
     print(test2)
-    print(str(test2_sev))
+    print((str(test2_sev)))
     test3 = "icing-testing-20190301-01"
     test3_sev = get_commit_severity(test3)
     print(test3)
-    print(str(test3_sev))
+    print((str(test3_sev)))
     test4 = "icing-testing-cew-20190405"
     test4_sev = get_commit_severity(test4)
     print(test4)
-    print(str(test4_sev))
+    print((str(test4_sev)))
     test5 = 'parallel_postproc'
     test5_sev = get_commit_severity(test5)
     print(test5)
-    print(str(test5_sev))
+    print((str(test5_sev)))
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

@@ -15,7 +15,7 @@ import shlex
 import smtplib
 import optparse
 from optparse import OptionParser
-import ConfigParser
+import configparser
 import traceback
 import netCDF4
 from netCDF4 import Dataset
@@ -131,7 +131,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     out0,err0 = p0.communicate()
     # I'm turning off R and python version for the moment, since they
     # create too many false positives when doing comaprisons.
-    gd['r_version'] = re.split(" --", out0)[0]
+    gd['r_version'] = re.split(" --", out0.decode('utf-8'))[0]
     # gd['python_version'] = re.split("\n", sys.version)[0]
     #Filenames of data
     gd['filenames_OH'] = get_filename_atts(auxdict['OH'])
@@ -152,7 +152,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         print("Error in prime_var search: should only match one!")
         sys.exit(1)
     '''
-    prime_var = auxdict['OH'].keys()[0]
+    prime_var = list(auxdict['OH'].keys())[0]
     OH_file = auxdict['OH'][prime_var]['file']
     MH_file = auxdict['MH'][prime_var]['file']
     MF_file = auxdict['MF'][prime_var]['file']
@@ -173,7 +173,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
                          str(auxdict['minsamplesize']) + " non-missing value(s);"
     gd['info_stencils'] = get_stencil_atts(auxdict)
     gd['info_ds_xy_incomplete'] = auxdict['ds_handle_missing']
-    predictor_vars = ",".join(auxdict['MF'].keys())
+    predictor_vars = ",".join(list(auxdict['MF'].keys()))
     train_string = ds_info['train_datasets']
     fut_rips = ",".join(auxdict['DS']['rips'])
     gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var,
@@ -216,10 +216,10 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd; 
     ad['ensemble_globals'] = egd;
     #And finally, write the whole thing to file
-    print("Wrting to: " + meta_file)
+    print(("Wrting to: " + meta_file))
     meta_text = json.dumps(ad, indent=2)
     f = open(meta_file, 'w')
-    print >> f, meta_text
+    print(meta_text, file=f)
     f.close()
 
 def merge_dicts(x, y):
@@ -232,7 +232,7 @@ def generate_fxn_arglist(arglist, is_ds=False):
     #creates formatted list for keeping track of args to functions in sequence
     #we assume that arglist is an OrderedDict
     if len(arglist) > 0:
-        ret = ";".join([make_arglist(arglist[k], is_ds) for k in arglist.keys()])
+        ret = ";".join([make_arglist(arglist[k], is_ds) for k in list(arglist.keys())])
         return(ret)
     else:
         return("none specified")
@@ -295,7 +295,7 @@ def get_filename_atts(data_struct):
     #Takes an optional arg for setting the first element in the returned list
     #otherwise, sorts alphabetically
     f_out = []
-    for k in data_struct.keys():
+    for k in list(data_struct.keys()):
         fname = data_struct[k]['file']
         if data_struct[k]['is_prime']:
             f_out = [osp.basename(fname)] + f_out
@@ -312,7 +312,7 @@ def get_tmask_atts(ds):
     miss_count = 0
     for k in keys:
         subset = ds[k]
-        vars = subset.keys()
+        vars = list(subset.keys())
         tmasks = [subset[v]['tmask'] for v in vars]
         tmask_set = list(set(tmasks))
         if tmask_set[0] == 'na':

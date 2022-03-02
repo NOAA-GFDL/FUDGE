@@ -14,7 +14,7 @@ module load globus
 set plat [exec /home/gfdl/bin2/gfdl_platform]
 
 #check for presence of esd environment module loaded; load if not present
-if {! [is-loaded "env"] } {
+if {! [is-loaded "env-py3"] } {
 switch ${plat} {
 	desktop {
     module use "/app/spack/v0.15/modulefiles/linux-rhel7-x86_64/"
@@ -25,7 +25,8 @@ switch ${plat} {
 	} 
 } 
 
-module swap /usr/local/Modules/modulefiles/python/2.7.12
+#module swap /usr/local/Modules/modulefiles/python/2.7.12
+module swap python/3.7.7
 module swap r/4.0.2
 module swap cdo/1.9.8
 module swap udunits/2.2.24

@@ -24,12 +24,21 @@ from get_ds_info import get_ds_info, parse_aux_info, make_aux_input, parse_grids
 from get_ds_info import add_ds_params_to_auxdict, add_s3_s5_params_to_auxdict
 from make_postProc_scripts import make_postProc_scripts
 from collections import OrderedDict
-from watcher import runWatcher #,_v_print
 from fudgeUtils import read_exp_info_file
 from get_grid_params import get_grid_params
 from check_aux_consistency import check_aux_consistency
 from make_experiment_info import make_exp_info
 from make_all_ds_paths import make_all_ds_paths
+
+
+BASEDIR = os.environ.get('BASEDIR')
+if BASEDIR is None:
+    print("Error in python script calculation: $BASEDIR not set. Please source a path to the section 8 tools.")
+    sys.exit(1)
+sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
+from xtmp_functions import make_xtmp_path
+import env
+
 
 list_title = []
 dictDS_hi = {}
@@ -51,15 +60,15 @@ preexist_glob = "erase" #if overwriting old, default is erasing, not archiving
 idirsuffix = ""
 global mutli
 def checkTags(dictParams,key):
-        if(dictParams.has_key(key)):
+        if(key in dictParams):
                     val = dictParams[key]
         else:
             if(key == 'oroot'):
-                print "output root tag is being deprecated from darkchocolate."
+                print("output root tag is being deprecated from darkchocolate.")
                 sys.exit("error")
 
             elif(key == 'sroot'):
-                print "Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again "
+                print("Script root default value is being deprecated from darkchocolate. elease specify <script_root> in XML and try again ")
                 sys.exit("error")
             elif(key == 'outdir'):
                 val = 'na'
@@ -102,7 +111,7 @@ def checkTags(dictParams,key):
             elif(key == 'property'):
                 val = {}
             else:
-                print "Error: Missing value for ",key
+                print("Error: Missing value for ",key)
                 sys.exit(1)
         return val
 
@@ -118,7 +127,7 @@ def parse_outdir(out_dir,property):
         if '$(' in outdirs:
             #print "outdirs as defined expects a property tag.."
             expect_prop = 1
-            for pname,pval in property.iteritems():
+            for pname,pval in property.items():
                 pname = '$('+pname+')'
                 if pname == outdirs:
                     #print "we may have located the property tag"
@@ -132,7 +141,7 @@ def parse_outdir(out_dir,property):
     #print "test",pname,new_out_dir,listout
     if(replace == "") & (expect_property == 1):
         replace = "na"
-        print "\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m"
+        print("\033[1;41mWARNING Your outdir specification references a variable. But reference property tag is UNDEFINED \033[1;41m")
     if (replace == "") & (expect_property == 0):
         replace ="na"
     if not bool(property):
@@ -147,7 +156,7 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
     dictDS = {}
     listDS = []
     if(output_grid == "na"):
-        print "ERROR, output_grid not accepted as na"
+        print("ERROR, output_grid not accepted as na")
         sys.exit(1)
     for itemj in listDatasetID:
         #print "counter .......",ctr
@@ -172,7 +181,6 @@ def getFacets(listDatasetID,var,dim,label="label",output_grid="na"):
         hi_ver = hi[ind+6]
         hi_expname = hi_exp+"_"+hi_rip
         hi_expname = hi_expname
-#        dictDS[ds_title] = [hi_proj, hi_product,hi_instit,hi_model,hi_exp,hi_mip,hi_realm,hi_rip,hi_ver,hi_expname]
         hiresdir = "/"+hi_proj+"/"+hi_product+"/"+hi_instit+"/"+hi_model+"/"+hi_exp+"/"+hi_freq+"/"+hi_realm+"/"+hi_mip+"/"+hi_rip+"/"+hi_ver+"/"+var+"/"+output_grid+"/"+dim+"/"
         dictDS['proj']=hi_proj
         dictDS['product']=hi_product
@@ -204,7 +212,7 @@ def getDir(listDir,label):
 
 
 def listVars(uinput,basedir=None,msub=False,pp=False):
-    print "PP option is set to ",pp
+    print("PP option is set to ",pp)
     if os.path.exists(uinput):
         handler = xmlhandler.XMLHandler(  )
         dictParams = handler.getParams(uinput)
@@ -215,10 +223,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     #print "----Downscaling XML template-", uinput
       #  print "----Force Override existing output Flag-", force
     ###################################
-    print "Input from XML"
-    print "########################"
-    for name,val in dictParams.iteritems():
-        print name,"=",val
+    print("Input from XML")
+    print("########################")
+    for name,val in dictParams.items():
+        print(name,"=",val)
     ###### get dictParams #################################
     predictor =  checkTags(dictParams,'predictor_list')
     target = checkTags(dictParams,'target')
@@ -281,10 +289,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     ##### end filename suffix ######
     # removing the following precipitation check. Checks in XMLGen should be good enough. And this condition may not apply any more. Espresso release
     # if(target != 'pr'):
-    #    if(pr_opts != 'na'):
-    #        print "ERROR: You specified pr_opts for a target field that's not precipitation_flux. Please check and try again"
-    #        sys.exit()
-    print "pr_opts:---------------- ",pr_opts
     #### pr_opts #########
     auxcustom1 = "na"  #$auxcustom1 now not used
     if (params != 'na'):
@@ -304,11 +308,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     out_dir = out_dir.strip()
 
     property = checkTags(dictParams,'property')
-#c    if not bool(property):
-#c        out_dir = out_dir+"#na#na"
-#c        listoutdir = out_dir
-#c    else:
-#c       print "or not"
     out_dir,listoutdir =  parse_outdir(out_dir,property)
     #print "new out_dir", out_dir
     ###CEW edits - debugging single-ens I35 case
@@ -319,20 +318,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
         copyprop = property
     else:
         copyprop = property['RIP']
-        #copyprop = property.iteritems()
-#    print(property)
-#    print(out_dir, listoutdir)
-#    print(copyprop)
-#    print(property)
-#    sys.exit()
-    if (len(listoutdir) > 1):
-       print("Multi-output ON")
-       global multi
-       multi = "on"
-    else:
-       print("single output on")
-       global multi
-       multi = "off"
     ##script -and- log prefix section ##
     sroot = checkTags(dictParams,'sroot')
     sbase = sroot+"/scripts/"+project_ID+"/"+experiment+"/"
@@ -360,20 +345,19 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
     elif(preexist == 'move'):
         force = True #new move feature in clobber - support
     else:
-        print("\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist)
+        print(("\033[1;41mERROR code -2: Please provide a valid value {'exit','erase','move'} for ifpreexist tag in XML \033[1;m",preexist))
         sys.exit(-2)
     if(output_grid == 'station'):
         if(latjstart == latjend):
             dsuffix = "J"+str(latjstart)
             region = output_grid
         else:
-            print "Please specify a single station. "
+            print("Please specify a single station. ")
             sys.exit()
     else:
        if(file_j_range != ''):
            dsuffix=file_j_range
            dim1 = dim
-    #comment out RR a1r    dim = output_grid+"/"+dim1
        else:
            sys.exit( "Please specify region information and file_j_range and try again. Quitting now \n")
     #print(dim1)
@@ -425,10 +409,10 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
             for lon in range(int(lons),int(lone)):
                 exists = checkExisting(outdir,lon,dsuffix,predictand,freq,dmodel,experiment,dexper,ens,fut_train_start_time,fut_train_end_time,'mini',ds_region)
                 if (exists == True) & (force == False):
-                    print "\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir
+                    print("\033[1;41mERROR code -7: Output already exists. Use <ifpreexist>erase</ifpreexist>  to override existing output. Quitting now..\033[1;m",'\n',outdir)
                     sys.exit(-7)
                 if (exists == True) & (force == True):
-                    print '\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m'
+                    print('\033[1;41mCAUTION Output already exists. -f is turned on. Any existing output will be overwritten.\033[1;m')
                     global overwrite
                     overwrite = True
                     break
@@ -436,12 +420,6 @@ def listVars(uinput,basedir=None,msub=False,pp=False):
                     overwrite = True
         global preexist_glob
         preexist_glob = preexist
-        ## CEW edit 2018-09-14
-        #if(preexist == 'move'):
-        #    global preexist_glob
-        #    preexist_glob = 'move'
-        #    #print "preexist turned ON................"
-#        return targetdir1,hist_pred_dir1,fut_pred_dir1
         target_scenario = dict_target['exp']+"_"+dict_target['rip']
         target_model = dict_target['model']
         #CEW edit for testing purposes mip to freq
@@ -469,11 +447,11 @@ def main():
     # First, check platform
     system, node, release, version, machine = os.uname()
     if(node.startswith('pp')):
-        print "Running on PP(PAN) node", node
+        print("Running on PP(PAN) node", node)
     if(node.startswith('an')):
-        print "Running on AN(PAN) node", node
+        print("Running on AN(PAN) node", node)
     else:
-        print "\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please log in to analysis nodes to run expergen. \033[1;m",node
+        print("\033[1;41mERROR code -5: Running on a workstation not tested for end-to-end runs yet. Please log in to analysis nodes to run expergen. \033[1;m",node)
         sys.exit(-5)
 
     # Then, check environment variables
@@ -527,7 +505,7 @@ def main():
     else:
         NEMSemail1 = options.mail
     msub = options.sbatch
-    print("Will jobs be automatically submitted? " + str(msub))
+    print(("Will jobs be automatically submitted? " + str(msub)))
     if (options.run_watcher and not options.sbatch):
         print("Error in expergen: option run-watcher should only be used with sbatch!")
         sys.exit(1)
@@ -552,7 +530,7 @@ def main():
 
     if is_xml and options.uinput != "none":
         if osp.exists(options.uinput):
-            print("XML input: " + options.uinput)
+            print(("XML input: " + options.uinput))
             # TODO: parse this for preexist settings
             tmp = listVars(options.uinput, basedir, msub)
             outdir = tmp[27]
@@ -579,21 +557,21 @@ def main():
                             is_csv = True
                     '''
                 else:
-                    print("Error in expergen: aux input from xml, " + auxfile +
-                          " does not exist on this filesystem!")
+                    print(("Error in expergen: aux input from xml, " + auxfile +
+                          " does not exist on this filesystem!"))
                     print("Please use --aux input for other aux or remove from xml.")
                     sys.exit(1)
             else:
                 create_default_aux = True
                 is_csv = False
         else:
-            print("Error in expergen: xml input " + options.uinput + " was " +
-                  " badly formed or not found. Please check input!")
+            print(("Error in expergen: xml input " + options.uinput + " was " +
+                  " badly formed or not found. Please check input!"))
             sys.exit(1)
 
     if osp.exists(options.auxinput):
         # Note: this can be in json or yaml
-        print("Aux input: " + options.auxinput)
+        print(("Aux input: " + options.auxinput))
         print("Aux will be used for all inputs; DO NOT CALL POSTPROC")
         auxfile = options.auxinput
         auxinfo, auxdict = parse_aux_info(options.auxinput)
@@ -607,8 +585,8 @@ def main():
         preexist = auxdict['cleanup_settings']['if_preexist']
         is_csv = True if auxdict['file_format'] == 'csv' else False
     elif options.auxinput is not "none":
-        print("Error in expergen: aux input " + options.auxinput + " was " +
-              " not found. Please check input!")
+        print(("Error in expergen: aux input " + options.auxinput + " was " +
+              " not found. Please check input!"))
         sys.exit(1)
 
     #CEW edits 6-30 for msub mail verbosity settings
@@ -627,7 +605,7 @@ def main():
     else:
         meta_table = options.metadata_table
         if not osp.isfile(meta_table):
-            print("Error in expergen: metadata table " + meta_table + " does not exist on tthis filesystem!")
+            print(("Error in expergen: metadata table " + meta_table + " does not exist on tthis filesystem!"))
             print("Please use default value or point to location without environment vars in path!")
             sys.exit(1)
 
@@ -641,7 +619,7 @@ def main():
                         options.uinput, auxfile, NEMSemail1,
                         basedir, fudgetag, env_file, msub, scriptdir,
                         sbatchmail, statmail, options.run_watcher,
-                        options.not_strict, meta_table, options.no_dmget, 
+                        options.not_strict, meta_table, options.no_dmget,
                         options.queue)
 
 
@@ -714,7 +692,7 @@ def generate_experiment(parse_xml, create_default_aux,
         exp_check = get_exp_check_tag(uinput)
         if exp_check is not None:
             if (exp_check != expconfig):
-                print("Error in expergen: constructed exp_config " + expconfig + " and xml exp_check tag " + exp_check + " did not match!")
+                print(("Error in expergen: constructed exp_config " + expconfig + " and xml exp_check tag " + exp_check + " did not match!"))
                 sys.exit(1)
         #Add the commands to create the components for the DS entry in the aux file
         ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
@@ -738,6 +716,8 @@ def generate_experiment(parse_xml, create_default_aux,
         else:
             #output grid or ds_region
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
+        #2022-02: create xtmp and set in auxfile
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, target, rip_list)
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
             queue = auxdict['queue']
@@ -752,7 +732,7 @@ def generate_experiment(parse_xml, create_default_aux,
                               ds_info['multivar_target'],
                               auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
                               auxdict, ds_minifile, expconfig,
-                              not_strict_metadata, metadata_table, queue)
+                              not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -779,27 +759,33 @@ def generate_experiment(parse_xml, create_default_aux,
             #Copy to config directory
             dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
             shutil.copy2(auxdict['gridspec'], dest)
+            xtmp_grid = ginfo['grid']
         else:
             i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(auxdict['output_grid'], basedir)
+            xtmp_grid = auxdict['output_grid']
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
         # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
         multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
         # same for the pp_wallclocktime - this should get added to the aux dict
         auxinfo = {'pp_wallclocktime': '5:00:00'}
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], xtmp_grid, True, auxdict['DS']['vars'], auxdict['DS']['rips'])
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
             queue = auxdict['queue']
         create_auxfile_runscripts(i_s, i_e, i_subset, i_off,
                                   j_s, j_e, j_subset, j_off,
                                   auxdict, auxinput, sbase, fudgetag,
-                                  not_strict_metadata, metadata_table, queue)
+                                  not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
 
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
-    print(ds_info.keys())
     if ds_info["downscale_oh"]:
-        if auxdict['OH'].keys()[0] == 'pr':
+        #all online documentation says that this should be solvable with a 
+        #simple list() to conver the keys. It is not.
+        oh_keys = auxdict["OH"].keys()
+        oh_keys = [*oh_keys]
+        if oh_keys[0] == 'pr':
             print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
             sys.exit(1)
         if len( auxdict['DS']['rips']) > 1:
@@ -812,6 +798,10 @@ def generate_experiment(parse_xml, create_default_aux,
         shutil.copy2(uinput, cdir)
     shutil.copy2(auxinput, cdir)
     shutil.copy2(env_file, sbase + "/environment_info.csh")
+    #2022-02: and dump a modified auxdict
+    cmdir = sbase + "/config_mod/"
+    with open(osp.join(cmdir, osp.basename(auxinput)), 'w') as f:
+        f.write(json.dumps(auxdict, indent=2))
     ################ step 6 fudgeList invocation ##############################################
     slogloc = sbase+"/"+"experiment_info.txt"
     if parse_xml:
@@ -822,10 +812,10 @@ def generate_experiment(parse_xml, create_default_aux,
             indirs = []
             dnames = ['OH', 'MH', 'MF']
             for d in dnames:
-                indirs += [osp.dirname(auxdict[d][el]['file']) for el in auxdict[d].keys()]
+                indirs += [osp.dirname(auxdict[d][el]['file']) for el in list(auxdict[d].keys())]
         if any([re.search('Pwl', el) is not None for el in indirs]):
             fcmd += ' --parse-j-style'
-        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
+        f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True, text=True)
         out, err = f.communicate()
         auxloc = sbase + "/config/" + osp.basename(auxinput)
         shutil.copy2(auxinput, auxloc)
@@ -841,7 +831,7 @@ def generate_experiment(parse_xml, create_default_aux,
     msubwrapper = []
     #CEW edit 6-30 for better status file monitoring when queue is full
     msubwrapper.append("rm -f " + sbase + "postProc/ppStatus/*")
-    print("multi output (Writing to multiple output directories) ...." + multi)
+    print(("multi output (Writing to multiple output directories) ...." + multi))
     mail_command = ""
     msub_mail_command = ""
     if (NEMSemail1!='none'):
@@ -869,18 +859,18 @@ def generate_experiment(parse_xml, create_default_aux,
     print("Making postproc scripts")
     make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
     print("----------------------------------------")
-    print("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper")
+    print(("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"))
     print("NOTE: postProc will succeed only if you're running the model for the full downscaled region. (it will fail if you're running downscaling for a single slice for example)")
 ################ step 5 job submission (if applicable) ##############################################
     print("Starting step 5: job submission")
     outfile_loc = osp.join(sbase, "outfile_paths.txt")
-    print("File with all downscaled output paths: " + outfile_loc)
+    print(("File with all downscaled output paths: " + outfile_loc))
     config_mod = [el for el in os.listdir(osp.join(sbase, 'config_mod')) if re.search('json', el) is not None][0]
     make_all_ds_paths(osp.join(sbase, 'config_mod/' +config_mod), outfile_loc)
     if not no_dmget:
         dmget_script = osp.join(basedir, "utils/bin/dmget_files") + " " + osp.join(sbase, 'fudge_inputs.txt')
         print("sourcing dmget commands for the experiment: " + dmget_script)
-        p4 = subprocess.Popen(dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        p4 = subprocess.Popen(dmget_script, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE, text=True)
         out4,err4 = p4.communicate()
         if (p4.returncode != 0):
             print("sourcing of dmget commands failed; please run with --no-dmget option")
@@ -900,7 +890,7 @@ def generate_experiment(parse_xml, create_default_aux,
         msub_cmd = msub_cmd + msub_string + el + "; "
         msub_short = msub_string + el + "; sleep 1"
         if msub:
-            p5 = subprocess.Popen(msub_short,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+            p5 = subprocess.Popen(msub_short,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE, )
             output5, errors5 = p5.communicate()
             if(p5.returncode != 0):
                 print("Step5:!!!! FAILED !!!!, please contact developer.")
@@ -912,7 +902,7 @@ def generate_experiment(parse_xml, create_default_aux,
     print("-----------")
     if not msub:
         print("--sbatch not set on command line. To submit jobs at a later point, please use the following:")
-        print("\033[1;95m"+msub_cmd+"\033[1;m")
+        print(("\033[1;95m"+msub_cmd+"\033[1;m"))
     '''
     #if parse_xml:
     print "Upon submission of downscaling batch jobs, please use the following watcher script command to watch for DS output from this and submit the postProc PP jobs automatically \n -- Use watcher interactively from AN nodes and load fudge module while doing so to set the environment. \n -- Use watcher -h for a complete list of command-line options including verbosity   "
@@ -925,8 +915,8 @@ def generate_experiment(parse_xml, create_default_aux,
     ns_cmd = "sbatch -D $HOME " + nextstep_file
     if run_watcher:
         print("Submitting callNextStep for this job to analysis")
-        print("\033[1;42m" + ns_cmd + "\033[0;m" + "\n")
-        p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
+        print(("\033[1;42m" + ns_cmd + "\033[0;m" + "\n"))
+        p6 = subprocess.Popen(ns_cmd, shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE, )
         output6, errors6 = p6.communicate()
         #######
         if(p6.returncode != 0):
@@ -938,11 +928,11 @@ def generate_experiment(parse_xml, create_default_aux,
         print(errors6)
     else:
         print("You can submit an experiment-tracking watcher to the batch queue with this command:")
-        print("\033[1;42m" + ns_cmd + "\033[1;m")
+        print(("\033[1;42m" + ns_cmd + "\033[1;m"))
     print("It is possible to cancel all jobs belonging to this experiment with the following command(s):")
-    print("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m")
+    print(("\033[1;42mscancel -u $USER -n " + expconfig + "\033[1;m"))
     if run_watcher:
-        print("\033[1;42mscancel -u $USER -n fudge_watcher." + expconfig + "\033[1;m")
+        print(("\033[1;42mscancel -u $USER -n fudge_watcher." + expconfig + "\033[1;m"))
     sys.exit(0)
 
 def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=3, nloops=1200, verbose=True):
@@ -990,9 +980,9 @@ def getOutputPath(projectRoot,category,instit,predModel,dexper,freq,realm,mip,en
     ##Sample:
     #${PROJECTROOT}/downscaled/NOAA-GFDL/GFDL-HIRAM-C360-COARSENED/amip/day/atmos/day/r1i1p1/v20110601/GFDL-ARRMv1A13X01/tasmax/OneD/v20130626/tasmax_day_GFDL-ARRMv1A13X01_amip_r1i1p1_US48_GFDL-HIRAM-C360-COARSENED_19790101-20081231.XXXX.nc
 
-    print "No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate."
+    print("No outdir specified. Deducing the standardized output directory is deprecated. out_dir is required from darkchocolate.")
     if(projectRoot == 'na'):
-        print "Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path "
+        print("Output root directory not specified. Default project root specifiction is deprecated from darkchocolate. Use out_dir to specify absolute path ")
         dexperonly = dexper.split("_")[0]
     if(freq == ""):
         freq = mip
@@ -1012,7 +1002,6 @@ def checkExisting(dire,lon,Jsuffix,variable,freq,model,exper,scenario,ens,start_
         fileid= ".I"+str(lon)+"_"+str(Jsuffix)+filesuff
         filename = variable+"_"+"day"+"_"+exper+"_"+str(scenario)+"_"+str(region)+"_"+str(start_year_s1)+"0101-"+str(end_year_s1)+"1231"+fileid
         if(os.path.exists(dire+"/"+filename)):
-        #    print "OOPS!!!!!!!!!Output file already exists:",dire,"/",filename
             exists = True
     return exists
 

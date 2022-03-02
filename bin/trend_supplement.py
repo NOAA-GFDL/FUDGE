@@ -7,7 +7,6 @@ from subprocess import PIPE
 import argparse
 import shlex
 import fudgeList
-import checker
 import smtplib
 import re
 import netCDF4
@@ -16,24 +15,27 @@ import fudgeUtils
 from fudgeUtils import send_status_email
 from gcp import gcp
 
-def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
+def callCopyToTrendDetr(infile, final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
     #Copies output to trend+resid output directory and changes the var name
     #Mostly expected for suppementary files (_qcmask, _save)
-    out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
-    out_files = [f for f in out_files if re.search(var, f) is not None]
-    if len(out_files) > 1:
-        print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
-        sys.exit(1)
-    #Get modified file path
-    fpath  = osp.join(final_out_dir, out_files[0])
-    #orig_var = var.split('Detr')[0]
-    #trendetr_var = re.sub("Detr", "", var)
+    #out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+    #out_files = [f for f in out_files if re.search(var, f) is not None]
+    #if len(out_files) > 1:
+    #    print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
+    #    sys.exit(1)
+
+    #fpath = infile
+    ##Get modified file path
+    #fpath  = osp.join(final_out_dir, out_files[0])
+    ##orig_var = var.split('Detr')[0]
+    ##trendetr_var = re.sub("Detr", "", var)
+    fpath = osp.join(final_out_dir, osp.basename(infile))
     try:
         #detr_method = re.match('.*?(Detr.*?)_', var).group(1)
         detr_method = re.match('.*?(Detr.*?)', var).group(1)
     except:
-        print("Error in callCopyToTrendDetr! Regular expression failed to find" + \
-              "Detr in expression!")
+        print(("Error in callCopyToTrendDetr! Regular expression failed to find" + \
+              "Detr in expression!"))
         sys.exit(1)
     #trendetr_var = re.sub('Detr.+?_', '_', var)
     #trendetr_climvar = var.split('Detr')[0]
@@ -42,7 +44,7 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
     print("Copying supplementary detrended files to new location!")
     print(fpath)
     print(trendetr_fpath)
-    gcp(fpath, trendetr_fpath)
+    gcp(infile, trendetr_fpath)
     nco_command = "ncrename -v " +var+","+trendetr_var +" "+trendetr_fpath
     p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out0, err0 = p.communicate()
@@ -55,20 +57,8 @@ def callCopyToTrendDetr(final_out_dir, exp_name, var, supp_string, mailid=None, 
                        mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
                        outfiles = final_out_dir)
         sys.exit(1)
-    #error,output = p.communicate()
-    #print(error)
-    #print(output)
-    #if(p.returncode != 0):
-    #    err_message = "error in call to ncrename"
-    #    print ("Error in renaming! There was an " + err_message)
-    #    print(nco_command)
-    #    if(mailid is not None):
-    #        send_status_email("failure", 'postProc - copy to trend+detr', exp_name, \
-    #                   traceback = "Error in call to ncrename - call for reference: " + nco_command,\
-    #                   mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
-    #                   outfiles = final_out_dir)
     else:
-        print "gcp and rename successful"
+        print("gcp and rename successful")
     return(trendetr_fpath)
 
 
@@ -88,7 +78,7 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
             trend = nc_obj.__dict__['trend']
         except KeyError:
             trend_error = 'Trend not found in input file ' + detr_file
-            print("Error in trend addition! " + trend_error + " ;exiting")
+            print(("Error in trend addition! " + trend_error + " ;exiting"))
             if( mailid is not None):
                 send_status_email("failure", 'callAddResid', exp_name,
                             traceback = trend_error,
@@ -111,7 +101,7 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
             s_idx += 1
     if(not trend_exists):
         trend_error = "trend file " + trend + ' not found on system'
-        print ("Error in anomaly addition!" + trend_error + " ; exiting")
+        print(("Error in anomaly addition!" + trend_error + " ; exiting"))
         if( mailid is not None):
             send_status_email("failure", 'postProc', exp_name,
                            traceback = "trendatology file " + trend + "not found on system",
@@ -120,7 +110,7 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
         exit(1)
     else:
         if( not osp.exists(osp.dirname(trend_detr_file)) ):
-            print 'Making output anom + trend directory'
+            print('Making output anom + trend directory')
             os.makedirs(osp.dirname(trend_detr_file))
         #print(os.environ)
         try:
@@ -168,7 +158,7 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
         print(output)
         if(p.returncode != 0):
             err_message = "error in call to resid addition"
-            print ("Error in trend addition! There was an " + err_message)
+            print(("Error in trend addition! There was an " + err_message))
             print(residadd_command)
             if(mailid is not None):
                 send_status_email("failure", 'postProc - residAdd', exp_name,
@@ -177,8 +167,8 @@ def callAddResid(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
                            outfiles = final_out_dir)
             sys.exit(1)
         else:
-            print "Trend addition successful"
-            print "Copying to final location"
+            print("Trend addition successful")
+            print("Copying to final location")
             gcp(trend_detr_file_out, trend_detr_file)
     return trend_detr_file
 

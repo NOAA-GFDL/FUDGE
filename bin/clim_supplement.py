@@ -7,7 +7,6 @@ from subprocess import PIPE
 import argparse
 import shlex
 import fudgeList
-import checker
 import smtplib
 import re
 import netCDF4
@@ -16,26 +15,28 @@ import fudgeUtils
 from fudgeUtils import send_status_email
 from gcp import gcp
 
-def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
-    #Copies output to anom+clim output directory and changes the var name
-    out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
-    out_files = [f for f in out_files if re.search(var, f) is not None]
-    print("var to be searched for:")
-    print(var)
-    print("out_files:")
-    print(out_files)
-    if len(out_files) > 1:
-        print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
-        sys.exit(1)
-    #Get modified file path
-    fpath  = osp.join(final_out_dir, out_files[0])
+def callCopyToAnomClim(infile, final_out_dir, exp_name, var, supp_string, mailid=None, sbase="", uinput=""):
+    ##Copies output to anom+clim output directory and changes the var name
+    #out_files = [f for f in os.listdir(final_out_dir) if osp.isfile(osp.join(final_out_dir, f))]
+    #out_files = [f for f in out_files if re.search(var, f) is not None]
+    #print("var to be searched for:")
+    #print(var)
+    #print("out_files:")
+    #print(out_files)
+    #if len(out_files) > 1:
+    #    print("Error in callCopyToAnom: more than one f in " + final_out_dir + " matches " + var + "!")
+    #    sys.exit(1)
+    ##Get modified file path
+    #fpath  = osp.join(final_out_dir, out_files[0])
+
+    fpath = osp.join(final_out_dir, osp.basename(infile))
     climanom_var = re.sub("Anom", "", var)
     #climanom_fpath = re.sub(var, climanom_var, fpath)
     climanom_fpath = re.sub("Anom", "", fpath)
     print("Copying supplementary anomaly files to new location!")
     print(fpath)
     print(climanom_fpath)
-    gcp(fpath, climanom_fpath)
+    gcp(infile, climanom_fpath) #prev. infile=fpath
     nco_command = "ncrename -v " +var+","+climanom_var +" "+climanom_fpath
     try:
         p = subprocess.Popen(nco_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -53,7 +54,7 @@ def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, s
     print(output)
     if(p.returncode != 0):
         err_message = "error in call to ncrename"
-        print ("Error in renaming! There was an " + err_message)
+        print(("Error in renaming! There was an " + err_message))
         print(nco_command)
         if(mailid is not None):
             send_status_email("failure", 'postProc - copy to anom+clim', exp_name, \
@@ -61,7 +62,7 @@ def callCopyToAnomClim(final_out_dir, exp_name, var, supp_string, mailid=None, s
                        mailid=mailid, logfiles = os.path.join(sbase, "log/out.*"), \
                        outfiles = final_out_dir)
     else:
-        print "gcp and rename successful"
+        print("gcp and rename successful")
     return(climanom_fpath)
 
 
@@ -80,7 +81,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
             clim = nc_obj.__dict__['climatology']
         except KeyError:
             clim_error = 'Climatology not found in input file ' + anom_file
-            print("Error in anomaly addition! " + clim_error + " ;exiting")
+            print(("Error in anomaly addition! " + clim_error + " ;exiting"))
             if( mailid is not None):
                 send_status_email("failure", 'callAddAnom', exp_name,
                             traceback = clim_error,
@@ -103,7 +104,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
             s_idx += 1
     if(not clim_exists):
         clim_error = "Climatology file " + clim + ' not found on system'
-        print ("Error in anomaly addition!" + clim_error + " ; exiting")
+        print(("Error in anomaly addition!" + clim_error + " ; exiting"))
         if( mailid is not None):
             send_status_email("failure", 'postProc', exp_name,
                            traceback = "Climatology file " + clim + "not found on system",
@@ -112,7 +113,7 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
         exit(1)
     else:
         if( not osp.exists(osp.dirname(clim_anom_file)) ):
-            print 'Making output anom + clim directory'
+            print('Making output anom + clim directory')
             os.makedirs(osp.dirname(clim_anom_file))
         try:
             s8_orig = os.environ.get("S8_PATH")
@@ -137,13 +138,13 @@ def callAddAnom(final_out_dir,exp_name,var,mailid=None,sbase="",uinput=""):
         anomadd_command = "tcsh $BASEDIR/utils/pp/anomadd_script.tcsh " + " ".join([str(clim_anom_var),
                                                                                     str(anom_file_out), str(clim_file_out),
                                                                                     str(clim_anom_file_out)])
-        print "Calling anomaly addition"
+        print("Calling anomaly addition")
         print(anomadd_command)
         p = subprocess.Popen(anomadd_command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out,err = p.communicate()
         print("return from p:")
         print(p)
-        print(str(p.returncode))
+        print((str(p.returncode)))
         if p.returncode != 0:
             print("Error in subprocess call of anomaly addition! Please examine call in more detail.")
             print(anomadd_command)

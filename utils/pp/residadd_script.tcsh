@@ -30,7 +30,7 @@ ncrename -h -v "$resid_var,$trend_var" -O $resid_file
 # and allows for a header pad. The -A in the second line avoids
 # overwriting the metadata we worked so hard to add.
 ncks -h --hdr_pad 6000 $resid_file -O $trendresid_tmp
-ncbo --op='add' -v $trend_var $resid_file $trend_file -A $trendresid_tmp
+ncbo --op_typ='add' -v $trend_var $resid_file $trend_file -A $trendresid_tmp
 ncrename -h -v "$trend_var,$var" $trendresid_tmp
 
 #write trend-specific metadata (and do a clone)?

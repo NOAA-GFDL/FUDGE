@@ -7,7 +7,7 @@ def make_runscript(scriptdir, experiment_name, idstring,
                   ds_vars, rips, outdir_regex,
                   i_idx, i_max, i_by, i_offset, j_idx,
                   j_max, j_by, j_offset, auxfile_mod,
-                  meta_file, write_qcmask):
+                  meta_file, write_qcmask, xtmpdir="/FAKE"):
     '''
     Given input parameters, writes a runscript to file.
     2019-05-24: checks for preexisting files before recalculating
@@ -26,19 +26,25 @@ def make_runscript(scriptdir, experiment_name, idstring,
                         "fi",
                         "scriptdir=" + scriptdir,
                         "statdir=" + osp.join(scriptdir, 'status', 'minifile'),
+                        "final_outdir=" + outdir_regex,
+                        "xtmp=" + xtmpdir,
                         "index_idstring=" + idstring,
+                        "vars=(" + " ".join(ds_vars) + ")",
+                        "rips=(" + " ".join(rips) + ")",
+                        'dv_idstring="${vars[${#vars[@]}]}_*${index_idstring}"',
+                        'qc_idstring="${vars[${#vars[@]}]}_qcmask*${index_idstring}"',
                         "logfile=${scriptdir}/log/out." + experiment_name + ".master.$scriptid.chunk.$index_idstring"])
     header += "\n"
-    var_set = "vars=(" + " ".join(ds_vars) + ")"
-    rip_set = "rips=(" + " ".join(rips) + ")"
+    #var_set = "vars=(" + " ".join(ds_vars) + ")"
+    #rip_set = "rips=(" + " ".join(rips) + ")"
     outdir_regex = re.sub("<VAR>", "${var}", outdir_regex)
     outdir_regex = re.sub("<RIP>", "${rip}", outdir_regex)
     complete = "\n".join(["all_complete=0",
                           "for rip in ${rips[@]}; do",
                           "  for var in ${vars[@]}; do",
-                          "    final_outdir=" + outdir_regex,
-                          "    mkdir -p $final_outdir",
-                          "    search_files=$(ls $final_outdir/ | grep $index_idstring)",
+                          "    #mkdir -p $final_outdir",
+                          "    loop_outdir=$xtmpdir/$rip/$var",
+                          "    search_files=$(ls $loop_outdir/ | grep $index_idstring)",
                           "    file_exists=$#",
                           "    if [ $file_exists == 0 ]; then",
                           "      all_complete=1",
@@ -55,32 +61,34 @@ def make_runscript(scriptdir, experiment_name, idstring,
                                            j_max, j_by, j_offset, auxfile_mod,
                                            meta_file, 'TRUE'])
     r_command = "Rscript " + master_driver + " " + cmd_args + " &> $logfile &" + "\nwait\nsleep 10\n"
-
     copies = "\n".join(["write_qcmask=" + ("0" if write_qcmask else "1"),
-                        "for rip in ${rips[@]}; do",
-                        "  for var in ${vars[@]}; do",
-                        "    final_outdir=" + outdir_regex,
-                        "    echo 'gcp $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/'",
-                        "    python ${BASEDIR}/utils/bin/gcp.py $TMPDIR/$final_outdir/*${index_idstring}.nc $final_outdir/ --retry 2",
-                        "    ostat=$?",
-                        "    if [ $ostat == 0 ]; then",
-                        "      touch $statdir/mini.${index_idstring}.success",
-                        "    else",
-                        "      touch $statdir/mini.${index_idstring}.fail",
-                        "    fi",
-                        "    if [ $write_qcmask == 0 ]; then",
-                        "      echo 'gcp $TMPDIR/$final_outdir/${var}_qcmask/*${index_idstring}.nc $final_outdir/${var}_qcmask/'",
-                        "      python ${BASEDIR}/utils/bin/gcp.py $TMPDIR/$final_outdir/${var}_qcmask/*${index_idstring}.nc $final_outdir/${var}_qcmask/ --retry 2",
-                        "      ostat=$?",
-                        "      if [ $ostat == 0 ]; then",
-                        "        touch $statdir/qcmask.${index_idstring}.success",
-                        "      else",
-                        "        touch $statdir/qcmask.${index_idstring}.fail",
-                        "      fi",
-                        "    fi",
-                        "  done",
-                        "done"])
-    return "\n".join([header, var_set, rip_set, complete, r_command, copies]) + "\n"
+                            "for rip in ${rips[@]}; do",
+                            "  for var in ${vars[@]}; do",
+                            "    final_outdir=" + outdir_regex,
+                            "    xtmp_outdir=$xtmp/$rip/$var/",
+                            "    search_files=$(ls $xtmp_outdir/ | grep $dv_idstring)",
+                            "    file_exists=$#",
+                            "    if [ $file_exists == 0 ]; then",
+                            "#these should also have a check for file size greater than 0",
+                            "      touch $statdir/mini.${index_idstring}.success",
+                            "    else",
+                            "      touch $statdir/mini.${index_idstring}.fail",
+                            "    fi",
+                            "    if [ $write_qcmask == 0 ]; then",
+                            "      xtmp_qcdir=$xtmp/$rip/${var}_qcmask",
+                            "      search_files=$(ls $xtmp_outdir/ | grep $qc_idstring)",
+                            "      ostat=$#",
+                            "      if [ $ostat == 0 ]; then",
+                            "        touch $statdir/qcmask.${index_idstring}.success",
+                            "      else",
+                            "        touch $statdir/qcmask.${index_idstring}.fail",
+                            "      fi",
+                            "    fi",
+                            "  done",
+                            "done"])
+
+    #return "\n".join([header, var_set, rip_set, complete, r_command, copies]) + "\n"
+    return "\n".join([header, complete, r_command, copies]) + "\n"
 
     '''
     final_outdir = "/archive/cew/PROJECTS/DOWNSCALING/REGj/downscaled/GFDL-ESM2M/rcp85/day/atmos/GFDL-ESM2Mdetr1981-2099PwlSm21St1Ww31rcp85/${rip}/v20120228/REGjtndetrcap1-QDM-D1A48L01K00/${var}/US480p1/OneD/"

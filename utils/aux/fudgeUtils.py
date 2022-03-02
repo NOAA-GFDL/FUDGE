@@ -6,7 +6,6 @@ from subprocess import PIPE
 import re
 
 # 2019-05-28: gcp is now in its own file, with commandline args
-# search for gcp.py
 
 def read_exp_info_file(exp_info, convert_to_j = True):
     #Reads data formatted in the general form of an experiment info file
@@ -31,7 +30,7 @@ def read_exp_info_file(exp_info, convert_to_j = True):
                     key,entry=keytmp,entrytmp
                 expdict[key] =  entry
     #Bugfix to make sure that single rips are always written as a list
-    if isinstance(expdict['output.path'], basestring):
+    if isinstance(expdict['output.path'], str):
         expdict['output.path'] = [expdict['output.path']]
     #Edit to create check in right location for j-style parsing
     tmp = expdict['output.path']
@@ -59,9 +58,10 @@ def notifyUser(mailid, subject, text):
     send_to = mailid
     if (mailid is not None):
         text_file = osp.join(tmpdir, "fudge_mail.tmp")
-        f = open(text_file, 'wb')
-        f.write(text)
-        f.close()
+        #previously 'wb'. the 'b' stood for 'bytes' and this is a string;
+        #python 3 does not let that stand
+        with open(text_file, 'w') as f:
+            f.write(text)
         command = "mailx -r " + 'fudge.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
         #command = "mailx -r " + 'oar.gfdl.esd'+'@'+"noaa.gov" +" -s '" + subject +  "' '" + mailid + "' < " + text_file
         m = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
@@ -112,13 +112,13 @@ def send_status_email(status,step,exp_name,mailid, \
     if xml != "":
         text = text + "\nExperiment XML:" + xml + "\n"
     if logfiles != "":
-        if isinstance(logfiles,basestring):
+        if isinstance(logfiles,str):
             logfiles = [logfiles]
         text = text + "\nLogfiles:"
         for l in logfiles:
             text = text + "\n\t" + l
     if outfiles != "":
-        if isinstance(outfiles,basestring):
+        if isinstance(outfiles,str):
             outfiles = [outfiles]
         text = text + "\nOutput files:"
         for o in outfiles:

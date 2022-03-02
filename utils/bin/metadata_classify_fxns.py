@@ -6,7 +6,7 @@ import csv
 import netCDF4
 from netCDF4 import Dataset
 from optparse import OptionParser
-import ConfigParser
+import configparser
 BASEDIR = os.environ.get('BASEDIR')
 if BASEDIR is None:
     print("Error in metadata setup: no version of fudge is checked out! Please check out a jamoca-or-later version of fudge.")
@@ -66,7 +66,7 @@ def get_experiment_metadata(gd, pd, OH_file, MH_file, MF_file, ds_experiment_nam
 def get_file_metadata(vfile, dtype="MF", config="", is_strict=True, verbose=False):
     # Gets (and checks) file metadata atts depending on classification
     if verbose:
-        print("Getting metadata for " + vfile)
+        print(("Getting metadata for " + vfile))
     dkeys = ['dataset', 'longname'] if dtype is "OH" else ['dataset', 'scenario', 'longname']
     vclass,vdat = classify_data(vfile, config, verbose)
     if vclass == "Unclassified":
@@ -81,7 +81,7 @@ def get_file_metadata(vfile, dtype="MF", config="", is_strict=True, verbose=Fals
         if is_strict:
             for k in dkeys:
                 if rdict[k] == "not found":
-                    print("Error in get_file_metadata: key " + k + " not found with strict parsing!")
+                    print(("Error in get_file_metadata: key " + k + " not found with strict parsing!"))
                     sys.exit(1)
             rdict = {k: rdict[k] for k in dkeys}
         else:
@@ -91,11 +91,11 @@ def get_file_metadata(vfile, dtype="MF", config="", is_strict=True, verbose=Fals
 def classify_data(vfile, config, verbose=False):
     # Classifies datasets by attribute
     if verbose:
-        print("Classifying " + vfile)
+        print(("Classifying " + vfile))
     vdat = "Unknown"
     vclass = "Unclassified"
     with Dataset(vfile, 'r') as nc_obj:
-        v_attnames = nc_obj.__dict__.keys()
+        v_attnames = list(nc_obj.__dict__.keys())
         with open(config, 'r') as csvfile:
             configreader = csv.DictReader(csvfile)
             for row in configreader:
@@ -112,7 +112,7 @@ def classify_data(vfile, config, verbose=False):
                         attnm = att_search[0] if len(att_search) == 1 else row['attribute']
                         v_att = nc_obj.__dict__[attnm]
                         v_search = re.search(row['attgrep'], v_att, re.IGNORECASE)
-                        if verbose: print(row['attgrep'] + " " + attnm); print(v_search)
+                        if verbose: print((row['attgrep'] + " " + attnm)); print(v_search)
                         if v_search is not None:
                             vdat = row['dataset']
                             vclass = row['data_class']; break
@@ -131,8 +131,8 @@ def get_attributes(vfile, vclass, vdat, verbose):
     # Sequence for a fixed key/value pair
     # or splitting of filenames:
     if verbose:
-        print("Getting attributes of " + vfile)
-        print("Classified as " + vclass)
+        print(("Getting attributes of " + vfile))
+        print(("Classified as " + vclass))
     attdict = {'dataset': "not found", "scenario": "not found", "longname": "not found"}
     with Dataset(vfile, 'r') as nc_obj:
         atts = atts = nc_obj.__dict__
@@ -184,7 +184,7 @@ def classify_cmip5(atts, vfile, vclass, vdat, verbose):
     # might not thave a rip in the metadata
     alist = []
     for a,idx in zip(attlist, att_idx):
-        if a in atts.keys():
+        if a in list(atts.keys()):
             if a == 'model_id':
                 alist.append(str(atts[a]).upper())
             else:
@@ -192,7 +192,7 @@ def classify_cmip5(atts, vfile, vclass, vdat, verbose):
         else:
             alist.append(str(fsplit[idx]))
     attdict['longname'] = " ".join(alist)
-    if 'experiment_id' in atts.keys():
+    if 'experiment_id' in list(atts.keys()):
         attdict['scenario'] = atts['experiment_id']
     else:
         attdict['scenario'] = alist[1]
@@ -200,7 +200,7 @@ def classify_cmip5(atts, vfile, vclass, vdat, verbose):
 
 def classify_hiram(atts, vclass, vdat, verbose):
     attdict = {'dataset': "not found", "scenario": "not found", "longname": "not found"}
-    if 'gfdl_experiment_name' in atts.keys():
+    if 'gfdl_experiment_name' in list(atts.keys()):
         exp_name = atts['gfdl_experiment_name']
         exp_split = re.split("_", exp_name)
         if len(exp_split) == 5:
@@ -321,7 +321,7 @@ def parse_meta_args():
     parser.add_option("-v","--verbose", action='store_true', default=False, help="Whether to print extra diagnostic output; defaults to False")
     options,args = parser.parse_args()
     print(options)
-    print(options.testtype)
+    print((options.testtype))
     send_test(testname=options.testtype, OH_file=options.OH, MF_file=options.MF, config=options.config, verbose=options.verbose)
 
 

@@ -16,7 +16,7 @@ def fudgeVer():
     try:
      #fudgeversion = 'fudge/'+os.environ['BRANCH']
      fudgeversion = 'fudge/'+os.environ['FUDGETAG']
-     print "version",fudgeversion
+     print("version",fudgeversion)
     except:
         fudgeversion = "<undefined>"
     return fudgeversion
@@ -43,34 +43,34 @@ def fudgeList(verbose=False):
     parser.add_option("-v", "--fversion",action="store_true",default=False,help="Print FUDGE CODE VERSION. Default is set to FALSE/no-printing")
     (options, args) = parser.parse_args()
 
-    for opts,vals in options.__dict__.items():
+    for opts,vals in list(options.__dict__.items()):
         if(opts == 'uinput'):
             uinput = vals
-            print "XML: ",uinput
+            print("XML: ",uinput)
         if(opts == 'sumlogloc'):
             sumlogloc = vals
         if(opts == 'force'):
             force = vals
         if(opts == 'fversion'):
-            print "fudge version retriever.."
+            print("fudge version retriever..")
             fudgeversion = fudgeVer()
-            print fudgeversion
+            print(fudgeversion)
     if uinput is None:
         uinput = userinput
     if sumlogloc is None:
         sys.exit("Please provide -o location_of_summarylog_output and try again.Quitting now..")
     if not osp.exists(uinput):
-        print "ERROR Invalid XML path.Quitting. Please use -h for help ",uinput
+        print("ERROR Invalid XML path.Quitting. Please use -h for help ",uinput)
         sys.exit()
-    print "Force override existing output is set to ",force
+    print("Force override existing output is set to ",force)
 
     basedir = os.environ.get('BASEDIR')
     if(basedir is None):
-        print "ERROR: BASEDIR environment variable not set"
+        print("ERROR: BASEDIR environment variable not set")
         sys.exit(1)
-    print "==============================runtime log from parser==================================================="
+    print("==============================runtime log from parser===================================================")
     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklist,idirsuffix = listVars.listVars(uinput,basedir=basedir,pp=True)
-    print "=================================================================================="
+    print("==================================================================================")
 
     basedire = basedir
     esdMethod = method
@@ -105,16 +105,16 @@ def fudgeList(verbose=False):
         if (osp.exists(indir)):
             exists = checkExists(varname,indir,region,ver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
             if (exists == False):
-                print "PP Output does not exist already",indir
+                print("PP Output does not exist already",indir)
             else:
-                print "PP Output exists"
+                print("PP Output exists")
     ###### start writing to summary log file ###############
     ready = "no"
     if not osp.exists(sumlogloc):
         ready = "yes" #ready to write log
     else:
         if (force == False):
-            print "ERROR: The passed location pointing to the output summary log [-o] already exists. Please use -f to force overwrite this file"
+            print("ERROR: The passed location pointing to the output summary log [-o] already exists. Please use -f to force overwrite this file")
             sys.exit("Quitting now")
         else:
             ready = "yes" #since force is True
@@ -175,14 +175,14 @@ def fudgeList(verbose=False):
             #####dict test
             histdict = {}
             histdict["hist.inpath_"+str(n_plist)]=osp.normpath(hist_pred_dir+"/"+plist)+idirsuffix+hist_file
-            for hkey,hval in histdict.iteritems():
+            for hkey,hval in histdict.items():
                 ascii = ascii+str(hkey)+":"+hval+"\n"
             ##########
             fut_parts = (plist,fut_freq,fut_model,fut_scenario,output_grid,fut_file_start_time+"-"+fut_file_end_time+".I*",file_j_range.replace('"','').strip()+".nc")
             fut_file = delim.join(fut_parts)
             futdict = {}
             futdict["fut.inpath_"+str(n_plist)]=osp.normpath(fut_pred_dir+"/"+plist)+idirsuffix+fut_file
-            for fkey,fval in futdict.iteritems():
+            for fkey,fval in futdict.items():
                 ascii = ascii+str(fkey)+":"+fval+"\n"
     listout = []
     property = {}
@@ -194,7 +194,7 @@ def fudgeList(verbose=False):
         property[listfacet[1]] = listfacet[2]
         unres_outdir = listfacet[0]
         if '$(' in unres_outdir:
-            for pname,pval in property.iteritems():
+            for pname,pval in property.items():
                 replace = pval
                 break;
             list_new_out_dir = replace.split(",")
@@ -230,7 +230,7 @@ def fudgeList(verbose=False):
     logop.close()
     ###### end writing to summary log file #########
     if (verbose):
-        print "----------Summary Log File: ", sumlogloc
+        print("----------Summary Log File: ", sumlogloc)
 
 def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
     filedire = indir+"/../../../"+region+"/"+ver+"/"
@@ -239,12 +239,12 @@ def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,s
         exists = False
     else:
         if (force == True):
-            print "CAUTION : PP output already exists. But -f is turned on, so output will be overwritten"
+            print("CAUTION : PP output already exists. But -f is turned on, so output will be overwritten")
             exists = False
         else:
             exists = True
-    print "ERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now.."
-    print filename
+    print("ERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..")
+    print(filename)
     return exists
 
 #Helper functions

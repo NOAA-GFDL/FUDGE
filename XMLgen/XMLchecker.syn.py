@@ -275,7 +275,7 @@ if not htFile:
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
   logfile.write(">>>>>>>  MISSING  historical_target_file:"+htFileName.strip()+"\n")
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-  print(">>>>>>>  MISSING  historical_target_file:"+htFileName.strip()+"\n")
+  print((">>>>>>>  MISSING  historical_target_file:"+htFileName.strip()+"\n"))
   fmissing = True
 logfile.write("\n")
 k=0
@@ -286,7 +286,7 @@ for hpFile in hpFiles:
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>>  MISSING  historical_predictor_file:"+hpFileNames[k].strip()+"\n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING  historical_predictor_file:"+hpFileNames[k].strip()+"\n")
+    print((">>>>>>>  MISSING  historical_predictor_file:"+hpFileNames[k].strip()+"\n"))
     fmissing = True
   k=k+1
 logfile.write("\n")
@@ -296,7 +296,7 @@ if not fpFile:
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
   logfile.write(">>>>>>>  MISSING   future_pedictor_file:"+fpFileName.strip()+"\n")
   logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-  print(">>>>>>>  MISSING   future_pedictor_file:"+fpFileName.strip()+"\n")
+  print((">>>>>>>  MISSING   future_pedictor_file:"+fpFileName.strip()+"\n"))
   fmissing = True
 logfile.write("\n")
 if smask!="na":
@@ -305,7 +305,7 @@ if smask!="na":
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
     logfile.write(">>>>>>> MISSING   spatial_mask_file: " + spFileName.strip() + ": \n")
     logfile.write(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n")
-    print(">>>>>>>  MISSING   spatial_mask_file: " + spFileName.strip() + " \n")
+    print((">>>>>>>  MISSING   spatial_mask_file: " + spFileName.strip() + " \n"))
     fmissing = True
   logfile.write("   " + spFile + "\n")
   logfile.write("\n")
@@ -329,7 +329,7 @@ logfile.write('................................................................'
 logfile.close()
 #print file(logFileName).read()
 print ("\n")
-print ("      XMLchecker LogFilename = "+XMLtxt_logFileName+"\n")
+print(("      XMLchecker LogFilename = "+XMLtxt_logFileName+"\n"))
 p99 = subprocess.Popen('cp '+logFileName+' '+XMLtxt_logFileName,shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
 #gcp1,gcpErr = p99.communicate()
 print ("\n")

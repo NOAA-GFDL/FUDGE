@@ -9,11 +9,6 @@ import smtplib
 import re
 import optparse
 from optparse import OptionParser
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email.Utils import COMMASPACE, formatdate
-from email import Encoders
 import netCDF4
 from netCDF4 import Dataset
 from fudgeUtils import tstamp
@@ -52,8 +47,8 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
     expdict1 = read_exp_info_file(osp.join(scriptdir1,"experiment_info.txt"))
     expdict2 = read_exp_info_file(osp.join(scriptdir2,"experiment_info.txt"))
     print(expdict1)
-    print(expdict1['fut.train.start.year_1'])
-    print(expdict1['fut.train.end.year_1'])
+    print((expdict1['fut.train.start.year_1']))
+    print((expdict1['fut.train.end.year_1']))
     trange_string = expdict1['fut.train.start.year_1'] +"-" + expdict1['fut.train.end.year_1']
     ds_exp1 = [("/").join(p.split("/")[0:len(p.split("/"))-1]) for p in expdict1['output.path']] #trim off OneD
     ds_exp2 = [("/").join(p.split("/")[0:len(p.split("/"))-1]) for p in expdict2['output.path']]
@@ -94,18 +89,18 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
         kdict = setdict[kty]
         klist = []
         #for outpaths in [ds_exp1,ds_exp2]:
-        print(kdict['inPath1'])
+        print((kdict['inPath1']))
         outpaths = [kdict['inPath1'] , kdict['inPath2']]
         all_outfiles =  [[f for f in os.listdir(p) if osp.isfile(osp.join(p, f))] for p in outpaths]
         all_outfiles = [sorted(lst) for lst in all_outfiles]
         num_files = [len(flist) for flist in all_outfiles]
         if (num_files.count(num_files[0]) != len(num_files)):
-            print("Error in makeCVEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs.")
+            print(("Error in makeCVEns: number of output files in directories " + ",".join(outpaths) + "should be identical! Please re-run pp jobs."))
             sys.exit(1)
         elif (num_files[0]==0):
-            print("Error in makeCVEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs.")
+            print(("Error in makeCVEns: no files found in output directories "+ ",".join(outpaths) + "! Please re-run pp jobs."))
             sys.exit(1)
-        all_outfiles = zip(*all_outfiles)
+        all_outfiles = list(zip(*all_outfiles))
         #Each f in all_outfiles should either contain _qcmask or not contain _qcmask
         for lst in all_outfiles:
             if re.search("_qcmask", lst[0]) is not None:
@@ -128,14 +123,14 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
             [kdict['exp1'], kdict['exp2']], trange_string,\
             isAnom=isAnom,isTrend=isTrend,recOnly=False,verbose=False)
             #ens_list.append(outfile)
-            print("output file(s):" + str(kfiles))
+            print(("output file(s):" + str(kfiles)))
             klist = klist + kfiles
         klist = ens_namemap(klist)
         klist = [kdict['ktitle'] + "." + named_file for named_file in klist]
         ens_list = ens_list + klist
     print("Ensemble files:")
     for el in ens_list:
-        print el
+        print(el)
     #title_list = ["dep.ensemble:", "cv.ensemble:"]
     #ens_title = zip(title_list, ens_list)
     #print(ens_title)
@@ -163,7 +158,7 @@ def runMakeCVEns(exp1, exp2, scriptdir1, scriptdir2, verbose=False):
         exp_info_file = osp.join(el, "experiment_info.txt")
         print(exp_info_file)
         if osp.isfile(exp_info_file):
-            print("Editing " + exp_info_file + " in place for xml apending.")
+            print(("Editing " + exp_info_file + " in place for xml apending."))
             with open(exp_info_file, 'a') as f:
                 f.write(ens_string)
     return("\t" + "\n\t".join(ens_list))
@@ -181,12 +176,12 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
         os.makedirs(tdir_ens)
     for f in flist:
         if not osp.isfile(f):
-            print("Error in call_cv_ens_creation! File " + f + " does not exist!")
+            print(("Error in call_cv_ens_creation! File " + f + " does not exist!"))
     inFiles = ",".join([gcp(f, osp.join(tdir_ens,osp.basename(f)), True, verbose, verbose) for f in flist])
     orig_inFiles = ",".join([osp.basename(p) for p in flist])
-    print(" ".join(["Calling", cv_type, " ensemble creation on ", inFiles]))
+    print((" ".join(["Calling", cv_type, " ensemble creation on ", inFiles])))
     with Dataset(flist[0], 'r') as nc_obj:
-        varnames = nc_obj.variables.keys()
+        varnames = list(nc_obj.variables.keys())
     vname = [varnames[v] for v in range(0, len(varnames)) if re.search(climvar,varnames[v]) is not None][0]
     supp_strings = ["qcmask","save"]
     if isAnom:
@@ -197,7 +192,7 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
                                                     exp_names,trange_string,isAnom=False)
             else:
                 outfile_anom = []
-            print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
+            print(("Target var " + vname + ' is an anomaly var; searching for anom + clim files'))
             clim_files = [re.sub("Anom","",f) for f in flist]
             climvar = re.sub("Anom", "", climvar)
             try:
@@ -208,12 +203,12 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
             return(outfile_clim + outfile_anom)
         else:
             #For the qcmasks and anomaly files,
-            print("Target var " + vname + ' is an anomaly var; searching for anom + clim files')
+            print(("Target var " + vname + ' is an anomaly var; searching for anom + clim files'))
             clim_files = [re.sub("Anom","",f) for f in flist]
             climvar = re.sub("Anom", "", climvar)
             try:
-                print("qcmask clim_files: " + str(clim_files))
-                print("qcmask climvar: " + climvar)
+                print(("qcmask clim_files: " + str(clim_files)))
+                print(("qcmask climvar: " + climvar))
                 outfile_clim = call_cv_ens_creation(clim_files,climvar,rips,rip_string,cv_type,odesc,kfold_string,
                                                     exp_names,trange_string,isAnom=False)
             except:
@@ -227,7 +222,7 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
                                                     exp_names,trange_string,isTrend=False)
             else:
                 outfile_anom = []
-            print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
+            print(("Target var " + vname + ' is a detrended var; searching for trend + resid files'))
             trend_method = climvar.split("Detr")[-1]
             orig_var = re.sub("Detr"+trend_method, "", vname)
             orig_clim = re.sub("Detr"+trend_method, "", climvar)
@@ -240,14 +235,14 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
             return(outfile_clim + outfile_anom)
         else:
             #For the qcmasks and anomaly files,
-            print("Target var " + vname + ' is a detrended var; searching for trend + resid files')
+            print(("Target var " + vname + ' is a detrended var; searching for trend + resid files'))
             trend_method = climvar.split("Detr")[-1]
             orig_var = re.sub("Detr"+trend_method, "", vname)
             orig_clim = re.sub("Detr"+trend_method, "", climvar)
             clim_files = [re.sub(climvar,orig_clim,f) for f in flist]
             try:
-                print("qcmask trend_files: " + str(clim_files))
-                print("qcmask trendvar: " + orig_clim)
+                print(("qcmask trend_files: " + str(clim_files)))
+                print(("qcmask trendvar: " + orig_clim))
                 outfile_clim = call_cv_ens_creation(clim_files,orig_clim,rips,rip_string,cv_type,odesc,kfold_string,
                                                     exp_names,trange_string,isAnom=False)
             except:
@@ -256,9 +251,9 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
     #Generate output file by doing a series of find-and-replace regexes on outdir
     current_rip = [rips[r] for r in range(0,len(rips)) if re.search(rips[r],flist[0]) is not None][0]
     outfile = make_cv_ens_name(osp.dirname(flist[0]), osp.basename(flist[0]), cv_type, odesc,kfold_string)
-    print("Output file location: " + outfile)
+    print(("Output file location: " + outfile))
     if not osp.exists(osp.dirname(outfile)):
-        print("Making " + osp.dirname(outfile))
+        print(("Making " + osp.dirname(outfile)))
         os.makedirs(osp.dirname(outfile))
     tmp_outfile = osp.join(tdir_ens,osp.basename(outfile)+tstamp())
     #Finally, call the ensemble generation code:
@@ -268,18 +263,18 @@ def call_cv_ens_creation(flist,climvar,rips,rip_string,cv_type,odesc,kfold_strin
     p = subprocess.Popen(ens_command, stdout=subprocess.PIPE, shell=True, env=None, cwd=tdir)
     out0,err0 = p.communicate()
     if (p.returncode != 0):
-        print(str(out0))
-        print(str(err0))
-        print("Error in processing ensemble " +  inFiles + "; call to c-shell failed.")
-        print("Command that failed: " + ens_command)
+        print((str(out0)))
+        print((str(err0)))
+        print(("Error in processing ensemble " +  inFiles + "; call to c-shell failed."))
+        print(("Command that failed: " + ens_command))
         sys.exit(1)
         return(None)
     else:
         if verbose:
-            print(str(out0))
-            print(str(err0))
+            print((str(out0)))
+            print((str(err0)))
         gcp(tmp_outfile, outfile, verbose, verbose)
-        print("Copied to " + outfile)
+        print(("Copied to " + outfile))
         return([outfile])
 
 def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold, is_supplement=False):
@@ -294,14 +289,14 @@ def make_cv_ens_name(orig_path, orig_fname, datatype, odesc, kfold, is_supplemen
     orig_expname = re.split("_", orig_fname)[-5]
     #else:
     #	orig_expname = re.split("_", orig_fname)[2]
-    print("original experiment name: " + orig_expname)
+    print(("original experiment name: " + orig_expname))
     exp_design = re.split("-", orig_fname)[2]
     #Okay, you want the single-letter component before 00
     exp_re = re.compile('([A-Z]*)00')
     exp_string = re.search(exp_re, exp_design).group()
     cv_expname = re.sub("[A-Z]00r[0-9]*e2", exp_string + odesc + "e2", orig_expname)
     cv_expname = re.sub("K00", kfold, cv_expname)
-    print("New experiment name: " + cv_expname)
+    print(("New experiment name: " + cv_expname))
     cv_path = re.sub(orig_expname, cv_expname, orig_path)
     cv_fname = re.sub(orig_expname, cv_expname, orig_fname)
     #From this point on, make the changes to the new things instead

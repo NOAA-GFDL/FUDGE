@@ -18,7 +18,7 @@ def get_ds_info(ds_method, FUDGEROOT):
     depc_vers = ["jamoca"]
     for meth, vers in zip(depc_methods, depc_vers):
         if ds_method == meth:
-            print("Error in get_ds_info! ds_method " + ds_method + " is not supported for fudge version " + vers + "-or-later!")
+            print(("Error in get_ds_info! ds_method " + ds_method + " is not supported for fudge version " + vers + "-or-later!"))
             print("Please pick a different method or run with an earlier version of FUDGE!")
             sys.exit(1)
     ds_table = osp.join(FUDGEROOT, "Rsuite/aux/ds_att_sheet.csv")
@@ -30,14 +30,14 @@ def get_ds_info(ds_method, FUDGEROOT):
             if row['method_name'] == ds_method:
                 ds_match = True
                 #No longer returning a subset of the dictionary in question
-                for k in row.keys():
+                for k in list(row.keys()):
                     if row[k] in ["TRUE", "FALSE"]:
                         row[k] = (row[k] == 'TRUE')
                 #Replace method_name with ds_method
                 row['ds_method'] = row.pop('method_name')
                 return(row)
     if ds_match is False:
-        print("Error in get_ds_info: Method " + ds_method + " not found in ds_att_sheet.csv!")
+        print(("Error in get_ds_info: Method " + ds_method + " not found in ds_att_sheet.csv!"))
         sys.exit(1)
 '''
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -65,9 +65,8 @@ def parse_aux_info(infile):
             jsondict = ordered_load(f, yaml.SafeLoader)
             '''
         else:
-            print("Error in parse_aux_input: input " + infile + " is not json!")
+            print(("Error in parse_aux_input: input " + infile + " is not json!"))
             sys.exit(1)
-        #wallclock time
         #defaults values for: wallclock time, njobs, ncpus, queue
         #and corresponding pp settings
         defaultdict = {'wallclocktime': '6:00:00', 
@@ -100,8 +99,8 @@ def parse_aux_info(infile):
         #Subsets in i and j that we are interested in
         defaultdict = {'i_subset': 1, 'j_subset': 'all', 'tile_olap':0}
         subsetdict = {}
-        for k in defaultdict.keys():
-            if k in jsondict.keys():
+        for k in list(defaultdict.keys()):
+            if k in list(jsondict.keys()):
                 tmp_k = jsondict[k]
                 if isinstance(tmp_k, list):
                     subsetdict[k] = tmp_k[0]
@@ -117,7 +116,7 @@ def parse_aux_info(infile):
         dataset_names = ['OH', 'MH', 'MF']
         for data_name in dataset_names:
             for filetype in copy_elements:
-                if filetype in jsondict[data_name].keys():
+                if filetype in list(jsondict[data_name].keys()):
                     filetmp = jsondict[data_name][filetype]
                     #R's json converter helpfully wraps everything in lists.
                     if isinstance(filetmp, list):
@@ -149,12 +148,12 @@ def make_aux_input(grid, script_base, targ_var):
              'X1-1' : 1,
              'NEUSA': 41,
              'ESTCPconus': 114}
-    if grid in jdict.keys():
+    if grid in list(jdict.keys()):
         jv  = str(jdict[grid])
         aux_scriptname = script_base + "/default_mini_"+grid+".json"
         print(aux_scriptname)
     else:
-        print("Error in make_aux_info: grid, " + grid + " not in jdict!")
+        print(("Error in make_aux_info: grid, " + grid + " not in jdict!"))
         sys.exit(1)
 
     auxdict['grid'] = grid
@@ -167,8 +166,8 @@ def make_aux_input(grid, script_base, targ_var):
     auxdict["files_in_aux"] = "FALSE"
     auxdict["file_format"] = "netcdf"
     if re.search('Anom', targ_var) is not None:
-        print("Error in make_aux_input: if using an anomaly var " + targ_var + \
-              " user specification of climo_source in aux file is required!")
+        print(("Error in make_aux_input: if using an anomaly var " + targ_var + \
+              " user specification of climo_source in aux file is required!"))
         sys.exit(1)
     else:
         auxdict["climo_source"] = "MF"
@@ -184,7 +183,7 @@ def make_aux_input(grid, script_base, targ_var):
     #to 2 hours rather than 12, as we have been using forever.
     aux_text = json.dumps(auxdict, indent=4)
     f = open(aux_scriptname, 'w')
-    print >> f, aux_text
+    print(aux_text, file=f)
     f.close()
     return(aux_scriptname)
 
@@ -210,7 +209,7 @@ def add_ds_params_to_auxdict(auxdict, njobs, ncpus, experiment_name, kfold,
             #filter out quotes
             arg_strip = re.sub("'", "", argpair[1])
             dsdict[argpair[0]] = as_num(arg_strip)
-        if 'minsamplesize' in dsdict.keys():
+        if 'minsamplesize' in list(dsdict.keys()):
             minsamplesize = dsdict['minsamplesize']
             #Turning off delete for the moment; trying to get metadata right
             #del dsdict["minsamplesize"]
@@ -264,29 +263,29 @@ def add_s3_s5_params_to_auxdict(auxdict, masklists, pr_opts, ds_method, ds_metho
         post_ds = ['pr_threshold_out', 'pr_conserve_out', 'ignore0', 'pr_adjmethod']
         post_ds_default = [None, None, False, 'exact']
         for k,d in zip(post_ds, post_ds_default):
-            if k not in prdict.keys():
+            if k not in list(prdict.keys()):
                 if d is not None:
-                    print("Warning for transform in add_s3_s5_params_to_auxdict: value " + k +
-                      "not found in args!")
-                    print("Using legacy code default of " + str(d))
+                    print(("Warning for transform in add_s3_s5_params_to_auxdict: value " + k +
+                      "not found in args!"))
+                    print(("Using legacy code default of " + str(d)))
                     prdict[k] = d
                 else:
-                    print("Error found in add_s3_s5_params_to_auxdict: param " +
-                           k + " is required!")
+                    print(("Error found in add_s3_s5_params_to_auxdict: param " +
+                           k + " is required!"))
                     sys.exit(1)
         transform = ['transform', 'arg', 'vars']
         transform_default = ['none', 'none', 'pr']
         for k,d in zip(transform, transform_default):
-            if k not in prdict.keys():
-                print("Warning for transform in add_s3_s5_params_to_auxdict: value " + k +
-                      "not found in args!")
-                print("Using legacy code default of " + d)
+            if k not in list(prdict.keys()):
+                print(("Warning for transform in add_s3_s5_params_to_auxdict: value " + k +
+                      "not found in args!"))
+                print(("Using legacy code default of " + d))
                 prdict[k] = d
         #Here's the point where you start specifying 'defaults' -
         #settings we've kept from legacy XML that we need to keep an eye out for.
         pairwise_ds = ['PARM', 'lm', 'lmstep']
         #And check for an alt specification of flag.neg that we've kept
-        if 'flag_neg' in prdict.keys():
+        if 'flag_neg' in list(prdict.keys()):
             flag_neg_in_propts = True
             s5_outloop = s5_outloop + ['flag.neg']
             adjust_dict['flag.neg'] = make_adjust('flag.neg', 'pr', 'outloop',

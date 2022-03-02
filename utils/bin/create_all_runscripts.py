@@ -11,7 +11,7 @@ import math
 def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
                           j_start, j_end, j_by, j_offset,
                           auxdict, auxfile, scriptdir, fudgetag,
-                          not_strict_metadata, metadata_table, queue):
+                          not_strict_metadata, metadata_table, queue, xtmpdir):
     '''
     Creates runscripts (with dmget commands) based off of the aux input files -
     all files are present already
@@ -21,12 +21,12 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     dataset_names = ['OH', 'MH', 'MF']
     data_files = []
     for dname in dataset_names:
-        data_files += [auxdict[dname][el]['file'] for el in auxdict[dname].keys()]
+        data_files += [auxdict[dname][el]['file'] for el in list(auxdict[dname].keys())]
     #None of these are going to be 'none':
     dmget = "\n".join(["dmget " + el for el in data_files]) + "\n"
     tmasks = []
     for dname in dataset_names:
-        tmasks += [auxdict[dname][el]['tmask'] for el in auxdict[dname].keys()]
+        tmasks += [auxdict[dname][el]['tmask'] for el in list(auxdict[dname].keys())]
     tmask_nones = ['na', 'none']
     if auxdict['DS']['indexing_tmask'] not in tmask_nones:
         tmasks.append(auxdict['DS']['indexing_tmask'])
@@ -37,7 +37,7 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
         dmget += "\n".join(["dmget " + el for el in tmasks]) + "\n"
     geomasks = []
     for dname in dataset_names:
-        geomasks += [auxdict[dname][el]['geomask'] for el in auxdict[dname].keys()]
+        geomasks += [auxdict[dname][el]['geomask'] for el in list(auxdict[dname].keys())]
     geomasks = list(set(geomasks))
     geomasks = [el for el in geomasks if el != 'none']
     if len(geomasks) > 0:
@@ -63,10 +63,10 @@ def create_auxfile_runscripts(i_start, i_end, i_by, i_offset,
     #sys.exit(1)
     make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               j_start, j_end, j_by, j_offset,
-                              auxdict['OH'].keys()[0], is_syn,
+                              list(auxdict['OH'].keys())[0], is_syn,
                               dmget, gcp_str, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
-                              not_strict_metadata, metadata_table, queue)
+                              not_strict_metadata, metadata_table, queue, xtmpdir)
 
 
 def create_xml_runscripts(i_start, i_end, i_by, i_offset,
@@ -78,7 +78,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                           outdir_string, target_var, ds_method, j_range, idirsuffix, multivar_target,
                           auxfile, aux_file_list, wallclocktime,
                           auxdict, ds_minifile, experiment_name,
-                          not_strict_metadata, metadata_table, queue):
+                          not_strict_metadata, metadata_table, queue, xtmpdir):
     '''
     Creates runscripts (with dmget commands) based off of the xml input files -
     we need to build files from xml components
@@ -164,9 +164,9 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
     oh_prime = [False for el in oh_vars]
     mh_prime = [False for el in predlist]
     mf_prime = [False for el in predlist]
-    oh_prime[0] = True 
+    oh_prime[0] = True
     mh_prime[0] = True
-    mf_prime[0] = True 
+    mf_prime[0] = True
     oh_nogrid = [False for el in oh_vars]
     mh_nogrid = [False for el in predlist]
     mf_nogrid = [False for el in predlist]
@@ -219,7 +219,7 @@ def create_xml_runscripts(i_start, i_end, i_by, i_offset,
                               target_var, is_syn,
                               dmget_string, gcp_string, auxdict, auxfile_mod,
                               scriptdir, fudgetag,
-                              not_strict_metadata, metadata_table, queue)
+                              not_strict_metadata, metadata_table, queue, xtmpdir)
 
 
 def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
@@ -228,29 +228,29 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                           dmget_string, gcp_string,
                           auxdict, auxfile_mod,
                           scriptdir, fudgetag,
-                          not_strict_metadata, metadata_table, queue):
+                          not_strict_metadata, metadata_table, queue, xtmpdir):
     '''
     Common commands for making the runscript and runcodes from the auxdict.
     Note that this now implies that the auxdict contains the scriptdir.
     '''
         # which i_indices are we going to be looping over?
-    i_elements = range(int(i_start), int(i_end)+1, i_by)
+    i_elements = list(range(int(i_start), int(i_end)+1, i_by))
     i_elements.append(int(i_end)+1)
     i_elements = list(set(i_elements))
     i_elements = sorted(i_elements)
     # i_offset = int(i_start)  - 1
     i_max = int(i_end) - i_offset
     # which j indices are we going to be looping over?
-    j_elements = range(int(j_start), int(j_end)+1, j_by)
+    j_elements = list(range(int(j_start), int(j_end)+1, j_by))
     if len(j_elements) == 0:
-        j_elements = range(int(j_start), int(j_end)+1, j_by)
+        j_elements = list(range(int(j_start), int(j_end)+1, j_by))
     j_elements.append(int(j_end)+1)
     j_elements = list(set(j_elements))
     j_elements = sorted(j_elements)
     # j_offset = int(j_start)  - 1
     j_max = int(j_end) - j_offset
 
-    #turned off setting of is_syn for Kieran's experiments in 08-2021; 
+    #turned off setting of is_syn for Kieran's experiments in 08-2021;
     #R code expects j elements of 0-0
     #if is_syn:
     #    j_elements = [1,2]
@@ -265,10 +265,10 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
 
     nrunscripts = (len(i_elements) - 1) * (len(j_elements) - 1)
     print("expected number runscripts:")
-    print(str(nrunscripts))
+    print((str(nrunscripts)))
     nmaster = int(math.ceil(float(nrunscripts) / float(njobs)))
     print("expected number of master scripts:")
-    print(str(nmaster))
+    print((str(nmaster)))
     #print(str((float(nrunscripts) / float(njobs))))
 
     slurm_header = "\n".join(['#!/bin/bash',
@@ -278,17 +278,17 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     if auxdict['mem'] != 'none':
         slurm_header += "#SBATCH --mem=" + str(auxdict['mem']) + 'GB\n'
     if auxdict['constraint'] != "none":
-        slurm_header += "#SBATCH --constraint=" + auxdict['constraint'] + '\n'
+        slurm_header += "#SBATCH --constraint=" + str(auxdict['constraint']) + '\n'
     # The path to the checkout script is hard-coded, and probably going to
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
     module_loads = "\n".join(["set -e",
                               'module swap git/2.27.0',
-                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`', 
+                              'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`',
                               'module purge',
                               "source $BASEDIR/set_fudge_env_bash",
                               "echo 'list of modules:'",
-                              "module list", 
+                              "module list",
                               "set -x"]) + "\n"
     #Commmands for making/manipulating file paths
     ds_var = auxdict['DS']['vars'][0]
@@ -304,7 +304,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     #swap out the newlines and dmgets in the dmget command
     dmget_bg_string  = re.sub("\ndmget", " ", dmget_string)
     dmget_bg_string = re.sub("  ", " ", dmget_bg_string)
-    
+
     #Make the command to source the list of files for dmgetting within the script
     script_dmgets = "$BASEDIR/utils/bin/dmget_files " + scriptdir + "/fudge_inputs.txt\n"
 
@@ -358,7 +358,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                                             auxdict['DS']['vars'], auxdict['DS']['rips'], regex_outdir,
                                             i_idx, imax, iby, i_offset,
                                             j_idx, jmax, jby, j_offset,
-                                            auxfile_mod, meta_tmp, auxdict['make_qcmask'])
+                                            auxfile_mod, meta_tmp, auxdict['make_qcmask'], xtmpdir)
             with open(runscript_name, 'w') as f:
                 f.write(runscript_code)
                 f.write('\n')  # needed for slurm POSIX standard
@@ -467,10 +467,10 @@ def build_xml_input_paths(in_vars, in_dir, trange, suffix, is_multivar=True):
             in_file = [el for el in f_dir_files if re.search(".nc$", el) is not None][0] # should only match ONE
             in_files.append(in_file)
         except IndexError:
-            print("directory: " + f_dir)
-            print("suffix: " + suffix)
-            print("trange: " + trange)
-            print("No files found with " + trange + " in " + f_dir + "; check path construction!")
+            print(("directory: " + f_dir))
+            print(("suffix: " + suffix))
+            print(("trange: " + trange))
+            print(("No files found with " + trange + " in " + f_dir + "; check path construction!"))
             sys.exit(1)
         dmget_string = dmget_string + "dmget "+ in_file + "\n"
     return(in_files, dmget_string)
@@ -483,7 +483,7 @@ def build_aux_input_paths(aux_subset):
     '''
     in_files = []
     dmget_string = ""
-    for v in aux_subset.keys():
+    for v in list(aux_subset.keys()):
         in_file = aux_subset[v]['file']
         in_files.append(in_file)
         dmget_string += 'dmget ' + in_file + "\n"
@@ -635,7 +635,7 @@ def make_ds_aux_entry(out_file, outdir, var, tmask='none'):
               'vars': out_vars,
               'rips': out_rips}
     return(dsdict)
-    
+
 def make_master_job_control(auxdict):
     '''
     Returns a set of lines describing job control settings in the master script file
