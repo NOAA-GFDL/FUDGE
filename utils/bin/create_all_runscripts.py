@@ -292,7 +292,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                               "set -x"]) + "\n"
     #Commmands for making/manipulating file paths
     ds_var = auxdict['DS']['vars'][0]
-    outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" + auxdict['DS']['out_subdir'] + "/" for el in auxdict['DS']['rips']]
+    outdirs = [re.sub('<RIP>', el, auxdict['DS']['out_dir']) + "/" for el in auxdict['DS']['rips']]
     outdir_cmd = create_outdir_string(outdirs, scriptdir, ds_var)
     outdir_string = create_outdir_string(outdirs, scriptdir, ds_var)
     meta_tmp = "$TMPDIR/meta_file.json"
@@ -352,7 +352,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             # 2018-04-09: Need to copy modified auxfile all the time, since that
             # is where the file paths are.
             #print(" ".join([str(el) for el in [ival, i_idx, imax, i_by, i_offset, jval, j_idx, jmax, j_by, j_offset]]))
-            regex_outdir = osp.join(auxdict['DS']['out_dir'], auxdict['DS']['out_subdir'])
+            regex_outdir = osp.join(auxdict['DS']['out_dir'])
             idstring = i_string + "_" + j_string
             runscript_code = make_runscript(scriptdir, experiment_name, idstring,
                                             auxdict['DS']['vars'], auxdict['DS']['rips'], regex_outdir,
@@ -630,7 +630,6 @@ def make_ds_aux_entry(out_file, outdir, var, tmask='none'):
     dsdict = {'indexing_tmask': tmask,
               'out_dir': outdir_path,
               'out_file': out_file,
-              'out_subdir': out_subdir,
               'out_supp': out_supp,
               'vars': out_vars,
               'rips': out_rips}
