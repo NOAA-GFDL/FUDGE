@@ -36,6 +36,13 @@ def make_exp_info(input, exp_outpath):
     if len(ind['DS']['rips']) > 0:
         rip = ind['DS']['rips'][-1]
         outdir = re.sub('<RIP>', rip, outdir)
+    tmask_list = ["target.time.window:" + ind['OH'][oh]['tmask'],
+                  "hist.time.window:"+ ind['MH'][mh]['tmask'],
+                  "fut.time.window:"+ ind['MF'][mf]['tmask']]
+    trim_mask = ind['DS']['indexing_tmask']
+    if trim_mask != ind['MF'][mf]['tmask']:
+        tmask_list.append("trim.time.mask:" + trim_mask)
+    tmask_strings = "\n".join(tmask_list)
     out  = "\n".join(["ds.experiment:" + ind['ds_experiment_name'],
                       "xml.path:" + xml,
                       "FUDGE.version:" + os.environ.get('FUDGETAG'),
@@ -49,9 +56,7 @@ def make_exp_info(input, exp_outpath):
                       "fut.inpath_1:"+ ind['MF'][mf]['file'],
                       "output.path:" + outdir,
                       "spat.mask.path_1:" + spatmask,
-                      "target.time.window:" + ind['OH'][oh]['tmask'],
-                      "hist.time.window:"+ ind['MH'][mh]['tmask'],
-                      "fut.time.window:"+ ind['MF'][mf]['tmask'],
+                      tmask_strings,                      
                       "target.train.start.year_1:" + timestrings[0][0],
                       "target.train.end.year_1:" + timestrings[0][1],
                       "hist.train.start.year_1:" + timestrings[1][0],
@@ -59,7 +64,7 @@ def make_exp_info(input, exp_outpath):
                       "fut.train.start.year_1:" + timestrings[2][0],
                       "fut.train.end.year_1:" + timestrings[2][1],
                       "script.base:" + scriptdir,
-                      "aux:" + osp.abspath(input)])
+                      "aux:" + osp.abspath(input) + "\n"])
     with open(exp_outpath, 'w') as f:
         f.write(out)
     return(exp_outpath)

@@ -1,6 +1,7 @@
 #!/bin/python
 
 import os,sys,stat,time
+import shutil
 import subprocess
 from subprocess import PIPE
 import re
@@ -43,8 +44,9 @@ def make_xtmp_path(experiment_name, gridname, create=False, var_list=[], rip_lis
                            gridname,
                            experiment_name])
     if create:
-        if not osp.exists(xtmp_path):
-            os.makedirs(xtmp_path)
+        if osp.exists(xtmp_path):
+            shutil.rmtree(xtmp_path)
+        os.makedirs(xtmp_path)
         for var in var_list:
             for rip in rip_list:
                 if not osp.exists(osp.join(xtmp_path, rip, var)):
