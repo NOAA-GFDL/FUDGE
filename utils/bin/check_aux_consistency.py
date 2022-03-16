@@ -58,7 +58,8 @@ def check_ds_struct(ds_struct):
     if len(ds_struct) == 0:
         sys.exit(1)
     fixed_keys = sorted(['out_file', 'vars', 'out_dir', 'indexing_tmask', 'rips', 'out_supp'])
-    ds_keys = sorted(ds_struct.keys())
+    former_fixed_keys = ['out_subdir']
+    ds_keys = sorted([el for el in ds_struct.keys() if el not in former_fixed_keys])
     ds_comp = list(zip(ds_keys, fixed_keys))
     if not all(el[0] == el[1] for el in ds_comp):
         print("Error in check_ds_struct: expected keys and found keys did not match!")
