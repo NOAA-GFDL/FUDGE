@@ -35,8 +35,6 @@ def make_postProc_scripts(auxdict, fudgetag, mailid):
             vars.append(svar)
     # regexes contain switches for ensemble members and vars;
     # saving off coords is more complex and we aren't doing it now
-    indir_regex = osp.join(auxdict['DS']['out_dir'], auxdict['DS']['out_subdir'])
-
     outdir_regex = auxdict['DS']['out_dir']
     script_dir = auxdict['script_settings']['scriptdir']
     auxdir = osp.join(script_dir, 'config_mod')

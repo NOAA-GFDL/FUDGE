@@ -28,10 +28,6 @@ def check_aux_consistency(aux):
     if preexist not in preexist_opts:
         print(("Error in check_aux_consistency: aux['cleanup_settings']['if_preexist'] should be one of " + ",".join(preexist_opts)))
         sys.exit(1)
-    #script_settings:
-    if not osp.isdir(aux['script_settings']['scriptdir']):
-        print("Error in check_aux_consistency: aux['script_settings']['scriptdir'] does not exist on this filesystem!")
-        sys.exit(1)
     # I don't think this returns anything
 
 def check_data_struct(data_struct):

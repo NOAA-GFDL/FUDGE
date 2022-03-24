@@ -609,15 +609,9 @@ def main():
             print("Please use default value or point to location without environment vars in path!")
             sys.exit(1)
 
-    #Finally, clean experiments if they already exist
-    ##clean_prior_experiments(uinput, sd, basedir, preexist_glob, is_csv)
-    clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, preexist, is_csv)
-    # Ask MJN: are these settings still used?
-    #njobs = int(specdict['njobs'])
-    #ncpus = int(specdict['ncpus'])
     generate_experiment(parse_xml, create_default_aux,
                         options.uinput, auxfile, NEMSemail1,
-                        basedir, fudgetag, env_file, msub, scriptdir,
+                        basedir, preexist, is_csv, fudgetag, env_file, msub, scriptdir,
                         sbatchmail, statmail, options.run_watcher,
                         options.not_strict, meta_table, options.no_dmget,
                         options.queue)
@@ -625,27 +619,16 @@ def main():
 
 def generate_experiment(parse_xml, create_default_aux,
                         uinput, auxinput, NEMSemail1,
-                        basedir, fudgetag, env_file, msub,
+                        basedir, preexist, is_csv, fudgetag, env_file, msub,
                         sbase, sbatchmail, statmail, run_watcher,
                         not_strict_metadata, metadata_table, no_dmget, queue):
     '''
     After the consistency checks, parses config (xml or aux) to get params.
     Then, generates master and runscripts, submitting if needed.
     '''
-    #First, create experiment directories. Note that this assumes
-    #you've cleaned up your experiment beforehand:
-    subdirs = ['master', 'runscript', 'log','postProc', 'config', 'status', 'profile']
-    statdirs  = ['master', 'minifile', 'postproc', 'ensemble', 'aux']
-    for el in subdirs:
-        subdir = osp.join(sbase,el)
-        if osp.exists(subdir):
-            shutil.rmtree(subdir)
-        os.makedirs(subdir)
-        if el == 'status':
-            for em in statdirs:
-                os.makedirs(osp.join(subdir, em))
-
+    #Before ALL else, create the auxinput you'll use whether running from XML or auxfile
     if parse_xml:
+        #do the xml parsing
         output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_mask,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists,idirsuffix= listVars(uinput,basedir,msub)
 
         #This is a bit of a hack, but I think I need this here to account for multi being non-global in the other branch
@@ -698,41 +681,6 @@ def generate_experiment(parse_xml, create_default_aux,
         ds_minifile = get_minifile_name(target, fut_freq, expconfig, fut_scenario,
                                         "<RIP>",
                                         ds_region, fut_file_start_time, fut_file_end_time)
-        print("Calling create_xml_runscripts")
-        if 'gridspec' in auxdict.keys():
-            ginfo = parse_gridspec(auxdict['gridspec'])
-            #check for agreement with XML:
-            if output_grid != ginfo['grid']:
-                print("Error in grid parsing: gridspec grid " + ginfo['grid'] + " and xml grid " + output_grid + " do not match!")
-                sys.exit(1)
-            elif output_grid == "":
-                print("Error in grid parsing: xml grid should not be an empty string!")
-                sys.exit(1)
-            i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
-            j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
-            #Copy to config directory
-            dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
-            shutil.copy2(auxdict['gridspec'], dest)
-        else:
-            #output grid or ds_region
-            i_s,i_e,i_off,j_s,j_e,j_off = get_grid_params(output_grid, basedir)
-        #2022-02: create xtmp and set in auxfile
-        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, target, rip_list)
-        print("Step 0: Create the unified runcscripts and master runscripts")
-        if (queue == 'batch'):
-            queue = auxdict['queue']
-        create_xml_runscripts(lons, lone, i_subset, i_off,
-                              lats, late, j_subset, j_off,
-                              njobs, ncpus, fudgetag, sbase,
-                              target_dir, hist_pred_dir, fut_pred_dir,
-                              oh_timerange, mh_timerange, mf_timerange, predlist,
-                              spat_mask, target_time_window, hist_time_window,
-                              fut_time_window, auxcustom, outdir, target, method,
-                              file_j_range, idirsuffix,
-                              ds_info['multivar_target'],
-                              auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-                              auxdict, ds_minifile, expconfig,
-                              not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
     else:
         # read in auxdict, which can be in json or yaml
         if re.search('json$', auxinput) is not None:
@@ -748,6 +696,65 @@ def generate_experiment(parse_xml, create_default_aux,
         #TODO: add an auxdict consistency-checking function
         check_aux_consistency(auxdict)
         ds_info = get_ds_info(auxdict['ds_method'], basedir)
+
+    #Next, check for a prior experimentand move/clean up as appropriate
+    #(This all gets a LOT more consistent when you can parse on experiment name)
+    if parse_xml:
+         listrips = [copyprop]
+         listrips = copyprop.split(",")
+    else:
+         outdirs = auxdict['DS']['out_dir']
+         listrips = auxdict['DS']['rips']
+    clean_prior_experiments(outdirs, sbase, listrips, basedir, preexist, is_csv, auxdict['ds_experiment_name'])
+
+    #Then, create experiment directories. Note that this assumes
+    #you've cleaned up your experiment beforehand:
+    subdirs = ['master', 'runscript', 'log','postProc', 'config', 'status', 'profile']
+    statdirs  = ['master', 'minifile', 'postproc', 'ensemble', 'aux']
+    for el in subdirs:
+        subdir = osp.join(sbase,el)
+        if osp.exists(subdir):
+            shutil.rmtree(subdir)
+        os.makedirs(subdir)
+        if el == 'status':
+            for em in statdirs:
+                os.makedirs(osp.join(subdir, em))
+
+    if parse_xml:
+        #create runscripts from xml
+        print("Calling create_xml_runscripts")
+        if 'gridspec' in auxdict.keys():
+            ginfo = parse_gridspec(auxdict['gridspec'])
+            #check for agreement with XML:
+            if output_grid != ginfo['grid']:
+                print("Error in grid parsing: gridspec grid " + ginfo['grid'] + " and xml grid " + output_grid + " do not match!")
+                sys.exit(1)
+            elif output_grid == "":
+                print("Error in grid parsing: xml grid should not be an empty string!")
+                sys.exit(1)
+            i_s = ginfo['istart']; i_e = ginfo['iend']; i_off = ginfo['ioff']
+            j_s = ginfo['jstart']; j_e = ginfo['jend']; j_off = ginfo['joff']
+            #Copy to config directory
+            dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
+            shutil.copy2(auxdict['gridspec'], dest)
+            #2022-02: create xtmp and set in auxfile
+            auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, target, rip_list)
+            print("Step 0: Create the unified runcscripts and master runscripts")
+            if (queue == 'batch'):
+                queue = auxdict['queue']
+            create_xml_runscripts(lons, lone, i_subset, i_off,
+                                  lats, late, j_subset, j_off,
+                                  njobs, ncpus, fudgetag, sbase,
+                                  target_dir, hist_pred_dir, fut_pred_dir,
+                                  oh_timerange, mh_timerange, mf_timerange, predlist,
+                                  spat_mask, target_time_window, hist_time_window,
+                                  fut_time_window, auxcustom, outdir, target, method,
+                                  file_j_range, idirsuffix,
+                                  ds_info['multivar_target'],
+                                  auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
+                                  auxdict, ds_minifile, expconfig,
+                                  not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
+    else:
         i_subset = auxdict['i_subset']
         j_subset = auxdict['j_subset']
         # 2019-05-18: swapping output_grid for ds_region;
@@ -765,10 +772,10 @@ def generate_experiment(parse_xml, create_default_aux,
             xtmp_grid = auxdict['output_grid']
         #Set expconfig for use in the final print
         expconfig = auxdict['ds_experiment_name']
-        # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
-        multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
         # same for the pp_wallclocktime - this should get added to the aux dict
         auxinfo = {'pp_wallclocktime': '5:00:00'}
+        # Setting 'multi' for use later in the workflow; this is meant to be a temporary hack
+        multi = 'on' if len(auxdict['DS']['rips']) > 1 else 'off'
         auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], xtmp_grid, True, auxdict['DS']['vars'], auxdict['DS']['rips'])
         print("Step 0: Create the unified runcscripts and master runscripts")
         if (queue == 'batch'):
@@ -781,7 +788,7 @@ def generate_experiment(parse_xml, create_default_aux,
     # 2020-03-02: Adding checks for combinations of settings that
     # are not currently turned on until we get the QC
     if ds_info["downscale_oh"]:
-        #all online documentation says that this should be solvable with a 
+        #all online documentation says that this should be solvable with a
         #simple list() to conver the keys. It is not.
         oh_keys = auxdict["OH"].keys()
         oh_keys = [*oh_keys]
@@ -838,12 +845,6 @@ def generate_experiment(parse_xml, create_default_aux,
      if sbatchmail==1:
          mail_command = "-m " + NEMSemail1 + " "
          msub_mail_command = "-m ae -M "+ NEMSemail1 + " "
-
-    if parse_xml:
-         listrips = [copyprop]
-         listrips = copyprop.split(",")
-    else:
-         listrips = auxdict['DS']['rips']
 
     # 2019-06-05: rewrite of postproc in progress
     # making the postproc directories

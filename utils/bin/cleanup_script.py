@@ -105,35 +105,18 @@ def parse_outdirs_from_xml(outdir_string):
         rip_list = [out_split[-3]]
     return(outdirs,rip_list)
 
-def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv):
+def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv, ds_experiment_name):
 #Clobbers or moves the script directories and all output directories,
 #depending on the settings of the xml passed in
 #Good news! Expergen checks for running on a workstation versus the analysis
 #nodes. This check should be safe.
 #Check for being on an analysis node:
-    '''
-    output = listVars.listVars(xml, basedir)
-    outdir = output[27]
-    if re.search("#", outdir) is not None: #Check to see how this handles on single-rip datasets
-        #Get outdirs for each rip
-        out_components = re.split("#", outdir)
-        #Expected parenthesis are an utter pain to make regular expressions around
-        for el in ("$", ")", "("):
-            out_components[1] = re.sub("\\" + el, '\\'+el, out_components[1])
-        rips = out_components[2]
-        rip_list = re.split(",", rips)
-        outdirs = []
-        for rip in rip_list:
-            outdirs.append(re.sub(out_components[1], rip, out_components[0]))
-        outdirs = [get_file_paths(f, is_csv) for f in outdirs]
-    #Script path
-    scriptpath = output[54]
-    targvar = output[25]
-    #Ensemble obtain
-    '''
+
     is_ensemble = False
     is_crossval = False
     cv_warn=False
+    if type(outdirs) is str:
+        outdirs = [outdirs]
     dirpaths = [scriptdir] + outdirs
     if len(outdirs) > 1:
         is_ensemble = True
@@ -173,12 +156,13 @@ def clean_prior_experiments(outdirs, scriptdir, rip_list, basedir, opt, is_csv):
     elif opt=='move':
         #set suffix to move new paths to:
         suffix = str(max([count_suffix(el) for el in dirpaths]) + 1)
+        exp_suffix = ds_experiment_name + "~" + suffix
         for el in dirpaths:
             if os.path.exists(el):
-                dest = "~".join([el.rstrip("/"), suffix])
+                dirsplit = re.split("/", el)
+                destsplit = [re.sub(ds_experiment_name, exp_suffix, el) for el in dirsplit]
+                dest = "/".join(destsplit)
                 print("moving " + str(el) + " to " + dest)
                 shutil.move(el, dest)
-                #except:
-                #"Move failed; indexes are uneven. Trying again."
-                #dest = 	"~".join([el.rstrip("/"), str(int(suffix)+1)])
-                #shutil.move(el, dest)
+        #print("Move complete. examine results.")
+        #sys.exit(1)
