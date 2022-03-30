@@ -314,6 +314,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     n_tiles = 0
     j_rangeval = len(j_elements)-1 if len(j_elements) > 1 else 1
     k = 0
+    idstrings = []
     for j in range(0, j_rangeval):
         jval = j_elements[j]
         jby = j_elements[j+1] - jval
@@ -354,6 +355,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             #print(" ".join([str(el) for el in [ival, i_idx, imax, i_by, i_offset, jval, j_idx, jmax, j_by, j_offset]]))
             regex_outdir = osp.join(auxdict['DS']['out_dir'])
             idstring = i_string + "_" + j_string
+            idstrings.append(idstring)
             runscript_code = make_runscript(scriptdir, experiment_name, idstring,
                                             auxdict['DS']['vars'], auxdict['DS']['rips'], regex_outdir,
                                             i_idx, imax, iby, i_offset,
@@ -365,15 +367,12 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
             os.chmod(runscript_name, runmode)    # f now executable
             runscript_files.append(runscript_name)
             if k % njobs == (njobs - 1) or k == ( nrunscripts - 1):
-                #print("writing master")
-                #print("i " + str(i) + " j " + str(j))
-                #print("i " + str(i_elements[i+1]-1) + " j " + str(j_elements[j+1]-1))
                 # Prepare to write all accululated data to file
                 i_master_string += "-" + str(i_elements[i+1]-1)
                 j_master_string += "-" + str(j_elements[j+1]-1)
                 idx_string = i_master_string + '_' + j_master_string
                 master_scriptname = osp.join(scriptdir, 'master', 'master_script_' + idx_string)
-                trap_command  = make_trap_command(scriptdir, idx_string)
+                trap_command  = make_trap_command(scriptdir, idx_string, idstrings)
                 executable_code = make_executable_stuff(runscript_files, auxfile_mod, meta_tmp,
                                                         i_idx, imax, i_by, i_offset, j_idx, jmax, j_by, j_offset)
                 #idx_string = "I" + str(i_elements) + "_" + j_string
@@ -393,6 +392,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
                     f.write("echo 'Beginning calls to executable'\n")
                     f.write(executable_code)
                     f.write('\n')  # needed for the slurm POSIX standard - final terminator
+                idstrings = []
             k += 1
     #2019-08: Adding sourcable script for dmgetting files
     #2021-03: File is now a text file of all files used by FUDGE
@@ -404,23 +404,43 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     	f.write("\n".join(dmget_list))
     print('master runscript and mini creation completed')
 
-def make_trap_command(scriptdir, idx_string):
+def make_trap_command(scriptdir, idx_string, idstrings):
     '''
     Makes a command to trap and write status files based off of the master exit status
     '''
     statdir = osp.join(scriptdir, 'status', 'master')
+    mini_statdir = osp.join(scriptdir, 'status', 'minifile')
+    mini_write_statdir = osp.join(scriptdir, 'status', 'all_mini')
+    idstring_array = "( " + " ".join(idstrings) + " )"
     trap_command = "\n".join(["#Trap code - writes status files for cleanup",
                               "chunk_id='" + idx_string + "'",
+                              "statdir=" + statdir,
                               "function exit_fxn() {",
                               "    # many thanks to https://medium.com/@dirk.avery/the-bash-trap-trap-ce6083f36700",
                               "	echo $1",
                               '	if [ "$1" != "0" ]; then',
-                              "	  touch " + statdir + "/${chunk_id}.fail",
-                              "	  exit 1",
-                              "  	else",
-                              "	  touch " + statdir + "/${chunk_id}.success",
-                              "	  exit 0",
+                              "	  touch $statdir/${chunk_id}.fail",
+                              "	  exitstat=1",
+                              " else",
+                              "	  touch $statdir/${chunk_id}.success",
+                              "	  exitstat=0",
                               "	fi",
+                              "  #independently check for all status files written by the runscripts",
+                              "  mini_statdir='" + mini_statdir + "'",
+                              "  all_statdir='" + mini_write_statdir + "'",
+                              "  mini_chunks=" + idstring_array,
+                              "  all_chunks_written=0",
+                              "  for mini in ${mini_chunks[@]}; do",
+                              "    if [ ! -f $mini_statdir/mini.${mini}.success ]; then",
+                              "      all_chunks_written=1",
+                              "    fi",
+                              "  done",
+                              '  if [ "$all_chunks_written" != "0" ]; then',
+                              "    touch $all_statdir/${chunk_id}.fail",
+                              "  else",
+                              "    touch $all_statdir/${chunk_id}.success",
+                              "  fi",
+                              "  exit $exitstat",
                               "}",
                               "trap 'exit_fxn $?' EXIT"])
     return(trap_command + "\n")
