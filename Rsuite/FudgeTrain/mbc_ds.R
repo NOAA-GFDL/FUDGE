@@ -308,7 +308,8 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
   iter = 30
-  jitter.fac = 0
+  is_jitter = F
+  jitter.val = NULL
   ratio.seq = F #should be 1 for this case
   trace = 0.05
   adjust_trace = F
@@ -355,10 +356,27 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       ratio.seq <- TRUE
     }
   }
-  jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
-  if (any(jitter.names %in% names(args))){
-    jitter.name <- jitter.names[which(jitter.names %in% names(args))] 
-    jitter.fac <- args[[jitter.name]]
+  #behavior changed 2022-10 - explicitly exit with error if using old args
+  jitter.old.names <- c("jitter", 'jitter.fac', 'jitter_fac')
+  if (any(jitter.old.names %in% names(args))){
+    stop(paste("Error in set.qdm.defaults: QDM requires specification of is_jitter and possibly jitter_val!"))
+  }else{
+    if ('is_jitter' %in% names(args)){
+      if (args$is_jitter){
+        jitter.fac <- args$jitter_val
+        if (jitter.fac == 'default'){
+          jitter.fac <- .Machine$double.eps^2
+        }else{
+          jitter.fac <- as.numeric(jitter.val)
+        }
+      }else{
+        if (!is.null(jitter_val) | args$jitter_val != 0){
+          stop(paste("Error in set.qdm.defaults: when is_jitter = F, cannot set jitter_val in config!"))
+        }else{
+          jitter.fac <- 0
+        }
+      }
+    }
   }
   if ('adjust_trace' %in% names(args)){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
@@ -371,7 +389,8 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
                  "force_reproducibility argument ('on' or 'off')", 
                  "is required to be set in the XML for MBC and QDM when type == 'mult'!"))
     }else{
-      force_reproducibility <- FALSE
+      #default changed 2022-10 - was false, is now true
+      force_reproducibility <- TRUE
     }
   }
   #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace

@@ -1,5 +1,5 @@
 #!/bin/python
-import os
+import os,sys
 
 TMPDIR = os.environ.get('TMPDIR')
 if TMPDIR is None:
