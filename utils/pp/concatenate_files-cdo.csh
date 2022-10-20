@@ -5,7 +5,7 @@
 
 source /usr/local/Modules/default/init/tcsh
 module use /app/spack/v0.15/modulefiles/linux-rhel6-x86_64/
-module load cdo/1.9.8
+module load cdo/1.9.10
 module load netcdf/4.6.1
 
 #/work/cew/testing/file_chunks/

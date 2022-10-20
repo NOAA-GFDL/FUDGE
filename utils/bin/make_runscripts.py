@@ -14,11 +14,12 @@ def make_runscript(scriptdir, experiment_name, idstring,
                 calls commandline gcp uitlity
     '''
     header = "\n".join(["#!/bin/bash",
-                        "set -x",
+                        "#don't set -x until modulefiles loaded",
                         "# -e not recommended; breaks file status detection for preexist",
                         "#set -e",
                         ". /usr/local/Modules/default/init/bash",
                         "source $BASEDIR/set_fudge_env_bash",
+                        "set -x",
                         "if [ ! $?SLURM_JOB_ID ]; then",
                         "  scriptid=`date +%Y%m%d-%H%M`",
                         "else",
@@ -27,13 +28,14 @@ def make_runscript(scriptdir, experiment_name, idstring,
                         "scriptdir=" + scriptdir,
                         "statdir=" + osp.join(scriptdir, 'status', 'minifile'),
                         "final_outdir=" + outdir_regex,
-                        "xtmp=" + xtmpdir,
+                        "xtmpdir=" + xtmpdir,
                         "index_idstring=" + idstring,
                         "vars=(" + " ".join(ds_vars) + ")",
                         "rips=(" + " ".join(rips) + ")",
                         'dv_idstring="${vars[${#vars[@]}]}_*${index_idstring}"',
                         'qc_idstring="${vars[${#vars[@]}]}_qcmask*${index_idstring}"',
-                        "logfile=${scriptdir}/log/out." + experiment_name + ".master.$scriptid.chunk.$index_idstring"])
+                        "logfile=${scriptdir}/log/out." + experiment_name + ".master.$scriptid.chunk.$index_idstring", 
+                        "touch $logfile"])
     header += "\n"
     #var_set = "vars=(" + " ".join(ds_vars) + ")"
     #rip_set = "rips=(" + " ".join(rips) + ")"
@@ -43,16 +45,17 @@ def make_runscript(scriptdir, experiment_name, idstring,
                           "for rip in ${rips[@]}; do",
                           "  for var in ${vars[@]}; do",
                           "    #mkdir -p $final_outdir",
-                          "    loop_outdir=$xtmpdir/$rip/$var",
+                          "    loop_outdir=$xtmpdir/$rip/$var/chunk/",
                           "    search_files=$(ls $loop_outdir/ | grep $index_idstring)",
+                          '    #checkstring="${search_files}tea"',
                           "    file_exists=$#",
-                          "    if [ $file_exists == 0 ]; then",
+                          '     if [ $file_exists == 0 ]; then',
                           "      all_complete=1",
                           "    fi",
                           "   done",
                           "done",
                           "if [ $all_complete == 0 ]; then",
-                          "  echo 'All files that would have been written are written; not recalculating'",
+                          "  echo 'All chunk files that would have been written are written; not recalculating'",
                           "  exit 0",
                           "fi"])
     # Then call the main R code
@@ -61,24 +64,27 @@ def make_runscript(scriptdir, experiment_name, idstring,
                                            j_max, j_by, j_offset, auxfile_mod,
                                            meta_file, 'TRUE'])
     r_command = "Rscript " + master_driver + " " + cmd_args + " &> $logfile &" + "\nwait\nsleep 10\n"
+    r_echo = "echo 'Rscript " + master_driver + " " + cmd_args + "'" 
     copies = "\n".join(["write_qcmask=" + ("0" if write_qcmask else "1"),
                             "for rip in ${rips[@]}; do",
                             "  for var in ${vars[@]}; do",
                             "    final_outdir=" + outdir_regex,
-                            "    xtmp_outdir=$xtmp/$rip/$var/",
+                            "    xtmp_outdir=$xtmpdir/$rip/$var/chunk/",
                             "    search_files=$(ls $xtmp_outdir/ | grep $dv_idstring)",
+                            '    checkstring="${search_files}tea"',
                             "    file_exists=$#",
-                            "    if [ $file_exists == 0 ]; then",
+                            '     if [ $file_exists == 0 ] && [ $checkstring != "tea" ]; then',
                             "#these should also have a check for file size greater than 0",
                             "      touch $statdir/mini.${index_idstring}.success",
                             "    else",
                             "      touch $statdir/mini.${index_idstring}.fail",
                             "    fi",
                             "    if [ $write_qcmask == 0 ]; then",
-                            "      xtmp_qcdir=$xtmp/$rip/${var}_qcmask",
-                            "      search_files=$(ls $xtmp_outdir/ | grep $qc_idstring)",
+                            "      xtmp_qcdir=$xtmpdir/$rip/${var}_qcmask/chunk/",
+                            "      osearch_files=$(ls $xtmp_outdir/ | grep $qc_idstring)",
                             "      ostat=$#",
-                            "      if [ $ostat == 0 ]; then",
+                            '      ocheck="${osearch_files}tea"',
+                            '      if [ $ostat == 0 ] && [ $ocheckstring != "tea" ]; then',
                             "        touch $statdir/qcmask.${index_idstring}.success",
                             "      else",
                             "        touch $statdir/qcmask.${index_idstring}.fail",
@@ -88,7 +94,7 @@ def make_runscript(scriptdir, experiment_name, idstring,
                             "done"])
 
     #return "\n".join([header, var_set, rip_set, complete, r_command, copies]) + "\n"
-    return "\n".join([header, complete, r_command, copies]) + "\n"
+    return "\n".join([header, complete, r_echo, r_command, copies]) + "\n"
 
     '''
     final_outdir = "/archive/cew/PROJECTS/DOWNSCALING/REGj/downscaled/GFDL-ESM2M/rcp85/day/atmos/GFDL-ESM2Mdetr1981-2099PwlSm21St1Ww31rcp85/${rip}/v20120228/REGjtndetrcap1-QDM-D1A48L01K00/${var}/US480p1/OneD/"

@@ -364,10 +364,10 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     if ('is_jitter' %in% names(args)){
       if (args$is_jitter){
         jitter.fac <- args$jitter_val
-        if (jitter.fac == 'default'){
+        if (args$jitter_val == 'default'){
           jitter.fac <- .Machine$double.eps^2
         }else{
-          jitter.fac <- as.numeric(jitter.val)
+          jitter.fac <- as.numeric(args$jitter_val)
         }
       }else{
         if (!is.null(jitter_val) | args$jitter_val != 0){
@@ -394,6 +394,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     }
   }
   #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace
+  print(paste("jitter.fac: ", jitter.fac))
   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
                       var.names=unlist(predictor.vars), 
                       adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn, 

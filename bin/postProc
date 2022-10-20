@@ -85,9 +85,13 @@ def runPostProc(aux, ds_dir, out_dir, final_outdir, var, mailid, verbose=False):
 
     #Determine how many ds vars we are looking for
     #note: anom + resid is a special case; always searched for
-    print(ds_dir)
+    print("Downscaled output chunk dir: " + ds_dir)
     if osp.exists(ds_dir):
         ds_files = [f for f in os.listdir(ds_dir) if re.search("\.nc", f) is not None]
+        if verbose:
+            print("List of files in output chunk dir:")
+            for n in ds_files:
+                print(n)
         n_ds_files = len(ds_files)
         if n_ds_files > 0:
             try:
@@ -125,6 +129,9 @@ def runPostProc(aux, ds_dir, out_dir, final_outdir, var, mailid, verbose=False):
     else:
         print('No suffix directory for ' + var + ' found. Moving on to next var.')
     output_files = [el for el in output_files if el is not None]
+    if len(output_files) == 0:
+        print("Error in postProc: output_files is of length 0. This should not happen!")
+        sys.exit(1)
     print("Concatenation operations complete." + "\n")
     for el in output_files:
         print("\t" + el)

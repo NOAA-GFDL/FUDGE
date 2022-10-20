@@ -137,9 +137,18 @@ def main(scriptdir, sleep=60, nloops=100,
                 gcp_then_touch(osp.join(stagedir, "master.fail"))
                 sys.exit(1)
         elif stage == 'mini':
-            status,faillist = check_mini_status(osp.join(statdir, 'minifile'),
+            status1,faillist1 = check_mini_status(osp.join(statdir, 'minifile'),
                                        osp.join(scriptdir, 'runscript'),
                                        make_qcmask, verbose)
+            if status1 == 'wait':
+                #expectation is that this is never success when other is fail; 
+                #meant as a failsafe for propogating failures
+                status2,faillist2 = check_all_mini_status(osp.join(statdir, 'all_mini'),
+                                           osp.join(scriptdir, 'master'),
+                                           make_qcmask, verbose)
+                status,faillist = status2,faillist2
+            else:
+                status,faillist = status1,faillist1
             if status == 'success':
                 stage = 'postProc'; status = 'wait'
                 Path(osp.join(stagedir, "mini.success")).touch()
@@ -486,6 +495,33 @@ def check_mini_status(mini_statdir, minidir, write_qcmask, verbose):
             else:
                 n_fail += 1
     if n_complete == len(search_strings):
+        status = 'success'
+    if n_fail > 0:
+        status = 'fail'
+        faillist = [re.sub(".fail", '', el) for el in statfiles if re.search('fail', el) is not None]
+    return(status, faillist)
+    
+def check_all_mini_status(mini_statdir, minidir, write_qcmask, verbose):
+    '''
+    A check on minifiles from the master script - did all of the minifiles associated with a given master script get written? 
+    '''
+    n_allmini = len(os.listdir(minidir))
+    statfiles = os.listdir(mini_statdir)
+    n_complete = 0
+    n_fail = 0
+    status = 'wait'
+    faillist = []
+    n_status = len(statfiles)
+    n_success = len([el for el in statfiles if re.search('success', el) is not None])
+    if verbose:
+        print(("There are " + str(n_status) + " " + srst + " all_mini statfiles; " + str(n_success) + " successful"))
+        # The below is a hack - but I want to see what the results are
+    if n_status >= n_mini:
+        if n_success == n_mini:
+            n_complete += 1
+        else:
+            n_fail += 1
+    if n_complete == 1:
         status = 'success'
     if n_fail > 0:
         status = 'fail'
