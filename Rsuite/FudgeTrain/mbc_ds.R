@@ -384,10 +384,11 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   if ('force_reproducibility' %in% names(args)) {
     force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
   }else{
-    if (args$type == 'mult'){
-      stop(paste("Error in set.QDM.defaults: as of fudgetag icing-testing-20180510", 
+    if (args$type == 'mult' && jitter.fac != 0){
+      stop(paste("Error in set.QDM.defaults: as of October 2022,", 
                  "force_reproducibility argument ('on' or 'off')", 
-                 "is required to be set in the XML for MBC and QDM when type == 'mult'!"))
+                 "is required to be set in the JSON for QDM when type == 'mult'",
+                 "and is_jitter is true!"))
     }else{
       #default changed 2022-10 - was false, is now true
       force_reproducibility <- TRUE
