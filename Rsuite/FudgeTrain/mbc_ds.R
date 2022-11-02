@@ -309,7 +309,8 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #'to control. Most of these also apply to QDM.
   iter = 30
   is_jitter = F
-  jitter.val = NULL
+  jitter_val = NULL
+  jitter.fac = 0
   ratio.seq = F #should be 1 for this case
   trace = 0.05
   adjust_trace = F
@@ -370,7 +371,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
           jitter.fac <- as.numeric(args$jitter_val)
         }
       }else{
-        if (!is.null(jitter_val) | args$jitter_val != 0){
+        if (!is.null(jitter_val) | ('jitter_val' %in% names(args)) ){
           stop(paste("Error in set.qdm.defaults: when is_jitter = F, cannot set jitter_val in config!"))
         }else{
           jitter.fac <- 0
@@ -382,7 +383,17 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }
   if ('force_reproducibility' %in% names(args)) {
-    force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
+    if (args$force_reproducibility %in% c('on', 'off', TRUE, FALSE)){
+      if (args$force_reproducibility %in% c('on', TRUE)){
+        force_reproducibility <- TRUE
+      }else{
+        force_reproducibility <- FALSE
+      }
+    }else{
+      stop(paste("Error in set.QDM.defautls: force_reproducibility should be one of", 
+                 paste(c('on', 'off', TRUE, FALSE), collapse=","), "but was", 
+                 args$force_reproducibility, "!"))
+    }
   }else{
     if (args$type == 'mult' && jitter.fac != 0){
       stop(paste("Error in set.QDM.defaults: as of October 2022,", 
