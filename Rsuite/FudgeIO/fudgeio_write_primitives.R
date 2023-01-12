@@ -93,29 +93,38 @@ WriteNC <-  function(filename,out.data,var.names,
 
   #the metadata vars associated with the dimensions
   if(verbose){message("writing metadata variables")}
-  if (length(var.data) > 0){
-    metavars.present <- T
-  }else{
-    metavars.present <- F
+  if (length(var.data) > 0) {
+    metavars.present <- TRUE
+  } else {
+    metavars.present <- FALSE
   }
-  if (metavars.present){
-    for (v in 1:length(var.data)){
+  if (metavars.present) {
+    for (v in 1:length(var.data)) {
       var <- names(var.data)[v]
-      if(verbose) { message(paste("defining metavar", var)) }
+      if(verbose) {
+        message(paste("defining metavar", var))
+      }
       dimlist <- list()
       dimnames <- var.data[[var]]$dimnames
-      if( !dimnames[1] == ""){
-        for (el in dimnames){
-          #If anything but bnds, get corresponding dim from the dim list;
-          #otherwise, use newly-constructed bnds var
-          dimlist[[el]] <- switch(as.character(el),
-                                  "bnds"=bnds,
-                                  dim.list[[as.character(el)]])
+    if (dimnames[1] != "") {
+        for (eln in seq_len(length(dimnames))) {
+          el <- dimnames[eln]
+        # Get the dim element from dim.list unless it isn't recognized,
+        # then just get it from the variable itself
+        # (this is to address station_id)
+        # otherwise, use newly-constructed bnds var or time from dim.list
+          dimlist[[el]] <- dim.list[[as.character(el)]]
+          if (!(as.character(el) %in% names(dim.list))) {
+            dimlist[[el]] <- var.data[[var]]$dim[[eln]]
+          }
+          if (as.character(el) == "bnds") {
+            dimlist[[el]] <- bnds
+          }
         }
       }
       var.dat[[var]] <- ncvar_def(var, #var.data[[v]], #Don't forget to add the data in somewhere
-                                  units=var.data[[var]]$units, #Add check for adding units back in if not present
-                                  dim=dimlist, #It should be fine for this to be NULL.
+                                  units = var.data[[var]]$units, #Add check for adding units back in if not present
+                                  dim = dimlist, #It should be fine for this to be NULL.
                                   longname = var.data[[var]]$longname,
                                   prec = var.data[[var]]$prec #This one gave me hives last time.
       )
@@ -181,6 +190,8 @@ WriteNC <-  function(filename,out.data,var.names,
       ncatt_put(nc.obj, 0, "any_missing_fill_changed","TRUE")
     }
   }
+
+  #clone attributes from variables
   if(verbose) { print("cloning attributes") }
   for (i in 1:length(dim.list)){
     dim.name <- names(dim.list)[i]
@@ -267,8 +278,8 @@ WriteNC <-  function(filename,out.data,var.names,
       }
     }
   }
-  ##2020-08: adding the last_modified date for the tool
-  #ncatt_put(nc.obj, 0, "tool_version", moddate(), prec='character')
+  #2020-08: adding the last_modified date for the tool
+  ncatt_put(nc.obj, 0, "tool_version", moddate(), prec='character')
   #################
   nc_close(nc.obj)
   ##2021 - adding compression settings via nccopy
@@ -277,7 +288,7 @@ WriteNC <-  function(filename,out.data,var.names,
   #compress_cmd <- paste("nccopy -d", compress_factor, filename, filename)
   #system(compress_cmd)
   #2022 - adding script for missval prec fixing
-  scriptloc <- "$BASEDIR/Rsuite/FudgeIO/fix_missval_prec.bash"
+  scriptloc <- "$S8_PATH/shared_code/FudgeIO/fix_missval_prec.bash"
   prec_cmd <- paste("bash", scriptloc, filename)
   print_out <- system(prec_cmd)
   return(filename)
@@ -299,7 +310,7 @@ global_clone_function <- function(env=parent.frame()){
                           as.vector(env$clone_exclude))
   if(length(env$clone_include) > 0){
     if (!('all' %in% env$clone_include)){
-    global.except.list <- global.except.list[!(global.except.list %in% env$clone_include)]
+      global.except.list <- global.except.list[!(global.except.list %in% env$clone_include)]
     }else{
       global.except.list <- c()
     }
@@ -346,6 +357,9 @@ get.global.except.atts <- function(env=parent.frame()){
                               'branch_time', 'modeling_realm',
                               'table_id', 'tracking_id', 'parent_experiment_rip',
                               "Institution", 'Institute_id', 'contact',
-                              'tool_version')
+                              'tool_version',
+                               #"filenames_OH", "filenames_MH", "filenames_MF", "gfdl_experiment_name",
+                              'variable_id',
+                              'CheckFile_fix_log', 'CheckFile_fix_script')
   return(env)
 }

@@ -1,0 +1,25 @@
+initialization_method
+physics_version
+realization
+product
+creation_date
+title
+forcing
+source
+parent_experiment_id
+branch_time
+modeling_realm
+table_id
+tracking_id
+parent_experiment_rip
+Institution
+Institute_id
+contact
+tool_version
+# filenames_OH
+# filenames_MH
+# filenames_MF
+# gfdl_experiment_name
+variable_id
+CheckFile_fix_log
+CheckFile_fix_script

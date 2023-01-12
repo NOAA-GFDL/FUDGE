@@ -1,0 +1,4 @@
+'gfdlesd_idname'
+'gfdlesd_idlongname'
+'gfdlesd_idscenario'
+'gfdlesd_idgrid'
