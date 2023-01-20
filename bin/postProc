@@ -184,7 +184,8 @@ def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwr
         sys.exit()
     #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
     #in that case, the modified workflow should just copy the file.
-    cat_file = cat_files(in_dir, file_patt, out_dir, delim_patt = "\.", orig_file = complete_gridfile, aux=aux)
+    is_concatenate = (n_expected_files > 1)
+    cat_file = cat_files(in_dir, file_patt, out_dir, delim_patt = "\.", orig_file = complete_gridfile, aux=aux, is_concatenate=is_concatenate)
     #And finally, set your metadata.
     #Note: this is now done in the cat step, to avoid copying to tmpdir more than once
     #out_file = set_FUDGE_metadata(out_file, exp_info)

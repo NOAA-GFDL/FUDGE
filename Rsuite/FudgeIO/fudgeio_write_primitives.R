@@ -279,7 +279,7 @@ WriteNC <-  function(filename,out.data,var.names,
     }
   }
   #2020-08: adding the last_modified date for the tool
-  ncatt_put(nc.obj, 0, "tool_version", moddate(), prec='character')
+  #ncatt_put(nc.obj, 0, "tool_version", moddate(), prec='character')
   #################
   nc_close(nc.obj)
   ##2021 - adding compression settings via nccopy
@@ -288,9 +288,9 @@ WriteNC <-  function(filename,out.data,var.names,
   #compress_cmd <- paste("nccopy -d", compress_factor, filename, filename)
   #system(compress_cmd)
   #2022 - adding script for missval prec fixing
-  scriptloc <- "$S8_PATH/shared_code/FudgeIO/fix_missval_prec.bash"
-  prec_cmd <- paste("bash", scriptloc, filename)
-  print_out <- system(prec_cmd)
+  #scriptloc <- "$S8_PATH/shared_code/FudgeIO/fix_missval_prec.bash"
+  #prec_cmd <- paste("bash", scriptloc, filename)
+  #print_out <- system(prec_cmd)
   return(filename)
 }
 

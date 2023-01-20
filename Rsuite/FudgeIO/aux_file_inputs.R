@@ -84,7 +84,7 @@ get_aux_params <- function(aux_file, copy_from_tmpdir=F){
   #   }
   #   print(aux_text)
   #Read in as json
-  aux_list <- fromJSON(aux_file)
+  aux_list <- fromJSON(readLines(aux_file, warn=F))
   output <- list()
   #First get the global vars
   output$ds_handle_missing <- aux_list$ds_handle_missing

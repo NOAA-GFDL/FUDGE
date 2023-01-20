@@ -154,7 +154,7 @@ QCAdjustArguments(pre_ds, post_ds,
                   predictor.vars, target.var, ds.ref$method)
 
 #Read in metadata parameters from metafile
-meta_list <- fromJSON(metafile)
+meta_list <- fromJSON(readLines(metafile, warn=F))
 
 ########################
 #2018-04-11 : now checking on how to read in csv data

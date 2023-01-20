@@ -23,7 +23,7 @@ sys.path.append(osp.join(BASEDIR, 'utils/shared_code'))
 from common_functions import get_nc_dim_lengths, tstamp
 import env
 
-def cat_files(input_dir, patt, output_dir, aux='none', delim_patt = ".", orig_file="test.nc"):
+def cat_files(input_dir, patt, output_dir, aux='none', delim_patt = ".", orig_file="test.nc", is_concatenate=True):
 	#Get all files in the input dir that match a given pattern
 	#(note: assumed to start at the beginning of the filename)
 
@@ -44,24 +44,34 @@ def cat_files(input_dir, patt, output_dir, aux='none', delim_patt = ".", orig_fi
 		os.makedirs(tdir_cat)
 	cat_min_loc = osp.join(basedir, 'utils/pp/')
 
-	print("getting list of files")
-	print(patt)
-	file_subset = [f for f in os.listdir(input_dir) if re.search(patt, f) is not None]
-	#Start dividing the file subset into subsets based on the separators.
-	#Each one is going to be in the general form of $capital_letter$start_index-$end_index
-	#find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
-	#unwind_list = [el for f in find_list for el in f ]
-	#i_matches = sorted([el for f in unwind_list for el in f if el != ""]) #remove duplicates
-	# this bit right here assumes that there are only ever gonna be two periods in the
-	#filename - $filename.i_suffix.nc
-	#corrected in 2021 to be separated by a general-purpose delimiter
-	file_split = re.split(delim_patt, file_subset[0])
-	out_filename = ".".join([file_split[0], "nc"])
-	outfile = osp.join(output_dir, out_filename)
-	tmp_outfile = osp.join(tdir, out_filename)
-	print("cdo call to all files matching pattern")
-	xy_out = call_cat_min_cdo(input_dir, file_subset, tdir_cat, tmp_outfile, "all values", orig_file)
-	print("concatenated file: " + xy_out)
+	if is_concatenate:
+		print("getting list of files")
+		print(patt)
+		file_subset = [f for f in os.listdir(input_dir) if re.search(patt, f) is not None]
+		#Start dividing the file subset into subsets based on the separators.
+		#Each one is going to be in the general form of $capital_letter$start_index-$end_index
+		#find_list  = [re.findall("\.(I[0-9]*)_|\.(I[0-9]*-[0-9]*)_", f) for f in file_subset]
+		#unwind_list = [el for f in find_list for el in f ]
+		#i_matches = sorted([el for f in unwind_list for el in f if el != ""]) #remove duplicates
+		# this bit right here assumes that there are only ever gonna be two periods in the
+		#filename - $filename.i_suffix.nc
+		#corrected in 2021 to be separated by a general-purpose delimiter
+		file_split = re.split(delim_patt, file_subset[0])
+		out_filename = ".".join([file_split[0], "nc"])
+		outfile = osp.join(output_dir, out_filename)
+		tmp_outfile = osp.join(tdir, out_filename)
+		print("cdo call to all files matching pattern")
+		xy_out = call_cat_min_cdo(input_dir, file_subset, tdir_cat, tmp_outfile, "all values", orig_file)
+		tmp_outfile = xy_out
+		print("concatenated file: " + xy_out)
+	else:
+		uncat_file = [f for f in os.listdir(input_dir) if re.search(patt, f) is not None][0]
+		file_split = re.split(delim_patt, uncat_file)
+		out_filename = ".".join([file_split[0], "nc"])
+		outfile = osp.join(output_dir, out_filename)
+		tmp_outfile = xy_out = osp.join(input_dir,uncat_file)
+		print(tmp_outfile)
+		print("one file; no concatenation step needed")
 	#Final step needs to be finalizing some metadata atts
 	if aux != 'none':
 	    print("finalizing file metadata")
