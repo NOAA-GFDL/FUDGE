@@ -423,9 +423,11 @@ for (r in 1:length(aux.ref$DS$rips)){
   }
   var_atts <- list()
   for (v in aux.ref$DS$vars){
-  	var_atts[[v]] <- list("missing_value" = 1e20)
+    vatts <- preserve_attributes(OH.vars[1], OH$metadata, v)
+  	var_atts[[v]] <- c(list("missing_value" = 1e20), vatts)
   }
-  sname <- OH$metadata[[OH.vars[1]]]$long_name
+  
+  
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],

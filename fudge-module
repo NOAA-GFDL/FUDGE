@@ -28,7 +28,7 @@ switch ${plat} {
 #module swap /usr/local/Modules/modulefiles/python/2.7.12
 module swap python/3.7.7
 module swap r/4.0.2
-module swap cdo/1.9.8
+module swap cdo
 module swap udunits/2.2.24
 module swap nco/4.8.1
 #the load of git needs to be a swap; version other than default loaded earlier
