@@ -165,8 +165,17 @@ if (copy_from_tmp){
   OH.files <- sapply(OH.files, function(x){file.path(TMPDIR, x)})
 }
 OH.vars <- names(aux.ref$OH)
-oh_x_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$idim, i_idx, i_max, i_stride-1)
-oh_y_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$jdim, j_idx, j_max, j_stride-1)
+# oh_x_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$idim, i_idx, i_max, i_stride-1)
+# oh_y_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$jdim, j_idx, j_max, j_stride-1)
+## As of 2023, turning off the overlapping functionality. It seems to play badly
+#with some simplifications in the s8 fudgeio; this is going to be a knot to 
+#untangle.
+#Okay - so some of the conflict here seems to be that s8 is operating on a 
+#start + count model and fudge wasn't. 
+oh_x_subset <- list(subset=c(i_idx, i_stride), 
+                    olap=FALSE)
+oh_y_subset <- list(subset=c(j_idx, j_stride),
+                    olap=FALSE)
 OH <- build.FUDGE.dataset(OH.files, OH.vars, list(x=oh_x_subset,y=oh_y_subset),
                           dim=ds.ref$oh_dimlist,
                           x_by = aux.ref$OH[[1]]$idim, y_by = aux.ref$OH[[1]]$jdim,
@@ -181,6 +190,7 @@ for (el in names(OH$data)){
 }
 oh.orig.dim <- OH$orig_dims[[1]]
 oh.dim <- dim(OH$data[[1]])
+
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2],
                               x.by=aux.ref$OH[[1]]$idim, y.by=aux.ref$OH[[1]]$jdim,
                               allow_partial=F)
@@ -191,8 +201,12 @@ if (copy_from_tmp){
   MH.files <- sapply(MH.files, function(x){file.path(TMPDIR, x)})
 }
 MH.vars <- names(aux.ref$MH)
-mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
-mh_y_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$jdim, j_idx, j_max, j_stride-1)
+# mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
+# mh_y_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$jdim, j_idx, j_max, j_stride-1)
+mh_x_subset <- list(subset=c(i_idx, i_stride), 
+                    olap=FALSE)
+mh_y_subset <- list(subset=c(j_idx, j_stride),
+                    olap=FALSE)
 MH <- build.FUDGE.dataset(MH.files, MH.vars, list(x=mh_x_subset,y=mh_y_subset),
                           dim=ds.ref$mh_dimlist,
                           x_by=aux.ref$MH[[1]]$idim, y_by=aux.ref$MH[[1]]$jdim,
@@ -216,8 +230,12 @@ if (copy_from_tmp){
   MF.files <- sapply(MF.files, function(x){file.path(TMPDIR, x)})
 }
 MF.vars <- names(aux.ref$MF)
-mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
-mf_y_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$jdim, j_idx, j_max, j_stride-1)
+# mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
+# mf_y_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$jdim, j_idx, j_max, j_stride-1)
+mf_x_subset <- list(subset=c(i_idx, i_stride), 
+                    olap=FALSE)
+mf_y_subset <- list(subset=c(j_idx, j_stride),
+                    olap=FALSE)
 MF <- build.FUDGE.dataset(MF.files, MF.vars,
                           subset=list(x=mf_x_subset, y=mf_y_subset),
                           dim=ds.ref$mf_dimlist,
@@ -279,8 +297,12 @@ if (!ds.ref$multivar_target){
   #This is a special bypass for the MBC; we can't count on OH
   #being all 1, and some of the other workflow assumes that
   targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
-  targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
-  targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
+  # targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
+  # targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
+  targ.x.subset <- list(subset=c(i_idx, i_stride), 
+                      olap=FALSE)
+  targ.y.subset <- list(subset=c(j_idx, j_stride),
+                      olap=FALSE)
   TARG <- build.FUDGE.dataset(OH.files[[1]], target.var[1], list(x=targ.x.subset,y=targ.y.subset),
                               dim=ds.ref$oh_dimlist,
                               x_by=aux.ref$OH[[1]]$idim, y_by=aux.ref$OH$jdim,
