@@ -737,23 +737,28 @@ def generate_experiment(parse_xml, create_default_aux,
             #Copy to config directory
             dest = osp.join(sbase + "/config/", osp.basename(auxdict['gridspec']))
             shutil.copy2(auxdict['gridspec'], dest)
-            #2022-02: create xtmp and set in auxfile
-            auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, target, rip_list)
-            print("Step 0: Create the unified runcscripts and master runscripts")
-            if (queue == 'batch'):
-                queue = auxdict['queue']
-            create_xml_runscripts(lons, lone, i_subset, i_off,
-                                  lats, late, j_subset, j_off,
-                                  njobs, ncpus, fudgetag, sbase,
-                                  target_dir, hist_pred_dir, fut_pred_dir,
-                                  oh_timerange, mh_timerange, mf_timerange, predlist,
-                                  spat_mask, target_time_window, hist_time_window,
-                                  fut_time_window, auxcustom, outdir, target, method,
-                                  file_j_range, idirsuffix,
-                                  ds_info['multivar_target'],
-                                  auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
-                                  auxdict, ds_minifile, expconfig,
-                                  not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
+        else:
+            print("Error in expergen: auxfile specified in xml requires a gridspec attribute - there's not a hard-coded lookup table anymore!")
+            sys.exit(1)
+        #2022-02: create xtmp and set in auxfile
+        auxdict['xtmpdir'] = make_xtmp_path(auxdict['ds_experiment_name'], output_grid, True, target, rip_list)
+        print('auxdict keys:')
+        print(auxdict.keys())
+        print("Step 0: Create the unified runcscripts and master runscripts")
+        if (queue == 'batch'):
+            queue = auxdict['queue']
+        create_xml_runscripts(lons, lone, i_subset, i_off,
+                              lats, late, j_subset, j_off,
+                              njobs, ncpus, fudgetag, sbase,
+                              target_dir, hist_pred_dir, fut_pred_dir,
+                              oh_timerange, mh_timerange, mf_timerange, predlist,
+                              spat_mask, target_time_window, hist_time_window,
+                              fut_time_window, auxcustom, outdir, target, method,
+                              file_j_range, idirsuffix,
+                              ds_info['multivar_target'],
+                              auxinput, auxinfo['copy_files'], auxinfo['wallclocktime'],
+                              auxdict, ds_minifile, expconfig,
+                              not_strict_metadata, metadata_table, queue, auxdict['xtmpdir'])
     else:
         i_subset = auxdict['i_subset']
         j_subset = auxdict['j_subset']
@@ -795,7 +800,7 @@ def generate_experiment(parse_xml, create_default_aux,
         if oh_keys[0] == 'pr':
             print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
             sys.exit(1)
-        if len( auxdict['DS']['rips']) > 1:
+        if len( listrips) > 1:
             print("Error in expergen: multi-rip behavior not established for CF methods!")
             sys.exit(1)
 
@@ -807,6 +812,9 @@ def generate_experiment(parse_xml, create_default_aux,
     shutil.copy2(env_file, sbase + "/environment_info.csh")
     #2022-02: and dump a modified auxdict
     cmdir = sbase + "/config_mod/"
+    #below mkdir used only for xml; write is used for both
+    if not (osp.isdir(cmdir)):
+      os.mkdir(cmdir)
     with open(osp.join(cmdir, osp.basename(auxinput)), 'w') as f:
         f.write(json.dumps(auxdict, indent=2))
     ################ step 6 fudgeList invocation ##############################################
@@ -858,6 +866,7 @@ def generate_experiment(parse_xml, create_default_aux,
         open(sbase+"/postProc/verb/verbose.false", 'a').close()
 
     print("Making postproc scripts")
+    print(auxdict.keys())
     make_postProc_scripts(auxdict, fudgetag, NEMSemail1)
     print("----------------------------------------")
     print(("\033[1;42m You can also use this sbatchwrapper script that launches all the post-processing(postProc) jobs for you in case of multi-ensemble output. If it's a single output file, you may still use this wrapper script \033[1;m", sbase + "/postProc/msubwrapper"))
