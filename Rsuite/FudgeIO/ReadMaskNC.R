@@ -92,7 +92,10 @@ ReadMaskNC <- function(mask.nc,var.name=NA,verbose=FALSE,
 ReadSpatialMask <- function(spat.file, x.subset, y.subset, spat.name='none'){
   #'Function to subset a spatial mask file in x and y.
   spat.nc <- nc_open(spat.file)
-  data <- ReadMaskNC(spat.nc)$masks[[1]][x.subset[1]:x.subset[2], y.subset[1]:y.subset[2], drop=F]
+  x.end <- x.subset[1] + x.subset[2] - 1
+  y.end <- y.subset[1] + y.subset[2] - 1
+  smask <- ReadMaskNC(spat.nc)$masks[[1]]
+  data <- smask[x.subset[1]:x.end, y.subset[1]:y.end, drop=F]
   nc_close(spat.nc)
   return(data)
 }

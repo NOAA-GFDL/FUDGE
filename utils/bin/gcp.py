@@ -44,6 +44,9 @@ def gcp(infile, outfile="TMPDIR", timestamp=False, verbose=False,
     sync = '--sync ' if gcp_sync else ""
     verbose = '-v ' if gcp_verbose else ""
     command = "gcp " + sync + verbose + infile + ' ' + outfile
+    #Note: the below doesn't work, but it's not a bad idea to have a cp setting 
+    #next time the dtns act up
+    #command = "cp " + infile + " " + outfile
     if verbose:
         print(command)
     modulepath = "source /usr/local/Modules/default/init/sh"
