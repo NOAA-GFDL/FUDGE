@@ -605,7 +605,7 @@ def main():
     else:
         meta_table = options.metadata_table
         if not osp.isfile(meta_table):
-            print(("Error in expergen: metadata table " + meta_table + " does not exist on tthis filesystem!"))
+            print(("Error in expergen: metadata table " + meta_table + " does not exist on this filesystem!"))
             print("Please use default value or point to location without environment vars in path!")
             sys.exit(1)
 
@@ -797,9 +797,10 @@ def generate_experiment(parse_xml, create_default_aux,
         #simple list() to conver the keys. It is not.
         oh_keys = auxdict["OH"].keys()
         oh_keys = [*oh_keys]
-        if oh_keys[0] == 'pr':
-            print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
-            sys.exit(1)
+        #Check turned off in 2023 - we want to downscale precip with QQDC
+        #if oh_keys[0] == 'pr':
+        #    print("Error in expergen: precip s3/s5 not yet ready for CF methods!")
+        #    sys.exit(1)
         if len( listrips) > 1:
             print("Error in expergen: multi-rip behavior not established for CF methods!")
             sys.exit(1)
