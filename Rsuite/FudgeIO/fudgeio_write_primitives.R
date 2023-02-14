@@ -288,9 +288,9 @@ WriteNC <-  function(filename,out.data,var.names,
   #compress_cmd <- paste("nccopy -d", compress_factor, filename, filename)
   #system(compress_cmd)
   #2022 - adding script for missval prec fixing
-  #scriptloc <- "$S8_PATH/shared_code/FudgeIO/fix_missval_prec.bash"
-  #prec_cmd <- paste("bash", scriptloc, filename)
-  #print_out <- system(prec_cmd)
+  scriptloc <- "$BASEDIR/Rsuite/FudgeIO/fix_missval_prec.bash"
+  prec_cmd <- paste("bash", scriptloc, filename)
+  print_out <- system(prec_cmd)
   return(filename)
 }
 
