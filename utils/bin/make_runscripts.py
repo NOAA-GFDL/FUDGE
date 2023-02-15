@@ -33,7 +33,7 @@ def make_runscript(scriptdir, experiment_name, idstring,
                         "vars=(" + " ".join(ds_vars) + ")",
                         "rips=(" + " ".join(rips) + ")",
                         'dv_idstring="${vars[${#vars[@]}]}_*${index_idstring}"',
-                        'qc_idstring="${vars[${#vars[@]}]}_qcmask*${index_idstring}"',
+                        'qc_idstring="${vars[${#vars[@]}]}_qcmask.*${index_idstring}"',
                         "logfile=${scriptdir}/log/out." + experiment_name + ".master.$scriptid.chunk.$index_idstring", 
                         "touch $logfile"])
     header += "\n"
