@@ -109,14 +109,15 @@ callQQDC_internal <- function(OH, MH, MF, args){
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=MF.slice, m.c=MH.slice, m.p=OH.slice),
               args)
-  tmp <- MBC::QDM(o.c=MF.slice, m.c=MH.slice, m.p=OH.slice)$mhat.p
+  #Feb 2023 - suppressing *all* warnings; once per tmask is too many
+  tmp <- suppressWarnings(MBC::QDM(o.c=MF.slice, m.c=MH.slice, m.p=OH.slice)$mhat.p)
   if (screen_NaNs){ # Screen out NaNs from 0/0
     tmp[is.nan(tmp)] <- 0
   }
   out <- rep(NA, length(OH.idx))
   out[OH.idx] <- tmp
   if ('trace.calc' %in% names(args)){
-    print('QDM_mult_noise invoked; replacing DS[OH == 0] <- 0')
+    #print('QDM_mult_noise invoked; replacing DS[OH == 0] <- 0')
     out[unlist(as.vector(OH), use.names=FALSE)==0] <- 0
   }
   return(out)
