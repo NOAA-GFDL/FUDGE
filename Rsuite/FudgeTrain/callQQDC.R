@@ -110,7 +110,13 @@ callQQDC_internal <- function(OH, MH, MF, args){
   q.args <- c(list(o.c=MF.slice, m.c=MH.slice, m.p=OH.slice),
               args)
   #Feb 2023 - suppressing *all* warnings; once per tmask is too many
-  tmp <- suppressWarnings(MBC::QDM(o.c=MF.slice, m.c=MH.slice, m.p=OH.slice)$mhat.p)
+  tmp <- withCallingHandlers(do.call('QDM_mod', q.args)$mhat.p, 
+                             warning = function(w){
+                               if ((conditionMessage(w) == c("collapsing to unique 'x' values"))) {
+                                 rlang::cnd_muffle(w)
+                               }
+                             }
+  )
   if (screen_NaNs){ # Screen out NaNs from 0/0
     tmp[is.nan(tmp)] <- 0
   }

@@ -2,7 +2,6 @@ QDM_mod <- function (o.c, m.c, m.p, ratio = FALSE, trace = 0.05, trace.calc = 0.
             trace, jitter.factor = 0, n.tau = NULL, ratio.max = 2, ratio.max.trace = 10 * 
             trace, ECBC = FALSE, ties = "first", subsample = NULL) 
 {
-  print("Entering QDM mod")
   if (jitter.factor > 0) {
     o.c <- jitter(o.c, jitter.factor)
     m.c <- jitter(m.c, jitter.factor)
