@@ -172,6 +172,12 @@ OH.vars <- names(aux.ref$OH)
 #untangle.
 #Okay - so some of the conflict here seems to be that s8 is operating on a 
 #start + count model and fudge wasn't. 
+#Also 2023 - adding a temporary update to account for the isd-lite station dim
+if (meta_list$provenance$is_isd){
+  ds.ref$oh_dimlist <- c(ds.ref$oh_dimlist, "ensemble")
+  ds.ref$mh_dimlist <- c(ds.ref$mh_dimlist, "ensemble")
+  ds.ref$mf_dimlist <- c(ds.ref$mf_dimlist, "ensemble")
+}
 oh_x_subset <- list(subset=c(i_idx, i_stride), 
                     olap=FALSE)
 oh_y_subset <- list(subset=c(j_idx, j_stride),
