@@ -191,6 +191,24 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
     gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, is_running_standalone))
+    #and finally, get the isd-lite-speific globals, if they are present
+    isd_file = osp.join(BASEDIR, 'utils/aux', "ISD_att_whitelist.txt")
+    with open(isd_file, 'r') as f:
+      isd_atts = f.readlines()
+      OH_file = get_file_from_fileset(auxdict['OH'], 'prime')
+      pd['is_isd'] = "false"
+      with Dataset(OH_file, 'r') as nc_obj:
+        if 'ISD_META_ICAO' in nc_obj.__dict__.keys():
+          pd['is_isd'] = "true"
+          for isda in isd_atts:
+            if not isda.startswith("#"):
+              isda = isda.rstrip("\n")
+              try:
+                gd[isda] = str(nc_obj.__dict__[isda])
+              except:
+                print("ISD-lite global attribute " + isda + " not found")
+                gd[isda] = "not found in OH file" 
+    print(gd)
     #attributes by variable
     var_longname = ""
     vd[prime_var] = {"longname": var_longname}

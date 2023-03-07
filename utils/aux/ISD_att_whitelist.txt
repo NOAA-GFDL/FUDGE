@@ -1,0 +1,19 @@
+#global_whitelist.txt
+#list of attributes to always carry over from file to file
+#when writing out metadata
+#possible conflicts: title, lowercase-i institution
+gfdl_contact_email
+gfdlesd_idgrid
+gfdlesd_idname
+institution
+ISD_META_CTRY
+ISD_META_ELEV_M
+ISD_META_ICAO
+ISD_META_LAT
+ISD_META_LON
+ISD_META_STATE
+ISD_META_STATION_NAME
+ISD_META_USAF
+ISD_META_WBAN
+latitude
+longitude
