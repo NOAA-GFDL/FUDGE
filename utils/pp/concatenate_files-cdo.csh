@@ -16,7 +16,7 @@ set in_files=$argv[2]
 set tdir = $argv[3]
 #/work/cew/testing/final_concatenated_out.nc
 set outfile = $argv[4]
-#original_file_with_complete_grid.nc
+#original_file_with_complete_grid_not_always_same_var.nc
 set gridsource = $argv[5]
 
 rm -rf $tdir/*
@@ -88,11 +88,16 @@ echo `date`
 
 echo "ncks to copy metadata for lat,lon, respective bounds"
 echo `date`
-set varlist = `cat $tdir/orig_vars.txt`
-#note: orig_vars may include some vars that are not present in the concatenated version
-set varstr = `echo $varlist | sed -e s:\ :,:g`
-#echo $varstr
-#previously gridsource was metafile
+##set varlist = `cat $tdir/orig_vars.txt`
+##set varstr = `echo $varlist | sed -e s:\ :,:g`
+#Since this is picking up metadata for grid vars, it needs to be from gridsource - 
+#but also shouldn't include the variable that we are concatenating on, because
+#that is how we get the *correct* missval set in the R code overridden with an
+#incorrect missval.
+#Currently, the metadata for the above varlist/varstr combo is
+#not doing that and I'm not sure how to fix it.
+## For now, I am hard-coding lat/lon/respective bounds for data standardization
+set varstr = "lat,lon,lat_bnds,lon_bnds"
 ncks -A -C -H --no-abc -v $varstr $gridsource $tdir/griddesc_out.nc >& $tdir/ncks_stdout.stderr.txt
 
 grep -q "ERROR" $tdir/ncks_stdout.stderr.txt
@@ -109,6 +114,9 @@ if ( $grepstat == 0 ) then
   end
 endif
 #ncks -A -C -H -v one,three_dmn_rec_var ~/in2.nc ~/out.nc
+
+##copy all globals from the metafile - this includes the ISD-lite atts, if included
+#ncks -A -x $metafile $tdir/griddesc_out.nc
 
 
 #This command can safely be last due to a padded header
@@ -130,6 +138,7 @@ else
   endif
 endif
 
+#remove subsetspecs from the file
 ncatted -h -a subsetspecs,global,d,, -O $tdir/griddesc_out.nc
 
 #Step 6: Copy to the final output location

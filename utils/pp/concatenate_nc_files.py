@@ -186,7 +186,7 @@ def cat_files_nco(input_dir, patt, output_dir, exp_info='none', delim_patt = "."
 	print("concatenated file: " + xy_out)
 	#Final step needs to be finalizing some metadata atts
 	if auxfile != 'none':
-		print("finalizing file metadata")
+		print("finalizing file metadata according to FUDGE standards")
 		xy_out = finalize_metadata_out(xy_out, auxfile)
 	#else:
 	#	print("no experiment_info file; metadata unchanged")

@@ -30,6 +30,7 @@ sys.path.append(osp.join(BASEDIR, 'utils/bin'))
 from get_ds_info import make_aux_input, get_ds_info, parse_gridspec
 from get_ds_info import add_ds_params_to_auxdict,add_s3_s5_params_to_auxdict
 from metadata_classify_fxns import get_experiment_metadata
+from get_file_from_fileset import get_file_from_fileset
 sys.path.append(osp.join(BASEDIR, 'bin'))
 import expergen
 from expergen import listVars
@@ -153,9 +154,9 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         sys.exit(1)
     '''
     prime_var = list(auxdict['OH'].keys())[0]
-    OH_file = auxdict['OH'][prime_var]['file']
-    MH_file = auxdict['MH'][prime_var]['file']
-    MF_file = auxdict['MF'][prime_var]['file']
+    OH_file = get_file_from_fileset(auxdict['OH'], 'prime')
+    MH_file = get_file_from_fileset(auxdict['MH'], 'prime')
+    MF_file = get_file_from_fileset(auxdict['MF'], 'prime')
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
@@ -190,6 +191,24 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
     gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, is_running_standalone))
+    #and finally, get the isd-lite-speific globals, if they are present
+    isd_file = osp.join(BASEDIR, 'utils/aux', "ISD_att_whitelist.txt")
+    with open(isd_file, 'r') as f:
+      isd_atts = f.readlines()
+      OH_file = get_file_from_fileset(auxdict['OH'], 'prime')
+      pd['is_isd'] = "false"
+      with Dataset(OH_file, 'r') as nc_obj:
+        if 'ISD_META_ICAO' in nc_obj.__dict__.keys():
+          pd['is_isd'] = "true"
+          for isda in isd_atts:
+            if not isda.startswith("#"):
+              isda = isda.rstrip("\n")
+              try:
+                gd[isda] = str(nc_obj.__dict__[isda])
+              except:
+                print("ISD-lite global attribute " + isda + " not found")
+                gd[isda] = "not found in OH file" 
+    print(gd)
     #attributes by variable
     var_longname = ""
     vd[prime_var] = {"longname": var_longname}
@@ -264,6 +283,7 @@ def arg_tostring(arg):
 def get_climatology_atts(auxdict, var, is_running_standalone):
     #Gets the attributes that you'd need for writing trend/climatology metadata
     clim_source = auxdict['climo_source']
+    print(clim_source)
     if type(clim_source) is list:
         clim_source = clim_source[0]
     if clim_source == "MF":
