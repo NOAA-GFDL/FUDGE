@@ -133,6 +133,8 @@ set.QQDC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QQDC.
   iter = 30
+  is_jitter = F
+  jitter_val = NULL
   jitter.fac = 0
   ratio.seq = F #should be 1 for this case
   trace = 0.05
@@ -180,38 +182,59 @@ set.QQDC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
       ratio.seq <- TRUE
     }
   }
-  jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
-  if (any(jitter.names %in% names(args))){
-    jitter.name <- jitter.names[which(jitter.names %in% names(args))]
-    jitter.fac <- args[[jitter.name]]
+  #behavior changed 2022-10 - explicitly exit with error if using old args
+  jitter.old.names <- c("jitter", 'jitter.fac', 'jitter_fac')
+  if (any(jitter.old.names %in% names(args))){
+    stop(paste("Error in set.qqdc.defaults: QQDC requires specification of is_jitter and possibly jitter_val!"))
+  }else{
+    if ('is_jitter' %in% names(args)){
+      if (args$is_jitter){
+        jitter.fac <- args$jitter_val
+        if (args$jitter_val == 'default'){
+          jitter.fac <- .Machine$double.eps^2
+        }else{
+          jitter.fac <- as.numeric(args$jitter_val)
+        }
+      }else{
+        if (!is.null(jitter_val) | ('jitter_val' %in% names(args)) ){
+          stop(paste("Error in set.qqdc.defaults: when is_jitter = F, cannot set jitter_val in config!"))
+        }else{
+          jitter.fac <- 0
+        }
+      }
+    }
   }
   if ('adjust_trace' %in% names(args)){
     adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
   }
   if ('force_reproducibility' %in% names(args)) {
-    force_reproducibility <- ifelse(args$force_reproducibility == 'on', TRUE, FALSE)
-  }else{
-    if (args$type == 'mult'){
-      stop(paste("Error in set.QQDC.defaults: as of fudgetag icing-testing-20180510",
-                 "force_reproducibility argument ('on' or 'off')",
-                 "is required to be set in the XML for MBC and QQDC when type == 'mult'!"))
-    }else{
-      force_reproducibility <- FALSE
-    }
-  }
-  #Put together QQDC-specific args - but keep trace_calc default of 0.5 * trace
-  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties,
-                      var.names=unlist(predictor.vars),
-                      adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn,
-                      force_reproducibility = force_reproducibility)
-  if ('QQDC_mult_noise' %in% names(args)){
-    if (args$QQDC_mult_noise == 'off'){
-      return.args$trace.calc <- -99 # setting to 0 can still hit eps. compares
-      if (ratio.seq){
-        screen_NaNs = TRUE
+    if (args$force_reproducibility %in% c('on', 'off', TRUE, FALSE)){
+      if (args$force_reproducibility %in% c('on', TRUE)){
+        force_reproducibility <- TRUE
+      }else{
+        force_reproducibility <- FALSE
       }
+    }else{
+      stop(paste("Error in set.QQDC.defaults: force_reproducibility should be one of", 
+                 paste(c('on', 'off', TRUE, FALSE), collapse=","), "but was", 
+                 args$force_reproducibility, "!"))
+    }
+  }else{
+    if (args$type == 'mult' && jitter.fac != 0){
+      stop(paste("Error in set.QQDC.defaults: as of October 2022,", 
+                 "force_reproducibility argument ('on' or 'off')", 
+                 "is required to be set in the JSON for QDM when type == 'mult'",
+                 "and is_jitter is true!"))
+    }else{
+      #default changed 2022-10 - was false, is now true
+      force_reproducibility <- TRUE
     }
   }
+  #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+                      var.names=unlist(predictor.vars), 
+                      adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn, 
+                      force_reproducibility = force_reproducibility)
   return.args$screen_NaNs = screen_NaNs
   #Deal with sample size
   if ('minsamplesize' %in% names(args)){
