@@ -68,7 +68,6 @@ callQQDC <- function(OH, MH, MF, args, ds.method="",
                           return(MF.slice[[1]])
                         }else{
                           print(e)
-                          #print(traceback())
                           stop('Unknown error in QQDC: Please examine outputs!')
                         }
                         stop('examine error output')
@@ -141,7 +140,6 @@ set.QQDC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
   adjust_trace = F
   transform = F
   tform_fxn = 'none'
-  ties = 'first'
   force_reproducibility=FALSE
   screen_NaNs = FALSE
   if ('trace' %in% names(args)){
@@ -231,7 +229,7 @@ set.QQDC.defaults <- function(args, predictor.vars, ..., env=parent.frame()){
     }
   }
   #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace
-  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties, 
+  return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace,
                       var.names=unlist(predictor.vars), 
                       adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn, 
                       force_reproducibility = force_reproducibility)
