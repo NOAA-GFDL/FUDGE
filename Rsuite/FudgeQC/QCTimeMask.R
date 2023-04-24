@@ -1,4 +1,4 @@
-QCTimeMask<-function(time.mask.obj, run=FALSE){
+QCTimeMask <- function(time.mask.obj, run=FALSE){
   #Given a path to a filename, returns all masks
   #within that file, along with the timeseries and the information needed to 
   #generate it at a later date.

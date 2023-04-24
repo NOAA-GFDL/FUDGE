@@ -173,6 +173,7 @@ OH.vars <- names(aux.ref$OH)
 #Okay - so some of the conflict here seems to be that s8 is operating on a 
 #start + count model and fudge wasn't. 
 #Also 2023 - adding a temporary update to account for the isd-lite station dim
+print(meta_list$provenance)
 if (meta_list$provenance$is_isd){
   ds.ref$oh_dimlist <- c(ds.ref$oh_dimlist, "ensemble")
   ds.ref$mh_dimlist <- c(ds.ref$mh_dimlist, "ensemble")
@@ -182,6 +183,9 @@ oh_x_subset <- list(subset=c(i_idx, i_stride),
                     olap=FALSE)
 oh_y_subset <- list(subset=c(j_idx, j_stride),
                     olap=FALSE)
+print(ds.ref$oh_dimlist)
+print(ds.ref$mh_dimlist)
+print(ds.ref$mf_dimlist)
 OH <- build.FUDGE.dataset(OH.files, OH.vars, list(x=oh_x_subset,y=oh_y_subset),
                           dim=ds.ref$oh_dimlist,
                           x_by = aux.ref$OH[[1]]$idim, y_by = aux.ref$OH[[1]]$jdim,

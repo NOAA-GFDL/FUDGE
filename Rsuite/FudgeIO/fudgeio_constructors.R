@@ -37,6 +37,12 @@ build.fudge.object <- function(filenames, varnames, #start.indices=NA, count.ind
     
     #metadata:
     var.metadata <- obtain.fudge.var.metadata(nc.obj, nc.var)
+    tmp <- obtain.fudge.var.dimensions(nc.obj, nc.var, subset=subset, select=dim)
+    print(nc.var)
+    print(names(tmp))
+    print(dim)
+    #print(str(tmp))
+    #stop('examine this output - should contain time')
     var.metadata[['dim']] <- obtain.fudge.var.dimensions(nc.obj, nc.var, subset=subset, select=dim)
     var.metadata[['vars']] <- obtain.fudge.var.metavars(nc.obj, nc.var, subset=subset, select=dim)
     #...assume that the combining steps can be taken before writing to file?

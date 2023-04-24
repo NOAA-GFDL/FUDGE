@@ -108,18 +108,21 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR){
   if (ds.ref$downscale_oh){
     #Create global reference vectors for where leapdays are in the input
     #historical and future datasets
+    print(names(MF$metadata[[1]]$dim$time))
+    print(names(OH$metadata[[1]]$dim$time))
+    print(names(OH$metadata[[1]]$dim))
     fut_calendar <- MF$metadata[[1]]$dim$time$calendar
-    hist_calendar <- OH$metadata[[1]]$dim$time$calendar
+    hist_calendar <- MH$metadata[[1]]$dim$time$calendar
     if (fut_calendar != 'none'){
       fut.tseries <- get.PCICt.time.series(MF$metadata[[1]]$dim$time$units, 
                                            MF$metadata[[1]]$dim$time$vals, 
                                            MF$metadata[[1]]$dim$time$calendar)
-      hist.tseries <- get.PCICt.time.series(OH$metadata[[1]]$dim$time$units, 
-                                            OH$metadata[[1]]$dim$time$vals, 
-                                            OH$metadata[[1]]$dim$time$calendar)
+      hist.tseries <- get.PCICt.time.series(MH$metadata[[1]]$dim$time$units, 
+                                            MH$metadata[[1]]$dim$time$vals, 
+                                            MH$metadata[[1]]$dim$time$calendar)
     }else{
       fut.tseries <- MF$metadata[[1]]$dim$time$vals
-      hist.tseries <- OH$metadata[[1]]$dim$time$vals
+      hist.tseries <- MH$metadata[[1]]$dim$time$vals
     }
     resample_method = 'cf_resample'
     if (resample_method == 'cf_resample'){
