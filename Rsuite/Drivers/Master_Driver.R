@@ -446,6 +446,10 @@ for (r in 1:length(aux.ref$DS$rips)){
     dimlist <- TARG$metadata[[1]]$dim
     varlist <- TARG$metadata[[1]]$vars
   }
+  
+  #remove any duplicate elements of dimlist
+  dimlist <- dimlist[unique(names(dimlist))]
+  varlist <- varlist[unique(names(varlist))]
 
   global_clone_file = NA
   clone_globals = F
