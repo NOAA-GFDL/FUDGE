@@ -190,7 +190,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     #Climatology and trend are more complicated - depending on the workflow,
     #they may or may not be present. For now, let's go off of the presence/status
     #of the MF dataset.
-    gd = merge_dicts(gd, get_climatology_atts(auxdict, prime_var, is_running_standalone))
+    gd = merge_dicts(gd, get_climatology_atts(auxdict, is_running_standalone))
     #and finally, get the isd-lite-speific globals, if they are present
     isd_file = osp.join(BASEDIR, 'utils/aux', "ISD_att_whitelist.txt")
     with open(isd_file, 'r') as f:
@@ -207,7 +207,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
                 gd[isda] = str(nc_obj.__dict__[isda])
               except:
                 print("ISD-lite global attribute " + isda + " not found")
-                gd[isda] = "not found in OH file" 
+                gd[isda] = "not found in OH file"
     print(gd)
     #attributes by variable
     var_longname = ""
@@ -220,8 +220,8 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         vd[qc_var] = {"longname": qc_longname,
                       "comment": qc_comment,
                       "globals": {"comment": global_comment}}
-    #As of 2021, trying to move some metadata operations from ensemble 
-    #process to a common location (here). 
+    #As of 2021, trying to move some metadata operations from ensemble
+    #process to a common location (here).
     egd['epoch'] = gd['ds_scenario']
     try:
         egd['trange'] = get_trange_from_filename(MF_file)
@@ -232,7 +232,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
             sys.exit(2)
     #so now we've got 3 dicts: globals, provenance (of globals) and by var
     ad = OrderedDict()
-    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd; 
+    ad['globals'] = gd; ad['vars'] = vd; ad['provenance'] = pd;
     ad['ensemble_globals'] = egd;
     #And finally, write the whole thing to file
     print(("Wrting to: " + meta_file))
@@ -280,15 +280,24 @@ def arg_tostring(arg):
     return(ret)
 
 
-def get_climatology_atts(auxdict, var, is_running_standalone):
+def get_climatology_atts(auxdict, is_running_standalone):
     #Gets the attributes that you'd need for writing trend/climatology metadata
     clim_source = auxdict['climo_source']
     print(clim_source)
     if type(clim_source) is list:
         clim_source = clim_source[0]
     if clim_source == "MF":
-        clim_file = auxdict['MF'][var]['file']
+        prime_var = [k for k in auxdict['MF'].keys() if auxdict['MF'][k]['is_prime']]
+        #All of this needs to be checked for working with a non-stated prime var
+        if len(prime_var) != 1:
+            print(prime_var)
+            print("Error in prime_var search: should only match one!")
+            sys.exit(1)
+        else:
+            var = prime_var[0]
+            clim_file = auxdict['MF'][var]['file']
     elif clim_source == "OH":
+        var = list(auxdict['OH'].keys())[0]
         clim_file = auxdict['OH'][var]['file']
     else:
         print("Error in standalone_metadata_tester.py: climo_source was not set in the auxdict!")
@@ -359,10 +368,10 @@ def get_stencil_atts(auxdict):
         stencils = list(set(stencils))
         stencil_list.append(k + ":" + ",".join(stencils))
     return(",".join(stencil_list))
-    
+
 def get_trange_from_filename(esd_file):
-    #Given a file with a date in $startdate-$enddate form in the filename, 
-    #determines the trange from the name of the file. 
+    #Given a file with a date in $startdate-$enddate form in the filename,
+    #determines the trange from the name of the file.
     fname = os.path.basename(esd_file)
     fsplit = re.split("_", fname)
     patt = "(\d*-\d*)"
@@ -441,12 +450,12 @@ def make_main_comment(region, grid, kfold, exp_name, desc, train_data, predictor
     config = "with experiment configuration " + exp_name + '. '
     train = " trained on " + train_data + " using predictor variable(s) " + predictor_vars + " and future predictor rips " + fut_rips
     return(main + kfold + config + desc + train)
-    
+
 def check_grid_att(grid_attname, grid_attval, file_list, file_type, is_strict=True):
     '''
     checks name of grid given in csv against attributes in the file
-    For now, this is a dumb check  - earlier filename steps don't 
-    filter based on whether files are expected to be gridless; 
+    For now, this is a dumb check  - earlier filename steps don't
+    filter based on whether files are expected to be gridless;
     in future that will also probably be a metadata attribute.
     is_strict refers to whether this step fails if metadata errors don't match;
     number of lon/lat val errors are different.
@@ -456,7 +465,7 @@ def check_grid_att(grid_attname, grid_attval, file_list, file_type, is_strict=Tr
         sys.exit(1)
     lat_vals = []
     lon_vals = []
-    #if file_list isn't a list, cast it as a list here.     
+    #if file_list isn't a list, cast it as a list here.
     for f in file_list:
         with Dataset(f, 'r') as nc_obj:
             global_atts = nc_obj.__dict__.keys()
@@ -484,7 +493,7 @@ def check_grid_att(grid_attname, grid_attval, file_list, file_type, is_strict=Tr
         if lat_vals.count(lat_vals[0]) != len(lat_vals):
             print("Error in check_grid_att: one or more gridded " + file_type + " files did not have same number of lat vals")
             sys.exit(1)
-                    
+
 
 def add_input_file_params(auxdict, lots_of_other_params):
     '''
