@@ -175,7 +175,8 @@ def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwr
     #determine reference grid from the auxfile: for now, OH works
     auxinfo, auxdict = parse_aux_info(aux)
     MF = auxdict['MF']
-    complete_gridfile = get_file_from_fileset(MF, 'prime')
+    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
+    complete_gridfile = get_file_from_fileset(MF, prime_var)
     #determine the number of files expected
     pres_files = [osp.join(in_dir, f) for f in os.listdir(in_dir) if re.search("\.nc", f) is not None]
     nfiles = len(pres_files)
@@ -196,7 +197,8 @@ def process_mask_file(exp_info, file_patt, out_dir):
     #determine reference grid from the auxfile: for now, MF works
     auxinfo, auxdict = parse_aux_info(aux)
     MF = auxdict['MF']
-    complete_gridfile = get_file_from_fileset(MF, 'prime')
+    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
+    complete_gridfile = get_file_from_fileset(MF, prime_var)
     #Okay...steps are roughly as follows:
     mask_region_files = []
     #For each of the mask directories:

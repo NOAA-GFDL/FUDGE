@@ -146,17 +146,19 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     check_grid_att('gfdlesd_idgrid', ds_grid, mh_gridfiles, "MH", is_strict)
     check_grid_att('gfdlesd_idgrid', ds_grid, mf_gridfiles, "MF", is_strict)
     '''
-    prime_var = [k for k in auxdict['MF'].keys() if auxdict['MF'][k]['is_prime']]
+    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")]
     #All of this needs to be checked for working with a non-stated prime var
     if len(prime_var) != 1:
         print(prime_var)
         print("Error in prime_var search: should only match one!")
         sys.exit(1)
     '''
-    prime_var = list(auxdict['OH'].keys())[0]
-    OH_file = get_file_from_fileset(auxdict['OH'], 'prime')
-    MH_file = get_file_from_fileset(auxdict['MH'], 'prime')
-    MF_file = get_file_from_fileset(auxdict['MF'], 'prime')
+    # prime_var = list(auxdict['OH'].keys())[0]
+    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
+
+    OH_file = get_file_from_fileset(auxdict['OH'], prime_var)
+    MH_file = get_file_from_fileset(auxdict['MH'], prime_var)
+    MF_file = get_file_from_fileset(auxdict['MF'], prime_var)
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
@@ -195,7 +197,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     isd_file = osp.join(BASEDIR, 'utils/aux', "ISD_att_whitelist.txt")
     with open(isd_file, 'r') as f:
       isd_atts = f.readlines()
-      OH_file = get_file_from_fileset(auxdict['OH'], 'prime')
+      OH_file = get_file_from_fileset(auxdict['OH'], prime_var)
       pd['is_isd'] = "false"
       with Dataset(OH_file, 'r') as nc_obj:
         if 'ISD_META_ICAO' in nc_obj.__dict__.keys():
@@ -287,7 +289,7 @@ def get_climatology_atts(auxdict, is_running_standalone):
     if type(clim_source) is list:
         clim_source = clim_source[0]
     if clim_source == "MF":
-        prime_var = [k for k in auxdict['MF'].keys() if auxdict['MF'][k]['is_prime']]
+        prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")]
         #All of this needs to be checked for working with a non-stated prime var
         if len(prime_var) != 1:
             print(prime_var)
