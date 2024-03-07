@@ -5,14 +5,13 @@
 library("rlang")
 callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FALSE) {
   if (args$force_reproducibility) {
-    #i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
-    #This is meant to enforce reprodcability when we have alternative
-    #subsetting in place.
-    seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
-    # print(paste("seedval:", seedval))
-    set.seed(seedval)
+    # i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
+    # This is meant to enforce reproducibility when we have alternative
+    # subsetting in place. -cew
+    # seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
+    # set.seed(seedval)
   }
-  #Create output data
+  # Create output data
   out.data <- array(NA, dim = dim(MF[[1]]))
   nrips <- dim(out.data)[4]
   index.mask <- tmasks$MF$masks[[w]]
@@ -31,13 +30,13 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
   tmp.missvals <- missval.args
   for (n in 1:nrips) {
     nval <<- n
-    MF.slice <- lapply(MF, '[', ,,,n,, , drop = FALSE)
-    #pr-specific check for now; only do if present
+    MF.slice <- lapply(MF, "[", ,,,n,, , drop = FALSE)
+    # pr-specific check for now; only do if present
     missval.args$pr_opts$MF <- MF_mask[,,,n,, ,drop = FALSE]
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice,
                                          missval.args$minsamplesize,
                                          missval.args,
-                                         missval.method = 'distributional')
+                                         missval.method = "distributional")
 
     if (args$adjust_trace) {
       adj.thold <- missval.args$pr_opts$adjusted.thold
@@ -51,7 +50,6 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
       if (args$trace > adj.thold) {
         args$trace <- adj.thold
       }
-      #args$trace <- min(args$trace, adj.thold)
     }
 
     if (missval.out$ds.possible) {
@@ -62,7 +60,6 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
                                             missval.out$complete.fut, args)},
                     error = function(e) {
                       is_known <- c(grepl("need at least two non-NA values to interpolate", e$message))
-                                     # grepl("regularize.values", e$message))
                       if (any(is_known) == TRUE) {
                         message(paste("Warning in callMBC: MBC did not have",
                                       "enough unique values in input datasets",
@@ -72,25 +69,24 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
                       } else {
                         print(e)
                         #print(traceback())
-                        stop('Unknown error in MBC: Please examine outputs!')
+                        stop("Unknown error in MBC: Please examine outputs!")
                       }
-                      stop('examine error output')
+                      stop("examine error output")
                     })
 
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
       #and that the synch missing values also need some sort of master
       #OH and MH vector for missing points.
-      #We also CAN'T use the pr masking functions with this method, I think
+      #We also CAN'T use the pr masking functions with this method, I think -cew
       out.data[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, out, olap)
 
-      # out.data[,,,n,,!is.na(index.mask)] <- out
       if (train_qcmask & missval.out$mv.retry) {
         print("adding the pr retry mask")
         qc[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     } else {
-      print('downscaling not possible at this point')
+      print("downscaling not possible at this point")
       out.data[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if (train_qcmask) {
         qc[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
@@ -107,13 +103,13 @@ callQDM_mod <- function(OH, MH, MF, args) {
   MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
   args$ratio <- args$ratio.seq
   screen_NaNs <- args$screen_NaNs
-  not.args <- c('adjust.trace', 'transform', 'tform_fxn',
-                'force_reproducibility', 'var.names',
-                'ratio.seq', 'iter', 'adjust_trace', 'screen_NaNs')
+  not.args <- c("adjust.trace", "transform", "tform_fxn",
+                "force_reproducibility", "var.names",
+                "ratio.seq", "iter", "adjust_trace", "screen_NaNs")
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice),
               args)
-  tmp <- withCallingHandlers(do.call('QDM_mod', q.args)$mhat.p,
+  tmp <- withCallingHandlers(do.call("QDM_mod", q.args)$mhat.p,
                              warning = function(w) {
                                if ((conditionMessage(w) == c("collapsing to unique 'x' values"))) {
                                  rlang::cnd_muffle(w)
@@ -138,13 +134,13 @@ callQDM <- function(OH, MH, MF, args) {
   MF.slice <- remove.missvals(unlist(as.vector(MF), use.names=F))
   args$ratio <- args$ratio.seq
   screen_NaNs <- args$screen_NaNs
-  not.args <- c('adjust.trace', 'transform', 'tform_fxn',
-                'force_reproducibility', 'var.names',
-                'ratio.seq', 'iter', 'adjust_trace', 'screen_NaNs')
+  not.args <- c("adjust.trace", "transform", "tform_fxn",
+                "force_reproducibility", "var.names",
+                "ratio.seq", "iter", "adjust_trace", "screen_NaNs")
   args <- args[!(names(args) %in% not.args)]
   q.args <- c(list(o.c=OH.slice, m.c=MH.slice, m.p=MF.slice),
               args)
-  tmp <- withCallingHandlers(do.call('QDM', q.args)$mhat.p,
+  tmp <- withCallingHandlers(do.call("QDM", q.args)$mhat.p,
                              warning = function(w) {
                                if ((conditionMessage(w) == c("collapsing to unique 'x' values"))) {
                                  rlang::cnd_muffle(w)
@@ -157,8 +153,8 @@ callQDM <- function(OH, MH, MF, args) {
   }
   out <- rep(NA, length(MF.idx))
   out[MF.idx] <- tmp
-  if ('trace.calc' %in% names(args)) {
-    print('qdm_mult_noise invoked; replacing DS[MF == 0] <- 0')
+  if ("trace.calc" %in% names(args)) {
+    print("qdm_mult_noise invoked; replacing DS[MF == 0] <- 0")
     out[unlist(as.vector(MF), use.names = FALSE) == 0] <- 0
   }
   return(out)
@@ -166,7 +162,7 @@ callQDM <- function(OH, MH, MF, args) {
 
 callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args) {
   #Okay...this is the step when any x.y.vars which are all missing get removed.
-  #This is then going to have to be applied to the same list of vars that
+  #This is then going to have to be applied to the same list of vars that -cew
   OH.slice <- as.matrix(as.data.frame(lapply(OH, function(x,y) {return(x[y])},
                                              complete.hist)))
   MH.slice <- as.matrix(as.data.frame(lapply(MH, function(x,y) {return(x[y])},
@@ -175,87 +171,41 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args) 
                                              complete.fut)))
 
 
-# REMOVE AFTER TESTING: set MF to something ridiculous that can be tracked
-  # colnames(OH.slice) <- colnames(MH.slice) <- colnames(MF.slice) <- c("tx", "rhn")
-# OH.slice <- OH.slice * 0 + array(seq_len(length(OH.slice)), dim = dim(OH.slice))
-# MH.slice <- MH.slice * 0 + array(seq_len(length(MH.slice)), dim = dim(MH.slice))
-# MF.slice <- MF.slice * 0 + array(seq_len(length(MF.slice)), dim = dim(MF.slice))
-
-# mbc_info <- installed.packages()["MBC",]
-# save(mbc_info, file="/work/Dennis.Adams-Smith/testing/mbc_info.Rdata")
-# energy_info <- installed.packages()["energy",]
-# save(energy_info, file="/work/Dennis.Adams-Smith/testing/energy_info.Rdata")
-# FNN_info <- installed.packages()["FNN",]
-# save(FNN_info, file="/work/Dennis.Adams-Smith/testing/FNN_info.Rdata")
-# Matrix_info <- installed.packages()["Matrix",]
-# save(Matrix_info, file="/work/Dennis.Adams-Smith/testing/Matrix_info.Rdata")
-# fudge_options <- options()
-# save(fudge_options, file="/work/Dennis.Adams-Smith/testing/FUDGE_options.Rdata")
-  # tmp <- switch(args$variant,
-  #               "pearson"  = MBCp(OH.slice, MH.slice, MF.slice,
-  #                                 iter = args$iter, jitter.factor = args$jitter,
-  #                                 ratio.seq = args$ratio.seq, trace = args$trace,
-  #                                 ties = args$ties),
-  #               "spearman" = MBCr(OH.slice, MH.slice, MF.slice,
-  #                                 iter = args$iter, jitter.factor = args$jitter,
-  #                                 ratio.seq = args$ratio.seq, trace = args$trace,
-  #                                 ties = args$ties),
-  #               "all"      = MBCn(OH.slice, MH.slice, MF.slice,
-  #                                 iter = args$iter, jitter.factor = args$jitter,
-  #                                 ratio.seq = args$ratio.seq, trace = args$trace,
-  #                                 ties = args$ties),
-  #               stop(paste("Error in callMBC_any: variant was not one of",
-  #                          "pearson (MBCp), spearman (MBCr), or all (MBCn)!")))
-
-
   if (args$variant == "spearman") {
     mbc_any_out <- MBC::MBCr(OH.slice, MH.slice, MF.slice,
                             iter = args$iter, jitter.factor = args$jitter.factor,
                             ratio.seq = args$ratio.seq, trace = args$trace,
                             ties = args$ties, silent = TRUE)
-    MBCr_tw_outputs[[w]] <<- mbc_any_out
-    if (w == 73) save(MBCr_tw_outputs, file = "/work/Dennis.Adams-Smith/testing/MBCr_tw_outputs.Rdata")
   } else if (args$variant == "pearson") {
     mbc_any_out <- MBC::MBCp(OH.slice, MH.slice, MF.slice,
                             iter = args$iter, jitter.factor = args$jitter.factor,
                             ratio.seq = args$ratio.seq, trace = args$trace,
                             ties = args$ties, silent = TRUE)
-    MBCp_tw_outputs[[w]] <<- mbc_any_out
-    if (w == 73) save(MBCp_tw_outputs, file = "/work/Dennis.Adams-Smith/testing/MBCp_tw_outputs.Rdata")
   } else if (args$variant == "all") {
     mbc_any_out <- MBC::MBCn(OH.slice, MH.slice, MF.slice,
                             iter = args$iter, jitter.factor = args$jitter.factor,
                             ratio.seq = args$ratio.seq, trace = args$trace,
-                            # ties = args$ties, silent = TRUE)
-                            ties = "first", return.all = TRUE)
-    MBCn_tw_outputs[[w]] <<- mbc_any_out
-    if (w == 73) save(MBCn_tw_outputs, file = "/work/Dennis.Adams-Smith/testing/MBCn_tw_outputs.Rdata")
+                            ties = args$ties, silent = TRUE)
   } else {
     stop(paste("Error in callMBC_any: variant was not one of",
              "pearson (MBCp), spearman (MBCr), or all (MBCn)!"))
   }
-
-  if (w == 73) {
-    data(cccma)
-    set.seed(1)
-    fit_mbcn_inany <- MBCn(o.c=cccma$rcm.c, m.c=cccma$gcm.c,
-                           m.p=cccma$gcm.p, ratio.seq=cccma$ratio.seq,
-                           trace=cccma$trace)
-    save(fit_mbcn_inany, file = "/work/Dennis.Adams-Smith/testing/MBC-cccma-fit_mbcn_inany.Rdata")
-    source("/home/d1a/Code/R/MBC_recertification_20240304_ppjob.R")
-  }
-
   #Need to remove vars that aren't target var at this step
   #Oh[[1]] should still work, even for multi-point target
   #...also need to do more advanced checking of missing values.
   #Need to add back in (from the MF) any values that we could not
-  #downscale over/are NA
+  #downscale over/are NA -cew
   return(mbc_any_out$mhat.p[, 1])
 }
 
 set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   #'Sets common defaults for the inputs to MBC that we want
   #'to control. Most of these also apply to QDM.
+  # moving the seed setting here to attempt to only do it once per I,J
+  # not in every time window -d1a
+  seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
+  set.seed(seedval)
+
   iter <- 30
   jitter.fac <- 0
   ratio.seq <- rep(FALSE, length(predictor.vars))
@@ -272,25 +222,25 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   jitter_val <- 0
   adjust_trace <- FALSE
   transform <- FALSE
-  tform_fxn <- 'none'
+  tform_fxn <- "none"
   screen_NaNs <- FALSE
   # -------------------------------
   # -------------------------------
 
   #This is going to have implications for the multi-point downscaling.
   #Need access to npts_by in order to expand this list...
-  #or really just need 1; multivar-targets are going to have that effect.
+  #or really just need 1; multivar-targets are going to have that effect. -cew
   trace <- 0.05
-  ties <- 'first'
+  ties <- "first"
   #Trace is going to be in the same notation as our pr units adjuster.
   #It'll work, but we need to have an idea of which vars are getting a unit
   #conversion.
-  #...I'm pretty sure those are globals anyway; we can check.
+  #...I'm pretty sure those are globals anyway; we can check. -cew
   force_reproducibility <- args$force_reproducibility
-  if ('trace' %in% names(args)) {
+  if ("trace" %in% names(args)) {
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
-    #get OH pr units from adjust.metadata (created back in main driver)
+    #get OH pr units from adjust.metadata (created back in main driver) -cew
     if (non.numeric.trace) {
       pr.units <- adjust.metadata$pr_oh_units
       if (length(pr.units)==0) {
@@ -301,7 +251,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
     } else {
       trace <- as.numeric(args$trace)
     }
-    if ('transform' %in% names(args)) {
+    if ("transform" %in% names(args)) {
       tform <- return.t.fxn(args$transform, args$transform_arg)
       if (is.null(tform[[2]])) {
         trace <- do.call(tform[[1]], list(trace))
@@ -310,15 +260,15 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
       }
     }
   }
-  rat.names <- c('ratio', 'ratio.seq', 'ratio_seq')
+  rat.names <- c("ratio", "ratio.seq", "ratio_seq")
   if (any(rat.names %in% names(args))) {
     rat.name <- rat.names[which(rat.names %in% names(args))]
-    in.rat.seq <- unlist(strsplit(args[[rat.name]], ','))
+    in.rat.seq <- unlist(strsplit(args[[rat.name]], ","))
     #...oh_by is going to blow this entire bit up hard at some point in the
     #future. I'm not sure I can get a good check going without it, though.
     #...it's also going to blow up when we get to using time-varying amplitudes
     #in here - need to make sure that only one val gets used for those.
-    ##Okay - as of 2-14-17, adding this in two steps: one for the
+    ##Okay - as of 2-14-17, adding this in two steps: one for the -cew
     #     in.rat.seq <- sapply(in.rat.seq, function(x,r) {rep(x,r)}, oh_by**2)
     #     ratio.seq <- in.rat.seq
     if (length(in.rat.seq) != length(ratio.seq)) {
@@ -327,23 +277,23 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
     }
     ratio.seq <- in.rat.seq
   }
-  # if ('type' %in% names(args)) {
-  #   if (args$type == 'add') {
+  # if ("type" %in% names(args)) {
+  #   if (args$type == "add") {
   #     ratio.seq <- FALSE
-  #   } else if (args$type == 'mult') {
+  #   } else if (args$type == "mult") {
   #     ratio.seq <- TRUE
   #   }
   # }
-  jitter.names <- c("jitter", 'jitter.fac', 'jitter_fac')
+  jitter.names <- c("jitter", "jitter.fac", "jitter_fac")
   if (any(jitter.names %in% names(args))) {
     jitter.name <- jitter.names[which(jitter.names %in% names(args))]
     jitter.fac <- args[[jitter.name]]
   }
 
-  # if ('force_reproducibility' %in% names(args) & args$type == 'mult') {
+  # if ("force_reproducibility" %in% names(args) & args$type == "mult") {
   #   stop(paste("Error in set.MBC.defaults: as of fudgetag icing-testing-20180510",
   #              "force_reproducibility argument (true or false)",
-  #              "is required to be set in the XML for MBC and QDM when type == 'mult'!"))
+  #              "is required to be set in the XML for MBC and QDM when type == "mult"!"))
   # }
   return.args <- list(iter = iter,
                       jitter.factor = jitter.fac,
@@ -356,7 +306,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
                       # jitter_val <- NULL
                       adjust_trace = adjust_trace,
                       # transform <- FALSE
-                      # tform_fxn <- 'none'
+                      # tform_fxn <- "none"
                       # screen_NaNs <- FALSE
                       force_reproducibility = force_reproducibility)
   # env$ds.args <- return.args
@@ -376,14 +326,14 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   trace <- 0.05
   adjust_trace <- FALSE
   transform <- FALSE
-  tform_fxn <- 'none'
-  ties <- 'first'
+  tform_fxn <- "none"
+  ties <- "first"
   force_reproducibility <- FALSE
   screen_NaNs <- FALSE
-  if ('trace' %in% names(args)) {
+  if ("trace" %in% names(args)) {
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
-    #get OH pr units from adjust.metadata (created back in main driver)
+    #get OH pr units from adjust.metadata (created back in main driver) -cew
     if (non.numeric.trace) {
       pr.units <- adjust.metadata$pr_oh_units
       if (length(pr.units)==0) {
@@ -395,11 +345,11 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
       trace <- as.numeric(args$trace)
     }
     #Now check the section 5 args for the
-    if (exists('pre.ds.train')) {
-      pre.ds.types <- sapply(pre.ds.train, '[[', 'type')
-      if ('transform' %in% pre.ds.types) {
+    if (exists("pre.ds.train")) {
+      pre.ds.types <- sapply(pre.ds.train, "[[", "type")
+      if ("transform" %in% pre.ds.types) {
         transform <- T
-        tform.idx <- which(pre.ds.types=='transform')
+        tform.idx <- which(pre.ds.types=="transform")
         tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$qc_args$transform,
                               pre.ds.train[[tform.idx]]$qc_args$arg)
         if (is.null(tform_fxn[[2]])) {
@@ -410,29 +360,29 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
       }
     }
   }
-  rat.names <- c('ratio', 'ratio.seq', 'ratio_seq')
-  if ('type' %in% names(args)) {
-    if (args$type=='add') {
+  rat.names <- c("ratio", "ratio.seq", "ratio_seq")
+  if ("type" %in% names(args)) {
+    if (args$type=="add") {
       ratio.seq <- FALSE
-    }else if (args$type=='mult') {
+    }else if (args$type=="mult") {
       ratio.seq <- TRUE
     }
   }
-  #behavior changed 2022-10 - explicitly exit with error if using old args
-  jitter.old.names <- c("jitter", 'jitter.fac', 'jitter_fac')
+  #behavior changed 2022-10 - explicitly exit with error if using old args -cew
+  jitter.old.names <- c("jitter", "jitter.fac", "jitter_fac")
   if (any(jitter.old.names %in% names(args))) {
     stop(paste("Error in set.qdm.defaults: QDM requires specification of is_jitter and possibly jitter_val!"))
   } else {
-    if ('is_jitter' %in% names(args)) {
+    if ("is_jitter" %in% names(args)) {
       if (args$is_jitter) {
         jitter.fac <- args$jitter_val
-        if (args$jitter_val == 'default') {
+        if (args$jitter_val == "default") {
           jitter.fac <- .Machine$double.eps^2
         } else {
           jitter.fac <- as.numeric(args$jitter_val)
         }
       } else {
-        if (!is.null(jitter_val) | ('jitter_val' %in% names(args)) ) {
+        if (!is.null(jitter_val) | ("jitter_val" %in% names(args)) ) {
           stop(paste("Error in set.qdm.defaults: when is_jitter = FALSE, cannot set jitter_val in config!"))
         } else {
           jitter.fac <- 0
@@ -440,23 +390,23 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
       }
     }
   }
-  if ('adjust_trace' %in% names(args)) {
-    adjust_trace <- ifelse(args$adjust_trace=='on', T, F)
+  if ("adjust_trace" %in% names(args)) {
+    adjust_trace <- ifelse(args$adjust_trace=="on", T, F)
   }
-  if ('force_reproducibility' %in% names(args)) {
-    if (args$force_reproducibility %in% c('on', 'off', TRUE, FALSE)) {
-      if (args$force_reproducibility %in% c('on', TRUE)) {
+  if ("force_reproducibility" %in% names(args)) {
+    if (args$force_reproducibility %in% c("on", "off", TRUE, FALSE)) {
+      if (args$force_reproducibility %in% c("on", TRUE)) {
         force_reproducibility <- TRUE
       } else {
         force_reproducibility <- FALSE
       }
     } else {
       stop(paste("Error in set.QDM.defautls: force_reproducibility should be one of",
-                 paste(c('on', 'off', TRUE, FALSE), collapse=","), "but was",
+                 paste(c("on", "off", TRUE, FALSE), collapse=","), "but was",
                  args$force_reproducibility, "!"))
     }
   } else {
-    if (args$type == 'mult' && jitter.fac != 0) {
+    if (args$type == "mult" && jitter.fac != 0) {
       stop(paste("Error in set.QDM.defaults: as of October 2022,",
                  "force_reproducibility argument ('on' or 'off')",
                  "is required to be set in the JSON for QDM when type == 'mult'",
@@ -472,8 +422,8 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
                       var.names=unlist(predictor.vars),
                       adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn,
                       force_reproducibility = force_reproducibility)
-  if ('qdm_mult_noise' %in% names(args)) {
-    if (args$qdm_mult_noise == 'off') {
+  if ("qdm_mult_noise" %in% names(args)) {
+    if (args$qdm_mult_noise == "off") {
       return.args$trace.calc <- -99 # setting to 0 can still hit eps. compares
       if (ratio.seq) {
         screen_NaNs <- TRUE
@@ -482,7 +432,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   }
   return.args$screen_NaNs = screen_NaNs
   #Deal with sample size
-  if ('minsamplesize' %in% names(args)) {
+  if ("minsamplesize" %in% names(args)) {
     return.args$minsamplesize <- args$minsamplesize
   }
   env$ds.ref$args <- return.args

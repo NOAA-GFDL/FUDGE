@@ -4,7 +4,7 @@
 #in the input
 
 source /usr/local/Modules/default/init/tcsh
-module use /app/spack/v0.15/modulefiles/linux-rhel6-x86_64/
+module use /app/spack/v0.15/modulefiles/linux-rhel7-x86_64/
 module load cdo
 module load netcdf-c
 
@@ -90,7 +90,7 @@ echo "ncks to copy metadata for lat,lon, respective bounds"
 echo `date`
 ##set varlist = `cat $tdir/orig_vars.txt`
 ##set varstr = `echo $varlist | sed -e s:\ :,:g`
-#Since this is picking up metadata for grid vars, it needs to be from gridsource - 
+#Since this is picking up metadata for grid vars, it needs to be from gridsource -
 #but also shouldn't include the variable that we are concatenating on, because
 #that is how we get the *correct* missval set in the R code overridden with an
 #incorrect missval.
