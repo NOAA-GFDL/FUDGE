@@ -2,16 +2,14 @@
 #'since both use the same package and there is similar
 #'argument checking between the two of them
 
-
-library(rlang)
-callMBC <- function(OH, MH, MF, args, ds.method="",
-                    tmasks, train_qcmask=F) {
+library("rlang")
+callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FALSE) {
   if (args$force_reproducibility) {
     #i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
     #This is meant to enforce reprodcability when we have alternative
     #subsetting in place.
     seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
-    #print(paste("seedval:", seedval))
+    # print(paste("seedval:", seedval))
     set.seed(seedval)
   }
   #Create output data
@@ -39,8 +37,8 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
     missval.out <- remove.FUDGE.missvals(OH, MH, MF.slice,
                                          missval.args$minsamplesize,
                                          missval.args,
-                                         missval.method='distributional')
-    # print(str(args))
+                                         missval.method = 'distributional')
+
     if (args$adjust_trace) {
       adj.thold <- missval.args$pr_opts$adjusted.thold
       if (args$transform) {
@@ -55,82 +53,41 @@ callMBC <- function(OH, MH, MF, args, ds.method="",
       }
       #args$trace <- min(args$trace, adj.thold)
     }
-    loop.ds <- ds.method
-    if (missval.out$mv.retry) {
-      print('switching QDM and QDM_mod')
-      loop.ds <- 'QDM_mod'
-    } else {
-      loop.ds <- ds.method
-    }
+
     if (missval.out$ds.possible) {
-      #There are different pre-conditioning steps that need
-      #to take place for each method
-      ds_meth <- switch(loop.ds,
-                        'QDM' = 'callQDM',
-                        'QDM_mod' = 'callQDM_mod')
-      ds_arglist <- list(missval.out$OH, missval.out$MH, missval.out$MF, args)
-      #ds_arglist <- list(OH, MH, MF.slice[[1]], args)
-      # message(loop.ds)
-      if (loop.ds %in% c("QDM", "QDM_mod")) {
-        out <- tryCatch({do.call(ds_meth, args = ds_arglist)},
-                        error = function(e) {
-                          is_known <- grepl("need at least two non-NA values to interpolate",
-                                            e$message)
-                          if (is_known) {
-                            message(paste("Warning in callMBC: QDM did not have",
-                                          "enough unique values in input datasets",
-                                          "to interpolate!"))
-                            message(paste("Returning MF unchanged."))
-                            return(MF.slice[[1]])
-                          } else {
-                            print(e)
-                            #print(traceback())
-                            stop('Unknown error in MBC: Please examine outputs!')
-                          }
-                          stop('examine error output')
-                        })
-        } else {
-          # message(paste("starting MBC", args$variant))
-          out <- tryCatch({callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF,
-                                                args$variant,
-                                                missval.out$complete.hist,
-                                                missval.out$complete.fut, args)},
-                        error = function(e) {
-                          is_known <- c(grepl("need at least two non-NA values to interpolate", e$message))
-                                         # grepl("regularize.values", e$message))
-                          if (any(is_known) == TRUE) {
-                            message(paste("Warning in callMBC: MBC did not have",
-                                          "enough unique values in input datasets",
-                                          "to interpolate!"))
-                            message(paste("Returning MF unchanged."))
-                            return(MF.slice[[1]])
-                          } else {
-                            print(e)
-                            #print(traceback())
-                            stop('Unknown error in MBC: Please examine outputs!')
-                          }
-                          stop('examine error output')
-                        })
-        }
-      # print(str(out))
-      # stop("stopping on purpose with structure of out above.")
-      train.stat <- missval.out$missval.status
+      message(paste("starting MBC", args$variant))
+      out <- tryCatch({callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF,
+                                            args$variant,
+                                            missval.out$complete.hist,
+                                            missval.out$complete.fut, args)},
+                    error = function(e) {
+                      is_known <- c(grepl("need at least two non-NA values to interpolate", e$message))
+                                     # grepl("regularize.values", e$message))
+                      if (any(is_known) == TRUE) {
+                        message(paste("Warning in callMBC: MBC did not have",
+                                      "enough unique values in input datasets",
+                                      "to interpolate!"))
+                        message(paste("Returning MF unchanged."))
+                        return(MF.slice[[1]])
+                      } else {
+                        print(e)
+                        #print(traceback())
+                        stop('Unknown error in MBC: Please examine outputs!')
+                      }
+                      stop('examine error output')
+                    })
+
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
       #and that the synch missing values also need some sort of master
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think
-      #out.data[,,,n,,][!is.na(index.mask)] <- out
-      loop.mask <- index.mask
-      loop.mask[is.na(MF.slice[[1]])] <- NA
-      # if (missval.out$mv.retry) {
-      #   # We need to limit out to those values for which MF has data
-      #   out <- apply.fudge.tmask(data = out, mask = loop.mask)
-      # }
       out.data[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, out, olap)
-      if (train_qcmask &  missval.out$mv.retry) {
+
+      # out.data[,,,n,,!is.na(index.mask)] <- out
+      if (train_qcmask & missval.out$mv.retry) {
         print("adding the pr retry mask")
-        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+        qc[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     } else {
       print('downscaling not possible at this point')
@@ -216,27 +173,84 @@ callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args) 
                                              complete.hist)))
   MF.slice <- as.matrix(as.data.frame(lapply(MF, function(x,y) {return(x[y])},
                                              complete.fut)))
-  tmp <- switch(args$variant,
-                "pearson"  = MBCp(OH.slice, MH.slice, MF.slice,
-                                  iter = args$iter, jitter.factor = args$jitter,
-                                  ratio.seq = args$ratio.seq, trace = args$trace,
-                                  ties = args$ties),
-                "spearman" = MBCr(OH.slice, MH.slice, MF.slice,
-                                  iter = args$iter, jitter.factor = args$jitter,
-                                  ratio.seq = args$ratio.seq, trace = args$trace,
-                                  ties = args$ties),
-                "all"      = MBCn(OH.slice, MH.slice, MF.slice,
-                                  iter = args$iter, jitter.factor = args$jitter,
-                                  ratio.seq = args$ratio.seq, trace = args$trace,
-                                  ties = args$ties),
-                stop(paste("Error in callMBC_any: variant was not one of",
-                           "pearson (MBCp), spearman (MBCr), or all (MBCn)!")))
+
+
+# REMOVE AFTER TESTING: set MF to something ridiculous that can be tracked
+  # colnames(OH.slice) <- colnames(MH.slice) <- colnames(MF.slice) <- c("tx", "rhn")
+# OH.slice <- OH.slice * 0 + array(seq_len(length(OH.slice)), dim = dim(OH.slice))
+# MH.slice <- MH.slice * 0 + array(seq_len(length(MH.slice)), dim = dim(MH.slice))
+# MF.slice <- MF.slice * 0 + array(seq_len(length(MF.slice)), dim = dim(MF.slice))
+
+# mbc_info <- installed.packages()["MBC",]
+# save(mbc_info, file="/work/Dennis.Adams-Smith/testing/mbc_info.Rdata")
+# energy_info <- installed.packages()["energy",]
+# save(energy_info, file="/work/Dennis.Adams-Smith/testing/energy_info.Rdata")
+# FNN_info <- installed.packages()["FNN",]
+# save(FNN_info, file="/work/Dennis.Adams-Smith/testing/FNN_info.Rdata")
+# Matrix_info <- installed.packages()["Matrix",]
+# save(Matrix_info, file="/work/Dennis.Adams-Smith/testing/Matrix_info.Rdata")
+# fudge_options <- options()
+# save(fudge_options, file="/work/Dennis.Adams-Smith/testing/FUDGE_options.Rdata")
+  # tmp <- switch(args$variant,
+  #               "pearson"  = MBCp(OH.slice, MH.slice, MF.slice,
+  #                                 iter = args$iter, jitter.factor = args$jitter,
+  #                                 ratio.seq = args$ratio.seq, trace = args$trace,
+  #                                 ties = args$ties),
+  #               "spearman" = MBCr(OH.slice, MH.slice, MF.slice,
+  #                                 iter = args$iter, jitter.factor = args$jitter,
+  #                                 ratio.seq = args$ratio.seq, trace = args$trace,
+  #                                 ties = args$ties),
+  #               "all"      = MBCn(OH.slice, MH.slice, MF.slice,
+  #                                 iter = args$iter, jitter.factor = args$jitter,
+  #                                 ratio.seq = args$ratio.seq, trace = args$trace,
+  #                                 ties = args$ties),
+  #               stop(paste("Error in callMBC_any: variant was not one of",
+  #                          "pearson (MBCp), spearman (MBCr), or all (MBCn)!")))
+
+
+  if (args$variant == "spearman") {
+    mbc_any_out <- MBC::MBCr(OH.slice, MH.slice, MF.slice,
+                            iter = args$iter, jitter.factor = args$jitter.factor,
+                            ratio.seq = args$ratio.seq, trace = args$trace,
+                            ties = args$ties, silent = TRUE)
+    MBCr_tw_outputs[[w]] <<- mbc_any_out
+    if (w == 73) save(MBCr_tw_outputs, file = "/work/Dennis.Adams-Smith/testing/MBCr_tw_outputs.Rdata")
+  } else if (args$variant == "pearson") {
+    mbc_any_out <- MBC::MBCp(OH.slice, MH.slice, MF.slice,
+                            iter = args$iter, jitter.factor = args$jitter.factor,
+                            ratio.seq = args$ratio.seq, trace = args$trace,
+                            ties = args$ties, silent = TRUE)
+    MBCp_tw_outputs[[w]] <<- mbc_any_out
+    if (w == 73) save(MBCp_tw_outputs, file = "/work/Dennis.Adams-Smith/testing/MBCp_tw_outputs.Rdata")
+  } else if (args$variant == "all") {
+    mbc_any_out <- MBC::MBCn(OH.slice, MH.slice, MF.slice,
+                            iter = args$iter, jitter.factor = args$jitter.factor,
+                            ratio.seq = args$ratio.seq, trace = args$trace,
+                            # ties = args$ties, silent = TRUE)
+                            ties = "first", return.all = TRUE)
+    MBCn_tw_outputs[[w]] <<- mbc_any_out
+    if (w == 73) save(MBCn_tw_outputs, file = "/work/Dennis.Adams-Smith/testing/MBCn_tw_outputs.Rdata")
+  } else {
+    stop(paste("Error in callMBC_any: variant was not one of",
+             "pearson (MBCp), spearman (MBCr), or all (MBCn)!"))
+  }
+
+  if (w == 73) {
+    data(cccma)
+    set.seed(1)
+    fit_mbcn_inany <- MBCn(o.c=cccma$rcm.c, m.c=cccma$gcm.c,
+                           m.p=cccma$gcm.p, ratio.seq=cccma$ratio.seq,
+                           trace=cccma$trace)
+    save(fit_mbcn_inany, file = "/work/Dennis.Adams-Smith/testing/MBC-cccma-fit_mbcn_inany.Rdata")
+    source("/home/d1a/Code/R/MBC_recertification_20240304_ppjob.R")
+  }
+
   #Need to remove vars that aren't target var at this step
   #Oh[[1]] should still work, even for multi-point target
   #...also need to do more advanced checking of missing values.
   #Need to add back in (from the MF) any values that we could not
   #downscale over/are NA
-  return(tmp$mhat.p[,1])
+  return(mbc_any_out$mhat.p[, 1])
 }
 
 set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
@@ -246,11 +260,16 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   jitter.fac <- 0
   ratio.seq <- rep(FALSE, length(predictor.vars))
 
+  # create debugging object
+  MBCr_tw_outputs <<- list()
+  MBCp_tw_outputs <<- list()
+  MBCn_tw_outputs <<- list()
+
   # -------------------------------
   # defaults in QDM needed for MBC?
   # -------------------------------
   is_jitter <- FALSE
-  jitter_val <- NULL
+  jitter_val <- 0
   adjust_trace <- FALSE
   transform <- FALSE
   tform_fxn <- 'none'
@@ -267,7 +286,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   #It'll work, but we need to have an idea of which vars are getting a unit
   #conversion.
   #...I'm pretty sure those are globals anyway; we can check.
-  force_reproducibility <- FALSE
+  force_reproducibility <- args$force_reproducibility
   if ('trace' %in% names(args)) {
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -320,6 +339,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
     jitter.name <- jitter.names[which(jitter.names %in% names(args))]
     jitter.fac <- args[[jitter.name]]
   }
+
   # if ('force_reproducibility' %in% names(args) & args$type == 'mult') {
   #   stop(paste("Error in set.MBC.defaults: as of fudgetag icing-testing-20180510",
   #              "force_reproducibility argument (true or false)",
