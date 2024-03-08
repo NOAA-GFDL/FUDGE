@@ -52,44 +52,63 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
       }
     }
 
+    loop.ds <- ds.method
+    if (missval.out$mv.retry){
+      print("switching QDM and QDM_mod")
+      loop.ds <- "QDM_mod"
+    }else{
+      loop.ds <- ds.method
+    }
+
     if (missval.out$ds.possible) {
-      message(paste("starting MBC", args$variant))
-      out <- tryCatch({callMBC_any(missval.out$OH, missval.out$MH, missval.out$MF,
-                                            args$variant,
-                                            missval.out$complete.hist,
-                                            missval.out$complete.fut, args)},
-                    error = function(e) {
-                      is_known <- c(grepl("need at least two non-NA values to interpolate", e$message))
-                      if (any(is_known) == TRUE) {
-                        message(paste("Warning in callMBC: MBC did not have",
-                                      "enough unique values in input datasets",
-                                      "to interpolate!"))
-                        message(paste("Returning MF unchanged."))
-                        return(MF.slice[[1]])
-                      } else {
-                        print(e)
-                        #print(traceback())
-                        stop("Unknown error in MBC: Please examine outputs!")
-                      }
-                      stop("examine error output")
-                    })
+      #There are different pre-conditioning steps that need
+      #to take place for each method
+      ds_meth <- switch(loop.ds,
+                        "QDM" = "callQDM",
+                        "QDM_mod" = "callQDM_mod",
+                        "MBC" = "callMBC_any")
+      ds_arglist = list(missval.out$OH, missval.out$MH, missval.out$MF, args)
+      #ds_arglist <- list(OH, MH, MF.slice[[1]], args)
+      out <- tryCatch({do.call(ds_meth, args = ds_arglist)},
+                      error = function(e){
+                        is_known <- grepl("need at least two non-NA values to interpolate",
+                                          e$message)
+                        if (is_known){
+                          message(paste("Warning in callQDM: QDM did not have",
+                                        "enough unique values in input datasets",
+                                        "to interpolate!"))
+                          message(paste("Returning MF unchanged."))
+                          return(MF.slice[[1]])
+                        }else{
+                          print(e)
+                          #print(traceback())
+                          stop("Unknown error in QDM: Please examine outputs!")
+                        }
+                        stop("examine error output")
+                      })
 
       #... the indexing on this function is going to be a pain.
       #I sort of think that we have to do synchronous missing values
       #and that the synch missing values also need some sort of master
       #OH and MH vector for missing points.
       #We also CAN'T use the pr masking functions with this method, I think -cew
-      out.data[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, out, olap)
-
+      # out.data[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, out, olap)
+      loop.mask <- index.mask
+      loop.mask[is.na(MF.slice[[1]])] <- NA
+      if (missval.out$mv.retry){
+        # We need to limit out to those values for which MF has data
+        out <- apply.fudge.tmask(data=out, mask=loop.mask)
+      }
+      out.data[,,,n,,] <- index.qm(index.mask, out, olap)
       if (train_qcmask & missval.out$mv.retry) {
         print("adding the pr retry mask")
-        qc[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     } else {
       print("downscaling not possible at this point")
-      out.data[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+      out.data[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       if (train_qcmask) {
-        qc[,,,n,,!is.na(index.mask)] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
+        qc[,,,n,,] <- index.qm(index.mask, rep(NA, length(index.mask)), olap)
       }
     }
   }

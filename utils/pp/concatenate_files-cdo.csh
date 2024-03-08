@@ -73,21 +73,22 @@ if ($#vars_not_pres > 0) then
 endif
 
 
-echo "ncks to copy data from lat,lon, respective bnds"
+##d1a  echo "ncks to copy data from lat,lon, respective bnds"
 #look, this would be elegant but it doesn't seem to work - the entire file is getting rewritten
 #maybe ncks rewrites files regardless?
-ncks -h -A -v lat,lon $gridsource $tdir/griddesc_out.nc
+##d1a  ncks -h -A -v lat,lon $gridsource $tdir/griddesc_out.nc
+
 ##copy over any bnds vars
 #ncks -m --trd $metafile | grep ": type" | grep "_bnds" | cut -f 1 -d ":" | sort > #$tdir/bnds_vars.txt
 #set varlist = `cat $bnds_vars.txt`
 #set varstr = `echo $varlist | sed -e s:\n:,:g`
 #ncks -h -A -v lat,lon $gridsource $tdir/griddesc_out.nc
 
-echo `date`
+##d1a echo `date`
 #I'm not happy with hard-coding lon_bnds and lat_bnds above, but honestly? data standardization.
 
-echo "ncks to copy metadata for lat,lon, respective bounds"
-echo `date`
+##d1a echo "ncks to copy metadata for lat,lon, respective bounds"
+##d1a echo `date`
 ##set varlist = `cat $tdir/orig_vars.txt`
 ##set varstr = `echo $varlist | sed -e s:\ :,:g`
 #Since this is picking up metadata for grid vars, it needs to be from gridsource -
@@ -97,11 +98,12 @@ echo `date`
 #Currently, the metadata for the above varlist/varstr combo is
 #not doing that and I'm not sure how to fix it.
 ## For now, I am hard-coding lat/lon/respective bounds for data standardization
-set varstr = "lat,lon,lat_bnds,lon_bnds"
-ncks -A -C -H --no-abc -v $varstr $gridsource $tdir/griddesc_out.nc >& $tdir/ncks_stdout.stderr.txt
+##d1a set varstr = "lat,lon,lat_bnds,lon_bnds"
+##d1a ncks -A -C -H --no-abc -v $varstr $gridsource $tdir/griddesc_out.nc >& $tdir/ncks_stdout.stderr.txt
 
-grep -q "ERROR" $tdir/ncks_stdout.stderr.txt
-set grepstat = $status
+##d1a grep -q "ERROR" $tdir/ncks_stdout.stderr.txt
+##d1a set grepstat = $status
+set grepstat = 0 ##d1a
 
 if ( $grepstat == 0 ) then
   foreach line ( "`cat $tdir/ncks_stdout.stderr.txt`" )
