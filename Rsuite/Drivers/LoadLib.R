@@ -56,7 +56,7 @@ LoadLib <- function(ds.method){
     ## libWrapper(KernSmooth) #KernSmooth gets attached, not loaded; can interfere with kde calls
   } else if (grepl('PARM', ds.method)){
     libWrapper("splines") #bs function
-    source(file.path(FUDGEROOT, "Rsuite/FudgeTrain/PARM/parm_helpers.R"))
+    source(file.path(FUDGEROOT, "Rsuite/sec4_DS/PARM/parm_helpers.R"))
   }else{
     print("No method-specfic libraries defined in LoadLib.R")
   }

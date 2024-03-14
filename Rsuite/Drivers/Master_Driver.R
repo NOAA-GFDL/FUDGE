@@ -18,11 +18,11 @@ if (TMPDIR == ""){
 ########### Library calls, source necessary functions ################
 sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''),
                   full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgePreDS/',sep=''),
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/sec3_PreDS/',sep=''),
                   full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeQC/',sep=''),
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/sec5_PostDS/',sep=''),
                   full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeTrain/',sep=''),
+sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/sec4_DS/',sep=''),
                   full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
 source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
 source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
@@ -168,10 +168,10 @@ OH.vars <- names(aux.ref$OH)
 # oh_x_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$idim, i_idx, i_max, i_stride-1)
 # oh_y_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$jdim, j_idx, j_max, j_stride-1)
 ## As of 2023, turning off the overlapping functionality. It seems to play badly
-#with some simplifications in the s8 fudgeio; this is going to be a knot to 
+#with some simplifications in the s8 fudgeio; this is going to be a knot to
 #untangle.
-#Okay - so some of the conflict here seems to be that s8 is operating on a 
-#start + count model and fudge wasn't. 
+#Okay - so some of the conflict here seems to be that s8 is operating on a
+#start + count model and fudge wasn't.
 #Also 2023 - adding a temporary update to account for the isd-lite station dim
 print(meta_list$provenance)
 if (meta_list$provenance$is_isd){
@@ -179,7 +179,7 @@ if (meta_list$provenance$is_isd){
   ds.ref$mh_dimlist <- c(ds.ref$mh_dimlist, "ensemble")
   ds.ref$mf_dimlist <- c(ds.ref$mf_dimlist, "ensemble")
 }
-oh_x_subset <- list(subset=c(i_idx, i_stride), 
+oh_x_subset <- list(subset=c(i_idx, i_stride),
                     olap=FALSE)
 oh_y_subset <- list(subset=c(j_idx, j_stride),
                     olap=FALSE)
@@ -213,7 +213,7 @@ if (copy_from_tmp){
 MH.vars <- names(aux.ref$MH)
 # mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
 # mh_y_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$jdim, j_idx, j_max, j_stride-1)
-mh_x_subset <- list(subset=c(i_idx, i_stride), 
+mh_x_subset <- list(subset=c(i_idx, i_stride),
                     olap=FALSE)
 mh_y_subset <- list(subset=c(j_idx, j_stride),
                     olap=FALSE)
@@ -242,7 +242,7 @@ if (copy_from_tmp){
 MF.vars <- names(aux.ref$MF)
 # mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
 # mf_y_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$jdim, j_idx, j_max, j_stride-1)
-mf_x_subset <- list(subset=c(i_idx, i_stride), 
+mf_x_subset <- list(subset=c(i_idx, i_stride),
                     olap=FALSE)
 mf_y_subset <- list(subset=c(j_idx, j_stride),
                     olap=FALSE)
@@ -309,7 +309,7 @@ if (!ds.ref$multivar_target){
   targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
   # targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
   # targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
-  targ.x.subset <- list(subset=c(i_idx, i_stride), 
+  targ.x.subset <- list(subset=c(i_idx, i_stride),
                       olap=FALSE)
   targ.y.subset <- list(subset=c(j_idx, j_stride),
                       olap=FALSE)
@@ -446,7 +446,7 @@ for (r in 1:length(aux.ref$DS$rips)){
     dimlist <- TARG$metadata[[1]]$dim
     varlist <- TARG$metadata[[1]]$vars
   }
-  
+
   #remove any duplicate elements of dimlist
   dimlist <- dimlist[unique(names(dimlist))]
   varlist <- varlist[unique(names(varlist))]
@@ -462,8 +462,8 @@ for (r in 1:length(aux.ref$DS$rips)){
     vatts <- preserve_attributes(OH.vars[1], OH$metadata, v)
   	var_atts[[v]] <- c(list("missing_value" = 1e20), vatts)
   }
-  
-  
+
+
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],

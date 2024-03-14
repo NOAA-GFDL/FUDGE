@@ -1,26 +1,26 @@
 #!/bin/Rscript
-# helper functions for PARM, pre-compiled for speed. Probbaly. 
+# helper functions for PARM, pre-compiled for speed. Probbaly.
 
 arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
-  #'make sure that the breakpoint finding code is reproducable between 
+  #'make sure that the breakpoint finding code is reproducable between
   #'the two breakpoint-finding steps
   mean_rsq <- mean(r_sq, na.rm=T)
   sdev_rsq <- sqrt(var(r_sq, na.rm=T))
   k.out <- rep(NA, 3) #ouptut with the breakpoints
   k.i <- 1            #write index of current breakpoints
   s.index <- start-1  #index of first point to start writing to; is 0 for second case.
-  
+
   for (p in 1:3){ #Find up to 6 break points total,or 3 per call to this fxn
     na.vec <- is.na(r_sq)
     found.min=F
     min_rsq = suppressWarnings(min(r_sq, na.rm=T))
     for (j in 1:length(r_sq)){
       if(sum(is.na(r_sq))!=length(r_sq)){
-        if(!na.vec[j] & r_sq[j]==min_rsq & 
+        if(!na.vec[j] & r_sq[j]==min_rsq &
            (r_sq[j] <= (mean_rsq))){
           #The above criteria match at most one point in the vector. However,
-          #that one point is about to get removed as part of the next step 
-          #carried out. 
+          #that one point is about to get removed as part of the next step
+          #carried out.
           #The above was edited 11-23-16, to account for the fact that sdev_rsq
           #is sometimes NA when other parts of the vector AREN'T.
           k.out[k.i] <- j
@@ -57,15 +57,15 @@ arrm.find.breakpoints <- function(r_sq, wind_len, start=1){
 }
 
 arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
-  #Finds bad breakpoints based on the ciriteria described in the 
-  #ARRM paper. 
-  # find negative/flat slopes and the value of corresponding breakpoints 
+  #Finds bad breakpoints based on the ciriteria described in the
+  #ARRM paper.
+  # find negative/flat slopes and the value of corresponding breakpoints
   # note: if negative slope is first segment, breakpoint to the right is removed
   #       if negative slope is any other segment, breakpoint to the left is removed
   # values2 is list of breakpoints corresponding to bad slopes
   # slopes2 is list of bad slopes
   # breakpoints2 is list of points (not temp values) where bad breakpoints are located
-  #CEW: replacing with list of indices corresponding to points to get booted, one for 
+  #CEW: replacing with list of indices corresponding to points to get booted, one for
   #each of the quantities listed above.
   bad.value.indices <- rep(F, length(values))
   bad.break.indices <- rep(F, length(slopes))
@@ -74,8 +74,8 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
     #print("Printing slopes and values")
     for(j in 1:length(slopes)){
       if (is.na(slopes[j])){
-        #First, check for missing values. 
-        #This can legit happen with pr values, 
+        #First, check for missing values.
+        #This can legit happen with pr values,
         #if you do not include an offset factor.
         bad.value.indices[j] <- T
         bad.break.indices[j] <- T
@@ -94,13 +94,13 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
         #Okay, this is the specific line that's leading
         #ot an issue in the main code when working with pr
         #without an offset in addition to the jitter function
-        if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes)) 
+        if((slopes[j]<=0.1) & (j!=1) & (j!=length(slopes))
            & ((xvals[j+1]-xvals[j])>5)){
           bad.value.indices[j-1] <- T
           bad.break.indices[j-1] <- T
           bad.slope.indices[j] <- T
         }
-        if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1) 
+        if((slopes[j]>=(-0.1)) & (slopes[j]<=0.1) & (j!=1)
            & (j!=length(slopes)) & ((xvals[j+1]-xvals[j])>2)){
           bad.value.indices[j] <- T
           bad.break.indices[j] <- T
@@ -109,14 +109,14 @@ arrm.find.bad.slopes <- function(values, slopes, xvals, run=T){
       }
     }
   }
-  return(list('bad.value' = bad.value.indices, 'bad.break' = bad.break.indices, 
+  return(list('bad.value' = bad.value.indices, 'bad.break' = bad.break.indices,
               'bad.slope' = bad.slope.indices))
 }
 
 calc_parm_rsquared <- function(start, end, by, hist_pred, hist_targ, window, dir='forward'){
   #' @param jseq sequence of values for which the r-squared in hist pred and hist targ will be calculated
   #' @param jstart start of jseq
-  #' @param rsq vector in which to put the r-squared values. In ivializing out-of-loop b/c 
+  #' @param rsq vector in which to put the r-squared values. In ivializing out-of-loop b/c
   #' it might be easier to iterate on a sparse vector and compress later
   #' @param hist_pred MH values
   #' @param hist_targ OH values
@@ -153,10 +153,3 @@ calc_parm_rsquared <- function(start, end, by, hist_pred, hist_targ, window, dir
   }
   return(rsq)
 }
-
-
-# cmpfile('/home/cew/Code/fudge/Rsuite/FudgeTrain/PARM/parm_helpers.R',
-#         '/home/cew/Code/fudge/Rsuite/FudgeTrain/PARM/parm_helpers.Rc',
-#         ascii=F, env = .GlobalEnv, verbose=T, options(optimize=3))
-#loadcmp is in main parm body
-#loadcmp('~/Code/section_8_tools/base/springpheno_gfdl_functions01.Rc')
