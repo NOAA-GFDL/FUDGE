@@ -33,7 +33,7 @@ minijob:
   - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
   #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/cew/Code/FUDGE_regtests/full_xml_subset_single.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all' --verbose
  tags:
-  - analysis
+  - esd_test
 # variables:
 #  CI_DEBUG_TRACE: "true"
 
@@ -60,7 +60,7 @@ fulljob:
   -   echo "Severity set to 1; skipping full regression tests"
   - fi
  tags:
-  - analysis
+  - esd_test
 
 bigdata:
  stage: test_all
@@ -86,6 +86,6 @@ bigdata:
   -  echo "Tag severity less than 3; not enough to run big data case"
   - fi
  tags:
-  - analysis
+  - esd_test
 # variables:
 #  CI_DEBUG_TRACE: "true"
