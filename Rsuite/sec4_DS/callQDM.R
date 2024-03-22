@@ -2,11 +2,11 @@
 
 callQDM <- function(OH, MH, MF, args, ds.method = "",
                     tmasks, train_qcmask = FALSE) {
-  if (args$force_reproducibility) {
-    #i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
-    #This is meant to enforce reproducbility when we have alternative
-    #subsetting in place.
-    seedval <- (31 * (ival + i_idx)) + (29 * (jval + j_idx))
+  if (args$force_reproducibility & w == 1) {
+    # i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
+    # This is meant to enforce reproducibility when we have alternative
+    # subsetting in place. -cew
+    seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
     set.seed(seedval)
   }
   # Create output data
@@ -50,17 +50,16 @@ callQDM <- function(OH, MH, MF, args, ds.method = "",
       }
     }
     if (missval.out$ds.possible) {
-      #There are different pre-conditioning steps that need
-      #to take place for each method
-      loop.ds <- "QDM"
+      # In place of the old QDM_mod, now we set pp.type = 3
+      pp_type <- 7
       if (missval.out$mv.retry) {
-        print("switching QDM and QDM_mod")
-        loop.ds <- "QDM_mod"
+        print("switching QDM pp.type = 7 to pp.type = 3")
+        pp_type <- 3
       }
       if (ds.method == "QDM") {
-        ds_arglist <- list(missval.out$OH, missval.out$MH, missval.out$MF, c(args, ds.method = loop.ds))
+        ds_arglist <- list(missval.out$OH, missval.out$MH, missval.out$MF, c(args, pp.type = pp_type))
       } else if (ds.method == "QQDC") {
-        ds_arglist <- list(missval.out$MF, missval.out$MH, missval.out$OH, c(args, ds.method = loop.ds))
+        ds_arglist <- list(missval.out$MF, missval.out$MH, missval.out$OH, c(args, pp.type = pp_type))
       } else {
         stop("calling QDM without a ds.method arg specified!")
       }
@@ -111,19 +110,16 @@ callQDM_internal <- function(OH, MH, MF, args) {
 
   args$ratio <- args$ratio.seq
   screen_NaNs <- args$screen_NaNs
-  loop.ds <- args$ds.method
 
   not.args <- c("adjust.trace", "transform", "tform_fxn",
                 "force_reproducibility", "var.names",
                 "ratio.seq", "iter", "adjust_trace", "screen_NaNs", "ds.method")
   args <- args[!(names(args) %in% not.args)]
 
-  q.args <- c(list(o.c = OH_slice, m.c = MH_slice, m.p = MF_slice),
-              args)
+  q.args <- c(list(o.c = OH_slice, m.c = MH_slice, m.p = MF_slice), args)
 
   #Feb 2023 - suppressing *all* warnings; once per tmask is too many
-  # tmp <- withCallingHandlers(do.call("QDM_mod", q.args)$mhat.p,
-  tmp <- withCallingHandlers(do.call(loop.ds, q.args)$mhat.p,
+  tmp <- withCallingHandlers(do.call("QDM", q.args)$mhat.p,
                              warning = function(w) {
                                if ((conditionMessage(w) == c("collapsing to unique 'x' values"))) {
                                  rlang::cnd_muffle(w)
@@ -144,11 +140,6 @@ callQDM_internal <- function(OH, MH, MF, args) {
 
 set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   #'Sets common defaults for the inputs to QDM that we want to control.
-  # moved from the "callQDM" function so it only gets reset once per I,J
-  # instead of every time window
-  # seedval <- (31 * (ival + i_idx)) + (29 * (jval + j_idx))
-  # set.seed(seedval)
-
   iter <- 30
   is_jitter <- FALSE
   jitter_val <- NULL

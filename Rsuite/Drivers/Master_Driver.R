@@ -3,57 +3,66 @@
 #' originally created: a1r,08/2014
 #' Modified heavily by 4-6-2015
 
-print(paste("START TIME:",Sys.time(),sep=''))
+print(paste0("START TIME:", Sys.time()))
 
 ############## Set environment variables #######################
 FUDGEROOT <<- Sys.getenv(c("BASEDIR"))
 FUDGETAG <<- Sys.getenv(c("FUDGETAG"))
 BRANCH <- Sys.getenv("BRANCH")
-print(paste("FUDGEROOT is now activated:",FUDGEROOT,sep=''))
-TMPDIR = Sys.getenv(c("TMPDIR"))
-if (TMPDIR == ""){
+print(paste0("FUDGEROOT is now activated:", FUDGEROOT))
+TMPDIR <- Sys.getenv(c("TMPDIR"))
+if (TMPDIR == "") {
   stop("ERROR: TMPDIR is not set. Please set it and try it")
 }
 
 ########### Library calls, source necessary functions ################
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/FudgeIO/',sep=''),
-                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/sec3_PreDS/',sep=''),
-                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/sec5_PostDS/',sep=''),
-                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-sapply(list.files(pattern="[.]R$", path=paste(FUDGEROOT,'Rsuite/sec4_DS/',sep=''),
-                  full.names=TRUE), source, echo=FALSE, print.eval=FALSE);
-source(paste(FUDGEROOT,'Rsuite/Drivers/LoadLib.R',sep=''))
-source(paste(FUDGEROOT, 'Rsuite/Drivers/UtilityFunctions.R', sep=""))
+sapply(list.files(pattern = "[.]R$", full.names = TRUE,
+                  path = paste0(FUDGEROOT, "Rsuite/FudgeIO/")),
+      source, echo = FALSE, print.eval = FALSE)
 
-#stop('examine this output')
+sapply(list.files(pattern = "[.]R$", full.names = TRUE,
+                  path = paste0(FUDGEROOT, "Rsuite/sec3_PreDS/")),
+      source, echo = FALSE, print.eval = FALSE)
+
+sapply(list.files(pattern = "[.]R$", full.names = TRUE,
+                  path = paste0(FUDGEROOT, "Rsuite/sec5_PostDS/")),
+      source, echo = FALSE, print.eval = FALSE)
+
+sapply(list.files(pattern = "[.]R$", full.names = TRUE,
+                  path = paste0(FUDGEROOT, "Rsuite/sec4_DS/")),
+      source, echo = FALSE, print.eval = FALSE)
+
+source(paste0(FUDGEROOT, "Rsuite/Drivers/LoadLib.R"))
+
+source(paste0(FUDGEROOT, "Rsuite/Drivers/UtilityFunctions.R"))
+
+#stop("examine this output")
 #-------Add traceback call for error handling -------
-stored.opts <- options()[c('warn', 'error', 'showErrorCalls')]
+stored.opts <- options()[c("warn", "error", "showErrorCalls")]
 ival <<- 0
 jval <<- 0
 w <<- 0
 
-FUDGE.error.handler.function <- function(){
+FUDGE.error.handler.function <- function() {
   #'Prints information needed for debugging/reproducing
   #'in a preoduction context
   message(paste("ival:", ival))
   message(paste("jval:", jval))
   message(paste("twindow:", w))
-  f.args <- as.list(sys.call(which=1))
-  if (length(f.args) > 0){
+  f.args <- as.list(sys.call(which = 1))
+  if (length(f.args) > 0) {
     message("Arguments to current function:")
     message(str(f.args))
   }
   traceback(2)
   #If quitting from a non-interactive session, a status of 1 should be sent.
-  if (!interactive()){
-    quit(save="no", status=1, runLast=FALSE) #runLast=FALSE
+  if (!interactive()) {
+    quit(save = "no", status = 1, runLast = FALSE) #runLast=FALSE
   }
 }
 #previously traceback
-options(error=FUDGE.error.handler.function,
-        warn = 1, showErrorCalls=TRUE)
+options(error = FUDGE.error.handler.function,
+        warn = 1, showErrorCalls = TRUE)
 
 
 
@@ -62,7 +71,7 @@ console.args <- commandArgs(TRUE)
 print(console.args)
 # i is longitude index in the netCDF file, j is latitude
 copy_from_tmp <- TRUE
-if (length(console.args) > 0){
+if (length(console.args) > 0) {
   i_idx <<- as.numeric(console.args[1])
   i_max <- as.numeric(console.args[2])
   i_stride <- as.numeric(console.args[3])
@@ -75,8 +84,8 @@ if (length(console.args) > 0){
   metafile <- console.args[10]
   copy_from_tmp = console.args[11]
   twindow_run <<- 'all'
-}else{
-  if (!exists('i_idx', inherits=T, envir=globalenv())){
+} else {
+  if (!exists('i_idx', inherits=T, envir=globalenv())) {
     stop(paste("Error in Master_Driver: you should be using a config file with",
                "command line params if you aren't using command-line args!"))
   }
@@ -89,7 +98,7 @@ message("Getting info from aux file")
 #need to load json parser before other lo=ib loads
 library(jsonlite)
 aux.ref <- get_aux_params(auxfile, copy_from_tmp)
-if ("multivar_target" %in% aux.ref){
+if ("multivar_target" %in% aux.ref) {
   ds.ref$multivar_target <- aux.ref$multivar_target
 }
 
@@ -107,7 +116,7 @@ target.var = names(aux.ref$OH)
 predictor.vars = names(aux.ref$MH)
 # If we aren't running with MBC (or another yes-multi-targets-are-okay method)
 # we want to make sure the prime var is first
-if (!ds.ref$multivar_target){
+if (!ds.ref$multivar_target) {
 message("Checking input predictor var order")
 predictor.vars <- fix.var.order(predictor.vars, target.var)
 }
@@ -129,14 +138,14 @@ s5.outloop <- length(post_ds$outloop) > 0
 train_qcmask <- aux.ref$return_qcmask_from_ds
 
 pr_is_adjusted <- 'pr_in' %in% names(pre_ds)
-if (pr_is_adjusted){
+if (pr_is_adjusted) {
   pr_opts <- pre_ds$qc_args
 }
 
 # #Adapt some of the parameters being set by the f-to-g bridge code
-if(pr_is_adjusted){
+if (pr_is_adjusted) {
   f.list <- override.f.defaults(ds.ref$args)
-}else{
+} else {
   f.list <- override.f.defaults(ds.ref$args, pr_opts)
 }
 # min.present <- f.list$threshold
@@ -161,8 +170,8 @@ meta_list <- fromJSON(readLines(metafile, warn=F))
 #via the file_format parameter in the aux file
 print("Reading OH files")
 OH.files <- unlist(lapply(aux.ref$OH, '[[', 'file'), use.names = F)
-if (copy_from_tmp){
-  OH.files <- sapply(OH.files, function(x){file.path(TMPDIR, x)})
+if (copy_from_tmp) {
+  OH.files <- sapply(OH.files, function(x) {file.path(TMPDIR, x)})
 }
 OH.vars <- names(aux.ref$OH)
 # oh_x_subset <- get.FUDGE.subset(aux.ref$OH[[1]]$idim, i_idx, i_max, i_stride-1)
@@ -174,7 +183,7 @@ OH.vars <- names(aux.ref$OH)
 #start + count model and fudge wasn't.
 #Also 2023 - adding a temporary update to account for the isd-lite station dim
 print(meta_list$provenance)
-if (meta_list$provenance$is_isd){
+if (meta_list$provenance$is_isd) {
   ds.ref$oh_dimlist <- c(ds.ref$oh_dimlist, "ensemble")
   ds.ref$mh_dimlist <- c(ds.ref$mh_dimlist, "ensemble")
   ds.ref$mf_dimlist <- c(ds.ref$mf_dimlist, "ensemble")
@@ -191,8 +200,8 @@ OH <- build.FUDGE.dataset(OH.files, OH.vars, list(x=oh_x_subset,y=oh_y_subset),
                           x_by = aux.ref$OH[[1]]$idim, y_by = aux.ref$OH[[1]]$jdim,
                           aux.ref$OH[[1]]$geomask,
                           file_format = aux.ref$file_format)
-for (el in names(OH$data)){
-  if (aux.ref$OH[[1]]$geomask != 'none'){
+for (el in names(OH$data)) {
+  if (aux.ref$OH[[1]]$geomask != 'none') {
     spatmask <- ReadSpatialMask(file.path(TMPDIR, aux.ref$OH[[1]]$geomask),
                                 oh_x_subset$subset, oh_y_subset$subset)
     OH$data[[el]] <- apply.any.mask(data=OH$data[[1]], mask=spatmask, dim='spatial')
@@ -207,8 +216,8 @@ oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2],
 
 message("Reading in MH files")
 MH.files <- unlist(lapply(aux.ref$MH, '[[', 'file'), use.names=F)
-if (copy_from_tmp){
-  MH.files <- sapply(MH.files, function(x){file.path(TMPDIR, x)})
+if (copy_from_tmp) {
+  MH.files <- sapply(MH.files, function(x) {file.path(TMPDIR, x)})
 }
 MH.vars <- names(aux.ref$MH)
 # mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
@@ -222,8 +231,8 @@ MH <- build.FUDGE.dataset(MH.files, MH.vars, list(x=mh_x_subset,y=mh_y_subset),
                           x_by=aux.ref$MH[[1]]$idim, y_by=aux.ref$MH[[1]]$jdim,
                           aux.ref$MH[[1]]$geomask,
                           file_format = aux.ref$file_format)
-for (el in names(MH$data)){
-  if (aux.ref$MH[[1]]$geomask != 'none'){
+for (el in names(MH$data)) {
+  if (aux.ref$MH[[1]]$geomask != 'none') {
     spatmask <- ReadSpatialMask(file.path(TMPDIR, aux.ref$MH[[el]]$geomask),
                                 mh_x_subset$subset, mh_y_subset$subset)
     MH$data[[el]] <- apply.any.mask(data=MH$data[[el]], mask=spatmask, dim='spatial')
@@ -236,8 +245,8 @@ mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2],
                               allow_partial=F)
 message("Reading in MF files")
 MF.files <- unlist(lapply(aux.ref$MF, '[[', 'file'), use.names=F)
-if (copy_from_tmp){
-  MF.files <- sapply(MF.files, function(x){file.path(TMPDIR, x)})
+if (copy_from_tmp) {
+  MF.files <- sapply(MF.files, function(x) {file.path(TMPDIR, x)})
 }
 MF.vars <- names(aux.ref$MF)
 # mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
@@ -252,8 +261,8 @@ MF <- build.FUDGE.dataset(MF.files, MF.vars,
                           x_by=aux.ref$MF[[1]]$idim, y_by=aux.ref$MF[[1]]$jdim,
                           aux.ref$MF[[1]]$geomask,
                           file_format = aux.ref$file_format)
-for (el in names(MH$data)){
-  if (aux.ref$MF[[1]]$geomask != 'none'){
+for (el in names(MH$data)) {
+  if (aux.ref$MF[[1]]$geomask != 'none') {
     spatmask <- ReadSpatialMask(file.path(TMPDIR, aux.ref$MF[[el]]$geomask),
                                 mf_x_subset$subset, mf_y_subset$subset)
     MF$data[[el]] <- apply.any.mask(data=MF$data[[el]], mask=spatmask, dim='spatial')
@@ -269,19 +278,19 @@ mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
 #outdirs <- c(file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir),
 #             file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir, aux.ref$DS$out_supp[1]))
 #write_to_tmp = TRUE
-#if (write_to_tmp){
-#  outdirs <- sapply(outdirs, function(x){file.path(TMPDIR, x)})
+#if (write_to_tmp) {
+#  outdirs <- sapply(outdirs, function(x) {file.path(TMPDIR, x)})
 #}
 #2022-02
 print(c(aux.ref$DS$vars,aux.ref$DS$out_supp))
 #Note that this particular structure is to facilitate the nested dirs that postproc uses for its writes
 #outvpaths <- c(aux.ref$DS$vars, paste0(aux.ref$DS$vars, aux.ref$DS$out_supp))
-outdirs <- sapply(c(aux.ref$DS$vars,aux.ref$DS$out_supp), function(x){file.path(aux.ref$xtmpdir, '<RIP>', x, "chunk")})
+outdirs <- sapply(c(aux.ref$DS$vars,aux.ref$DS$out_supp), function(x) {file.path(aux.ref$xtmpdir, '<RIP>', x, "chunk")})
 #Check for existance of output dirs, after replacing $rip a bit
 out_rip_dirs <- list()
-for (rip in fut.pred.rip.list){
-  dirlist <- sapply(outdirs, function(x){sub('<RIP>', rip, x)})
-  if (!all(file.exists(dirlist))){
+for (rip in fut.pred.rip.list) {
+  dirlist <- sapply(outdirs, function(x) {sub('<RIP>', rip, x)})
+  if (!all(file.exists(dirlist))) {
     stop(paste("Error in dir existance: One or more of the dirs",
                paste(dirlist, collapse=','),
                "do not yet exist!"))
@@ -293,17 +302,17 @@ for (rip in fut.pred.rip.list){
 ###### (note: the clever delayed evaluation in getDSInfo() is not working)
 message("Setting target dimensions")
 delayedAssign('TARG', eval(parse(text=ds.ref$target)))
-if (!ds.ref$multivar_target){
+if (!ds.ref$multivar_target) {
   targ.dim <- switch(ds.ref$target,
                      'OH' = oh.orig.dim,
                      'MH' = mh.orig.dim,
                      'MF' = mf.orig.dim)
-  if (ds.ref$target=='OH'){
+  if (ds.ref$target=='OH') {
     ds.coords <- oh.coords
-  }else if (ds.ref$target=='MF'){
+  }else if (ds.ref$target=='MF') {
     ds.coords <- mf.coords
   }
-}else{
+} else {
   #This is a special bypass for the MBC; we can't count on OH
   #being all 1, and some of the other workflow assumes that
   targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
@@ -343,9 +352,9 @@ QCDSArguments(k=aux.ref$kfold, ds.method = ds.ref$method, args=ds.ref$args,
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
-if (pr_is_adjusted){
+if (pr_is_adjusted) {
   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts=pr_opts)
-}else{
+} else {
   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
 }
 
@@ -362,7 +371,7 @@ output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
 #            'qc' = array(NA, dim=output.dim))
 
 #Added 02-14-17 - trying to set up defaults differently
-set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
+set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()) {
   #Alter args for a given method depending on the args allowed
   #(NOTE: may include settings other than default, such as QDM type to ratio)
 
@@ -372,10 +381,10 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()){
   #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   env$prime_predictor <- paste0(MH.vars[1], ".0.0")
   default.methods <- c("MBC", "QDM", "QQDC", "QDMall", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
-  if (! (ds.method %in% default.methods)){
+  if (! (ds.method %in% default.methods)) {
     #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
     env$prime_predictor <- paste0(MH.vars[1], ".0.0")
-  }else{
+  } else {
     env <- switch(ds.method,
                   'MBC' = set.MBC.defaults(args, ..., env=env),
 									'QDM' = set.QDM.defaults(args, ..., env=env),
@@ -426,15 +435,15 @@ jend <- jstart + j_stride - 1
 locstring <- paste0("I", istart, '-', iend, '_J', jstart, "-", jend)
 
 tmp_filename <- sub('I<ISTART>-<IEND>_J<JSTART>-<JEND>', locstring, tmp_filename)
-for (r in 1:length(aux.ref$DS$rips)){
+for (r in 1:length(aux.ref$DS$rips)) {
   rip <- fut.pred.rip.list[r]
   #First do the filename, then the output dir
   loop_filename <- sub("<RIP>", rip, tmp_filename)
-  loop_outdirs <- sapply(outdirs, function(x){sub("<RIP>", rip, x)})
+  loop_outdirs <- sapply(outdirs, function(x) {sub("<RIP>", rip, x)})
   loop_filepath = file.path(loop_outdirs[1], loop_filename)
   #Metadata-related things
   message('writing global attributes')
-  if (ds.ref$target != "MF"){
+  if (ds.ref$target != "MF") {
     if (ds.ref$method == "KDDM") {
       dimlist <- MF$metadata[[1]]$dim
       varlist <- MF$metadata[[1]]$vars
@@ -442,7 +451,7 @@ for (r in 1:length(aux.ref$DS$rips)){
       dimlist <- c(TARG$metadata[[1]]$dim,  MF$metadata[[1]]$dim)
       varlist <- c(TARG$metadata[[1]]$vars, MF$metadata[[1]]$vars)
     }
-  }else{
+  } else {
     dimlist <- TARG$metadata[[1]]$dim
     varlist <- TARG$metadata[[1]]$vars
   }
@@ -451,19 +460,17 @@ for (r in 1:length(aux.ref$DS$rips)){
   dimlist <- dimlist[unique(names(dimlist))]
   varlist <- varlist[unique(names(varlist))]
 
-  global_clone_file = NA
-  clone_globals = F
-  if (aux.ref$file_format != 'csv'){
-    global_clone_file = OH.files[[1]]
-    clone_globals = T
+  global_clone_file <- NA
+  clone_globals <- FALSE
+  if (aux.ref$file_format != 'csv') {
+    global_clone_file <- OH.files[[1]]
+    clone_globals <- TRUE
   }
   var_atts <- list()
-  for (v in aux.ref$DS$vars){
+  for (v in aux.ref$DS$vars) {
     vatts <- preserve_attributes(OH.vars[1], OH$metadata, v)
   	var_atts[[v]] <- c(list("missing_value" = 1e20), vatts)
   }
-
-
 
   message(paste("Writing to file", loop_filepath))
   ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],
@@ -482,8 +489,8 @@ for (r in 1:length(aux.ref$DS$rips)){
                             verbose=F
   )
   message(paste('Downscaled output file:',ds.out.filename,sep=''))
-  if (aux.ref$make_qcmask){
-    for (var in aux.ref$DS$vars){
+  if (aux.ref$make_qcmask) {
+    for (var in aux.ref$DS$vars) {
       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
       qc.var <- paste(var, 'qcmask', sep="_")
 
@@ -506,7 +513,7 @@ for (r in 1:length(aux.ref$DS$rips)){
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
        qc_var_atts <- list()
-  for (v in names(qc.list)){
+  for (v in names(qc.list)) {
   	qc_var_atts[[v]] <- list("missing_value" = 1e20)
   }
       qc.out.filename  = WriteNC(qc_filepath, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,

@@ -4,12 +4,12 @@
 
 library("rlang")
 callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FALSE) {
-  if (args$force_reproducibility) {
+  if (args$force_reproducibility & w == 1) {
     # i_idx, j_idx, i_offset and j_offset are passed in from the command-line.
     # This is meant to enforce reproducibility when we have alternative
     # subsetting in place. -cew
-    # seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
-    # set.seed(seedval)
+    seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
+    set.seed(seedval)
   }
   # Create output data
   out.data <- array(NA, dim = dim(MF[[1]]))
@@ -105,7 +105,6 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
 
 
 
-
 callMBC_any <- function(OH, MH, MF, variant, complete.hist, complete.fut, args) {
   #Okay...this is the step when any x.y.vars which are all missing get removed.
   #This is then going to have to be applied to the same list of vars that -cew
@@ -152,8 +151,6 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   #'to control. Most of these also apply to QDM.
   # moving the seed setting here to attempt to only do it once per I,J
   # not in every time window -d1a
-  seedval <- (31 * (ival + i_idx)) + (29 * (jval + j_idx))
-  set.seed(seedval)
 
   iter <- 30
   jitter.fac <- 0
@@ -187,7 +184,7 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
     #get OH pr units from adjust.metadata (created back in main driver) -cew
     if (non.numeric.trace) {
       pr.units <- adjust.metadata$pr_oh_units
-      if (length(pr.units)==0) {
+      if (length(pr.units) == 0) {
         stop(paste("Error in set.MBC.defaults: no pr vars found in OH!"))
       }
       pr.trace <- convert.pr.threshold(args$trace, pr.units)
@@ -246,129 +243,3 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   env$ds.ref$args <- return.args
   return(env)
 }
-
-#
-# set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
-#   #'Sets common defaults for the inputs to MBC that we want
-#   #'to control. Most of these also apply to QDM.
-#   iter <- 30
-#   is_jitter <- FALSE
-#   jitter_val <- NULL
-#   jitter.fac <- 0
-#   ratio.seq <- FALSE #should be 1 for this case
-#   trace <- 0.05
-#   adjust_trace <- FALSE
-#   transform <- FALSE
-#   tform_fxn <- "none"
-#   ties <- "first"
-#   force_reproducibility <- FALSE
-#   screen_NaNs <- FALSE
-#   if ("trace" %in% names(args)) {
-#     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
-#     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
-#     #get OH pr units from adjust.metadata (created back in main driver) -cew
-#     if (non.numeric.trace) {
-#       pr.units <- adjust.metadata$pr_oh_units
-#       if (length(pr.units)==0) {
-#         stop(paste("Error in set.QDM.defaults: no pr vars found in OH!"))
-#       }
-#       pr.trace <- convert.pr.threshold(args$trace, pr.units)
-#       trace <- pr.trace
-#     } else {
-#       trace <- as.numeric(args$trace)
-#     }
-#     #Now check the section 5 args for the
-#     if (exists("pre.ds.train")) {
-#       pre.ds.types <- sapply(pre.ds.train, "[[", "type")
-#       if ("transform" %in% pre.ds.types) {
-#         transform <- T
-#         tform.idx <- which(pre.ds.types=="transform")
-#         tform_fxn <- return.t.fxn(pre.ds.train[[tform.idx]]$qc_args$transform,
-#                               pre.ds.train[[tform.idx]]$qc_args$arg)
-#         if (is.null(tform_fxn[[2]])) {
-#           trace <- do.call(tform_fxn[[1]], list(trace))
-#         } else {
-#           trace <- do.call(tform_fxn[[1]], list(trace, tform_fxn[[2]]))
-#         }
-#       }
-#     }
-#   }
-#   rat.names <- c("ratio", "ratio.seq", "ratio_seq")
-#   if ("type" %in% names(args)) {
-#     if (args$type=="add") {
-#       ratio.seq <- FALSE
-#     }else if (args$type=="mult") {
-#       ratio.seq <- TRUE
-#     }
-#   }
-#   #behavior changed 2022-10 - explicitly exit with error if using old args -cew
-#   jitter.old.names <- c("jitter", "jitter.fac", "jitter_fac")
-#   if (any(jitter.old.names %in% names(args))) {
-#     stop(paste("Error in set.qdm.defaults: QDM requires specification of is_jitter and possibly jitter_val!"))
-#   } else {
-#     if ("is_jitter" %in% names(args)) {
-#       if (args$is_jitter) {
-#         jitter.fac <- args$jitter_val
-#         if (args$jitter_val == "default") {
-#           jitter.fac <- .Machine$double.eps^2
-#         } else {
-#           jitter.fac <- as.numeric(args$jitter_val)
-#         }
-#       } else {
-#         if (!is.null(jitter_val) | ("jitter_val" %in% names(args)) ) {
-#           stop(paste("Error in set.qdm.defaults: when is_jitter = FALSE, cannot set jitter_val in config!"))
-#         } else {
-#           jitter.fac <- 0
-#         }
-#       }
-#     }
-#   }
-#   if ("adjust_trace" %in% names(args)) {
-#     adjust_trace <- ifelse(args$adjust_trace=="on", T, F)
-#   }
-#   if ("force_reproducibility" %in% names(args)) {
-#     if (args$force_reproducibility %in% c("on", "off", TRUE, FALSE)) {
-#       if (args$force_reproducibility %in% c("on", TRUE)) {
-#         force_reproducibility <- TRUE
-#       } else {
-#         force_reproducibility <- FALSE
-#       }
-#     } else {
-#       stop(paste("Error in set.QDM.defautls: force_reproducibility should be one of",
-#                  paste(c("on", "off", TRUE, FALSE), collapse=","), "but was",
-#                  args$force_reproducibility, "!"))
-#     }
-#   } else {
-#     if (args$type == "mult" && jitter.fac != 0) {
-#       stop(paste("Error in set.QDM.defaults: as of October 2022,",
-#                  "force_reproducibility argument ('on' or 'off')",
-#                  "is required to be set in the JSON for QDM when type == 'mult'",
-#                  "and is_jitter is true!"))
-#     } else {
-#       #default changed 2022-10 - was false, is now true
-#       force_reproducibility <- TRUE
-#     }
-#   }
-#   #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace
-#   print(paste("jitter.fac: ", jitter.fac))
-#   return.args <- list(iter=iter, jitter.factor=jitter.fac, ratio.seq=ratio.seq, trace=trace, ties=ties,
-#                       var.names=unlist(predictor.vars),
-#                       adjust_trace=adjust_trace, transform=transform, tform_fxn = tform_fxn,
-#                       force_reproducibility = force_reproducibility)
-#   if ("qdm_mult_noise" %in% names(args)) {
-#     if (args$qdm_mult_noise == "off") {
-#       return.args$trace.calc <- -99 # setting to 0 can still hit eps. compares
-#       if (ratio.seq) {
-#         screen_NaNs <- TRUE
-#       }
-#     }
-#   }
-#   return.args$screen_NaNs = screen_NaNs
-#   #Deal with sample size
-#   if ("minsamplesize" %in% names(args)) {
-#     return.args$minsamplesize <- args$minsamplesize
-#   }
-#   env$ds.ref$args <- return.args
-#   return(env)
-# }
-

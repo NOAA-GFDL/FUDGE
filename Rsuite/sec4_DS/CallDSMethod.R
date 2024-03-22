@@ -19,8 +19,6 @@
 #' @param ds_var: The target variable. Can be used to key off of some methods.
 #' @examples
 #' @references \url{link to the FUDGE API documentation}
-#' TODO: Find a better name for general.bias.corrector
-
 
 callDSMethod <- function(method, OH, MH, MF, ds.args,
                          missvals = "distributional",
@@ -30,25 +28,24 @@ callDSMethod <- function(method, OH, MH, MF, ds.args,
   #Missing value removal now takes place within the ds method wrappers
   #called by CallDSMethod
   ds_out <- switch(method,
-                   "lm"      = callLMAll(OH, MH, MF, ds.args, ds.method = "lm",    missval.args, tmasks, train_qcmask),
-                   "lmstep"  = callLMAll(OH, MH, MF, ds.args, ds.method = "lmstep", missval.args, tmasks, train_qcmask),
-                   "lmAsync" = callLMAsync(OH, MH, MF, ds.args, ds.method = "lmAsync",    missval.args, tmasks, train_qcmask),
-                   "lmstepAsync"  = callLMAsync(OH, MH, MF, ds.args, ds.method = "lmstepAsync", missval.args, tmasks, train_qcmask),
-                   "CDFt"    = callCDFt(OH, MH, MF, ds.args,  ds.method = "gfdl_CDFt",   missval.args, tmasks, train_qcmask),
-                   "CDFtmod" = callCDFt(OH, MH, MF, ds.args,  ds.method = "CDFtmod", missval.args, tmasks, train_qcmask),
-                   "PARM"    = callPARM(MH, OH, MF, ds.args, missval.args, tmasks, train_qcmask),
-                   "BCQM"    = callQM(OH, MH, MF, ds.args, type = "BCQM", missval.args, tmasks, train_qcmask),
-                   "KDDM"    = callQM(OH, MH, MF, ds.args, type = "KDDM", missval.args, tmasks, train_qcmask),
-                   "DeltaSD" = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, tmasks),
-                   "BCMM"    = callQM(OH, MH, MF, ds.args, type = "BCMM", missval.args, tmasks, train_qcmask),
-                   "MBC"     = callMBC(OH, MH, MF, ds.args, ds.method = "MBC", tmasks, train_qcmask),
-									 "QDM"     = callQDM(OH, MH, MF, ds.args, ds.method = "QDM", tmasks, train_qcmask),
-									 "QQDC"    = callQDM(OH, MH, MF, ds.args, ds.method = "QQDC", tmasks, train_qcmask),
-                   # "QDMall"  = callMBC(OH, MH, MF, ds.args, ds.method="QDMall", tmasks, train_qcmask),
-                   "CFQM"    = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
-                   "BCMM"    = callQM(OH, MH, MF, ds.args, type = "BCMM", missval.args, tmasks, train_qcmask),
-                   "returnMF"   = ds.MF.function(OH, MH, MF, ds.args),
-                   ReturnDownscaleError(method)
+     "lm"       = callLMAll(OH, MH, MF, ds.args, ds.method = "lm", missval.args, tmasks, train_qcmask),
+     "lmstep"   = callLMAll(OH, MH, MF, ds.args, ds.method = "lmstep", missval.args, tmasks, train_qcmask),
+     "lmAsync"  = callLMAsync(OH, MH, MF, ds.args, ds.method = "lmAsync", missval.args, tmasks, train_qcmask),
+     "lmstepAsync"  = callLMAsync(OH, MH, MF, ds.args, ds.method = "lmstepAsync", missval.args, tmasks, train_qcmask),
+     "CDFt"     = callCDFt(OH, MH, MF, ds.args, ds.method = "gfdl_CDFt", missval.args, tmasks, train_qcmask),
+     "CDFtmod"  = callCDFt(OH, MH, MF, ds.args, ds.method = "CDFtmod", missval.args, tmasks, train_qcmask),
+     "PARM"     = callPARM(MH, OH, MF, ds.args, missval.args, tmasks, train_qcmask),
+     "BCQM"     = callQM(OH, MH, MF, ds.args, type = "BCQM", missval.args, tmasks, train_qcmask),
+     "KDDM"     = callQM(OH, MH, MF, ds.args, type = "KDDM", missval.args, tmasks, train_qcmask),
+     "DeltaSD"  = callDeltaSD(OH, MH, MF, ds.args, train_qcmask, tmasks),
+     "BCMM"     = callQM(OH, MH, MF, ds.args, type = "BCMM", missval.args, tmasks, train_qcmask),
+     "MBC"      = callMBC(OH, MH, MF, ds.args, ds.method = "MBC", tmasks, train_qcmask),
+		 "QDM"      = callQDM(OH, MH, MF, ds.args, ds.method = "QDM", tmasks, train_qcmask),
+		 "QQDC"     = callQDM(OH, MH, MF, ds.args, ds.method = "QQDC", tmasks, train_qcmask),
+     "CFQM"     = callCFQM(OH, MH, MF, ds.args, train_qcmask, missval.args, tmasks, s5_list),
+     "BCMM"     = callQM(OH, MH, MF, ds.args, type = "BCMM", missval.args, tmasks, train_qcmask),
+     "returnMF" = ds.MF.function(OH, MH, MF, ds.args),
+     ReturnDownscaleError(method)
   )
   #Restore missing values to original place now takes place within method
   #No longer taking place within method as of 10-15; now adding as formal indexing
