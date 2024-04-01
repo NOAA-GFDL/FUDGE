@@ -59,19 +59,38 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR) {
       time_mask_overlap <- TRUE
     }
 
-  #Do explicit checks on the members of masks
-  masknames <- names(tmask.list$OH$masks)
+  # #Do explicit checks on the members of masks
+  # masknames <- names(tmask.list$OH$masks)
+  # for (el in names(tmask.list)) {
+  #   if (length(tmask.list[[el]]$masks) != nmasks) {
+  #     stop(paste("Error in get.fudge.timemask.list: the", el, "dataset",
+  #                "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
+  #   }
+  #   # el_masknames <- names(tmask.list[[el]]$masks)
+  #   # if (any(el_masknames != masknames)) {
+  #   #   stop(paste("Error in get.fudge.timemask.list: the names of masks in OH and",
+  #   #              el, "datasets are not identical!"))
+  #   # }
+  # }
+
+  # Explicit checks for the number of masks
   for (el in names(tmask.list)) {
     if (length(tmask.list[[el]]$masks) != nmasks) {
       stop(paste("Error in get.fudge.timemask.list: the", el, "dataset",
                  "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
     }
-    # el_masknames <- names(tmask.list[[el]]$masks)
-    # if (any(el_masknames != masknames)) {
-    #   stop(paste("Error in get.fudge.timemask.list: the names of masks in OH and",
-    #              el, "datasets are not identical!"))
-    # }
   }
+  # Explicit checks that trim masks subset their window
+  # for (el in names(tmask.list)) {
+  #   for (tw in seq_len(nmasks)) {
+  #     table(tmask.list$OH$masks[[tw]] == tmask.list[[el]]$masks[[tw]])
+  #         if (length() != nmasks) {
+  #       stop(paste("Error in get.fudge.timemask.list: the", el, "dataset",
+  #                  "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
+  #     }
+  #   }
+  # }
+
 
   ###Do OH-downscaling specific mask-reading
   if (ds.ref$downscale_oh) {

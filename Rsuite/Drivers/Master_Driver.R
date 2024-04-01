@@ -474,12 +474,12 @@ for (r in seq_len(length(aux.ref$DS$rips))) {
     vatts <- preserve_attributes(OH.vars[1], OH$metadata, v)
   	var_atts[[v]] <- c(list("missing_value" = 1e20), vatts)
   }
-# DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
-# DELETE ME: trying saving R data out and assembling later instead of ncrcat
-  saveRDS(ds$ds[, , , r, , , drop = FALSE],
-         file = paste0("/xtmp/Dennis.Adams-Smith/work/testing/fudge_rds_output/",
-                      basename(loop_filepath), ".RDS"))
-# DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
+# # DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
+# # DELETE ME: trying saving R data out and assembling later instead of ncrcat
+#   saveRDS(ds$ds[, , , r, , , drop = FALSE],
+#          file = paste0("/xtmp/Dennis.Adams-Smith/work/testing/fudge_rds_output/",
+#                       basename(loop_filepath), ".RDS"))
+# # DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
   message(paste("Writing to file", loop_filepath))
   ds.out.filename <- WriteNC(loop_filepath, ds$ds[, , , r, , , drop = FALSE],
                             aux.ref$DS$vars,
