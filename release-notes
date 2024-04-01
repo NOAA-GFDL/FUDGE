@@ -1,4 +1,15 @@
-05-30-219
+2024-04-01
+(Dennis Adams-Smith)
+- Starting work on "Neapolitan"
+  - fix "prime var" issues
+  - dis-entangle QDM from MBC
+    - bugfix in QQDC, it now works like QDM as expected
+  - re-enable MBC
+  - better test for matching time window masks than checking variable names
+  - write the "missing_value" attribute with the correct precision in the first
+    place and remove after-the-fact bash script that fixed it
+
+05-30-2019
 (cew)
 - bugfix for watcher behavior related to qcmasks
 
