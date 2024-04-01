@@ -6,12 +6,12 @@
 print(paste0("START TIME:", Sys.time()))
 
 ############## Set environment variables #######################
-FUDGEROOT <<- Sys.getenv(c("BASEDIR"))
-FUDGETAG <<- Sys.getenv(c("FUDGETAG"))
+FUDGEROOT <<- Sys.getenv("BASEDIR")
+FUDGETAG <<- Sys.getenv("FUDGETAG")
 BRANCH <- Sys.getenv("BRANCH")
 print(paste0("FUDGEROOT is now activated:", FUDGEROOT))
-TMPDIR <- Sys.getenv(c("TMPDIR"))
-if (TMPDIR == "") {
+TMPDIR <- Sys.getenv("TMPDIR", unset = "missing")
+if (TMPDIR == "missing") {
   stop("ERROR: TMPDIR is not set. Please set it and try it")
 }
 
@@ -83,9 +83,9 @@ if (length(console.args) > 0) {
   auxfile <- console.args[9]
   metafile <- console.args[10]
   copy_from_tmp = console.args[11]
-  twindow_run <<- 'all'
+  twindow_run <<- "all"
 } else {
-  if (!exists('i_idx', inherits=T, envir=globalenv())) {
+  if (!exists("i_idx", inherits = TRUE, envir = globalenv())) {
     stop(paste("Error in Master_Driver: you should be using a config file with",
                "command line params if you aren't using command-line args!"))
   }
@@ -117,8 +117,8 @@ predictor.vars = names(aux.ref$MH)
 # If we aren't running with MBC (or another yes-multi-targets-are-okay method)
 # we want to make sure the prime var is first
 if (!ds.ref$multivar_target) {
-message("Checking input predictor var order")
-predictor.vars <- fix.var.order(predictor.vars, target.var)
+  message("Checking input predictor var order")
+  predictor.vars <- fix.var.order(predictor.vars, target.var)
 }
 
 
@@ -137,7 +137,7 @@ s5.inloop <- length(post_ds$inloop) > 0
 s5.outloop <- length(post_ds$outloop) > 0
 train_qcmask <- aux.ref$return_qcmask_from_ds
 
-pr_is_adjusted <- 'pr_in' %in% names(pre_ds)
+pr_is_adjusted <- "pr_in" %in% names(pre_ds)
 if (pr_is_adjusted) {
   pr_opts <- pre_ds$qc_args
 }
@@ -154,23 +154,23 @@ ds.ref$args <- f.list$args
 #Then, check that the s3 and s5 adjustments you are performing make sense in
 #this context. The pre_ds and post_ds datasets were created waaay back up near
 #the head of the class.
-is_multi_ens = length(aux.ref$DS$rips) > 1
-is_multi_var = length(aux.ref$MH) > 1
+is_multi_ens <- length(aux.ref$DS$rips) > 1
+is_multi_var <- length(aux.ref$MH) > 1
 QCAdjustArguments(pre_ds, post_ds,
-                  is.multivar=is_multi_var,
-                  is.multi.ens=is_multi_ens,
-                  target.in.predictors = (target.var%in%predictor.vars),
+                  is.multivar = is_multi_var,
+                  is.multi.ens = is_multi_ens,
+                  target.in.predictors = (target.var %in% predictor.vars),
                   predictor.vars, target.var, ds.ref$method)
 
 #Read in metadata parameters from metafile
-meta_list <- fromJSON(readLines(metafile, warn=F))
+meta_list <- fromJSON(readLines(metafile, warn = FALSE))
 
 ########################
 #2018-04-11 : now checking on how to read in csv data
 #via the file_format parameter in the aux file
 print("Reading OH files")
-OH.files <- unlist(lapply(aux.ref$OH, '[[', 'file'), use.names = F)
-if (copy_from_tmp) {
+OH.files <- unlist(lapply(aux.ref$OH, "[[", "file"), use.names = FALSE)
+if (copy_from_tmp == TRUE) {
   OH.files <- sapply(OH.files, function(x) {file.path(TMPDIR, x)})
 }
 OH.vars <- names(aux.ref$OH)
@@ -188,93 +188,103 @@ if (meta_list$provenance$is_isd) {
   ds.ref$mh_dimlist <- c(ds.ref$mh_dimlist, "ensemble")
   ds.ref$mf_dimlist <- c(ds.ref$mf_dimlist, "ensemble")
 }
-oh_x_subset <- list(subset=c(i_idx, i_stride),
-                    olap=FALSE)
-oh_y_subset <- list(subset=c(j_idx, j_stride),
-                    olap=FALSE)
+oh_x_subset <- list(subset = c(i_idx, i_stride), olap = FALSE)
+oh_y_subset <- list(subset = c(j_idx, j_stride), olap = FALSE)
 print(ds.ref$oh_dimlist)
 print(ds.ref$mh_dimlist)
 print(ds.ref$mf_dimlist)
-OH <- build.FUDGE.dataset(OH.files, OH.vars, list(x=oh_x_subset,y=oh_y_subset),
-                          dim=ds.ref$oh_dimlist,
-                          x_by = aux.ref$OH[[1]]$idim, y_by = aux.ref$OH[[1]]$jdim,
+OH <- build.FUDGE.dataset(OH.files, OH.vars,
+                          list(x = oh_x_subset, y = oh_y_subset),
+                          dim = ds.ref$oh_dimlist,
+                          x_by = aux.ref$OH[[1]]$idim,
+                          y_by = aux.ref$OH[[1]]$jdim,
                           aux.ref$OH[[1]]$geomask,
                           file_format = aux.ref$file_format)
 for (el in names(OH$data)) {
-  if (aux.ref$OH[[1]]$geomask != 'none') {
+  if (aux.ref$OH[[1]]$geomask != "none") {
     spatmask <- ReadSpatialMask(file.path(TMPDIR, aux.ref$OH[[1]]$geomask),
                                 oh_x_subset$subset, oh_y_subset$subset)
-    OH$data[[el]] <- apply.any.mask(data=OH$data[[1]], mask=spatmask, dim='spatial')
+    OH$data[[el]] <- apply.any.mask(data = OH$data[[1]],
+                                    mask = spatmask, dim = "spatial")
   }
 }
 oh.orig.dim <- OH$orig_dims[[1]]
 oh.dim <- dim(OH$data[[1]])
 
 oh.coords <- get.loop.indices(oh.dim[1], oh.dim[2],
-                              x.by=aux.ref$OH[[1]]$idim, y.by=aux.ref$OH[[1]]$jdim,
-                              allow_partial=F)
+                              x.by = aux.ref$OH[[1]]$idim,
+                              y.by = aux.ref$OH[[1]]$jdim,
+                              allow_partial = FALSE)
 
 message("Reading in MH files")
-MH.files <- unlist(lapply(aux.ref$MH, '[[', 'file'), use.names=F)
-if (copy_from_tmp) {
+MH.files <- unlist(lapply(aux.ref$MH, "[[", "file"), use.names = FALSE)
+if (copy_from_tmp == TRUE) {
   MH.files <- sapply(MH.files, function(x) {file.path(TMPDIR, x)})
 }
 MH.vars <- names(aux.ref$MH)
-# mh_x_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$idim, i_idx, i_max, i_stride-1)
-# mh_y_subset <- get.FUDGE.subset(aux.ref$MH[[1]]$jdim, j_idx, j_max, j_stride-1)
-mh_x_subset <- list(subset=c(i_idx, i_stride),
-                    olap=FALSE)
-mh_y_subset <- list(subset=c(j_idx, j_stride),
-                    olap=FALSE)
-MH <- build.FUDGE.dataset(MH.files, MH.vars, list(x=mh_x_subset,y=mh_y_subset),
-                          dim=ds.ref$mh_dimlist,
-                          x_by=aux.ref$MH[[1]]$idim, y_by=aux.ref$MH[[1]]$jdim,
+
+mh_x_subset <- list(subset = c(i_idx, i_stride), olap = FALSE)
+mh_y_subset <- list(subset = c(j_idx, j_stride), olap = FALSE)
+
+MH <- build.FUDGE.dataset(MH.files, MH.vars,
+                          list(x = mh_x_subset, y = mh_y_subset),
+                          dim = ds.ref$mh_dimlist,
+                          x_by = aux.ref$MH[[1]]$idim,
+                          y_by = aux.ref$MH[[1]]$jdim,
                           aux.ref$MH[[1]]$geomask,
                           file_format = aux.ref$file_format)
+
 for (el in names(MH$data)) {
-  if (aux.ref$MH[[1]]$geomask != 'none') {
+  if (aux.ref$MH[[1]]$geomask != "none") {
     spatmask <- ReadSpatialMask(file.path(TMPDIR, aux.ref$MH[[el]]$geomask),
                                 mh_x_subset$subset, mh_y_subset$subset)
-    MH$data[[el]] <- apply.any.mask(data=MH$data[[el]], mask=spatmask, dim='spatial')
+    MH$data[[el]] <- apply.any.mask(data = MH$data[[el]],
+                                    mask = spatmask, dim = "spatial")
   }
 }
+
 mh.orig.dim <- MH$orig_dims[[1]]
 mh.dim <- dim(MH$data[[1]])
 mh.coords <- get.loop.indices(mh.dim[1], mh.dim[2],
-                              x.by = aux.ref$MH[[1]]$idim, y.by = aux.ref$MH[[1]]$jdim,
-                              allow_partial=F)
+                              x.by = aux.ref$MH[[1]]$idim,
+                              y.by = aux.ref$MH[[1]]$jdim,
+                              allow_partial = FALSE)
+
 message("Reading in MF files")
-MF.files <- unlist(lapply(aux.ref$MF, '[[', 'file'), use.names=F)
+MF.files <- unlist(lapply(aux.ref$MF, "[[", "file"), use.names = FALSE)
 if (copy_from_tmp) {
   MF.files <- sapply(MF.files, function(x) {file.path(TMPDIR, x)})
 }
 MF.vars <- names(aux.ref$MF)
-# mf_x_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$idim, i_idx, i_max, i_stride-1)
-# mf_y_subset <- get.FUDGE.subset(aux.ref$MF[[1]]$jdim, j_idx, j_max, j_stride-1)
-mf_x_subset <- list(subset=c(i_idx, i_stride),
-                    olap=FALSE)
-mf_y_subset <- list(subset=c(j_idx, j_stride),
-                    olap=FALSE)
+
+mf_x_subset <- list(subset = c(i_idx, i_stride), olap = FALSE)
+mf_y_subset <- list(subset = c(j_idx, j_stride), olap = FALSE)
+
 MF <- build.FUDGE.dataset(MF.files, MF.vars,
-                          subset=list(x=mf_x_subset, y=mf_y_subset),
-                          dim=ds.ref$mf_dimlist,
-                          x_by=aux.ref$MF[[1]]$idim, y_by=aux.ref$MF[[1]]$jdim,
+                          subset = list(x = mf_x_subset, y = mf_y_subset),
+                          dim = ds.ref$mf_dimlist,
+                          x_by = aux.ref$MF[[1]]$idim,
+                          y_by = aux.ref$MF[[1]]$jdim,
                           aux.ref$MF[[1]]$geomask,
                           file_format = aux.ref$file_format)
 for (el in names(MH$data)) {
-  if (aux.ref$MF[[1]]$geomask != 'none') {
+  if (aux.ref$MF[[1]]$geomask != "none") {
     spatmask <- ReadSpatialMask(file.path(TMPDIR, aux.ref$MF[[el]]$geomask),
                                 mf_x_subset$subset, mf_y_subset$subset)
-    MF$data[[el]] <- apply.any.mask(data=MF$data[[el]], mask=spatmask, dim='spatial')
+    MF$data[[el]] <- apply.any.mask(data = MF$data[[el]],
+                                    mask = spatmask, dim = "spatial")
   }
 }
+
 mf.orig.dim <- MF$orig_dims[[1]]
 mf.dim <- dim(MF$data[[1]])
 mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
-                              x.by=aux.ref$MF[[1]]$idim, y.by=aux.ref$MF[[1]]$jdim,
-                              allow_partial=F)
+                              x.by = aux.ref$MF[[1]]$idim,
+                              y.by = aux.ref$MF[[1]]$jdim,
+                              allow_partial = FALSE)
+
 ########################
-#2018-04-10: Creating file paths and checking for existance
+#2018-04-10: Creating file paths and checking for existence
 #outdirs <- c(file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir),
 #             file.path(aux.ref$DS$out_dir, aux.ref$DS$out_subdir, aux.ref$DS$out_supp[1]))
 #write_to_tmp = TRUE
@@ -285,15 +295,15 @@ mf.coords <- get.loop.indices(mf.dim[1], mf.dim[2],
 print(c(aux.ref$DS$vars,aux.ref$DS$out_supp))
 #Note that this particular structure is to facilitate the nested dirs that postproc uses for its writes
 #outvpaths <- c(aux.ref$DS$vars, paste0(aux.ref$DS$vars, aux.ref$DS$out_supp))
-outdirs <- sapply(c(aux.ref$DS$vars,aux.ref$DS$out_supp), function(x) {file.path(aux.ref$xtmpdir, '<RIP>', x, "chunk")})
+outdirs <- sapply(c(aux.ref$DS$vars, aux.ref$DS$out_supp),
+                  function(x) {file.path(aux.ref$xtmpdir, "<RIP>", x, "chunk")})
 #Check for existance of output dirs, after replacing $rip a bit
 out_rip_dirs <- list()
 for (rip in fut.pred.rip.list) {
-  dirlist <- sapply(outdirs, function(x) {sub('<RIP>', rip, x)})
+  dirlist <- sapply(outdirs, function(x) {sub("<RIP>", rip, x)})
   if (!all(file.exists(dirlist))) {
     stop(paste("Error in dir existance: One or more of the dirs",
-               paste(dirlist, collapse=','),
-               "do not yet exist!"))
+               paste(dirlist, collapse = ","), "do not yet exist!"))
   }
   out_rip_dirs[[rip]] <- dirlist
 }
@@ -301,15 +311,15 @@ for (rip in fut.pred.rip.list) {
 ###### Set target dataset for blind reference at a later point
 ###### (note: the clever delayed evaluation in getDSInfo() is not working)
 message("Setting target dimensions")
-delayedAssign('TARG', eval(parse(text=ds.ref$target)))
+delayedAssign("TARG", eval(parse(text=ds.ref$target)))
 if (!ds.ref$multivar_target) {
   targ.dim <- switch(ds.ref$target,
-                     'OH' = oh.orig.dim,
-                     'MH' = mh.orig.dim,
-                     'MF' = mf.orig.dim)
-  if (ds.ref$target=='OH') {
+                     "OH" = oh.orig.dim,
+                     "MH" = mh.orig.dim,
+                     "MF" = mf.orig.dim)
+  if (ds.ref$target == "OH") {
     ds.coords <- oh.coords
-  }else if (ds.ref$target=='MF') {
+  } else if (ds.ref$target == "MF") {
     ds.coords <- mf.coords
   }
 } else {
@@ -318,20 +328,21 @@ if (!ds.ref$multivar_target) {
   targ.dim <- c(oh.orig.dim[1],oh.orig.dim[2],1,1,1,1)
   # targ.x.subset <- get.FUDGE.subset(1, i_idx, i_max, i_stride-1)
   # targ.y.subset <- get.FUDGE.subset(1, j_idx, j_max, j_stride-1)
-  targ.x.subset <- list(subset=c(i_idx, i_stride),
-                      olap=FALSE)
-  targ.y.subset <- list(subset=c(j_idx, j_stride),
-                      olap=FALSE)
-  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var[1], list(x=targ.x.subset,y=targ.y.subset),
-                              dim=ds.ref$oh_dimlist,
-                              x_by=aux.ref$OH[[1]]$idim, y_by=aux.ref$OH$jdim,
+  targ.x.subset <- list(subset = c(i_idx, i_stride), olap = FALSE)
+  targ.y.subset <- list(subset = c(j_idx, j_stride), olap = FALSE)
+  TARG <- build.FUDGE.dataset(OH.files[[1]], target.var[1],
+                              list(x = targ.x.subset, y = targ.y.subset),
+                              dim = ds.ref$oh_dimlist,
+                              x_by = aux.ref$OH[[1]]$idim,
+                              y_by = aux.ref$OH$jdim,
                               "none")
   ds.coords <- get.loop.indices(targ.dim[1], targ.dim[2],
-                                x.by=1, y.by=1, allow_partial=F)
+                                x.by = 1, y.by = 1, allow_partial = FALSE)
 }
 
 #Get string of training data for the metadata atts
-train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)], collapse=","),
+train.string <- paste(paste(ds.ref$training[-length(ds.ref$training)],
+                            collapse = ","),
                       paste("and", ds.ref$training[length(ds.ref$training)]))
 
 #Create list of time masks for application
@@ -345,15 +356,15 @@ tmasks <<- tmask.list #global assign due to missval retry functions in ds step
 
 message("Checking downscaling arguments")
 print(is_multi_ens)
-QCDSArguments(k=aux.ref$kfold, ds.method = ds.ref$method, args=ds.ref$args,
-              is.multivar=is_multi_var,
-              is.multi_ens=is_multi_ens,
-              tmasks=tmasks, ds.experiment = aux.ref$ds_experiment_name)
+QCDSArguments(k = aux.ref$kfold, ds.method = ds.ref$method, args = ds.ref$args,
+              is.multivar = is_multi_var,
+              is.multi_ens = is_multi_ens,
+              tmasks = tmasks, ds.experiment = aux.ref$ds_experiment_name)
 
 message("Obtaining metadata for section 3 and 5 adjustments")
 #making global to faclilitate trace pr calls in the MBC function
 if (pr_is_adjusted) {
-  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts=pr_opts)
+  adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts = pr_opts)
 } else {
   adjust.metadata <<- get.adjust.metadata(OH, MH, MF, pr_opts)
 }
@@ -367,8 +378,6 @@ if (pr_is_adjusted) {
 
 output.dim <- c(targ.dim[1:3], #Spatial vars come from target dataset,
                 mf.orig.dim[4:6]) #time/ensemble/n vars come from the MF dataset
-# ds <- list('ds' = array(NA, dim=output.dim),
-#            'qc' = array(NA, dim=output.dim))
 
 #Added 02-14-17 - trying to set up defaults differently
 set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()) {
@@ -380,31 +389,27 @@ set.ds.defaults <- function(ds.method, args, ..., env=parent.frame()) {
   #commenting out 2018-04-19 - not all methods need this
   #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
   env$prime_predictor <- paste0(MH.vars[1], ".0.0")
-  default.methods <- c("MBC", "QDM", "QQDC", "QDMall", "CFQM", "lmAsync", 'lmstepAsync', "KDDM")
+  default.methods <- c("MBC", "QDM", "QQDC", "QDMall", "CFQM", "lmAsync", "lmstepAsync", "KDDM")
   if (! (ds.method %in% default.methods)) {
-    #env$prime_predictor <- paste0(predictor.vars[1], ".0.0")
     env$prime_predictor <- paste0(MH.vars[1], ".0.0")
   } else {
     env <- switch(ds.method,
-                  'MBC' = set.MBC.defaults(args, ..., env=env),
-									'QDM' = set.QDM.defaults(args, ..., env=env),
-									'QQDC' = set.QDM.defaults(args, ..., env=env),
-                  # 'QDMall' = set.QDM.defaults(args, ..., env=env),
-                  "CFQM" = set.CFQM.defaults(args, ..., env=env),
-                  "lmAsync" = set.lmAsync.defaults(args, ..., env=env),
-                  "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env=env),
-                  "KDDM" = set.KDDM.defaults(args, ..., env=env),
-                  stop(paste("Error in set.ds.defaults: no method",
-                             ds.method, "!")))
-    #return(new.args)
+              "MBC" = set.MBC.defaults(args, ..., env = env),
+							"QDM" = set.QDM.defaults(args, ..., env = env),
+							"QQDC" = set.QDM.defaults(args, ..., env = env),
+              "CFQM" = set.CFQM.defaults(args, ..., env = env),
+              "lmAsync" = set.lmAsync.defaults(args, ..., env = env),
+              "lmstepAsync" = set.lmstepAsync.defaults(args, ..., env = env),
+              "KDDM" = set.KDDM.defaults(args, ..., env = env),
+            stop(paste("Error in set.ds.defaults: no method", ds.method, "!")))
   }
   return(env)
 }
 message("Checking for default ds arguments (requires var units)")
-set.ds.defaults(ds.ref$method, ds.ref$args, predictor.vars=predictor.vars,
-                          pre.ds.train=pre.ds.train,
-                          ds.ref=ds.ref, aux.ref=aux.ref,
-                env=environment())
+set.ds.defaults(ds.ref$method, ds.ref$args, predictor.vars = predictor.vars,
+                          pre.ds.train = pre.ds.train,
+                          ds.ref = ds.ref, aux.ref = aux.ref,
+                env = environment())
 ##s3 call formerly here
 
 message("FUDGE training begins...")
@@ -421,8 +426,6 @@ message(paste("FUDGE downscaling took", ds.elapsed, "seconds to run"))
 #s5 call used to go in here
 
 # ----- Begin segment like FUDGE Schematic Section 6: Write Downscaled results to data files -----
-# rip.list <- lapply(att_table, '[[', 'rip')
-# rips <- unique(rip.list)
 
 #As of 2017-04-10, we are still writing out individual rips
 #to file when we write out data
@@ -432,17 +435,17 @@ istart <- i_idx + i_offset - 1
 iend <- istart + i_stride - 1
 jstart <- j_idx + j_offset - 1
 jend <- jstart + j_stride - 1
-locstring <- paste0("I", istart, '-', iend, '_J', jstart, "-", jend)
+locstring <- paste0("I", istart, "-", iend, "_J", jstart, "-", jend)
 
-tmp_filename <- sub('I<ISTART>-<IEND>_J<JSTART>-<JEND>', locstring, tmp_filename)
-for (r in 1:length(aux.ref$DS$rips)) {
+tmp_filename <- sub("I<ISTART>-<IEND>_J<JSTART>-<JEND>", locstring, tmp_filename)
+for (r in seq_len(length(aux.ref$DS$rips))) {
   rip <- fut.pred.rip.list[r]
   #First do the filename, then the output dir
   loop_filename <- sub("<RIP>", rip, tmp_filename)
   loop_outdirs <- sapply(outdirs, function(x) {sub("<RIP>", rip, x)})
-  loop_filepath = file.path(loop_outdirs[1], loop_filename)
+  loop_filepath <- file.path(loop_outdirs[1], loop_filename)
   #Metadata-related things
-  message('writing global attributes')
+  message("writing global attributes")
   if (ds.ref$target != "MF") {
     if (ds.ref$method == "KDDM") {
       dimlist <- MF$metadata[[1]]$dim
@@ -462,7 +465,7 @@ for (r in 1:length(aux.ref$DS$rips)) {
 
   global_clone_file <- NA
   clone_globals <- FALSE
-  if (aux.ref$file_format != 'csv') {
+  if (aux.ref$file_format != "csv") {
     global_clone_file <- OH.files[[1]]
     clone_globals <- TRUE
   }
@@ -471,39 +474,43 @@ for (r in 1:length(aux.ref$DS$rips)) {
     vatts <- preserve_attributes(OH.vars[1], OH$metadata, v)
   	var_atts[[v]] <- c(list("missing_value" = 1e20), vatts)
   }
-
+# DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
+# DELETE ME: trying saving R data out and assembling later instead of ncrcat
+  saveRDS(ds$ds[, , , r, , , drop = FALSE],
+         file = paste0("/xtmp/Dennis.Adams-Smith/work/testing/fudge_rds_output/",
+                      basename(loop_filepath), ".RDS"))
+# DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
   message(paste("Writing to file", loop_filepath))
-  ds.out.filename = WriteNC(loop_filepath, ds$ds[,,,r,, , drop=F],
-                            aux.ref$DS$vars, #formerly target.var
-                            dim.list=dimlist,
-                            var.data=varlist,
-                            prec='float',
-                            units=OH$metadata[[OH.vars[1]]]$units,
-                            longname=paste(OH$metadata[[OH.vars[1]]]$long_name),
-                            standard_name=paste(OH$metadata[[OH.vars[1]]]$standard_name),
-                            global_overwrite=meta_list$globals,
-                            var_attributes=var_atts,
+  ds.out.filename <- WriteNC(loop_filepath, ds$ds[, , , r, , , drop = FALSE],
+                            aux.ref$DS$vars,
+                            dim.list = dimlist,
+                            var.data = varlist,
+                            prec = "float",
+                            units = OH$metadata[[OH.vars[1]]]$units,
+                            longname = paste(OH$metadata[[OH.vars[1]]]$long_name),
+                            standard_name = paste(OH$metadata[[OH.vars[1]]]$standard_name),
+                            global_overwrite = meta_list$globals,
+                            var_attributes = var_atts,
                             #global_clone_file = global_clone_file,
-                            #clone_globals=clone_globals, clone_all=F,
-                            #clone_include="frequency",clone_exclude="climatology",
-                            verbose=F
-  )
-  message(paste('Downscaled output file:',ds.out.filename,sep=''))
+                            #clone_globals = clone_globals, clone_all = FALSE,
+                            #clone_include = "frequency", clone_exclude = "climatology",
+                            verbose = FALSE)
+  message(paste0("Downscaled output file:", ds.out.filename))
   if (aux.ref$make_qcmask) {
     for (var in aux.ref$DS$vars) {
       ds$qc[is.na(ds$qc)] <- as.double(1.0e20)
-      qc.var <- paste(var, 'qcmask', sep="_")
+      qc.var <- paste(var, "qcmask", sep = "_")
 
       #Substitute to get mask output directory
-      qc_filename <- sub(paste0(var, '_'), paste0(qc.var, '_'), loop_filename)
-      qc_filepath = file.path(loop_outdirs[2], qc_filename)
+      qc_filename <- sub(paste0(var, "_"), paste0(qc.var, "_"), loop_filename)
+      qc_filepath <- file.path(loop_outdirs[2], qc_filename)
 
-      message(paste('attempting to write to', qc_filename))
+      message(paste("attempting to write to", qc_filename))
       qc_comment <- list()
-      qc_comment[qc.var] <- meta_list$vars[[qc.var]][['comment']]
-      qc_longname <- meta_list$vars[[qc.var]][['longname']]
+      qc_comment[qc.var] <- meta_list$vars[[qc.var]][["comment"]]
+      qc_longname <- meta_list$vars[[qc.var]][["longname"]]
       qc_globals <- meta_list$globals
-      qc_globals$comment <- meta_list$vars[[qc.var]][['globals']][['comment']]
+      qc_globals$comment <- meta_list$vars[[qc.var]][["globals"]][["comment"]]
       qc_globals$climatology <- NA
 
       qc.list <- list()
@@ -512,19 +519,21 @@ for (r in 1:length(aux.ref$DS$rips)) {
       qc.varlist <- varlist
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
-       qc_var_atts <- list()
-  for (v in names(qc.list)) {
-  	qc_var_atts[[v]] <- list("missing_value" = 1e20)
-  }
-      qc.out.filename  = WriteNC(qc_filepath, lapply(qc.list, '[', ,,,r,, , drop=F), qc.var,
-                                 dim.list = dimlist, var.data=varlist,
-                                 prec='float', missval=1e20, units="1",
-                                 comment=qc_comment, #comment needs to be a list
-                                 longname=qc_longname,
+      qc_var_atts <- list()
+      for (v in names(qc.list)) {
+  	    qc_var_atts[[v]] <- list("missing_value" = 1e20)
+      }
+      qc.out.filename  = WriteNC(qc_filepath,
+                                 lapply(qc.list, "[", ,,,r,, , drop = FALSE),
+                                 qc.var,
+                                 dim.list = dimlist, var.data = varlist,
+                                 prec = "float", missval = 1e20, units = "1",
+                                 comment = qc_comment, #comment needs to be a list
+                                 longname = qc_longname,
                                  var_attributes = qc_var_atts,
-                                 global_overwrite=qc_globals)
+                                 global_overwrite = qc_globals)
 
-      message(paste('QC Mask output file:',qc.out.filename,sep=''))
+      message(paste0("QC Mask output file:", qc.out.filename))
     }
   }
 }

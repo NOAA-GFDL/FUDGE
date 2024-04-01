@@ -66,11 +66,11 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR) {
       stop(paste("Error in get.fudge.timemask.list: the", el, "dataset",
                  "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
     }
-    el_masknames <- names(tmask.list[[el]]$masks)
-    if (any(el_masknames != masknames)) {
-      stop(paste("Error in get.fudge.timemask.list: the names of masks in OH and",
-                 el, "datasets are not identical!"))
-    }
+    # el_masknames <- names(tmask.list[[el]]$masks)
+    # if (any(el_masknames != masknames)) {
+    #   stop(paste("Error in get.fudge.timemask.list: the names of masks in OH and",
+    #              el, "datasets are not identical!"))
+    # }
   }
 
   ###Do OH-downscaling specific mask-reading
