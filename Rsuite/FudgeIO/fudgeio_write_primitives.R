@@ -161,7 +161,7 @@ WriteNC <-  function(filename, out.data, var.names,
       # 2024-04 NO, it doesn't.
       #         It is an outdated function not to be used this way
       #         and does not properly support precision
-      ncatt_put(nc.obj, var.dat[[loop.varname]], loop_missvals[[loop.varname]], prec = prec[loop])
+      ncatt_put(nc = nc.obj, varid = loop.varname, attname = "missing_value", attval = loop_miss, prec = prec[loop])
       # doing it this way writes precision correctly the first time, no need for the later bash script
     } else {
       print("Support for writing large data to file is currently turned off.")
@@ -294,10 +294,10 @@ WriteNC <-  function(filename, out.data, var.names,
   #compress_cmd <- paste("nccopy -d", compress_factor, filename, filename)
   #system(compress_cmd)
   #2022 - adding script for missval prec fixing
-  scriptloc <- "$BASEDIR/Rsuite/FudgeIO/fix_missval_prec.bash"
-  prec_cmd <- paste("bash", scriptloc, filename)
-  print_out <- system(prec_cmd)
-  # 2024 - trying to remove this bash script, writing "missval prec" correctly in first place
+  # scriptloc <- "$BASEDIR/Rsuite/FudgeIO/fix_missval_prec.bash"
+  # prec_cmd <- paste("bash", scriptloc, filename)
+  # print_out <- system(prec_cmd)
+  # 2024 - removing this bash script, writing "missval prec" correctly in first place
   return(filename)
 }
 

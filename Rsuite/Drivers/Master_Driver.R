@@ -471,15 +471,9 @@ for (r in seq_len(length(aux.ref$DS$rips))) {
   }
   var_atts <- list()
   for (v in aux.ref$DS$vars) {
-    vatts <- preserve_attributes(OH.vars[1], OH$metadata, v)
-  	var_atts[[v]] <- c(list("missing_value" = 1e20), vatts)
+    var_atts[[v]] <- preserve_attributes(OH.vars[1], OH$metadata, v)
   }
-# # DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
-# # DELETE ME: trying saving R data out and assembling later instead of ncrcat
-#   saveRDS(ds$ds[, , , r, , , drop = FALSE],
-#          file = paste0("/xtmp/Dennis.Adams-Smith/work/testing/fudge_rds_output/",
-#                       basename(loop_filepath), ".RDS"))
-# # DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE ME DELETE #
+
   message(paste("Writing to file", loop_filepath))
   ds.out.filename <- WriteNC(loop_filepath, ds$ds[, , , r, , , drop = FALSE],
                             aux.ref$DS$vars,
@@ -519,10 +513,7 @@ for (r in seq_len(length(aux.ref$DS$rips))) {
       qc.varlist <- varlist
       qc.list <- list()
       qc.list[[qc.var]] <- ds$qc
-      qc_var_atts <- list()
-      for (v in names(qc.list)) {
-  	    qc_var_atts[[v]] <- list("missing_value" = 1e20)
-      }
+
       qc.out.filename  = WriteNC(qc_filepath,
                                  lapply(qc.list, "[", ,,,r,, , drop = FALSE),
                                  qc.var,
@@ -530,7 +521,7 @@ for (r in seq_len(length(aux.ref$DS$rips))) {
                                  prec = "float", missval = 1e20, units = "1",
                                  comment = qc_comment, #comment needs to be a list
                                  longname = qc_longname,
-                                 var_attributes = qc_var_atts,
+                                 var_attributes =  list(),
                                  global_overwrite = qc_globals)
 
       message(paste0("QC Mask output file:", qc.out.filename))
