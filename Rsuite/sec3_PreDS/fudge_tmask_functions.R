@@ -59,20 +59,6 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR) {
       time_mask_overlap <- TRUE
     }
 
-  # #Do explicit checks on the members of masks
-  # masknames <- names(tmask.list$OH$masks)
-  # for (el in names(tmask.list)) {
-  #   if (length(tmask.list[[el]]$masks) != nmasks) {
-  #     stop(paste("Error in get.fudge.timemask.list: the", el, "dataset",
-  #                "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
-  #   }
-  #   # el_masknames <- names(tmask.list[[el]]$masks)
-  #   # if (any(el_masknames != masknames)) {
-  #   #   stop(paste("Error in get.fudge.timemask.list: the names of masks in OH and",
-  #   #              el, "datasets are not identical!"))
-  #   # }
-  # }
-
   # Explicit checks for the number of masks
   for (el in names(tmask.list)) {
     if (length(tmask.list[[el]]$masks) != nmasks) {
@@ -80,16 +66,43 @@ get.fudge.timemask.list <- function(aux.ref, ds.ref, TMPDIR) {
                  "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
     }
   }
-  # Explicit checks that trim masks subset their window
-  # for (el in names(tmask.list)) {
-  #   for (tw in seq_len(nmasks)) {
-  #     table(tmask.list$OH$masks[[tw]] == tmask.list[[el]]$masks[[tw]])
-  #         if (length() != nmasks) {
-  #       stop(paste("Error in get.fudge.timemask.list: the", el, "dataset",
-  #                  "had", length(tmask.list[[el]]$masks), "masks, not", nmasks, "!"))
-  #     }
-  #   }
-  # }
+
+  # Retaining "name" checks for masks OH/MH/MF since those should match
+  # making "trim" test a subset test
+  oh_masknames <- names(tmask.list$OH$masks)
+  problem_maskname <- FALSE
+  for (el in c("MH", "MF")) {
+    el_masknames <- names(tmask.list[[el]]$masks)
+    if (any(el_masknames != oh_masknames)) {
+      warning(paste("Error in get.fudge.timemask.list:",
+                    "the names of masks in OH and",
+                     el, "are not identical!"))
+      problem_maskname <- TRUE
+    }
+  }
+  if (problem_maskname == TRUE) {
+    stop("Time window mask variable names should match in OH, MH, and MF")
+  }
+
+  # Explicit check that trim masks subset their window
+  if (is_indexed_with_tmask == TRUE) {
+    problem_masks <- c()
+    for (tw in seq_len(nmasks)) {
+      # using "!is.na()" on a 1/NA mask gives back 1/0 so we can subtract
+      # and determine by sign which direction the differences occur
+      # then if any of them are tripped, we can exit with an actual error
+      trim_mf_compatible <- as.numeric(!is.na(tmask.list$trim$masks[[tw]])) - as.numeric(!is.na(tmask.list$MF$masks[[tw]]))
+      if (sum(trim_mf_compatible > 0) > 0) {
+        warning(paste0("Error in get.fudge.timemask.list: the ds_indexing \"trim\" masks include days",
+        " outside the MF mask's window for window ", tw, ", indicating a possible mask mismatch!"))
+        print(table(trim_mf_compatible))
+        problem_masks[paste0("MF", tw)] <- TRUE
+      }
+    }
+    if (any(problem_masks == TRUE)) {
+      stop("Check for problems with mismatched time window masks as detailed in above warnings!")
+    }
+  }
 
 
   ###Do OH-downscaling specific mask-reading
