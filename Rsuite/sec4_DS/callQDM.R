@@ -108,7 +108,6 @@ callQDM_internal <- function(OH, MH, MF, args) {
   MH_slice <- remove.missvals(unlist(as.vector(MH), use.names = FALSE))
   MF_slice <- remove.missvals(unlist(as.vector(MF), use.names = FALSE))
 
-  args$ratio <- args$ratio.seq
   screen_NaNs <- args$screen_NaNs
 
   not.args <- c("adjust.trace", "transform", "tform_fxn",
@@ -144,7 +143,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   is_jitter <- FALSE
   jitter_val <- NULL
   jitter.fac <- 0
-  ratio.seq <- FALSE #should be 1 for this case
+  ratio <- FALSE #should be 1 for this case
   trace <- 0.05
   adjust_trace <- FALSE
   transform <- FALSE
@@ -184,9 +183,9 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   rat.names <- c("ratio", "ratio.seq", "ratio_seq")
   if ("type" %in% names(args)) {
     if (args$type == "add") {
-      ratio.seq <- FALSE
+      ratio <- FALSE
     } else if (args$type == "mult") {
-      ratio.seq <- TRUE
+      ratio <- TRUE
     }
   }
   #behavior changed 2022-10 - explicitly exit with error if using old args
@@ -238,7 +237,7 @@ set.QDM.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
     }
   }
   #Put together QDM-specific args - but keep trace_calc default of 0.5 * trace
-  return.args <- list(iter = iter, jitter.factor = jitter.fac, ratio.seq = ratio.seq, trace = trace,
+  return.args <- list(iter = iter, jitter.factor = jitter.fac, ratio = ratio, trace = trace,
                       var.names = unlist(predictor.vars),
                       adjust_trace = adjust_trace, transform = transform, tform_fxn = tform_fxn,
                       force_reproducibility = force_reproducibility)
