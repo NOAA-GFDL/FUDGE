@@ -60,7 +60,7 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
                         is_known <- grepl("need at least two non-NA values to interpolate",
                                           e$message)
                         if (is_known) {
-                          message(paste("Warning in callQDM: QDM did not have",
+                          message(paste("Warning in callMBC: MBC did not have",
                                         "enough unique values in input datasets",
                                         "to interpolate!"))
                           message(paste("Returning MF unchanged."))
@@ -68,7 +68,7 @@ callMBC <- function(OH, MH, MF, args, ds.method = "", tmasks, train_qcmask = FAL
                         } else {
                           print(e)
                           #print(traceback())
-                          stop("Unknown error in QDM: Please examine outputs!")
+                          stop("Unknown error in MBC: Please examine outputs!")
                         }
                         stop("examine error output")
                       })
@@ -123,7 +123,7 @@ callMBCvariant <- function(OH, MH, MF, variant, complete.hist, complete.fut, arg
 
   mbc_out <- mbc.fun(OH.slice, MH.slice, MF.slice,
                           iter = args$iter, jitter.factor = args$jitter.factor,
-                          ratio.seq = args$ratio_seq, trace = args$trace,
+                          ratio.seq = args$ratio.seq, trace = args$trace,
                           ties = args$ties, silent = TRUE)
   # Care was taken to make sure the variable in the first column was the one
   # that should be returned, so we return only the first column of MBC results.
@@ -160,9 +160,9 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
   transform <- FALSE
   tform_fxn <- "none"
   screen_NaNs <- FALSE
-  # -------------------------------
-  # -------------------------------
   trace <- 0.05
+  # -------------------------------
+  # -------------------------------
   if ("trace" %in% names(args)) {
     non.numeric.trace <- is.na(suppressWarnings(as.numeric(args$trace)))
     #if trace is non-numeric (i.e an arg we'd pass to the pr functions
@@ -199,17 +199,24 @@ set.MBC.defaults <- function(args, predictor.vars, ..., env = parent.frame()) {
     ratio_seq <- in.rat.seq
   }
 
+  if ("adjust_trace" %in% names(args)) {
+    adjust_trace <- ifelse(args$adjust_trace == "on", TRUE, FALSE)
+  }
+
+  # <simpleError in if (ratio) {    epsilon <- .Machine$double.eps    o.c[o.c < trace.calc] <- runif(sum(o.c < trace.calc), min = epsilon,         max = trace.calc)    m.c[m.c < trace.calc] <- runif(sum(m.c < trace.calc), min = epsilon,         max = trace.calc)    m.p[m.p < trace.calc] <- runif(sum(m.p < trace.calc), min = epsilon,         max = trace.calc)}: argument is of length zero>
+  # Error in value[[3L]](cond) :
+
+
   return_args <- list(iter = args$iter,
                       jitter.factor = jitter_val,
                       ratio.seq = ratio_seq,
                       ties = args$ties,
+                      trace = trace,
+                      adjust_trace = adjust_trace,
                       variant = args$variant,
                       var.names = unlist(predictor.vars),
                       force_reproducibility = args$force_reproducibility)
-  if ("trace" %in% names(args)) {
-    return_args[[trace]] <- trace
-    return_args[[adjust_trace]] <- adjust_trace
-  }
+
   env$ds.ref$args <- return_args
   return(env)
 }
