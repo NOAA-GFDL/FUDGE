@@ -576,6 +576,10 @@ def main():
         auxfile = options.auxinput
         auxinfo, auxdict = parse_aux_info(options.auxinput)
         outdirs = auxdict['DS']['out_dir']
+        ds_var = auxdict['DS']['vars'][0]
+        oh_vars = [*auxdict['OH']]
+        mh_vars = [*auxdict['MH']]
+        mf_vars = [*auxdict['MF']]
         rip_list = auxdict['DS']['rips']
         if re.search("<RIP>", outdirs) is not None:
             outdirs = [re.sub("<RIP>", el, outdirs) for el in rip_list]
@@ -587,6 +591,15 @@ def main():
     elif options.auxinput is not "none":
         print(("Error in expergen: aux input " + options.auxinput + " was " +
               " not found. Please check input!"))
+        sys.exit(1)
+
+    # backstop for specifying an output variable, but it's not the first in the list of OH vars -Dennis 2024-04-25
+    # TO-DO: more complicated variable list checking, but not today
+    if ds_var != oh_vars[0]:
+        print("****** ERROR ******")
+        print("Error in expergen: output variable listed in config (" + ds_var + ") was not the first one listed in the OH file list (" + ", ".join(oh_vars) + ").")
+        print("Check OH, MH and MF file lists for variable consistency.")
+        print("****** ERROR ******")
         sys.exit(1)
 
     #CEW edits 6-30 for msub mail verbosity settings

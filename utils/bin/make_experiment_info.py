@@ -9,7 +9,7 @@ from itertools import chain
 
 def make_exp_info(input, exp_outpath):
     '''
-    Writes an experiment_info.txt file to file. Needed for the postproc workflow
+    Writes an experiment_info.txt file to file.
     in: dictionary-pased auxfile
     exp_outpath:
     '''
@@ -114,9 +114,6 @@ NEMSemail:Carolyn.Whitlock@noaa.gov
 def parse_auxfile(input):
     '''
     Parses a FUDGE-formatted json file.
-    ASSUMPTIONS:
-      - univariate experiment (not more than one var per OH, MH, MF)
-      - seriously, talk to the folks on the 3rd floor about exp_info specs
     '''
     with open(input, 'r') as f:
         out = json.load(f)

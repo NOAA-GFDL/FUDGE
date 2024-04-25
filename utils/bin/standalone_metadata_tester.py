@@ -90,8 +90,8 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         tasmax_qcmask:
           comment: "comment for tasmax_qcmask"
     '''
+    BASEDIR = os.environ.get('BASEDIR')
     if metadata_table == 'none' or re.search('BASEDIR', metadata_table) is not None:
-        BASEDIR = os.environ.get('BASEDIR')
         if BASEDIR is None:
             print("Error in metadata setup: no --metadata-table is specified and no version of fudge is checked out! Please check out fudge or point to a metadata table!")
             sys.exit(1)
@@ -154,11 +154,13 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
         sys.exit(1)
     '''
     # prime_var = list(auxdict['OH'].keys())[0]
-    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
+    oh_prime_var = [k for k in auxdict['OH'].keys() if (auxdict['OH'][k]['is_prime']=="TRUE")][0]
+    mh_prime_var = [k for k in auxdict['MH'].keys() if (auxdict['MH'][k]['is_prime']=="TRUE")][0]
+    mf_prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
 
-    OH_file = get_file_from_fileset(auxdict['OH'], prime_var)
-    MH_file = get_file_from_fileset(auxdict['MH'], prime_var)
-    MF_file = get_file_from_fileset(auxdict['MF'], prime_var)
+    OH_file = get_file_from_fileset(auxdict['OH'], oh_prime_var)
+    MH_file = get_file_from_fileset(auxdict['MH'], mh_prime_var)
+    MF_file = get_file_from_fileset(auxdict['MF'], mf_prime_var)
     gd, pd = get_experiment_metadata(gd, pd, OH_file, MH_file, MF_file,
                                      auxdict['ds_experiment_name'],
                                      running_standalone=is_running_standalone,
@@ -177,14 +179,18 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     gd['info_stencils'] = get_stencil_atts(auxdict)
     gd['info_ds_xy_incomplete'] = auxdict['ds_handle_missing']
     predictor_vars = ",".join(list(auxdict['MF'].keys()))
+
     train_string = ds_info['train_datasets']
     fut_rips = ",".join(auxdict['DS']['rips'])
-    gd['comment'] = make_global_comment(auxdict['ds_method'], prime_var,
+    gd['comment'] = make_global_comment(auxdict['ds_method'],
+                                        ",".join(auxdict['DS']['vars']),
                                         auxdict['ds_region'],
                                         auxdict['output_grid'],
                                         auxdict['kfold'],
                                         auxdict['ds_experiment_name'],
                                         train_string, predictor_vars, fut_rips)
+    # prime_var gets used a lot but really it should be DS_var
+    DS_var = auxdict['DS']['vars'][0]
     #add timestamp of script creation
     exp_info = auxdict['script_settings']['scriptdir'].rstrip("/") + "/experiment_info.txt"
     gd['scriptgen_timestamp'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(osp.getmtime(exp_info)))
@@ -197,7 +203,7 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     isd_file = osp.join(BASEDIR, 'utils/aux', "ISD_att_whitelist.txt")
     with open(isd_file, 'r') as f:
       isd_atts = f.readlines()
-      OH_file = get_file_from_fileset(auxdict['OH'], prime_var)
+      OH_file = get_file_from_fileset(auxdict['OH'], oh_prime_var)
       pd['is_isd'] = "false"
       with Dataset(OH_file, 'r') as nc_obj:
         if 'ISD_META_ICAO' in nc_obj.__dict__.keys():
@@ -213,12 +219,12 @@ def make_fudge_metadata(auxdict, ds_info, meta_file, is_running_standalone = Fal
     print(gd)
     #attributes by variable
     var_longname = ""
-    vd[prime_var] = {"longname": var_longname}
+    vd[DS_var] = {"longname": var_longname}
     if auxdict['make_qcmask']:
-        qc_var = prime_var + "_qcmask"
+        qc_var = DS_var + "_qcmask"
         qc_comment = make_qc_comment(auxdict['qc_method'], auxdict['ds_method'], BASEDIR)
-        qc_longname = make_qc_longname(auxdict['qc_method'], auxdict['ds_method'], prime_var)
-        global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], prime_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips, str(auxdict['minsamplesize']))
+        qc_longname = make_qc_longname(auxdict['qc_method'], auxdict['ds_method'], DS_var)
+        global_comment = make_qc_global_comment(auxdict['ds_method'], auxdict['qc_method'], DS_var, auxdict['ds_region'], auxdict['output_grid'], auxdict['kfold'], auxdict['ds_experiment_name'], train_string, predictor_vars, fut_rips, str(auxdict['minsamplesize']))
         vd[qc_var] = {"longname": qc_longname,
                       "comment": qc_comment,
                       "globals": {"comment": global_comment}}
