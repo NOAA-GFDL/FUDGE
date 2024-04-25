@@ -29,20 +29,35 @@ def make_exp_info(input, exp_outpath):
         spatmasks.append([ind[d][el]['geomask'] for el in list(ind[d].keys())])
     spatmasks = list(set(chain.from_iterable(spatmasks))) #if el != 'none'
     spatmask = spatmasks[0]
-    in_files = [ind['OH'][oh]['file'], ind['MH'][mh]['file'], ind['MF'][mf]['file']]
+    in_files = [ind['OH'][oh[0]]['file'], ind['MH'][mh[0]]['file'], ind['MF'][mf[0]]['file']]
     #time_starts, time_ends = [get_file_time_strings(el) for el in in_files]
     timestrings = [get_file_time_strings(el) for el in in_files]
     outdir = ind['DS']['out_dir']
     if len(ind['DS']['rips']) > 0:
         rip = ind['DS']['rips'][-1]
         outdir = re.sub('<RIP>', rip, outdir)
-    tmask_list = ["target.time.window:" + ind['OH'][oh]['tmask'],
-                  "hist.time.window:"+ ind['MH'][mh]['tmask'],
-                  "fut.time.window:"+ ind['MF'][mf]['tmask']]
+    tmask_list = ["target.time.window:" + ind['OH'][oh[0]]['tmask'],
+                  "hist.time.window:"+ ind['MH'][mh[0]]['tmask'],
+                  "fut.time.window:"+ ind['MF'][mf[0]]['tmask']]
     trim_mask = ind['DS']['indexing_tmask']
-    if trim_mask != ind['MF'][mf]['tmask']:
+    if trim_mask != ind['MF'][mf[0]]['tmask']:
         tmask_list.append("trim.time.mask:" + trim_mask)
     tmask_strings = "\n".join(tmask_list)
+
+    oh_inpath_list = []
+    mh_inpath_list = []
+    mf_inpath_list = []
+    for v in range(len(oh)):
+        oh_inpath_list.append("target.inpath_" + str(v+1) + ":" + ind['OH'][oh[v]]['file'])
+    for v in range(len(mh)):
+        mh_inpath_list.append("hist.inpath_" + str(v+1) + ":" + ind['MH'][mh[v]]['file'])
+    for v in range(len(mf)):
+        mf_inpath_list.append("fut.inpath_" + str(v+1) + ":" + ind['MF'][mf[v]]['file'])
+
+    inpath_list = oh_inpath_list + mh_inpath_list + mf_inpath_list
+
+    inpath_list_string = "\n".join(inpath_list)
+
     out  = "\n".join(["ds.experiment:" + ind['ds_experiment_name'],
                       "xml.path:" + xml,
                       "FUDGE.version:" + os.environ.get('FUDGETAG'),
@@ -50,13 +65,11 @@ def make_exp_info(input, exp_outpath):
                       "minifile.I.start:" + str(istart),
                       "minifile.I.end:" + str(iend),
                       "qc.mask:" + ('on' if ind['make_qcmask'] else 'off'),
-                      "target:" + oh,
-                      "target.inpath_1:" + ind['OH'][oh]['file'],
-                      "hist.inpath_1:"+ ind['MH'][mh]['file'],
-                      "fut.inpath_1:"+ ind['MF'][mf]['file'],
+                      "target:" + ", ".join(oh),
+                      inpath_list_string,
                       "output.path:" + outdir,
                       "spat.mask.path_1:" + spatmask,
-                      tmask_strings,                      
+                      tmask_strings,
                       "target.train.start.year_1:" + timestrings[0][0],
                       "target.train.end.year_1:" + timestrings[0][1],
                       "hist.train.start.year_1:" + timestrings[1][0],
@@ -107,9 +120,9 @@ def parse_auxfile(input):
     '''
     with open(input, 'r') as f:
         out = json.load(f)
-    OHvar = list(out['OH'].keys())[0]
-    MHvar = list(out['MH'].keys())[0]
-    MFvar = list(out['MF'].keys())[0]
+    OHvar = list(out['OH'].keys())
+    MHvar = list(out['MH'].keys())
+    MFvar = list(out['MF'].keys())
     return(out, OHvar, MHvar, MFvar)
 
 def get_file_time_strings(f):
