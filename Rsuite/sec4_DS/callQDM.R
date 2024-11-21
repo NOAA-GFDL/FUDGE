@@ -12,7 +12,13 @@ callQDM <- function(OH, MH, MF, args, ds.method = "",
   # Create output data
   out_data <- array(NA, dim = dim(OH[[1]]))
   nrips <- dim(out_data)[4]
-  index_mask <- tmasks$OH$masks[[w]]
+
+  if (ds.method == "QDM") {
+    index_mask <- tmasks$MF$masks[[w]]
+  } else if (ds.method == "QQDC") {
+    index_mask <- tmasks$OH$masks[[w]]
+  }
+
   olap <- FALSE
   if (train_qcmask) {
     if (tmasks$apply_tmasks) {
