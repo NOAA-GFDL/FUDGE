@@ -9,15 +9,16 @@ callQDM <- function(OH, MH, MF, args, ds.method = "",
     seedval <- ( 31 * (ival + i_idx) ) + ( 29 * (jval + j_idx) )
     set.seed(seedval)
   }
-  # Create output data
-  out_data <- array(NA, dim = dim(OH[[1]]))
-  nrips <- dim(out_data)[4]
 
+  # Create output data
   if (ds.method == "QDM") {
+    out_data <- array(NA, dim = dim(MF[[1]]))
     index_mask <- tmasks$MF$masks[[w]]
   } else if (ds.method == "QQDC") {
+    out_data <- array(NA, dim = dim(OH[[1]]))
     index_mask <- tmasks$OH$masks[[w]]
   }
+  nrips <- dim(out_data)[4]
 
   olap <- FALSE
   if (train_qcmask) {
@@ -91,6 +92,14 @@ callQDM <- function(OH, MH, MF, args, ds.method = "",
 			if (missval.out$mv.retry) {
 			  out <- apply.fudge.tmask(data = out, mask = loop_mask)
 			}
+      print("dim(out)")
+      print(dim(out))
+      print("dim( out_data[,,,n,,] )")
+      print(dim( out_data[,,,n,,] ))
+      print("length(out)")
+      print(length(out))
+      print("length( out_data[,,,n,,] )")
+      print(length( out_data[,,,n,,] ))
       out_data[,,,n,,] <- index.qm(index_mask, out, olap)
       if (train_qcmask &  missval.out$mv.retry) {
         print("adding the pr retry mask")
