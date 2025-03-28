@@ -17,20 +17,20 @@ set plat [exec /home/gfdl/bin2/gfdl_platform]
 if {! [is-loaded "env-py3"] } {
 switch ${plat} {
 	desktop {
-    module use "/app/spack/v0.15/modulefiles/linux-rhel7-x86_64/"
+    module use "/app/spack/2024.02/modulefiles/linux-rhel8-x86_64"
 } 
 	hpcs-csc {
-    module use "/app/spack/v0.15/modulefiles/linux-rhel7-x86_64/"
+    module use "/app/spack/2024.02/modulefiles/linux-rhel8-x86_64"
     module swap slurm
 	} 
 } 
 
 #module swap /usr/local/Modules/modulefiles/python/2.7.12
-module swap python/3.7.7
-module swap r/4.0.2
-module swap cdo
-module swap udunits/2.2.24
-module swap nco/4.8.1
+module load esd_python3.9-pyferret
+module load r/4.2.2
+module load cdo
+module load udunits
+module load nco
 #the load of git needs to be a swap; version other than default loaded earlier
 module swap git/2.38.1
 module swap gcp
