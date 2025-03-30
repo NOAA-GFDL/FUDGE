@@ -979,7 +979,7 @@ def make_call_next_step_cmd(sbase, experiment_name, send_mail, mailid, sleep=3, 
     verbose_str = ""
     if verbose:
         verbose_str = "--verbose"
-    checkout_cmd = "\n".join(["module load git/2.38.1",
+    checkout_cmd = "\n".join(["module load git/2.45.1",
                              "eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`"])
     nextstep_cmd = " ".join(["python -u $BASEDIR/bin/call_next_step.py",
                              "-s " + sbase,
