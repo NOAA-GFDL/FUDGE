@@ -26,13 +26,13 @@ switch ${plat} {
 } 
 
 #module swap /usr/local/Modules/modulefiles/python/2.7.12
-module load esd_python3.9-pyferret
+module load python/3.10
 module load r/4.2.2
 module load cdo
 module load udunits
 module load nco
 #the load of git needs to be a swap; version other than default loaded earlier
-module swap git/2.40.0
+module swap git/2.45.1
 module swap gcp
 
 } 
