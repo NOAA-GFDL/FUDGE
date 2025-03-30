@@ -283,7 +283,7 @@ def make_master_and_runscripts(i_start, i_end, i_by, i_offset,
     # stay that way for now; the load of git is DEFINETLY needed if the
     # checkout script is going to be used.
     module_loads = "\n".join(["set -e",
-                              'module swap git/2.40.0',
+                              'module swap git/2.45.1',
                               'eval `/home/esd/bin/checkout-fudge-s8-bash --fudgetag ' + fudgetag + '`',
                               'module purge',
                               "source $BASEDIR/set_fudge_env_bash",
