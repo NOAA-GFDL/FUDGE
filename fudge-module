@@ -32,7 +32,7 @@ module swap cdo
 module swap udunits
 module swap nco
 #the load of git needs to be a swap; version other than default loaded earlier
-module swap git/2.40.0
+#module swap git/2.40.0
 module swap gcp
 
 } 
