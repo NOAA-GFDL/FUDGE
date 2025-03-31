@@ -18,7 +18,7 @@ from fudgeUtils import tstamp
 from make_all_ds_paths import make_all_ds_paths
 from call_next_step_ens import submit_ens_job
 import shutil
-from pathlib2 import Path
+#from pathlib2 import Path
 import json
 
 #in the section 8 tools, this uses S8_path instead
@@ -67,7 +67,9 @@ def gcp_then_touch(file):
     print(tmpfile)
     if not osp.isdir(osp.dirname(tmpfile)):
         os.makedirs(osp.dirname(tmpfile))
-    Path(tmpfile).touch()
+#    Path(tmpfile).touch()
+    with open(tmpfile, 'a') as f:
+      pass
     gcp(tmpfile, file)
 
 
@@ -151,7 +153,9 @@ def main(scriptdir, sleep=60, nloops=100,
                 status,faillist = status1,faillist1
             if status == 'success':
                 stage = 'postProc'; status = 'wait'
-                Path(osp.join(stagedir, "mini.success")).touch()
+#                Path(osp.join(stagedir, "mini.success")).touch()
+                with open(osp.join(stagedir, "mini.success") 'a') as f:
+                  pass
                 #gcp_then_touch(osp.join(stagedir, "mini.success"))
                 submit_postproc_jobs(scriptdir, verbose)
             elif status == 'fail':
@@ -263,7 +267,9 @@ def main(scriptdir, sleep=60, nloops=100,
         If you believe that this was a simple timeout with no steps failed, \
         try restarting the watcher script; if that fails, contact Carolyn.
         '''
-        Path(osp.join(stagedir, "watcher.failure")).touch()
+#        Path(osp.join(stagedir, "watcher.failure")).touch()
+        with open(osp.join(stagedir, "watcher.failure"), 'a') as f:
+          pass
         send_status_email('failure', 'watcher', exp_name,
                           traceback=tmessage + "\n" + rmessage,
                           mailid=mailid, logfiles=logfile_loc,
@@ -312,7 +318,9 @@ def main(scriptdir, sleep=60, nloops=100,
                        traceback= tmessage,
                        mailid=mailid, logfiles = logdir,
                        exp_info_file = exp_info, outfiles = outsplit)
-        Path(osp.join(stagedir, "experiment.success")).touch()
+#        Path(osp.join(stagedir, "experiment.success")).touch()
+        with open(osp.join(stagedir, "experiment.success") 'a') as f:
+          pass
         print("File cleanup operations in progress")
         clean_xtmp_dir(auxdict['xtmpdir'], noop = False)
         make_prof_file(scriptdir, scriptdir + "/log/")
