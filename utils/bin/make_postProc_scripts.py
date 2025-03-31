@@ -144,7 +144,7 @@ def make_pp_runcode_commands(fudgetag, postproc_cmd):
                      "find $statdir/* | grep $desc",
                      "set ppstat = $status",
                      "if ($ppstat == 1) then",
-                     "  module load git/2.45.1",
+#                     "  module load git/2.45.1",
                      "	eval `/home/esd/bin/checkout-fudge-s8 --fudgetag " + fudgetag + "`",
                      "	source $BASEDIR/set_fudge_env",
                      "	" + postproc_cmd,
