@@ -319,7 +319,7 @@ def main(scriptdir, sleep=60, nloops=100,
                        mailid=mailid, logfiles = logdir,
                        exp_info_file = exp_info, outfiles = outsplit)
 #        Path(osp.join(stagedir, "experiment.success")).touch()
-        with open(osp.join(stagedir, "experiment.success") 'a') as f:
+        with open(osp.join(stagedir, "experiment.success"), 'a') as f:
           pass
         print("File cleanup operations in progress")
         clean_xtmp_dir(auxdict['xtmpdir'], noop = False)
