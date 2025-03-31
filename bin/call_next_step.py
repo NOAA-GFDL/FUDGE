@@ -154,7 +154,7 @@ def main(scriptdir, sleep=60, nloops=100,
             if status == 'success':
                 stage = 'postProc'; status = 'wait'
 #                Path(osp.join(stagedir, "mini.success")).touch()
-                with open(osp.join(stagedir, "mini.success") 'a') as f:
+                with open(osp.join(stagedir, "mini.success"), 'a') as f:
                   pass
                 #gcp_then_touch(osp.join(stagedir, "mini.success"))
                 submit_postproc_jobs(scriptdir, verbose)
