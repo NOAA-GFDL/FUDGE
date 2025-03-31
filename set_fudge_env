@@ -7,4 +7,4 @@ module purge
 echo "loading $BASEDIR/fudge-module"
 module swap fudge-module
 
-set s8_tag = sec8-20190415
+set s8_tag = s820250331
