@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/tcsh -f
 ###User input interactive
 if ($#argv < 11) then
  echo "Usage: make.code.tmax.sh number_of_years_to_leave_out lon_start lon_end lat_start lat_end basedir outdir [start_year] [end_year] [varname_to_downscale] [futurelist]"
@@ -8,10 +8,46 @@ echo "Making R code starters for lon slices " $argv[7] #"to " $argv[44]
 #####################################################
 set TEMPLATE_LIST = ()
 set PREDICTOR = $argv[1]
-set TEMPLATE_LIST = ( $TEMPLATE_LIST "PREDICTOR":"'"${PREDICTOR}"'" ) 
+#set TEMPLATE_LIST = ( $TEMPLATE_LIST "PREDICTOR":"'"${PREDICTOR}"'" ) 
+## handle multi predictors  ##
+set pctr=1
+set predlist = ()
+set predlist1= ()
+set cmd =  "`echo "$PREDICTOR" | cut -d',' -f$pctr `"
+#CEW edit to determine iteration and add indents (count)
+#CEW edit to add grep-based bypass for testing
+set list_present = `echo $PREDICTOR | grep ","`
+echo $list_present
+if($list_present != "") then 
+ set count=1
+ while($cmd != '')
+   set cmd = `echo ${cmd} | tr -s " " `
+   set predlist = ( $predlist "'"${cmd}"'" )
+   if ($pctr > 1) then
+      set predlist1 = ( $predlist1",'"${cmd}"'")
+   else
+      set predlist1 = ( $predlist1"'"${cmd}"'")
+   endif
+   @ pctr = $pctr + 1
+   set cmd = "`echo ${PREDICTOR} | cut -d',' -f$pctr `"
+ end
+## preds in c list predlist now##
+##end handle multiple predictors
+  echo "predlist $predlist1"
+  set TEMPLATE_LIST = ( $TEMPLATE_LIST "PREDICTOR":"list("${predlist1}")" )
+  echo $TEMPLATE_LIST
+  echo "DEbug1"
+
+#CEW edit
+else
+  set TEMPLATE_LIST = ( $TEMPLATE_LIST "PREDICTOR":"'"${PREDICTOR}"'" )
+endif
+###End CEW testing edit
+
 set TARGET = $argv[2]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "TARGET":"'"${TARGET}"'" )
 set op_grid = $argv[3]
+echo "Debug 55"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "OP.GRID":"'"${op_grid}"'" )
 set spat_mask_dir = $argv[4]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "SPAT.MASK.DIR":"'"${spat_mask_dir}"'" )
@@ -27,13 +63,57 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "JEND":${jend} )
 set hist_file_start_year = $argv[10]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FILE.START.YEAR":${hist_file_start_year} )
 set hist_file_end_year = $argv[11]
+if ($hist_file_end_year:q =~ *_*) then
+set hist_pred_suffix =  `echo "$hist_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.PRED.SUFFIX":"'_"${hist_pred_suffix}"'")
+set hist_file_end_year = `echo "$hist_file_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.PRED.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.FILE.END.YEAR":${hist_file_end_year} )
 set hist_train_start_year = $argv[12]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.START.YEAR":${hist_train_start_year} )
 set hist_train_end_year = $argv[13]
+if ($hist_train_end_year:q =~ *_*) then 
+#cset hist_train_suffix =  `echo "$hist_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.TRAIN.SUFFIX":"'_"${hist_train_suffix}"'")
+set hist_train_end_year = `echo "$hist_train_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "HIST.TRAIN.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TRAIN.END.YEAR":${hist_train_end_year} )
 set hist_scenario = $argv[14]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.SCENARIO":"'"${hist_scenario}"'" )
+####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
+#CEW edit to fail on 'historic_r1i1p1'
+set hist_search = `echo $hist_scenario | grep -P ".*_.*to"`
+set hist_status = $status
+#if ($hist_scenario:q =~ *to*) then
+#if ($hist_scenario:q =~ *_*to*) then
+#if( `echo $hist_scenario | grep -P ".*_.*to"` ) then
+if ( $hist_status == 0 ) then
+echo "just after hist if"
+set h_cutone = `echo "$hist_scenario" | cut -d '_' -f2`
+set h_cuttwo  = `echo "$h_cutone" | awk -F"to" '{print $1}'`
+set h_rstart = `echo "$h_cuttwo" | awk -F"r" '{print $2}'`      ##
+set h_cutthree = `echo "$h_cutone" | awk -F"to" '{print $2}'`
+set h_rend = `echo "$h_cutthree" | awk -F"i" '{print $1}'`   ##
+set h_ip = `echo "$h_cutthree" | awk -F"i" '{print $2}'`   
+set hctr = 1 
+foreach hr (`seq $h_rstart 1 $h_rend`)
+  if($hctr == 1) then 
+  set harr = "'"r${hr}i${h_ip}"'"
+  else
+  set harr = "$harr,'r${hr}i${h_ip}'"
+  endif 
+  @ hctr = $hctr + 1
+end 
+set h_rip = $harr
+else #close if 
+set h_rip = "'`echo "$hist_scenario" | cut -d '_' -f2`'"
+endif 
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.PRED.RIPS":"c("${h_rip}")" )
+####
 set hist_model = $argv[15]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.MODEL":"'"${hist_model}"'" )
 set hist_freq = $argv[16]
@@ -45,6 +125,13 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "H.TIME.WINDOW":"'"${hist_time_window}"'" )
 set fut_file_start_year = $argv[19]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FILE.START.YEAR":${fut_file_start_year})
 set fut_file_end_year = $argv[20]
+if ($fut_file_end_year:q =~ *_*) then
+set fut_pred_suffix =  `echo "$fut_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.PRED.SUFFIX":"'_"${fut_pred_suffix}"'")
+set fut_file_end_year = `echo "$fut_file_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.PRED.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.FILE.END.YEAR":${fut_file_end_year} )
 set fut_train_start_year = $argv[21]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.START.YEAR":${fut_train_start_year} )
@@ -52,6 +139,35 @@ set fut_train_end_year = $argv[22]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TRAIN.END.YEAR":${fut_train_end_year} )
 set fut_scenario = $argv[23]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.SCENARIO":"'"${fut_scenario}"'" )
+####if there are multiple rips in hist pred, then parse and put them in hist.pred.rips
+#CEW editing regex to fail on 'historical_r1i1p1'
+echo $fut_scenario | grep -P ".*_.*to"
+set fut_status = $status
+echo $fut_status
+#if ($fut_scenario:q =~ *to*) then
+echo "just before fut status"
+if ( $fut_status == 0 ) then
+set f_cutone = `echo "$fut_scenario" | cut -d '_' -f2`
+set f_cuttwo  = `echo "$f_cutone" | awk -F"to" '{print $1}'`
+set f_rstart = `echo "$f_cuttwo" | awk -F"r" '{print $2}'`      ##
+set f_cutthree = `echo "$f_cutone" | awk -F"to" '{print $2}'`
+set f_rend = `echo "$f_cutthree" | awk -F"i" '{print $1}'`   ##
+set f_ip = `echo "$f_cutthree" | awk -F"i" '{print $2}'`
+set fctr = 1
+foreach fr (`seq $f_rstart 1 $f_rend`)
+  if($fctr == 1) then
+  set farr = "'"r${fr}i${f_ip}"'"
+  else
+  set farr = "$farr,'r${fr}i${f_ip}'"
+  endif
+  @ fctr = $fctr + 1
+end
+set f_rip = $farr
+else #close if
+set f_rip = "'`echo "$fut_scenario" | cut -d '_' -f2`'"
+endif
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.PRED.RIPS":"c("${f_rip}")" )
+####
 set fut_model = $argv[24]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.MODEL":"'"${fut_model}"'" )
 set fut_freq = $argv[25]
@@ -63,6 +179,13 @@ set TEMPLATE_LIST = ( $TEMPLATE_LIST "F.TIME.WINDOW":"'"${fut_time_window}"'")
 set target_file_start_year = $argv[28]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FILE.START.YEAR":${target_file_start_year} )
 set target_file_end_year = $argv[29]
+if ($target_file_end_year:q =~ *_*) then
+set target_suffix =  `echo "$target_file_end_year" | cut -d'_' -f2 `
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SUFFIX":"'_"${target_suffix}"'")
+set target_file_end_year = `echo "$target_file_end_year" | cut -d'_' -f1 `
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SUFFIX":"''")
+endif
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.FILE.END.YEAR":${target_file_end_year} )
 set target_train_start_year = $argv[30]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.START.YEAR":${target_train_start_year} )
@@ -70,6 +193,33 @@ set target_train_end_year = $argv[31]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.TRAIN.END.YEAR":${target_train_end_year} )
 set target_scenario = $argv[32]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.SCENARIO":"'"${target_scenario}"'")
+####if there are multiple rips in target, then parse and put them in hist.pred.rips
+#CEW regex edit
+set targ_search = `echo $target_scenario | grep -P ".*_.*to"`
+set targ_status = $status
+#if ($target_scenario:q =~ *to*) then
+if ($targ_status == 0) then
+set t_cutone = `echo "$target_scenario" | cut -d '_' -f2`
+set t_cuttwo  = `echo "$t_cutone" | awk -F"to" '{print $1}'`
+set t_rstart = `echo "$t_cuttwo" | awk -F"r" '{print $2}'`      ##
+set t_cutthree = `echo "$t_cutone" | awk -F"to" '{print $2}'`
+set t_rend = `echo "$t_cutthree" | awk -F"i" '{print $1}'`   ##
+set t_ip = `echo "$t_cutthree" | awk -F"i" '{print $2}'`
+set tctr = 1
+foreach tr (`seq $t_rstart 1 $t_rend`)
+  if($tctr == 1) then
+  set tarr = "'"r${tr}i${t_ip}"'"
+  else
+  set tarr = "$tarr,'r${tr}i${t_ip}'"
+  endif
+  @ tctr = $tctr + 1
+end
+set t_rip = $tarr
+else #close if
+set t_rip = "'`echo "$target_scenario" | cut -d '_' -f2`'"
+endif
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.RIPS":"c("${t_rip}")" )
+####
 set target_model = $argv[33]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "T.MODEL":"'"${target_model}"'")
 set target_freq = $argv[34]
@@ -84,24 +234,61 @@ set dexper = $argv[38]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "DEXPER":"'"${dexper}"'")
 set kfold = $argv[39]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "KFOLD":${kfold} )
-set outdir = $argv[40]
+set outdir = "$argv[40]"
+#######
+set outlist = ()
+set octr=1
+set cmdout =  `echo "$outdir" | cut -d'#' -f$octr `
+set prop =  `echo "$outdir" | cut -d'#' -f2 `
+set rep =  `echo "$outdir" | cut -d'#' -f3 `
+#### let's extract property variable name only
+set prop_name =  `echo "$prop" | cut -d'$' -f2 | cut -d'(' -f2 | cut -d')' -f1`
+set property = `echo "$prop_name='$rep'"`
+if($prop != 'na') then 
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PROPERTY":"${property}")
+else
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PROPERTY":"")
+endif
+set outdir = $cmdout
+set mask_outdir = $cmdout 
+## undo following , remove lines later if the workflow works in R 
+#set arr = `echo $rep | cut -d ","  --output-delimiter=' ' -f 1-`
+#set outdirtmp = ()
+#set mask_outdirtmp = ()
+#foreach element ($arr)
+# set search = ${prop} 
+# set outdir2 = `echo $cmdout| sed "s/$search/$element/g" `
+# echo $outdir2
+# if ($outdirtmp == '') then
+# set outdirtmp = ( "list('"${outdir2}"'")
+# set mask_outdirtmp =( "list('"${outdir2}"/"${TARGET}_qcmask/"'")
+# else
+# set outdirtmp = ( $outdirtmp",'"${outdir2}"'")
+# set mask_outdirtmp =( $outdirtmp",'"${outdir2}"/"${TARGET}_qcmask/"'")
+# endif
+#end
+#set outdir = $outdirtmp")"
+#set mask_outdir = $mask_outdirtmp")" 
+###############################################
+
+#######
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "OUTPUT.DIR":"'"${outdir}"'")
-set mask_outdir = $argv[40]"/"${TARGET}_qcmask/
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.OUTPUT.DIR":"'"${mask_outdir}"'")
 set tstamp = $argv[41]
 set esdgen = $argv[42]
 set basedir = $argv[43]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUDGEROOT":"'"${basedir}"'")
 set iend = $argv[44]
+#CEW edit next line
+echo "This is iend: $iend"
+echo $iend
 set params = $argv[45]
 if($params == 'na') then 
  set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list('"${params}"')" )
 else
  set TEMPLATE_LIST = ( $TEMPLATE_LIST "PARAMS":"args=list("${params}")" )
 endif
-echo "debug"
 set ds_region = $argv[46]
-echo "debug 2"
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "DS.REGION":"'"${ds_region}"'")
 set auxcustom = $argv[47]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "FUT.TIME.TRIM.MASK":"'"${auxcustom}"'")
@@ -116,6 +303,7 @@ set adjust_out = $argv[51]
 set sbasedir = $argv[52]
 set pr_opts = $argv[53]
 ###############################
+
 if($pr_opts == 'na') then
  set TEMPLATE_LIST = ( $TEMPLATE_LIST "PR_OPTS":"" )
 else
@@ -124,14 +312,15 @@ endif
 set branch = $argv[54]
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "BRANCH":"'"${branch}"'")
 
-
 #########qclist################
 set masklist = "list(mask1=list(type='${qc_type}',adjust.out='${adjust_out}',qc.mask='${qc_switch}'))"
 
 ############################### 
 #better way to get masklist and options #todo clean up irrelevant options in this
 set masklist = $argv[55]
-echo $masklist
+set idirsuffix = $argv[56]
+set TEMPLATE_LIST = ( $TEMPLATE_LIST "PRED.DIR.SUFFIX":"'"${idirsuffix}"'")
+
 if($masklist == na) then
 set TEMPLATE_LIST = ( $TEMPLATE_LIST "MASK.LIST":'"na"')
 else
@@ -150,14 +339,20 @@ endif
 #############dev
 set lon_end = $iend
 set lon_start = $istart
-if ( $lon_end < $lon_start ) then
+#CEW edit 4-10
+#echo "this is the if statment causing the problem, I think"
+echo $lon_end
+echo $lon_start
+if( $lon_end < $lon_start ) then
  echo "Please check second argument: lon_end  should be greater than or equal to lon_start"
  exit
 endif
 
+#CEW edit 10-12;  dir creation moved to expergen (main script)
 set codeprefix=$sbasedir/runcode/
-mkdir -p $codeprefix
+#mkdir -p $codeprefix
 set cnter = 1
+
 
 #new
 #TODO we could store templates in a method sub-dir and switch it based on the templates
@@ -170,14 +365,16 @@ foreach i (`seq $lon_start 1 $lon_end`)
   foreach TEMPLATE ($TEMPLATE_LIST)
    set find =  `echo "$TEMPLATE" | cut -d':' -f1` 
    set replace = `echo "$TEMPLATE" | cut -d':' -f2` 
-#   echo $find $replace
+   echo $replace 
+   echo "find replace $find $replace "
    if($find == 'PARAMS') then
 	   sed -i 's%<'$find'>%'$replace% $codepath
    else	
     sed -i 's%<'$find'>%'$replace% $codepath
-
    endif
  end
   echo "R starter Code location: $codepath"
 # @ i = $i + 1
 end
+
+

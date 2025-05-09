@@ -1,0 +1,91 @@
+#Setting up automatic deployment of regression tests
+stages:
+ - test_mini
+ - test_full
+ - test_all
+
+before_script:
+ #- module load git
+ - commitname=$CI_COMMIT_REF_NAME
+ - severity=$(python get_commit_severity.py $CI_COMMIT_REF_NAME)
+ - 'echo "Severity level: ${severity}"'
+
+minijob:
+ # This step is meant to run the minifile tests.
+ stage: test_mini
+ script:
+  - echo "loading ESD environment in gitlab-ci"
+  - module purge
+  - module use -a /home/esd/local/modulefiles
+  - module load esd/env
+  - module list
+  - gitvers=$(git --version)
+  - echo $gitvers
+  #Note: we're using an outdated version at the lab; this is normally commit sha
+  - eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  - module list
+  - source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  - echo $REG_BASEDIR
+  - datestr=`date +%Y%m%d-%H%M`
+  - PTMPDIR=/work/${USER}/REGRESSION_TESTS/mini_xml/
+  - summfile="${PTMPDIR}/${FUDGETAG}_test-mini_${datestr}.txt"
+  - set -x
+  - python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/sample_mini_xml.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all'
+  #- python /home/cew/Code/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/cew/Code/FUDGE_regtests/full_xml_subset_single.yml --runtemp --summary_file $summfile --regtest --nloops 100 --compare-opt 'all' --verbose
+ tags:
+  - esd_test
+# variables:
+#  CI_DEBUG_TRACE: "true"
+
+fulljob:
+ stage: test_full
+ script:
+  - echo `bash --version`
+  - if [ $severity -gt 1 ]; then
+  -   echo "loading ESD environment"
+  -   module purge
+  -   module use -a /home/esd/local/modulefiles
+  -   module load esd/env
+  #-   module unload python/2.7.12
+  #-   module load python/2.7.12_np
+  -   module list
+  -   eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  -   source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  -   datestr=`date +%Y%m%d-%H%M`
+  -   PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
+  -   summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
+  -   set -x
+  -   python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/full_xml.yml --runtemp --summary_file $summfile --regtest --nloops 150 --compare-opt 'all'
+  - else
+  -   echo "Severity set to 1; skipping full regression tests"
+  - fi
+ tags:
+  - esd_test
+
+bigdata:
+ stage: test_all
+ script:
+  - echo `bash --version`
+  - if [ $severity -gt 2 ]; then
+  -  echo "Running big data case"
+  -   echo "loading ESD environment"
+  -   module purge
+  -   module use -a /home/esd/local/modulefiles
+  -   module load esd/env
+  #-   module unload python/2.7.12
+  #-   module load python/2.7.12_np
+  -   module list
+  -   eval `/home/cew/bin/checkout-fudge-s8-bash --fudgetag $CI_COMMIT_REF_NAME --update`
+  -   source /home/Oar.Gfdl.Esd_test/FUDGE_regtests/reg_config_file_bash
+  -   datestr=`date +%Y%m%d-%H%M`
+  -   PTMPDIR=/work/${USER}/REGRESSION_TESTS/full_xml/
+  -   summfile="${PTMPDIR}/${FUDGETAG}_${datestr}.txt"
+  -   set -x
+  -   python /home/Oar.Gfdl.Esd_test/FUDGE_regtests/run_fudge_regtests_kahlua.py -i /home/Oar.Gfdl.Esd_test/FUDGE_regtests/all_xml.yml --runtemp --summary_file $summfile --regtest --nloops 200 --compare-opt 'all' --sleep 6
+  - else
+  -  echo "Tag severity less than 3; not enough to run big data case"
+  - fi
+ tags:
+  - esd_test
+# variables:
+#  CI_DEBUG_TRACE: "true"

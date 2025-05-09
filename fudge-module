@@ -1,0 +1,38 @@
+#%Module########################################################################
+##Testing module for esd role account env cleanup
+
+proc ModulesHelp { } {
+
+	puts stderr "\tloads a smaller subset of modules for FUDGE, the framework for downscaling of GCMs empirically. Is meant to change in synch with the ESD environment, only *this* is under version control; avoids loading anything graphics-related.\t"
+}
+
+module-whatis "loads the project environment for ESD project FUDGE"
+
+#needed for role accnt
+module load globus
+
+set plat [exec /home/gfdl/bin2/gfdl_platform]
+
+#check for presence of esd environment module loaded; load if not present
+if {! [is-loaded "env-py3"] } {
+switch ${plat} {
+	desktop {
+    module use "/app/spack/2024.02/modulefiles/linux-rhel8-x86_64"
+} 
+	hpcs-csc {
+    module use "/app/spack/2024.02/modulefiles/linux-rhel8-x86_64"
+    module swap slurm
+	} 
+} 
+
+#module swap /usr/local/Modules/modulefiles/python/2.7.12
+module swap python/3.10
+module swap r/4.2.2
+module swap cdo
+module swap udunits
+module swap nco
+#the load of git needs to be a swap; version other than default loaded earlier
+#module swap git/2.40.0
+module swap gcp
+
+} 

@@ -3,12 +3,17 @@
 [.Rdata]
 [.Rhistory]
 .gitignore~
-Rsuite/FudgeTrain/src/examples/.RData
-Rsuite/FudgeTrain/src/examples/.Rhistory
-Rsuite/FudgeTrain/src/examples/Rplot.png
-Rsuite/FudgeTrain/src/examples/plotting CDFt method with real data.png
+Rsuite/sec4_DS/src/examples/.RData
+Rsuite/sec4_DS/src/examples/.Rhistory
+Rsuite/sec4_DS/src/examples/Rplot.png
+Rsuite/sec4_DS/src/examples/plotting CDFt method with real data.png
 .RData
 .Rhistory
 Rsuite/SampleNC/[.nfs*]
 Rsuite/sampleNC/.nfs00000000242a560a0000023a
-documentation/[.~lock]*
+Regression_tests/
+.nfs000000001c49abc8000001bd
+.nfs00000000e8a05cd2000001bc
+builds/
+gitlab-runner
+gmon.out

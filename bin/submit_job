@@ -25,7 +25,7 @@ while ( $lon_start <= $lon_end )
  set inc=1
  set sub_lon_end=`expr $lon_start`
  set sub_lon_start=`expr $lon_start`
- while ( ( $sub_lon_end <= $lon_end ) && ( $inc < 9 ) )
+ while ( ( $sub_lon_end <= $lon_end ) && ( $inc < 3 ) )
          set sub_lon_end=`expr $lon_start + $inc`
          set inc=`expr $inc + 1`
  end

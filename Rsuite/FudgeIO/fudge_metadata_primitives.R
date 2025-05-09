@@ -1,0 +1,166 @@
+make.fudge.history <- function(inst,ver, FUDGEROOT){
+  paste('File processed at',inst,
+        'using FUDGE (Framework For Unified Downscaling of GCMs Empirically)", 
+        "developed at GFDL, using version:', ver,'on', date(),"; ", 
+        get.git.branch(FUDGEROOT))
+}
+make.fudge.comment <- function(ds.method, ds.var, grid.region, mask.region, kfold, 
+                               experiment.name, 
+                               #experiment.config, training.data, 
+                               predictor.vars, fut.pred.rips, 
+                               qc.method=NA, missval.args=NA, train.string=NA){
+  #'The comment attribute stores a human-readable description of the experiment
+  #'and its arguments.
+  is_qcmask <- !is.na(qc.method)
+  if (is_qcmask){
+    #This is going to switch based upon the method
+    if (qc.method == 'qc.train'){
+      if (ds.method == 'DeltaSD'){
+        string.start <- paste("Output to document the delta ratio applied at individual x,y,t locations")
+      }else{
+        qc.str.method = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
+                            " met for ", train.string, ' and missing indicates retry option invoked')
+        
+        string.start <- paste("Output produced from a QC mask", qc.str.method, 
+                              "performed upon", ds.method, 'downscaled output')
+      }
+    }else{
+      qc.str.method <- switch(qc.method, 
+                              #'qc.train' = paste0("where 1=minsamplesize requirements (n>",missval.args$minsamplesize,")", 
+                              #                    " met for ", train.string, ' and missing indicates retry option invoked'),
+                              'tail.adjust' = paste0('where 1=tail adjustment took place and missing indicates it did not'), 
+                              qc.method
+                              )
+      string.start <- paste("Output produced from a QC mask", qc.str.method, "performed upon", ds.method, 'downscaled output')
+      
+    }
+    string.desc <- paste("This is a QC check related to a downscaled estimate of", ds.var) 
+  }else{
+    string.start <- paste("Output produced by downscaling by the", ds.method, "method")
+    string.desc <- paste("This is a downscaled estimate of", ds.var)
+  }
+  string.main <- paste("on the subset", mask.region, "of the", grid.region, "grid", 
+                       ",and based on", paste0(kfold, "-fold cross-validation,"), 
+                       "with experiment configuration", paste0(experiment.name,"."), 
+                       string.desc, "trained on", train.string, "using predictor", 
+                       "variable(s)", paste0(predictor.vars, collapse=","), "and future predictor rip", 
+                       paste(fut.pred.rips, collapse=","))
+  #                       string.desc, "for the", experiment.config, "experiment", 
+  #                        "having done training using the", training.data, "time series,", 
+  #                        "predictor(s) used:", paste0(predictor.vars,","), 
+  #                        "future predictor rip used:", paste(fut.pred.rips, collapse=","))
+  return(paste(string.start, string.main))
+}
+
+make.fudge.info <- function(tmask.filenames, aux.ref, missval.args, 
+                            ds.method, ds.args, 
+                            pres_ds, post_ds){
+  #'Makes several attribute that, when put together, produce the info
+  #'attributes - the description of the settings that get put into 
+  #'a FUDGE run.
+  missval.string <- paste("After removing missing values with the", 
+                          missval.args$missval_method, "method,", 
+                          "inputs had at least", missval.args$minsamplesize, 
+                          "non-missing value(s);")
+  #Downscaling method
+  if (length(ds.args) > 0){
+    if(ds.args[[1]]=='na'){
+      fudge.argstring <- "default settings"
+    }else{
+      fudge.argstring <- paste(mapply(paste, names(ds.args), ds.args, sep="="), collapse=",")
+    }
+  }else{
+    fudge.argstring <- 'na'
+  }
+  info_ds <- paste0(ds.method, " : (", paste(fudge.argstring), ")")
+  
+  #info_stencils and info_geomasks
+  #For now, you can assume one per dataset class
+  data.class.names <- c("OH", "MH", "MF")
+  info_stencils <- paste(paste0(data.class.names, ":", sapply(data.class.names, 
+                                                              function(x,struct){struct[[x]][[1]]$stencil_name}, 
+                                                              aux.ref)), collapse=",")
+  
+  #Information on how to handle incomplete x,y data used for ds:
+  info_ds_xy_incomplete = aux.ref$ds_handle_missing
+  
+  #Info_tmasks
+  if (length(tmask.filenames) != 0){
+    tmask_list <- mapply(paste, names(tmask.filenames), 
+                         #sapply(tmask_str, sub, pattern=TMPDIR, replacement="", fixed=T))
+                         sapply(tmask.filenames, basename), sep="=")
+    info_tmask <- paste(tmask_list, collapse=",")
+  }else{
+    info_tmask <- 'none_used'
+  }
+  #info pre_ds
+  #Okay - this bit right here is sort of horribly ad-hoc.
+  #but it looks like it will work to get the 3^5 experiments out.
+  info_pre_ds <- generate_s3s5_arglist(c(pre_ds$outloop, pre_ds$inloop), 'qc_args')
+  info_post_ds <- generate_s3s5_arglist(c(post_ds$inloop, post_ds$outloop), 'qc_args')
+  return(list(info_ds = info_ds, 
+              info_pre_ds = info_pre_ds, 
+              info_post_ds = info_post_ds, 
+              info_tmask = info_tmask, 
+              info_missval = missval.string, 
+              info_stencils=info_stencils, 
+              info_ds_xy_incomplete = info_ds_xy_incomplete))
+}
+get.fudge.climatology <- function(){
+  return("Why isn't the climatology being picked up as one of the returned atts?")
+}
+
+make.qc.longname <- function(qc.method, ds.method, ds.var){
+  #'Makes a longname for the qcmask data
+  if (qc.method == 'qc.train'){
+    #secondary check for ds method
+    if (ds.method == 'DeltaSD'){
+      qc.longname <- paste("Delta of", ds.var)
+    }else{
+      qc.longname <- paste("Training qcmask for", ds.var)
+    }
+  }else{
+    qc.longname <- paste("QC mask of", ds.var)
+  }
+  return(qc.longname)
+}
+
+get.qc.comment <- function(qc.method, ds.method){
+  #'When we get more into the mask revisions, use qc_maskvar instead
+  basedir = Sys.getenv("BASEDIR")
+  if(basedir==""){basedir='/home/cew/Code/fudge/'}
+  qc.metatable <- file.path(basedir, '/Rsuite/aux/qcmask_metadata.csv')
+  qc.metadata <- read.csv(qc.metatable, stringsAsFactors=F)
+  qc.methodlist <- qc.metadata[,2]
+  qc.match <- which(qc.methodlist==qc.method)
+  if (length(qc.match)==0){
+    qc.comment <- "1 = unadjusted; NA = adjusted"
+  }else{
+    if (qc.method %in% c('qc.train')){
+      if (ds.method == 'DeltaSD'){
+        qc.comment <- 'Delta used to generate DS output at a given x,y,t'
+      }else{
+        qc.comment <- as.character(qc.metadata[qc.match,3])
+      }
+    }else{
+      qc.comment <- as.character(qc.metadata[qc.match,3])
+    }
+  }
+  return(qc.comment)
+}
+
+generate_s3s5_arglist <- function(arglist, argname='qc_args'){
+  #Creates formatted list of args for keeping track of metadata attributes
+  if (length(arglist)!=0){
+    info <- paste('fxn', mapply(paste, lapply(arglist, '[[', 'type'), 
+                                paste0(paste(lapply(arglist, '[[', argname), sep=",")), 
+                                sep=":"), 
+                  collapse=";")
+    info <- gsub('\"', "", info)
+    info <- gsub('list', "", info)
+    info <- gsub('na', "", info)
+  }else{
+    info <- "none specified"
+  }
+  return(info)
+}

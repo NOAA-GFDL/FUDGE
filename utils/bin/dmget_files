@@ -1,0 +1,25 @@
+#!/bin/bash
+
+readarray -t infile_list < $1
+echo ${infile_list[@]}
+for infile in ${infile_list[@]}; do
+  if [ ! -f $infile ]; then
+    echo "Error in dmget_files: ${infile} not found on filesystem"
+    exit 1
+  fi 
+done
+
+dmget_list=()
+for i in ${infile_list[@]}; do
+  dmls_out=$(dmls -l $i | grep -o "(.*)")
+  dmls_stat=$(echo $dmls_out | grep "DUL")
+  if [[ $dmls_stat -ne 0 ]]; then
+    #add to dmget list
+    dmget_list=("${dmget_list[@]}" $i)
+  fi
+done
+if [[ ${#dmget_list[@]} > 0 ]]; then
+  echo ${dmget_list[@]}
+  dmget $dmget_list
+fi
+  

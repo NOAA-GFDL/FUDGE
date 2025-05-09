@@ -1,0 +1,39 @@
+#Command to make netcdf from the climatological series:
+#ncgen -o exceeds_climseries.nc < exceeds_climseries.ascii 
+netcdf fudge_climatological_axes {
+dimensions:
+	MONTH_NOLEAP = 6 ;
+	MONTH_JULIAN = 6 ;
+	bnds = 2;
+variables:
+	double MONTH_NOLEAP(MONTH_NOLEAP) ;
+		MONTH_NOLEAP:units = "days since 0000-01-01" ;
+		MONTH_NOLEAP:time_origin = "1-JAN-0000" ;
+		MONTH_NOLEAP:modulo = " " ;
+		MONTH_NOLEAP:edges = "MONTH_NOLEAP_EDGES" ;
+		MONTH_NOLEAP:calendar = "noleap" ;
+	double MONTH_NOLEAP_EDGES(MONTH_NOLEAP,bnds) ;
+		MONTH_NOLEAP_EDGES:edges = " " ;
+	double MONTH_JULIAN(MONTH_JULIAN) ;
+		MONTH_JULIAN:units = "days since 0000-01-01" ;
+		MONTH_JULIAN:time_origin = "1-JAN-0000" ;
+		MONTH_JULIAN:modulo = " " ;
+		MONTH_JULIAN:edges = "MONTH_JULIAN_EDGES" ;
+		MONTH_JULIAN:calendar = "julian" ;
+	double MONTH_JULIAN_EDGES(MONTH_JULIAN,bnds) ;
+		MONTH_JULIAN_EDGES:edges = " " ;		
+
+// global attributes:
+		:history = "Axes with years of 365 and 365.25 days - GFDL 12MAR2015 " ;
+		:message = "Climatological axes ANNUAL_NOLEAP, ANNUAL_JULIAN, MONTH_NOLEAP, MONTH_JULIAN, SEASONAL_NOLEAP, SEASONAL_JULIAN defined" ;
+data:
+
+ MONTH_NOLEAP = 15.5, 45, 74.5, 105, 135.5, 166;
+
+ MONTH_NOLEAP_EDGES = 0, 31, 31, 59, 59, 90, 90, 120, 120, 151, 151, 181;
+
+ MONTH_JULIAN = 15.5, 45.125, 74.75, 105.25, 135.75, 166.25;
+
+ MONTH_JULIAN_EDGES = 0, 31, 31, 59.25, 59,25, 90.25, 90.25, 120.25, 120.25, 151.25, 151.25, 181.25;
+}
+

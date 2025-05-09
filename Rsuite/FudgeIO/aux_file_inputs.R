@@ -1,0 +1,151 @@
+test.file <- "/home/cew/Code/h_testing//subsample//stencils//i5_j5_diamond.txt"
+
+read_stencil_data <- function(stencil_file, delim="none", convert_to_mask=T){
+  #'Note: there is going to be a conflict between the dims of the stencil
+  #'(which are going to place the x dim first, generally)
+  #'
+  if (stencil_file == "none"){
+    IDIM=1
+    JDIM=1
+    stencil=1
+  }else{
+    if (delim=='none'){
+      #First line is the IDIM,JDIM specification
+      data <- trimws(readLines(stencil_file))
+      dimspec <- sub(" ", "", data[1])
+      dimstring <- unlist(strsplit(dimspec, ","))
+      for (n in dimstring){
+        n.split <- unlist(strsplit(n, "="))
+        assign(n.split[[1]], as.numeric(n.split[[2]]))
+      }
+      stencil <- c()
+      split_line <- function(x){
+        substring(x, seq(1,nchar(x),1), seq(1,nchar(x),1))
+      }
+      i.filedim <- 0
+      for (n in 2:length(data)){
+        if (data[n] != ""){
+          stencil <- c(stencil, as.numeric(split_line(data[n])))
+          i.filedim <- i.filedim + 1
+        }
+      }
+      dim(stencil) <- c(i.filedim, length(stencil)/i.filedim)
+    }else{
+      #First line is the IDIM,JDIM specification
+      dimspec <- readLines(stencil_file, n=1)
+      dimspec <- sub(" ", "", dimspec)
+      dimstring <- unlist(strsplit(dimspec, ","))
+      for (n in dimstring){
+        n.split <- unlist(strsplit(n, "="))
+        assign(n.split[[1]], as.numeric(n.split[[2]]))
+      }
+      #For each line after
+      stencil <- read.delim(stencil_file, sep=" ", comment.char = "#", 
+                            skip=1, header=F, strip.white=T)
+      #Note to self: extra whitespace gets counted as NA values. 
+      #" " might not be the best delimeter.
+    }
+    #Add basic checks 
+    test.dim <- c(IDIM, JDIM)
+    if (any(dim(stencil) != test.dim)){
+      stop(paste("Error reading in stencil", stencil_file, 
+                 ": IDIM, JDIM did not agree with array dims!"))
+    }else{
+      dim(stencil) <- test.dim
+    }
+    #x and y assignments are correct; order is not
+    #Testing no roatation scheme now
+    stencil <- reverse.each.xy(stencil)
+  }
+  if (convert_to_mask){
+    #Converts to follow conventions of our other mask data
+    #no longer using this step
+    #stencil[stencil > 0] <- 1
+    stencil[stencil == 0] <- NA
+  }
+  ##Working 1-24-16 on way to make sure stencil shows correct dimensions
+  #stencil <- t(stencil)
+  #Check to make sure that center of stencil is present (not added yet)
+  return(list(idim=IDIM, jdim=JDIM, stencil=stencil, stencil_name=stencil_file))
+}
+#Check on this with whitespace
+
+get_aux_params <- function(aux_file, copy_from_tmpdir=F){
+  #Comment-stripping is a work in progress.
+  #   aux_tmp <- readLines(aux_file)
+  #   print(aux_tmp)
+  #   aux_text <- c()
+  #   print("Starting iteration")
+  #   for (line in aux_tmp){
+  #     print(line)
+  #     if (! grepl("#", line)){
+  #       append(aux_text, line)
+  #     }
+  #   }
+  #   print(aux_text)
+  #Read in as json
+  aux_list <- fromJSON(readLines(aux_file, warn=F))
+  output <- list()
+  #First get the global vars
+  output$ds_handle_missing <- aux_list$ds_handle_missing
+  if ('multivar_target' %in% names(aux_list)){
+    output$multivar_target <- aux_list$multivar_target
+  }
+  if ('file_format' %in% names(aux_list)){
+    output$file_format <- aux_list$file_format
+  }else{
+    output$file_format <- 'netcdf'
+  }
+  output$climo_source <- aux_list$climo_source
+  dataset_names <- c("OH", "MH", "MF")
+  #2018-04-09: Drop in the entire struct for OH, MH and MF.
+  for (n in dataset_names){
+    #2017-04-06: For now, asusme that the stencils are all the same for
+    #each of the vars that are provided. It's not a worse assumption
+    #than what we are working with now.
+    el <- aux_list[[n]]
+    out <- list()
+    out$geomask <- el[[1]]$geomask
+    for (v in names(el)){
+      el[[v]]<- c(el[[v]], read_stencil_data(el[[v]]$stencil, convert_to_mask=T))
+    }
+    output[[n]] <- el
+  }
+  #2018-04-10: adding the writes of the ds output to the file.
+  output['DS'] <- aux_list['DS']
+  #2019-02-20: adding entries for downscaling method, args and kfold
+  output['ds_method'] = aux_list['ds_method']
+  output['ds_args'] = aux_list['ds_args']
+  output['kfold'] = aux_list['kfold']
+  output['minsamplesize'] = aux_list['minsamplesize']
+  #...and args needed for metadata:
+  output['ds_experiment_name'] = aux_list['ds_experiment_name']
+  output['ds_region'] = aux_list['ds_region']
+  output['output_grid'] = aux_list['output_grid']
+  #2019-02-22:...and last but definetly not least, the s3/s5 args.
+  output['s3'] = aux_list['s3']
+  #Add a special case for the parsing of 
+  output['s5'] = aux_list['s5']
+  output['return_qcmask_from_ds'] = aux_list['return_qcmask_from_ds']
+  output['make_qcmask'] = aux_list['make_qcmask']
+  output['qc_method'] = aux_list['qc_method']
+  output['qc_loc'] = aux_list['qc_loc']
+  output['xtmpdir'] = aux_list['xtmpdir']
+  return(output)
+}
+
+#tmp <- get_aux_params("/home/cew/Code/h_testing/subsample//aux_files//aux_01.json")
+
+reverse.each.xy <- function(data){
+  #data is a 2-d array
+  data.dim <- dim(data)
+  x <- data.dim[1]
+  y <- data.dim[2]
+    for (i in 1:x){
+      data[i,] <- rev(data[i,])
+    }
+#   for(j in 1:y){
+#     data[,j] <- rev(data[,j])
+#   }
+  return(data)
+}

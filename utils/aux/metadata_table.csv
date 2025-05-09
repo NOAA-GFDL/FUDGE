@@ -1,0 +1,17 @@
+dataset,attribute,attgrep,data_class
+gfdlesd,gfdlesd_idname,'.*',gfdlesd
+HIRAM,gfdl_experiment_name,HIRAM,HIRAM
+HIRAM,model_id,HIRAM,HIRAM
+BCC-CSM1-1,model_id,BCC-CSM1-1,CMIP-5
+CCSM4,model_id,CCSM4,CMIP-5
+MIROC5,model_id,MIROC5,CMIP-5
+MPI-ESM-LR,model_id,MPI-ESM-LR,CMIP-5
+GFDL-ESM2M,model_id,GFDL-ESM2M,CMIP-5
+Livneh,title,livneh,OBS01
+Prism,title,prism,OBS01
+Daymet,title,daymet,OBS01
+CMIP-6,conventions,CMIP-6,CMIP-6
+CORDEX,project_id,CORDEX,CORDEX
+GFDL-FLORB01-p2FA,title,GFDL-FLORB01-p2FA,FLOR
+KB_SYN,experiment_id,QUANTILEMAP,KB_SYN
+CBAY,FILE_3,TPLM2,TPLM2

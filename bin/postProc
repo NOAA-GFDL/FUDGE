@@ -1,205 +1,276 @@
-#!/usr/bin/python
-import expergen 
-import os,sys,subprocess,shutil
+#!/bin/python
+
+#starting to mess around with the modified postProc workflow
+from fudgeUtils import tstamp
+#from fudgeUtils import read_exp_info_file
+from get_ds_info import parse_aux_info
+import os,sys,subprocess,shutil,time,copy
+from os import path as osp
 from subprocess import PIPE
-import argparse
-import shlex
-import fudgeList
-import checker
-cnt = 0
+import re
+from optparse import OptionParser
+import traceback
+from fudgeUtils import send_status_email
+from concatenate_nc_files import cat_files
+from trend_supplement import callCopyToTrendDetr, callAddResid
+from clim_supplement import callCopyToAnomClim, callAddAnom
+from get_file_from_fileset import get_file_from_fileset
+print("imports complete")
+
 def postProc():
-     #userinput = '/home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml'
-     force = False #default
-     usage = "\n############################################################################"
-     usage = usage + "\nEg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
-     parser = argparse.ArgumentParser(description=usage)	
-     usage = "Eg. postProc -i /home/a1r/gitlab/fudge/autogen/finalTests/GFDL-ARRMv2-A01P01X01.CM3.xml"
-     try:
-	userinput 
-	uinput = userinput
-     except:
-#	 print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.." 	
-	 userinput = "none"	
-     #parser.add_option("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
-     parser.add_argument("-i", "--file", dest="uinput",help="pass location of XML template", metavar="FILE")
-     #parser.add_option("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     parser.add_argument("-f", "--force",action="store_true",default=False, help="Force override existing output. Default is set to FALSE/no-override")
-     #parser.add_option("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME")
-     parser.add_argument("-v", "--vname", dest="vname",help="pass variable name to be post-processed. (If you pass two variables, you could pass as comma-separated variables--note this feature(mutliple variables for PPP) is in beta-testing. ", metavar="VNAME",nargs='+')
-     args = vars(parser.parse_args())
+    #Input parsing and arg checking for main body of code
+    usage = "usage: %prog [--aux auxfile.json] [-d ds_dir] [-o output_dir] [-s suffix] [-m --mail] [--verbose]"
+    parser = OptionParser(usage=usage, version='postProc kahlua')
+    parser.add_option("--aux", dest="aux",
+                      help="Path to a standardized json auxfile. Used to derive experiment parameters.")
+    parser.add_option("-d", "--ds_dir", dest="ds_dir",
+                      help="Output directory for the raw downscaled output. Is assumed to have .nc files in the general I$istart-$iend.J$jstart-$jend format.")
+    parser.add_option("-o", "--output_dir", action="store",
+                      help="Directory to which to write the concatenated file. The name of the concatenated file is going to be deduced from the inputs, but this could theoretically get written anywhere.")
+    parser.add_option("--final_outdir", action="store", default="output_dir",
+                     help="Directory to which the concatenated output will be copied for permanent storage (i.e. somewhere in /archive). If not set, is set to output_dir.")
+    parser.add_option("--var", action='store', default='none',
+                      help="The variable of interest in the files in -d (i.e. tasmax, tasmax_qcmask).")
+    parser.add_option("-m","--mail", action="store", default=None,
+                      help="If set, the destination to which to send email status messages. Note that this depends in part on the initial expergen experiment settings.")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print extra status messages used to help debugging. Defaults to False.")
+    (options, args) = parser.parse_args()
+    #Make sure the ds_dir, output_dir, exist
+    if not osp.exists(options.ds_dir):
+        sys.exit(1)
+    if not osp.exists(options.output_dir):
+        sys.exit(1)
+    if not osp.exists(options.final_outdir):
+        sys.exit(1)
+    #Make sure the json auxfile file exists
+    if not osp.exists(options.aux):
+        sys.exit(1)
+    #Do the slightly complicated checking of the mail arguments
+    if options.mail is not None:
+        #Note: we no longer get this variable from the environment at any point.
+        uemail = options.mail
+    else:
+        uemail = "na"
 
-     if userinput == "none":
-        print "Looking for XML location taken from command line option.."
-        print "Looks like uinput is not defined with this piece of code. If you passed it as an option, I'll try to use the command-line option with the XML location instead.."
-     vname = ""
-     for argu,valu in args.iteritems(): 
-        if(argu == 'uinput'):
-			 #print "test"
-                	 uinput = valu  
-                 	 print uinput
-        if(argu == 'force'):
-			force = valu
-        if(argu == 'vname'):
-			lvname = valu 
-		        lvname1 = ' '.join(lvname)
-		        lvname = lvname1.split(',')
-			print lvname1 
-			print "Variable(s) to be post-processed: ",lvname
-     if uinput is None:	
-        uinput = userinput
-	
-     if not os.path.exists(uinput):
-                        print "ERROR Invalid XML path.Quitting. Please use -h for help ",uinput
-                        sys.exit()
-     print "Force override existing output is set to ",force
-     #start_time1, start_time2, end_time1, end_time2, varname, hires1,lowres1,hires2,lowres2,strlist,futstart,futend,amip,calendar,esdMethod,expname1,expname2,freq,truth, predictor,rootdir1,rootdir2,dsuffix,region,lats,late,tstamp,lons,lone,yrtot,leaveit,basedire,outdire,futprefix,params,listlos,listfuts,ver = expergen.listVars(uinput,pp=True)
-################ get BASEDIR #################
-     basedir = os.environ.get('BASEDIR')
-     if(basedir is None):
-           print "\033[1;41mERROR: BASEDIR environment variable not set\033[1;m"
-	   sys.exit(1)
-     output_grid,kfold,lone,region,fut_train_start_time,fut_train_end_time,file_j_range,hist_file_start_time,hist_file_end_time,hist_train_start_time,hist_train_end_time,lats,late,lons,late, basedir,method,target_file_start_time,target_file_end_time,target_train_start_time,target_train_end_time,spat_mask,fut_file_start_time,fut_file_end_time,predictor,target,params,outdir,dversion,dexper,target_scenario,target_model,target_freq,hist_scenario,hist_model,hist_freq,fut_scenario,fut_model,fut_freq,hist_pred_dir,fut_pred_dir,target_dir,expconfig,target_time_window,hist_time_window,fut_time_window,tstamp,ds_region,target_ver,auxcustom,qc_switch,qc_varname,qc_type,adjust_out,sbase,pr_opts,masklists = expergen.listVars(uinput,basedir=basedir,pp=True) 
-     basedire = basedir	
-     esdMethod = method
-     varname = target 
-     if(spat_mask != 'na'):
-     	grid = spat_mask+"../"+region+".nc"
-     else:
-	grid = 'na'
-     region = ds_region
-     outrec = outdir.split('_')
-     #amip = outrec[0] 
-     #fut = outrec[1]
-     #print "amip outdir", amip
-     #print "fut outdir", fut
-     suff = ".nc"
-     cond = 1 
-     indir = fut_pred_dir 
-     freq = fut_freq
-     exper_rip = fut_scenario
-     scenario = exper_rip.split('_')[0]
-     ens = exper_rip.split('_')[1]	
-     #ver = dversion
-     ver = "na" 	
-     actualver = ""
-     #a1r, comment out above because as per new directory strucytre, there is no dversion. 	
-     predModel = fut_model 	
-     indir = outdir #Our mini op from dscaling is the input to PP  
-     ## if vname  contains the word mask, then yes let's set the indir differently  ##
-     listvname = []	
-     if(lvname is not None):
-     	listvname = lvname #.split(',')  
-     else:
-	listvname.append(varname)	
-     for vname in listvname:
-	print vname,"check 1"
-        vname = vname.strip(",")
-        vname = vname.strip()
-	print "Processing variable ",vname 
-    	if(vname is not None):
-    	 	if "mask" in vname:
-			print "The variable you're trying to PP appears to be a mask variable"
-        		#indir = indir+"../../../../"+vname+"/"+region+"/OneD/"+ver+"/" 
-                	indir = indir+"/"+target+"_qcmask/"
-        		print "indir ",indir 
-	        else:
-			indir = outdir	
-      	#if vname is passed, we assume we PP the target variable
-     	else: 
-        	vname = varname 
-        	print "default target variable chose to be post-processed. Override with a -v varname.", vname
-	##### lets run the checker on OneD first ###############
-	tnum = int(lone) - int(lons) + 1 
-	print "checker on OneD"
-       	checker.checker(indir,tnum,varname=vname)
-        ################################################
-	obsid = "'"+target_model+"."+target_scenario+"."+target_freq+"."+target_ver+"("+target_train_start_time+"-"+target_train_end_time+")"+"'"
-     #"OBS_DATA.GRIDDED_OBS.livneh.historical.atmos.day.r0i0p0.v1p2(1961-2005)"
+    if options.final_outdir is "output_dir":
+        final_outdir = options.output_dir
+    else:
+        final_outdir = options.final_outdir
 
-     	if (cond == 1):
-           			if (os.path.exists(indir)):
-                                        exists = checkExists(vname,indir,region,actualver,freq,expconfig,exper_rip,predModel,str(fut_train_start_time),str(fut_train_end_time),suff,force)
-             				if (exists == False):
+    verbose = options.verbose
+    print("calling runpostProc")
+    runPostProc(options.aux, options.ds_dir, options.output_dir, final_outdir, options.var, uemail, verbose)
 
-           					#print "PP Output does not exist already",indir
-						cnt = call_ppFudge(basedire,indir,esdMethod,vname,str(expconfig),exper_rip,region,ver,lons,lone,lats,late,grid,freq,str(fut_train_start_time),str(fut_train_end_time),obsid,output_grid)
-						print "call_ppFudge: COMPLETE "
-						print "fudgeList invocation: BEGINS"
-						slogloc = sbase+"/"+"experiment_info.txt"
-						fcmd = "python "+basedir+"/bin/fudgeList.py -f -i "+uinput+" -o "+slogloc 
-						f = subprocess.Popen(fcmd, stdout=subprocess.PIPE, shell=True)
-						out, err = f.communicate() 
-						#print "fudgeList out", out
-						#if err is not None:
-						#	print "fudgeList err", err	
-						print "Summary Log File: ", slogloc
-						slogloc_alt = indir+"../../../"
-						if("mask" in vname): 
-                                                	slogloc_alt = indir+"../../../../"
-						print "Copy summary log to ",os.path.abspath(slogloc_alt+"/experiment_info.txt")	
-					        shutil.copy2(slogloc, slogloc_alt)
-                                        ###final checker test for extraneous existing files ######
-                       		                print "checker on TwoD "
-                                               # filedirect = indir+"/../../../"+region+"/"+actualver+"/"
-					        filedirect = indir+"/../"
-                                                if "mask" in vname: #spl cases are not great
-                                                #	filedirect = indir+"/../../../../"+region+"/"+actualver+"/"
-							filedirect = indir+"/../../"
+def runPostProc(aux, ds_dir, out_dir, final_outdir, var, mailid, verbose=False):
+    #Clearer wrapper describing what the postProc function does.
+    #Still trying to duplicate old functionality; should really be called once
+    #for each ensemble member.
+    print("in runpostProc")
+    auxinfo, auxdict = parse_aux_info(aux)
+    total_exp_name = auxdict['ds_experiment_name']
+    script_dir = auxdict['script_settings']['scriptdir']
+    # var is set; includes the _qcmask vars
+    '''
+    expdict = read_exp_info_file(exp_info)
+    total_exp_name = expdict['ds.experiment']
+    script_dir = expdict['script.base']
+    var = expdict['target']
+    xml_loc = expdict['xml.path']
+    '''
+    send_to = mailid
 
-                                        	checker.checker(filedirect,2,"warning")
-					else:
-						sys.exit("ERROR")
-           			else:
-                			print "\033[1;41mERROR Input directory ",indir," does not exist. Aborting exec. \033[1;m"
-                			sys.exit()
+    output_files = [] #can end being up to 4 elements long
 
-def checkExists(var,indir,region,ver,freq,dexper,exper_rip,predictor,start,end,suff,force):
-                                        filedire = indir+"/../" #../../"+region+"/"+ver+"/"
-				        print "In checkExists()......"
-				        if "mask" in var: #spl cases are not great
-	                                        filedire = indir+"/../../" #../../"+region+"/"+ver+"/"
-						print "-----Looking for PP output in:", filedire		
-                                        filename =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end+".nc"
-#                                        filename =var+"_"+freq+"_"+esdMethod+"_"+dexper+"_"+drip+"_"+region+"_"+predictor+"_"+start+"0101"+"-"+end+"1231"+".nc"
+    #Expect one output file per runscript
+    n_expected_files = len([f for f in os.listdir(osp.join(script_dir, "runscript")) if re.search("script", f) is not None])
 
-					#print "test test",filedire,filename	
-                                        if not os.path.exists(filedire+"/"+filename):                
-                                           exists = False  
-                                        else:
-					   if (force == True):	
-					   	print "CAUTION : PP output  already exists. But -f is turned on, so output will be overwritten"	
-						exists = False
-					   else:
-						exists = True
-						print "\033[1;41mERROR: PP output already exists. ", filedire,"/",filename,". Please use -f option to override this. Quitting now..\033[1;m"
-					#cprint filename
-				        return exists		
+    #Determine how many ds vars we are looking for
+    #note: anom + resid is a special case; always searched for
+    print("Downscaled output chunk dir: " + ds_dir)
+    if osp.exists(ds_dir):
+        ds_files = [f for f in os.listdir(ds_dir) if re.search("\.nc", f) is not None]
+        if verbose:
+            print("List of files in output chunk dir:")
+            for n in ds_files:
+                print(n)
+        n_ds_files = len(ds_files)
+        if n_ds_files > 0:
+            try:
+                # pattern is the file before the i,j indicator
+                file_patt = ds_files[0].split(".")[0]
+                print('calling process_file')
+                ds_file = process_file(aux, file_patt, ds_dir,
+                                       out_dir, n_expected_files)
+                output_files.append(ds_file)
+            except:
+                print(traceback.format_exc())
+                send_status_email("failure", 'postProc', total_exp_name, \
+                               traceback="One or more ds minifiles may be absent for the specified region", \
+                               mailid=send_to, logfiles = [os.path.join(script_dir, "fudge_postProc_.*")], \
+                               exp_info_file = os.path.join(script_dir, 'experiment_info.txt'), \
+                               outfiles = ds_dir)
+                sys.exit(-1)
+            #Note: python 'is' checks to see if same object, '==' checks for same value
+            #'is' works within the list comprehensions, but == works outside
+            anom_resid_patterns = ['Anom', 'Detr']
+            supp_patterns = ['qcmask', 'save']
+            if any([re.search(el, var) is not None for el in anom_resid_patterns]):
+                if not any([re.search(el, var) is not None for el in supp_patterns]):
+                    anom_out = check_anom_resid(ds_file, final_outdir, total_exp_name,
+                                                var, send_to, script_dir,
+                                                "",True)
+                    output_files.append(anom_out)
+                else:
+                    # you don't need to do a trend addition,
+                    # all you need is a copy
+                    anom_out = check_anom_resid(ds_file, final_outdir, total_exp_name,
+                                                var, send_to, script_dir,
+                                                "",False)
+                    output_files.append(anom_out)
+    else:
+        print('No suffix directory for ' + var + ' found. Moving on to next var.')
+    output_files = [el for el in output_files if el is not None]
+    if len(output_files) == 0:
+        print("Error in postProc: output_files is of length 0. This should not happen!")
+        sys.exit(1)
+    print("Concatenation operations complete." + "\n")
+    for el in output_files:
+        print("\t" + el)
+    sys.exit(0)
 
-def call_ppFudge(basedire,indir,method,var,dexper,exper_rip,region,ver,lons,lone,lats,late,grid,freq,start,end,obsid,output_grid):
-        script1Loc = basedire+"/utils/pp/ppFudge" #"/main/code/esd/autogen/ppFudge"
-	print script1Loc 
-#check if output already exists
-#options basedir indir method var epoch rip region ver
-#TODO rem redundant region to cattool
 
-        fileprefix =var+"_"+freq+"_"+dexper+"_"+exper_rip+"_"+region+"_"+start+"-"+end 
-	cmd =  script1Loc+" "+basedire+" "+indir+" "+method+" "+var+" "+dexper+" "+exper_rip+" "+region+" "+ver+" "+str(lons)+" "+str(lone)+" "+str(lats)+" "+str(late)+" "+str(grid)+" "+fileprefix+" "+obsid+" "+output_grid
-        print "PP ..in progress", cmd 
-       	#p = subprocess.Popen('tcsh -c "'+cmd+'"',shell=True,stdout=PIPE,stdin=PIPE, stderr=PIPE)
-        p = subprocess.Popen('tcsh -f -c "'+cmd+'"',shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
-	error,output = p.communicate()
-	print p.returncode ,output, error
-        word = "ERROR"
-        if (p.returncode != 0):
-         print "\033[1;31m!!!! FAILED !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock'\033[1;m"
-         sys.exit(0)
-	if word in error:
-         print "'\033[1;31m!!!! FAILED. !!!!,error occured in call_ppFudge. Please save log and contact Aparna Radhakrishnan/Carolyn Whitlock\033[1;m"
-         sys.exit(0)
-         ############################################################################################
-        global cnt
-	cnt = cnt + 1
-        print "1- completed\n"
-	return p.returncode
+def check_anom_resid(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput, is_ds=False):
+    #Checks for whether you need to call the anom addition or trend addition scripts;
+    #calls them and returns the output file, if needed.
+    #note: uinput is the xml
+    copy_file = None
+    add_strings  = ["Anom", 'Detr']
+    if any([el in var for el in add_strings]):
+        #Copy operations are predictable, and called by everything
+        #You need to do the add operations (note: adds here include copies. Yes, it's weird.)
+        if ("Anom" in var):
+            if is_ds:
+                print("Calling the anomaly addition script")
+                anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+                print(osp.dirname(anom_file))
+                copy_file = anom_file
+            else:
+                print("Copying qc file to final destination")
+                print("using var " + var)
+                climvar = re.sub('Anom', '', var)
+                copy_file = callCopyToAnomClim(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+        elif ("Detr" in var):
+            if is_ds:
+                print("Calling the trend/resid addition script")
+                anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+                climvar = re.sub('Detr', '', var)
+            else:
+                print("Copying qc file to final destination")
+                copy_file = callCopyToTrendDetr(in_file, final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+    else:
+        print("None of " + ",".join(add_strings)," found in var; no adding/trending operations take place.")
+    return(copy_file)
+
+def process_file(aux, file_patt, in_dir, out_dir, n_expected_files, force_overwrite=False):
+    #determine reference grid from the auxfile: for now, OH works
+    auxinfo, auxdict = parse_aux_info(aux)
+    MF = auxdict['MF']
+    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
+    complete_gridfile = get_file_from_fileset(MF, prime_var)
+    #determine the number of files expected
+    pres_files = [osp.join(in_dir, f) for f in os.listdir(in_dir) if re.search("\.nc", f) is not None]
+    nfiles = len(pres_files)
+    #are there that many .nc files in the directory where you expected to see them?
+    if nfiles != n_expected_files:
+        print("Error in process_file: wrong number of files in",in_dir, "!")
+        sys.exit()
+    #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
+    #in that case, the modified workflow should just copy the file.
+    is_concatenate = (n_expected_files > 1)
+    cat_file = cat_files(in_dir, file_patt, out_dir, delim_patt = "\.", orig_file = complete_gridfile, aux=aux, is_concatenate=is_concatenate)
+    #And finally, set your metadata.
+    #Note: this is now done in the cat step, to avoid copying to tmpdir more than once
+    #out_file = set_FUDGE_metadata(out_file, exp_info)
+    return(cat_file)
+
+def process_mask_file(exp_info, file_patt, out_dir):
+    #determine reference grid from the auxfile: for now, MF works
+    auxinfo, auxdict = parse_aux_info(aux)
+    MF = auxdict['MF']
+    prime_var = [k for k in auxdict['MF'].keys() if (auxdict['MF'][k]['is_prime']=="TRUE")][0]
+    complete_gridfile = get_file_from_fileset(MF, prime_var)
+    #Okay...steps are roughly as follows:
+    mask_region_files = []
+    #For each of the mask directories:
+    region_mask_dirs = [osp.join(out_dir, el) for el in osp.listfiles(out_dir) if re.search('mask', el) is not None]
+    for maskdir in region_mask_dirs:
+        maskpath = osp.join(outdir, maskdir)
+        spatpath = osp.join(maskpath, "SpatSubset")
+        #file_patt probably needs to be edited - would that include the
+        #mask information in the name?
+        #determine the number of files expected
+        nfiles = len([f for f in os.listdir(spatpath) if re.search("\.nc", f) is not None])
+        #are there that many .nc files in the directory where you expected to see them?
+        if nfiles != expected_files:
+            print("Error in process_file: wrong number of files in",spatpath, "!")
+        #If there are that many files, proceed with next step. NOTE: One is an acceptable answer;
+        #in that case, the modified workflow should just copy the file.
+        mask_file = cat_files(spatpath, file_patt, maskdir, delim_patt = "\.", orig_file = complete_gridfile, aux=aux)
+        #note: mask_file is already copied to maskdir
+        mask_region_files.append(mask_file)
+    #...upon further inspection, it looks like ncbo isn't going to work readily -
+    #ncflint mentions what we'd want it to do as one of the available options,
+    #but it's not implemented. Hm.
+    if len(mask_region_files) > 1:
+        #add the mask files using the utility you wrote to do the thing
+        out_file = combine_masked_files(mask_region_files)
+    else:
+        #This should be the most common case
+        out_file = mask_region_files[1]
+    #And finally, set your metadata.
+    out_file = set_FUDGE_metadata(out_file, exp_info)
+    return(out_file)
+
+
+def proc_all_files(exp_info, out_dir):
+    #Look for 3 different kinds of input files
+    #(data, qcmask_data, save_data)
+    #_qcmask data is written in a separate file; we don't have the
+    #same stuff in place for the save data yet, but it's probably going to
+    #go there
+    #Stuff we need to make this operation:
+    #variable of interest
+    #output location
+    #How many files we expect to have in the x and y subsets
+    #...so one way to look at the $var_qcmask and $var_save files is that
+    #they are strings to search for in the naming file patterns.
+    #..so in the absence of a --qcmask tag added, how does it determine if there
+    #are qcmask inputs that need to be processed?
+    #answer: check for the qcmask dirs in a separate call. Make one for the
+    #main body function, and one for the qcmasks. One for the saves as well,
+    #once you get to that point.
+
+    supp_strings = ['qcmask', 'save']
+    #Anomaly copy/add switches
+    add_strings  = ["Anom", 'Detr']
+    for el in patterns:
+        #Assume the output always needs addition
+        cat_file = process_file(exp_info, el, out_dir, n_expected_files)
+        if any(add_strings in var):
+            if not any(supp_strings) in var:
+                #You need to do the add operations (note: adds here include copies. Yes, it's weird.)
+                if ("Anom" in var):
+                    print("Calling the anomaly addition script")
+                    anom_file = callAddAnom(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+                elif ("Detr" in var):
+                    print("Calling the trend addition script")
+                    anom_file = callAddResid(final_out_dir, total_exp_name,var,send_to, sbase,uinput)
+            #Copy operations are predictable, and called by everything
+            if ("Anom" in var):
+                copy_file = callCopyToAnomClim(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+            elif ("Detr" in var):
+                copy_file = callCopyToTrendDetr(final_out_dir, total_exp_name, var, send_to, sbase, uinput)
+
 if __name__ == '__main__':
+    print(sys.argv)
     postProc()

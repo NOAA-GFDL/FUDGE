@@ -1,0 +1,205 @@
+#fudge_subset_functions.R
+#Functions related to subsetting and looping over data - 
+#getting multiple points, padding datasets, and determining
+#which coordinates to loop over within the function.
+
+pad.fudge.var.dim <- function(data, pad.dim, pad.by=1, 
+                              pad.type='NA', pad.loc='start'){
+  #Pads a 6-dimensional dataset with more values along one of 
+  #x or y depending on args. The pad specification changes
+  #how the missing values will be added/padded.
+  #Called from the fudge dataset builder.
+  #Strong assumption that the 6-dimensional structure is enforced
+  #pad.dim can be one of 'x' or 'y'
+  #As of 3-16-17, x and y are no longer padded diffrently
+  new.dim <- dim(data)
+  if (pad.dim=='x'){
+    dim.len <- new.dim[1]
+  }else if (pad.dim=='y'){
+    dim.len <- new.dim[2]
+  }
+  start.pad.seq <- c(1)
+  end.pad.seq <- c()
+  if ('start' %in% pad.loc){
+    pad.idx <- which(pad.loc=='start')
+    pad.dim.len <- dim.len + pad.by[pad.idx]
+    start.pad.seq <- (pad.by[pad.idx]+1):pad.dim.len
+  }
+  if ('end' %in% pad.loc){
+    pad.idx <- which(pad.loc=='end')
+    pad.dim.len <- dim.len + pad.by[pad.idx]
+    end.pad.seq <- min(start.pad.seq):dim.len
+  }
+  all.pad.seq <- sort(unique(c(start.pad.seq, end.pad.seq)))
+  print(pad.loc)
+  print(pad.by)
+  print(all.pad.seq)
+  print(length(all.pad.seq))
+  print(dim(data))
+  new.dim.len <- sum(pad.by) + dim.len
+  if (pad.dim=='x'){
+    new.dim[1] <- new.dim.len
+    out.data <- array(NA, dim=new.dim)
+    out.data[all.pad.seq,,,,,] <- data
+  }else if (pad.dim=='y'){
+    new.dim[2] <- new.dim.len
+    out.data <- array(NA, dim=new.dim)
+    out.data[,all.pad.seq,,,,] <- data
+  }
+  remove(data)
+  gc()
+  return(out.data)
+}
+
+get.FUDGE.subset <- function(by, idx, idx_max, stride=0){
+  #Gets a subset of indices suitable for using in the IO functions
+  #by: how many points you will be taking in a single slice
+  #idx: where you are starting counting from
+  #idx_max: max allowable index. 
+  #allow_small_subset: whether to make smaller subsets
+  #  when idx=1 or idx=idx_max
+  ##Now returns extra arguments, to determine what steps need to be made
+  ##to pad the input datsets.
+  delt <- floor(by/2) #for by=1, this is 0
+  start = idx - delt
+  end = idx + delt + stride
+  #Track whether or not you need to add end-of-grid checks elsewhere
+  #Only one of teh olap conditions should ever be true at once.
+  #This has changed as of 3-16-17 - you can overlap both at once.
+  olap = F
+  olap_by = 0
+  olap_loc = 'none'
+  if ((start)  < 1){
+    olap = T
+    olap_by = (start * (-1)) + 1
+    olap_loc = 'start'
+    start = 1
+  }
+  if (end > idx_max){
+    #     if(olap == T){
+    #       stop(paste("Error in get.fudge.subset: subset overlapped start and end", 
+    #                  "of index simultaneously! This should not be possible."))
+    #     }
+    if (olap){
+      olap_loc = c('start', 'end')
+      olap_by = c(olap_by, end-idx_max)
+    }else{
+      olap = T
+      olap_by = end - idx_max
+      olap_loc = 'end'
+    }
+    end <- idx_max
+  }
+  return(list(subset=c(start, end), 
+              olap=olap, 
+              olap_by=olap_by, 
+              olap_loc=olap_loc))
+}
+
+get.loop.indices <- function(x.len, y.len, x.by, y.by=x.by, 
+                             by.min=1, 
+                             allow_partial=F, fixed_edge=F){
+  #Get.loop.indices deals with two cases: 
+  #' 1) You are looping by exactly as many points as there are 
+  #' in the given dimension. In this case, don't try to loop; 
+  #' there is a single start and end index.
+  #' 2) You are looping by fewer points than there are in the
+  #' given dimension (i.e. looping by 3 in 114 lat indices); in 
+  #' that case, the center of your 'by' moves by one each time, leaving
+  #' smaller sample sizes at the end of your distribution.
+  #' 9-21: Code has been modified; we now pad datasets that have insifficient
+  #' indices in x or y with missing values to fill the dataset. Need to return
+  #' fewer looping coords as a result.
+  if (allow_partial){
+    x.delt <- (x.by-1)/2
+    y.delt <- (y.by-1)/2    
+  }else{
+    x.delt <- x.by
+    y.delt <- y.by    
+  }
+  if (x.len==x.by){
+    x.start <- 1
+    x.end <- x.by
+  }else{
+    out <- loop.seq(x.len, x.delt, allow_partial, fixed_edge)
+    x.start <- out$start; x.end <- out$end
+  }
+  if(y.len==y.by){
+    y.start <- 1
+    y.end <- y.by
+  }else{
+    out <- loop.seq(y.len, y.delt, allow_partial, fixed_edge)
+    y.start <- out$start; y.end <- out$end
+  }
+  #When we do grids with more than one X strip, this is going to require
+  #that the x and y coordinates get combined with each other.
+  return(list(x.start = x.start, x.end = x.end, #x.olap=x.olap,
+              y.start  = y.start, y.end=y.end)) #y.olap=y.olap))
+}
+
+loop.seq <- function(len, delt, allow_partial=F, fixed_edge=T){
+  #Creates a sequence of start and end values to loop over 
+  #delt = (by-1)/2
+  ###These two lines get used if we ever turn on downscaling
+  ###over incomplete datasets again
+  if (allow_partial){
+    #incomplete datasets on edges
+    base.seq <- 1:(len-delt)
+    start.seq <- c(rep(1, delt),   base.seq)
+    end.seq <- c(base.seq+delt, rep(len, delt))
+  }else if (fixed_edge){
+    #Fixed grid on edges (move target, predictors don't move)
+    base.seq <- 1:(len - (delt-1) )
+    start.seq <- base.seq
+    end.seq <- base.seq + (delt-1)
+    pad <- (delt-1)/2
+    start.seq <- c(rep(start.seq[1], pad), 
+                   start.seq, rep(start.seq[length(start.seq)], pad))
+    end.seq <- c(rep(end.seq[1], pad), 
+                 end.seq, rep(end.seq[length(end.seq)], pad))
+  }else{
+    #complete datasets on edges
+    base.seq <- 1:(len - (delt-1) )
+    start.seq <- base.seq
+    end.seq <- base.seq + (delt-1)
+  }
+  return(list(start=start.seq, end=end.seq))
+}
+
+
+get.xy.slice <- function(data, coords, i, j){
+  #Given a subset of x and y coords and a list of data
+  #either covering those coords (the most common case)
+  #or of x and y dimensions 1 (i.e. ENSO, same for all x and y)
+  #subsets the data for use in the downscaling steps.
+  x1 <- coords$x.start[i]
+  x2 <- coords$x.end[i]
+  y1 <- coords$y.start[j]
+  y2 <- coords$y.end[j]
+  #Function for most common case
+  subset.xy <- function(el, x1, x2, y1, y2, n){
+    if (any( (dim(el)[1:2]) < c(x2,y2) )){
+      #Subsetting is not posisble; don't bother on short dims
+      message(paste("Warning in subset.xy: var", n, 
+                    "had too few indices to subset on x and y;", 
+                    "returning var unsubset"))
+      return(el)
+    }else{
+      #Subsetting is posisble (the most common case)
+      return(el[x1:x2, y1:y2, ,,, , drop=F])
+    }
+  }
+  return(lapply(data, subset.xy,
+                x1, x2, y1, y2, n=names(data)))
+}
+
+get.xy.center <- function(dataset){
+  #'Returns the x,y center coordinate of the input dataset
+  #'assuming dims are in FUDGE-specific order
+  spat.dims <- dim(dataset)[1:2]
+  x.mid <- floor(mean(1, spat.dims[1]))
+  y.mid <- floor(mean(1, spat.dims[2]))
+  data.slice <- dataset[x.mid,y.mid,,,, ,drop=F]
+  dim(data.slice) <- c( c(1,1), dim(dataset)[3:6])
+  return(data.slice)
+}
